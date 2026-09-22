@@ -1,0 +1,26 @@
+# サブリポジトリ(それぞれ独立した git リポジトリ。decitima-project では追跡しない)
+/devex-ui/
+/devex-api/
+
+# 環境変数・秘密情報
+.env
+.env.*
+!.env.example
+
+# Claude Code(ローカル設定のみ除外。settings.json は追跡する)
+.claude/settings.local.json
+.claude/*.local.json
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+# .vscode/ は settings.json（ワークスペース共通の解析設定）だけ追跡し、それ以外は無視する
+.vscode/*
+!.vscode/settings.json
+
+# Python
+__pycache__/
+*.pyc
