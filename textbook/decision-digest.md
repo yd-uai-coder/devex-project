@@ -52,3 +52,15 @@ Phase 1着手前にユーザーへ仕様診断を提示し、全12項目の決�
 ## Phase 0 ── 「生成ドキュメントの自己診断」をプロダクト要件化
 
 #28(CL進行ルールとしての仕様診断)を、Devexというプロダクト自体の機能要件としても明示した(ユーザー指示、#25再帰検証ルールの直接的な適用例)。[`docs/requirements.md`](../docs/requirements.md) 1.4節Must haveに「ドキュメント自己診断機能」を追加: 4文書生成後、AIが不足・不明瞭な点を最重要/中程度/軽微の3段階で自己診断しチャットに提示する。診断結果は`chat_histories`の`sender='others'`行として記録する(既存の4値化で確保していた枠を具体的な用途に確定)。詳細は[`Phase-0/Phase-0-7.md`](./Phase-0/Phase-0-7.md)参照。
+
+## Phase 2着手前 ── 文書アップロード要件の追加
+
+「Phase 2を開始する」の実行中(教材ファイル生成前)にユーザーから新要件が提示され、一旦中断して`docs/*.md`を先行改訂した。Phase 1〜5のロードマップ区分自体は変更なし(Phase 2-1「DB移行」・Phase 2-3「チャットヒアリングフロー設計」・Phase 3-2「チャットヒアリングUI」の中に組み込む)。教材(`textbook/Phase-2/…`)の生成はこのセッションでは行っていない(次回「Phase 2を開始する」で着手)。
+
+- **要件本体(Must have化)**: 初期ヒアリング入力(SCR-004)時に参考資料を最大3ファイルまでアップロードできる機能を[`docs/requirements.md`](../docs/requirements.md) 1.3/1.4節に追加した。
+- **データモデル**: `projects.intake`(JSONB)を拡張するのではなく、`chat_histories`/`generated_documents`と同じ粒度の新規テーブル`intake_files`を新設した([`docs/internal_design.md`](../docs/internal_design.md) 3.2節)。理由: ファイル単位の状態(成功/失敗、エラー理由)を個別に持たせやすいため。
+- **ファイル実体は保持しない**: 抽出したテキストのみをDBに永続化し、元ファイルのバイナリは処理後に破棄する。理由: 現行インフラはPostgreSQLのみで、S3等のオブジェクトストレージを持たない。バイナリ保持を選ぶとPhase 1(環境構築)への手戻りが発生するため見送った。
+- **対応形式をtxt・Markdown・PDFの3種類に絞った経緯**: 当初案(txt/Markdown/Word/Excel/PowerPoint/PDF)に対し、「文書内の図はどう解釈されるか」という指摘があった。GeminiはPDF/画像にはネイティブなマルチモーダル理解(図・レイアウトの解釈を含む)があるが、Word/Excel/PowerPointはLLMに直接渡せない。これらも同水準で図を解釈するにはPDF変換(LibreOffice等)という新規インフラが必要になり、Phase 1への手戻りが生じる。そのためWord/Excel/PowerPointは対象外とし、図を含む資料はユーザー側でPDF化してもらう設計にした。
+- **テキスト化方式**: `txt`/`md`はそのままUTF-8テキストとして読み込む(LLM呼び出し不要)。`pdf`は既存の`app/ai/llm/gemini.py`のGeminiクライアントにファイルをそのまま渡し、LLMのネイティブなファイル理解でテキスト化する(新規のPDF解析ライブラリは追加しない)。この方式により新規ライブラリ・新規インフラを一切追加せずに済んでいる。
+- **初期値(ユーザー未指定、こちらの提案で確定)**: 1ファイル最大5MB、抽出テキストは1ファイルあたり最大20,000文字(超過分は切り詰め)、処理は`POST /api/v1/projects`実行時に同期、テキスト化失敗(`FILE_EXTRACTION_FAILED`)してもヒアリングはブロックしない。PDFのテキスト化はGemini Flash-Liteのクォータを1回消費する(既存の`LLM_QUOTA_EXCEEDED`リスクと同じプール、[`docs/implementation_plan.md`](../docs/implementation_plan.md) 4.4リスク5に追記)。
+- 新規エラーコード`TOO_MANY_FILES`/`UNSUPPORTED_FILE_TYPE`/`FILE_TOO_LARGE`/`FILE_EXTRACTION_FAILED`を[`docs/internal_design.md`](../docs/internal_design.md) 3.4節に追加した。

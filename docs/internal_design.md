@@ -36,6 +36,7 @@
 * **ChatHistory（チャット履歴）**: ユーザーとAIの間で行われた対話のログ。
 * **GeneratedDocument（生成ドキュメント）**: ヒアリング結果を基に生成された4種のMarkdownテキスト（要件定義、外部設計、内部設計、実装計画）およびそのバージョンを管理。
 * **PromptTemplate（プロンプトテンプレート）**: ※Should have要件を見据え、WebアプリやAPI向けなどのテンプレート定義を保持。
+* **IntakeFile（添付ファイル）**: 初期ヒアリング入力時にアップロードされた参考資料(txt/Markdown/PDF、最大3ファイル)から抽出したテキストを管理。
 
 ### 2. テーブル定義
 
@@ -95,6 +96,22 @@
 | default_environment | JSONB | NULL可 | このテンプレート選択時にSCR-004のintake環境設定へプリフィルするデフォルト値。`intake.environment`([外部設計書](external_design.md) 2.5節3項)と同じ構造(`languages`/`frameworks`/`databases`/`deploy_targets`) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 
+#### ⑥ `intake_files` テーブル
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK, DEFAULT gen_random_uuid() | 添付ファイルID |
+| project_id | UUID | FK (`projects.id`), NOT NULL | プロジェクトID |
+| filename | VARCHAR(255) | NOT NULL | アップロード時の元ファイル名 |
+| file_type | VARCHAR(20) | NOT NULL | 拡張子(`txt`/`md`/`pdf`のいずれか) |
+| size_bytes | INT | NOT NULL | 元ファイルのサイズ(バイト) |
+| extracted_text | TEXT | NULL可 | 抽出したテキスト内容(抽出失敗時はNULL、最大20,000文字で切り詰め) |
+| status | VARCHAR(20) | NOT NULL, DEFAULT 'processed' | 処理結果 (`processed`: テキスト化成功, `failed`: 失敗) |
+| error_message | VARCHAR(255) | NULL可 | 失敗時の理由 |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+
+**保存方針**: 元ファイルの実体(バイナリ)は保持しない。テキスト化後は破棄し、`extracted_text`のみ永続化する(オブジェクトストレージ非依存)。テキスト化方式は`file_type`によって異なる: `txt`/`md`はファイル内容をUTF-8テキストとしてそのまま読み込む(LLM呼び出し不要)。`pdf`はGeminiのネイティブなファイル理解でテキスト化する(図・レイアウトの解釈を含む。詳細は3.3節・[外部設計書](external_design.md) 2.5節5項参照)。対応形式をtxt/Markdown/PDFの3種類に限定しているのは、Word/Excel/PowerPointをLLMへ直接渡せず、同水準の図解釈を行うにはPDF変換用の新規インフラ(LibreOffice等)が必要になるため(導入しない判断。[decision-digest](../textbook/decision-digest.md)参照)。
+
 ---
 
 ## 3.3 バックエンド処理・モジュール設計
@@ -117,7 +134,8 @@ backend/
 ```
 
 * **`chat_service.py`**:
-  * プロジェクト作成時、`intake`(初期ヒアリング入力)を`sender='intake'`の`chat_histories`行として永続化する。ユーザーからの入力とこれまでの `chat_histories`(intake行を含む)をLangChainのメモリ（Memory）にロードし、LLMへ送信することで、チャット開始直後のAIの最初の発話に反映する。
+  * プロジェクト作成時、`intake`(初期ヒアリング入力)を`sender='intake'`の`chat_histories`行として永続化する。添付ファイルがある場合は`intake_files`のテキスト化(後述)も行い、その`extracted_text`も`sender='intake'`の`chat_histories`行(ファイルごと、またはintake本体行への追記)として併せて永続化する。ユーザーからの入力とこれまでの `chat_histories`(intake行・添付ファイル由来の行を含む)をLangChainのメモリ（Memory）にロードし、LLMへ送信することで、チャット開始直後のAIの最初の発話に反映する。
+  * **添付ファイルのテキスト化**: `txt`/`md`はファイル内容をUTF-8テキストとしてそのまま読み込む。`pdf`は既存の`app/ai/llm/gemini.py`のGeminiクライアントを流用し、ファイルをそのまま渡してLLMのネイティブなファイル理解でテキスト化する(新規のPDF解析ライブラリは追加しない)。結果は`intake_files`テーブルに保存する(3.2節参照)。
   * ヒアリングが十分な状態に達したか（あるいはユーザーが生成を要求したか）を判定するロジックを保持。判定基準([外部設計書](external_design.md) 2.3節SCR-004参照): (1)目的・課題の明確化、(2)コア機能が最低1つ以上「誰が・何を・なぜ」のレベルで具体化、(3)想定ユーザー像の把握、(4)MVPスコープの認識合わせ、(5)環境設定未入力時は技術的制約の確認、をすべて満たしたら「十分」と判定する。十分と判断した場合は、即座に生成へ進まず、構造化した要件サマリをユーザーに提示して明示的な承認を得てから次のステップ（`doc_generator_service.py` の呼び出し）に進む。
 * **`doc_generator_service.py`**:
   * ヒアリング完了時、チャット全履歴をコンテキストとしてインプットし、「要件定義」「外部設計」「内部設計」「実装計画」のそれぞれに特化したプロンプトを実行。
@@ -130,9 +148,9 @@ backend/
 | :--- | :--- | :--- | :--- |
 | **POST** | `/api/v1/auth/register` | 新規ユーザー登録 | 不要 |
 | **POST** | `/api/v1/auth/login` | ログイン（JWT発行） | 不要 |
-| **POST** | `/api/v1/projects` | 新規プロジェクト作成(初期ヒアリング入力を`intake`として受け取る。[外部設計書](external_design.md) 2.5節3項参照) | 必要 |
+| **POST** | `/api/v1/projects` | 新規プロジェクト作成(初期ヒアリング入力を`intake`として受け取る。添付ファイル最大3件・txt/md/pdfのみを伴う場合は`multipart/form-data`になる。[外部設計書](external_design.md) 2.5節3項・5項参照) | 必要 |
 | **GET** | `/api/v1/projects` | ユーザーのプロジェクト一覧取得 | 必要 |
-| **GET** | `/api/v1/projects/{id}` | 特定プロジェクトの詳細・状態取得 | 必要 |
+| **GET** | `/api/v1/projects/{id}` | 特定プロジェクトの詳細・状態取得(添付ファイルのサマリ ── ファイル名・形式・`status` ── を含む。`extracted_text`本文は含めない) | 必要 |
 | **POST** | `/api/v1/projects/{id}/chat` | チャットメッセージ送信・AI応答取得（ストリーミング対応） | 必要 |
 | **GET** | `/api/v1/projects/{id}/chat` | 特定プロジェクトのチャット履歴取得 | 必要 |
 | **POST** | `/api/v1/projects/{id}/generate` | 設計書4種の自動生成トリガー（非同期） | 必要 |
@@ -162,6 +180,10 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 * `RESOURCE_NOT_FOUND`: 指定されたプロジェクトやドキュメントが存在しない
 * `LLM_API_ERROR`: 外部LLMプロバイダー（Gemini等）との通信エラーやレートリミット超過
 * `LLM_QUOTA_EXCEEDED`: Gemini Flash-Lite無料枠のトークン上限超過。ユーザーには「本日の利用上限に達しました」等の分かりやすいメッセージを表示する([実装計画書](implementation_plan.md) 4.4リスク3参照)
+* `TOO_MANY_FILES`: 初期ヒアリングの添付ファイルが上限(3件)を超えている
+* `UNSUPPORTED_FILE_TYPE`: 添付ファイルがtxt/Markdown/PDF以外の形式である
+* `FILE_TOO_LARGE`: 添付ファイルが1ファイルあたりの上限(5MB)を超えている
+* `FILE_EXTRACTION_FAILED`: 添付ファイルのテキスト化に失敗した(破損ファイル等。ヒアリング自体はブロックしない)
 * `INTERNAL_SERVER_ERROR`: 予期せぬサーバーエラー
 
 ### 2. 例外検知・ログ出力方針
