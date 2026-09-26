@@ -1,5 +1,9 @@
 # Phase-1-1: Docker Compose 環境の動作確認
 
+## この章の目的
+
+既存の`docker-compose.yml`スタック(postgres/redis/backend/nginx)を実際に起動し、DB/Redisへの疎通・マイグレーション適用・`devex-ui`とのCORS疎通を確認する。確認の過程で見つかった設定不整合(`DATABASE_URL`の認証情報不一致、postgres/redisの`ports`未公開など)をあわせて修正する。
+
 納期モード([`Phase-1-introduction.md`](./Phase-1-introduction.md) 参照)。#14 の SUT/ドライバ/スタブの言語化は省略し、「動くこと」の確認に留める。
 
 ## この章で作成・更新したファイル
@@ -86,6 +90,8 @@ curl -i -H "Origin: http://localhost:3000" http://localhost:8000/health
 ```
 
 devex-ui 自体は現時点で FastAPI を呼ぶ画面を持たない(SSGデモページのみ)ため、実際の疎通確認は `curl`/`/health` による代替確認に留めた。実際の API 呼び出し画面は Phase 3 で作られる。
+
+> **後続の改訂**: この時点のCORS設定(`allow_origins`/`allow_credentials`/`allow_methods`/`allow_headers`)は「変更不要」だったが、`Content-Disposition`のようなCORSセーフリスト対象外のレスポンスヘッダーをJSから読む機能([`Phase-3-6.md`](../Phase-3/Phase-3-6.md)のドキュメントダウンロード)を後から追加した際、`expose_headers`が未設定だったためヘッダーが読めず、ドキュメントのUUIDがファイル名になる不具合が実際に発生した。`app/main.py`に`expose_headers=["Content-Disposition"]`を追加して解決した。詳細は[`decision-digest.md`](../decision-digest.md)「ドキュメントダウンロードのファイル名がUUIDになる不具合の修正(CORS `expose_headers`未設定)」節参照。
 
 ## テスト観点(納期モード: 「動くこと」の確認)
 

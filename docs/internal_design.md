@@ -57,7 +57,7 @@
 | id | UUID | PK, DEFAULT gen_random_uuid() | プロジェクトID |
 | user_id | UUID | FK (`users.id`), NOT NULL | 所有ユーザーID |
 | title | VARCHAR(255) | NOT NULL | プロジェクト名 / アイデア概要 |
-| status | VARCHAR(50) | NOT NULL, DEFAULT 'interviewing' | 状態 (interviewing: ヒアリング中, generating: 生成中, completed: 完了) |
+| status | VARCHAR(50) | NOT NULL, DEFAULT 'interviewing' | 状態 (interviewing: ヒアリング中, generating: 生成中, completed: 完了, revising: 修正中。completed後に新規チャットメッセージを送るとrevisingへ遷移する) |
 | intake | JSONB | NULL可 | 初期ヒアリング入力([外部設計書](external_design.md) 2.5節3項)をそのまま保持。`system_overview`/`goals_raw`/`notes_raw`/`environment` を含む |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
@@ -137,9 +137,10 @@ backend/
   * プロジェクト作成時、`intake`(初期ヒアリング入力)を`sender='intake'`の`chat_histories`行として永続化する。添付ファイルがある場合は`intake_files`のテキスト化(後述)も行い、その`extracted_text`も`sender='intake'`の`chat_histories`行(ファイルごと、またはintake本体行への追記)として併せて永続化する。ユーザーからの入力とこれまでの `chat_histories`(intake行・添付ファイル由来の行を含む)をLangChainのメモリ（Memory）にロードし、LLMへ送信することで、チャット開始直後のAIの最初の発話に反映する。
   * **添付ファイルのテキスト化**: `txt`/`md`はファイル内容をUTF-8テキストとしてそのまま読み込む。`pdf`は既存の`app/ai/llm/gemini.py`のGeminiクライアントを流用し、ファイルをそのまま渡してLLMのネイティブなファイル理解でテキスト化する(新規のPDF解析ライブラリは追加しない)。結果は`intake_files`テーブルに保存する(3.2節参照)。
   * ヒアリングが十分な状態に達したか（あるいはユーザーが生成を要求したか）を判定するロジックを保持。判定基準([外部設計書](external_design.md) 2.3節SCR-004参照): (1)目的・課題の明確化、(2)コア機能が最低1つ以上「誰が・何を・なぜ」のレベルで具体化、(3)想定ユーザー像の把握、(4)MVPスコープの認識合わせ、(5)環境設定未入力時は技術的制約の確認、をすべて満たしたら「十分」と判定する。十分と判断した場合は、即座に生成へ進まず、構造化した要件サマリをユーザーに提示して明示的な承認を得てから次のステップ（`doc_generator_service.py` の呼び出し）に進む。
+  * **`completed → revising`遷移**: `project.status == "completed"`の状態でユーザーが新規チャットメッセージを送信すると、そのメッセージを永続化する前に`project.status`を`revising`(修正中)へ変更する。「チャットに戻る」操作は必ずしも修正指示を意味しないため、この遷移は実際にメッセージを送信した時点で初めて発生させ、チャット画面を開いただけでは発生させない。
 * **`doc_generator_service.py`**:
-  * ヒアリング完了時、チャット全履歴をコンテキストとしてインプットし、「要件定義」「外部設計」「内部設計」「実装計画」のそれぞれに特化したプロンプトを実行。
-  * バックグラウンドタスクとして非同期実行され、進捗や結果をデータベース (`generated_documents`) に保存。
+  * ヒアリング完了時、「要件定義」「外部設計」「内部設計」「実装計画」のそれぞれに特化したプロンプトを、この順に**連鎖的に**実行する。要件定義のみチャット全履歴をコンテキストとしてインプットし、以降の3文書は生の対話履歴を再解釈せず、前段で確定した文書だけを入力にする(外部設計は要件定義を、内部設計は要件定義+外部設計を、実装計画は要件定義+内部設計を入力にする)。こうすることで4文書間の記述の一貫性を確保する。
+  * バックグラウンドタスクとして非同期実行され、進捗や結果をデータベース (`generated_documents`) に保存。`generate()`開始時点の`project.status`(`interviewing`または`revising`)を保持しておき、`generating`への変更を経て、成功時は`completed`へ、失敗時は保持していた開始時点のステータスへ差し戻す(`revising`からの再生成に失敗した場合に`interviewing`へ戻ってしまい「生成済みだった」という文脈を失うことを防ぐ)。
   * **自己診断ステップ**: 4文書の生成完了後、生成した文書自体を入力として追加のLLM呼び出しを行い、不足・不明瞭な点を「最重要/中程度/軽微」の3段階に分類して抽出する([要件定義書](requirements.md) 1.4節「ドキュメント自己診断機能」)。抽出結果は`sender='others'`の`chat_histories`行として保存し、ユーザーへの提示は`chat_service.py`側のチャット表示ロジックが担う。
 
 ### 2. APIエンドポイント一覧
@@ -167,24 +168,25 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 
 ```json
 {
-  "error": {
-    "code": "ERROR_CODE_STRING",
-    "message": "ユーザー向けの詳細なエラーメッセージ",
-    "details": []
-  }
+  "detail": "ユーザー向けの詳細なエラーメッセージ",
+  "code": "ERROR_CODE_STRING"
 }
 ```
 
+**(Phase 2-5で確定)** 当初案の`{"error": {"code","message","details"}}`という入れ子形式は採用していない。`devex-api`のスターターテンプレートが既に`{"detail": "..."}`という形(FastAPI/Pydanticの標準的なエラー形にも合わせた形)でエラーレスポンスを返す設計になっており(`app/core/errors.py`の`AppError`・`app/api/error_handlers.py`)、`devex-ui`側の`client.ts`もこの形を前提に実装済みだったため、既存の動いている契約を壊さずに済むよう`code`フィールドを追加する形にした。`code`は該当する場合のみ含まれ(下記コード一覧に対応する例外にのみ設定)、未設定のエラーは`{"detail": "..."}`のみを返す。
+
 主なエラーコード例：
-* `UNAUTHORIZED`: 認証トークンが無効または有効期限切れ
-* `RESOURCE_NOT_FOUND`: 指定されたプロジェクトやドキュメントが存在しない
-* `LLM_API_ERROR`: 外部LLMプロバイダー（Gemini等）との通信エラーやレートリミット超過
-* `LLM_QUOTA_EXCEEDED`: Gemini Flash-Lite無料枠のトークン上限超過。ユーザーには「本日の利用上限に達しました」等の分かりやすいメッセージを表示する([実装計画書](implementation_plan.md) 4.4リスク3参照)
-* `TOO_MANY_FILES`: 初期ヒアリングの添付ファイルが上限(3件)を超えている
-* `UNSUPPORTED_FILE_TYPE`: 添付ファイルがtxt/Markdown/PDF以外の形式である
-* `FILE_TOO_LARGE`: 添付ファイルが1ファイルあたりの上限(5MB)を超えている
-* `FILE_EXTRACTION_FAILED`: 添付ファイルのテキスト化に失敗した(破損ファイル等。ヒアリング自体はブロックしない)
-* `INTERNAL_SERVER_ERROR`: 予期せぬサーバーエラー
+* `RESOURCE_NOT_FOUND`: 指定されたプロジェクトやドキュメントが存在しない(`ProjectNotFoundError`/`DocumentNotFoundError`)
+* `LLM_API_ERROR`: 外部LLMプロバイダー（Gemini等）との通信エラーが規定回数のリトライ後も解消しない場合(`GenerationFailedError`)
+* `LLM_QUOTA_EXCEEDED`: Gemini Flash-Lite無料枠のトークン上限超過。ユーザーには「本日の利用上限に達しました」等の分かりやすいメッセージを表示する（`LLMQuotaExceededError`。[実装計画書](implementation_plan.md) 4.4リスク3参照）
+* `TOO_MANY_FILES`: 初期ヒアリングの添付ファイルが上限(3件)を超えている(`TooManyFilesError`)
+* `UNSUPPORTED_FILE_TYPE`: 添付ファイルがtxt/Markdown/PDF以外の形式である(`UnsupportedFileTypeError`)
+* `FILE_TOO_LARGE`: 添付ファイルが1ファイルあたりの上限(5MB)を超えている(`FileTooLargeError`)
+* `INTERNAL_SERVER_ERROR`: `AppError`以外の予期せぬ例外をキャッチする最終防衛ラインのハンドラが返す(スタックトレース等の詳細はレスポンスに含めずサーバーログにのみ記録)
+
+**`UNAUTHORIZED`について**: 認証境界(`app/api/deps.py`の`get_current_user`)は意図的に`AppError`ではなく生の`HTTPException`を使っており(認証失敗の理由を外部に細かく漏らさないため)、`code`フィールドは付与されない。レスポンス形自体は`{"detail": "..."}`のまま変わらない。
+
+**`FILE_EXTRACTION_FAILED`について**: このエラーはHTTPレスポンスの例外としては送出されない。添付ファイルのテキスト化失敗はヒアリング自体をブロックしない設計のため(2.3節・2.5節5項参照)、`intake_files.status='failed'`・`error_message`として記録され、プロジェクト作成自体は`201 Created`で成功する。
 
 ### 2. 例外検知・ログ出力方針
 

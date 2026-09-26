@@ -1,5 +1,9 @@
 # Phase-1-2: 外部APIキー取得・`.env` 管理方針
 
+## この章の目的
+
+Devexの稼働に必要な外部APIキー(`GOOGLE_API_KEY`等)の取得先を明示し、`.env`/`.env.example`の管理方針(正本の置き方・Docker用/ホスト用2系統の使い分け・本番起動時の安全装置)を整理する。あわせて`GEMINI_MODEL`をspec確定値(`gemini-2.5-flash-lite`)に修正する。
+
 納期モード([`Phase-1-introduction.md`](./Phase-1-introduction.md) 参照)。#14 の SUT/ドライバ/スタブの言語化は省略し、「動くこと」の確認に留める。[`Phase-1-1.md`](./Phase-1-1.md) で起動したスタックを使って確認する。
 
 ## この章で作成・更新したファイル
