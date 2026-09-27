@@ -74,6 +74,8 @@ uv run pytest -m integration tests/integration/test_health.py -v
 → green(`test_health_reports_database_and_redis_ok` PASSED)。
 
 > 備考: `tests/integration/` を一括実行(`pytest -m integration tests/integration/`)すると、`test_auth_flow.py` の後に `test_health.py` を実行した場合に限り pytest-asyncio のイベントループ後片付けでエラーが出ることを確認した(`test_health.py` 単体では green)。認証情報とは無関係な、複数モジュール間のイベントループスコープの相互作用によるものであり、テストコード自体(Phase 2 以降が触る領域)の問題のため本 Phase では修正しない。Phase 2 でテストを追加・変更する際に併せて確認する。
+>
+> **後続Phaseでの改訂**: [`Phase-2-2.md`](../Phase-2/Phase-2-2.md)は個別実行という回避策のまま持ち越し、根本原因の特定はしていなかった。[`Phase-4-1.md`](../Phase-4/Phase-4-1.md)で根本原因(`app/core/database.py`の`engine`・`app/infrastructure/redis.py`の`get_redis_pool()`がモジュールレベルのシングルトンで、内部コネクションプールが生成時のイベントループに紐づいたままになっていたこと)を特定し、`tests/integration/conftest.py`の`client`フィクスチャで明示的に後片付けする形に修正した。詳細は[`decision-digest.md`](../decision-digest.md)「Phase 4完了後」節参照。
 
 ### 6. devex-ui との疎通確認
 

@@ -211,3 +211,41 @@ Phase 3-5(チャットヒアリングUI、SSE+完了承認)の設計中、フロ
 - **テスト**: `tests/unit/test_cors.py`(新規)。DB/Redis接続が必要な実エンドポイント経由のテストは重いため、`test_body_size_limit.py`と同様の軽量パターンで、`app.main.app`の実際のミドルウェア登録内容(`app.user_middleware`、Starletteの`Middleware.cls`/`Middleware.kwargs`)を直接検査する形にした(DB非依存・高速、かつ実際の設定を直接見るため設定ドリフトの心配もない)。
 - **samplesへの反映は無し**: `app/main.py`はCL教材(curriculum)の対象外のスターターテンプレートファイルであり、`textbook/samples/backend/`に対応ファイル自体が存在しない([`Phase-1-1.md`](./Phase-1/Phase-1-1.md)が「CORSは変更不要だった」と記録している既存インフラのため)。今回も実`devex-api`のみを直接修正した。
 - **反映範囲**: ユーザー報告への直接対応(実環境で再現するバグ修正)のため、[[feedback_direct_impl_scope]]の既定の例外として実devex-apiへ直接反映した。`uv run pytest tests/unit`(114件green)・`uvx pyright`(0エラー)で検証済み。
+
+## Phase 4完了後 ── 統合テスト・QA(rule #24: Phase完了時にまとめて1回追記)
+
+Phase 4の生成にあたり、事前にユーザーへE2Eテストの実装粒度(バックエンドAPI統合テストのみ/ブラウザE2E(Playwright)フル導入/両方の折衷案)を確認し、**ブラウザE2E(Playwright)をフル導入**する方針を選んだ(バックエンドAPI統合テストのみに絞る軽量案は不採用)。これが本Phaseの設計全体を左右する最大の決定である。
+
+- **2種類のフェイクLLM機構が併存する設計**: pytestプロセス内で`monkeypatch`により`get_gemini_llm`を直接差し替える既存手法(Phase 2から継続)に加え、環境変数`E2E_FAKE_LLM`経由で有効化する`E2eFakeLLM`(`app/ai/llm/fake.py`、Phase 4-3新設)を追加した。前者はpytestと同一プロセス内のFastAPIアプリを対象にでき、後者はPlaywrightが`docker compose`で起動する別プロセスをHTTP越しに操作するだけのため必要になった、テスト実行形態の違いに起因する使い分け。詳細は[`Phase-4-3.md`](./Phase-4/Phase-4-3.md)参照。
+- **`E2E_FAKE_LLM`の本番誤有効化への二重防御**: `app/core/config.py`の`Settings._reject_unsafe_production_settings`(Phase 1由来の既存バリデータ)に`ENVIRONMENT=production`かつ`E2E_FAKE_LLM=true`を拒否する分岐を追加。加えて`docker-compose.e2e.yml`は`docker-compose.prod.yml`と独立したオーバーレイとし、本番起動コマンドには一切登場しない構成にした。
+- **`docker-compose.e2e.yml`はsamplesへミラーせず`devex-api`直下へ直接反映**: [`Phase-1-introduction.md`](./Phase-1/Phase-1-introduction.md)が確立した「リポジトリ直下のインフラ設定ファイルは写経対象にしない」という前例に倣った(rule #3の例外の再適用であり、新たな例外ではない)。
+- **`get_gemini_llm`への`timeout`明示**: Phase 4-3の実装検証中に、`ChatGoogleGenerativeAI`へ`timeout`を渡していなかった(既定無制限)ことを発見。`invoke_with_retry`のリトライは例外発生時のみ機能しハングには無力なため、`settings.LLM_TIMEOUT_SECONDS`(既定60秒、実測に基づかない暫定値)を追加した。詳細は[`Phase-4-5.md`](./Phase-4/Phase-4-5.md)参照。
+- **監査で発見・修正した実害2件**: ①`app/services/llm_retry.py`の`LLMQuotaExceededError`/`GenerationFailedError`メッセージが英語のまま日本語UIに漏れ出ていたバグ(バックエンド、[`Phase-4-1.md`](./Phase-4/Phase-4-1.md))。②`ChatPanel.tsx`の`handleApprove`が`try/catch`を持たず、生成トリガー失敗時にボタンが固まったまま復旧不能になるバグ(フロントエンド、[`Phase-4-2.md`](./Phase-4/Phase-4-2.md))。いずれもPhase 2-5・Phase 3-5が作成した箇所への改訂であり、当該章のintroduction相当部分(`Phase-2-3.md`・`Phase-2-5.md`・`Phase-3-5.md`)に1行の参照を追記済み。
+- **統合テスト基盤の既知課題(Phase 1由来)を根本修正**: [`Phase-1-1.md`](./Phase-1/Phase-1-1.md)が発見し、Phase 2でも「個別実行」という回避策のまま持ち越されていた`tests/integration/`一括実行時のpytest-asyncioイベントループ後片付けエラーを、Phase 4-1で根本修正した。原因は`app/core/database.py`の`engine`・`app/infrastructure/redis.py`の`get_redis_pool()`がモジュールレベルのシングルトンで、内部コネクションプールが生成時のイベントループに紐づいたままになることだった。`tests/integration/conftest.py`の`client`フィクスチャのteardownで`engine.dispose()`・`get_redis_pool().disconnect()`+`cache_clear()`を行うよう修正し、`tests/integration`一括実行(最終的に9ファイル・9件)がgreenになることを確認した。詳細は[`Phase-4-1.md`](./Phase-4/Phase-4-1.md)参照。
+- **`E2eFakeLLM`の設計を実機検証で2度修正**: 当初の設計(ヒアリング完了判定を「HumanMessageが2件以上」、doc_type判別を「ラベル文字列の部分一致」)には、実際にdocker composeで起動したdevex-apiへcurlでアクセスして検証したところ2件の不具合があった((1)完了判定プロンプト自身のHumanMessageを数えてしまい実発話0件でも完了扱いになる、(2)doc_type間の相互参照文言により外部設計書・内部設計書の生成内容が要件定義書と誤判定される)。両方を修正し、当初「Playwrightのみで検証する、追加の単体テストは不要」としていた判断を撤回して`tests/unit/test_fake_llm_e2e.py`を追加した。詳細は[`Phase-4-3.md`](./Phase-4/Phase-4-3.md)「実機検証で発見した2件の不具合」参照。
+- **検討したが見送った項目**: `ApiError`(devex-ui `client.ts`)へのバックエンド`code`フィールド読み取り追加。rule #17の判定基準(「今この共通化を駆動している実在の消費者は何か」)に照らし、現状どの画面も`code`で挙動分岐しておらず、Phase 4-1のメッセージ日本語化で`message`のみでも十分ユーザーに伝わるため、追加しないことにした。詳細は[`Phase-4-2.md`](./Phase-4/Phase-4-2.md)参照。
+- **`GOOGLE_API_KEY`に関する既往の記録の訂正**: Phase 2〜Phase 4-4まで一貫して「`GOOGLE_API_KEY`未設定のため実LLM未検証」と記録してきたが、本Phaseの実機検証中に`devex-api/.env`へ実際の値が既に設定されていることが判明した(設定時期は本Phaseの範囲では特定していない)。本Phase自体は意図的に`E2E_FAKE_LLM=true`で検証する方針のため、この鍵を使った実際の動作確認は行っていない。詳細は[`Phase-4-5.md`](./Phase-4/Phase-4-5.md)参照。
+- **申し送り**: `textbook/appendix/*-retrospective.md`(rule #10)がPhase 0〜3のいずれについても未作成であることが本Phase準備中に判明した。rule #18のセッション分離に従い、振り返り・decision digestの整理(本entryが「Phase完了時にまとめて1回」の実施分)は本Phase生成と同一セッションで行い、**振り返り自体は別セッションで行う**方針にした。詳細は[`Phase-4-introduction.md`](./Phase-4/Phase-4-introduction.md)「申し送り」節参照。
+
+## Phase 4完了後 ── 統合テスト用DBの分離
+
+ユーザーが実際に`devex-ui`のPlaywright E2Eテストを実行する過程で、開発用DBのスキーマ(`users`等9テーブル)が2度消失する事故が発生した。原因は`tests/integration/conftest.py`の`client`フィクスチャが、開発用DBと**同じ`DATABASE_URL`**に対して毎回`Base.metadata.create_all`/`drop_all`を実行する設計だったこと([`Phase-4-3.md`](./Phase-4/Phase-4-3.md)が「既知の残課題」として記録済みだった)。1度目は`alembic upgrade head`で復旧したが、2度目が発生した際、`alembic upgrade head`を実行しても復旧しないという追加の問題が判明した ── `Base.metadata.drop_all`はAlembicの管理外の削除のため、`alembic_version`テーブルは「最新リビジョン適用済み」の記録のまま実テーブルだけが消えるという食い違いが起き、`alembic upgrade head`が「もう最新なので何もしない」と誤判断してしまう。復旧には`alembic_version`テーブル自体を削除してから`alembic upgrade head`をやり直す必要があった。
+
+これを踏まえ、統合テスト専用のPostgres DB(`$POSTGRES_TEST_DB`、既定値`devex-app-db-test`)を開発用DB(`$POSTGRES_DB`)とは別に用意する根本対策を行った。
+
+- `devex-api/docker-compose.test.yml`(新規、`docker-compose.e2e.yml`と同じオーバーレイ構成) ── `backend`コンテナの`DATABASE_URL`だけをテスト専用DBへ差し替える。
+- `devex-api/postgres-init/01-create-test-db.sh`(新規) ── Postgresボリューム初回初期化時にテストDBを自動作成する(公式postgresイメージの`docker-entrypoint-initdb.d`仕組み。既存ボリュームには遡って適用されないため、今回は手動で`CREATE DATABASE`した)。
+- `devex-api/.env`・`.env.example`に`POSTGRES_TEST_DB`を追加、`docker-compose.yml`のpostgresサービスに`POSTGRES_TEST_DB`環境変数と`postgres-init/`のマウントを追加。
+- 統合テストの正しい実行コマンドは以降 `docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm --no-deps backend uv run pytest -m integration tests/integration` に統一する(`devex-api/CLAUDE.md`「テストの分離」節、`tests/integration/conftest.py`のdocstringに明記)。
+- 動作確認: この新しいコマンドで統合テスト5件(当時`devex-ui`実リポジトリに存在した分)を実行し、テストDB側にはテーブルが残らず(想定どおりdrop_all済み)、開発用DB側の9テーブルは無傷であることを確認した。
+- `docker-compose.test.yml`・`postgres-init/`はrule #3の例外(リポジトリ直下のインフラ設定ファイルは写経対象にしない、[`Phase-1-introduction.md`](./Phase-1/Phase-1-introduction.md)の前例)としてsamplesへミラーせず`devex-api`へ直接反映した。`tests/integration/conftest.py`のdocstring更新のみsamplesにも反映済み。
+
+## Phase 4完了後 ── E2Eスペックの実行時不具合修正
+
+ユーザーが実際に`devex-ui`で`npm run test:e2e`(Playwright)を実行したところ、[`Phase-4-4.md`](./Phase-4/Phase-4-4.md)の2シナリオとも失敗した。`error-context.md`(失敗時点のページスナップショット)とdevex-apiのログを突き合わせて診断し、E2Eスペック(`e2e/devex-flow.spec.ts`)自体の不備2件を発見・修正した(DB分離とは無関係)。
+
+1. **テストパスワードが登録画面の強度ルールを満たしていなかった**: `"s3cret-pass"`は大文字を含まず、`registerSchema`(Phase 3完了後に追加された強度ルール)のクライアント側バリデーションで弾かれ、登録APIが一度も呼ばれないまま`/register`に留まっていた。`"S3cret-pass"`に修正。
+2. **2本目のシナリオに登録後の`/login`遷移待ちが無かった**: 1本目のシナリオには`await expect(page).toHaveURL(/\/login/)`という明示的な遷移待ちがあったが、2本目には無かった。そのため、`/register`に留まっている間に後続の`fill()`がそのページ自身のフォームへ入力され、その後`/login`へ遷移した瞬間に`LoginForm`がまっさらな状態で再マウントされて入力が失われ、空欄のまま「ログイン」ボタンが押されてバリデーションエラーになっていた。1本目と同じ待ちを追加して解消した。
+3. **`getByText("E2E Fake")`がPlaywrightのstrict mode違反(複数要素にマッチ)になっていた**: `E2eFakeLLM._reply_for()`はオープニング発話と通常のチャット返信を同じ固定文字列で返す設計のため、1回目のユーザー発話後には同一文言のAI発話が2つ存在する。テスト側のロケータに`.first()`を追加して解消した(フェイクLLM側の設計変更ではない)。
+
+`devex-ui/e2e/devex-flow.spec.ts`(実リポジトリ)・`textbook/samples/frontend/e2e/devex-flow.spec.ts`(教材サンプル)の両方に反映済み。詳細は[`Phase-4-4.md`](./Phase-4/Phase-4-4.md)「実機検証で発見した不具合」節参照。

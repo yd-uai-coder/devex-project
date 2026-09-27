@@ -69,6 +69,10 @@
 - `uv run pytest tests/unit/test_llm_retry.py tests/unit/test_error_handlers.py tests/unit/test_document_download.py`で11件green(catch-allハンドラのテストを含む)、`uv run pytest tests/unit`で既存分含め**91件green**、`uvx pyright`で0エラー。
 - 実Docker Compose環境で、存在しないプロジェクトID(`ProjectNotFoundError`)と非対応ファイル形式(`UnsupportedFileTypeError`)の両方について、実際のHTTPレスポンスに`{"detail": "...", "code": "RESOURCE_NOT_FOUND"}` / `{"detail": "...", "code": "UNSUPPORTED_FILE_TYPE"}`が返ることを確認した。ダウンロードエンドポイントは、`generated_documents`に手動でテスト行を1件挿入したうえで実際にHTTPリクエストし、`Content-Disposition`が`filename="?????????_requirements_20260922.md"; filename*=UTF-8''%E3%83%80%E3%82%A6...`のように日本語ファイル名を正しくエンコードして返し、本文(Markdown)も正しく取得できることを確認した。検証後はテーブルを降格し、`devex-api`のコードは写経前の状態に戻してある。
 
+## 後続Phaseでの改訂
+
+[`Phase-4-1.md`](../Phase-4/Phase-4-1.md)で、本章が作成した`app/services/llm_retry.py`の`LLMQuotaExceededError`/`GenerationFailedError`のメッセージ文言が、英語のまま(`"AI provider quota exceeded, please try again later"`等)だったバグを日本語へ修正した。このメッセージはAppErrorハンドラを介してそのままHTTPレスポンスのdetailへ返るため、日本語UI上に英語のエラー文が表示される実害があった。詳細は[`decision-digest.md`](../decision-digest.md)「Phase 4完了後」節参照。
+
 ## Phase 2全体としての既知の残課題(Phase 3以降への申し送り)
 
 - `ChatService.stream_reply`はSSE接続が途中で切断された場合、AI応答が`chat_histories`に保存されない(ユーザー発話のみ保存された状態になる)。再送・部分永続化の復旧機構は未実装([`Phase-2-3.md`](./Phase-2-3.md)参照)。

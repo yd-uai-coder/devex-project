@@ -56,3 +56,5 @@
 | Cookie無しで`/refresh`を呼ぶ | 401 | 同上 |
 
 `uv run pytest tests/unit/test_deps_current_project.py`で3件green、`uv run pytest tests/unit`で既存分含め91件green(Phase 2-1〜2-5相当)、`uv run pytest -m integration tests/integration/test_auth_flow.py::test_register_login_and_access_protected_route`・`::test_refresh_without_cookie_is_unauthorized`をそれぞれ単独実行してgreen、`uvx pyright`で0エラーを確認済み(このセッション内で一時的に`devex-api/backend`へ反映して検証し、検証後は元の状態に戻した。写経後は各自の環境で再確認すること)。2つの統合テストを同一プロセスでまとめて実行すると[`Phase-1-1.md`](../Phase-1/Phase-1-1.md)で既知のpytest-asyncioイベントループ後片付けの問題が再現するため、統合テストは今のところ個別実行を前提とする(Phase 2から持ち越しの既知課題であり本章のCookie化とは無関係)。
+
+> **後続Phaseでの改訂**: [`Phase-4-1.md`](../Phase-4/Phase-4-1.md)がこの根本原因(`engine`・`get_redis_pool()`のコネクションプールがイベントループに紐づいたままになる問題)を特定し、`tests/integration/conftest.py`で修正した。以後、統合テストの個別実行という制約は解消されている。

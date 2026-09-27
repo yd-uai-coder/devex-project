@@ -1,4 +1,4 @@
-# 作成：Phase-2-5
+# 作成：Phase-2-5｜更新：Phase-4-1
 # 写経レベル: コア(Phase 2-5) ── docs/implementation_plan.md 4.4節リスク1(リトライ・クォータ処理)の実装箇所。chat_service.py/doc_generator_service.pyが共有する。
 import asyncio
 from collections.abc import Awaitable, Callable
@@ -25,6 +25,28 @@ async def invoke_with_retry(call: Callable[[], Awaitable[T]]) -> T:
     ストリームは途中までクライアントへ送信済みの可能性があり、最初からやり直すのは安全でないため
     (この場合はストリームの失敗をそのまま伝播させ、クライアント側の再送に委ねる)。
     """
+    # Phase-4-1：更新(メッセージが英語のままだったバグを修正。このtry/exceptで送出される
+    # 例外のdetailは、check_completion/generate_opening_replyの呼び出し元がAppError
+    # ハンドラを介してそのままHTTPレスポンスのdetailへ返すため、他の全ユーザー向け文言と
+    # 同じく日本語にする必要がある。Phase 4-1の統合フロー監査で発見した ── 発生源が
+    # doc_generator_service.pyの`except`節と異なりここ一箇所のため、修正箇所も1箇所で足りる)
+    # last_error: Exception | None = None
+    # for attempt in range(1, MAX_GENERATION_ATTEMPTS + 1):
+    #     try:
+    #         return await call()
+    #     except Exception as exc:
+    #         if _is_quota_error(exc):
+    #             # クォータ超過はリトライしても解消しないため即座に諦める
+    #             raise LLMQuotaExceededError(
+    #                 "AI provider quota exceeded, please try again later"
+    #             ) from exc
+    #         last_error = exc
+    #         if attempt < MAX_GENERATION_ATTEMPTS:
+    #             await asyncio.sleep(RETRY_DELAY_SECONDS)
+    # raise GenerationFailedError(
+    #     "Failed to generate a response after multiple attempts"
+    # ) from last_error
+    # ↓↓
     last_error: Exception | None = None
     for attempt in range(1, MAX_GENERATION_ATTEMPTS + 1):
         try:
@@ -33,13 +55,13 @@ async def invoke_with_retry(call: Callable[[], Awaitable[T]]) -> T:
             if _is_quota_error(exc):
                 # クォータ超過はリトライしても解消しないため即座に諦める
                 raise LLMQuotaExceededError(
-                    "AI provider quota exceeded, please try again later"
+                    "本日の利用上限に達しました。時間をおいて再度お試しください。"
                 ) from exc
             last_error = exc
             if attempt < MAX_GENERATION_ATTEMPTS:
                 await asyncio.sleep(RETRY_DELAY_SECONDS)
     raise GenerationFailedError(
-        "Failed to generate a response after multiple attempts"
+        "AIからの応答生成に失敗しました。時間をおいて再度お試しください。"
     ) from last_error
 
 

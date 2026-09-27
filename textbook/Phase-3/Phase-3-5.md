@@ -81,6 +81,10 @@ Next.js 16の`app/projects/[id]/chat/page.tsx`では`params`が`Promise<{id: str
 
 `npx vitest run src/features/hearing "src/app/projects/[id]"`で32件green、`npx tsc --noEmit`で0エラー、既存テスト全体は166件中165件green(残る1件`Menu.test.tsx`は[`Phase-3-1.md`](./Phase-3-1.md)で確認済みの本Phaseと無関係な既存不具合)を確認した(このセッション内で一時的に`devex-ui`へ反映して検証し、検証後は元の状態に戻した。写経後は各自の環境で再確認すること)。`react-markdown`・`remark-gfm`はReact 19.2.4/Next.js 16.2.12との互換性を`npm view`のpeer dependencies確認済み(`react-markdown@10.1.0`は`react >=18`のみを要求)。
 
+## 後続Phaseでの改訂
+
+[`Phase-4-2.md`](../Phase-4/Phase-4-2.md)で、本章が作成した`ChatPanel.tsx`の`handleApprove`が`try/catch`を持たず、`approveAndGenerate`失敗時に`setApproving(false)`へ到達しないままボタンが固まる不具合が見つかり、他フォームと同じ`submitError`パターンに揃える形で修正された。詳細は[`decision-digest.md`](../decision-digest.md)「Phase 4完了後」節参照。
+
 ## Phase 3-5全体としての既知の残課題
 
 - SSE切断時の再接続時、`GET .../chat`で履歴を再取得して整合させる処理は未実装(現状は`connectionLost`バナーを表示するのみ)。次回のページ読み込み(`loadHistory`)で結果的に整合するが、同一セッション内での自動再取得は行っていない(#17: 現時点でこれを要求する実消費者が無い)。

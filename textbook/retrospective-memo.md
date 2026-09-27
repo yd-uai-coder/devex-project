@@ -47,6 +47,13 @@
 - **判断理由**: `routes→services→repositories→models`のレイヤード構成(`devex-api/CLAUDE.md`)を持つテンプレート全般で起こりうる一般的な落とし穴であり、Devexのドメインとは無関係。「サービスメソッドを追加したら、それを呼ぶルートが実際に存在するか」を確認するチェック項目を、テンプレート側の開発フロー(あるいはこのCL手法の#11実装前チェックリスト・#13/#15の突き合わせ)に明示的に加える価値がある。
 - **対象外**: `hearing-completion`という具体的なエンドポイント名・レスポンス形状自体はDevexのドメインそのものであり、テンプレートには持ち込まない。テンプレートに持ち込むのは「サービス⇔ルートの対応漏れを機械的に確認する」という点検の型のみ。
 
+## `[テンプレート反映候補]` 統合テストの`client`フィクスチャがイベントループをまたいでコネクションプールを使い回してしまう不具合
+
+- **発生**: [`Phase-1-1.md`](./Phase-1/Phase-1-1.md)で最初に発見・保留、[`Phase-2-2.md`](./Phase-2/Phase-2-2.md)で「個別実行」という回避策のまま持ち越し、[`Phase-4-1.md`](./Phase-4/Phase-4-1.md)で根本修正。
+- **概要**: `tests/integration/conftest.py`の`client`フィクスチャは、モジュールレベルのシングルトンである`app/core/database.py`の`engine`・`app/infrastructure/redis.py`の`get_redis_pool()`をそのまま使う。両者の内部コネクションプールは生成時のイベントループに紐づくが、pytest-asyncioは既定でテスト関数ごとに新しいイベントループを作るため、後片付けをしないと2件目以降のテストが別のイベントループからプールを再利用しようとして`RuntimeError: Event loop is closed`/`attached to a different loop`になる。フィクスチャのteardownで`await engine.dispose()`・`await get_redis_pool().disconnect(); get_redis_pool.cache_clear()`を行うよう修正した。
+- **判断理由**: `engine`・Redis接続プールをモジュールレベルの`lru_cache`シングルトンにする設計自体はテンプレート全般の既存パターン(`devex-api/CLAUDE.md`「LLM/LangGraph連携」節が同種のキャッシュ戦略を明記している)であり、この不具合もpytest-asyncio+モジュールレベルの非同期リソースという組み合わせで一般的に起こりうる。統合テストが1ファイルあたり1〜2件しか無いうちは「個別実行すれば良い」で済むが、テストが増えるほど顕在化しやすくなるため、テンプレート側のconftestに最初から後片付けを組み込んでおく価値がある。
+- **対象外**: `tests/integration/conftest.py`の`client`フィクスチャがテスト用DBと開発用DBで同じ`DATABASE_URL`を共有している点(Phase 1の環境設計)自体は、この不具合とは別の論点として[`Phase-4-3.md`](./Phase-4/Phase-4-3.md)「既知の残課題」に記録済みで、今回のテンプレート反映候補には含めない。
+
 ## `[テンプレート反映候補]` テストファイルを`__tests__/`サブフォルダへ配置する規約
 
 - **発生**: Phase 3完了後のユーザー相談([`decision-digest.md`](./decision-digest.md)「Phase 3完了後」節参照)

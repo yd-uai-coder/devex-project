@@ -95,3 +95,7 @@
 - (Phase 3-5準備中に発覚した`GET .../hearing-completion`ルート追記後の再検証)`uv run pytest tests/unit/test_chat_service.py`で6件green、`uv run pytest tests/unit`で既存分含め92件green(Phase 2-1〜2-5相当)、`uvx pyright`で0エラーを確認済み(このセッション内で一時的に`devex-api/backend`へ反映して検証し、検証後は元の状態に戻した)。
 - 実際にDocker Compose環境(Phase 1で構築済みの実Postgres/Redis)に対して `docker compose exec backend uv run alembic upgrade head` でテーブルを作成し、`POST /api/v1/auth/register`→`login`→`POST /api/v1/projects`(txtファイル添付、`multipart/form-data`)→`GET /api/v1/projects/{id}`→`GET /api/v1/projects/{id}/chat`を実際にcurlで呼び出し、`intake`のJSONB往復・`intake_files`のテキスト抽出・`chat_histories`への記録(`intake`行×2: 入力本体+添付ファイル)・存在しないプロジェクトIDでの404を確認した。`TooManyFilesError`(4ファイル添付)・`UnsupportedFileTypeError`(`.docx`)もHTTP 400で正しく返ることを確認した。検証後はテーブルを降格(`DROP TABLE`)し、`devex-api`のコードは写経前の状態に戻してある。
 - 実際のGemini API呼び出し(PDFテキスト化・ヒアリング応答生成)は`GOOGLE_API_KEY`未設定のため実LLMでは未検証。`FakeLLM`による単体テストでロジックの正しさは検証済み(既存プロジェクトの方針どおり、単体テストで実LLMは呼ばない)。写経後、実際のAPIキーを設定した状態で一度は手動確認することを推奨する。
+
+## 後続Phaseでの改訂
+
+[`Phase-4-3.md`](../Phase-4/Phase-4-3.md)で、本章が作成した`app/ai/llm/gemini.py`の`get_gemini_llm`に、`settings.E2E_FAKE_LLM`分岐(ブラウザE2Eテスト用の決定論的スタブへの切り替え)と、実クライアントへの`timeout`明示(Phase 4-5のパフォーマンス確認で発見した欠落の是正)が追加された。詳細は[`decision-digest.md`](../decision-digest.md)「Phase 4完了後」節参照。
