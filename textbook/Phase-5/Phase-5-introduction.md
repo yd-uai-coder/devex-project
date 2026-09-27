@@ -4,7 +4,7 @@
 
 [`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.2節 WBS区分5(デプロイ・運用準備タスク)を実装する: 本番用Dockerイメージの監査・最終確認、本番相当環境での動作検証+実API検証、運用マニュアル・READMEの整備、README整備+GitHub Actions自動デプロイの4章構成。加えて[`Phase-4-introduction.md`](../Phase-4/Phase-4-introduction.md)「Phase 4全体としての既知の残課題」が本Phaseへ申し送った2点 ── 実Gemini APIキーでの動作確認、`LLM_TIMEOUT_SECONDS`の実測調整 ── にも対応する。
 
-**5-4は5-1〜5-3完了後、ユーザーからの追加依頼(README群がテンプレート説明のままであること・GitHub Actionsでの自動デプロイ)を受けて追加した章である**(Phase 4が完了後に複数の「Phase N完了後」decision-digestエントリを積み重ねた前例と同じ扱い)。
+**5-4は5-1〜5-3完了後、ユーザーからの追加依頼(README群がテンプレート説明のままであること・GitHub Actionsでの自動デプロイ)を受けて追加した章である**(Phase 4が完了後に複数の「Phase N完了後」decision-digestエントリを積み重ねた前例と同じ扱い)。**5-5は実際にConoHa VPSへデプロイを試みた際に判明した制約(同居する別プロジェクトが既にポート80/443を専有)を受けて追加した章であり、devex-api固有の`nginx`+`certbot`をVPS共有のTraefikへ置き換える。**
 
 Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生成・E2Eテスト一式)を、実際にConoHa VPS(devex-api)・Vercel(devex-ui)へデプロイできる状態に仕上げることが目的である。ただし本Phase自体で実際のライブデプロイは行わない(下記「スコープ」参照)。
 
@@ -18,7 +18,7 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 
 ## モード宣言(#21)
 
-本Phase(5-1・5-2・5-4の3章)は**納期モード**で実施する。5-3は実装ファイルを作らない章のためモード宣言の対象外([`Phase-0-1.md`](../Phase-0/Phase-0-1.md)等の設計章と同様の扱い)。
+本Phase(5-1・5-2・5-4・5-5の4章)は**納期モード**で実施する。5-3は実装ファイルを作らない章のためモード宣言の対象外([`Phase-0-1.md`](../Phase-0/Phase-0-1.md)等の設計章と同様の扱い)。
 
 - 条件(a): 扱う対象(Docker/nginx/compose設定の監査、TLS証明書取得手順、運用マニュアル)は大半が定型的なインフラ作業であり、ドメイン判断を体現する箇所(タイムアウト値の実測決定等)は少数。
 - 条件(b): MVPコアループ(チャット↔4文書生成)そのものではなく、その運用面の付随作業である。
@@ -39,8 +39,9 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 | [`Phase-5-2.md`](./Phase-5-2.md) | 本番相当環境での動作検証+実API検証 | 納期 | 5-1(監査済みのイメージを使う) |
 | [`Phase-5-3.md`](./Phase-5-3.md) | 運用マニュアル・README整備 | 対象外(設計章) | 5-1, 5-2(検証結果を手順書に反映) |
 | [`Phase-5-4.md`](./Phase-5-4.md) | README整備の続き(root/devex-api/devex-ui) + GitHub Actionsでの自動デプロイ + 既存lintエラー是正 | 納期 | 5-3(READMEを土台に追記) |
+| [`Phase-5-5.md`](./Phase-5-5.md) | 共有Traefikリバースプロキシへの移行(複数プロジェクト同居対応、実VPSデプロイで判明した制約への対処) | 納期 | 5-2(`docker-compose.prod.yml`を上書き) |
 
-5-1・5-2は`docker-compose.prod.yml`・`nginx/*.conf`・`backend/Dockerfile`という設定ファイルと、`app/core/config.py`(既にPhase 4-3からsamples対象)の値変更のみを扱い、新規シンボル(関数・クラス)を導入しない。したがって#13(全ファイル解説)は各章の「この章で作成・更新したファイル」表で代替し、#15の前方import監査はPythonコード(`config.py`)のみが対象、Docker/nginx/compose部分は対象外(コマンド実行結果で検証する。詳細は各章「テスト観点」参照)。5-3はコードを作成しないため#13・#15・#12リファクタ追従いずれも対象外。5-4も新規GitHub Actionsワークフロー(YAML、import概念が無い)とREADME/OPERATIONS.mdの追記が中心のため#15の前方import監査は対象外。既存backendコードのlint是正(コメント・docstringの折り返しのみ、ロジック不変)は#13の対象だが新規シンボルを導入しないため簡潔に扱う(詳細は[`Phase-5-4.md`](./Phase-5-4.md)参照)。
+5-1・5-2は`docker-compose.prod.yml`・`nginx/*.conf`・`backend/Dockerfile`という設定ファイルと、`app/core/config.py`(既にPhase 4-3からsamples対象)の値変更のみを扱い、新規シンボル(関数・クラス)を導入しない。したがって#13(全ファイル解説)は各章の「この章で作成・更新したファイル」表で代替し、#15の前方import監査はPythonコード(`config.py`)のみが対象、Docker/nginx/compose部分は対象外(コマンド実行結果で検証する。詳細は各章「テスト観点」参照)。5-3はコードを作成しないため#13・#15・#12リファクタ追従いずれも対象外。5-4も新規GitHub Actionsワークフロー(YAML、import概念が無い)とREADME/OPERATIONS.mdの追記が中心のため#15の前方import監査は対象外。既存backendコードのlint是正(コメント・docstringの折り返しのみ、ロジック不変)は#13の対象だが新規シンボルを導入しないため簡潔に扱う(詳細は[`Phase-5-4.md`](./Phase-5-4.md)参照)。5-5も`docker-compose.prod.yml`(nginx/certbot削除+Traefik label追加)とTraefik自体の設定(devex-apiリポジトリ外)のみを扱い、importシンボルの変更が無いため#15の対象外。
 
 ## サンプルコード一覧
 
@@ -49,6 +50,8 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 `docker-compose.prod.yml`・`nginx/nginx.prod.conf`・`backend/Dockerfile`・`devex-api/OPERATIONS.md`・`devex-api/README.md`・`devex-ui/README.md`・`.env`/`.env.example`(root・backend)は、[`Phase-1-introduction.md`](../Phase-1/Phase-1-introduction.md)が確立した前例(devex-api直下のインフラ設定ファイルはsamplesへミラーせず直接編集する)を踏襲し、samplesへの追加なし。各章では対象ファイルの相対パスを明記した上で差分を示す。
 
 5-4で新規追加した`devex-api/.github/workflows/deploy.yml`・`devex-ui/.github/workflows/ci.yml`、root`README.md`・root`CLAUDE.md`(リポジトリ間リンク・ルール#34追加)も同じ理由でsamples対象外。5-4で行った既存backendコードのlint是正(ruff `E501`等49件、コメント・docstringの折り返しのみ)は、`textbook/samples/backend/`のミラーへは反映していない ── クラス名・シグネチャ・型に変更が無い純粋な整形であり、rule #9が対象とする「検討・相談の中で提示するコード」の変更ではないため(詳細な判断根拠は[`Phase-5-4.md`](./Phase-5-4.md)参照)。
+
+5-5で削除した`devex-api/nginx/nginx.prod.conf`、更新した`docker-compose.prod.yml`・`OPERATIONS.md`・`README.md`も同じ理由でsamples対象外。共有Traefik自体の設定(`/opt/traefik/docker-compose.yml`)はdevex-apiのリポジトリに属さないVPS共有インフラのため、`OPERATIONS.md`にのみ全文を記載し、samples・実リポジトリのいずれにも置かない。
 
 ## 実装前チェックリスト(#11、設計レベルの疑問に限定 #20)
 
@@ -67,10 +70,12 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 | 5-4 | [`devex-api/OPERATIONS.md`](../../devex-api/OPERATIONS.md) | 「9. GitHub Actionsによる自動デプロイ」節新設、ロールバック手順にrevert運用を追記 | 目視レビュー |
 | 5-4 | `devex-api/backend/`配下の既存lintエラー是正(49件のE501+1件のSIM105、詳細は[`Phase-5-4.md`](./Phase-5-4.md)参照) | コメント・docstringの折り返し、`contextlib.suppress`への置換(ロジック不変) | `uv run ruff check .`が0件、`uv run pytest -m "not integration"`が既存121件green、`uvx pyright`に新規エラー無し |
 | 5-4 | `devex-ui/vitest.config.mts`・`HearingCompletionBanner.tsx`・`useGenerationPolling.ts`等(詳細は[`Phase-5-4.md`](./Phase-5-4.md)参照) | `e2e/`誤収集の除外、Hooksルール違反の是正、`set-state-in-effect`の解消、未使用import削除 | `npm run lint`が0件、`npm run test`が190件green(3回連続)、`npm run build`成功、`npx tsc --noEmit`エラー無し |
+| 5-5 | [`devex-api/docker-compose.prod.yml`](../../devex-api/docker-compose.prod.yml) | `nginx`・`certbot`サービス削除、`backend`にTraefik label+外部ネットワーク`edge`参加を追加 | `docker compose config`が通る、ローカルで`edge`ネットワークを作成した上で`up -d`しbackend/postgres/redisがhealthy、labelが`docker inspect`で確認できる |
+| 5-5 | [`devex-api/OPERATIONS.md`](../../devex-api/OPERATIONS.md)・[`devex-api/README.md`](../../devex-api/README.md) | Traefik導入手順・新規プロジェクト追加の汎用手順・既存の同居プロジェクト移行手順を追記 | 目視レビュー |
 
 ## 写経順序(#23)
 
-章番号順(5-1 → 5-2 → 5-3 → 5-4)。5-2は5-1で監査・改修したDockerfileを使ってスタックを起動する。5-3は5-1・5-2の検証結果(HEALTHCHECK追加、証明書取得手順、実測値)を運用マニュアルに反映するため両方の完了を前提にする。5-4は5-3が整備したREADME・OPERATIONS.mdを土台に追記するため、5-3の完了を前提にする。
+章番号順(5-1 → 5-2 → 5-3 → 5-4 → 5-5)。5-2は5-1で監査・改修したDockerfileを使ってスタックを起動する。5-3は5-1・5-2の検証結果(HEALTHCHECK追加、証明書取得手順、実測値)を運用マニュアルに反映するため両方の完了を前提にする。5-4は5-3が整備したREADME・OPERATIONS.mdを土台に追記するため、5-3の完了を前提にする。5-5は5-2が作った`docker-compose.prod.yml`(nginx+certbot構成)を前提として上書きするため、5-2(および5-2の内容を反映した5-4のOPERATIONS.md更新)の完了を前提にする。
 
 ## Phase完了チェック(#22)
 
@@ -81,6 +86,8 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 5. なぜ本Phaseは実際のConoHa VPS/Vercelへのライブデプロイを行わず、ローカルの本番相当環境での検証に留めたか、その判断の理由を説明できるか。
 6. `devex-api`には自動デプロイ用のGitHub Actionsワークフローがあるのに、`devex-ui`には無い(Vercelネイティブ連携に委ねている)のはなぜか、両者のデプロイ先の違いに照らして説明できるか。
 7. 既存のlintエラー(49件のE501等)を「今回のCI導入」のタイミングで是正した判断根拠を、CLAUDE.md #17の判定基準(「今この作業を駆動している実在の消費者は何か」)に沿って説明できるか。
+8. devex-api固有の`nginx`+`certbot`を廃止し、VPS共有のTraefikへ移行した理由を、CLAUDE.md #17の判定基準に沿って説明できるか。
+9. nginxを撤去してもリクエストボディサイズの防御が失われない理由を、`app/api/middleware.py`の`BodySizeLimitMiddleware`が元々持っていた設計意図と結びつけて説明できるか。
 
 ## 対象外にした既知の課題(将来課題、decision-digest参照)
 

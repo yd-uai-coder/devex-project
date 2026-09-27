@@ -259,6 +259,16 @@ Phase 5(5-1〜5-3)完了後、ユーザーから2件の追加依頼(README群が
 - **GitHub Actions自動デプロイ方式**: `devex-api`(ConoHa VPS)は`.github/workflows/deploy.yml`でtest→SSHデプロイ(`git pull`+`docker compose up -d --build`、レジストリ経由のpush/pull方式は個人開発規模には過剰と判断し不採用)。`devex-ui`(Vercel)はVercelのネイティブGitHub連携がデプロイを担うため、Actions側は`ci.yml`でlint/test/buildのみ(デプロイジョブなし)。
 - **CI導入を機に既存lintエラー(devex-api: 49件のE501等、devex-ui: lint 6件+vitest設定漏れ)を是正**: `uv run ruff check .`・`npm run lint`・`npm run test`をCIのゲートに含める以上、既存の未修正debtを放置するとCIが恒久的に赤くなるため、今回のCI導入作業の一環として修正した(CLAUDE.md #17: 「今この作業を駆動している実在の消費者」= 新設したCIワークフロー自身)。`devex-api`側の修正はコメント・docstringの折り返しのみでロジック変更は無く、`textbook/samples/backend/`側のミラーへは反映していない(rule #9が対象とする「クラス名・シグネチャ・型」の変更ではないため)。`devex-ui`側では`vitest.config.mts`が`e2e/`(Playwright仕様)を誤って収集していた設定漏れ(テスト実行のたびに無関係な1件が必ず失敗する原因)と、`HearingCompletionBanner.tsx`の実際のReact Hooksルール違反(早期returnの後にhookを呼んでいた)という、単なる整形を超えた実質的な修正が見つかった。詳細は[`Phase-5-4.md`](./Phase-5/Phase-5-4.md)参照。
 
+## Phase 5完了後 ── 共有Traefikへの移行(Phase 5-5)
+
+実際にConoHa VPSへ`docker-compose.prod.yml`をデプロイしたところ、同じVPSに同居する別プロジェクトが既にポート80/443を専有しており、devex-api自身の`nginx`が起動できなかった。ユーザーは今後も複数プロジェクトをこのVPSに同居させる方針であり、標準的な構成を求めたため、devex-api固有の`nginx`+`certbot`を廃止し、**VPS共有のTraefik**(devex-apiのリポジトリに属さない、VPS共通のリバースプロキシ)へ移行した。詳細は[`Phase-5-5.md`](./Phase-5/Phase-5-5.md)参照。
+
+- **既に80/443を握っていた別プロジェクトも移行が必要**: 2つのコンテナが同じホストポートを同時に持つことはできないため、Traefik導入には既存の他プロジェクトを直接ポート公開からTraefik配下(labelベースのルーティング)へ移す設定変更(短時間の再起動を伴う)が必須になる。これは事前にユーザーへ確認し、了承を得た上で進めた。
+- **検討した代替案(不採用)**: VPSに追加IPv4を取得しdevex-apiだけ別IPの80/443を使う案は、既存の他プロジェクトに一切触れずに済む利点があったが、「今後も複数プロジェクトを同居させる」という方針の下ではプロジェクトが増えるたびにIPを追加購入することになりスケールしないと判断し、不採用とした。
+- **Traefikを選んだ理由**: Docker Provider(コンテナlabelから動的にルーティングを生成)+ACME(Let's Encrypt HTTP-01)の自動証明書取得を1コンテナで完結でき、新規プロジェクト追加のたびに共有nginxの設定ファイルを手で書き足す必要がない。`OPERATIONS.md`に「新規プロジェクトをTraefik配下に追加する手順」を汎用テンプレートとして記載し、devex-apiの移行はその最初の適用例、既存の他プロジェクトの移行は2番目の適用例という位置づけにした。
+- **リクエストボディサイズの防御は失われない**: nginxの`client_max_body_size`が無くなるが、`app/api/middleware.py`の`BodySizeLimitMiddleware`(nginxを経由しない経路でも効くよう元々アプリ層に重ねて実装済み)がそのまま機能するため、防御に穴は開かない。
+- **`docker-compose.prod.yml`から`nginx`・`certbot`サービスと関連ボリュームを削除、`backend`にTraefik label+外部ネットワーク`edge`参加を追加**。TLS証明書の取得・更新はTraefikのACME機能に完全に委譲し、certbotの手動cron運用は不要になった。
+
 ## Phase 5完了後 ── デプロイ・運用準備(rule #24: Phase完了時にまとめて1回追記)
 
 Phase 5の生成にあたり、事前にユーザーへスコープ(WBS区分5の3項目+Phase4申し送り2点のみ/コード整理も含めて広げるか)・デプロイ先(devex-ui→Vercel、devex-api→契約済みのConoHa VPS)・実施深度(ローカル本番相当検証+手順書整備までか、実ライブデプロイまで行うか)を確認し、**最小スコープ・ローカル検証まで**の方針を選んだ。
