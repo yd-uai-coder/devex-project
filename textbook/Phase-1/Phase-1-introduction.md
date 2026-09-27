@@ -66,3 +66,7 @@ WBS区分1の残り5項目のうち「①キックオフ・要件確認」「②
 ## 次のフェーズ
 
 **Phase 2**: バックエンド開発(2-1 DB移行〜2-5 エクスポート・エラーハンドリング)。詳細は [`Phase-0-2.md`](../Phase-0/Phase-0-2.md) のロードマップを参照。ユーザーが「Phase 2 を開始する」と発話するまでは着手しない(#5)。
+
+## 後続Phaseでの改訂(#12)
+
+`GEMINI_MODEL`のspec確定値(本章2.参照)は、Phase 5時点でGoogle側のモデル提供状況が変わり`gemini-2.5-flash-lite`が新規利用不可(404 NOT_FOUND)になったため`gemini-3.5-flash-lite`へ変更された。詳細は[`Phase-5-2.md`](../Phase-5/Phase-5-2.md)「実Gemini APIキーでの動作確認」、要点は[`decision-digest.md`](../decision-digest.md)参照。
