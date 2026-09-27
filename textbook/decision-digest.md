@@ -250,6 +250,15 @@ Phase 4の生成にあたり、事前にユーザーへE2Eテストの実装粒�
 
 `devex-ui/e2e/devex-flow.spec.ts`(実リポジトリ)・`textbook/samples/frontend/e2e/devex-flow.spec.ts`(教材サンプル)の両方に反映済み。詳細は[`Phase-4-4.md`](./Phase-4/Phase-4-4.md)「実機検証で発見した不具合」節参照。
 
+## Phase 5完了後 ── README整備・GitHub Actions自動デプロイ(Phase 5-4、rule #24: Phase完了時にまとめて1回追記)
+
+Phase 5(5-1〜5-3)完了後、ユーザーから2件の追加依頼(README群がテンプレート説明のままであること、GitHub Actionsでの自動デプロイ)があり、Phase 5に4番目の章として追加した。詳細は[`Phase-5-4.md`](./Phase-5/Phase-5-4.md)参照。
+
+- **README整備の範囲**: root `README.md`にdevex-api/devex-uiへのリンク表を追加。`devex-api/README.md`・`devex-ui/README.md`はいずれも冒頭を「Devexとしての主な機能」の説明に書き換え、既存のテンプレート説明(汎用FastAPIバックエンド/next-tamagui-templates)は「本リポジトリの位置づけ(テンプレートとしての出自)」節として保持した(削除しない ── どちらのリポジトリも実際に汎用テンプレートとして再利用可能な基盤を持つため)。
+- **`devex-api/CLAUDE.md`・`devex-ui/CLAUDE.md`はいずれも削除しなかった**: ユーザーから当初「両方ともテンプレート作成時のままなので削除」という依頼があったが、実際に内容を精査したところ、`devex-api/CLAUDE.md`は現在のアーキテクチャ(レイヤー構成・エラーハンドリング・LangGraph構成・レート制限・テスト分離・Docker構成)を正確に記述した現役のドキュメントであり、`devex-ui/CLAUDE.md`もTesting節(`__tests__/`配置規約)・バックエンド連携節(`apiFetch`/TTLキャッシュパターン)がPhase 3完了後の相談を通じて実際に更新され続けていた(decision-digest内の「Phase 3完了後」の複数エントリ参照)。この事実をユーザーに提示した上で、最終的に両方とも削除しない方針で確定した。**教訓**: 「テンプレート作成時のまま」という前提は、AI(私)自身の最初の一読による評価だったが、実際には過去のPhaseで参照・更新されていた形跡(他ドキュメントからの引用)を横断的に確認するまで正確性を判断できなかった。同種の削除判断を今後行う際は、対象ファイルへの相互参照を`grep`で洗い出してから判断することを推奨する。
+- **GitHub Actions自動デプロイ方式**: `devex-api`(ConoHa VPS)は`.github/workflows/deploy.yml`でtest→SSHデプロイ(`git pull`+`docker compose up -d --build`、レジストリ経由のpush/pull方式は個人開発規模には過剰と判断し不採用)。`devex-ui`(Vercel)はVercelのネイティブGitHub連携がデプロイを担うため、Actions側は`ci.yml`でlint/test/buildのみ(デプロイジョブなし)。
+- **CI導入を機に既存lintエラー(devex-api: 49件のE501等、devex-ui: lint 6件+vitest設定漏れ)を是正**: `uv run ruff check .`・`npm run lint`・`npm run test`をCIのゲートに含める以上、既存の未修正debtを放置するとCIが恒久的に赤くなるため、今回のCI導入作業の一環として修正した(CLAUDE.md #17: 「今この作業を駆動している実在の消費者」= 新設したCIワークフロー自身)。`devex-api`側の修正はコメント・docstringの折り返しのみでロジック変更は無く、`textbook/samples/backend/`側のミラーへは反映していない(rule #9が対象とする「クラス名・シグネチャ・型」の変更ではないため)。`devex-ui`側では`vitest.config.mts`が`e2e/`(Playwright仕様)を誤って収集していた設定漏れ(テスト実行のたびに無関係な1件が必ず失敗する原因)と、`HearingCompletionBanner.tsx`の実際のReact Hooksルール違反(早期returnの後にhookを呼んでいた)という、単なる整形を超えた実質的な修正が見つかった。詳細は[`Phase-5-4.md`](./Phase-5/Phase-5-4.md)参照。
+
 ## Phase 5完了後 ── デプロイ・運用準備(rule #24: Phase完了時にまとめて1回追記)
 
 Phase 5の生成にあたり、事前にユーザーへスコープ(WBS区分5の3項目+Phase4申し送り2点のみ/コード整理も含めて広げるか)・デプロイ先(devex-ui→Vercel、devex-api→契約済みのConoHa VPS)・実施深度(ローカル本番相当検証+手順書整備までか、実ライブデプロイまで行うか)を確認し、**最小スコープ・ローカル検証まで**の方針を選んだ。

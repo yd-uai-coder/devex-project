@@ -2,7 +2,9 @@
 
 ## 目的
 
-[`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.2節 WBS区分5(デプロイ・運用準備タスク)を実装する: 本番用Dockerイメージの監査・最終確認、本番相当環境での動作検証+実API検証、運用マニュアル・READMEの整備の3章構成。加えて[`Phase-4-introduction.md`](../Phase-4/Phase-4-introduction.md)「Phase 4全体としての既知の残課題」が本Phaseへ申し送った2点 ── 実Gemini APIキーでの動作確認、`LLM_TIMEOUT_SECONDS`の実測調整 ── にも対応する。
+[`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.2節 WBS区分5(デプロイ・運用準備タスク)を実装する: 本番用Dockerイメージの監査・最終確認、本番相当環境での動作検証+実API検証、運用マニュアル・READMEの整備、README整備+GitHub Actions自動デプロイの4章構成。加えて[`Phase-4-introduction.md`](../Phase-4/Phase-4-introduction.md)「Phase 4全体としての既知の残課題」が本Phaseへ申し送った2点 ── 実Gemini APIキーでの動作確認、`LLM_TIMEOUT_SECONDS`の実測調整 ── にも対応する。
+
+**5-4は5-1〜5-3完了後、ユーザーからの追加依頼(README群がテンプレート説明のままであること・GitHub Actionsでの自動デプロイ)を受けて追加した章である**(Phase 4が完了後に複数の「Phase N完了後」decision-digestエントリを積み重ねた前例と同じ扱い)。
 
 Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生成・E2Eテスト一式)を、実際にConoHa VPS(devex-api)・Vercel(devex-ui)へデプロイできる状態に仕上げることが目的である。ただし本Phase自体で実際のライブデプロイは行わない(下記「スコープ」参照)。
 
@@ -16,7 +18,7 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 
 ## モード宣言(#21)
 
-本Phase(5-1・5-2の2章)は**納期モード**で実施する。5-3は実装ファイルを作らない章のためモード宣言の対象外([`Phase-0-1.md`](../Phase-0/Phase-0-1.md)等の設計章と同様の扱い)。
+本Phase(5-1・5-2・5-4の3章)は**納期モード**で実施する。5-3は実装ファイルを作らない章のためモード宣言の対象外([`Phase-0-1.md`](../Phase-0/Phase-0-1.md)等の設計章と同様の扱い)。
 
 - 条件(a): 扱う対象(Docker/nginx/compose設定の監査、TLS証明書取得手順、運用マニュアル)は大半が定型的なインフラ作業であり、ドメイン判断を体現する箇所(タイムアウト値の実測決定等)は少数。
 - 条件(b): MVPコアループ(チャット↔4文書生成)そのものではなく、その運用面の付随作業である。
@@ -36,14 +38,17 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 | [`Phase-5-1.md`](./Phase-5-1.md) | 本番用Dockerイメージの監査・最終確認 | 納期 | なし |
 | [`Phase-5-2.md`](./Phase-5-2.md) | 本番相当環境での動作検証+実API検証 | 納期 | 5-1(監査済みのイメージを使う) |
 | [`Phase-5-3.md`](./Phase-5-3.md) | 運用マニュアル・README整備 | 対象外(設計章) | 5-1, 5-2(検証結果を手順書に反映) |
+| [`Phase-5-4.md`](./Phase-5-4.md) | README整備の続き(root/devex-api/devex-ui) + GitHub Actionsでの自動デプロイ + 既存lintエラー是正 | 納期 | 5-3(READMEを土台に追記) |
 
-5-1・5-2は`docker-compose.prod.yml`・`nginx/*.conf`・`backend/Dockerfile`という設定ファイルと、`app/core/config.py`(既にPhase 4-3からsamples対象)の値変更のみを扱い、新規シンボル(関数・クラス)を導入しない。したがって#13(全ファイル解説)は各章の「この章で作成・更新したファイル」表で代替し、#15の前方import監査はPythonコード(`config.py`)のみが対象、Docker/nginx/compose部分は対象外(コマンド実行結果で検証する。詳細は各章「テスト観点」参照)。5-3はコードを作成しないため#13・#15・#12リファクタ追従いずれも対象外。
+5-1・5-2は`docker-compose.prod.yml`・`nginx/*.conf`・`backend/Dockerfile`という設定ファイルと、`app/core/config.py`(既にPhase 4-3からsamples対象)の値変更のみを扱い、新規シンボル(関数・クラス)を導入しない。したがって#13(全ファイル解説)は各章の「この章で作成・更新したファイル」表で代替し、#15の前方import監査はPythonコード(`config.py`)のみが対象、Docker/nginx/compose部分は対象外(コマンド実行結果で検証する。詳細は各章「テスト観点」参照)。5-3はコードを作成しないため#13・#15・#12リファクタ追従いずれも対象外。5-4も新規GitHub Actionsワークフロー(YAML、import概念が無い)とREADME/OPERATIONS.mdの追記が中心のため#15の前方import監査は対象外。既存backendコードのlint是正(コメント・docstringの折り返しのみ、ロジック不変)は#13の対象だが新規シンボルを導入しないため簡潔に扱う(詳細は[`Phase-5-4.md`](./Phase-5-4.md)参照)。
 
 ## サンプルコード一覧
 
 [`textbook/samples/backend/app/core/config.py`](../samples/backend/app/core/config.py)の`GEMINI_MODEL`・`LLM_TIMEOUT_SECONDS`をPhase-5-2タグで更新した(#29の更新規約に従い旧値をコメントアウト+新値)。これが本Phase唯一のsamples反映。
 
 `docker-compose.prod.yml`・`nginx/nginx.prod.conf`・`backend/Dockerfile`・`devex-api/OPERATIONS.md`・`devex-api/README.md`・`devex-ui/README.md`・`.env`/`.env.example`(root・backend)は、[`Phase-1-introduction.md`](../Phase-1/Phase-1-introduction.md)が確立した前例(devex-api直下のインフラ設定ファイルはsamplesへミラーせず直接編集する)を踏襲し、samplesへの追加なし。各章では対象ファイルの相対パスを明記した上で差分を示す。
+
+5-4で新規追加した`devex-api/.github/workflows/deploy.yml`・`devex-ui/.github/workflows/ci.yml`、root`README.md`・root`CLAUDE.md`(リポジトリ間リンク・ルール#34追加)も同じ理由でsamples対象外。5-4で行った既存backendコードのlint是正(ruff `E501`等49件、コメント・docstringの折り返しのみ)は、`textbook/samples/backend/`のミラーへは反映していない ── クラス名・シグネチャ・型に変更が無い純粋な整形であり、rule #9が対象とする「検討・相談の中で提示するコード」の変更ではないため(詳細な判断根拠は[`Phase-5-4.md`](./Phase-5-4.md)参照)。
 
 ## 実装前チェックリスト(#11、設計レベルの疑問に限定 #20)
 
@@ -55,10 +60,17 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 | 5-2 | [`devex-api/.env`](../../devex-api/.env)・[`.env.example`](../../devex-api/.env.example)(root・backend) | `GEMINI_MODEL`を`gemini-3.5-flash-lite`に修正 | 実Gemini API呼び出しが成功する(下記5-2「実測結果」参照) |
 | 5-3 | [`devex-api/OPERATIONS.md`](../../devex-api/OPERATIONS.md)(新規) | VPS初期セットアップ〜TLS証明書取得〜バックアップ〜ロールバック〜Vercelデプロイの手順書 | 目視レビュー(実装ファイルを作らない章のためテスト対象外) |
 | 5-3 | [`devex-api/README.md`](../../devex-api/README.md)・[`devex-ui/README.md`](../../devex-ui/README.md) | OPERATIONS.mdへのリンク追加、Devex固有のVercelデプロイ手順追記 | 目視レビュー、リンク切れが無いこと |
+| 5-4 | root [`README.md`](../../README.md)・root [`CLAUDE.md`](../../CLAUDE.md) | devex-api/devex-uiへのリンク追加、ルール#34(完了報告は日本語)追加 | 目視レビュー |
+| 5-4 | [`devex-api/README.md`](../../devex-api/README.md)・[`devex-ui/README.md`](../../devex-ui/README.md) | テンプレート説明主体だった冒頭をDevex機能の説明に書き換え(既存のテンプレートとしての説明は「本リポジトリの位置づけ」節として保持) | 目視レビュー、リンク切れが無いこと |
+| 5-4 | [`devex-api/.github/workflows/deploy.yml`](../../devex-api/.github/workflows/deploy.yml)(新規) | push/PR時のlint+test、`main`へのpush時にConoHa VPSへSSHデプロイ | YAML構文チェック(`yaml.safe_load`)、ローカルで`uv run ruff check .`・`uv run pytest -m "not integration"`が通ること |
+| 5-4 | [`devex-ui/.github/workflows/ci.yml`](../../devex-ui/.github/workflows/ci.yml)(新規) | push/PR時のlint+test+build(デプロイはVercelネイティブ連携に委ねる) | YAML構文チェック、ローカルで`npm run lint`・`npm run test`・`npm run build`が通ること |
+| 5-4 | [`devex-api/OPERATIONS.md`](../../devex-api/OPERATIONS.md) | 「9. GitHub Actionsによる自動デプロイ」節新設、ロールバック手順にrevert運用を追記 | 目視レビュー |
+| 5-4 | `devex-api/backend/`配下の既存lintエラー是正(49件のE501+1件のSIM105、詳細は[`Phase-5-4.md`](./Phase-5-4.md)参照) | コメント・docstringの折り返し、`contextlib.suppress`への置換(ロジック不変) | `uv run ruff check .`が0件、`uv run pytest -m "not integration"`が既存121件green、`uvx pyright`に新規エラー無し |
+| 5-4 | `devex-ui/vitest.config.mts`・`HearingCompletionBanner.tsx`・`useGenerationPolling.ts`等(詳細は[`Phase-5-4.md`](./Phase-5-4.md)参照) | `e2e/`誤収集の除外、Hooksルール違反の是正、`set-state-in-effect`の解消、未使用import削除 | `npm run lint`が0件、`npm run test`が190件green(3回連続)、`npm run build`成功、`npx tsc --noEmit`エラー無し |
 
 ## 写経順序(#23)
 
-章番号順(5-1 → 5-2 → 5-3)。5-2は5-1で監査・改修したDockerfileを使ってスタックを起動する。5-3は5-1・5-2の検証結果(HEALTHCHECK追加、証明書取得手順、実測値)を運用マニュアルに反映するため両方の完了を前提にする。
+章番号順(5-1 → 5-2 → 5-3 → 5-4)。5-2は5-1で監査・改修したDockerfileを使ってスタックを起動する。5-3は5-1・5-2の検証結果(HEALTHCHECK追加、証明書取得手順、実測値)を運用マニュアルに反映するため両方の完了を前提にする。5-4は5-3が整備したREADME・OPERATIONS.mdを土台に追記するため、5-3の完了を前提にする。
 
 ## Phase完了チェック(#22)
 
@@ -67,6 +79,8 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 3. `LLM_TIMEOUT_SECONDS`を60秒から30秒に変更した根拠(実測値・マージンの考え方)を説明できるか。
 4. `GEMINI_MODEL`を`gemini-2.5-flash-lite`から`gemini-3.5-flash-lite`に変更するに至った経緯(実API検証で何が起きたか)を説明できるか。
 5. なぜ本Phaseは実際のConoHa VPS/Vercelへのライブデプロイを行わず、ローカルの本番相当環境での検証に留めたか、その判断の理由を説明できるか。
+6. `devex-api`には自動デプロイ用のGitHub Actionsワークフローがあるのに、`devex-ui`には無い(Vercelネイティブ連携に委ねている)のはなぜか、両者のデプロイ先の違いに照らして説明できるか。
+7. 既存のlintエラー(49件のE501等)を「今回のCI導入」のタイミングで是正した判断根拠を、CLAUDE.md #17の判定基準(「今この作業を駆動している実在の消費者は何か」)に沿って説明できるか。
 
 ## 対象外にした既知の課題(将来課題、decision-digest参照)
 

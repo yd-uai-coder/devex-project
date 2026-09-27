@@ -11,4 +11,13 @@ Devexは、AI(LangChain等)を活用した対話型インターフェースを�
 | [内部設計書](docs/internal_design.md) | 技術スタック・アーキテクチャ方針、データモデル、バックエンド処理・モジュール設計、エラーハンドリング |
 | [実装計画書](docs/implementation_plan.md) | 開発ステージ分割・マイルストーン、WBS、開発環境・CI/CD、想定リスクと対策 |
 
+## リポジトリ
+
+本ディレクトリは2つの独立したGitリポジトリのコンテナである(モノレポではない)。
+
+| リポジトリ | 内容 | 主要ドキュメント |
+| :--- | :--- | :--- |
+| [devex-api](https://github.com/yd-uai-coder/devex-api) | バックエンド(FastAPI + LangChain + PostgreSQL + Redis) | [README](devex-api/README.md) / [CLAUDE.md](devex-api/CLAUDE.md) / [OPERATIONS.md](devex-api/OPERATIONS.md)(デプロイ・運用手順) |
+| [devex-ui](https://github.com/yd-uai-coder/devex-ui) | フロントエンド(Next.js + Tamagui) | [README](devex-ui/README.md) / [CLAUDE.md](devex-ui/CLAUDE.md) |
+
 CL(Curriculum Loop)開発の進行ルール・プロジェクトゴールは [`CLAUDE.md`](CLAUDE.md) を参照。

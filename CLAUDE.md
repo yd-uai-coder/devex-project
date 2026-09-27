@@ -139,6 +139,8 @@ When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the tar
 
 **#33. フロントエンド(devex-ui)のテストファイル配置**(Phase 3完了後の相談で確立)。`devex-ui`の`*.test.ts(x)`は、ソース直下への直接colocateではなく、テスト対象と同じディレクトリ直下の`__tests__/`サブフォルダに置く(Jest由来でJS界隈での認知度が高い規約。ソース側ディレクトリの見通しを優先する判断)。`textbook/samples/frontend/`配下のサンプルも同じ構成に揃え、以降のPhase(Phase 4以降)で新規に書くフロントエンドのテストファイルもこの配置に従う。相対importはテスト対象より1階層深くなる点に注意する(`./Foo`→`../Foo`、`../../tamagui.config`→`../../../tamagui.config`)。単なるディレクトリ移動は#29のPhaseタグ付与の対象外(#29はコンテンツ変更の追跡用)。`devex-api`側の`tests/unit/`・`tests/integration/`構成は対象外(元々別ディレクトリ構成のため変更なし)。経緯は[`textbook/decision-digest.md`](./textbook/decision-digest.md)「Phase 3完了後」節参照。
 
+**#34. 完了報告は日本語**(本プロジェクト固有)。AIがユーザーへ行う作業の完了報告・進捗サマリ(チャット上での応答)は日本語で記述する。コード・ファイルパス・コマンド・技術用語(英語表記が定着しているもの)はそのままでよいが、地の文は日本語で統一する。教材(`textbook/`配下)・`decision-digest.md`等はこの節の他ルール(日本語表記)により元々日本語であり、本ルールは主にチャット上の完了報告に対する明確化である。
+
 ### プロジェクトのゴール
 
 1. **プロダクト目標**: `docs/implementation_plan.md` ステージ1(MVP)が定義する Must 要件(チャットヒアリング → 要件定義 / 外部設計 / 内部設計 / 実装計画の4種 Markdown 自動生成)を満たし、ステージ1のマイルストーン1・2の受け入れ基準を満たす。
