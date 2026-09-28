@@ -1,4 +1,4 @@
-// 作成：Phase-3-6
+// 作成：Phase-3-6｜更新：Phase-6-2,6-6
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
 
@@ -11,10 +11,33 @@ export type GeneratedDocumentRead = {
   content: string;
   version: number;
   created_at: string;
+  // Phase-6-6:追記 ── 現在表示中のバージョンかどうか(バージョン履歴の「表示中」バッジ用)
+  is_current: boolean;
 };
 
 export function listDocuments(projectId: string): Promise<GeneratedDocumentRead[]> {
   return apiFetch<GeneratedDocumentRead[]>(`/api/v1/projects/${projectId}/documents`);
+}
+
+// Phase-6-2:追記 ── SCR-006(バージョン履歴管理画面)向け
+export function listDocumentVersions(
+  projectId: string,
+  docType: DocType,
+): Promise<GeneratedDocumentRead[]> {
+  return apiFetch<GeneratedDocumentRead[]>(
+    `/api/v1/projects/${projectId}/documents/${docType}/versions`,
+  );
+}
+
+export function restoreDocumentVersion(
+  projectId: string,
+  docType: DocType,
+  version: number,
+): Promise<GeneratedDocumentRead> {
+  return apiFetch<GeneratedDocumentRead>(
+    `/api/v1/projects/${projectId}/documents/${docType}/versions/${version}/restore`,
+    { method: "POST" },
+  );
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";

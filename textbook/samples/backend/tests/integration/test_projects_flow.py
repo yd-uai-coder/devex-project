@@ -1,4 +1,4 @@
-# 作成：Phase-4-1
+# 作成：Phase-4-1｜更新：Phase-6-6
 # 写経レベル: 定型 ── 個々のロジックはPhase 2の各サービス単体テストで既に検証済み。
 # ここでの狙いは「ルーティング・スキーマ変換・DIの配線」自体の統合的な確認(過去に
 # get_hearing_completionルートの配線漏れが見つかった教訓の横展開、decision-digest.md参照)。
@@ -70,12 +70,24 @@ async def test_full_projects_flow_create_chat_generate_download(
     project_id = create_response.json()["id"]
     assert create_response.json()["status"] == "interviewing"
 
-    chat_response = await client.post(
-        f"/api/v1/projects/{project_id}/chat",
-        headers=headers,
-        json={"message": "利用者は倉庫の担当者を想定しています"},
-    )
-    assert chat_response.status_code == 200
+    # Phase-6-6：更新(ヒアリング完了判定に最低発話数ガードが入ったため、3往復送る)
+    # chat_response = await client.post(
+    #     f"/api/v1/projects/{project_id}/chat",
+    #     headers=headers,
+    #     json={"message": "利用者は倉庫の担当者を想定しています"},
+    # )
+    # ↓↓
+    for message in (
+        "利用者は倉庫の担当者を想定しています",
+        "MVPでは在庫の入出庫記録と一覧表示のみ作ります",
+        "技術的な制約は特にありません",
+    ):
+        chat_response = await client.post(
+            f"/api/v1/projects/{project_id}/chat",
+            headers=headers,
+            json={"message": message},
+        )
+        assert chat_response.status_code == 200
     assert "text/event-stream" in chat_response.headers["content-type"]
 
     history_response = await client.get(f"/api/v1/projects/{project_id}/chat", headers=headers)

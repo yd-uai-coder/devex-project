@@ -1,4 +1,4 @@
-// 作成：Phase-3-4
+// 作成：Phase-3-4｜更新：Phase-6-4
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createProject } from "../createProject";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
@@ -30,6 +30,7 @@ describe("createProject", () => {
       systemOverview: "備品予約を一元管理したい",
       goalsRaw: "重複予約を防ぎたい",
       notesRaw: "",
+      templateId: null,
       environment: { languages: ["python"], frameworks: [], databases: [], deployTargets: [] },
       files: [file],
     });
@@ -44,6 +45,8 @@ describe("createProject", () => {
     expect(body.get("goals_raw")).toBe("重複予約を防ぎたい");
     // 空文字のnotes_rawはフィールド自体を送らない
     expect(body.has("notes_raw")).toBe(false);
+    // templateId=nullの場合はtemplate_idフィールド自体を送らない
+    expect(body.has("template_id")).toBe(false);
     expect(JSON.parse(body.get("environment") as string)).toEqual({
       languages: ["python"],
       frameworks: [],
@@ -60,11 +63,28 @@ describe("createProject", () => {
       systemOverview: "x",
       goalsRaw: "y",
       notesRaw: "",
+      templateId: null,
       environment: { languages: [], frameworks: [], databases: [], deployTargets: [] },
       files: [],
     });
 
     const body = stub.requests[0].init?.body as FormData;
     expect(body.has("environment")).toBe(false);
+  });
+
+  it("templateIdが指定されていればtemplate_idフィールドを送る", async () => {
+    stub.queue({ status: 201, body: SAMPLE_PROJECT_RESPONSE });
+
+    await createProject({
+      systemOverview: "x",
+      goalsRaw: "y",
+      notesRaw: "",
+      templateId: "t1",
+      environment: { languages: [], frameworks: [], databases: [], deployTargets: [] },
+      files: [],
+    });
+
+    const body = stub.requests[0].init?.body as FormData;
+    expect(body.get("template_id")).toBe("t1");
   });
 });

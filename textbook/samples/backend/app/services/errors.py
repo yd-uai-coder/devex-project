@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5
+# 更新：Phase-2-2,2-3,2-5,6-3
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -40,6 +40,13 @@ class ProjectNotFoundError(NotFoundError):
 # Phase-2-5:追記
 class DocumentNotFoundError(NotFoundError):
     """指定したドキュメントIDが存在しない、または他ユーザーが所有するプロジェクトのものである場合に送出する。"""
+
+    code: ClassVar[str | None] = "RESOURCE_NOT_FOUND"
+
+
+# Phase-6-3:追記
+class PromptTemplateNotFoundError(NotFoundError):
+    """プロジェクト作成時に指定されたtemplate_idが存在しない場合に送出する。"""
 
     code: ClassVar[str | None] = "RESOURCE_NOT_FOUND"
 

@@ -1,16 +1,28 @@
-# 作成：Phase-2-3
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5
 # 写経レベル: コア ── 添付ファイルのバリデーション順序・失敗時の非ブロッキング方針など、ドメイン判断を体現する箇所。
+# Phase-6-3:追記 ── app.repositories.prompt_template.PromptTemplateRepository,
+#   app.services.errors.PromptTemplateNotFoundError
+# Phase-6-5:追記 ── structlog
 import uuid
 from dataclasses import dataclass
 
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.project import Project
 from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.intake_file import IntakeFileRepository
 from app.repositories.project import ProjectRepository
-from app.services.errors import FileTooLargeError, TooManyFilesError, UnsupportedFileTypeError
+from app.repositories.prompt_template import PromptTemplateRepository
+from app.services.errors import (
+    FileTooLargeError,
+    PromptTemplateNotFoundError,
+    TooManyFilesError,
+    UnsupportedFileTypeError,
+)
 from app.services.intake_file_processor import ALLOWED_FILE_TYPES, extract_text
+
+logger = structlog.get_logger(__name__)
 
 # 初期ヒアリングに添付できるファイル数の上限(docs/external_design.md 2.5節5項)
 MAX_FILES_PER_PROJECT = 3
@@ -36,18 +48,32 @@ class ProjectService:
         self._projects = ProjectRepository(session)
         self._chat_histories = ChatHistoryRepository(session)
         self._intake_files = IntakeFileRepository(session)
+        # Phase-6-3:追記
+        self._prompt_templates = PromptTemplateRepository(session)
 
     async def create(
-        self, *, user_id: uuid.UUID, intake: dict, files: list[UploadedFileInput]
+        self,
+        *,
+        user_id: uuid.UUID,
+        intake: dict,
+        files: list[UploadedFileInput],
+        # Phase-6-3:追記 ── SCR-003で選択したテンプレートのID(任意)
+        template_id: uuid.UUID | None = None,
     ) -> Project:
         """プロジェクトを作成し、初期ヒアリング入力と添付ファイルの内容をchat_historiesへ記録する。"""
         if len(files) > MAX_FILES_PER_PROJECT:
             raise TooManyFilesError(f"添付ファイルは最大{MAX_FILES_PER_PROJECT}件までです")
         for file in files:
             self._validate_file(file)
+        # Phase-6-3:追記 ── 存在しないtemplate_idをそのままDBへ渡すとFK制約違反(IntegrityError、
+        # 未捕捉のまま500になる)で落ちるため、事前に存在確認する。
+        if template_id is not None and await self._prompt_templates.get_by_id(template_id) is None:
+            raise PromptTemplateNotFoundError(f"Prompt template {template_id} not found")
 
         title = (intake.get("system_overview") or "").strip()[:255] or "無題のプロジェクト"
-        project = await self._projects.create(user_id=user_id, title=title, intake=intake)
+        project = await self._projects.create(
+            user_id=user_id, title=title, intake=intake, template_id=template_id
+        )
         filenames = [file.filename for file in files]
         await self._chat_histories.add(
             project_id=project.id, sender="intake", message=_format_intake_summary(intake, filenames)
@@ -57,6 +83,9 @@ class ProjectService:
             await self._ingest_file(project.id, file)
 
         await self._session.commit()
+        # Phase-6-5:追記 ── プロジェクト作成(主要ライフサイクルイベント、内部設計書3.4節INFO)。
+        # system_overview等の本文は記録しない(project_idのみ)。
+        logger.info("project_created", project_id=str(project.id))
         return project
 
     def _validate_file(self, file: UploadedFileInput) -> None:

@@ -1,5 +1,5 @@
-# 作成：Phase-2-1
-# 写経レベル: 定型 ── テーブル定義のみ(Should have機能のためリポジトリは未実装)。
+# 作成：Phase-2-1｜更新：Phase-6-3(docstringのみ)
+# 写経レベル: 定型 ── テーブル定義のみ(リポジトリ・サービスはPhase 6-3参照)。
 import uuid
 from datetime import datetime
 
@@ -13,7 +13,6 @@ class PromptTemplate(Base):
     """プロジェクト作成時に選択できるテンプレート定義を表すORMモデル(Should have要件、SCR-003)。
 
     default_environment: SCR-004の初期ヒアリング入力(intake.environment)へプリフィルするデフォルト値。
-    このPhaseではテーブル定義のみを用意し、リポジトリ/サービスはSCR-003実装時(Stage2)に追加する。
     """
 
     __tablename__ = "prompt_templates"

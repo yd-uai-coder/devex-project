@@ -1,11 +1,15 @@
-# 作成：Phase-2-5｜更新：Phase-4-1,4-5
+# 作成：Phase-2-5｜更新：Phase-4-1,4-5,6-5
+# Phase-6-5:追記 ── structlog.testing.capture_logs, langchain_core.messages.HumanMessage,
+#   app.services.llm_retry.prompt_char_count
 import asyncio
 
 import pytest
+import structlog.testing
+from langchain_core.messages import HumanMessage
 
 from app.services import llm_retry
 from app.services.errors import GenerationFailedError, LLMQuotaExceededError
-from app.services.llm_retry import invoke_with_retry
+from app.services.llm_retry import invoke_with_retry, prompt_char_count
 
 
 @pytest.fixture(autouse=True)
@@ -100,3 +104,57 @@ async def test_asyncio_timeout_error_is_treated_the_same_as_builtin_timeout_erro
     """Python 3.11以降`asyncio.TimeoutError`は`TimeoutError`のエイリアスであることを
     明示的に固定する(将来のPythonバージョンでこの関係が変わった場合に検知するための回帰テスト)。"""
     assert asyncio.TimeoutError is TimeoutError
+
+
+# Phase-6-5:追記
+def test_prompt_char_count_sums_only_string_contents() -> None:
+    """thought signature付き応答等、contentが辞書のリストになる要素は数えない
+    (対象は文字列contentのみ、本文自体はログに含めないため文字数だけを算出する)。"""
+    messages = [
+        HumanMessage(content="12345"),
+        HumanMessage(content=[{"type": "text", "text": "ignored"}]),
+    ]
+
+    assert prompt_char_count(messages) == 5
+
+
+async def test_logs_debug_with_latency_and_prompt_chars_on_success() -> None:
+    """成功時、本文を含まないDEBUGログ(レイテンシ・プロンプト文字数)を記録する。"""
+
+    async def _call() -> str:
+        return "ok"
+
+    with structlog.testing.capture_logs() as logs:
+        await invoke_with_retry(_call, messages=[HumanMessage(content="12345")])
+
+    debug_logs = [log for log in logs if log["log_level"] == "debug"]
+    assert len(debug_logs) == 1
+    assert debug_logs[0]["event"] == "llm_call_succeeded"
+    assert debug_logs[0]["prompt_chars"] == 5
+    assert "latency_ms" in debug_logs[0]
+
+
+async def test_logs_warning_on_quota_exceeded(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(llm_retry, "_is_quota_error", lambda _exc: True)
+
+    async def _call() -> str:
+        raise RuntimeError("quota exceeded")
+
+    with structlog.testing.capture_logs() as logs, pytest.raises(LLMQuotaExceededError):
+        await invoke_with_retry(_call)
+
+    assert any(
+        log["log_level"] == "warning" and log["event"] == "llm_quota_exceeded" for log in logs
+    )
+
+
+async def test_logs_error_after_exhausting_retries() -> None:
+    async def _call() -> str:
+        raise RuntimeError("always fails")
+
+    with structlog.testing.capture_logs() as logs, pytest.raises(GenerationFailedError):
+        await invoke_with_retry(_call)
+
+    error_logs = [log for log in logs if log["log_level"] == "error"]
+    assert len(error_logs) == 1
+    assert error_logs[0]["event"] == "llm_generation_failed_after_retries"

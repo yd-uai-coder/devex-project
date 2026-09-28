@@ -44,6 +44,7 @@ Traefikを選んだ理由は、Docker Provider(コンテナのlabelを見て動�
 +      - edge
 +    labels:
 +      - "traefik.enable=true"
++      - "traefik.docker.network=edge"
 +      - "traefik.http.routers.devex-api.rule=Host(`your-domain.example.com`)"
 +      - "traefik.http.routers.devex-api.entrypoints=websecure"
 +      - "traefik.http.routers.devex-api.tls.certresolver=letsencrypt"
@@ -85,7 +86,7 @@ nginxの`client_max_body_size`は無くなるが、`app/api/middleware.py`の`Bo
 | 確認項目 | 手段 | 結果 |
 |---|---|---|
 | `docker-compose.prod.yml`の構文 | `docker compose -f docker-compose.prod.yml config` | エラー無し |
-| labelが正しくコンテナに反映される | `docker inspect devex-api-backend-1 --format '{{json .Config.Labels}}'` | `traefik.enable=true`等5個のlabelを確認 |
+| labelが正しくコンテナに反映される | `docker inspect devex-api-backend-1 --format '{{json .Config.Labels}}'` | `traefik.enable=true`等6個のlabelを確認 |
 | ホストへポートが公開されていない | `docker compose -f docker-compose.prod.yml ps`のPORTS列 | `8000/tcp`のみ(ホスト側マッピング無し) |
 | backend/postgres/redisが起動する | ローカルで外部ネットワーク`edge`を作成した上で`docker compose -f docker-compose.prod.yml up -d --build` | 3サービスともhealthy、マイグレーション適用・`/health`応答(コンテナ内から確認)とも成功 |
 
@@ -95,7 +96,16 @@ TLS込みの検証(実際にTraefikを経由したHTTPSアクセス)は、Traefi
 
 同じVPSに以前から同居していた別プロジェクトも、Traefik導入にあたって直接のポート公開をやめてTraefik配下へ移行する必要がある(2つのコンテナが同じホストポートを同時に持つことはできないため)。この移行手順は`OPERATIONS.md`「4. 新規プロジェクトをTraefik配下に追加する手順」に汎用テンプレートとして記載し、devex-apiの移行はその最初の適用例、既存の他プロジェクトの移行は2番目の適用例という位置づけにした。同節には移行後の動作確認(対象ドメインへの`curl`・`docker compose ps`・Traefikログ確認)を必須ステップとして含めている。この手順は今後さらに別のプロジェクトを追加する際にも、devex-api固有の内容(ドメイン名・label値)を読み替えるだけでそのまま使える。
 
+## 実VPSデプロイでの検証結果(追記)
+
+本章執筆時点では「実VPSでの検証はユーザー自身が行う」としていたが、その後ユーザーが実際にConoHa VPS上で本手順を実行し、2件の実害ある不具合が見つかった。いずれも解決済みで、`https://devex-api.uandi-tech.com/health`が`{"status":"ok","database":"ok","redis":"ok"}`を返すことまで確認済み。
+
+1. **Traefikのイメージタグ`v3.3`がDocker Engine 29+と非互換**: Docker 29がAPI最小サポートバージョンを1.44に引き上げたため、`v3.3`が使う古いDockerクライアント(APIバージョン1.24固定)がDockerデーモンとの通信そのものに失敗し(`client version 1.24 is too old`エラーで無限リトライ)、Traefikがコンテナを一切検出できなかった。`DOCKER_API_VERSION`環境変数での回避を試みたが効果が無く(Traefikの内部Dockerクライアントはこの環境変数を参照しないため)、`traefik:v3.6`(Docker API自動ネゴシエーション対応)へのイメージタグ変更で解決した。
+2. **複数ネットワークに参加するコンテナへの到達にはネットワーク明示指定が必要**: `backend`は`internal`(DB/Redis用)と`edge`(Traefik用)の2つのネットワークに参加しているが、Traefikにどちらを使うか明示しないと誤ったネットワーク側のIPで接続を試み、`504 Gateway Timeout`になった。`traefik.docker.network=edge`labelを追加して解決した。
+
+この2点は`OPERATIONS.md`「1. ConoHa VPS初期セットアップ」・「4. 新規プロジェクトをTraefik配下に追加する手順」に既知の注意点として反映済み。ローカル環境ではDocker Engineの実バージョンやTraefikの複数ネットワーク解決の挙動を完全には再現できず、実VPSデプロイで初めて顕在化した典型例である。
+
 ## 既知の残課題
 
-- 実際のVPS上でのTraefik導入・既存他プロジェクトの移行・証明書取得はユーザー自身が行う(本Phaseはローカル検証+手順書整備までに留める、これまでのPhase 5各章と同じ方針)。
 - Traefikのダッシュボード機能は`OPERATIONS.md`のcompose例では有効化していない(個人利用規模では不要、かつ誤って公開すると情報漏洩リスクがあるため)。将来的に必要になった場合はBasic認証等でアクセス制限した上で有効化することを推奨する。
+- 既に同居していた別プロジェクト(quaiz-api)自体のTraefik配下への移行、および今後quaiz-api以外のプロジェクトを追加する際の実際の適用は、本章執筆時点ではまだ実施例が1件(devex-api自身)のみである。

@@ -1,4 +1,4 @@
-// 作成：Phase-3-6
+// 作成：Phase-3-6｜更新：Phase-6-6
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -12,6 +12,7 @@ const SAMPLE_DOC = {
   content: "# 見出し\n本文です",
   version: 1,
   created_at: "",
+  is_current: true, // Phase-6-6:追記
 };
 
 function renderView(content: string = SAMPLE_DOC.content) {
@@ -81,6 +82,26 @@ describe("DocumentMarkdownView", () => {
 
     await vi.waitFor(() => expect(URL.createObjectURL).toHaveBeenCalled());
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  // Phase-6-6:追記 ── 復元後の表示中バージョンをダウンロードする(画面の内容とダウンロード内容が一致する)
+  it("ダウンロードは表示中のドキュメントのidを指定して取得する", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("content", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DocumentMarkdownView
+          projectId="p1"
+          document={{ ...SAMPLE_DOC, id: "restored-v1", version: 1, is_current: true }}
+        />
+      </TamaguiProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "ダウンロード(.md)" }));
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/documents/restored-v1/download");
   });
 
   it("ダウンロード失敗時はエラーを表示する", async () => {

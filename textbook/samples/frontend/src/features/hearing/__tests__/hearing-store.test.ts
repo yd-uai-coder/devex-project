@@ -1,4 +1,4 @@
-// 作成：Phase-3-5
+// 作成：Phase-3-5｜更新：Phase-6-6
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useHearingStore } from "../hearing-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
@@ -148,6 +148,44 @@ describe("useHearingStore", () => {
 
     expect(useHearingStore.getState().generationTriggered).toBe(true);
     expect(stub.requests[0].url).toContain("/generate");
+  });
+
+  // Phase-6-6:追記
+  it("approveAndGenerate()は使用済みの完了判定を破棄し、projectStatusをgeneratingにする", async () => {
+    useHearingStore.setState({
+      projectStatus: "interviewing",
+      completion: { is_sufficient: true, summary: "要約", missing_points: [] },
+    });
+    stub.queue({ status: 202, body: null });
+
+    await useHearingStore.getState().approveAndGenerate("p1");
+
+    expect(useHearingStore.getState().projectStatus).toBe("generating");
+    expect(useHearingStore.getState().completion).toBeNull();
+  });
+
+  // Phase-6-6:追記 ── 生成済み(completed)のプロジェクトへ再度チャットするとサーバー側がrevisingへ
+  // 遷移させる。storeのprojectStatusも追従しないと、新しい完了バナーのボタンが押せないままになる。
+  it("sendMessage()はprojectStatus==='completed'のときrevisingへ遷移させる", async () => {
+    useHearingStore.setState({ projectStatus: "completed" });
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["はい"]));
+    stub.queue({ status: 200, body: { is_sufficient: true, summary: "要約", missing_points: [] } });
+
+    await useHearingStore.getState().sendMessage("p1", "追加の要望です");
+
+    expect(useHearingStore.getState().projectStatus).toBe("revising");
+    expect(useHearingStore.getState().completion?.is_sufficient).toBe(true);
+  });
+
+  // Phase-6-6:追記
+  it("sendMessage()はcompleted以外のprojectStatusを変更しない", async () => {
+    useHearingStore.setState({ projectStatus: "interviewing" });
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["はい"]));
+    stub.queue({ status: 200, body: { is_sufficient: false, summary: "", missing_points: [] } });
+
+    await useHearingStore.getState().sendMessage("p1", "こんにちは");
+
+    expect(useHearingStore.getState().projectStatus).toBe("interviewing");
   });
 
   it("dismissConnectionLost()はconnectionLostをfalseに戻す", () => {

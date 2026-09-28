@@ -1,4 +1,4 @@
-// 作成：Phase-3-4
+// 作成：Phase-3-4｜更新：Phase-6-4
 import { z } from "zod";
 import { applyRules, maxLength, requiredText } from "@/lib/schemas/validation-rules";
 
@@ -30,6 +30,8 @@ export const intakeSchema = z.object({
     maxLength("実現したいこと", GOALS_MAX_LENGTH),
   ),
   notesRaw: applyRules(z.string().trim(), maxLength("補足", NOTES_MAX_LENGTH)),
+  // Phase-6-4:追記 ── SCR-003(テンプレート選択、任意)で選択したテンプレートのID。未選択はnull。
+  templateId: z.string().nullable(),
   environment: environmentSchema,
   // ファイルごとの拡張子/サイズ検証はFileUploadField側(選択時点)で行うため、
   // ここでは件数のみをsubmit時の最終防御として確認する。

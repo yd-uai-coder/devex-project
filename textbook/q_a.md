@@ -63,3 +63,7 @@
 1. Phase 0
 2. ユーザー指示: 「本プロジェクトで作成するシステムは今回の検討と同じ観点で精査したドキュメントを作成するものである事を要件として明示したい」
 3. #28(CL進行ルール)を、Devexというプロダクト自体の機能要件としても明示。[`docs/requirements.md`](../docs/requirements.md) 1.4節Must haveに「ドキュメント自己診断機能」を追加し、[`docs/external_design.md`](../docs/external_design.md)・[`docs/internal_design.md`](../docs/internal_design.md)にも反映した。`chat_histories.sender`の`'others'`値の用途を「ドキュメント自己診断結果の記録」に確定した。
+
+1. Phase 6(ステージ2動作確認後)
+2. ユーザー指示: 「HearingCompletionBannerの発生が早い。まだ質問事項があるのに発生している」「設計書生成→チャットに戻る→再度チャット送信→新しいHearingCompletionBannerが表示されるが、設計書生成ボタンがdisabled:falseに戻らない(ダッシュボード経由で再遷移すると押下可能になる)」「同じ内容でも復元ボタンを押すたびにバージョンが上がっている。新しく生成しない場合はバージョンを更新せず、現在の表示内容がどのバージョンかを示すバッジをバージョン履歴に付ける。ダウンロードは現在表示中のバージョンの内容にする」
+3. [`Phase-6-6.md`](./Phase-6/Phase-6-6.md)として対応(samplesのみ反映)。完了判定はプロンプト厳格化+ユーザー発話3件の下限ガード、ボタンは`hearing-store`が`projectStatus`(completed→revising)・`completion`を追従、復元は`generated_documents.is_current`カラムの付け替えのみに変更(仕様診断#28決定2を撤回、`docs/internal_design.md`3.2節を改訂)。

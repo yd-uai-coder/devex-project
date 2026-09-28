@@ -1,6 +1,12 @@
-// 作成：Phase-3-6
+// 作成：Phase-3-6｜更新：Phase-6-2,6-6
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DownloadError, downloadDocument, listDocuments } from "../documentsApi";
+import {
+  DownloadError,
+  downloadDocument,
+  listDocuments,
+  listDocumentVersions,
+  restoreDocumentVersion,
+} from "../documentsApi";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import { useAuthStore } from "@/components/auth/auth-store";
 
@@ -21,6 +27,52 @@ describe("listDocuments", () => {
     await listDocuments("p1");
 
     expect(stub.requests[0].url).toContain("/api/v1/projects/p1/documents");
+  });
+});
+
+// Phase-6-2:追記
+describe("listDocumentVersions", () => {
+  let stub: ReturnType<typeof stubFetch>;
+
+  beforeEach(() => {
+    stub = stubFetch();
+  });
+
+  afterEach(() => {
+    stub.restore();
+  });
+
+  it("GET /api/v1/projects/{id}/documents/{doc_type}/versionsを呼ぶ", async () => {
+    stub.queue({ status: 200, body: [] });
+
+    await listDocumentVersions("p1", "requirements");
+
+    expect(stub.requests[0].url).toContain(
+      "/api/v1/projects/p1/documents/requirements/versions",
+    );
+  });
+});
+
+describe("restoreDocumentVersion", () => {
+  let stub: ReturnType<typeof stubFetch>;
+
+  beforeEach(() => {
+    stub = stubFetch();
+  });
+
+  afterEach(() => {
+    stub.restore();
+  });
+
+  it("POST .../versions/{version}/restoreを呼ぶ", async () => {
+    stub.queue({ status: 200, body: { id: "d2", doc_type: "requirements", content: "v1", version: 1, created_at: "", is_current: true } });
+
+    await restoreDocumentVersion("p1", "requirements", 1);
+
+    expect(stub.requests[0].url).toContain(
+      "/api/v1/projects/p1/documents/requirements/versions/1/restore",
+    );
+    expect(stub.requests[0].init?.method).toBe("POST");
   });
 });
 

@@ -18,7 +18,12 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "pyjwt>=2.13.0",
     "redis>=5.0",
+    # Phase-6-5:追記 ── sentry-sdkは以前から間接依存として存在していたが、
+    # 明示的に使う(sentry_sdk.init)ため直接依存へ格上げする。
+    "sentry-sdk>=2.67.1",
     "sqlalchemy[asyncio]>=2.0",
+    # Phase-6-5:追記
+    "structlog>=25.1.0",
     "tavily-python>=0.7.27",
     "uvicorn[standard]>=0.52.1",
 ]

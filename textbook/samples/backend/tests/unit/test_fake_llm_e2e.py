@@ -1,4 +1,4 @@
-# 作成：Phase-4-3
+# 作成：Phase-4-3｜更新：Phase-6-6
 # 写経レベル: コア ── 実機検証で発見した2件の不具合(ヒアリング完了判定の誤カウント、
 # doc_type判別の誤マッチ)の回帰テスト。当初はPlaywright(Phase 4-4)のみで検証する設計にして
 # いたが、両方ともpytestレベルの単体テストで安価に検知できる性質のバグだったため、事後的に
@@ -32,8 +32,21 @@ async def test_insufficient_after_one_chat_turn() -> None:
     assert result.is_sufficient is False
 
 
-async def test_sufficient_after_two_chat_turns() -> None:
+# Phase-6-6：更新(chat_service側の最低発話数ガード導入に伴い、完了判定に要するチャット発話を
+# 2件から3件へ引き上げた)
+# async def test_sufficient_after_two_chat_turns() -> None:
+#     result = await _completion(E2eFakeLLM(), human_message_count=3)
+#
+#     assert result.is_sufficient is True
+# ↓↓
+async def test_insufficient_after_two_chat_turns() -> None:
     result = await _completion(E2eFakeLLM(), human_message_count=3)
+
+    assert result.is_sufficient is False
+
+
+async def test_sufficient_after_three_chat_turns() -> None:
+    result = await _completion(E2eFakeLLM(), human_message_count=4)
 
     assert result.is_sufficient is True
 

@@ -1,4 +1,4 @@
-# 作成：Phase-2-1
+# 作成：Phase-2-1｜更新：Phase-6-3
 # 写経レベル: 定型 ── 既存User/Conversationと同型のORMモデル定義。
 import uuid
 from datetime import datetime
@@ -31,6 +31,12 @@ class Project(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="interviewing")
     # intake: 初期ヒアリング入力(system_overview/goals_raw/notes_raw/environment)をそのまま保持する
     intake: Mapped[dict | None] = mapped_column(PortableJSON, nullable=True)
+    # Phase-6-3:追記 ── SCR-003で選択したテンプレート(prompt_templates.id)。intake JSONには含めず
+    # 専用カラムとして永続化する(ヒアリング再開・再生成時も含めプロジェクトのライフサイクル
+    # 全体を通じて参照するため)。
+    template_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("prompt_templates.id"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

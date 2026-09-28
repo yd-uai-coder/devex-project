@@ -1,12 +1,19 @@
-# 作成：Phase-2-5｜更新：Phase-4-1
+# 作成：Phase-2-5｜更新：Phase-4-1,6-5
 # 写経レベル: コア(Phase 2-5) ── docs/implementation_plan.md 4.4節リスク1(リトライ・クォータ処理)の実装箇所。chat_service.py/doc_generator_service.pyが共有する。
+# Phase-6-5:追記 ── time, structlog, langchain_core.messages.BaseMessage
 import asyncio
-from collections.abc import Awaitable, Callable
+import time
+from collections.abc import Awaitable, Callable, Sequence
 from typing import TypeVar
+
+import structlog
+from langchain_core.messages import BaseMessage
 
 from app.services.errors import GenerationFailedError, LLMQuotaExceededError
 
 T = TypeVar("T")
+
+logger = structlog.get_logger(__name__)
 
 # LLM呼び出しの一時的な失敗に対する最大リトライ回数・リトライ間隔(秒)。
 # app/services/chat.py(既存の汎用デモ)の_invoke_with_retryと同じ値を踏襲する。
@@ -14,7 +21,19 @@ MAX_GENERATION_ATTEMPTS = 3
 RETRY_DELAY_SECONDS = 1.0
 
 
-async def invoke_with_retry(call: Callable[[], Awaitable[T]]) -> T:
+def prompt_char_count(messages: Sequence[BaseMessage]) -> int:
+    """メッセージ列のうち文字列content部分だけの合計文字数を返す(DEBUGログ用)。
+    本文自体はログに含めない(内部設計書3.4節「プライバシー上の注意」)。thought signature付き
+    応答等、content が辞書のリストになる要素は対象外(文字列のcontentのみを数える)。"""
+    return sum(len(m.content) for m in messages if isinstance(m.content, str))
+
+
+async def invoke_with_retry(
+    call: Callable[[], Awaitable[T]],
+    *,
+    # Phase-6-5:追記 ── DEBUGログ用(プロンプト文字数の算出のみに使い、本文はログに含めない)
+    messages: Sequence[BaseMessage] | None = None,
+) -> T:
     """LLM呼び出しをラップし、クォータ超過は即座に諦め、それ以外の一時的エラーは規定回数までリトライする。
 
     chat_service.py(完了判定)・doc_generator_service.py(4文書生成+自己診断)の双方が同じ
@@ -24,12 +43,13 @@ async def invoke_with_retry(call: Callable[[], Awaitable[T]]) -> T:
     ストリーミング応答(chat_service.ChatService.stream_reply)には適用していない ──
     ストリームは途中までクライアントへ送信済みの可能性があり、最初からやり直すのは安全でないため
     (この場合はストリームの失敗をそのまま伝播させ、クライアント側の再送に委ねる)。
+
+    Phase 6-5: 呼び出し成功時はDEBUGでレイテンシ・プロンプト文字数を、一時的失敗・クォータ超過は
+    WARNINGを、規定回数リトライしても失敗した場合はERROR(スタックトレース付き)を記録する
+    (内部設計書3.4節のログレベル定義)。全てのLLM呼び出し箇所がinvoke_with_retryを経由する設計
+    (doc_generator_service.pyのdocstring参照)のため、ログ集約もここ一箇所に閉じられる。
     """
-    # Phase-4-1：更新(メッセージが英語のままだったバグを修正。このtry/exceptで送出される
-    # 例外のdetailは、check_completion/generate_opening_replyの呼び出し元がAppError
-    # ハンドラを介してそのままHTTPレスポンスのdetailへ返すため、他の全ユーザー向け文言と
-    # 同じく日本語にする必要がある。Phase 4-1の統合フロー監査で発見した ── 発生源が
-    # doc_generator_service.pyの`except`節と異なりここ一箇所のため、修正箇所も1箇所で足りる)
+    # Phase-6-5：更新(構造化ログを追加。メッセージ文言自体はPhase 4-1で確定済みのまま変更なし)
     # last_error: Exception | None = None
     # for attempt in range(1, MAX_GENERATION_ATTEMPTS + 1):
     #     try:
@@ -38,28 +58,50 @@ async def invoke_with_retry(call: Callable[[], Awaitable[T]]) -> T:
     #         if _is_quota_error(exc):
     #             # クォータ超過はリトライしても解消しないため即座に諦める
     #             raise LLMQuotaExceededError(
-    #                 "AI provider quota exceeded, please try again later"
+    #                 "本日の利用上限に達しました。時間をおいて再度お試しください。"
     #             ) from exc
     #         last_error = exc
     #         if attempt < MAX_GENERATION_ATTEMPTS:
     #             await asyncio.sleep(RETRY_DELAY_SECONDS)
     # raise GenerationFailedError(
-    #     "Failed to generate a response after multiple attempts"
+    #     "AIからの応答生成に失敗しました。時間をおいて再度お試しください。"
     # ) from last_error
     # ↓↓
+    prompt_chars = prompt_char_count(messages) if messages is not None else None
     last_error: Exception | None = None
     for attempt in range(1, MAX_GENERATION_ATTEMPTS + 1):
+        started = time.monotonic()
         try:
-            return await call()
+            result = await call()
+            logger.debug(
+                "llm_call_succeeded",
+                attempt=attempt,
+                prompt_chars=prompt_chars,
+                latency_ms=round((time.monotonic() - started) * 1000, 1),
+            )
+            return result
         except Exception as exc:
             if _is_quota_error(exc):
                 # クォータ超過はリトライしても解消しないため即座に諦める
+                logger.warning("llm_quota_exceeded", attempt=attempt)
                 raise LLMQuotaExceededError(
                     "本日の利用上限に達しました。時間をおいて再度お試しください。"
                 ) from exc
             last_error = exc
+            logger.warning(
+                "llm_call_failed",
+                attempt=attempt,
+                max_attempts=MAX_GENERATION_ATTEMPTS,
+                error_type=type(exc).__name__,
+            )
             if attempt < MAX_GENERATION_ATTEMPTS:
                 await asyncio.sleep(RETRY_DELAY_SECONDS)
+    logger.error(
+        "llm_generation_failed_after_retries",
+        max_attempts=MAX_GENERATION_ATTEMPTS,
+        error_type=type(last_error).__name__ if last_error else None,
+        exc_info=last_error,
+    )
     raise GenerationFailedError(
         "AIからの応答生成に失敗しました。時間をおいて再度お試しください。"
     ) from last_error

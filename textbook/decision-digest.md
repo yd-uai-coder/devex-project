@@ -269,6 +269,15 @@ Phase 5(5-1〜5-3)完了後、ユーザーから2件の追加依頼(README群が
 - **リクエストボディサイズの防御は失われない**: nginxの`client_max_body_size`が無くなるが、`app/api/middleware.py`の`BodySizeLimitMiddleware`(nginxを経由しない経路でも効くよう元々アプリ層に重ねて実装済み)がそのまま機能するため、防御に穴は開かない。
 - **`docker-compose.prod.yml`から`nginx`・`certbot`サービスと関連ボリュームを削除、`backend`にTraefik label+外部ネットワーク`edge`参加を追加**。TLS証明書の取得・更新はTraefikのACME機能に完全に委譲し、certbotの手動cron運用は不要になった。
 
+## Phase 5完了後 ── 実VPSデプロイで発覚したTraefik関連の2件の不具合(Phase 5-5追補)
+
+ユーザーが実際にConoHa VPS上でPhase 5-5の手順を実行したところ、2件の実害ある不具合が見つかり、対話的なデバッグの末に解決した。両方とも`OPERATIONS.md`・[`Phase-5-5.md`](./Phase-5/Phase-5-5.md)に反映済み。`docker-compose.prod.yml`自体の修正(`traefik.docker.network=edge`label追加)はユーザー自身が直接反映した。
+
+1. **`traefik:v3.3`がDocker Engine 29+と非互換**: Docker 29がAPI最小サポートバージョンを1.44に引き上げたため、`v3.3`が使う古いDockerクライアント(APIバージョン1.24固定)がデーモンとの通信に失敗し、Traefikがコンテナを一切検出できなかった(`client version 1.24 is too old`エラーで無限リトライ)。`DOCKER_API_VERSION`環境変数での回避は効果が無かった(Traefikの内部Dockerクライアントはこの環境変数を参照しない)。`traefik:v3.6`(Docker API自動ネゴシエーション対応)へのイメージタグ変更で解決した。
+2. **複数ネットワーク参加時は`traefik.docker.network`の明示が必須**: `backend`が`internal`(DB/Redis用)と`edge`(Traefik用)の2つのネットワークに参加している状態で、Traefikにどちらを使うか明示しないと誤ったネットワーク側のIPで接続を試み`504 Gateway Timeout`になった。`traefik.docker.network=edge`labelの追加で解決した。
+
+**教訓**: どちらもローカル環境では再現できない類の不具合(Docker Engineの実際のバージョン差異、Traefikの複数ネットワーク解決の実際の挙動)であり、「実VPSデプロイはユーザー自身が行う」というPhase 5の一貫した方針の妥当性を裏付ける実例になった。`OPERATIONS.md`の該当箇所には「既知の注意点」として両方とも明記し、今後quaiz-api等を追加する際に同じ問題を踏まないようにした。
+
 ## Phase 5完了後 ── デプロイ・運用準備(rule #24: Phase完了時にまとめて1回追記)
 
 Phase 5の生成にあたり、事前にユーザーへスコープ(WBS区分5の3項目+Phase4申し送り2点のみ/コード整理も含めて広げるか)・デプロイ先(devex-ui→Vercel、devex-api→契約済みのConoHa VPS)・実施深度(ローカル本番相当検証+手順書整備までか、実ライブデプロイまで行うか)を確認し、**最小スコープ・ローカル検証まで**の方針を選んだ。
@@ -281,3 +290,12 @@ Phase 5の生成にあたり、事前にユーザーへスコープ(WBS区分5�
 - **`devex-api`直下のインフラ設定ファイルは引き続きsamplesへミラーせず直接反映**: [`Phase-1-introduction.md`](./Phase-1/Phase-1-introduction.md)が確立した前例をそのまま踏襲(`docker-compose.prod.yml`・`nginx/*.conf`・`backend/Dockerfile`・`OPERATIONS.md`・`devex-api/README.md`・`devex-ui/README.md`・`.env`/`.env.example`)。samplesへ反映したのは`app/core/config.py`(Phase 4-3以降既にsamples対象)の値変更のみ。
 - **`devex-ui/CLAUDE.md`の陳腐化は対象外のまま**: `src/features/{dashboard,hearing,documents}`等のDevex機能層を反映していない既知の課題([[feedback_direct_impl_scope]]と同種の「実プロジェクトへの直接反映」の話ではなく、単純な文書債務)だが、運用マニュアル整備とは別の作業としてスコープ確定時に対象外と合意した。次にこのファイルへ手を入れる機会があれば解消を検討する。
 - **申し送り**: [`Phase-4-introduction.md`](./Phase-4/Phase-4-introduction.md)が申し送った「`textbook/appendix/*-retrospective.md`(rule #10)がPhase 0〜4のいずれについても未作成」という既知の負債は、本Phase完了時点でも解消していない。rule #18に従い本Phaseでも着手せず、**別セッションでPhase 0〜5の振り返り・decision digestの整理・`q_a.md`の追記をまとめて行う**ことを推奨する。詳細は[`Phase-5-introduction.md`](./Phase-5/Phase-5-introduction.md)「申し送り」節参照。
+
+## Phase 6着手 ── ステージ2の仕様診断(#28)
+
+Phase 5(実VPSデプロイまで)完了後、ステージ2(Should have要件: バージョン管理・履歴保持/プロンプトテンプレート選択/エラーハンドリング堅牢化・ログ構造化・監視強化)の着手にあたり、rule #28に沿って4ドキュメント+実コードへの影響調査を行った。詳細は[`Phase-6-introduction.md`](./Phase-6/Phase-6-introduction.md)参照。
+
+- **セッション境界(#18)に従い、Phase 6の着手そのものは別セッションへ持ち越した**: Phase 5完了と同一セッション内でCLAUDE.md「進行のルール」の改訂(rule #34追加)を行っていたため、そのセッションでは新規Phase生成を開始せず、新しいセッションでPhase 6に着手した。
+- **最重要5点を確定**: (1)バージョン履歴の保持件数は現状の3件キャップを維持、UIのみ新設。(2)復元は新バージョン追加(上書きしない)。(3)`projects.template_id`をサーバー側に永続化し、合流先は`doc_generator_service.py`ではなく`chat_service.py`(ヒアリングのシステムプロンプト)。(4)内部設計書の「DEBUGログにプロンプト内容を含める」記述を撤回し、メタデータのみ記録するプライバシー配慮を追加。(5)監視強化は`structlog`+`SENTRY_DSN`設定時のみ有効化するSentry+既存`/health`への外部アップタイム監視、という個人開発規模に見合う具体案を採用。
+- **ドキュメントの記述不整合を是正**: 4ドキュメントが「MVPで既に実装済みの機構」(バージョン増分+3件保持、共通エラーレスポンス形式)を未着手のShould have機能であるかのように記述していた点を修正し、Should have分は「その上に被せるUI/監視/ログ強化」であることを明確化した。
+- **章立て(5章、ユーザー確認待ち)**: 6-1バージョン履歴API/6-2バージョン履歴UI/6-3テンプレートAPI/6-4テンプレート選択UI/6-5エラー・ログ・監視、という機能×レイヤーの分割案を提示した。

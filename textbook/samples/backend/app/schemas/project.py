@@ -1,4 +1,4 @@
-# 作成：Phase-2-3
+# 作成：Phase-2-3｜更新：Phase-6-3
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 import uuid
 from datetime import datetime
@@ -39,3 +39,5 @@ class ProjectDetail(ProjectRead):
 
     intake: dict | None
     intake_files: list[IntakeFileRead] = []
+    # Phase-6-3:追記 ── SCR-003で選択したテンプレートのID(未選択ならNone)
+    template_id: uuid.UUID | None = None

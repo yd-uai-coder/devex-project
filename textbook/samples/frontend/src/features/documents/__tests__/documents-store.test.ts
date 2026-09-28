@@ -1,4 +1,4 @@
-// 作成：Phase-3-6
+// 作成：Phase-3-6｜更新：Phase-6-6
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDocumentsStore } from "../documents-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
@@ -19,6 +19,7 @@ const SAMPLE_DOC = {
   content: "# 要件定義",
   version: 1,
   created_at: "2026-01-01T00:00:00Z",
+  is_current: true, // Phase-6-6:追記
 };
 
 describe("useDocumentsStore", () => {

@@ -1,19 +1,25 @@
-# 作成：Phase-2-4｜更新：Phase-2-5
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
+# Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
+# Phase-6-5:追記 ── structlog
 import uuid
 
+import structlog
 from langchain_core.messages import HumanMessage, SystemMessage
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.gemini import extract_text_content, get_gemini_llm
 from app.core.database import AsyncSessionLocal
 from app.models.chat_history import ChatHistory
+from app.models.generated_document import GeneratedDocument
 from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.generated_document import DOC_TYPES, GeneratedDocumentRepository
 from app.repositories.project import ProjectRepository
-from app.services.errors import LLMQuotaExceededError
+from app.services.errors import DocumentNotFoundError, LLMQuotaExceededError
 from app.services.llm_retry import invoke_with_retry
+
+logger = structlog.get_logger(__name__)
 
 _DOC_TYPE_LABELS: dict[str, str] = {
     "requirements": "要件定義書",
@@ -253,6 +259,43 @@ class DocGeneratorService:
 
         project.status = "completed"
         await self._session.commit()
+        # Phase-6-5:追記 ── ドキュメント生成完了(主要ライフサイクルイベント、内部設計書3.4節INFO)
+        logger.info("documents_generated", project_id=str(project_id), doc_count=len(DOC_TYPES))
+
+    # Phase-6-1:追記 ── SCR-006(バージョン履歴管理画面)向け。写経レベル: コア(復元の意味論
+    # ─新バージョンとして追加、既存版は上書きしない─ は仕様診断#28で確定した設計判断のため)。
+    async def list_versions(self, project_id: uuid.UUID, doc_type: str) -> list[GeneratedDocument]:
+        """指定doc_typeの保管済み全バージョン(最大3件)を新しい順に返す。"""
+        return await self._documents.list_versions(project_id=project_id, doc_type=doc_type)
+
+    async def restore_version(
+        self, project_id: uuid.UUID, doc_type: str, version: int
+    ) -> GeneratedDocument:
+        # Phase-6-6：更新(復元のたびに同じ内容のバージョンが増えていく不具合。「復元」は新しい版を
+        # 作らず、表示中バージョン(is_current)を指定版へ付け替えるだけにした。新しい版が増えるのは
+        # 再生成(generate→create_version)のときのみ)
+        # """指定バージョンの内容を新バージョンとして追加する(既存版の上書きはしない、
+        # create_versionのバージョニング方針との一貫性を保つ)。"""
+        # target = await self._documents.get_version(
+        #     project_id=project_id, doc_type=doc_type, version=version
+        # )
+        # if target is None:
+        #     raise DocumentNotFoundError(f"{doc_type} version {version} not found")
+        # restored = await self._documents.create_version(
+        #     project_id=project_id, doc_type=doc_type, content=target.content
+        # )
+        # await self._session.commit()
+        # return restored
+        # ↓↓
+        """指定バージョンを表示中(is_current)に切り替える。バージョン番号は増やさず、新しい行も
+        作らない(既存版の内容も書き換えない)。指定バージョンが存在しなければDocumentNotFoundError。"""
+        restored = await self._documents.set_current(
+            project_id=project_id, doc_type=doc_type, version=version
+        )
+        if restored is None:
+            raise DocumentNotFoundError(f"{doc_type} version {version} not found")
+        await self._session.commit()
+        return restored
 
     async def _generate_one(
         self, doc_type: str, transcript: str, generated: dict[str, str], *, llm
@@ -287,7 +330,7 @@ class DocGeneratorService:
             response = await llm.ainvoke(messages)
             return extract_text_content(response.content)
 
-        return await invoke_with_retry(_call)
+        return await invoke_with_retry(_call, messages=messages)
 
     async def _self_diagnose(self, generated: dict[str, str], *, llm) -> str:
         # Phase-2-5：更新
@@ -315,7 +358,7 @@ class DocGeneratorService:
             response = await llm.ainvoke(messages)
             return extract_text_content(response.content)
 
-        return await invoke_with_retry(_call)
+        return await invoke_with_retry(_call, messages=messages)
 
 
 def _render_transcript(history: list[ChatHistory]) -> str:

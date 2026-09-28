@@ -1,4 +1,4 @@
-# 更新：Phase-4-3
+# 更新：Phase-4-3,6-5
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。本Phaseまで
 # サンプルとして写経対象になったことが無く、今回が初めてのsamples反映(以下は差分のみでなく
 # 全文)。E2E_FAKE_LLM・LLM_TIMEOUT_SECONDS以外はdevex-api/backend/app/core/config.pyの
@@ -81,6 +81,10 @@ class Settings(BaseSettings):
 
     # リクエストボディの上限(バイト)。nginx の client_max_body_size と同じ値に揃える。
     MAX_REQUEST_BODY_BYTES: int = 2_000_000
+
+    # Phase-6-5:追記 ── 設定されている場合のみSentryを初期化する(app/main.py)。未設定(None)
+    # なら完全にno-op(内部設計書3.4節「監視方針」: 個人開発規模のため無料枠のみで足りる)。
+    SENTRY_DSN: str | None = None
 
     # Phase-4-3：更新(E2E_FAKE_LLMの本番誤有効化を拒否する分岐を追加。既存のDEBUG・
     # JWT_SECRET_KEYチェックは変更なし)

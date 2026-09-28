@@ -58,6 +58,7 @@
 | user_id | UUID | FK (`users.id`), NOT NULL | 所有ユーザーID |
 | title | VARCHAR(255) | NOT NULL | プロジェクト名 / アイデア概要 |
 | status | VARCHAR(50) | NOT NULL, DEFAULT 'interviewing' | 状態 (interviewing: ヒアリング中, generating: 生成中, completed: 完了, revising: 修正中。completed後に新規チャットメッセージを送るとrevisingへ遷移する) |
+| template_id | UUID | FK (`prompt_templates.id`), NULL可（※ステージ2対応） | SCR-003で選択したテンプレート。クライアント側のプリフィルのみで終わらせず、プロジェクトのライフサイクル全体(ヒアリング再開・再生成時)を通じて選択したテンプレートを保持するためサーバー側に永続化する(⑤`prompt_templates`テーブル参照) |
 | intake | JSONB | NULL可 | 初期ヒアリング入力([外部設計書](external_design.md) 2.5節3項)をそのまま保持。`system_overview`/`goals_raw`/`notes_raw`/`environment` を含む |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
@@ -81,9 +82,14 @@
 | doc_type | VARCHAR(50) | NOT NULL | 種別 ('requirements', 'external_design', 'internal_design', 'implementation_plan') |
 | content | TEXT | NOT NULL | 生成されたMarkdownテキスト |
 | version | INT | NOT NULL, DEFAULT 1 | バージョン番号 |
+| is_current | BOOLEAN | NOT NULL, DEFAULT false | 現在表示中のバージョンか。同一`project_id`+`doc_type`につきちょうど1行のみ`true`(ステージ2追補) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 
 **バージョニング方針**: 「再生成する」ボタン押下時は既存行を上書きせず新バージョンを追加する。同一`project_id`+`doc_type`につき直近3バージョンまで保管し、4件目が生成された時点で最も古いバージョンを削除する。
+
+**(ステージ2診断で確定)** 上記のバージョン増分+直近3件保持というDBレベルの機構自体はMVP(ステージ1)で実装済みであり(`app/repositories/generated_document.py`の`create_version`)、ステージ2の「バージョン管理・履歴保持」機能はこの機構自体の変更ではなく、その上に被せる**UI(SCR-006 バージョン履歴管理画面)**の新設を指す。保持件数は3件キャップを維持し(拡張・撤廃はしない)、「復元」はUI上で選んだ過去バージョンの内容を**新バージョンとして追加**する(既存行の上書きはしない、この方針との一貫性を保つ)。
+
+**(ステージ2動作確認後の改訂・上記の復元方針を置き換える)** 復元のたびに同じ内容のバージョンが増え、保持3件を無意味に消費してしまうため、「復元」は**新しい行を作らず、表示中バージョン(`is_current`)を指定バージョンへ切り替えるだけ**にする。バージョン番号が増えるのは再生成(`create_version`)のときのみで、新しく生成した版は自動的に`is_current=true`になる(それまでの`is_current`は外れる)。ドキュメント一覧(`GET /projects/{id}/documents`)は最新版ではなく`is_current=true`の版を返し、画面表示・ダウンロードの対象は常に表示中バージョンになる。バージョン履歴UIは表示中の版に「表示中」バッジを付ける。
 
 #### ⑤ `prompt_templates` テーブル（※Should have対応）
 
@@ -95,6 +101,8 @@
 | system_prompt | TEXT | NOT NULL | LLMに与えるシステムプロンプト定義 |
 | default_environment | JSONB | NULL可 | このテンプレート選択時にSCR-004のintake環境設定へプリフィルするデフォルト値。`intake.environment`([外部設計書](external_design.md) 2.5節3項)と同じ構造(`languages`/`frameworks`/`databases`/`deploy_targets`) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+
+**(ステージ2診断で確定)** `system_prompt`の合流先は、4文書生成(`doc_generator_service.py`の`_DOC_TYPE_PROMPTS`、doc_type単位で固定)ではなく、**ヒアリングチャットのシステムプロンプト**(`chat_service.py`の`_HEARING_SYSTEM_PROMPT`)である。`projects.template_id`が設定されている場合、該当テンプレートの`system_prompt`をヒアリング開始時に合流させる。テンプレート自体は当面**固定シードデータ**(「Webアプリ向け」「API向け」の2件)とし、ユーザーによるCRUD機能は設けない(一覧取得APIのみ新設)。
 
 #### ⑥ `intake_files` テーブル
 
@@ -134,6 +142,7 @@ backend/
 ```
 
 * **`chat_service.py`**:
+  * （※ステージ2診断で確定）`projects.template_id`が設定されている場合、該当`prompt_templates.system_prompt`をヒアリング開始時のシステムプロンプトへ合流させる(3.2節⑤参照)。
   * プロジェクト作成時、`intake`(初期ヒアリング入力)を`sender='intake'`の`chat_histories`行として永続化する。添付ファイルがある場合は`intake_files`のテキスト化(後述)も行い、その`extracted_text`も`sender='intake'`の`chat_histories`行(ファイルごと、またはintake本体行への追記)として併せて永続化する。ユーザーからの入力とこれまでの `chat_histories`(intake行・添付ファイル由来の行を含む)をLangChainのメモリ（Memory）にロードし、LLMへ送信することで、チャット開始直後のAIの最初の発話に反映する。
   * **添付ファイルのテキスト化**: `txt`/`md`はファイル内容をUTF-8テキストとしてそのまま読み込む。`pdf`は既存の`app/ai/llm/gemini.py`のGeminiクライアントを流用し、ファイルをそのまま渡してLLMのネイティブなファイル理解でテキスト化する(新規のPDF解析ライブラリは追加しない)。結果は`intake_files`テーブルに保存する(3.2節参照)。
   * ヒアリングが十分な状態に達したか（あるいはユーザーが生成を要求したか）を判定するロジックを保持。判定基準([外部設計書](external_design.md) 2.3節SCR-004参照): (1)目的・課題の明確化、(2)コア機能が最低1つ以上「誰が・何を・なぜ」のレベルで具体化、(3)想定ユーザー像の把握、(4)MVPスコープの認識合わせ、(5)環境設定未入力時は技術的制約の確認、をすべて満たしたら「十分」と判定する。十分と判断した場合は、即座に生成へ進まず、構造化した要件サマリをユーザーに提示して明示的な承認を得てから次のステップ（`doc_generator_service.py` の呼び出し）に進む。
@@ -155,8 +164,11 @@ backend/
 | **POST** | `/api/v1/projects/{id}/chat` | チャットメッセージ送信・AI応答取得（ストリーミング対応） | 必要 |
 | **GET** | `/api/v1/projects/{id}/chat` | 特定プロジェクトのチャット履歴取得 | 必要 |
 | **POST** | `/api/v1/projects/{id}/generate` | 設計書4種の自動生成トリガー（非同期） | 必要 |
-| **GET** | `/api/v1/projects/{id}/documents` | 生成された設計書一覧・内容の取得 | 必要 |
+| **GET** | `/api/v1/projects/{id}/documents` | 生成された設計書一覧(doc_typeごとの現在表示中(`is_current`)の版のみ)・内容の取得 | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents/{doc_id}/download` | 指定Markdownドキュメントのダウンロード | 必要 |
+| **GET** | `/api/v1/projects/{id}/documents/{doc_type}/versions` | （※ステージ2、SCR-006向け）指定doc_typeの保持済みバージョン一覧(最大3件)を取得 | 必要 |
+| **POST** | `/api/v1/projects/{id}/documents/{doc_type}/versions/{version}/restore` | （※ステージ2、SCR-006向け）指定バージョンを表示中(`is_current`)に切り替える。新バージョンは作らない(3.2節バージョニング方針参照) | 必要 |
+| **GET** | `/api/v1/prompt-templates` | （※ステージ2、SCR-003向け）選択可能なプロンプトテンプレート一覧の取得(固定シードデータ) | 必要 |
 
 ---
 
@@ -190,11 +202,18 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 
 ### 2. 例外検知・ログ出力方針
 
-* **ログライブラリ**: Python標準の `logging` モジュール（または構造化ログを出力する `structlog`）を使用し、JSON形式でログを出力する。
+* **ログライブラリ**: `structlog`を使用し、JSON形式でログを出力する(ステージ2診断で`structlog`を採用確定。理由は3参照)。
 * **ログレベルの定義**:
-  * `DEBUG`: 開発環境での詳細なデバッグ情報（SQLクエリ、プロンプトの内容など）
+  * `DEBUG`: 開発環境での詳細なデバッグ情報（SQLクエリ、LLM呼び出しのレイテンシ・プロンプト文字数など。**プロンプト本文・レスポンス本文は含めない**、下記「プライバシー上の注意」参照）
   * `INFO`: APIリクエストの受付、プロジェクト作成、ドキュメント生成完了などの主要なライフサイクルイベント
   * `WARNING`: 外部APIの応答遅延、バリデーションエラー等の軽微な問題
   * `ERROR`: データベース接続エラー、外部LLMの呼び出し失敗、予期せぬ例外（スタックトレースを必ず記録）
 * **例外キャッチとハンドリング**:
   * FastAPIの `exception_handler` を用いて、カスタム例外（例: `AppException`）および未処理の `Exception` をグローバルにキャッチし、適切なHTTPステータスコードと共通エラーレスポンスに変換して返却する。
+* **プライバシー上の注意(ステージ2診断で確定)**: 当初案では`DEBUG`ログにプロンプトの内容を含める想定だったが、[要件定義書](requirements.md) 1.5節「入出力データ（機密性の高い要件定義データ）の適切な保護」と矛盾するため撤回した。ログにはプロンプト・レスポンスの**本文は一切出力せず**、project_id・doc_type・文字数・レイテンシ・モデル名等のメタデータのみを記録する。プロンプト本文のデバッグが必要な場合も、常時有効なDEBUGログの一部にはしない(将来必要になった場合は`E2E_FAKE_LLM`と同様、本番環境で誤って有効化されないようガードされた専用フラグとして別途検討する)。
+
+### 3. 監視方針(ステージ2、個人開発規模を前提とする)
+
+* **エラー追跡**: `sentry-sdk`(既に間接依存として`uv.lock`に存在)を使い、環境変数`SENTRY_DSN`が設定されている場合のみ初期化する(未設定時は完全にno-op)。本番のConoHa VPS上でのみ設定し、無料枠で例外の集約・通知を受け取る。
+* **死活監視**: 新規のアプリケーションコードは不要。既存の`/health`エンドポイント([外部設計書](external_design.md)、`app/main.py`)を外部の無料アップタイム監視サービス(例: UptimeRobot)から定期的に叩く運用とする(`devex-api/OPERATIONS.md`に手順を記載)。
+* **意図的に採用しないもの**: Prometheus/Grafana等の自前メトリクス基盤、OpenTelemetryによる分散トレーシングは、個人開発・単一VPS構成の規模に見合わないため採用しない。

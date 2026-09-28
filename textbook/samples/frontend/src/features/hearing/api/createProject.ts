@@ -1,4 +1,4 @@
-// 作成：Phase-3-4
+// 作成：Phase-3-4｜更新：Phase-6-4
 import { apiFetch } from "@/lib/api/client";
 import type { ProjectRead } from "@/features/dashboard/api/projects";
 import type { EnvironmentValues } from "@/features/hearing/schemas";
@@ -7,6 +7,8 @@ export type CreateProjectInput = {
   systemOverview: string;
   goalsRaw: string;
   notesRaw: string;
+  // Phase-6-4:追記
+  templateId: string | null;
   environment: EnvironmentValues;
   files: File[];
 };
@@ -20,6 +22,10 @@ export function createProject(input: CreateProjectInput): Promise<ProjectRead> {
   formData.set("goals_raw", input.goalsRaw);
   if (input.notesRaw) {
     formData.set("notes_raw", input.notesRaw);
+  }
+  // Phase-6-4:追記
+  if (input.templateId) {
+    formData.set("template_id", input.templateId);
   }
 
   const { languages, frameworks, databases, deployTargets } = input.environment;

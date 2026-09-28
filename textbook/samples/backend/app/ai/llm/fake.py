@@ -1,4 +1,4 @@
-# 作成：Phase-4-3
+# 作成：Phase-4-3｜更新：Phase-6-6
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -22,12 +22,17 @@ from pydantic import BaseModel
 from app.schemas.generation import HearingCompletionCheck
 
 # ヒアリング完了(is_sufficient=True)と判定するまでに要するHumanMessage数(末尾の判定プロンプト
-# 自身を除く)。「初期ヒアリング入力(intake)1件+実際のチャット発話2件」で3件になる。
+# 自身を除く)。「初期ヒアリング入力(intake)1件+実際のチャット発話3件」で4件になる。
+# Phase-6-6：更新(chat_service._MIN_USER_TURNS_FOR_COMPLETION=3の導入に合わせ、
+# 「intake1件+チャット2件=3件」から「intake1件+チャット3件=4件」へ引き上げた。
+# ガードだけが働いてフェイクは楽観的にtrueを返す、という食い違いを避けるため)
 # 当初は単純に「HumanMessageが2件以上」としていたが、実機検証で以下2件の不具合が見つかり
 # 修正した経緯がある(詳細はPhase-4-3.mdの「実機検証で発見した2件の不具合」参照)。
 # (1) chat_service.check_completionは末尾に_COMPLETION_CHECK_PROMPT自身のHumanMessageを
 #     追記するため、これも数えてしまうと実際のチャット発話が0件でも条件を満たしてしまう。
-_TURNS_UNTIL_SUFFICIENT = 3
+# _TURNS_UNTIL_SUFFICIENT = 3
+# ↓↓
+_TURNS_UNTIL_SUFFICIENT = 4
 
 # doc_generator_service.pyの各doc_type専用プロンプト(_DOC_TYPE_PROMPTS)は、他doc_typeへの
 # 入力参照を「以下の【要件定義書】および【外部設計書】に基づき...」のような角括弧表記で行うため、
@@ -71,7 +76,7 @@ class _FakeStructuredE2e:
             # 末尾の1件は常にchat_service.check_completionが追記する
             # _COMPLETION_CHECK_PROMPT自身のHumanMessageであり、実際の対話ターンではないため
             # 対象外にする。残りのHumanMessageは「初期ヒアリング入力(intake)1件+実際の
-            # チャット発話N件」なので、_TURNS_UNTIL_SUFFICIENT=3は「intake+チャット2往復」を意味する。
+            # チャット発話N件」なので、_TURNS_UNTIL_SUFFICIENT=4は「intake+チャット3往復」を意味する。
             conversation_messages = messages[:-1]
             user_turns = sum(1 for m in conversation_messages if isinstance(m, HumanMessage))
             sufficient = user_turns >= _TURNS_UNTIL_SUFFICIENT

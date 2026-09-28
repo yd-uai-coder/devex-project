@@ -1,4 +1,4 @@
-// 作成：Phase-3-5
+// 作成：Phase-3-5｜更新：Phase-6-6
 import { create } from "zustand";
 import { streamChat } from "@/features/hearing/api/streamChat";
 import {
@@ -80,11 +80,23 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       message: text,
       created_at: new Date().toISOString(),
     };
+    // Phase-6-6：更新(生成済みのプロジェクトへ発話するとサーバー側(ChatService.stream_reply)が
+    // completed→revisingへ遷移させるが、storeのprojectStatusはloadHistoryでしか更新されず
+    // "completed"のまま取り残され、新しい完了バナーのボタンが押せないままになる不具合があった。
+    // サーバー側と同じ遷移をここで即時に反映する)
+    // set((state) => ({
+    //   messages: [...state.messages, optimisticUserMessage],
+    //   sending: true,
+    //   streamingReply: "",
+    //   connectionLost: false,
+    // }));
+    // ↓↓
     set((state) => ({
       messages: [...state.messages, optimisticUserMessage],
       sending: true,
       streamingReply: "",
       connectionLost: false,
+      projectStatus: state.projectStatus === "completed" ? "revising" : state.projectStatus,
     }));
 
     try {
@@ -116,7 +128,11 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
 
   approveAndGenerate: async (projectId) => {
     await triggerGeneration(projectId);
-    set({ generationTriggered: true });
+    // Phase-6-6：更新(承認した完了判定は使用済みなので破棄し、projectStatusも生成中へ追従させる。
+    // 残したままだと、生成後にチャットへ戻った際に前回の(承認済みの)バナーが古い状態で再表示される)
+    // set({ generationTriggered: true });
+    // ↓↓
+    set({ generationTriggered: true, projectStatus: "generating", completion: null });
   },
 
   dismissConnectionLost: () => set({ connectionLost: false }),
