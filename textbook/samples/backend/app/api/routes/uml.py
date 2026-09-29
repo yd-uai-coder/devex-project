@@ -1,4 +1,4 @@
-# 作成：Phase-8-4
+# 作成：Phase-8-4｜更新：Phase-9-5
 # 写経レベル: コア ── prefixにproject_idを含める構成・エンドポイント構成そのもの。
 import uuid
 
@@ -66,6 +66,19 @@ async def validate_diagram(
     return await UmlDiagramService(session).validate(
         project_id=current_project.id, diagram_id=diagram_id
     )
+
+
+# Phase-9-5:追記
+@router.post("/diagrams/{diagram_id}/layout", response_model=UmlDiagramRead)
+async def compute_diagram_layout(
+    diagram_id: uuid.UUID, session: SessionDep, current_project: CurrentProjectDep
+) -> UmlDiagramRead:
+    """UML図の自動レイアウト(M6)を実行し、`layout_model`を保存して返す。
+    要素数上限超過・M4構造検証エラーの場合は400(実行前チェック、Phase 9)。"""
+    diagram = await UmlDiagramService(session).compute_layout(
+        project_id=current_project.id, diagram_id=diagram_id
+    )
+    return UmlDiagramRead.model_validate(diagram)
 
 
 @router.get("/data-items", response_model=list[DataItemRead])

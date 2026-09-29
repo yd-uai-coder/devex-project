@@ -171,7 +171,7 @@ backend/
 │   ├── repositories/    # データアクセス層 (DBへのCRUD操作)
 │   └── uml/             # UML設計図パイプライン(ステージ3。既存レイヤーの外側に独立パッケージとして追加、Phase 8〜)
 │       ├── domain/       # Semantic/Layout/StyleモデルのPydantic定義
-│       ├── layout/       # 自動レイアウト(decitima由来のエンジンを移植。Phase 9)
+│       ├── layout/       # 自動レイアウト(別プロジェクトの自作エンジンを移植。Phase 9)
 │       ├── export/       # draw.io Generator / SVG出力(決定的、AI非依存)
 │       ├── sync/         # 内部設計書への差し込み(document_writer。Phase 13)
 │       └── validation/   # ID重複・参照切れ・DFD規則等の検証

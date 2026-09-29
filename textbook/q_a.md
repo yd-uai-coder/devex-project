@@ -77,7 +77,7 @@
 1. Phase 7
 2. ユーザー確認: Phase 7着手にあたり、3リポジトリ(`devex`本体/`devex-api`/`devex-ui`)のブランチ運用を質問した。前回セッションの検討メモには「stage2-phase6の未コミット変更を整理し、ステージ3用のブランチを切る」という次アクションが残っていたが、本プロジェクトはPhase 0〜6まで一貫してmain直下にコミットしてきており、ブランチを切った前例が無かったため。
 3. ユーザーから、`devex-api`は既に`stage2-phase6`をmainへマージ済み(PR#1)・`stage3`ブランチ作成済みとの実際のgit状態が共有された。`devex`本体はステージ2分をpush済みでブランチ不要、`devex-ui`も同様にブランチ不要と指示された。結果: `devex-api`のみ`stage3`ブランチで進行し、他2リポジトリは`main`のまま。
-4. ユーザー確認: decitima `engine.py`移植スパイク(Phase 9に本実装を割り当て済み)をPhase 7でどこまで踏み込むか。
+4. ユーザー確認: レイアウトエンジン移植スパイク(Phase 9に本実装を割り当て済み)をPhase 7でどこまで踏み込むか。
 5. ユーザー選択: 「見通しの文書化のみ(推奨)」。実コードのコピーはPhase 9まで行わず、[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)に移植可否・リスクの文書化のみ行った。
 6. ユーザー確認: React Flow×Tamaguiスパイク(Phase 11に本実装を割り当て済み)の成果物の扱い。
 7. ユーザー選択: 「使い捨ての技術検証のみ(推奨)」。ただし検証精度を上げるため、Phase 11で実際に使う予定のルート/コンポーネント配置(`app/.../projects/[id]/uml/page.tsx` + `src/features/uml/components/UmlPageContent.tsx`)で検証した。詳細は[`Phase-7-3.md`](./Phase-7/Phase-7-3.md)参照。
@@ -104,3 +104,25 @@
 5. Claudeが業界動向を調査(WebSearch)。CQRS的な立場(Ardalis等)と、ArchUnit等で強制する「常にService経由」の立場、FastAPI公式`full-stack-fastapi-template`の慣習の3つを提示した。
 6. ユーザー指示: 「常にService経由、Repository直参照は層違反として禁止。この立場で統一したいのでproject関連もリファクタリングしてほしい」。理由: 将来の処理追加時の拡張性、設計判断の余地を減らしたいこと。
 7. 対応: `projects.py`/`prompt_templates.py`の直接Repository参照6箇所をServiceメソッド経由へ統一(`app/services/prompt_template.py`新設)。詳細は[`Phase-8-5.md`](./Phase-8/Phase-8-5.md)参照。`app/api/deps.py`の`get_current_project`は既存の認証境界の例外カテゴリとして対象外にした(ユーザーへ報告済み、異論なし)。
+
+## Phase 9(レイアウトエンジン移植・レーン/行割り当て・`/layout` API)
+
+1. Phase 9
+2. ユーザー指示: 「Phase9を開始する。過去のPhaseからの申し送り事項を見落とさない様注意」。
+3. 対応: `Phase-7-4.md`の申し送り5点・`appendix/stage3-requirements-organization.md`診断3・移植元エンジン`engine.py`全文を2エージェントで横断調査してから設計に入った。
+4. ユーザー確認: 移植元のlane/row前提(lane=AI出力のlayer/actor等)に対し、`ErElement`には`layer`が無くER図はモジュール依存・時系列を表す図ではない。Phase 9のレイアウトエンジンをER図にも適用する場合、laneの割り当てをどうするか。
+5. ユーザー選択: 「ER図は単純なフォールバック値で同じエンジンに乗せる」(推奨)。`lane=0`固定・`row`=定義順indexという機械的なフォールバックに決定した。詳細は[`Phase-9-1.md`](./Phase-9/Phase-9-1.md)参照。
+
+### Phase 9 ── 移植元プロジェクト名の除去
+
+1. Phase 9
+2. ユーザー指示: 移植元の別プロジェクト名はこのアプリケーションと直接関係が無いので使わないでほしい。
+3. ユーザー選択: 除去範囲は全ファイル(教材・samples・devex-api本体・docs・decision digest・本ログ・appendixの調査記録・`.gitignore`)。出自は「別プロジェクトの自作図生成エンジンから移植」という一般名の1行だけにする。
+4. 対応: パス・commitハッシュ・移植元のメソッド名による対比は削除し、設計判断はdevex単体の理由として書き直した。どうしても触れる必要がある箇所だけ「移植元エンジン」と呼ぶ。appendix D3の決定文も「コピー + 出自を一般名で明記」に更新した。
+
+### Phase 9 ── 製図処理へのライブラリ適用の検討
+
+1. Phase 9
+2. ユーザー質問: 製図に使う処理をライブラリ(例: networkx)で簡略化できないか。ただし、networkxは以前、自作DFSより消費メモリが多かった経験がある。その点も含めて検討したい。
+3. 回答: `app/uml/layout/`の各処理を評価した結果、採用したのは標準ライブラリ`graphlib.TopologicalSorter`だけ(`ranking.py`のKahnループを置き換え)。ランダムな2000グラフ(n≦30、循環あり)で結果が完全一致。計測(tracemallocのピーク値): 手書き版 約12KB / `graphlib`版 約16KB / networkx は`import`だけで約17.8MB(初回約2.7秒)、構築+計算で約52KB。networkxは置き換えられる量が`graphlib`と同じなので不採用。back edge検出は`dfs_labeled_edges`がback edgeを区別しないため自作DFSのまま。経路探索・仕上げ処理(graphviz/grandalf/libavoid)と線分判定(shapely)は、前提(レーン×行の格子・独自の許容誤差)に合わないので不採用。
+4. 対応方針: samples・devex-api本体の`ranking.py`を更新(samplesは#29の`Phase-9-1：更新`タグ付き)。評価の表は[`Phase-9-1.md`](./Phase-9/Phase-9-1.md)「ライブラリ適用の検討」節。decision digestへの要約はPhase 9完了時に行う(#24)。

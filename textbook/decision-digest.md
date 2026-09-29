@@ -309,7 +309,7 @@ Phase 5完了後の要件整理([`appendix/stage3-requirements-organization.md`]
 - **D5(図↔文書対応表)を確定**: コンポーネント図・ER図・処理別DFDはすべて`internal_design.md`(3.2節・3.3節)に寄せ、アクティビティ図のみ`external_design.md`(2.2節)に残した。`internal_design.md`が既にモジュール構造・データモデルを扱っており、`external_design.md`は利用者向け仕様のみという実際の文書構成を根拠にした。対応表は[`docs/internal_design.md`](../docs/internal_design.md) 3.3節「3. UML設計図パイプラインの図↔文書対応」に反映済み。
 - **`docs/*.md`への反映**: `requirements.md`(1.4節Could haveに1項目)、`external_design.md`(SCR-007・2.6節新設)、`internal_design.md`(`uml_diagrams`テーブル・データ辞書・D5対応表・UML APIエンドポイント)、`implementation_plan.md`(ステージ3節、Phase 7〜14のロードマップ、「2ステージ」→「3ステージ」)に反映した。Stage3全体は`docs/requirements.md`上ではCould have階層とした(Stage1=Must、Stage2=Shouldという既存の「Stage番号=優先度階層」の慣例を踏襲。Stage3内部のMust M1〜M9aとは別軸)。
 - **React Flow×Tamaguiスパイク(使い捨て)**: `@xyflow/react@^12.12.0`を`devex-ui`へ追加し、`app/.../projects/[id]/uml/page.tsx` + `src/features/uml/components/UmlPageContent.tsx`(Phase 11で使う予定の実配置)でダミーノードを描画する検証を行った。`npx tsc --noEmit`・`npm run lint`・`npm run test`(既存220件+新規1件)・`npm run build`すべて成功。jsdomの`ResizeObserver`未実装によるReact Flowのテスト失敗を懸念したが、Tamagui `Select`用に既存の`vitest.setup.ts`ポリフィルがそのまま効き、追加対応は不要だった。
-- **decitima `engine.py`移植の見通し(文書化のみ)**: 標準ライブラリのみ・約950行・自己完結・同一ユーザー所有(ライセンス障壁なし)と判定し、Phase 9移植時の申し送り事項5点(assertの例外化、O(n²〜n!)の計算量対策、未使用import等の整理、日本語文字幅推定の流用、既存テスト不在への対応)を[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)に記録した。コードのコピーは行っていない。
+- **レイアウトエンジン移植の見通し(文書化のみ)**: 標準ライブラリのみ・約950行・自己完結・同一ユーザー所有(ライセンス障壁なし)と判定し、Phase 9移植時の申し送り事項5点(assertの例外化、O(n²〜n!)の計算量対策、未使用import等の整理、日本語文字幅推定の流用、既存テスト不在への対応)を[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)に記録した。コードのコピーは行っていない。
 
 ## Phase 7完了後 ── `devex-ui`のルートグループ名リネーム(`(proteced)`→`(protected)`)にまつわる後始末
 
@@ -331,7 +331,7 @@ Phase 7完了報告後、ユーザーが個別テストを実行しようとし�
 - **`POST /diagrams`はPhase 8時点ではプレースホルダー**: M1(AI生成トリガー)の実装はPhase 10。Phase 8では指定notationの要素・関係が空のdraftを作るだけの`UmlDiagramService.create`として実装し、その旨をコード・教材双方に明記した。
 - **動作確認で2件のバグを発見・その場で修正**: (1) テストヘルパー`_create_project`が固定メールアドレスを使っていたため、同一テスト内で2プロジェクト作成すると`users.email`一意制約違反になっていた(呼び出しごとに一意化して解消)。(2) `UmlDiagramService.update`/`DataItemService.update`が、`onupdate=func.now()`のサーバー計算列(`updated_at`)を`commit`直後に同期アクセスして`MissingGreenlet`になっていた(`await self._session.refresh(...)`を追加して解消)。詳細は[`Phase-8-2.md`](./Phase-8/Phase-8-2.md)・[`Phase-8-3.md`](./Phase-8/Phase-8-3.md)「動作確認で見つかった落とし穴」参照。
 - **検証結果**: Phase 8分52件・全体222件のユニットテストが成功、`ruff check .`全通過、`uvx pyright`はPhase 8由来の新規エラー0件(既存の既知1件のみ残存)、`alembic history`でリビジョンチェーンの連結を確認。**Postgres実DBへの`alembic upgrade head`/`downgrade`往復確認は本セッションの環境制約(Docker不可・Postgres未起動)により未実施**。次回`docker compose`が使える環境での実行を推奨する(詳細は[`Phase-8-4.md`](./Phase-8/Phase-8-4.md)「動作確認」参照)。
-- **申し送り**: Phase 9着手時は[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)「Phase 9への申し送り」節(decitima `engine.py`移植時の対応点5点)を必ず参照すること(ユーザーからの明示的な指示)。DFD境界フロー一致検証の申し送りは本エントリ・[`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)を参照。
+- **申し送り**: Phase 9着手時は[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)「Phase 9への申し送り」節(レイアウトエンジン移植時の対応点5点)を必ず参照すること(ユーザーからの明示的な指示)。DFD境界フロー一致検証の申し送りは本エントリ・[`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)を参照。
 
 ## Phase 8完了後 ── ルーター層の設計統一(Repository直接参照の禁止)
 
@@ -344,3 +344,17 @@ Phase 8完了報告後、「routeから直接Repositoryを呼び出す場合とS
 - **対象外とした境界**: `app/api/deps.py`の`get_current_project`(内部で`ProjectRepository.get_by_id`を直接呼ぶ)は対象外とした。ルートハンドラ本体ではなく、既存の`get_current_user`と同じ「認証・所有権解決を担う共有依存関数」という既存の例外カテゴリに属すると判断したため。
 - **検証結果**: 全体231件のユニットテストが成功(新規追加分含む)、`ruff check .`全通過、`uvx pyright`は本改訂由来の新規エラー0件。動作確認中に、新規テストの`_create_project`ヘルパーが固定メールアドレスを使っていたための`users.email`一意制約違反(Phase 8-2で見つけたものと同種のバグ)を発見・その場で修正した。
 - **記録**: 変更元Phase(Phase 2・Phase 6)のintroductionにも1行の参照を追記済み([`Phase-2-introduction.md`](./Phase-2/Phase-2-introduction.md)・[`Phase-6-introduction.md`](./Phase-6/Phase-6-introduction.md)「後続Phaseでの改訂」節)。
+
+## Phase 9完了 ── レイアウトエンジン移植・レーン/行割り当て・`/layout` API
+
+Phase 8完了後の指示「Phase 9を開始する。過去のPhaseからの申し送り事項を見落とさない様注意」を受け、着手前に[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)「Phase 9への申し送り」5点・`appendix/stage3-requirements-organization.md`診断3・移植元エンジン(950行)全文を2エージェントで横断調査してから実装した。詳細は[`Phase-9-introduction.md`](./Phase-9/Phase-9-introduction.md)参照。
+
+- **申し送り5点への対応を確定**: (1) assertのうちnode()/edge()由来3点はM4構造検証との統合(実行前ゲート)で到達し得ない状態にし、実行時に本当に起こりうる2点(幅超過・経路探索失敗)のみ専用例外化。(2) ノード数上限(`MAX_ELEMENTS`共有)+`asyncio.to_thread`。(3) 未使用`import math`は移植せず、`_cost()`の重み定数は用途コメント付き定数に分解。(4) 日本語文字幅推定(`wrap`/`tw`/`cw`)は逐語移植。(5) 各章でゴールデンテストを新規作成。
+- **移植元に無い新規アルゴリズムを追加**: lane/rowの自動割り当て(`ranking.py`)。laneは要素の`layer`属性(初出順+フォールバックレーン)、rowはDFSによるback edge除去+最長経路法によるレイヤリング。移植元は人手指定前提のため、devex独自の設計判断として新規実装した。
+- **移植元との対比で2点を簡略化**: (1) `allow_swap`の手動選別を廃止し、行が全て自動算出であることを理由に**全要素を交差削減の対象**にする(`crossing_reduction.py`)。(2) `lane_weights`/`lane_w_hint`を持たず、全レーンを均等幅として扱う(`geometry.py`)。
+- **このセッションで確定した設計判断**: ER図のlane割り当ては`layer`を持たないため、`lane=0`固定+意味モデル内の定義順indexという機械的なフォールバックにする(ユーザーへ2案を提示し選択を得た。将来ER専用のレイアウト改善は別Phaseの余地として残す)。
+- **`layout_model`の設計**: 移植元で座標算出とSVG/drawio出力が同一コードだった点を踏まえ、Phase 9では`to_svg`/`to_drawio`(`app/uml/export/`、Phase 12)を含めず、ノード座標・辺の折れ点・lane/row・交差/重なり/衝突数のみを`LayoutModel`として永続化する設計にした。
+- **Phase 9完了後の相談で確定(依存ライブラリの方針)**: レイアウト処理へのライブラリ適用を検討し、採用したのは標準ライブラリ`graphlib.TopologicalSorter`(`ranking.py`の最長経路レイヤリング)だけ。networkxは`import`だけで約17.8MBかかり、置き換えられる量が`graphlib`と同じなので不採用。経路探索・仕上げ処理・線分判定は、レーン×行の格子という前提に合うライブラリが無いので自作のまま。以後も「標準ライブラリで足りるなら第三者ライブラリを入れない」を基準にする。評価の表は[`Phase-9-1.md`](./Phase-9/Phase-9-1.md)「ライブラリ適用の検討」節。
+- **Phase 9完了後の相談で確定(出自表記)**: 移植元の別プロジェクト名は全ファイルで使わない。出自は「別プロジェクトの自作図生成エンジンから移植」の一般名1行だけにする(appendix D3を更新)。
+- **検証結果**: Phase 9分23件・全体261件のユニットテストが成功、`ruff check .`全通過、`uvx pyright`はPhase 9由来の新規エラー0件、`alembic history`で既存チェーンに変更が無いことを確認(Phase 9は新規マイグレーション不要、Phase 8で確保済みの列・テーブルを使用)。
+- **申し送り**: Phase 10(AI生成)は要素への`layer`設定の責務を持つ。DFD境界フロー一致検証(Phase 8からの申し送り)は診断8本文どおりフラットな複数図構成を前提に設計すること。Phase 12(export)は`LayoutModel`がexportに必要な情報を過不足なく持つか確認すること。

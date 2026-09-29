@@ -70,4 +70,4 @@
 
 ## 次のフェーズ
 
-**Phase 9**: レイアウトエンジン移植(decitima由来)・レーン/行割り当て・`/layout` API。着手前に[`Phase-7-4.md`](../Phase-7/Phase-7-4.md)「Phase 9への申し送り」節(decitima `engine.py`移植時の対応点5点)を必ず参照すること。
+**Phase 9**: レイアウトエンジン移植・レーン/行割り当て・`/layout` API。着手前に[`Phase-7-4.md`](../Phase-7/Phase-7-4.md)「Phase 9への申し送り」節(レイアウトエンジン移植時の対応点5点)を必ず参照すること。
