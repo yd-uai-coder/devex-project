@@ -1,9 +1,19 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
 # Phase-2-5:追記 ── uuid, urllib.parse.quote, fastapi.responses.Response, app.services.errors.DocumentNotFoundError
 # Phase-6-1:追記 ── app.schemas.document.DocType, app.services.doc_generator_service.DocGeneratorService
+# Phase-8-5：更新(「常にService経由、Repository直参照は層違反として禁止」という方針へ統一。
+#   Repository4種・IntakeFileRead・DocumentNotFoundErrorへの直接importを削除し、
+#   各Serviceの新設メソッド経由に置き換えた。詳細はPhase-8-5.md参照)
+# from app.repositories.chat_history import ChatHistoryRepository
+# from app.repositories.generated_document import GeneratedDocumentRepository
+# from app.repositories.intake_file import IntakeFileRepository
+# from app.repositories.project import ProjectRepository
+# from app.schemas.project import IntakeFileRead, ProjectDetail, ProjectRead
+# from app.services.errors import DocumentNotFoundError, GenerationFailedError, LLMQuotaExceededError
+# ↓↓
 import json
 import uuid
 from typing import Annotated
@@ -14,17 +24,13 @@ from fastapi.responses import Response, StreamingResponse
 
 from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
 from app.core.errors import BadRequestError
-from app.repositories.chat_history import ChatHistoryRepository
-from app.repositories.generated_document import GeneratedDocumentRepository
-from app.repositories.intake_file import IntakeFileRepository
-from app.repositories.project import ProjectRepository
 from app.schemas.document import DocType, GeneratedDocumentRead
 from app.schemas.generation import HearingCompletionCheck
 from app.schemas.hearing import ChatHistoryRead, HearingMessageRequest
-from app.schemas.project import IntakeFileRead, ProjectDetail, ProjectRead
+from app.schemas.project import ProjectDetail, ProjectRead
 from app.services.chat_service import ChatService
 from app.services.doc_generator_service import DocGeneratorService, generate_documents
-from app.services.errors import DocumentNotFoundError, GenerationFailedError, LLMQuotaExceededError
+from app.services.errors import GenerationFailedError, LLMQuotaExceededError
 from app.services.project import ProjectService, UploadedFileInput
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -67,24 +73,31 @@ async def create_project(
 @router.get("", response_model=list[ProjectRead])
 async def list_projects(session: SessionDep, current_user: CurrentUserDep) -> list[ProjectRead]:
     """認証ユーザーのプロジェクト一覧を取得する。"""
-    projects = await ProjectRepository(session).list_for_user(current_user.id)
+    # Phase-8-5：更新(ルーターがRepositoryを直接参照しない方針へ統一)
+    # projects = await ProjectRepository(session).list_for_user(current_user.id)
+    # ↓↓
+    projects = await ProjectService(session).list_for_user(current_user.id)
     return [ProjectRead.model_validate(p) for p in projects]
 
 
 @router.get("/{project_id}", response_model=ProjectDetail)
 async def get_project(session: SessionDep, current_project: CurrentProjectDep) -> ProjectDetail:
     """プロジェクトの詳細(初期ヒアリング入力・添付ファイルサマリを含む)を取得する。"""
-    intake_files = await IntakeFileRepository(session).list_for_project(current_project.id)
-    return ProjectDetail(
-        id=current_project.id,
-        title=current_project.title,
-        status=current_project.status,  # type: ignore[arg-type]
-        created_at=current_project.created_at,
-        updated_at=current_project.updated_at,
-        intake=current_project.intake,
-        intake_files=[IntakeFileRead.model_validate(f) for f in intake_files],
-        template_id=current_project.template_id,  # Phase-6-3:追記
-    )
+    # Phase-8-5：更新(IntakeFileRepositoryの直接参照・ProjectDetailの組み立てを
+    # ProjectService.get_detailへ集約)
+    # intake_files = await IntakeFileRepository(session).list_for_project(current_project.id)
+    # return ProjectDetail(
+    #     id=current_project.id,
+    #     title=current_project.title,
+    #     status=current_project.status,  # type: ignore[arg-type]
+    #     created_at=current_project.created_at,
+    #     updated_at=current_project.updated_at,
+    #     intake=current_project.intake,
+    #     intake_files=[IntakeFileRead.model_validate(f) for f in intake_files],
+    #     template_id=current_project.template_id,  # Phase-6-3:追記
+    # )
+    # ↓↓
+    return await ProjectService(session).get_detail(current_project)
 
 
 @router.post("/{project_id}/chat")
@@ -108,7 +121,10 @@ async def get_hearing_history(
     session: SessionDep, current_project: CurrentProjectDep
 ) -> list[ChatHistoryRead]:
     """プロジェクトのチャット履歴を取得する。"""
-    history = await ChatHistoryRepository(session).list_for_project(current_project.id)
+    # Phase-8-5：更新(ルーターがRepositoryを直接参照しない方針へ統一)
+    # history = await ChatHistoryRepository(session).list_for_project(current_project.id)
+    # ↓↓
+    history = await ChatService(session).list_history(current_project.id)
     return [ChatHistoryRead.model_validate(entry) for entry in history]
 
 
@@ -166,9 +182,12 @@ async def list_generated_documents(
     #     current_project.id
     # )
     # ↓↓
-    documents = await GeneratedDocumentRepository(session).list_current_for_project(
-        current_project.id
-    )
+    # Phase-8-5：更新(ルーターがRepositoryを直接参照しない方針へ統一)
+    # documents = await GeneratedDocumentRepository(session).list_current_for_project(
+    #     current_project.id
+    # )
+    # ↓↓
+    documents = await DocGeneratorService(session).list_current_documents(current_project.id)
     return [GeneratedDocumentRead.model_validate(d) for d in documents]
 
 
@@ -181,9 +200,15 @@ async def download_generated_document(
     (docs/external_design.md 2.5節4項: 本リポジトリ`docs/`配下の実ファイル名
     `requirements.md`/`external_design.md`/`internal_design.md`/`implementation_plan.md`
     に合わせ`{document_type}.md`とする)。"""
-    document = await GeneratedDocumentRepository(session).get_by_id(doc_id)
-    if document is None or document.project_id != current_project.id:
-        raise DocumentNotFoundError(f"Document {doc_id} not found")
+    # Phase-8-5：更新(所有権チェックをDocGeneratorService.get_documentへ集約。ルーターが
+    # Repositoryを直接参照しない方針へ統一)
+    # document = await GeneratedDocumentRepository(session).get_by_id(doc_id)
+    # if document is None or document.project_id != current_project.id:
+    #     raise DocumentNotFoundError(f"Document {doc_id} not found")
+    # ↓↓
+    document = await DocGeneratorService(session).get_document(
+        project=current_project, doc_id=doc_id
+    )
 
     filename = f"{document.doc_type}.md"
     return Response(

@@ -76,3 +76,4 @@ Phase 1〜5(ステージ1/MVP)は完了・実VPSデプロイまで確認済み�
 ## 後続 Phase での改訂(#12)
 
 - [`Phase-6-6.md`](./Phase-6-6.md)で、6-1/6-2の「復元は新バージョンとして追加」を「復元は表示中バージョンの切替(新バージョンは作らない)」へ改訂した(`generated_documents.is_current`追加)。6-1・6-2本文の該当節に改訂注記あり。
+- [`Phase-8-5.md`](../Phase-8/Phase-8-5.md)で、6-3が作成した`app/api/routes/prompt_templates.py`を「ルーターはRepositoryを直接参照しない(常にService経由)」という方針へ改訂し、`app/services/prompt_template.py`を新設した。

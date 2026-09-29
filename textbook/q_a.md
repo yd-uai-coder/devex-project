@@ -71,3 +71,36 @@
 1. Phase 6(ステージ2デプロイ後の本番確認)
 2. ユーザー報告: 「ログイン状態からF5でブラウザを更新するとログイン状態が切れる」(本番 devex.uandi-tech.com)。DevTools・VPSログの確認を経て、`refresh`のRequest URLが`https://devex-api.uandi-tech.com//api/v1/auth/refresh`(`//`二重)で、`cookie:`ヘッダが付いていないことが判明。
 3. 原因は、VercelのNEXT_PUBLIC_API_URLの末尾スラッシュ。Cookieの`Path=/api/v1/auth`が`//api/...`にパスマッチせず送られなかった(サーバー側のRedis・Set-Cookieは正常)。対応: Vercelの環境変数から末尾スラッシュを削除して再デプロイ+`src/lib/api/base-url.ts`で末尾スラッシュを除去する再発防止([`Phase-6-6.md`](./Phase-6/Phase-6-6.md)「API ベースURLの末尾スラッシュ除去」参照)。
+
+## Phase 7(ステージ3着手)
+
+1. Phase 7
+2. ユーザー確認: Phase 7着手にあたり、3リポジトリ(`devex`本体/`devex-api`/`devex-ui`)のブランチ運用を質問した。前回セッションの検討メモには「stage2-phase6の未コミット変更を整理し、ステージ3用のブランチを切る」という次アクションが残っていたが、本プロジェクトはPhase 0〜6まで一貫してmain直下にコミットしてきており、ブランチを切った前例が無かったため。
+3. ユーザーから、`devex-api`は既に`stage2-phase6`をmainへマージ済み(PR#1)・`stage3`ブランチ作成済みとの実際のgit状態が共有された。`devex`本体はステージ2分をpush済みでブランチ不要、`devex-ui`も同様にブランチ不要と指示された。結果: `devex-api`のみ`stage3`ブランチで進行し、他2リポジトリは`main`のまま。
+4. ユーザー確認: decitima `engine.py`移植スパイク(Phase 9に本実装を割り当て済み)をPhase 7でどこまで踏み込むか。
+5. ユーザー選択: 「見通しの文書化のみ(推奨)」。実コードのコピーはPhase 9まで行わず、[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)に移植可否・リスクの文書化のみ行った。
+6. ユーザー確認: React Flow×Tamaguiスパイク(Phase 11に本実装を割り当て済み)の成果物の扱い。
+7. ユーザー選択: 「使い捨ての技術検証のみ(推奨)」。ただし検証精度を上げるため、Phase 11で実際に使う予定のルート/コンポーネント配置(`app/.../projects/[id]/uml/page.tsx` + `src/features/uml/components/UmlPageContent.tsx`)で検証した。詳細は[`Phase-7-3.md`](./Phase-7/Phase-7-3.md)参照。
+
+## Phase 8(意味モデル・データ辞書・CRUD/validate API)
+
+1. Phase 8
+2. ユーザー確認: `docs/internal_design.md`が「Phase 8で確定する」と明記していた`DataItem`の永続化実体(専用テーブルかプロジェクト単位のJSONBか)をどちらにするか。
+3. ユーザー選択: 「専用テーブル `data_items`」(推奨)。項目単位のCRUD・一意性制約・参照検証のしやすさを理由に採用。
+4. ユーザー確認: `DataItem`を操作する専用APIをPhase 8で公開するか(`docs/internal_design.md`のエンドポイント表にはdiagram系のみでDataItem用エンドポイントが未記載だった)。
+5. ユーザー選択: 「最小限のCRUD APIを今追加」(推奨)。`/projects/{id}/uml/data-items`系として実装。
+6. ユーザー確認: DFD検証規則「上位図と下位図の境界フローが一致する」(診断8)は`uml_diagrams`に階層列が無いため今のままでは検証できない。列を先に追加するか、規則をPhase 10へ申し送るか。
+7. ユーザーから、列追加の有無でPhase 10の設計判断がどう変わるか(見立て)を求められた。Claudeは診断8本文の「APIエンドポイント/バッチごとに1枚」という記述が示すフラットな複数図構成の可能性、列だけ追加してもノード単位の対応情報が別途必要になり手戻りになりうる点を提示した。
+8. ユーザー選択: 「案A: 列追加を見送り、規則をPhase 10へ申し送り」。ただし「Phase10開始時の設計判断は診断8本文どおりフラットな複数図に留める構成を前提に行う」という前提を明示的に付記するよう指示があった。この前提は[`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)・[`decision-digest.md`](../decision-digest.md)双方に反映済み。
+9. ユーザー指示: 「Phase7-4にPhase9への申し送り事項の記載がある。Phase9開始時に申し送りを見落とさないようにしておいて欲しい」。
+10. 対応: [`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)「次のフェーズ」に明記し、[`decision-digest.md`](../decision-digest.md)のPhase 8完了エントリにも参照を残した。
+
+## Phase 8完了後(ルーター層の設計統一)
+
+1. Phase 8完了後
+2. ユーザー質問: 「routeから直接Repositoryを呼び出す場合とServiceを経由して処理する場合の設計判断が知りたい」。
+3. Claudeが既存コードを調査し、「単純な読み取りはRepository直呼び、書き込み・複数Repo調整・外部呼び出しはService経由」という暗黙の基準を提示。Phase 8の`uml.py`ではこれより厳格に「全操作をService経由」で統一したことも説明した。
+4. ユーザー確認: 「今回の判断とは異なる現場実務上の暗黙のルールのような構成がないか確認してほしい」。
+5. Claudeが業界動向を調査(WebSearch)。CQRS的な立場(Ardalis等)と、ArchUnit等で強制する「常にService経由」の立場、FastAPI公式`full-stack-fastapi-template`の慣習の3つを提示した。
+6. ユーザー指示: 「常にService経由、Repository直参照は層違反として禁止。この立場で統一したいのでproject関連もリファクタリングしてほしい」。理由: 将来の処理追加時の拡張性、設計判断の余地を減らしたいこと。
+7. 対応: `projects.py`/`prompt_templates.py`の直接Repository参照6箇所をServiceメソッド経由へ統一(`app/services/prompt_template.py`新設)。詳細は[`Phase-8-5.md`](./Phase-8/Phase-8-5.md)参照。`app/api/deps.py`の`get_current_project`は既存の認証境界の例外カテゴリとして対象外にした(ユーザーへ報告済み、異論なし)。

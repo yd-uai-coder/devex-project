@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -93,3 +93,33 @@ class GenerationFailedError(BadGatewayError):
 
     # Phase-2-5:追記
     code: ClassVar[str | None] = "LLM_API_ERROR"
+
+
+# Phase-8-2:追記 ── ステージ3(UML設計図パイプライン)
+class UmlDiagramNotFoundError(NotFoundError):
+    """指定したUML図IDが存在しない、または他プロジェクトのものである場合に送出する。"""
+
+    code: ClassVar[str | None] = "RESOURCE_NOT_FOUND"
+
+
+# Phase-8-2:追記
+class DataItemNotFoundError(NotFoundError):
+    """指定したデータ項目IDが存在しない、または他プロジェクトのものである場合に送出する。"""
+
+    code: ClassVar[str | None] = "RESOURCE_NOT_FOUND"
+
+
+# Phase-8-2:追記
+class UmlDiagramVersionConflictError(ConflictError):
+    """UML図の更新(PUT)時、リクエストのversionがDB上の最新versionと一致しない場合に送出する
+    (楽観ロック)。既存コードベースに前例の無い新規パターン(generated_documents.versionは
+    「再生成のたびに増える版数」であり、書き込み競合検知の仕組みではない)。"""
+
+    code: ClassVar[str | None] = "VERSION_CONFLICT"
+
+
+# Phase-8-2:追記
+class DataItemNameConflictError(ConflictError):
+    """同一プロジェクト内に同名のデータ項目が既に存在する場合に送出する(data_items.name一意制約)。"""
+
+    code: ClassVar[str | None] = "DATA_ITEM_NAME_CONFLICT"

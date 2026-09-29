@@ -1,8 +1,9 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
 # Phase-6-5:追記 ── structlog
+# Phase-8-5:追記 ── app.models.project.Project
 import uuid
 
 import structlog
@@ -13,6 +14,7 @@ from app.ai.llm.gemini import extract_text_content, get_gemini_llm
 from app.core.database import AsyncSessionLocal
 from app.models.chat_history import ChatHistory
 from app.models.generated_document import GeneratedDocument
+from app.models.project import Project
 from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.generated_document import DOC_TYPES, GeneratedDocumentRepository
 from app.repositories.project import ProjectRepository
@@ -261,6 +263,22 @@ class DocGeneratorService:
         await self._session.commit()
         # Phase-6-5:追記 ── ドキュメント生成完了(主要ライフサイクルイベント、内部設計書3.4節INFO)
         logger.info("documents_generated", project_id=str(project_id), doc_count=len(DOC_TYPES))
+
+    # Phase-8-5:追記 ── ルーターがRepositoryを直接参照しない方針への統一(list_generated_documents用)
+    async def list_current_documents(self, project_id: uuid.UUID) -> list[GeneratedDocument]:
+        """生成された設計書(各doc_typeの現在表示中のバージョンのみ)一覧を取得する。"""
+        return await self._documents.list_current_for_project(project_id)
+
+    # Phase-8-5:追記 ── 同上(download_generated_document用。以前はルーターに所有権チェックが
+    # 手書きされていた)
+    async def get_document(self, *, project: Project, doc_id: uuid.UUID) -> GeneratedDocument:
+        """指定ドキュメントを1件取得する(他プロジェクトのものは404扱い)。
+        GeneratedDocumentRepositoryはProjectRepositoryのような所有権スコープの
+        get_by_idを持たないため、その意味づけ(見つからなければNotFound)をここに集約する。"""
+        document = await self._documents.get_by_id(doc_id)
+        if document is None or document.project_id != project.id:
+            raise DocumentNotFoundError(f"Document {doc_id} not found")
+        return document
 
     # Phase-6-1:追記 ── SCR-006(バージョン履歴管理画面)向け。写経レベル: コア(復元の意味論
     # ─新バージョンとして追加、既存版は上書きしない─ は仕様診断#28で確定した設計判断のため)。

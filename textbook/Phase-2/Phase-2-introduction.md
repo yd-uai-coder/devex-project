@@ -68,6 +68,10 @@ CLAUDE.md #21(納期モード)は教材の記述の厚さ(#14 SUT/ドライバ/�
 
 [`Phase-2-5.md`](./Phase-2-5.md)末尾「Phase 2全体としての既知の残課題」参照(SSE切断時の非永続化、PDF抽出のノーリトライ、実Gemini API未検証)。
 
+## 後続 Phase での改訂(#12)
+
+- [`Phase-8-5.md`](../Phase-8/Phase-8-5.md)で、本Phaseが作成した`app/api/routes/projects.py`・`app/services/{project,chat_service,doc_generator_service}.py`の一部ルート/メソッドを「ルーターはRepositoryを直接参照しない(常にService経由)」という方針へ改訂した。
+
 ## 次のフェーズ
 
 **Phase 3**: フロントエンド開発(3-1 認証画面・ダッシュボード、3-2 チャットヒアリングUI、3-3 ドキュメントプレビューUI)。詳細は [`Phase-0-2.md`](../Phase-0/Phase-0-2.md) のロードマップを参照。ユーザーが「Phase 3を開始する」と発話するまでは着手しない(#5)。

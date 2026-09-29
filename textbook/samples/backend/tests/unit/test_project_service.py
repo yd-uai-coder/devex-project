@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5
 # Phase-6-3:追記 ── uuid, app.models.prompt_template.PromptTemplate,
 #   app.services.errors.PromptTemplateNotFoundError
 # Phase-6-5:追記 ── structlog.testing
@@ -175,6 +175,35 @@ async def test_create_rejects_unknown_template_id(db_session: AsyncSession) -> N
         await service.create(
             user_id=user.id, intake={"system_overview": "s"}, files=[], template_id=uuid.uuid4()
         )
+
+
+# Phase-8-5:追記 ── ルーターがRepositoryを直接参照しない方針へ統一した際に新設したメソッドのテスト
+async def test_list_for_user_returns_only_that_users_projects(db_session: AsyncSession) -> None:
+    user = await _create_user(db_session)
+    other_user = User(email="other@example.com", hashed_password="x")
+    db_session.add(other_user)
+    await db_session.flush()
+    service = ProjectService(db_session)
+    await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[])
+    await service.create(user_id=other_user.id, intake={"system_overview": "other"}, files=[])
+
+    result = await service.list_for_user(user.id)
+
+    assert len(result) == 1
+    assert result[0].title == "s"
+
+
+async def test_get_detail_includes_intake_files(db_session: AsyncSession) -> None:
+    user = await _create_user(db_session)
+    service = ProjectService(db_session)
+    file = UploadedFileInput(filename="memo.txt", data="既存Excel管理からの移行".encode())
+    project = await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+
+    detail = await service.get_detail(project)
+
+    assert detail.id == project.id
+    assert len(detail.intake_files) == 1
+    assert detail.intake_files[0].filename == "memo.txt"
 
 
 # Phase-6-5:追記

@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,6-6
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,6-6,8-5
 # Phase-6-6:追記 ── langchain_core.messages.AIMessageChunk, app.services.chat_service._COMPLETION_CHECK_PROMPT
 # Phase-2-3:追記 ── pytest, app.api.routes.projects.get_hearing_completion
 # Phase-6-3:追記 ── app.models.prompt_template.PromptTemplate
@@ -33,6 +33,21 @@ async def _create_project(session: AsyncSession) -> Project:
     session.add(project)
     await session.flush()
     return project
+
+
+# Phase-8-5:追記 ── ルーターがRepositoryを直接参照しない方針へ統一した際に新設したメソッドのテスト
+async def test_list_history_returns_entries_in_chronological_order(
+    db_session: AsyncSession,
+) -> None:
+    project = await _create_project(db_session)
+    repo = ChatHistoryRepository(db_session)
+    await repo.add(project_id=project.id, sender="user", message="1件目")
+    await repo.add(project_id=project.id, sender="ai", message="2件目")
+    service = ChatService(db_session)
+
+    history = await service.list_history(project.id)
+
+    assert [h.message for h in history] == ["1件目", "2件目"]
 
 
 # Phase-6-5:追記

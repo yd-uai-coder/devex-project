@@ -1,8 +1,9 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5
 # 写経レベル: コア ── 添付ファイルのバリデーション順序・失敗時の非ブロッキング方針など、ドメイン判断を体現する箇所。
 # Phase-6-3:追記 ── app.repositories.prompt_template.PromptTemplateRepository,
 #   app.services.errors.PromptTemplateNotFoundError
 # Phase-6-5:追記 ── structlog
+# Phase-8-5:追記 ── app.schemas.project.IntakeFileRead, app.schemas.project.ProjectDetail
 import uuid
 from dataclasses import dataclass
 
@@ -14,6 +15,7 @@ from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.intake_file import IntakeFileRepository
 from app.repositories.project import ProjectRepository
 from app.repositories.prompt_template import PromptTemplateRepository
+from app.schemas.project import IntakeFileRead, ProjectDetail
 from app.services.errors import (
     FileTooLargeError,
     PromptTemplateNotFoundError,
@@ -87,6 +89,29 @@ class ProjectService:
         # system_overview等の本文は記録しない(project_idのみ)。
         logger.info("project_created", project_id=str(project.id))
         return project
+
+    # Phase-8-5:追記 ── ルーターがRepositoryを直接参照しない方針への統一(list_projects用)
+    async def list_for_user(self, user_id: uuid.UUID) -> list[Project]:
+        """指定ユーザーのプロジェクト一覧を取得する。"""
+        return await self._projects.list_for_user(user_id)
+
+    # Phase-8-5:追記 ── 同上(get_project用。以前はルーターにIntakeFileRepositoryの呼び出しと
+    # ProjectDetailの組み立てが直書きされていた)
+    async def get_detail(self, project: Project) -> ProjectDetail:
+        """プロジェクトの詳細(初期ヒアリング入力・添付ファイルサマリを含む)を返す。
+        Project単体のカラムに加え、別Repository(IntakeFile)の取得・整形も
+        このメソッドに集約する(ルーター層はRepositoryを直接参照しない)。"""
+        intake_files = await self._intake_files.list_for_project(project.id)
+        return ProjectDetail(
+            id=project.id,
+            title=project.title,
+            status=project.status,  # type: ignore[arg-type]
+            created_at=project.created_at,
+            updated_at=project.updated_at,
+            intake=project.intake,
+            intake_files=[IntakeFileRead.model_validate(f) for f in intake_files],
+            template_id=project.template_id,
+        )
 
     def _validate_file(self, file: UploadedFileInput) -> None:
         """対応形式・サイズ上限を満たさないファイルがあれば、記録前にまとめて弾く。"""

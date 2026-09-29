@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-3
+# 作成：Phase-2-1｜更新：Phase-6-3,8-2
 # 写経レベル: 定型 ── 既存User/Conversationと同型のORMモデル定義。
 import uuid
 from datetime import datetime
@@ -9,10 +9,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base, PortableJSON
 
+# Phase-8-2:追記 ── app.models.data_item.DataItem, app.models.uml_diagram.UmlDiagram
 if TYPE_CHECKING:
     from app.models.chat_history import ChatHistory
+    from app.models.data_item import DataItem
     from app.models.generated_document import GeneratedDocument
     from app.models.intake_file import IntakeFile
+    from app.models.uml_diagram import UmlDiagram
     from app.models.user import User
 
 
@@ -53,5 +56,12 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan"
     )
     intake_files: Mapped[list["IntakeFile"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    # Phase-8-2:追記 ── ステージ3(UML設計図パイプライン)
+    data_items: Mapped[list["DataItem"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    uml_diagrams: Mapped[list["UmlDiagram"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )

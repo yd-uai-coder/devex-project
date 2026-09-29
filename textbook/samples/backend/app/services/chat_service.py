@@ -1,11 +1,13 @@
-# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6
+# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5
 # 写経レベル: コア ── MVPコアループ(ヒアリングフロー)そのもの。LangGraphを使わない設計判断も含む。
 # Phase-2-5:追記 ── app.services.llm_retry.invoke_with_retry
 # Phase-6-3:追記 ── app.models.prompt_template.PromptTemplate,
 #   app.repositories.prompt_template.PromptTemplateRepository
 # Phase-6-5:追記 ── time, structlog, app.services.llm_retry.prompt_char_count
+# Phase-8-5:追記 ── uuid
 import json
 import time
+import uuid
 from collections.abc import AsyncIterator
 
 import structlog
@@ -99,6 +101,11 @@ class ChatService:
         self._chat_histories = ChatHistoryRepository(session)
         # Phase-6-3:追記
         self._prompt_templates = PromptTemplateRepository(session)
+
+    # Phase-8-5:追記 ── ルーターがRepositoryを直接参照しない方針への統一(get_hearing_history用)
+    async def list_history(self, project_id: uuid.UUID) -> list[ChatHistory]:
+        """プロジェクトのチャット履歴を送信日時の昇順(発生順)で取得する。"""
+        return await self._chat_histories.list_for_project(project_id)
 
     async def stream_reply(
         self, project: Project, *, user_message: str, llm=None

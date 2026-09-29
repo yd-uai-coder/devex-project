@@ -120,6 +120,36 @@
 
 **保存方針**: 元ファイルの実体(バイナリ)は保持しない。テキスト化後は破棄し、`extracted_text`のみ永続化する(オブジェクトストレージ非依存)。テキスト化方式は`file_type`によって異なる: `txt`/`md`はファイル内容をUTF-8テキストとしてそのまま読み込む(LLM呼び出し不要)。`pdf`はGeminiのネイティブなファイル理解でテキスト化する(図・レイアウトの解釈を含む。詳細は3.3節・[外部設計書](external_design.md) 2.5節5項参照)。対応形式をtxt/Markdown/PDFの3種類に限定しているのは、Word/Excel/PowerPointをLLMへ直接渡せず、同水準の図解釈を行うにはPDF変換用の新規インフラ(LibreOffice等)が必要になるため(導入しない判断。[decision-digest](../textbook/decision-digest.md)参照)。
 
+#### ⑦ `uml_diagrams` テーブル(ステージ3、Phase 8で新設予定)
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK, DEFAULT gen_random_uuid() | 図ID |
+| project_id | UUID | FK (`projects.id`), NOT NULL | プロジェクトID |
+| view | VARCHAR(50) | NOT NULL | 設計ビュー(`structure`/`data`/`dataflow`等) |
+| notation | VARCHAR(50) | NOT NULL | 図記法(`component`/`er`/`dfd`。初期実装対象) |
+| semantic_model | JSONB | NOT NULL | 意味モデル(要素・関係。Single Source of Truth) |
+| layout_model | JSONB | NULL可 | 自動レイアウト結果(ノード座標・辺の折れ点。手動移動後は折れ点を破棄しsmoothstep/orthogonalEdgeStyleに委ねる) |
+| style_model | JSONB | NULL可 | 表示スタイル |
+| status | VARCHAR(20) | NOT NULL, DEFAULT 'draft' | `draft`/`reviewing`/`approved`/`exported` |
+| version | INT | NOT NULL, DEFAULT 1 | 楽観ロック用バージョン |
+| source_doc_versions | JSONB | NULL可 | 生成元とした各`generated_documents`のバージョン番号(文書再生成時の陳腐化検知用) |
+| created_at / updated_at | TIMESTAMP | NOT NULL | 作成・更新日時 |
+
+所有権は`projects.user_id`経由で既存の`CurrentProjectDep`により検証する(既存パターンを踏襲)。
+
+#### ⑧ `data_items` テーブル(ステージ3、Phase 8で新設)
+
+**データ辞書(`DataItem`、プロジェクト共通、ステージ3)**: DFDの全フローが参照する「名前+フィールド名の一覧」を保持し、自由記述ラベルを禁止する(処理ノードには入力→出力の対応と変換の1行説明を持たせる)。プロジェクト全図で共有することで、ER図のテーブルやAPIスキーマと同じデータ項目を指しているかを確認できる基礎にする。永続化の実体は**専用テーブルとして確定した**(Phase 8。項目単位のCRUD・一意性制約・「どこからも参照されないデータ項目がない」検証を素直に書けることを優先し、プロジェクト単位のJSONBには寄せなかった。詳細は[`textbook/decision-digest.md`](../textbook/decision-digest.md)参照)。
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK, DEFAULT gen_random_uuid() | データ項目ID |
+| project_id | UUID | FK (`projects.id`, ondelete CASCADE), NOT NULL | プロジェクトID |
+| name | VARCHAR(255) | NOT NULL, `UNIQUE(project_id, name)` | データ項目名(プロジェクト内一意) |
+| fields | JSONB | NOT NULL, DEFAULT `[]` | フィールド一覧。各要素は`{name, type?, required?}`(型・必須は任意項目) |
+| created_at / updated_at | TIMESTAMP | NOT NULL | 作成・更新日時 |
+
 ---
 
 ## 3.3 バックエンド処理・モジュール設計
@@ -138,7 +168,13 @@ backend/
 │   ├── services/        # ビジネスロジック層
 │   │   ├── chat_service.py      # LangChainを用いた対話・ヒアリング制御
 │   │   └── doc_generator_service.py # 4種のドキュメント一括生成ロジック
-│   └── repositories/    # データアクセス層 (DBへのCRUD操作)
+│   ├── repositories/    # データアクセス層 (DBへのCRUD操作)
+│   └── uml/             # UML設計図パイプライン(ステージ3。既存レイヤーの外側に独立パッケージとして追加、Phase 8〜)
+│       ├── domain/       # Semantic/Layout/StyleモデルのPydantic定義
+│       ├── layout/       # 自動レイアウト(decitima由来のエンジンを移植。Phase 9)
+│       ├── export/       # draw.io Generator / SVG出力(決定的、AI非依存)
+│       ├── sync/         # 内部設計書への差し込み(document_writer。Phase 13)
+│       └── validation/   # ID重複・参照切れ・DFD規則等の検証
 ```
 
 * **`chat_service.py`**:
@@ -169,6 +205,33 @@ backend/
 | **GET** | `/api/v1/projects/{id}/documents/{doc_type}/versions` | （※ステージ2、SCR-006向け）指定doc_typeの保持済みバージョン一覧(最大3件)を取得 | 必要 |
 | **POST** | `/api/v1/projects/{id}/documents/{doc_type}/versions/{version}/restore` | （※ステージ2、SCR-006向け）指定バージョンを表示中(`is_current`)に切り替える。新バージョンは作らない(3.2節バージョニング方針参照) | 必要 |
 | **GET** | `/api/v1/prompt-templates` | （※ステージ2、SCR-003向け）選択可能なプロンプトテンプレート一覧の取得(固定シードデータ) | 必要 |
+| **POST** | `/api/v1/projects/{id}/uml/diagrams` | （※ステージ3、Phase 8）UML設計図の生成トリガー | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}` | （※ステージ3、Phase 8）UML図の取得 | 必要 |
+| **PUT** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}` | （※ステージ3、Phase 8）UML Model全体の更新(`version`による楽観ロック) | 必要 |
+| **POST** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/validate` | （※ステージ3、Phase 8）バリデーション実行 | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/data-items` | （※ステージ3、Phase 8）データ辞書一覧取得 | 必要 |
+| **POST** | `/api/v1/projects/{id}/uml/data-items` | （※ステージ3、Phase 8）データ項目作成 | 必要 |
+| **PUT** | `/api/v1/projects/{id}/uml/data-items/{item_id}` | （※ステージ3、Phase 8）データ項目更新 | 必要 |
+| **DELETE** | `/api/v1/projects/{id}/uml/data-items/{item_id}` | （※ステージ3、Phase 8）データ項目削除 | 必要 |
+| **POST** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/layout` | （※ステージ3、Phase 9）自動レイアウトの実行 | 必要 |
+| **POST** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/approve` | （※ステージ3、Phase 12）承認(バリデーションNGの場合は不可) | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/export/drawio` | （※ステージ3、Phase 12）`.drawio`ダウンロード(approvedのみ) | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/export/svg` | （※ステージ3、Phase 12）SVGダウンロード(approvedのみ) | 必要 |
+
+### 3. UML設計図パイプラインの図↔文書対応(ステージ3、D5)
+
+Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と、本文書内の対応セクションを以下のとおり確定する(要件整理は`appendix/stage3-requirements-organization.md`、決定事項D5は[decision digest](../textbook/decision-digest.md)参照)。
+
+| 設計ビュー | 図記法 | 対応セクション |
+| :--- | :--- | :--- |
+| システム構造(モジュール) | コンポーネント図 | 本節「1. 主要処理ロジックの分割方針」 |
+| データ構造 | ER図 | 3.2節「2. テーブル定義」 |
+| 処理別データフロー(Must) | DFD | 本節 新設予定の「処理別データフロー」節(Phase 10で追加。APIエンドポイント/バッチ単位。要素表は「元/データ/変換/先」) |
+| 振る舞い(Should、Phase 14) | アクティビティ図 | [外部設計書](external_design.md) 2.2節「画面一覧・画面遷移フロー」 |
+
+`internal_design`(本文書)にcomponent/ER/DFDを寄せているのは、`external_design.md`が画面・API等の利用者向け仕様のみを扱うのに対し、本文書の3.2/3.3節が既にモジュール構造・データモデルを扱っており、実装者向けの構造図・データ構造図の置き場として一貫するため。承認済みの図と要素表は、上記セクションにアンカーコメント(`<!-- uml:diagram:<diagram_id>:start -->`〜`:end -->`)経由でプレビュー時にSVGとして差し込む(M9a、Phase 13)。DFDプロンプトの実装(内部設計書生成プロンプトへの「処理別データフロー」節追加)・アンカー導入は後続Phase(Phase 10・13)で行う。
+
+**DFD検証規則の申し送り(Phase 8)**: 診断8(`appendix/stage3-requirements-organization.md`)が定めるDFD検証規則5点のうち、「上位図と下位図の境界フローが一致する」はPhase 8では実装しない。`uml_diagrams`に上位図/下位図を結びつける列(`parent_diagram_id`/`level`)を持たせておらず、機械的に判定する材料が無いため。Phase 10(AI生成)がDFDの粒度(診断8本文が示す「APIエンドポイント/バッチごとに1枚」というフラットな複数図構成を採るか、階層分解を導入するか)を確定させた段階で、必要な列・検証ロジックを追加する。詳細は[`textbook/Phase-8/Phase-8-introduction.md`](../textbook/Phase-8/Phase-8-introduction.md)参照。
 
 ---
 

@@ -299,3 +299,48 @@ Phase 5(実VPSデプロイまで)完了後、ステージ2(Should have要件: �
 - **最重要5点を確定**: (1)バージョン履歴の保持件数は現状の3件キャップを維持、UIのみ新設。(2)復元は新バージョン追加(上書きしない)。(3)`projects.template_id`をサーバー側に永続化し、合流先は`doc_generator_service.py`ではなく`chat_service.py`(ヒアリングのシステムプロンプト)。(4)内部設計書の「DEBUGログにプロンプト内容を含める」記述を撤回し、メタデータのみ記録するプライバシー配慮を追加。(5)監視強化は`structlog`+`SENTRY_DSN`設定時のみ有効化するSentry+既存`/health`への外部アップタイム監視、という個人開発規模に見合う具体案を採用。
 - **ドキュメントの記述不整合を是正**: 4ドキュメントが「MVPで既に実装済みの機構」(バージョン増分+3件保持、共通エラーレスポンス形式)を未着手のShould have機能であるかのように記述していた点を修正し、Should have分は「その上に被せるUI/監視/ログ強化」であることを明確化した。
 - **章立て(5章、ユーザー確認待ち)**: 6-1バージョン履歴API/6-2バージョン履歴UI/6-3テンプレートAPI/6-4テンプレート選択UI/6-5エラー・ログ・監視、という機能×レイヤーの分割案を提示した。
+
+## Phase 7完了 ── ステージ3(UML設計図パイプライン)着手: 設計フェーズ
+
+Phase 5完了後の要件整理([`appendix/stage3-requirements-organization.md`](../appendix/stage3-requirements-organization.md)、決定事項D1〜D8)を受け、Phase 7として設計フェーズ(仕様診断・D5確定・スパイク・`docs/`反映)を実施した。詳細は[`Phase-7-introduction.md`](./Phase-7/Phase-7-introduction.md)参照。
+
+- **本Stage固有の進行特例**: ユーザー指示により、Stage 3に限りコードを`devex-api`/`devex-ui`本体へ直接反映する(通常のsamples-onlyから変更)。ただし教材・samplesは通常どおり作成し、samples側の#29 Phaseタグは本体コードには一切書かない。ユーザーはPhaseごとにテストを実行し確認後、次Phaseへ進む指示を出す。
+- **ブランチ運用の確定**: `devex-api`は`stage2-phase6`をmainへマージ済み(PR#1)・`stage3`ブランチで以降のPhaseを進行する。`devex-ui`とこのリポジトリ(`devex`本体)はいずれもブランチを切らず`main`直下で継続する(Phase 0〜6と同じ運用。事前の検討メモにあった「3リポジトリ共通でブランチを切る」という想定は、ユーザー確認の結果このプロジェクトでは不採用になった)。
+- **D5(図↔文書対応表)を確定**: コンポーネント図・ER図・処理別DFDはすべて`internal_design.md`(3.2節・3.3節)に寄せ、アクティビティ図のみ`external_design.md`(2.2節)に残した。`internal_design.md`が既にモジュール構造・データモデルを扱っており、`external_design.md`は利用者向け仕様のみという実際の文書構成を根拠にした。対応表は[`docs/internal_design.md`](../docs/internal_design.md) 3.3節「3. UML設計図パイプラインの図↔文書対応」に反映済み。
+- **`docs/*.md`への反映**: `requirements.md`(1.4節Could haveに1項目)、`external_design.md`(SCR-007・2.6節新設)、`internal_design.md`(`uml_diagrams`テーブル・データ辞書・D5対応表・UML APIエンドポイント)、`implementation_plan.md`(ステージ3節、Phase 7〜14のロードマップ、「2ステージ」→「3ステージ」)に反映した。Stage3全体は`docs/requirements.md`上ではCould have階層とした(Stage1=Must、Stage2=Shouldという既存の「Stage番号=優先度階層」の慣例を踏襲。Stage3内部のMust M1〜M9aとは別軸)。
+- **React Flow×Tamaguiスパイク(使い捨て)**: `@xyflow/react@^12.12.0`を`devex-ui`へ追加し、`app/.../projects/[id]/uml/page.tsx` + `src/features/uml/components/UmlPageContent.tsx`(Phase 11で使う予定の実配置)でダミーノードを描画する検証を行った。`npx tsc --noEmit`・`npm run lint`・`npm run test`(既存220件+新規1件)・`npm run build`すべて成功。jsdomの`ResizeObserver`未実装によるReact Flowのテスト失敗を懸念したが、Tamagui `Select`用に既存の`vitest.setup.ts`ポリフィルがそのまま効き、追加対応は不要だった。
+- **decitima `engine.py`移植の見通し(文書化のみ)**: 標準ライブラリのみ・約950行・自己完結・同一ユーザー所有(ライセンス障壁なし)と判定し、Phase 9移植時の申し送り事項5点(assertの例外化、O(n²〜n!)の計算量対策、未使用import等の整理、日本語文字幅推定の流用、既存テスト不在への対応)を[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)に記録した。コードのコピーは行っていない。
+
+## Phase 7完了後 ── `devex-ui`のルートグループ名リネーム(`(proteced)`→`(protected)`)にまつわる後始末
+
+Phase 7完了報告後、ユーザーが個別テストを実行しようとしたところ2段階のトラブルが発生し、最終的にすべて解消した。
+
+1. **`devex-ui`側で`(proteced)`typoが独立に修正されていた**: ユーザーがセッション外(自身のエディタ等)で、`src/app/(pages)/(proteced)/`配下(dashboard/chat/documents/projects new/uml)全体を正しい綴り`(protected)/`へリネーム済みだった(中身は無変更、`git diff`で内容一致を確認)。Phase 7完了報告後・本セッションの外で行われたため、報告時点のgit statusには現れていなかった。
+2. **自分の後始末ミス**: 上記に気づかないまま、不足していた`uml`のページテストを追加した際、古い綴り`(proteced)`側に作成してしまい、`../page`のimportが解決できず1件だけ失敗する状態になった。原因判明後、この誤配置ファイルを削除し、既にユーザー側で用意されていた`(protected)`側の同等テスト(1件、正常動作を確認済み)に一本化した。
+3. **`.next`型検証ファイルの古いパス参照**: リネーム前に実行した`npm run build`の生成物(`.next/types/validator.ts`等、Next.js自動生成・手動編集不可)が`(proteced)`パスを指したまま残っており、`npx tsc --noEmit`が10件のエラーを出した。`devex-ui`の実ソース(`src/**`)を検索した結果、`(proteced)`/`(protected)`を直書きした相対パス・importは存在しないことを確認(ユーザーにも提示し合意済み)。`.next`削除+`npm run build`による再生成のみで解消し、ソースコードの変更は行っていない。
+4. **最終確認**: `.next`再生成後、`npm run lint`(既存警告1件のみ、Phase 6由来で無関係)・`npx tsc --noEmit`(エラー無し)・`npm run test`(44ファイル・221件全成功)・`npm run build`(全ルート正常生成)を確認した。
+
+**教訓**: 複数リポジトリを横断する長時間セッションでは、ユーザー自身がセッション外で行った変更(エディタでのリネーム等)がgit statusのスナップショットに反映されるまでタイムラグがあり得る。パスに依存する新規ファイルを追加する際は、直前に確認した構成を過信せず、都度`git status`/実ディレクトリ構成を再確認するのが安全。
+
+## Phase 8完了 ── 意味モデル・データ辞書・CRUD/validate API
+
+[`Phase-7-introduction.md`](./Phase-7/Phase-7-introduction.md)「次のフェーズ」を受け、Phase 8として`app/uml/domain/`(意味モデル)・`app/uml/validation/`(M4構造検証+DFD規則)・`data_items`/`uml_diagrams`(永続化)・CRUD/validate APIを実装した。詳細は[`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)参照。
+
+- **着手前の設計判断3点を確定**(`docs/internal_design.md`の未決事項・未記載事項の解消): (1) `DataItem`の永続化は専用テーブル`data_items`(project_id FK + name一意制約 + fields)に確定。プロジェクト単位のJSONBは、項目単位のCRUD・一意性制約・未参照検証のしやすさで見送った。(2) `DataItem`用の最小限CRUD APIを`/projects/{id}/uml/data-items`系として新規公開(`docs/internal_design.md`3.3節②のエンドポイント表は元々diagrams系4本のみだった)。(3) DFD検証規則「上位図と下位図の境界フローが一致する」(診断8)はPhase 8では実装せず、`uml_diagrams`に`parent_diagram_id`/`level`等の階層列も追加しないことを確定。Phase 10のAI生成設計は診断8本文が示す「APIエンドポイント/バッチごとに1枚」というフラットな複数図構成を前提に行う(列を先に追加すると、実際の検証にはノード単位の対応情報が別途必要になり、Phase 10で結局作り直す手戻りの方が大きいと判断)。
+- **既存コードベースに前例の無い新規パターンを2つ導入**: (1) `semantic_model`をAPIスキーマ(`app/schemas/uml_diagram.py`)で生`dict`ではなく`app.uml.domain.SemanticModel`(discriminated union)としてそのまま公開する(既存の`project.intake`等は生dict)。(2) `UmlDiagram.version`による楽観ロック(PUT時にリクエストのversionとDB上の値が不一致なら`UmlDiagramVersionConflictError`/409)。`generated_documents.version`は「再生成のたびに増える版数」であり別物であることを明記した。
+- **`POST /diagrams`はPhase 8時点ではプレースホルダー**: M1(AI生成トリガー)の実装はPhase 10。Phase 8では指定notationの要素・関係が空のdraftを作るだけの`UmlDiagramService.create`として実装し、その旨をコード・教材双方に明記した。
+- **動作確認で2件のバグを発見・その場で修正**: (1) テストヘルパー`_create_project`が固定メールアドレスを使っていたため、同一テスト内で2プロジェクト作成すると`users.email`一意制約違反になっていた(呼び出しごとに一意化して解消)。(2) `UmlDiagramService.update`/`DataItemService.update`が、`onupdate=func.now()`のサーバー計算列(`updated_at`)を`commit`直後に同期アクセスして`MissingGreenlet`になっていた(`await self._session.refresh(...)`を追加して解消)。詳細は[`Phase-8-2.md`](./Phase-8/Phase-8-2.md)・[`Phase-8-3.md`](./Phase-8/Phase-8-3.md)「動作確認で見つかった落とし穴」参照。
+- **検証結果**: Phase 8分52件・全体222件のユニットテストが成功、`ruff check .`全通過、`uvx pyright`はPhase 8由来の新規エラー0件(既存の既知1件のみ残存)、`alembic history`でリビジョンチェーンの連結を確認。**Postgres実DBへの`alembic upgrade head`/`downgrade`往復確認は本セッションの環境制約(Docker不可・Postgres未起動)により未実施**。次回`docker compose`が使える環境での実行を推奨する(詳細は[`Phase-8-4.md`](./Phase-8/Phase-8-4.md)「動作確認」参照)。
+- **申し送り**: Phase 9着手時は[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)「Phase 9への申し送り」節(decitima `engine.py`移植時の対応点5点)を必ず参照すること(ユーザーからの明示的な指示)。DFD境界フロー一致検証の申し送りは本エントリ・[`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)を参照。
+
+## Phase 8完了後 ── ルーター層の設計統一(Repository直接参照の禁止)
+
+Phase 8完了報告後、「routeから直接Repositoryを呼び出す場合とServiceを経由する場合の設計判断」についてユーザーと相談した。詳細は[`Phase-8-5.md`](./Phase-8/Phase-8-5.md)参照。
+
+- **既存の暗黙の基準を確認**: `devex-api`は「単純な読み取りはRepository直呼び、書き込み・複数Repo調整・外部LLM呼び出しはService経由」というCQRS的な基準に暗黙に従っていた(`projects.py`の`list_projects`/`get_project`/`get_hearing_history`/`list_generated_documents`/`download_generated_document`、`prompt_templates.py`の`list_prompt_templates`の計6箇所がRepository直呼び)。Phase 8の`app/uml/routes/uml.py`だけは全操作をService経由に統一しており、2つの流儀が混在していた。
+- **業界動向の調査**: 前者はArdalis等が支持するCQRS的な立場、後者はArchUnit等で強制する実務現場やFastAPI公式`full-stack-fastapi-template`("The API layer contains only route handlers with no business logic")に見られる立場であることを確認した。
+- **ユーザー決定**: 「常にService経由、Repository直参照は層違反として禁止」で統一する。理由: (1) 将来の処理追加時にServiceを新設する手戻りを避けられる拡張性、(2) ルートごとに経路を判断する余地を減らしたい。
+- **対応**: `app/services/{project,chat_service,doc_generator_service}.py`に薄いラッパーメソッド(`list_for_user`/`get_detail`/`list_history`/`list_current_documents`/`get_document`)を追加し、`app/services/prompt_template.py`(`PromptTemplateService`)を新設。`projects.py`/`prompt_templates.py`からRepositoryの直接importを全て除去した。
+- **対象外とした境界**: `app/api/deps.py`の`get_current_project`(内部で`ProjectRepository.get_by_id`を直接呼ぶ)は対象外とした。ルートハンドラ本体ではなく、既存の`get_current_user`と同じ「認証・所有権解決を担う共有依存関数」という既存の例外カテゴリに属すると判断したため。
+- **検証結果**: 全体231件のユニットテストが成功(新規追加分含む)、`ruff check .`全通過、`uvx pyright`は本改訂由来の新規エラー0件。動作確認中に、新規テストの`_create_project`ヘルパーが固定メールアドレスを使っていたための`users.email`一意制約違反(Phase 8-2で見つけたものと同種のバグ)を発見・その場で修正した。
+- **記録**: 変更元Phase(Phase 2・Phase 6)のintroductionにも1行の参照を追記済み([`Phase-2-introduction.md`](./Phase-2/Phase-2-introduction.md)・[`Phase-6-introduction.md`](./Phase-6/Phase-6-introduction.md)「後続Phaseでの改訂」節)。
