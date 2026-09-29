@@ -1,6 +1,7 @@
 // 作成：Phase-3-6｜更新：Phase-6-2,6-6
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
+import { API_BASE_URL } from "@/lib/api/base-url";
 
 export type DocType = "requirements" | "external_design" | "internal_design" | "implementation_plan";
 
@@ -40,7 +41,10 @@ export function restoreDocumentVersion(
   );
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Phase-6-6：更新(NEXT_PUBLIC_API_URLの末尾スラッシュで`//api/...`となりCookieのpathに一致せず、
+// F5でログインが切れる不具合があったため、末尾スラッシュを除去する共通定数base-url.tsへ集約した。
+// 定数の定義自体は冒頭のimportへ移動)
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export class DownloadError extends Error {}
 

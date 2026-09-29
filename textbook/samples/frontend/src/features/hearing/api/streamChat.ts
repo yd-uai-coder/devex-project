@@ -1,7 +1,11 @@
-// 作成：Phase-3-5
+// 作成：Phase-3-5｜更新：Phase-6-6
 import { refreshTokens, useAuthStore } from "@/components/auth/auth-store";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Phase-6-6：更新(NEXT_PUBLIC_API_URLの末尾スラッシュで`//api/...`となりCookieのpathに一致せず、
+// F5でログインが切れる不具合があったため、末尾スラッシュを除去する共通定数base-url.tsへ集約した)
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// ↓↓
+import { API_BASE_URL } from "@/lib/api/base-url";
 
 export class StreamChatError extends Error {}
 

@@ -67,3 +67,7 @@
 1. Phase 6(ステージ2動作確認後)
 2. ユーザー指示: 「HearingCompletionBannerの発生が早い。まだ質問事項があるのに発生している」「設計書生成→チャットに戻る→再度チャット送信→新しいHearingCompletionBannerが表示されるが、設計書生成ボタンがdisabled:falseに戻らない(ダッシュボード経由で再遷移すると押下可能になる)」「同じ内容でも復元ボタンを押すたびにバージョンが上がっている。新しく生成しない場合はバージョンを更新せず、現在の表示内容がどのバージョンかを示すバッジをバージョン履歴に付ける。ダウンロードは現在表示中のバージョンの内容にする」
 3. [`Phase-6-6.md`](./Phase-6/Phase-6-6.md)として対応(samplesのみ反映)。完了判定はプロンプト厳格化+ユーザー発話3件の下限ガード、ボタンは`hearing-store`が`projectStatus`(completed→revising)・`completion`を追従、復元は`generated_documents.is_current`カラムの付け替えのみに変更(仕様診断#28決定2を撤回、`docs/internal_design.md`3.2節を改訂)。
+
+1. Phase 6(ステージ2デプロイ後の本番確認)
+2. ユーザー報告: 「ログイン状態からF5でブラウザを更新するとログイン状態が切れる」(本番 devex.uandi-tech.com)。DevTools・VPSログの確認を経て、`refresh`のRequest URLが`https://devex-api.uandi-tech.com//api/v1/auth/refresh`(`//`二重)で、`cookie:`ヘッダが付いていないことが判明。
+3. 原因は、VercelのNEXT_PUBLIC_API_URLの末尾スラッシュ。Cookieの`Path=/api/v1/auth`が`//api/...`にパスマッチせず送られなかった(サーバー側のRedis・Set-Cookieは正常)。対応: Vercelの環境変数から末尾スラッシュを削除して再デプロイ+`src/lib/api/base-url.ts`で末尾スラッシュを除去する再発防止([`Phase-6-6.md`](./Phase-6/Phase-6-6.md)「API ベースURLの末尾スラッシュ除去」参照)。

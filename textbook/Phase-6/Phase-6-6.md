@@ -24,6 +24,7 @@
 | [`src/features/hearing/hearing-store.ts`](../samples/frontend/src/features/hearing/hearing-store.ts) | 更新 | **コア** | `sendMessage`が`projectStatus: completed→revising`を即時反映(サーバー側`stream_reply`と同じ遷移)。`approveAndGenerate`が`projectStatus: "generating"`・`completion: null`にする(使用済みの完了判定を持ち越さない) |
 | [`src/features/hearing/components/HearingCompletionBanner.tsx`](../samples/frontend/src/features/hearing/components/HearingCompletionBanner.tsx) | 更新 | 定型 | `projectStatus==="completed"`ならボタン無効・「設計書は生成済みです」表示。storeを購読するので、`revising`に変わると再描画され押下可能に戻る |
 | [`src/features/documents/components/VersionHistoryPanel.tsx`](../samples/frontend/src/features/documents/components/VersionHistoryPanel.tsx) | 更新 | **コア** | 復元後は一覧に足さず`is_current`(「(表示中)」)のみ付け替える。表示中の版には復元ボタンを出さない。「(最新)」は最大versionに残す(両者は復元後に異なりうる) |
+| [`src/lib/api/base-url.ts`](../samples/frontend/src/lib/api/base-url.ts)(新規)、`src/lib/api/client.ts`・`src/features/hearing/api/streamChat.ts`・`src/features/documents/api/documentsApi.ts`・`src/lib/api/server-fetch.ts`(更新) | 更新 | **コア** | `NEXT_PUBLIC_API_URL`の末尾スラッシュを除去する`API_BASE_URL`を1か所に集約し、各APIクライアントから使う(下記「設計判断」参照。`server-fetch.ts`はsamples未収録のためdevex-uiのみ) |
 | `tests/unit/test_chat_service.py`・`test_fake_llm_e2e.py`・`test_generated_document_repository.py`・`test_document_versions.py`・`test_doc_generator_service.py`・`test_document_download.py`、`tests/integration/test_projects_flow.py`(すべて更新) | 更新 | 定型 | 下記テスト観点 |
 | `src/features/hearing/**/__tests__/HearingCompletionBanner.test.tsx`・`hearing-store.test.ts`、`src/features/documents/**/__tests__/VersionHistoryPanel.test.tsx`・`DocumentMarkdownView.test.tsx`・`DocumentTabs.test.tsx`・`documents-store.test.ts`・`documentsApi.test.ts`、`e2e/devex-flow.spec.ts`(すべて更新) | 更新 | 定型 | 下記テスト観点 |
 
@@ -43,6 +44,10 @@ LLMは根拠の乏しい条件も「満たした」と楽観的に判定しが�
 
 > 既知の残課題: `DocumentTabs`は`LayoutTabs.content`へ毎レンダー新しい関数コンポーネントを渡すため、復元後の`documents-store`再取得で`VersionHistoryPanel`が再マウントされ、パネルが閉じる(再度開けば最新の一覧が取得され、バッジも正しい)。機能上は問題ないため今回は対象外とした。
 
+### API ベースURLの末尾スラッシュ除去(本番で発見した不具合)
+
+本番でF5するとログインが切れた。Vercelの`NEXT_PUBLIC_API_URL`に末尾スラッシュが付いており、`${API_BASE_URL}${path}`が`https://host//api/v1/auth/refresh`になっていた。サーバーは`//api/...`でもルーティングするため通常のAPI呼び出しは成功するが、ブラウザのCookieのパスマッチは厳密で、`Path=/api/v1/auth`のリフレッシュトークンCookieは`//api/...`のリクエストには送られない。結果、F5後の`refresh`だけが401になった(サーバーのRedis・`Set-Cookie`は正常だった)。ローカルは`http://localhost:8000`(末尾スラッシュ無し)のため再現しなかった。環境変数の設定ミスに依存するので、定数側で`replace(/\/+$/, "")`して吸収する。
+
 ## テスト観点(#14)
 
 - `test_chat_service.py`: SUT=`ChatService.check_completion`、ドライバ=pytest、スタブ=`FakeLLM`(LLM呼び出しは外部依存のため注入)。発話が下限未満ならLLMがtrueでもfalse・下限以上ならLLM判定を尊重・intake/attachment/aiを数えない・LLMのfalseはそのまま。
@@ -51,6 +56,7 @@ LLMは根拠の乏しい条件も「満たした」と楽観的に判定しが�
 - `test_fake_llm_e2e.py`・`test_projects_flow.py`・`e2e/devex-flow.spec.ts`: 完了判定に必要な発話が3回になったことへの追従。
 - `hearing-store.test.ts`: SUT=`useHearingStore`、ドライバ=vitest、スタブ=`stubFetch`+`streamChat`のモック。`completed`で送信すると`revising`・それ以外は不変・`approveAndGenerate`後に`completion=null`かつ`generating`。
 - `HearingCompletionBanner.test.tsx`: SUT=バナー、ドライバ=Testing Library、スタブ不要(storeを`setState`で直接設定)。`completed`で無効・`completed→revising`の変化で再描画され押下可能に戻る。
+- `base-url.test.ts`: SUT=`API_BASE_URL`(モジュール読み込み時に決まるため`vi.resetModules()`+動的import)、ドライバ=vitest、スタブ=環境変数(`vi.stubEnv`)+`stubFetch`。末尾スラッシュ無し/1個/複数・未設定のフォールバック・末尾スラッシュ付きでも`apiFetch`のURLに`//`が入らない。
 - `VersionHistoryPanel.test.tsx`・`DocumentMarkdownView.test.tsx`: 「表示中」バッジ・復元後に行数が増えずバッジが移る・ダウンロードが表示中ドキュメントのidを使う。
 
 ## 実行確認
