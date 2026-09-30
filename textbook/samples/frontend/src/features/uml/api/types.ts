@@ -1,4 +1,4 @@
-// 作成：Phase-11-2
+// 作成：Phase-11-2｜更新：Phase-12-2,12-5
 // 写経レベル: 定型 ── バックエンドの Pydantic スキーマを snake_case のまま写した型定義。
 // devex-api の UML API(app/api/routes/uml.py)が返す・受け取る JSON の型。
 // バックエンドの Pydantic スキーマに合わせて snake_case のまま手書きする(既存 feature と同じ方針)。
@@ -72,7 +72,16 @@ export type UmlRelation = SemanticModel["relations"][number];
 // ---- 配置(app/uml/layout/model.py の出力スキーマ) ----
 // x, y はノードの左上。points は端点を含む直交折れ線。空リストは「折れ点なし」(D2)。
 export type LayoutBox = { x: number; y: number; w: number; h: number; lane: number; row: number };
-export type LayoutEdgeGeometry = { points: [number, number][] };
+// Phase-12-2：更新(BE の LayoutEdgeGeometry に label_pos が増えた)
+// export type LayoutEdgeGeometry = { points: [number, number][] };
+// ↓↓
+// label_pos: 辺ラベルの中心(出力の draw.io/SVG が使う。レビュー画面は React Flow が自前で置く)。
+// ラベルの無い辺・手で動かしたノードにつながる辺(points=[])では null か省略。
+export type LayoutEdgeGeometry = {
+  points: [number, number][];
+  label_pos?: [number, number] | null;
+};
+// ── ここから Phase-11-2 の作成分 ──
 export type LayoutModel = {
   width: number;
   height: number;
@@ -111,6 +120,13 @@ export type UmlDiagramUpdate = {
   semantic_model: SemanticModel;
   layout_model?: LayoutModel | null;
 };
+
+// Phase-12-5:追記
+// UmlDiagramApprove(version は画面で見ていた版。違えば 409 VERSION_CONFLICT)
+export type UmlDiagramApprove = { version: number };
+
+// 出力の形式(GET .../export/drawio | .../export/svg)
+export type ExportFormat = "drawio" | "svg";
 
 // ---- 生成(app/schemas/uml_generation.py) ----
 export type UmlSubjectSpec = { subject?: string; tables?: string[] | null };

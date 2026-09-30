@@ -1,4 +1,4 @@
-# 作成：Phase-9-4
+# 作成：Phase-9-4｜更新：Phase-12-3
 # 写経レベル: コア ── 仕上げ処理一式の移植。ポート順序最適化(全順列/山登り)
 # の使い分けの閾値等、判断箇所を含む。
 """経路の仕上げ処理(出入口オフセット・通路スロット割当・ラベル配置・指標計測)。
@@ -203,7 +203,11 @@ def reroute_final(state: LayoutState, offs: dict, slots: dict) -> None:
 
 
 # ---- ラベル配置
-def _label_size(text: str) -> tuple[float, float]:
+# Phase-12-3：更新(出力 app/uml/export/svg.py も同じ大きさで描くため公開名にした。式は不変)
+# def _label_size(text: str) -> tuple[float, float]:
+# ↓↓
+def label_size(text: str) -> tuple[float, float]:
+    """ラベルの背景矩形の大きさ(幅, 高さ)。出力(`app/uml/export/svg.py`)も同じ大きさで描く。"""
     lines = text.split("\n")
     return max(tw(line) for line in lines) + 10, LINE_H * len(lines)
 
@@ -217,7 +221,10 @@ def place_labels(state: LayoutState) -> None:
     for e in state.edges:
         if not e.label:
             continue
-        lw, lh = _label_size(e.label)
+        # Phase-12-3：更新
+        # lw, lh = _label_size(e.label)
+        # ↓↓
+        lw, lh = label_size(e.label)
         segs = []
         total = 0.0
         for i in range(len(e.pts) - 1):

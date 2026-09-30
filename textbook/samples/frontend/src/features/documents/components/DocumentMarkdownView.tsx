@@ -1,5 +1,6 @@
-// 作成：Phase-3-6｜更新：Phase-6-2
+// 作成：Phase-3-6｜更新：Phase-6-2,12-5
 // Phase-6-2:追記 ── @/features/documents/components/VersionHistoryPanel
+// Phase-12-5:追記 ── @/lib/api/download.saveFile
 "use client";
 
 import { useState } from "react";
@@ -7,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button, H1, H2, H3, H4, Paragraph, Text, XStack, YStack } from "tamagui";
 import { downloadDocument } from "@/features/documents/api/documentsApi";
+import { saveFile } from "@/lib/api/download";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
 import { VersionHistoryPanel } from "@/features/documents/components/VersionHistoryPanel";
 import type { Components } from "react-markdown";
@@ -80,15 +82,18 @@ export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownVi
     setDownloadError(null);
     try {
       const { filename, content } = await downloadDocument(projectId, document.id);
-      const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = window.document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      window.document.body.appendChild(link);
-      link.click();
-      window.document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // Phase-12-5：更新(UML 図の出力と共有するため @/lib/api/download.ts の saveFile へ移した)
+      // const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+      // const url = URL.createObjectURL(blob);
+      // const link = window.document.createElement("a");
+      // link.href = url;
+      // link.download = filename;
+      // window.document.body.appendChild(link);
+      // link.click();
+      // window.document.body.removeChild(link);
+      // URL.revokeObjectURL(url);
+      // ↓↓
+      saveFile(filename, content, "text/markdown;charset=utf-8");
     } catch {
       setDownloadError("ダウンロードに失敗しました");
     }

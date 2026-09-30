@@ -1,4 +1,4 @@
-// 更新：Phase-3-1,3-4,6-6,11-2
+// 更新：Phase-3-1,3-4,6-6,11-2,12-5
 import { refreshTokens, useAuthStore } from "@/components/auth/auth-store";
 
 // Phase-6-6：更新(NEXT_PUBLIC_API_URLの末尾スラッシュで`//api/...`となりCookieのpathに一致せず、
@@ -57,7 +57,10 @@ export class ApiError extends Error {
 
 // FastAPI/Pydanticのエラーレスポンス({detail: string, code?: string} または 422時の
 // {detail: [{msg: string, ...}, ...]})から、メッセージとcodeを取り出してApiErrorにする。
-async function toApiError(res: Response): Promise<ApiError> {
+// Phase-12-5：更新(UML 図の出力 umlApi.exportDiagram も同じ ApiError にするため export した)
+// async function toApiError(res: Response): Promise<ApiError> {
+// ↓↓
+export async function toApiError(res: Response): Promise<ApiError> {
   try {
     const body = await res.json();
     const code = typeof body?.code === "string" ? body.code : undefined;

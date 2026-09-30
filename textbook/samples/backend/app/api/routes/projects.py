@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -14,15 +14,17 @@
 # from app.schemas.project import IntakeFileRead, ProjectDetail, ProjectRead
 # from app.services.errors import DocumentNotFoundError, GenerationFailedError, LLMQuotaExceededError
 # ↓↓
+# Phase-12-4：更新 ── urllib.parse.quote を削除し、app.api.responses.content_disposition を追記
+#   (_content_disposition を UML 図の出力と共有するため app/api/responses.py へ移した)
 import json
 import uuid
 from typing import Annotated
-from urllib.parse import quote
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, status
 from fastapi.responses import Response, StreamingResponse
 
 from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
+from app.api.responses import content_disposition
 from app.core.errors import BadRequestError
 from app.schemas.document import DocType, GeneratedDocumentRead
 from app.schemas.generation import HearingCompletionCheck
@@ -214,7 +216,10 @@ async def download_generated_document(
     return Response(
         content=document.content,
         media_type="text/markdown",
-        headers={"Content-Disposition": _content_disposition(filename)},
+        # Phase-12-4：更新
+        # headers={"Content-Disposition": _content_disposition(filename)},
+        # ↓↓
+        headers={"Content-Disposition": content_disposition(filename)},
     )
 
 
@@ -244,12 +249,12 @@ async def restore_document_version(
     return GeneratedDocumentRead.model_validate(restored)
 
 
-# Phase-2-5:追記
-def _content_disposition(filename: str) -> str:
-    """日本語等の非ASCII文字を含むファイル名用のContent-Disposition値を組み立てる(RFC 5987)。
-    ASCII非対応のクライアント向けにfilename(置換フォールバック)とfilename*(UTF-8)の両方を含める。"""
-    ascii_fallback = filename.encode("ascii", errors="replace").decode("ascii")
-    return f"attachment; filename=\"{ascii_fallback}\"; filename*=UTF-8''{quote(filename)}"
+# Phase-12-4：削除(app/api/responses.py の content_disposition へ移した)
+# def _content_disposition(filename: str) -> str:
+#     """日本語等の非ASCII文字を含むファイル名用のContent-Disposition値を組み立てる(RFC 5987)。
+#     ASCII非対応のクライアント向けにfilename(置換フォールバック)とfilename*(UTF-8)の両方を含める。"""
+#     ascii_fallback = filename.encode("ascii", errors="replace").decode("ascii")
+#     return f"attachment; filename=\"{ascii_fallback}\"; filename*=UTF-8''{quote(filename)}"
 
 
 def _parse_environment(raw: str | None) -> dict | None:

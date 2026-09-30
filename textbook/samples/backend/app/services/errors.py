@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -207,3 +207,33 @@ class LLMInvalidOutputError(BadGatewayError):
     一時的な失敗でありうるため、invoke_with_retryの通常のリトライ対象にする)。"""
 
     code: ClassVar[str | None] = "LLM_INVALID_OUTPUT"
+
+
+# Phase-12-1:追記 ── 承認フロー(M7)
+class UmlDiagramNotApprovableError(ConflictError):
+    """承認できない状態(承認済み・出力済み)の図を承認しようとした場合に送出する。
+    承認し直すには、いったん保存してレビュー中へ戻す必要がある。"""
+
+    code: ClassVar[str | None] = "UML_DIAGRAM_NOT_APPROVABLE"
+
+
+class UmlApprovalValidationFailedError(BadRequestError):
+    """承認しようとした図の意味モデルが検証(M4)を通らない場合に送出する。
+    エラーの一覧は`POST .../validate`で取り直す(このエラーは件数と要約だけを返す)。"""
+
+    code: ClassVar[str | None] = "UML_APPROVAL_VALIDATION_FAILED"
+
+
+class UmlLayoutRequiredError(BadRequestError):
+    """配置(`layout_model`)が無い図、または配置の無い要素を含む図を承認・出力しようとした場合に
+    送出する。出力(draw.io/SVG)は座標が無いと描けないため、承認の条件にする。"""
+
+    code: ClassVar[str | None] = "UML_LAYOUT_REQUIRED"
+
+
+# Phase-12-4:追記 ── draw.io/SVG出力(M8)
+class UmlDiagramNotApprovedError(ConflictError):
+    """承認されていない(下書き・レビュー中の)図を出力しようとした場合に送出する。
+    出力は承認済みの図だけに許す(ダウンロードは最終成果物。D6)。"""
+
+    code: ClassVar[str | None] = "UML_DIAGRAM_NOT_APPROVED"

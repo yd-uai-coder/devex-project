@@ -1,4 +1,4 @@
-// 作成：Phase-11-5｜更新：Phase-11-6
+// 作成：Phase-11-5｜更新：Phase-11-6,12-5
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,6 +13,10 @@ vi.mock("@/features/uml/components/UmlCanvas", () => ({ UmlCanvas: () => <div>ca
 // Phase-11-6:追記
 vi.mock("@/features/uml/components/ElementInspector", () => ({
   ElementInspector: () => <div>inspector</div>,
+}));
+// Phase-12-5:追記
+vi.mock("@/features/uml/components/DiagramReviewActions", () => ({
+  DiagramReviewActions: () => <div>review-actions</div>,
 }));
 vi.mock("@/features/uml/components/ValidationPanel", () => ({
   ValidationPanel: () => <div>validation</div>,
@@ -42,6 +46,9 @@ describe("UmlDiagramPageContent", () => {
       runLayout: vi.fn().mockResolvedValue(undefined),
       // Phase-11-6:追記
       validating: false,
+      // Phase-12-5:追記
+      approving: false,
+      exporting: false,
       addElement: vi.fn(),
       validate: vi.fn().mockResolvedValue(undefined),
     });
@@ -56,7 +63,11 @@ describe("UmlDiagramPageContent", () => {
 
     expect(useUmlEditorStore.getState().load).toHaveBeenCalledWith("p1", "d1");
     expect(screen.getByRole("heading", { name: "コンポーネント図(全体)" })).toBeInTheDocument();
-    expect(screen.getByText("状態: 下書き")).toBeInTheDocument();
+    // Phase-12-5：更新
+    // expect(screen.getByText("状態: 下書き")).toBeInTheDocument();
+    // ↓↓
+    // 状態表示と承認・出力は DiagramReviewActions.test.tsx で検証する
+    expect(screen.getByText("review-actions")).toBeInTheDocument();
     expect(screen.getByText("canvas")).toBeInTheDocument();
   });
 

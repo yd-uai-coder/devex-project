@@ -126,7 +126,8 @@
 
 ## 後続 Phase での改訂
 
-(なし)
+- [`Phase-12-2.md`](../Phase-12/Phase-12-2.md): `reconcile_layout`が、折れ点を捨てた辺(`points=[]`)の`label_pos`も捨てるようにした。FE の`LayoutEdgeGeometry`型に`label_pos?`を足した(12-5)。
+- [`Phase-12-5.md`](../Phase-12/Phase-12-5.md): レビュー画面の状態表示を`DiagramReviewActions`(承認・出力の操作)へ移し、ストアに`approve`/`exportDiagram`を足した。申し送りだった M7 と`points=[]`の辺の draw.io 出力は Phase 12 で解消した。
 
 ## Phase 完了チェック(#22)
 

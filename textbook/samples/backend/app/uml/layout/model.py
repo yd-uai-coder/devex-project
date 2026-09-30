@@ -1,4 +1,4 @@
-# 作成：Phase-9-2｜更新：Phase-11-1,11-7
+# 作成：Phase-9-2｜更新：Phase-11-1,11-7,12-2
 # 写経レベル: コア ── 1つのクラスが持っていた状態を関数群+state引数へ分割する設計判断、
 # および出力スキーマ(LayoutModel)の設計そのもの。
 """レイアウト計算の内部表現(ノード・辺・計算中の状態)と、
@@ -184,8 +184,13 @@ class LayoutEdgeGeometry(BaseModel):
     """
 
     points: list[tuple[float, float]]
+    # Phase-12-2:追記
+    # ラベル(ERの多重度・DFDのデータ項目名)の中心座標。ラベルの無い辺、配置を計算した後に
+    # 端点のノードを手で動かした辺(points=[])、Phase 12より前に計算した配置ではNone
+    label_pos: tuple[float, float] | None = None
 
 
+# ── ここから Phase-9-2 の作成分 ──
 class LayoutMetrics(BaseModel):
     # Phase-11-7：更新(overlaps が線どうしの重なりで、ノードの重なりは数えないことを明記)
     # """交差数・重なり数・衝突数(見づらさを主観でなく測定するための指標)。"""

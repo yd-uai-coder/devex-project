@@ -1,16 +1,19 @@
-// 作成：Phase-11-5｜更新：Phase-11-6
+// 作成：Phase-11-5｜更新：Phase-11-6,12-5
 // 写経レベル: 定型 ── ツールバーとパネルの配線(判断はストアにある)。
 "use client";
 
 // Phase-11-6:追記 ── types.DfdElementType, ElementInspector, ValidationPanel
+// Phase-12-5:追記 ── DiagramReviewActions
+// Phase-12-5：更新 ── labels から DIAGRAM_STATUS_LABELS を削除(状態表示は DiagramReviewActions へ)
 import { useEffect } from "react";
 import Link from "next/link";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
 import type { DfdElementType } from "@/features/uml/api/types";
+import { DiagramReviewActions } from "@/features/uml/components/DiagramReviewActions";
 import { ElementInspector } from "@/features/uml/components/ElementInspector";
 import { UmlCanvas } from "@/features/uml/components/UmlCanvas";
 import { ValidationPanel } from "@/features/uml/components/ValidationPanel";
-import { DIAGRAM_STATUS_LABELS, diagramTitle } from "@/features/uml/labels";
+import { diagramTitle } from "@/features/uml/labels";
 import { useUmlEditorStore } from "@/features/uml/uml-editor-store";
 
 // 自動レイアウトの再実行は、手で動かした座標を置き換える(M6: 明示的な再実行のときだけ上書きする)。
@@ -40,6 +43,10 @@ export function UmlDiagramPageContent({
   const layingOut = useUmlEditorStore((s) => s.layingOut);
   const conflict = useUmlEditorStore((s) => s.conflict);
   const layoutNotice = useUmlEditorStore((s) => s.layoutNotice);
+  // Phase-12-5:追記
+  const approving = useUmlEditorStore((s) => s.approving);
+  const exporting = useUmlEditorStore((s) => s.exporting);
+  // ── ここから Phase-11-5 の作成分 ──
   const load = useUmlEditorStore((s) => s.load);
   const save = useUmlEditorStore((s) => s.save);
   const runLayout = useUmlEditorStore((s) => s.runLayout);
@@ -53,7 +60,10 @@ export function UmlDiagramPageContent({
   }, [projectId, diagramId, load]);
 
   const generating = diagram?.generation_status === "generating";
-  const busy = saving || layingOut || conflict || generating;
+  // Phase-12-5：更新(承認・出力の最中も他の操作を止める)
+  // const busy = saving || layingOut || conflict || generating;
+  // ↓↓
+  const busy = saving || layingOut || conflict || generating || approving || exporting;
 
   return (
     <YStack paddingVertical="$4" gap="$3">
@@ -73,8 +83,11 @@ export function UmlDiagramPageContent({
 
       {diagram ? (
         <>
+          {/* Phase-12-5：更新(状態表示を承認・出力の操作と一緒に DiagramReviewActions へ移した)
+          <Text color="$color11">{`状態: ${DIAGRAM_STATUS_LABELS[diagram.status]}`}</Text>
+          ↓↓ */}
+          <DiagramReviewActions />
           <XStack gap="$3" alignItems="center" flexWrap="wrap">
-            <Text color="$color11">{`状態: ${DIAGRAM_STATUS_LABELS[diagram.status]}`}</Text>
             <Button size="$3" disabled={busy || !dirty} onPress={() => void save()}>
               {saving ? "保存中..." : "保存"}
             </Button>

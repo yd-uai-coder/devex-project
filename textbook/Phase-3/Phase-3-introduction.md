@@ -86,6 +86,7 @@
 
 - [`Phase-11-2.md`](../Phase-11/Phase-11-2.md): `src/lib/api/client.ts`の`ApiError`に、共通エラー形式の`code`(任意)を追加した。
 - [`Phase-11-4.md`](../Phase-11/Phase-11-4.md): `src/hooks/useGenerationPolling.ts`の`POLL_INTERVAL_MS`・`POLL_TIMEOUT_MS`を export し、UML 生成のポーリングで再利用した。
+- [`Phase-12-5.md`](../Phase-12/Phase-12-5.md): 文書ダウンロードの`parseFilename`(`documentsApi.ts`)と保存処理(`DocumentMarkdownView.tsx`)を、UML図の出力と共有するため`src/lib/api/download.ts`へ移した。`client.ts`の`toApiError`を export した。
 
 ## 次のフェーズ
 

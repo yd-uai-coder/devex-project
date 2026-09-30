@@ -1,7 +1,10 @@
-// 作成：Phase-11-2
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+// 作成：Phase-11-2｜更新：Phase-12-5
+// Phase-12-5:追記 ── vitest.vi, umlApi(approveDiagram, exportDiagram), client.ApiError
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  approveDiagram,
   computeLayout,
+  exportDiagram,
   generateDiagrams,
   getCandidates,
   getDiagram,
@@ -11,6 +14,7 @@ import {
   updateDiagram,
   validateDiagram,
 } from "../umlApi";
+import { ApiError } from "@/lib/api/client";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import { COMPONENT_LAYOUT, COMPONENT_MODEL, makeCandidates } from "@/features/uml/test-utils/umlFixtures";
 
@@ -88,5 +92,68 @@ describe("umlApi", () => {
     const candidates = await getCandidates("p1");
 
     expect(candidates.dfd_subjects).toHaveLength(2);
+  });
+});
+
+// Phase-12-5:追記 ── 承認・出力
+describe("approveDiagram", () => {
+  let stub: ReturnType<typeof stubFetch>;
+
+  beforeEach(() => {
+    stub = stubFetch();
+  });
+
+  afterEach(() => {
+    stub.restore();
+  });
+
+  it("POST .../approve に見ていた version を送る", async () => {
+    await approveDiagram("p1", "d1", 3);
+
+    expect(stub.requests[0].url).toMatch(new RegExp(`${BASE}/diagrams/d1/approve$`));
+    expect(stub.requests[0].init?.method).toBe("POST");
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ version: 3 });
+  });
+});
+
+describe("exportDiagram", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("ファイルの本文と Content-Disposition のファイル名を返す", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("<mxfile/>", {
+        status: 200,
+        headers: { "Content-Disposition": 'attachment; filename="component.drawio"' },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const file = await exportDiagram("p1", "d1", "drawio");
+
+    expect(fetchMock.mock.calls[0][0]).toMatch(new RegExp(`${BASE}/diagrams/d1/export/drawio$`));
+    expect(file).toEqual({
+      filename: "component.drawio",
+      content: "<mxfile/>",
+      mimeType: "application/xml",
+    });
+  });
+
+  it("失敗は code 付きの ApiError にする", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ detail: "承認されていません", code: "UML_DIAGRAM_NOT_APPROVED" }), {
+          status: 409,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+
+    const error = await exportDiagram("p1", "d1", "svg").catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).code).toBe("UML_DIAGRAM_NOT_APPROVED");
   });
 });

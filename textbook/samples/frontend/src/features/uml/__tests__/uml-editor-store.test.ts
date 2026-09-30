@@ -1,7 +1,9 @@
-// 作成：Phase-11-5｜更新：Phase-11-6
+// 作成：Phase-11-5｜更新：Phase-11-6,12-5
 // Phase-11-6:追記 ── umlFixtures(DFD_MODEL, ER_MODEL), reactFlowAdapter.placeMissingNodes
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+// Phase-12-5:追記 ── vitest.vi, @/lib/api/download(saveFile をスパイする)
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useUmlEditorStore } from "../uml-editor-store";
+import * as download from "@/lib/api/download";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import { placeMissingNodes } from "@/features/uml/adapters/reactFlowAdapter";
 import {
@@ -200,6 +202,76 @@ describe("useUmlEditorStore", () => {
       expect(stub.requests.slice(2).map((r) => r.init?.method)).toEqual(["PUT", "POST"]);
       expect(stub.requests[3].url).toMatch(/\/validate$/);
       expect(useUmlEditorStore.getState().validation?.errors).toHaveLength(1);
+    });
+  });
+
+  // Phase-12-5:追記 ── 承認・出力
+  describe("承認と出力", () => {
+    it("approve は未保存の変更を先に保存し、保存後の version で承認する", async () => {
+      await loadDiagram();
+      useUmlEditorStore.getState().updateElement("c1", { name: "認証" });
+      stub.queue({ body: makeDiagram({ version: 2, status: "reviewing" }) });
+      stub.queue({ body: makeDiagram({ version: 2, status: "approved" }) });
+
+      await useUmlEditorStore.getState().approve();
+
+      expect(stub.requests.slice(2).map((r) => r.init?.method)).toEqual(["PUT", "POST"]);
+      expect(stub.requests[3].url).toMatch(/\/diagrams\/d1\/approve$/);
+      expect(JSON.parse(stub.requests[3].init?.body as string)).toEqual({ version: 2 });
+      expect(useUmlEditorStore.getState().diagram?.status).toBe("approved");
+      expect(useUmlEditorStore.getState().approving).toBe(false);
+    });
+
+    it("検証エラーで承認できなければ、理由を出して検証パネルに一覧を取る", async () => {
+      await loadDiagram();
+      stub.queue({
+        status: 400,
+        body: {
+          detail: "検証エラーが1件あるため承認できません",
+          code: "UML_APPROVAL_VALIDATION_FAILED",
+        },
+      });
+      stub.queue({
+        body: { errors: [{ code: "DUPLICATE_ID", message: "重複", element_id: "c1" }], warnings: [] },
+      });
+
+      await useUmlEditorStore.getState().approve();
+
+      const state = useUmlEditorStore.getState();
+      expect(state.error).toBe("検証エラーが1件あるため承認できません");
+      expect(stub.requests[3].url).toMatch(/\/validate$/);
+      expect(state.validation?.errors).toHaveLength(1);
+      expect(state.diagram?.status).toBe("draft");
+    });
+
+    it("承認で version が合わなければ競合として扱う", async () => {
+      await loadDiagram();
+      stub.queue({ status: 409, body: { detail: "conflict", code: "VERSION_CONFLICT" } });
+
+      await useUmlEditorStore.getState().approve();
+
+      expect(useUmlEditorStore.getState().conflict).toBe(true);
+    });
+
+    it("exportDiagram はファイルを保存させ、図を取り直して出力済みにする", async () => {
+      const saveFile = vi.spyOn(download, "saveFile").mockImplementation(() => {});
+      await loadDiagram(makeDiagram({ status: "approved" }));
+      const fetchMock = stub.fetchMock;
+      fetchMock.mockResolvedValueOnce(
+        new Response("<svg/>", {
+          status: 200,
+          headers: { "Content-Disposition": 'attachment; filename="component.svg"' },
+        }),
+      );
+      stub.queue({ body: makeDiagram({ status: "exported" }) });
+
+      await useUmlEditorStore.getState().exportDiagram("svg");
+
+      expect(saveFile).toHaveBeenCalledWith("component.svg", "<svg/>", "image/svg+xml");
+      // 出力の応答は mockResolvedValueOnce で差し込んだため stub.requests には記録されない
+      expect(String(fetchMock.mock.calls[2][0])).toMatch(/\/diagrams\/d1\/export\/svg$/);
+      expect(useUmlEditorStore.getState().diagram?.status).toBe("exported");
+      saveFile.mockRestore();
     });
   });
 });

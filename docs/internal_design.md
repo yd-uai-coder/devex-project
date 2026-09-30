@@ -131,9 +131,9 @@
 | subject | VARCHAR(255) | NOT NULL, DEFAULT '' | 同じ記法の中で図を識別するキー(component: `''`、ER: 全体なら`''`・部分図ならグループ名、DFD: 処理名。Phase 10で追加) |
 | scope | JSONB | NULL可 | AIに渡した対象の選択(ER部分図の`{"tables": [...]}`。再生成で再利用する。Phase 10で追加) |
 | semantic_model | JSONB | NOT NULL | 意味モデル(要素・関係。Single Source of Truth) |
-| layout_model | JSONB | NULL可 | 自動レイアウト結果(ノード座標・辺の折れ点。手動移動後は折れ点を破棄しsmoothstep/orthogonalEdgeStyleに委ねる) |
+| layout_model | JSONB | NULL可 | 自動レイアウト結果(ノード座標・辺の折れ点・辺ラベルの中心`label_pos`(Phase 12)。手動移動後は折れ点とラベル位置を破棄しsmoothstep/orthogonalEdgeStyleに委ねる) |
 | style_model | JSONB | NULL可 | 表示スタイル |
-| status | VARCHAR(20) | NOT NULL, DEFAULT 'draft' | `draft`/`reviewing`/`approved`/`exported` |
+| status | VARCHAR(20) | NOT NULL, DEFAULT 'draft' | `draft`/`reviewing`/`approved`/`exported`(遷移規則は`app/uml/domain/status.py`。保存・自動レイアウトで`reviewing`、承認で`approved`、出力で`exported`、AI再生成で`draft`。Phase 12) |
 | version | INT | NOT NULL, DEFAULT 1 | 楽観ロック用バージョン |
 | generation_status | VARCHAR(20) | NOT NULL, DEFAULT 'completed' | AI生成の状態(`generating`/`completed`/`failed`)。レビューの状態`status`とは別の軸(Phase 10で追加) |
 | generation_error | TEXT | NULL可 | 直近の生成が失敗した理由(ユーザー向けの文言。Phase 10で追加) |
@@ -239,9 +239,9 @@ backend/
 | **PUT** | `/api/v1/projects/{id}/uml/data-items/{item_id}` | （※ステージ3、Phase 8）データ項目更新 | 必要 |
 | **DELETE** | `/api/v1/projects/{id}/uml/data-items/{item_id}` | （※ステージ3、Phase 8）データ項目削除 | 必要 |
 | **POST** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/layout` | （※ステージ3、Phase 9）自動レイアウトの実行 | 必要 |
-| **POST** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/approve` | （※ステージ3、Phase 12）承認(バリデーションNGの場合は不可) | 必要 |
-| **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/export/drawio` | （※ステージ3、Phase 12）`.drawio`ダウンロード(approvedのみ) | 必要 |
-| **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/export/svg` | （※ステージ3、Phase 12）SVGダウンロード(approvedのみ) | 必要 |
+| **POST** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/approve` | （※ステージ3、Phase 12）承認(`{version}`。draft/reviewing→approved。versionの不一致・承認済みは409、配置の無い要素・バリデーションNGは400。状態が変わってもversionは増やさない) | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/export/drawio` | （※ステージ3、Phase 12）`.drawio`ダウンロード(approved/exportedのみ。それ以外は409。成功でapproved→exported) | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/export/svg` | （※ステージ3、Phase 12）SVGダウンロード(同上。draw.ioと同じ中間表現から書き出す) | 必要 |
 
 ### 3. UML設計図パイプラインの図↔文書対応(ステージ3、D5)
 

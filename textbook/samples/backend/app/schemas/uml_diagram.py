@@ -1,12 +1,13 @@
-# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1
+# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1,12-1
 # 写経レベル: コア ── semantic_modelを型付きdiscriminated unionのまま公開するという設計判断そのもの。
 # Phase-9-5:追記 ── app.uml.layout.model.LayoutModel
+# Phase-12-1:追記 ── app.uml.domain.DiagramStatus
 import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.uml.domain import NotationType, SemanticModel
+from app.uml.domain import DiagramStatus, NotationType, SemanticModel
 from app.uml.layout.model import LayoutModel
 
 
@@ -30,7 +31,11 @@ class UmlDiagramRead(BaseModel):
     semantic_model: SemanticModel
     # Phase-9-5:追記
     layout_model: LayoutModel | None
-    status: str
+    # Phase-12-1：更新(遷移規則を app/uml/domain/status.py に置いたので、値を型で縛る)
+    # status: str
+    # ↓↓
+    # status: レビューの状態(draft→reviewing→approved→exported。app/uml/domain/status.py)
+    status: DiagramStatus
     version: int
     # Phase-10-6:追記
     # generation_status: 'generating'/'completed'/'failed'(FEはgeneratingの間ポーリングする)
@@ -60,3 +65,11 @@ class UmlDiagramUpdate(BaseModel):
     semantic_model: SemanticModel
     # Phase-11-1:追記
     layout_model: LayoutModel | None = None
+
+
+# Phase-12-1:追記
+class UmlDiagramApprove(BaseModel):
+    """UML図の承認リクエストのスキーマ。`version`は利用者が画面で見ていた版
+    (見ていない版を承認しないための楽観ロック。一致しなければ409)。"""
+
+    version: int

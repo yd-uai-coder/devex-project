@@ -1,4 +1,4 @@
-# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1
+# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1,12-1,12-4
 # Phase-9-5:追記 ── app.api.routes.uml.compute_diagram_layout
 # Phase-10-6:追記 ── fastapi.BackgroundTasks, tests.fixtures.uml(create_empty_diagram, create_project,
 #   create_project_with_internal_design), app.api.routes.uml(generate_diagrams, list_diagrams,
@@ -9,6 +9,13 @@
 # Phase-10-6：更新 ── 全テストの`create_diagram(UmlDiagramCreate(notation=...), db_session, project)`を
 #   `create_empty_diagram(db_session, project.id, ...)`へ一括置換した(各行へのタグは省略)。
 # Phase-11-1:追記 ── app.uml.layout.LayoutModel
+# Phase-12-1:追記 ── app.api.routes.uml.approve_diagram, app.schemas.uml_diagram.UmlDiagramApprove,
+#   app.services.errors.UmlLayoutRequiredError
+# Phase-12-4:追記 ── uuid, app.api.responses.content_disposition,
+#   app.api.routes.uml(export_diagram_drawio, export_diagram_svg),
+#   app.services.errors.UmlDiagramNotApprovedError
+
+import uuid
 
 import pytest
 from fastapi import BackgroundTasks
@@ -19,8 +26,12 @@ from tests.fixtures.uml import (
     create_project_with_internal_design,
 )
 
+from app.api.responses import content_disposition
 from app.api.routes.uml import (
+    approve_diagram,
     compute_diagram_layout,
+    export_diagram_drawio,
+    export_diagram_svg,
     generate_diagrams,
     get_diagram,
     list_diagrams,
@@ -30,9 +41,14 @@ from app.api.routes.uml import (
     validate_diagram,
 )
 from app.core.errors import BadRequestError
-from app.schemas.uml_diagram import UmlDiagramUpdate
+from app.schemas.uml_diagram import UmlDiagramApprove, UmlDiagramUpdate
 from app.schemas.uml_generation import UmlGenerateRequest, UmlSubjectSpec
-from app.services.errors import UmlDiagramNotFoundError, UmlDiagramVersionConflictError
+from app.services.errors import (
+    UmlDiagramNotApprovedError,
+    UmlDiagramNotFoundError,
+    UmlDiagramVersionConflictError,
+    UmlLayoutRequiredError,
+)
 from app.services.uml_generation_service import run_uml_generation
 from app.uml.domain import ComponentSemanticModel, DfdSemanticModel
 from app.uml.layout import LayoutModel
@@ -226,3 +242,78 @@ async def test_list_generation_runs_returns_requested_history(db_session: AsyncS
     assert len(runs) == 1
     assert runs[0].notation == "component"
     assert runs[0].status == "running"
+
+
+# Phase-12-1:追記 ── 承認
+async def test_approve_diagram_returns_approved_diagram(db_session: AsyncSession) -> None:
+    project = await create_project(db_session)
+    created = await create_empty_diagram(db_session, project.id, "component")
+    model = ComponentSemanticModel.model_validate(
+        {
+            "elements": [{"id": "c1", "name": "a"}, {"id": "c2", "name": "b"}],
+            "relations": [{"id": "r1", "source_id": "c1", "target_id": "c2"}],
+        }
+    )
+    await update_diagram(
+        created.id, UmlDiagramUpdate(version=1, semantic_model=model), db_session, project
+    )
+    await compute_diagram_layout(created.id, db_session, project)
+
+    result = await approve_diagram(created.id, UmlDiagramApprove(version=2), db_session, project)
+
+    assert result.status == "approved"
+    assert result.version == 2
+
+
+async def test_approve_diagram_without_layout_is_bad_request(db_session: AsyncSession) -> None:
+    project = await create_project(db_session)
+    created = await create_empty_diagram(db_session, project.id, "component")
+
+    with pytest.raises(UmlLayoutRequiredError):
+        await approve_diagram(created.id, UmlDiagramApprove(version=1), db_session, project)
+
+
+# Phase-12-4:追記 ── 出力
+async def _approved_diagram_id(db_session: AsyncSession, project) -> uuid.UUID:
+    created = await create_empty_diagram(db_session, project.id, "component")
+    model = ComponentSemanticModel.model_validate(
+        {
+            "elements": [{"id": "c1", "name": "認証API"}, {"id": "c2", "name": "認証サービス"}],
+            "relations": [{"id": "r1", "source_id": "c1", "target_id": "c2"}],
+        }
+    )
+    await update_diagram(
+        created.id, UmlDiagramUpdate(version=1, semantic_model=model), db_session, project
+    )
+    await compute_diagram_layout(created.id, db_session, project)
+    await approve_diagram(created.id, UmlDiagramApprove(version=2), db_session, project)
+    return created.id
+
+
+async def test_export_diagram_drawio_returns_attachment(db_session: AsyncSession) -> None:
+    project = await create_project(db_session)
+    diagram_id = await _approved_diagram_id(db_session, project)
+
+    response = await export_diagram_drawio(diagram_id, db_session, project)
+
+    assert response.media_type == "application/xml"
+    assert response.headers["Content-Disposition"] == content_disposition("component.drawio")
+    assert b"<mxfile" in response.body
+
+
+async def test_export_diagram_svg_returns_svg(db_session: AsyncSession) -> None:
+    project = await create_project(db_session)
+    diagram_id = await _approved_diagram_id(db_session, project)
+
+    response = await export_diagram_svg(diagram_id, db_session, project)
+
+    assert response.media_type == "image/svg+xml"
+    assert bytes(response.body).startswith(b"<svg")
+
+
+async def test_export_diagram_rejects_unapproved_diagram(db_session: AsyncSession) -> None:
+    project = await create_project(db_session)
+    created = await create_empty_diagram(db_session, project.id, "component")
+
+    with pytest.raises(UmlDiagramNotApprovedError):
+        await export_diagram_svg(created.id, db_session, project)
