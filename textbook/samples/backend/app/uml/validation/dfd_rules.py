@@ -1,4 +1,4 @@
-# 作成：Phase-8-3
+# 作成：Phase-8-3｜更新：Phase-10-4
 # 写経レベル: コア ── 診断8のDFD規則をどこまで実装しどこをPhase 10へ申し送るかという判断そのもの。
 import uuid
 from collections.abc import Sequence
@@ -7,18 +7,31 @@ from app.uml.domain.dfd import DfdDataStore, DfdElement, DfdExternalEntity, DfdF
 from app.uml.validation.base import ValidationIssue
 
 
+# Phase-10-4：更新(未参照データ項目の判定を、プロジェクト内の全DFDを横断して行うため)
+# def validate_dfd_rules(
+#     elements: Sequence[DfdElement], flows: Sequence[DfdFlow], data_item_ids: set[uuid.UUID]
+# ) -> tuple[list[ValidationIssue], list[ValidationIssue]]:
+# ↓↓
 def validate_dfd_rules(
-    elements: Sequence[DfdElement], flows: Sequence[DfdFlow], data_item_ids: set[uuid.UUID]
+    elements: Sequence[DfdElement],
+    flows: Sequence[DfdFlow],
+    data_item_ids: set[uuid.UUID],
+    referenced_elsewhere: set[uuid.UUID] | frozenset[uuid.UUID] = frozenset(),
 ) -> tuple[list[ValidationIssue], list[ValidationIssue]]:
-    """診断8(appendix/stage3-requirements-organization.md)のDFD規則5点のうち、
-    「上位図と下位図の境界フローが一致する」を除く4点を検証する。境界フロー一致は
-    `uml_diagrams`に階層(親子/level)を表す列が無く判定できないためPhase 10へ申し送る
-    (textbook/Phase-8/Phase-8-introduction.md「後続Phaseへの申し送り」参照)。
+    """診断8(appendix/stage3-requirements-organization.md)のDFD規則を検証する。
 
-    `data_item_ids`はプロジェクトのデータ辞書全件のIDを渡す想定。「どこからも参照されない
-    データ項目がない」はこの図単体の参照有無で判定する(複数DFD図にまたがる参照集計は、
-    階層構造の要否と合わせてPhase 10以降で検討する)。
+    診断8の5点目「上位図と下位図の境界フローが一致する」は撤回した。Phase 10でDFDを
+    「APIエンドポイント/バッチごとに1枚」のフラットな構成に確定し、上位図・下位図という
+    階層自体を持たないため、判定の対象が存在しない。
+
+    `data_item_ids`はプロジェクトのデータ辞書全件のID。`referenced_elsewhere`は、同じ
+    プロジェクトの他のDFDが参照しているデータ項目のID。処理ごとに1枚の構成では、ある図が
+    参照しないデータ項目の多くは他の図が参照しているため、「どこからも参照されない」は
+    プロジェクト内の全DFDを横断して判定する(この図にも他の図にも無いものだけを警告する)。
     """
+    # > **[Phase 10 で確定 ── 境界フロー一致規則は実装しない]** 当初「上位図と下位図の境界フローが
+    # > 一致する」をPhase 10で実装する予定 → 撤回。理由: DFDを処理ごとに1枚のフラットな構成に
+    # > 確定し、上位図・下位図の階層を持たないため判定対象が無い。
     errors: list[ValidationIssue] = []
     warnings: list[ValidationIssue] = []
 
@@ -83,13 +96,17 @@ def validate_dfd_rules(
                 )
             )
 
-    # 4. どこからも参照されないデータ項目がない(この図の中での参照有無を警告として報告)
-    referenced_item_ids = {flow.data_item_id for flow in flows}
+    # Phase-10-4：更新
+    # # 4. どこからも参照されないデータ項目がない(この図の中での参照有無を警告として報告)
+    # referenced_item_ids = {flow.data_item_id for flow in flows}
+    # ↓↓
+    # 4. どこからも参照されないデータ項目がない(プロジェクト内の全DFDを横断し、警告として報告)
+    referenced_item_ids = {flow.data_item_id for flow in flows} | set(referenced_elsewhere)
     for item_id in sorted(data_item_ids - referenced_item_ids, key=str):
         warnings.append(
             ValidationIssue(
                 code="UNREFERENCED_DATA_ITEM",
-                message=f"データ項目{item_id}はこの図のどのフローからも参照されていません",
+                message=f"データ項目{item_id}はどのDFDのフローからも参照されていません",
                 element_id=str(item_id),
             )
         )

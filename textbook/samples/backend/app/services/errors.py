@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -157,3 +157,53 @@ class LayoutValidationFailedError(BadRequestError):
     (`app.uml.validation.validate_diagram`)に一本化する(Phase-7-4.md申し送り#1)。"""
 
     code: ClassVar[str | None] = "LAYOUT_VALIDATION_FAILED"
+
+
+# Phase-10-5:追記 ── ステージ3 Phase 10: UML図のAI生成
+class UmlSourceDocumentMissingError(ConflictError):
+    """UML図の生成元となる内部設計書(現行版)がまだ生成されていない場合に送出する。"""
+
+    code: ClassVar[str | None] = "UML_SOURCE_DOCUMENT_MISSING"
+
+
+class UmlGenerationInProgressError(ConflictError):
+    """プロジェクト内でUML図のAI生成が実行中の場合に送出する。生成はプロジェクトごとに1本に
+    限る(並行生成によるデータ項目名の一意制約の競合と、無料枠クォータの浪費を避けるため)。
+    生成中の図の更新(PUT)・レイアウト実行も、生成結果で上書きされるため同じ例外で拒否する。"""
+
+    code: ClassVar[str | None] = "UML_GENERATION_IN_PROGRESS"
+
+
+class UmlSubjectNotFoundError(BadRequestError):
+    """生成対象(subject)が内部設計書から列挙した候補に無い場合に送出する
+    (DFDの処理名、ER部分図のテーブル名、component/ER全体以外のsubject指定など)。"""
+
+    code: ClassVar[str | None] = "UML_SUBJECT_NOT_FOUND"
+
+
+class ErScopeRequiredError(BadRequestError):
+    """ER図の全体生成でテーブル数が上限(MAX_ELEMENTS)を超える場合、または部分図に
+    テーブルの選択が無い場合に送出する(部分図として、対象のテーブルを選んで生成し直す)。"""
+
+    code: ClassVar[str | None] = "ER_SCOPE_REQUIRED"
+
+
+class TooManySubjectsError(BadRequestError):
+    """1回の生成リクエストで指定した対象が上限(MAX_SUBJECTS_PER_REQUEST)を超える場合に送出する。"""
+
+    code: ClassVar[str | None] = "TOO_MANY_SUBJECTS"
+
+
+class LLMTokenLimitError(BadGatewayError):
+    """LLMの入力または出力のトークン数が上限を超えた場合に送出する(出力が`MAX_TOKENS`で
+    打ち切られた、または入力が大きすぎて拒否された)。同じ入力で再試行しても結果は変わらない
+    ため、invoke_with_retryはこの例外をリトライせずにそのまま伝播させる。"""
+
+    code: ClassVar[str | None] = "LLM_TOKEN_LIMIT"
+
+
+class LLMInvalidOutputError(BadGatewayError):
+    """LLMの構造化出力を出力スキーマとして解釈できなかった場合に送出する(出力の揺らぎによる
+    一時的な失敗でありうるため、invoke_with_retryの通常のリトライ対象にする)。"""
+
+    code: ClassVar[str | None] = "LLM_INVALID_OUTPUT"

@@ -128,15 +128,21 @@
 | project_id | UUID | FK (`projects.id`), NOT NULL | プロジェクトID |
 | view | VARCHAR(50) | NOT NULL | 設計ビュー(`structure`/`data`/`dataflow`等) |
 | notation | VARCHAR(50) | NOT NULL | 図記法(`component`/`er`/`dfd`。初期実装対象) |
+| subject | VARCHAR(255) | NOT NULL, DEFAULT '' | 同じ記法の中で図を識別するキー(component: `''`、ER: 全体なら`''`・部分図ならグループ名、DFD: 処理名。Phase 10で追加) |
+| scope | JSONB | NULL可 | AIに渡した対象の選択(ER部分図の`{"tables": [...]}`。再生成で再利用する。Phase 10で追加) |
 | semantic_model | JSONB | NOT NULL | 意味モデル(要素・関係。Single Source of Truth) |
 | layout_model | JSONB | NULL可 | 自動レイアウト結果(ノード座標・辺の折れ点。手動移動後は折れ点を破棄しsmoothstep/orthogonalEdgeStyleに委ねる) |
 | style_model | JSONB | NULL可 | 表示スタイル |
 | status | VARCHAR(20) | NOT NULL, DEFAULT 'draft' | `draft`/`reviewing`/`approved`/`exported` |
 | version | INT | NOT NULL, DEFAULT 1 | 楽観ロック用バージョン |
+| generation_status | VARCHAR(20) | NOT NULL, DEFAULT 'completed' | AI生成の状態(`generating`/`completed`/`failed`)。レビューの状態`status`とは別の軸(Phase 10で追加) |
+| generation_error | TEXT | NULL可 | 直近の生成が失敗した理由(ユーザー向けの文言。Phase 10で追加) |
 | source_doc_versions | JSONB | NULL可 | 生成元とした各`generated_documents`のバージョン番号(文書再生成時の陳腐化検知用) |
 | created_at / updated_at | TIMESTAMP | NOT NULL | 作成・更新日時 |
 
 所有権は`projects.user_id`経由で既存の`CurrentProjectDep`により検証する(既存パターンを踏襲)。
+
+`UNIQUE(project_id, notation, subject)`(Phase 10)。AIによる再生成は同じ行を上書きする(semantic_modelを置換し、layout_modelを破棄、status='draft'、version+1)。`source_doc_versions`は生成時に`{"internal_design": <version>}`を記録する。
 
 #### ⑧ `data_items` テーブル(ステージ3、Phase 8で新設)
 
@@ -149,6 +155,20 @@
 | name | VARCHAR(255) | NOT NULL, `UNIQUE(project_id, name)` | データ項目名(プロジェクト内一意) |
 | fields | JSONB | NOT NULL, DEFAULT `[]` | フィールド一覧。各要素は`{name, type?, required?}`(型・必須は任意項目) |
 | created_at / updated_at | TIMESTAMP | NOT NULL | 作成・更新日時 |
+
+#### ⑨ `uml_generation_runs` テーブル(ステージ3、Phase 10で新設)
+
+UML図のAI生成リクエスト1回分の履歴。一括生成の途中でクォータ超過・トークン上限等で止まった場合に、対象ごとの結果(生成済み/失敗/未着手)と理由をユーザーが確認できるようにする。図の数による上限は設けず、止まった理由と「再度の生成指示が必要なこと」をここで伝える。
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | 履歴ID |
+| project_id | UUID | FK (`projects.id`, ondelete CASCADE), NOT NULL | プロジェクトID |
+| notation | VARCHAR(50) | NOT NULL | 図記法 |
+| requested | JSONB | NOT NULL | 受け付けた対象(`[{subject, diagram_id}]`、受け付け順) |
+| status | VARCHAR(20) | NOT NULL | `running`/`completed`/`partial`/`failed` |
+| results | JSONB | NOT NULL | 対象ごとの`{subject, diagram_id, outcome: succeeded\|failed\|skipped, reason_code, message}`。`reason_code`は`QUOTA_EXCEEDED`/`TOKEN_LIMIT`/`INVALID_OUTPUT`/`GENERATION_FAILED` |
+| started_at / finished_at | TIMESTAMP | started_at NOT NULL | 開始・終了日時 |
 
 ---
 
@@ -171,6 +191,7 @@ backend/
 │   ├── repositories/    # データアクセス層 (DBへのCRUD操作)
 │   └── uml/             # UML設計図パイプライン(ステージ3。既存レイヤーの外側に独立パッケージとして追加、Phase 8〜)
 │       ├── domain/       # Semantic/Layout/StyleモデルのPydantic定義
+│       ├── generation/   # AI生成(内部設計書の節抽出・LLM出力スキーマ・プロンプト・変換・失敗の分類。Phase 10)
 │       ├── layout/       # 自動レイアウト(別プロジェクトの自作エンジンを移植。Phase 9)
 │       ├── export/       # draw.io Generator / SVG出力(決定的、AI非依存)
 │       ├── sync/         # 内部設計書への差し込み(document_writer。Phase 13)
@@ -186,6 +207,7 @@ backend/
 * **`doc_generator_service.py`**:
   * ヒアリング完了時、「要件定義」「外部設計」「内部設計」「実装計画」のそれぞれに特化したプロンプトを、この順に**連鎖的に**実行する。要件定義のみチャット全履歴をコンテキストとしてインプットし、以降の3文書は生の対話履歴を再解釈せず、前段で確定した文書だけを入力にする(外部設計は要件定義を、内部設計は要件定義+外部設計を、実装計画は要件定義+内部設計を入力にする)。こうすることで4文書間の記述の一貫性を確保する。
   * バックグラウンドタスクとして非同期実行され、進捗や結果をデータベース (`generated_documents`) に保存。`generate()`開始時点の`project.status`(`interviewing`または`revising`)を保持しておき、`generating`への変更を経て、成功時は`completed`へ、失敗時は保持していた開始時点のステータスへ差し戻す(`revising`からの再生成に失敗した場合に`interviewing`へ戻ってしまい「生成済みだった」という文脈を失うことを防ぐ)。
+  * **内部設計書の固定形式の見出し(Phase 10)**: UML図の生成対象を決定的に列挙できるよう、内部設計書プロンプトで3.2節のテーブル見出しを`### テーブル: <テーブル名>`、3.3節の「処理別データフロー」小節の処理見出しを`#### DF-<連番>: <HTTPメソッド> <パス>`(バッチは`<バッチ名>`)に固定する。各処理の下には「元/データ/変換/先」の表と`- データ項目: <名前>(<フィールド…>)`を書かせる。
   * **自己診断ステップ**: 4文書の生成完了後、生成した文書自体を入力として追加のLLM呼び出しを行い、不足・不明瞭な点を「最重要/中程度/軽微」の3段階に分類して抽出する([要件定義書](requirements.md) 1.4節「ドキュメント自己診断機能」)。抽出結果は`sender='others'`の`chat_histories`行として保存し、ユーザーへの提示は`chat_service.py`側のチャット表示ロジックが担う。
 
 ### 2. APIエンドポイント一覧
@@ -205,7 +227,10 @@ backend/
 | **GET** | `/api/v1/projects/{id}/documents/{doc_type}/versions` | （※ステージ2、SCR-006向け）指定doc_typeの保持済みバージョン一覧(最大3件)を取得 | 必要 |
 | **POST** | `/api/v1/projects/{id}/documents/{doc_type}/versions/{version}/restore` | （※ステージ2、SCR-006向け）指定バージョンを表示中(`is_current`)に切り替える。新バージョンは作らない(3.2節バージョニング方針参照) | 必要 |
 | **GET** | `/api/v1/prompt-templates` | （※ステージ2、SCR-003向け）選択可能なプロンプトテンプレート一覧の取得(固定シードデータ) | 必要 |
-| **POST** | `/api/v1/projects/{id}/uml/diagrams` | （※ステージ3、Phase 8）UML設計図の生成トリガー | 必要 |
+| **POST** | `/api/v1/projects/{id}/uml/diagrams` | （※ステージ3、Phase 10）UML設計図のAI生成の受け付け(`202`、非同期。`{notation, subjects: [{subject, tables?}]}`、1回5件まで。同じ対象の図は上書き) | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/diagrams` | （※ステージ3、Phase 10）UML図の一覧(`generation_status`のポーリングに使う) | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/candidates` | （※ステージ3、Phase 10）生成対象の候補(内部設計書から列挙したDFDの処理・ERのテーブル) | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/generation-runs` | （※ステージ3、Phase 10）AI生成の履歴(対象ごとの結果と、止まった理由) | 必要 |
 | **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}` | （※ステージ3、Phase 8）UML図の取得 | 必要 |
 | **PUT** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}` | （※ステージ3、Phase 8）UML Model全体の更新(`version`による楽観ロック) | 必要 |
 | **POST** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/validate` | （※ステージ3、Phase 8）バリデーション実行 | 必要 |
@@ -226,12 +251,14 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 | :--- | :--- | :--- |
 | システム構造(モジュール) | コンポーネント図 | 本節「1. 主要処理ロジックの分割方針」 |
 | データ構造 | ER図 | 3.2節「2. テーブル定義」 |
-| 処理別データフロー(Must) | DFD | 本節 新設予定の「処理別データフロー」節(Phase 10で追加。APIエンドポイント/バッチ単位。要素表は「元/データ/変換/先」) |
+| 処理別データフロー(Must) | DFD | 本節の「処理別データフロー」小節(Phase 10で内部設計書プロンプトに追加済み。APIエンドポイント/バッチ単位の`#### DF-<n>`見出し。要素表は「元/データ/変換/先」) |
 | 振る舞い(Should、Phase 14) | アクティビティ図 | [外部設計書](external_design.md) 2.2節「画面一覧・画面遷移フロー」 |
 
-`internal_design`(本文書)にcomponent/ER/DFDを寄せているのは、`external_design.md`が画面・API等の利用者向け仕様のみを扱うのに対し、本文書の3.2/3.3節が既にモジュール構造・データモデルを扱っており、実装者向けの構造図・データ構造図の置き場として一貫するため。承認済みの図と要素表は、上記セクションにアンカーコメント(`<!-- uml:diagram:<diagram_id>:start -->`〜`:end -->`)経由でプレビュー時にSVGとして差し込む(M9a、Phase 13)。DFDプロンプトの実装(内部設計書生成プロンプトへの「処理別データフロー」節追加)・アンカー導入は後続Phase(Phase 10・13)で行う。
+`internal_design`(本文書)にcomponent/ER/DFDを寄せているのは、`external_design.md`が画面・API等の利用者向け仕様のみを扱うのに対し、本文書の3.2/3.3節が既にモジュール構造・データモデルを扱っており、実装者向けの構造図・データ構造図の置き場として一貫するため。承認済みの図と要素表は、上記セクションにアンカーコメント(`<!-- uml:diagram:<diagram_id>:start -->`〜`:end -->`)経由でプレビュー時にSVGとして差し込む(M9a、Phase 13)。内部設計書生成プロンプトへの「処理別データフロー」節の追加はPhase 10で実施済み。アンカー導入はPhase 13で行う。
 
-**DFD検証規則の申し送り(Phase 8)**: 診断8(`appendix/stage3-requirements-organization.md`)が定めるDFD検証規則5点のうち、「上位図と下位図の境界フローが一致する」はPhase 8では実装しない。`uml_diagrams`に上位図/下位図を結びつける列(`parent_diagram_id`/`level`)を持たせておらず、機械的に判定する材料が無いため。Phase 10(AI生成)がDFDの粒度(診断8本文が示す「APIエンドポイント/バッチごとに1枚」というフラットな複数図構成を採るか、階層分解を導入するか)を確定させた段階で、必要な列・検証ロジックを追加する。詳細は[`textbook/Phase-8/Phase-8-introduction.md`](../textbook/Phase-8/Phase-8-introduction.md)参照。
+**DFD検証規則(Phase 10で確定)**: DFDは「APIエンドポイント/バッチごとに1枚」のフラットな構成に確定した(Phase 10)。診断8(`appendix/stage3-requirements-organization.md`)のDFD検証規則5点のうち「上位図と下位図の境界フローが一致する」は、上位図・下位図の階層を持たないため撤回した。「どこからも参照されないデータ項目がない」は、図単体ではなくプロジェクト内の全DFDを横断して判定する。詳細は[`textbook/Phase-10/Phase-10-4.md`](../textbook/Phase-10/Phase-10-4.md)参照。
+
+**UML図のAI生成(Phase 10)**: `POST /uml/diagrams`は受け付け(検証・対象の図を`generating`化・履歴作成)までをリクエスト内で行い、生成自体はBackgroundTasksで対象を1件ずつ実行する。入力は内部設計書の現行版から記法ごとに必要な節だけを抽出する(component: 3.1+3.3、ER: 3.2(部分図は選んだテーブルのみ)、DFD: 3.2+対象のDF節+既存データ辞書)。構造化出力は`include_raw=True`で呼び、`finish_reason=MAX_TOKENS`(トークン上限。再試行しない)と解釈失敗(再試行する)を区別する。クォータ超過で止まった場合、残りの対象はLLMを呼ばずに未着手(skipped)として履歴に残す。同時実行はプロジェクトごとに1本。詳細は[`textbook/Phase-10/Phase-10-introduction.md`](../textbook/Phase-10/Phase-10-introduction.md)参照。
 
 ---
 
@@ -257,6 +284,8 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 * `TOO_MANY_FILES`: 初期ヒアリングの添付ファイルが上限(3件)を超えている(`TooManyFilesError`)
 * `UNSUPPORTED_FILE_TYPE`: 添付ファイルがtxt/Markdown/PDF以外の形式である(`UnsupportedFileTypeError`)
 * `FILE_TOO_LARGE`: 添付ファイルが1ファイルあたりの上限(5MB)を超えている(`FileTooLargeError`)
+* `UML_SOURCE_DOCUMENT_MISSING` / `UML_GENERATION_IN_PROGRESS`(409)、`UML_SUBJECT_NOT_FOUND` / `ER_SCOPE_REQUIRED` / `TOO_MANY_SUBJECTS`(400): UML図のAI生成の受け付け時の検証(ステージ3、Phase 10)
+* `LLM_TOKEN_LIMIT` / `LLM_INVALID_OUTPUT`: UML図のAI生成で、トークン上限超過/構造化出力の解釈失敗(バックグラウンド実行中に発生するため、HTTPレスポンスではなく生成履歴`uml_generation_runs`の`reason_code`として記録する。Phase 10)
 * `INTERNAL_SERVER_ERROR`: `AppError`以外の予期せぬ例外をキャッチする最終防衛ラインのハンドラが返す(スタックトレース等の詳細はレスポンスに含めずサーバーログにのみ記録)
 
 **`UNAUTHORIZED`について**: 認証境界(`app/api/deps.py`の`get_current_user`)は意図的に`AppError`ではなく生の`HTTPException`を使っており(認証失敗の理由を外部に細かく漏らさないため)、`code`フィールドは付与されない。レスポンス形自体は`{"detail": "..."}`のまま変わらない。

@@ -82,6 +82,10 @@ devex-api直下(samples対象外、直接反映済み): [`docker-compose.e2e.yml
 
 rule #18(セッション境界ルール)は「振り返りファイルへの書き込み」を含むセッションでは新規Phase生成を開始しないことを求めており、裏を返せば**Phase生成セッションの中で振り返りを書くこともまた避けるべき**である。そのため本Phaseの教材・サンプル生成が完了した時点で本セッションを終え、**別セッションでPhase 0〜4の振り返り(rule #10)・decision digestの整理(rule #24、本Phase分の追記含む)をまとめて行う**ことを推奨する。`textbook/q_a.md`(rule #8)もPhase 0以降ログが途切れているため、同じ機会に追記することが望ましい。
 
+## 後続 Phase での改訂(#12)
+
+- [`Phase-10-1.md`](../Phase-10/Phase-10-1.md)・[`Phase-10-5.md`](../Phase-10/Phase-10-5.md): `app/ai/llm/fake.py`(E2eFakeLLM)の内部設計書の応答を、UML図の生成候補(テーブル見出し・DF見出し)を含む固定文面にした。UML生成の出力スキーマ3種への固定応答と、`with_structured_output(schema, include_raw=True)`への対応も追加した。
+
 ## 次のフェーズ
 
 **Phase 5**: デプロイ・運用準備。詳細は[`Phase-0-2.md`](../Phase-0/Phase-0-2.md)のロードマップを参照。ユーザーが「Phase 5を開始する」と発話するまでは着手しない(#5)。

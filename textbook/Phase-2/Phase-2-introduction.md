@@ -71,6 +71,7 @@ CLAUDE.md #21(納期モード)は教材の記述の厚さ(#14 SUT/ドライバ/�
 ## 後続 Phase での改訂(#12)
 
 - [`Phase-8-5.md`](../Phase-8/Phase-8-5.md)で、本Phaseが作成した`app/api/routes/projects.py`・`app/services/{project,chat_service,doc_generator_service}.py`の一部ルート/メソッドを「ルーターはRepositoryを直接参照しない(常にService経由)」という方針へ改訂した。
+- [`Phase-10-1.md`](../Phase-10/Phase-10-1.md)で、本Phaseが作成した内部設計書プロンプト(`doc_generator_service.py`の`_DOC_TYPE_PROMPTS["internal_design"]`)に、テーブル見出しの固定形式と「処理別データフロー」節(`#### DF-<n>: <処理名>`)を追加した。また[`Phase-10-5.md`](../Phase-10/Phase-10-5.md)で`llm_retry.invoke_with_retry`を改訂し、トークン上限超過(`LLMTokenLimitError`・入力トークン超過の400)をリトライしないようにした。
 
 ## 次のフェーズ
 

@@ -1,4 +1,4 @@
-# 更新：Phase-2-3,2-4
+# 更新：Phase-2-3,2-4,10-5
 """LLM クライアントの挙動を模したテスト用スタブ。
 
 `with_structured_output(schema)` の呼び出しごとに `schema` を `structured_output_calls` に
@@ -50,13 +50,18 @@ class FakeLLM:
         content: str | list[str | dict[Any, Any]] | None = None,
         content_sequence: list[str | list[str | dict[Any, Any]]] | None = None,
         structured: BaseModel | None = None,
-        structured_sequence: list[BaseModel | Exception] | None = None,
+        # Phase-10-5：更新(include_raw=Trueの呼び出しで、生の応答を模したdictも渡せるように)
+        # structured_sequence: list[BaseModel | Exception] | None = None,
+        # ↓↓
+        structured_sequence: list[BaseModel | dict[str, Any] | Exception] | None = None,
         stream_chunks: list[str | list[str | dict[Any, Any]]] | None = None,
     ) -> None:
         # content: invoke()が返すAIMessageの本文(固定1件)
         # content_sequence: invoke()/ainvoke()の呼び出しごとに1つずつ消費する本文の列(Phase 2-4)
         # structured: with_structured_output().invoke()が返す構造化レスポンス(固定1件)
         # structured_sequence: 呼び出しごとに1つずつ消費する構造化レスポンス/例外の列
+        # (include_raw=Trueの呼び出しでは、dictをそのまま{"raw", "parsed", "parsing_error"}の
+        # 戻り値として返す ── MAX_TOKENSでの打ち切り等、生の応答を模したいテスト用)
         # stream_chunks: astream()が順にyieldする本文断片の列(未指定ならcontentを1チャンクとして返す。Phase 2-3)
         self._content = content
         self._content_sequence = content_sequence
@@ -90,33 +95,80 @@ class FakeLLM:
         for piece in chunks:
             yield _FakeChunk(piece)
 
-    def with_structured_output(self, schema: type[BaseModel]) -> _FakeStructuredLLM:
+    # Phase-10-5：更新(UML生成はwith_structured_output(schema, include_raw=True)で呼ぶため)
+    # def with_structured_output(self, schema: type[BaseModel]) -> _FakeStructuredLLM:
+    #     """構造化出力用のサブクライアントを返す。呼ばれた schema を記録する。"""
+    #     self.structured_output_calls.append(schema)
+    #     return _FakeStructuredLLM(self._structured, self._structured_sequence)
+    # ↓↓
+    def with_structured_output(
+        self, schema: type[BaseModel], *, include_raw: bool = False
+    ) -> _FakeStructuredLLM:
         """構造化出力用のサブクライアントを返す。呼ばれた schema を記録する。"""
         self.structured_output_calls.append(schema)
-        return _FakeStructuredLLM(self._structured, self._structured_sequence)
+        return _FakeStructuredLLM(
+            self._structured, self._structured_sequence, include_raw=include_raw
+        )
 
 
+# Phase-10-5：更新(include_raw=Trueのときは実物と同じ{"raw", "parsed", "parsing_error"}で返す)
+# class _FakeStructuredLLM:
+#     """with_structured_output()が返す、構造化レスポンスのみを返すテスト用スタブ。"""
+#
+#     def __init__(
+#         self,
+#         structured: BaseModel | None,
+#         sequence: list[BaseModel | Exception] | None = None,
+#     ) -> None:
+#         self._structured = structured
+#         self._sequence = sequence
+#
+#     def invoke(self, _messages: Any) -> BaseModel | None:
+#         """構造化済みレスポンスをそのまま返す。sequence 指定時は先頭から1つずつ消費し、
+#         値が Exception インスタンスならその回の呼び出しとして送出する。"""
+#         if self._sequence is not None:
+#             item = self._sequence.pop(0)
+#             if isinstance(item, Exception):
+#                 raise item
+#             return item
+#         return self._structured
+#
+#     async def ainvoke(self, messages: Any) -> BaseModel | None:
+#         """invoke の非同期版(結果は同じ)。"""
+#         return self.invoke(messages)
+# ↓↓
 class _FakeStructuredLLM:
     """with_structured_output()が返す、構造化レスポンスのみを返すテスト用スタブ。"""
 
     def __init__(
         self,
         structured: BaseModel | None,
-        sequence: list[BaseModel | Exception] | None = None,
+        sequence: list[BaseModel | dict[str, Any] | Exception] | None = None,
+        *,
+        include_raw: bool = False,
     ) -> None:
         self._structured = structured
         self._sequence = sequence
+        self._include_raw = include_raw
 
-    def invoke(self, _messages: Any) -> BaseModel | None:
+    def invoke(self, _messages: Any) -> Any:
         """構造化済みレスポンスをそのまま返す。sequence 指定時は先頭から1つずつ消費し、
-        値が Exception インスタンスならその回の呼び出しとして送出する。"""
+        値が Exception インスタンスならその回の呼び出しとして送出する。
+        include_raw=True のときは、実物と同じ{"raw", "parsed", "parsing_error"}の形で返す
+        (dictの値はそのまま返し、BaseModelの値はfinish_reason="STOP"の生応答で包む)。"""
+        item: BaseModel | dict[str, Any] | None
         if self._sequence is not None:
-            item = self._sequence.pop(0)
-            if isinstance(item, Exception):
-                raise item
+            next_item = self._sequence.pop(0)
+            if isinstance(next_item, Exception):
+                raise next_item
+            item = next_item
+        else:
+            item = self._structured
+        if not self._include_raw or isinstance(item, dict):
             return item
-        return self._structured
+        raw = AIMessage(content="", response_metadata={"finish_reason": "STOP"})
+        return {"raw": raw, "parsed": item, "parsing_error": None}
 
-    async def ainvoke(self, messages: Any) -> BaseModel | None:
+    async def ainvoke(self, messages: Any) -> Any:
         """invoke の非同期版(結果は同じ)。"""
         return self.invoke(messages)

@@ -73,6 +73,10 @@
 - **Phase 10(AI生成)**: 要素に`layer`を適切に設定する責務を持つ(Phase 9のlane算出はこの`layer`値に依存する)。診断8の「上位図と下位図の境界フローが一致する」検証規則(Phase 8で申し送り済み)は、診断8本文が示す「APIエンドポイント/バッチごとに1枚」というフラットな複数図構成を前提に設計すること(Phase 8-introduction.md参照)。
 - **Phase 12(承認・export)**: `to_svg`/`to_drawio`は`layout_model`(ノード座標・辺の折れ点・lane/row)をそのまま使う想定。移植元で座標算出とSVG/drawio出力が同一コードだったため、Phase 9の`LayoutModel`スキーマがPhase 12のexportに必要な情報を過不足なく持つよう設計した(不足があれば拡張する)。
 
+## 後続 Phase での改訂(#12)
+
+- [`Phase-10-5.md`](../Phase-10/Phase-10-5.md): `UmlDiagramService.compute_layout`に、AI生成中の図を拒否するガード(`UmlGenerationInProgressError`)を追加した。M4検証の呼び出しは、DFDの未参照判定を全DFD横断にするため`_validate_model`へ集約した。
+
 ## Phase完了チェック(#22)
 
 1. 移植元に無い「lane/rowの自動割り当て」がなぜ必要か、そのアルゴリズム(最長経路法+循環除去)の要点を説明できるか。

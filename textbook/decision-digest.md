@@ -358,3 +358,49 @@ Phase 8完了後の指示「Phase 9を開始する。過去のPhaseからの申�
 - **Phase 9完了後の相談で確定(出自表記)**: 移植元の別プロジェクト名は全ファイルで使わない。出自は「別プロジェクトの自作図生成エンジンから移植」の一般名1行だけにする(appendix D3を更新)。
 - **検証結果**: Phase 9分23件・全体261件のユニットテストが成功、`ruff check .`全通過、`uvx pyright`はPhase 9由来の新規エラー0件、`alembic history`で既存チェーンに変更が無いことを確認(Phase 9は新規マイグレーション不要、Phase 8で確保済みの列・テーブルを使用)。
 - **申し送り**: Phase 10(AI生成)は要素への`layer`設定の責務を持つ。DFD境界フロー一致検証(Phase 8からの申し送り)は診断8本文どおりフラットな複数図構成を前提に設計すること。Phase 12(export)は`LayoutModel`がexportに必要な情報を過不足なく持つか確認すること。
+
+## Phase 10完了 ── AI生成(構造化出力)・内部設計書プロンプトへの「処理別データフロー」節追加
+
+[`Phase-9-introduction.md`](./Phase-9/Phase-9-introduction.md)「次のフェーズ」を受け、M1(設計図のAI生成)を実装した。Phase 8のプレースホルダー`POST /diagrams`を置き換えた。詳細は[`Phase-10-introduction.md`](./Phase-10/Phase-10-introduction.md)参照。
+
+- **着手前にユーザーが確定した事項**:
+  1. 実行方式はBackgroundTasks(202+ポーリング)。
+  2. 再生成は`(project, notation, subject)`単位で上書きする。
+  3. DFDはフラット構成(処理ごとに1枚)で確定し、境界フロー一致規則を撤回する。未参照データ項目は全DFD横断で判定する。
+  4. DFDの対象は、内部設計書の固定形式の見出し(`#### DF-<n>: <処理名>`)を正規表現で決定的に列挙する(LLMを呼ばない)。
+  5. 生成単位は個別と一括の両方。一括は1回5件まで。
+  6. 図の「数」の上限は設けない。止まった理由は生成履歴(`uml_generation_runs`)に残す。伝えるのは「理由」と「再度の生成指示が必要なこと」。
+  7. 入力の節の抽出を全図に適用する。ERは30件を超えるとき部分図にする。
+- **撤回した推奨値**: 計画の初版に「DFDは1プロジェクト10件まで」を置いたが、既存文書に根拠の無いClaude自身の推奨値だった。ユーザーの指摘で撤回した。件数を縛っているのはトークンではなくクォータ(呼び出し回数)であり、図によって消費も違うため、数の上限ではなく生成履歴で扱う形に改めた。
+- **LLM出力専用スキーマを分離**: ドメインモデルは`DfdFlow.data_item_id`(UUID)とdiscriminated unionを持つため、構造化出力に向かない。記法ごとにフラットで全項目必須のスキーマにし、`layer`を必須にした(Phase 9の申し送り)。データ項目は名前で参照させ、サービス層が名前→UUIDに解決する。既存の項目は上書きしない。
+- **既存コードに前例の無い新規パターン**: `with_structured_output(schema, include_raw=True)`で`finish_reason`を読み、`MAX_TOKENS`(トークン上限。再試行しない)と解釈失敗(再試行する)を区別する。`llm_retry`は`LLMTokenLimitError`と入力トークン超過(Gemini 400)をリトライしないよう改訂した(#12、Phase-2-5の遡及)。
+- **生成状態は別の軸**: `generation_status`/`generation_error`をレビューの`status`と分けた。生成中の図のPUT・レイアウトは409で拒否する。同時実行はプロジェクトごとに1本。
+- **写経順序の配慮**: `UmlDiagramService.create`の削除はルート差し替えと同じ10-6に置いた。前方importの考え方を削除にも当てはめ、どの章の時点でもテストが通るようにした。
+- **検証結果**:
+  - 全体325件のユニットテストが成功(Phase 9時点は261件)。
+  - `ruff check .`は全通過。`uvx pyright`はPhase 10由来の新規エラー0件。
+  - 開発用Postgresで`alembic upgrade head`→`downgrade -1`→`upgrade head`の往復を確認。Phase 8で未実施だった実DBでのマイグレーションを、ここで初めて確認できた。
+  - 実Gemini(`gemini-3.5-flash-lite`)でcomponent・DFDの構造化出力が`finish_reason=STOP`で返り、M4検証を通過した。
+  - samplesのオーバーレイでも325件が成功した。
+- **申し送り**:
+  - Phase 11(FE)は、`GET /diagrams`の`generation_status`をポーリングし、`GET /candidates`・`GET /generation-runs`で選択UIと履歴を作る。
+  - Phase 13は、`source_doc_versions`(`{"internal_design": <version>}`)で陳腐化を検知する。
+  - プロセスが落ちて`generating`のまま残る問題は、既知の制約のまま残っている。
+
+## Phase 10完了後 ── フォルダ構成の再整理(検討課題として記録)
+
+Phase 10完了後、ユーザーから2つの質問を受けた。1つは「`app/uml/generation/schemas.py`を`app/schemas`に置かなかった理由」。もう1つは「md生成とUMLでフォルダ分けのルールが違うので、(md | uml | 共通)で再整理すべきか。すべきなら今かStage 3終了時か」。ユーザーの判断は「ファイル配置は現状維持。後の検討課題として記録する」。
+
+- **現状のルール(明文化)**:
+  - 層フォルダ(routes・services・repositories・models・schemas)はI/Oの境界であり、md側・uml側の両方のファイルが同居している(`uml.py`・`uml_diagram_service.py`・`uml_diagram.py`等)。
+  - `app/uml/`は、I/Oを持たないUMLの純粋ロジック(domain・layout・validation・generation)である。外への依存は末端モジュールの`app.services.errors`だけ。
+  - md側の純粋ロジック(プロンプト定数・`_render_transcript`)は量が少ないので`doc_generator_service.py`の中にある。これが「ルールが違う」ように見える原因である。
+- **`schemas.py`の配置理由**: 理由は2つ。(1) 依存を「外側 → `app/uml`」の一方向に保つため。(2) UMLの出力スキーマはAPIに出ないLLM境界の型だから。一方、`app/schemas/generation.py`の`HearingCompletionCheck`はAPIのレスポンスも兼ねる。詳細は[`Phase-10-2.md`](./Phase-10/Phase-10-2.md)。
+- **今は再整理しない理由**:
+  - CLAUDE.md #17(b)(駆動する消費者がいない遡及クリーンアップは行わない)。
+  - Phase 2〜10の教材・samples(パス・#29タグ・import)への影響が大きい。
+  - `devex-api`はテンプレートでもあり、層を先に分ける構成がその前提である。
+- **検討課題(再判定のタイミング)**:
+  - (1) **Phase 13着手時**: 内部設計書のMarkdownを読み書きする純粋ロジック(`app/uml/sync`・アンカー・要素表の差し込み・陳腐化の検知)が増える。「内部設計書の形式の取り決め」(`doc_generator_service.py`のプロンプトの見出し形式+`app/uml/generation/sections.py`のパーサ+アンカー)をmd側・uml側で共有する必要が出たら、「共通」の純粋パッケージとして切り出すかを判定する。
+  - (2) **Stage 3終了時の振り返り**: 上記以外の観点も含めて要否を判定する。
+  - 実施する場合は、#18に従いPhase生成とは別のセッションで行う。

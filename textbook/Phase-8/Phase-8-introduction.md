@@ -59,6 +59,11 @@
 - **境界フロー一致検証(診断8)**: `uml_diagrams`に階層列(`parent_diagram_id`/`level`)が無いため、Phase 8では実装しない。Phase 10のAI生成設計は、診断8本文の「APIエンドポイント/バッチごとに1枚」というフラットな複数図構成を前提に行う。
 - **実AI生成トリガー**: `POST /diagrams`は本Phaseでは要素・関係が空のdraftを作るプレースホルダー(`UmlDiagramService.create`)。Phase 10でこの内部をAI呼び出しに置き換える。
 
+## 後続 Phase での改訂(#12)
+
+- [`Phase-10-4.md`](../Phase-10/Phase-10-4.md): DFDを処理ごとに1枚のフラット構成に確定し、申し送りだった「上位図と下位図の境界フロー一致」規則を撤回した。「どこからも参照されないデータ項目がない」は、図単体ではなくプロジェクト内の全DFDを横断する判定に改訂した(`validate_dfd_rules`の`referenced_elsewhere`引数)。`uml_diagrams`に`subject`/`scope`/`generation_status`/`generation_error`列と一意制約を追加した。
+- [`Phase-10-6.md`](../Phase-10/Phase-10-6.md): 生成トリガーのプレースホルダー(`UmlDiagramService.create`・`UmlDiagramCreate`)を廃止し、`POST /diagrams`をAI生成の受け付け(202)に差し替えた。
+
 ## Phase完了チェック(#22)
 
 1. `DataItem`の永続化を専用テーブルにした理由と、プロジェクト単位のJSONBに寄せた場合に失うものを説明できるか。
