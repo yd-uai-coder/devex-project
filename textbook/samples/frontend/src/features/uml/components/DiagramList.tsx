@@ -1,14 +1,17 @@
-// 作成：Phase-11-4
+// 作成：Phase-11-4｜更新：Phase-13-6
 // 写経レベル: 定型 ── 一覧表示とリンク。
+// Phase-13-6:追記 ── uml-store.isSourceOutdated
 "use client";
 
 import Link from "next/link";
 import { H3, Text, XStack, YStack } from "tamagui";
 import { DIAGRAM_STATUS_LABELS, diagramTitle } from "@/features/uml/labels";
-import { useUmlStore } from "@/features/uml/uml-store";
+import { isSourceOutdated, useUmlStore } from "@/features/uml/uml-store";
 
 export function DiagramList({ projectId }: { projectId: string }) {
   const diagrams = useUmlStore((s) => s.diagrams);
+  // Phase-13-6:追記
+  const currentDocVersion = useUmlStore((s) => s.candidates?.internal_design_version ?? null);
 
   return (
     <YStack gap="$2">
@@ -30,6 +33,12 @@ export function DiagramList({ projectId }: { projectId: string }) {
           {diagram.generation_status === "generating" ? (
             <Text color="$color11" fontSize="$2">
               生成中...
+            </Text>
+          ) : null}
+          {/* Phase-13-6:追記 */}
+          {isSourceOutdated(diagram, currentDocVersion) ? (
+            <Text color="$orange10" fontSize="$2">
+              内部設計書が更新されています(再生成を検討してください)
             </Text>
           ) : null}
           {diagram.generation_status === "failed" ? (

@@ -1,7 +1,8 @@
-// 作成：Phase-11-2｜更新：Phase-12-5
+// 作成：Phase-11-2｜更新：Phase-12-5,13-5
 // 写経レベル: 定型 ── apiFetch の薄いラッパー(既存 documentsApi.ts と同じ形)。
 // Phase-12-5:追記 ── auth-store.useAuthStore, base-url.API_BASE_URL, client.toApiError,
 //   download.parseFilename, types(ExportFormat, UmlDiagramApprove)
+// Phase-13-5:追記 ── types(UmlEmbedRead, UmlReflectRead)
 import { useAuthStore } from "@/components/auth/auth-store";
 import { API_BASE_URL } from "@/lib/api/base-url";
 import { apiFetch, toApiError } from "@/lib/api/client";
@@ -13,8 +14,10 @@ import type {
   UmlDiagramApprove,
   UmlDiagramRead,
   UmlDiagramUpdate,
+  UmlEmbedRead,
   UmlGenerateRequest,
   UmlGenerationRunRead,
+  UmlReflectRead,
   ValidationResult,
 } from "@/features/uml/api/types";
 
@@ -109,18 +112,55 @@ export async function exportDiagram(
   diagramId: string,
   format: ExportFormat,
 ): Promise<ExportedFile> {
-  const accessToken = useAuthStore.getState().accessToken;
-  const res = await fetch(
-    `${API_BASE_URL}${umlPath(projectId, `/diagrams/${diagramId}/export/${format}`)}`,
-    {
-      credentials: "include",
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-    },
-  );
-  if (!res.ok) throw await toApiError(res);
+  // Phase-13-5：更新(zip のダウンロードと共有するため fetchAttachment へ切り出した)
+  // const accessToken = useAuthStore.getState().accessToken;
+  // const res = await fetch(
+  //   `${API_BASE_URL}${umlPath(projectId, `/diagrams/${diagramId}/export/${format}`)}`,
+  //   {
+  //     credentials: "include",
+  //     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  //   },
+  // );
+  // if (!res.ok) throw await toApiError(res);
+  // ↓↓
+  const res = await fetchAttachment(umlPath(projectId, `/diagrams/${diagramId}/export/${format}`));
 
   const content = await res.text();
   const filename =
     parseFilename(res.headers.get("Content-Disposition")) ?? `${diagramId}.${format}`;
   return { filename, content, mimeType: EXPORT_MIME_TYPES[format] };
+}
+
+// Phase-13-5:追記
+// ファイルを返すエンドポイント(Content-Disposition 付き)を生の fetch で呼ぶ。
+// 失敗は apiFetch と同じ ApiError(code 付き)にする。
+async function fetchAttachment(path: string): Promise<Response> {
+  const accessToken = useAuthStore.getState().accessToken;
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: "include",
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res;
+}
+
+// 文書のプレビューに差し込む図と、図と文書の食い違い(M9a)。状態は変えない。
+export function listEmbeds(projectId: string): Promise<UmlEmbedRead[]> {
+  return apiFetch<UmlEmbedRead[]>(umlPath(projectId, "/embeds"));
+}
+
+// 承認済みの図すべてを内部設計書へ反映し直す。404: 内部設計書が無い
+export function reflectDiagrams(projectId: string): Promise<UmlReflectRead> {
+  return apiFetch<UmlReflectRead>(umlPath(projectId, "/reflect"), { method: "POST" });
+}
+
+export type DownloadedBundle = { filename: string; content: Blob };
+
+// 内部設計書の md と、反映済みの図(SVG・draw.io)の zip(D8)。入れた図は exported になる。
+// zip はバイナリなので text() ではなく blob() で受け取る。
+export async function downloadBundle(projectId: string): Promise<DownloadedBundle> {
+  const res = await fetchAttachment(umlPath(projectId, "/bundle"));
+  const content = await res.blob();
+  const filename = parseFilename(res.headers.get("Content-Disposition")) ?? "internal_design.zip";
+  return { filename, content };
 }

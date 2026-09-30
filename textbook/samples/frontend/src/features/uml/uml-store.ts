@@ -1,4 +1,4 @@
-// 作成：Phase-11-4
+// 作成：Phase-11-4｜更新：Phase-13-6
 // 写経レベル: コア ── ポーリングの継続条件(isGenerating)と、受け付け後に一覧を取り直してポーリングを始める流れ。
 import { create } from "zustand";
 import { isCacheFresh } from "@/lib/api/cache";
@@ -41,6 +41,17 @@ export function isGenerating(diagrams: UmlDiagramRead[]): boolean {
   return diagrams.some((d) => d.generation_status === "generating");
 }
 
+// Phase-13-6:追記
+// 図を生成した後に、内部設計書が再生成・復元されたか(図が古い)。devex-api
+// app/uml/sync/staleness.py の source_outdated と同じ規則(「等しくない」で比べる ── 復元で
+// 版の番号が下がることがあるため)。一覧画面では、取得済みの生成候補の版と比べる
+// (SVG を含む GET .../embeds を一覧のために呼ばない)。
+export function isSourceOutdated(diagram: UmlDiagramRead, currentVersion: number | null): boolean {
+  const source = diagram.source_doc_versions?.internal_design;
+  return source != null && currentVersion != null && source !== currentVersion;
+}
+
+// ── ここから Phase-11-4 の作成分 ──
 export const useUmlStore = create<UmlStore>((set, get) => ({
   projectId: null,
   diagrams: [],

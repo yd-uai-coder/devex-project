@@ -1,4 +1,4 @@
-// 作成：Phase-12-5
+// 作成：Phase-12-5｜更新：Phase-13-5
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseFilename, saveFile } from "../download";
 
@@ -32,6 +32,19 @@ describe("saveFile", () => {
     expect(link.download).toBe("component.svg");
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:1");
     expect(document.querySelector("a[download]")).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  // Phase-13-5:追記
+  it("Blob を受け取ったら、そのまま保存させる(zip などのバイナリ)", () => {
+    const createObjectURL = vi.fn().mockReturnValue("blob:2");
+    vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL: vi.fn() });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const zip = new Blob([new Uint8Array([0x50, 0x4b])], { type: "application/zip" });
+
+    saveFile("internal_design.zip", zip, "application/zip");
+
+    expect(createObjectURL).toHaveBeenCalledWith(zip);
     vi.unstubAllGlobals();
   });
 });

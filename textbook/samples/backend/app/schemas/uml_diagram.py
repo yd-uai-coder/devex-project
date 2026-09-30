@@ -1,7 +1,8 @@
-# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1,12-1
+# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1,12-1,13-2,13-3
 # 写経レベル: コア ── semantic_modelを型付きdiscriminated unionのまま公開するという設計判断そのもの。
 # Phase-9-5:追記 ── app.uml.layout.model.LayoutModel
 # Phase-12-1:追記 ── app.uml.domain.DiagramStatus
+# Phase-13-3:追記 ── app.uml.sync.DocState
 import uuid
 from datetime import datetime
 
@@ -9,6 +10,7 @@ from pydantic import BaseModel, ConfigDict
 
 from app.uml.domain import DiagramStatus, NotationType, SemanticModel
 from app.uml.layout.model import LayoutModel
+from app.uml.sync import DocState
 
 
 class UmlDiagramRead(BaseModel):
@@ -73,3 +75,30 @@ class UmlDiagramApprove(BaseModel):
     (見ていない版を承認しないための楽観ロック。一致しなければ409)。"""
 
     version: int
+
+
+# Phase-13-2:追記
+class UmlReflectRead(BaseModel):
+    """図の一括再反映の結果(反映した承認済みの図の数)。"""
+
+    reflected: int
+
+
+# Phase-13-3:追記
+class UmlEmbedRead(BaseModel):
+    """文書のプレビューに差し込む図1枚分と、図と文書の食い違い(陳腐化)。
+
+    - `source_outdated`: 図を生成した後に内部設計書が再生成・復元された(図が古い)
+    - `doc_state`: 文書に反映した内容と図の今の状態の関係(app/uml/sync/staleness.py参照)
+    - `svg`: 承認済みの図だけ(プレビューではimgのdata URIとして表示し、スクリプトを実行させない)
+    """
+
+    diagram_id: uuid.UUID
+    notation: NotationType
+    subject: str
+    title: str
+    status: DiagramStatus
+    version: int
+    source_outdated: bool
+    doc_state: DocState
+    svg: str | None

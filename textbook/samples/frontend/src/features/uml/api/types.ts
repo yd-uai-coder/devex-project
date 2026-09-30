@@ -1,4 +1,4 @@
-// 作成：Phase-11-2｜更新：Phase-12-2,12-5
+// 作成：Phase-11-2｜更新：Phase-12-2,12-5,13-5
 // 写経レベル: 定型 ── バックエンドの Pydantic スキーマを snake_case のまま写した型定義。
 // devex-api の UML API(app/api/routes/uml.py)が返す・受け取る JSON の型。
 // バックエンドの Pydantic スキーマに合わせて snake_case のまま手書きする(既存 feature と同じ方針)。
@@ -177,3 +177,26 @@ export type DataItemRead = {
 // ---- 検証(app/uml/validation/base.py) ----
 export type ValidationIssue = { code: string; message: string; element_id: string | null };
 export type ValidationResult = { errors: ValidationIssue[]; warnings: ValidationIssue[] };
+
+// Phase-13-5:追記
+// ---- 内部設計書への反映(app/schemas/uml_diagram.py UmlReflectRead / UmlEmbedRead) ----
+// 文書に反映した内容と、図の今の状態の関係(app/uml/sync/staleness.py)
+//   reflected: 反映済み / not_reflected: 承認済みだが文書に無い(再生成・復元で消えた)
+//   outdated: 文書の内容が古い(承認後に編集された) / not_applicable: まだ承認されていない
+export type DocState = "reflected" | "not_reflected" | "outdated" | "not_applicable";
+
+export type UmlReflectRead = { reflected: number };
+
+export type UmlEmbedRead = {
+  diagram_id: string;
+  notation: NotationType;
+  subject: string;
+  title: string;
+  status: DiagramStatus;
+  version: number;
+  // 図を生成した後に、内部設計書が再生成・復元された(図が古い)
+  source_outdated: boolean;
+  doc_state: DocState;
+  // 承認済みの図だけ。プレビューでは img の data URI にして表示する(スクリプトを実行させない)
+  svg: string | null;
+};

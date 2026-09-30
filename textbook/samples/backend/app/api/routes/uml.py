@@ -1,4 +1,4 @@
-# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1,12-1,12-4
+# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1,12-1,12-4,13-2,13-3,13-4
 # 写経レベル: コア ── prefixにproject_idを含める構成・エンドポイント構成そのもの。
 # Phase-10-6:追記 ── fastapi.BackgroundTasks, app.schemas.uml_generation(DfdSubjectRead,
 #   UmlCandidatesRead, UmlGenerateRequest, UmlGenerationRunRead),
@@ -7,6 +7,8 @@
 # Phase-12-1:追記 ── app.schemas.uml_diagram.UmlDiagramApprove
 # Phase-12-4:追記 ── fastapi.responses.Response, app.api.responses.content_disposition,
 #   app.services.uml_diagram_service.ExportFormat
+# Phase-13-2:追記 ── app.schemas.uml_diagram.UmlReflectRead, app.services.uml_sync_service.UmlSyncService
+# Phase-13-3:追記 ── app.schemas.uml_diagram.UmlEmbedRead
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, status
@@ -15,7 +17,13 @@ from fastapi.responses import Response
 from app.api.deps import CurrentProjectDep, SessionDep
 from app.api.responses import content_disposition
 from app.schemas.data_item import DataItemCreate, DataItemRead, DataItemUpdate
-from app.schemas.uml_diagram import UmlDiagramApprove, UmlDiagramRead, UmlDiagramUpdate
+from app.schemas.uml_diagram import (
+    UmlDiagramApprove,
+    UmlDiagramRead,
+    UmlDiagramUpdate,
+    UmlEmbedRead,
+    UmlReflectRead,
+)
 from app.schemas.uml_generation import (
     DfdSubjectRead,
     UmlCandidatesRead,
@@ -29,6 +37,7 @@ from app.services.uml_generation_service import (
     UmlGenerationService,
     run_uml_generation,
 )
+from app.services.uml_sync_service import UmlSyncService
 from app.uml.validation import ValidationResult
 
 # project_idをprefixに含める(既存のprojects.pyはエンドポイント側にproject_idを書く方式だが、
@@ -211,6 +220,56 @@ async def export_diagram_svg(
 ) -> Response:
     """承認済みのUML図をSVGとしてダウンロードする(M8。draw.ioと同じエンジンで書き出す)。"""
     return await _export(diagram_id, "svg", session, current_project)
+
+
+# Phase-13-2:追記
+@router.post("/reflect", response_model=UmlReflectRead)
+async def reflect_diagrams(
+    session: SessionDep, current_project: CurrentProjectDep
+) -> UmlReflectRead:
+    """承認済みの図すべてを、内部設計書の表示中の版へ反映し直す(M9a)。文書の再生成・復元で
+    アンカーが消えた場合に使う。版は増やさない(D1案A)。内部設計書が無ければ404。"""
+    reflected = await UmlSyncService(session).reflect_all(current_project.id)
+    return UmlReflectRead(reflected=reflected)
+
+
+# Phase-13-3:追記
+@router.get("/embeds", response_model=list[UmlEmbedRead])
+async def list_embeds(
+    session: SessionDep, current_project: CurrentProjectDep
+) -> list[UmlEmbedRead]:
+    """文書のプレビューに差し込む図(承認済みの図のSVG)と、図と文書の食い違いを返す。
+    状態は変えない(プレビューで見ただけでは`exported`にしない)。"""
+    embeds = await UmlSyncService(session).list_embeds(current_project.id)
+    return [
+        UmlEmbedRead.model_validate(
+            {
+                "diagram_id": embed.diagram.id,
+                "notation": embed.diagram.notation,
+                "subject": embed.diagram.subject,
+                "title": embed.title,
+                "status": embed.diagram.status,
+                "version": embed.diagram.version,
+                "source_outdated": embed.sync_state.source_outdated,
+                "doc_state": embed.sync_state.doc_state,
+                "svg": embed.svg,
+            }
+        )
+        for embed in embeds
+    ]
+
+
+# Phase-13-4:追記
+@router.get("/bundle")
+async def download_bundle(session: SessionDep, current_project: CurrentProjectDep) -> Response:
+    """内部設計書のmdと、反映済みの図(SVG・draw.io)をzipでダウンロードする(D8)。
+    zipに入れた図は`exported`になる。内部設計書が無ければ404。"""
+    bundle = await UmlSyncService(session).bundle(current_project.id)
+    return Response(
+        content=bundle.content,
+        media_type=bundle.media_type,
+        headers={"Content-Disposition": content_disposition(bundle.filename)},
+    )
 
 
 # ── ここから Phase-8-4 の作成分 ──

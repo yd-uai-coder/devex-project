@@ -242,6 +242,9 @@ backend/
 | **POST** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/approve` | （※ステージ3、Phase 12）承認(`{version}`。draft/reviewing→approved。versionの不一致・承認済みは409、配置の無い要素・バリデーションNGは400。状態が変わってもversionは増やさない) | 必要 |
 | **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/export/drawio` | （※ステージ3、Phase 12）`.drawio`ダウンロード(approved/exportedのみ。それ以外は409。成功でapproved→exported) | 必要 |
 | **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}/export/svg` | （※ステージ3、Phase 12）SVGダウンロード(同上。draw.ioと同じ中間表現から書き出す) | 必要 |
+| **POST** | `/api/v1/projects/{id}/uml/reflect` | （※ステージ3、Phase 13）承認済みの図すべてを内部設計書の表示中の版へ反映し直す(`{reflected}`。版は増やさない。内部設計書が無ければ404) | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/embeds` | （※ステージ3、Phase 13）文書のプレビューに差し込む図(承認済みの図のSVG)と、図と文書の食い違い(`source_outdated`・`doc_state`)。状態は変えない | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/bundle` | （※ステージ3、Phase 13）内部設計書のmd+反映済みの図(SVG・drawio)のzip。zipに入れた図はapproved→exported | 必要 |
 
 ### 3. UML設計図パイプラインの図↔文書対応(ステージ3、D5)
 
@@ -254,7 +257,13 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 | 処理別データフロー(Must) | DFD | 本節の「処理別データフロー」小節(Phase 10で内部設計書プロンプトに追加済み。APIエンドポイント/バッチ単位の`#### DF-<n>`見出し。要素表は「元/データ/変換/先」) |
 | 振る舞い(Should、Phase 14) | アクティビティ図 | [外部設計書](external_design.md) 2.2節「画面一覧・画面遷移フロー」 |
 
-`internal_design`(本文書)にcomponent/ER/DFDを寄せているのは、`external_design.md`が画面・API等の利用者向け仕様のみを扱うのに対し、本文書の3.2/3.3節が既にモジュール構造・データモデルを扱っており、実装者向けの構造図・データ構造図の置き場として一貫するため。承認済みの図と要素表は、上記セクションにアンカーコメント(`<!-- uml:diagram:<diagram_id>:start -->`〜`:end -->`)経由でプレビュー時にSVGとして差し込む(M9a、Phase 13)。内部設計書生成プロンプトへの「処理別データフロー」節の追加はPhase 10で実施済み。アンカー導入はPhase 13で行う。
+`internal_design`(本文書)にcomponent/ER/DFDを寄せているのは、`external_design.md`が画面・API等の利用者向け仕様のみを扱うのに対し、本文書の3.2/3.3節が既にモジュール構造・データモデルを扱っており、実装者向けの構造図・データ構造図の置き場として一貫するため。承認済みの図と要素表は、上記セクションにアンカーコメント(`<!-- uml:diagram:<diagram_id>:start v=<version> -->`〜`<!-- uml:diagram:<diagram_id>:end -->`)経由でプレビュー時にSVGとして差し込む(M9a、Phase 13)。内部設計書生成プロンプトへの「処理別データフロー」節の追加はPhase 10で実施済み。
+
+**図の反映・アンカー・陳腐化(Phase 13で確定)**:
+* **アンカー**: 図のIDを含むため、文書を生成するLLMには書かせず、反映のときにバックエンドが見出しを基準に挿入する(プロンプトは変えない)。挿入先はcomponentが`## 3.3`直下、ERが`## 3.2`直下、DFDが対象の`#### DF-<n>: <処理名>`直下。見つからなければ末尾の`## 付録: 設計図`節に入れる。同じ図のアンカーが既にあれば、その位置のまま中身を置き換える。`v=<version>`は反映したときの図の`version`で、文書の復元で古いアンカーも一緒に戻る。
+* **反映**: 承認と同じトランザクションで、`is_current`の版の本文をアンカーの範囲だけ書き換える(版は増やさない。D1案A)。範囲の中身は、題名の注意書きと要素表(component: 名称/種別/説明/依存先、ER: カラムと関連、DFD: 元/データ/変換/先とデータ項目)。文書の再生成・復元でアンカーが消えた場合は、一括の再反映(`POST /uml/reflect`)で戻す。
+* **陳腐化**: (a) 図が古い = `source_doc_versions.internal_design` ≠ 表示中の内部設計書の版(「等しくない」で比べる。復元で番号が下がるため)。(b) 文書が古い = アンカーの`v`と図の状態・`version`の食い違い(`reflected`/`not_reflected`/`outdated`/`not_applicable`)。文書チェーンに沿った下流への伝播はPhase 13b(M9b)で扱う。
+* 詳細は[`textbook/Phase-13/Phase-13-introduction.md`](../textbook/Phase-13/Phase-13-introduction.md)参照。
 
 **DFD検証規則(Phase 10で確定)**: DFDは「APIエンドポイント/バッチごとに1枚」のフラットな構成に確定した(Phase 10)。診断8(`appendix/stage3-requirements-organization.md`)のDFD検証規則5点のうち「上位図と下位図の境界フローが一致する」は、上位図・下位図の階層を持たないため撤回した。「どこからも参照されないデータ項目がない」は、図単体ではなくプロジェクト内の全DFDを横断して判定する。詳細は[`textbook/Phase-10/Phase-10-4.md`](../textbook/Phase-10/Phase-10-4.md)参照。
 

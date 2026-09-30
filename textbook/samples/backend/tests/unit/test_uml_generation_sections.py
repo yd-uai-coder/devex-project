@@ -1,4 +1,5 @@
-# 作成：Phase-10-1
+# 作成：Phase-10-1｜更新：Phase-13-1
+# Phase-13-1:追記 ── app.uml.generation.sections(find_dfd_heading_end, find_section_heading_end)
 from tests.fixtures.uml import INTERNAL_DESIGN_MD
 
 from app.uml.generation import (
@@ -9,6 +10,7 @@ from app.uml.generation import (
     extract_section,
     remove_subsection,
 )
+from app.uml.generation.sections import find_dfd_heading_end, find_section_heading_end
 
 
 def test_extract_section_stops_before_next_level_two_heading() -> None:
@@ -65,3 +67,20 @@ def test_extract_er_table_blocks_keeps_only_selected_tables() -> None:
     assert "### テーブル: reservations" in blocks
     assert "user_id" in blocks
     assert "### テーブル: users" not in blocks
+
+
+# Phase-13-1:追記 ── 図の反映位置(見出し行の直後)
+def test_find_section_heading_end_points_just_after_heading_line() -> None:
+    index = find_section_heading_end(INTERNAL_DESIGN_MD, "3.2")
+
+    assert index is not None
+    assert INTERNAL_DESIGN_MD[:index].endswith("## 3.2 データモデル定義\n")
+    assert find_section_heading_end(INTERNAL_DESIGN_MD, "9.9") is None
+
+
+def test_find_dfd_heading_end_matches_by_title_not_code() -> None:
+    index = find_dfd_heading_end(INTERNAL_DESIGN_MD, "予約リマインドバッチ")
+
+    assert index is not None
+    assert INTERNAL_DESIGN_MD[:index].endswith("#### DF-3: 予約リマインドバッチ\n")
+    assert find_dfd_heading_end(INTERNAL_DESIGN_MD, "DF-3") is None

@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -321,8 +321,16 @@ class DocGeneratorService:
         # await self._session.commit()
         # return restored
         # ↓↓
+        # Phase-13-2：更新(D1案Aの例外を明記)
+        # """指定バージョンを表示中(is_current)に切り替える。バージョン番号は増やさず、新しい行も
+        # 作らない(既存版の内容も書き換えない)。指定バージョンが存在しなければDocumentNotFoundError。"""
+        # ↓↓
         """指定バージョンを表示中(is_current)に切り替える。バージョン番号は増やさず、新しい行も
-        作らない(既存版の内容も書き換えない)。指定バージョンが存在しなければDocumentNotFoundError。"""
+        作らない(既存版の内容も書き換えない)。指定バージョンが存在しなければDocumentNotFoundError。
+
+        既存版の内容を書き換える例外は1つだけ: 承認済みのUML図を内部設計書へ反映するとき
+        (`GeneratedDocumentRepository.update_content_in_place`、D1案A)。復元した版には、その版を
+        表示していた当時に反映した図のアンカーが残っている(陳腐化の判定はその`v=`で行う)。"""
         restored = await self._documents.set_current(
             project_id=project_id, doc_type=doc_type, version=version
         )

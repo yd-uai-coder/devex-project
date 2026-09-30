@@ -1,6 +1,10 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,12-5
+// 作成：Phase-3-6｜更新：Phase-6-2,12-5,13-6
 // Phase-6-2:追記 ── @/features/documents/components/VersionHistoryPanel
 // Phase-12-5:追記 ── @/lib/api/download.saveFile
+// Phase-13-6:追記 ── @/features/documents/anchors.splitByAnchors,
+//   @/features/documents/components(DiagramEmbed, DiagramSyncBar),
+//   @/features/documents/documents-store.useDocumentsStore,
+//   @/features/documents/hooks/useDiagramEmbeds, @/features/uml/api/types.UmlEmbedRead
 "use client";
 
 import { useState } from "react";
@@ -11,6 +15,12 @@ import { downloadDocument } from "@/features/documents/api/documentsApi";
 import { saveFile } from "@/lib/api/download";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
 import { VersionHistoryPanel } from "@/features/documents/components/VersionHistoryPanel";
+import { splitByAnchors } from "@/features/documents/anchors";
+import { DiagramEmbed } from "@/features/documents/components/DiagramEmbed";
+import { DiagramSyncBar } from "@/features/documents/components/DiagramSyncBar";
+import { useDocumentsStore } from "@/features/documents/documents-store";
+import { useDiagramEmbeds } from "@/features/documents/hooks/useDiagramEmbeds";
+import type { UmlEmbedRead } from "@/features/uml/api/types";
 import type { Components } from "react-markdown";
 
 type DocumentMarkdownViewProps = {
@@ -64,9 +74,43 @@ const markdownComponents: Components = {
   ),
 };
 
+// Phase-13-6:追記
+// 内部設計書の本文を、UML 図のアンカーを境に分けて描く(アンカーの位置に図を差し込む。M9a・D8)。
+function renderWithDiagrams(content: string, embeds: UmlEmbedRead[], loaded: boolean) {
+  const byId = new Map(embeds.map((embed) => [embed.diagram_id, embed]));
+  return splitByAnchors(content).map((segment, index) =>
+    segment.kind === "markdown" ? (
+      <ReactMarkdown key={index} remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        {segment.text}
+      </ReactMarkdown>
+    ) : (
+      <DiagramEmbed key={index} embed={byId.get(segment.diagramId)} loaded={loaded}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {segment.body}
+        </ReactMarkdown>
+      </DiagramEmbed>
+    ),
+  );
+}
+
+// ── ここから Phase-3-6 の作成分 ──
 export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownViewProps) {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  // Phase-13-6:追記
+  // 図を差し込むのは内部設計書だけ(図と文書の対応は docs/internal_design.md 3.3節、D5)
+  const isInternalDesign = document.doc_type === "internal_design";
+  const { embeds, loaded, error: embedsError, reload } = useDiagramEmbeds(
+    projectId,
+    isInternalDesign,
+  );
+  const fetchDocuments = useDocumentsStore((s) => s.fetchDocuments);
+
+  // 再反映・zip の後: 文書の本文(アンカーの範囲)と図の状態(exported)が変わるので両方を取り直す
+  async function handleDiagramsChanged() {
+    await fetchDocuments(projectId, { force: true });
+    await reload();
+  }
 
   async function handleCopy() {
     try {
@@ -120,10 +164,30 @@ export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownVi
         </Text>
       ) : null}
       <VersionHistoryPanel projectId={projectId} docType={document.doc_type} />
-      <YStack borderWidth={1} borderColor="$borderColor" borderRadius="$4" padding="$4">
+      {/* Phase-13-6:追記 */}
+      {isInternalDesign ? (
+        <DiagramSyncBar projectId={projectId} embeds={embeds} onChanged={handleDiagramsChanged} />
+      ) : null}
+      {embedsError ? (
+        <Text role="alert" color="$color9">
+          {`設計図を取得できませんでした: ${embedsError}`}
+        </Text>
+      ) : null}
+      {/* Phase-13-6：更新(内部設計書はアンカーで分けて図を差し込む) */}
+      {/* <YStack borderWidth={1} borderColor="$borderColor" borderRadius="$4" padding="$4">
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
           {document.content}
         </ReactMarkdown>
+      </YStack> */}
+      {/* ↓↓ */}
+      <YStack borderWidth={1} borderColor="$borderColor" borderRadius="$4" padding="$4">
+        {isInternalDesign ? (
+          renderWithDiagrams(document.content, embeds, loaded)
+        ) : (
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {document.content}
+          </ReactMarkdown>
+        )}
       </YStack>
     </YStack>
   );

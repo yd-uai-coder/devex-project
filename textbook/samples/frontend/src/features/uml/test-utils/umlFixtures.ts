@@ -1,5 +1,6 @@
-// 作成：Phase-11-2
+// 作成：Phase-11-2｜更新：Phase-13-6
 // 写経レベル: 定型 ── テスト用のサンプルデータ。
+// Phase-13-6:追記 ── types.UmlEmbedRead
 import type {
   ComponentSemanticModel,
   DataItemRead,
@@ -8,6 +9,7 @@ import type {
   LayoutModel,
   UmlCandidatesRead,
   UmlDiagramRead,
+  UmlEmbedRead,
   UmlGenerationRunRead,
 } from "@/features/uml/api/types";
 
@@ -113,6 +115,23 @@ export function makeCandidates(overrides: Partial<UmlCandidatesRead> = {}): UmlC
       { code: "DF-2", title: "プロジェクト作成" },
     ],
     er_tables: ["users", "projects"],
+    ...overrides,
+  };
+}
+
+// Phase-13-6:追記
+// GET .../uml/embeds の1件(承認済みで、文書に反映済み)
+export function makeEmbed(overrides: Partial<UmlEmbedRead> = {}): UmlEmbedRead {
+  return {
+    diagram_id: "d1",
+    notation: "component",
+    subject: "",
+    title: "コンポーネント図(全体)",
+    status: "approved",
+    version: 2,
+    source_outdated: false,
+    doc_state: "reflected",
+    svg: '<svg xmlns="http://www.w3.org/2000/svg"><text>認証API</text></svg>',
     ...overrides,
   };
 }

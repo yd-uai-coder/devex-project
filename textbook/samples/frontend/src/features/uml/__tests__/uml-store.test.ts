@@ -1,6 +1,7 @@
-// 作成：Phase-11-4
+// 作成：Phase-11-4｜更新：Phase-13-6
+// Phase-13-6:追記 ── uml-store.isSourceOutdated
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { isGenerating, useUmlStore } from "../uml-store";
+import { isGenerating, isSourceOutdated, useUmlStore } from "../uml-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import { makeCandidates, makeDiagram, makeRun } from "@/features/uml/test-utils/umlFixtures";
 
@@ -65,5 +66,23 @@ describe("useUmlStore", () => {
 
     expect(useUmlStore.getState().generateError).toBe("生成中の図があります");
     expect(stub.requests).toHaveLength(1);
+  });
+});
+
+// Phase-13-6:追記
+describe("isSourceOutdated", () => {
+  it.each([
+    [1, 1, false],
+    [1, 2, true],
+    [3, 2, true], // 復元で版の番号が下がった場合も古い
+    [1, null, false], // 内部設計書が無い
+  ])("図の元の版 %s・現在の版 %s → %s", (source, current, expected) => {
+    const diagram = makeDiagram({ source_doc_versions: { internal_design: source } });
+
+    expect(isSourceOutdated(diagram, current)).toBe(expected);
+  });
+
+  it("AI で生成していない図(source_doc_versions が null)は比べない", () => {
+    expect(isSourceOutdated(makeDiagram({ source_doc_versions: null }), 2)).toBe(false);
   });
 });

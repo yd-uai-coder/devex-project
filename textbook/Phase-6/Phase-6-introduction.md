@@ -77,3 +77,4 @@ Phase 1〜5(ステージ1/MVP)は完了・実VPSデプロイまで確認済み�
 
 - [`Phase-6-6.md`](./Phase-6-6.md)で、6-1/6-2の「復元は新バージョンとして追加」を「復元は表示中バージョンの切替(新バージョンは作らない)」へ改訂した(`generated_documents.is_current`追加)。6-1・6-2本文の該当節に改訂注記あり。
 - [`Phase-8-5.md`](../Phase-8/Phase-8-5.md)で、6-3が作成した`app/api/routes/prompt_templates.py`を「ルーターはRepositoryを直接参照しない(常にService経由)」という方針へ改訂し、`app/services/prompt_template.py`を新設した。
+- [`Phase-13-2.md`](../Phase-13/Phase-13-2.md)で、6-6の「復元は既存版の内容を書き換えない」に例外を1つ作った。承認済みのUML図を内部設計書へ反映するときだけ、表示中の版の本文を版を増やさずに書き換える(`GeneratedDocumentRepository.update_content_in_place`、D1案A)。`restore_version`のdocstringに例外を明記した。
