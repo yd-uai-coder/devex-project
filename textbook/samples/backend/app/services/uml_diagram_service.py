@@ -1,4 +1,4 @@
-# 作成：Phase-8-3｜更新：Phase-9-5,10-5,10-6
+# 作成：Phase-8-3｜更新：Phase-9-5,10-5,10-6,11-1
 # 写経レベル: コア ── 楽観ロック・notation不変チェック・生成中ガード・DFDの横断検証の設計判断そのもの。
 # Phase-9-5:追記 ── asyncio, app.services.errors.LayoutNodeLimitExceededError,
 #   app.services.errors.LayoutValidationFailedError, app.uml.layout.compute_layout,
@@ -6,6 +6,7 @@
 # Phase-10-5:追記 ── app.services.errors.UmlGenerationInProgressError
 # Phase-10-6：削除 ── app.uml.domain(NOTATION_TO_VIEW, NotationType, empty_semantic_model)
 #   (createの廃止に伴い不要になった)
+# Phase-11-1:追記 ── app.uml.layout(LayoutModel, reconcile_layout)
 import asyncio
 import uuid
 
@@ -28,6 +29,7 @@ from app.uml.domain import (
     ErSemanticModel,
     SemanticModelAdapter,
 )
+from app.uml.layout import LayoutModel, reconcile_layout
 from app.uml.layout import compute_layout as compute_layout_engine
 from app.uml.validation import ValidationResult, validate_diagram
 from app.uml.validation.structural import MAX_ELEMENTS
@@ -84,8 +86,15 @@ class UmlDiagramService:
         diagram_id: uuid.UUID,
         expected_version: int,
         semantic_model: ComponentSemanticModel | ErSemanticModel | DfdSemanticModel,
+        # Phase-11-1:追記
+        layout_model: LayoutModel | None = None,
     ) -> UmlDiagram:
         """UML図の意味モデル全体を更新する(楽観ロック)。
+
+        `layout_model`を渡した場合は、レビュー画面で手動移動した配置として意味モデルと同じ
+        versionで保存する。省略した場合は保存済みの配置を保つ。どちらの場合も、新しい意味モデルに
+        存在しない要素・関係のジオメトリは`reconcile_layout`で落とす(要素の削除を1回の保存で
+        反映するため)。
 
         `expected_version`がDB上の現在のversionと一致しない場合、他の更新と競合している
         とみなしUmlDiagramVersionConflictError(409)にする(devex-api既存コードベースに前例の
@@ -106,6 +115,20 @@ class UmlDiagramService:
                 f"(expected version {expected_version}, current version {diagram.version})"
             )
         diagram.semantic_model = semantic_model.model_dump(mode="json")
+        # Phase-11-1:追記
+        base_layout = (
+            layout_model
+            if layout_model is not None
+            else (
+                LayoutModel.model_validate(diagram.layout_model)
+                if diagram.layout_model is not None
+                else None
+            )
+        )
+        if base_layout is not None:
+            diagram.layout_model = reconcile_layout(base_layout, semantic_model).model_dump(
+                mode="json"
+            )
         diagram.version += 1
         await self._session.flush()
         await self._session.commit()

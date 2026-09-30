@@ -1,0 +1,12 @@
+/* 更新：Phase-11-5 ── 既存の devex-ui/src/app/globals.css の末尾に追記する分だけを載せる(既存部分は省略) */
+/* Phase-11-5:追記 */
+
+/* UML レビュー画面の接続点(features/uml/components/nodes/NodeHandles.tsx)。
+   普段は隠して直交辺の矢印を見せ、マウスを乗せたとき・選択中だけ表示する。 */
+.react-flow__handle.uml-handle {
+  opacity: 0;
+}
+.react-flow__node:hover .react-flow__handle.uml-handle,
+.react-flow__node.selected .react-flow__handle.uml-handle {
+  opacity: 1;
+}

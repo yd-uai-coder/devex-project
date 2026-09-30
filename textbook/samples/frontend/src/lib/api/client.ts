@@ -1,4 +1,4 @@
-// 更新：Phase-3-1,3-4,6-6
+// 更新：Phase-3-1,3-4,6-6,11-2
 import { refreshTokens, useAuthStore } from "@/components/auth/auth-store";
 
 // Phase-6-6：更新(NEXT_PUBLIC_API_URLの末尾スラッシュで`//api/...`となりCookieのpathに一致せず、
@@ -15,29 +15,67 @@ import { API_BASE_URL } from "@/lib/api/base-url";
 // 401でも再リフレッシュ対象から除外する。
 const REFRESH_PATH = "/api/v1/auth/refresh";
 
+// Phase-11-2：更新(409 VERSION_CONFLICT・400 LAYOUT_* 等を見分けるため、共通エラー形式の code を ApiError に載せる)
+// export class ApiError extends Error {
+//   status: number;
+//
+//   constructor(status: number, message: string) {
+//     super(message);
+//     this.name = "ApiError";
+//     this.status = status;
+//   }
+// }
+//
+// // FastAPI/Pydanticのエラーレスポンス({detail: string} または 422時の
+// // {detail: [{msg: string, ...}, ...]})からメッセージを取り出す。
+// async function extractErrorMessage(res: Response): Promise<string> {
+//   try {
+//     const body = await res.json();
+//     if (typeof body?.detail === "string") return body.detail;
+//     if (Array.isArray(body?.detail)) {
+//       return body.detail.map((issue: { msg?: string }) => issue.msg).filter(Boolean).join(", ");
+//     }
+//   } catch {
+//     // レスポンスがJSONでない場合はstatusTextにフォールバックする
+//   }
+//   return res.statusText || `リクエストに失敗しました(status: ${res.status})`;
+// }
+// ↓↓
 export class ApiError extends Error {
   status: number;
+  // devex-apiの共通エラー形式{detail, code}のcode(例: "VERSION_CONFLICT")。
+  // 同じstatus(409・400)の中で原因を見分けるために使う。codeを持たないエラーではundefined。
+  code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
   }
 }
 
-// FastAPI/Pydanticのエラーレスポンス({detail: string} または 422時の
-// {detail: [{msg: string, ...}, ...]})からメッセージを取り出す。
-async function extractErrorMessage(res: Response): Promise<string> {
+// FastAPI/Pydanticのエラーレスポンス({detail: string, code?: string} または 422時の
+// {detail: [{msg: string, ...}, ...]})から、メッセージとcodeを取り出してApiErrorにする。
+async function toApiError(res: Response): Promise<ApiError> {
   try {
     const body = await res.json();
-    if (typeof body?.detail === "string") return body.detail;
+    const code = typeof body?.code === "string" ? body.code : undefined;
+    if (typeof body?.detail === "string") return new ApiError(res.status, body.detail, code);
     if (Array.isArray(body?.detail)) {
-      return body.detail.map((issue: { msg?: string }) => issue.msg).filter(Boolean).join(", ");
+      const message = body.detail
+        .map((issue: { msg?: string }) => issue.msg)
+        .filter(Boolean)
+        .join(", ");
+      return new ApiError(res.status, message, code);
     }
   } catch {
     // レスポンスがJSONでない場合はstatusTextにフォールバックする
   }
-  return res.statusText || `リクエストに失敗しました(status: ${res.status})`;
+  return new ApiError(
+    res.status,
+    res.statusText || `リクエストに失敗しました(status: ${res.status})`,
+  );
 }
 
 // バックエンド(FastAPI想定)への薄いfetchラッパー。認証トークンの付与・401時の
@@ -87,7 +125,10 @@ export async function apiFetch<T>(path: string, init?: RequestInit, isRetry = fa
         return apiFetch<T>(path, init, true);
       }
       // リフレッシュに失敗した場合はrefreshTokens()内で既にログアウト済み
-      throw new ApiError(res.status, await extractErrorMessage(res));
+      // Phase-11-2：更新
+      // throw new ApiError(res.status, await extractErrorMessage(res));
+      // ↓↓
+      throw await toApiError(res);
     }
 
     // リフレッシュを試みなかった/リトライ後も失敗した401は、ログアウト状態に落とす。
@@ -95,7 +136,10 @@ export async function apiFetch<T>(path: string, init?: RequestInit, isRetry = fa
     if (res.status === 401 && accessToken) {
       useAuthStore.getState().logout();
     }
-    throw new ApiError(res.status, await extractErrorMessage(res));
+    // Phase-11-2：更新
+    // throw new ApiError(res.status, await extractErrorMessage(res));
+    // ↓↓
+    throw await toApiError(res);
   }
 
   if (res.status === 204) {

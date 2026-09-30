@@ -82,6 +82,11 @@
 
 [`Phase-3-6.md`](./Phase-3-6.md)末尾「Phase 3全体としての既知の残課題」参照(SCR-005の一部Should要件未実装、SSE再接続時の履歴再取得未実装、実Gemini API未検証)。
 
+## 後続 Phase での改訂(#12)
+
+- [`Phase-11-2.md`](../Phase-11/Phase-11-2.md): `src/lib/api/client.ts`の`ApiError`に、共通エラー形式の`code`(任意)を追加した。
+- [`Phase-11-4.md`](../Phase-11/Phase-11-4.md): `src/hooks/useGenerationPolling.ts`の`POLL_INTERVAL_MS`・`POLL_TIMEOUT_MS`を export し、UML 生成のポーリングで再利用した。
+
 ## 次のフェーズ
 
 **Phase 4**: 統合テスト・QA。詳細は[`Phase-0-2.md`](../Phase-0/Phase-0-2.md)のロードマップを参照。ユーザーが「Phase 4を開始する」と発話するまでは着手しない(#5)。

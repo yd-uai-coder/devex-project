@@ -63,6 +63,7 @@
 
 - [`Phase-10-4.md`](../Phase-10/Phase-10-4.md): DFDを処理ごとに1枚のフラット構成に確定し、申し送りだった「上位図と下位図の境界フロー一致」規則を撤回した。「どこからも参照されないデータ項目がない」は、図単体ではなくプロジェクト内の全DFDを横断する判定に改訂した(`validate_dfd_rules`の`referenced_elsewhere`引数)。`uml_diagrams`に`subject`/`scope`/`generation_status`/`generation_error`列と一意制約を追加した。
 - [`Phase-10-6.md`](../Phase-10/Phase-10-6.md): 生成トリガーのプレースホルダー(`UmlDiagramService.create`・`UmlDiagramCreate`)を廃止し、`POST /diagrams`をAI生成の受け付け(202)に差し替えた。
+- [`Phase-11-1.md`](../Phase-11/Phase-11-1.md): `PUT /diagrams/{id}`(`UmlDiagramUpdate`)に任意の`layout_model`を追加し、手動移動の座標を意味モデルと同じversionで保存するようにした。保存の直前に`reconcile_layout`で、削除した要素・関係のジオメトリを落とす。
 
 ## Phase完了チェック(#22)
 

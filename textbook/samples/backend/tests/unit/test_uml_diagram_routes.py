@@ -1,4 +1,4 @@
-# 作成：Phase-8-4｜更新：Phase-9-5,10-6
+# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1
 # Phase-9-5:追記 ── app.api.routes.uml.compute_diagram_layout
 # Phase-10-6:追記 ── fastapi.BackgroundTasks, tests.fixtures.uml(create_empty_diagram, create_project,
 #   create_project_with_internal_design), app.api.routes.uml(generate_diagrams, list_diagrams,
@@ -8,6 +8,7 @@
 #   app.models.user.User, app.schemas.uml_diagram.UmlDiagramCreate
 # Phase-10-6：更新 ── 全テストの`create_diagram(UmlDiagramCreate(notation=...), db_session, project)`を
 #   `create_empty_diagram(db_session, project.id, ...)`へ一括置換した(各行へのタグは省略)。
+# Phase-11-1:追記 ── app.uml.layout.LayoutModel
 
 import pytest
 from fastapi import BackgroundTasks
@@ -34,6 +35,7 @@ from app.schemas.uml_generation import UmlGenerateRequest, UmlSubjectSpec
 from app.services.errors import UmlDiagramNotFoundError, UmlDiagramVersionConflictError
 from app.services.uml_generation_service import run_uml_generation
 from app.uml.domain import ComponentSemanticModel, DfdSemanticModel
+from app.uml.layout import LayoutModel
 
 
 # Phase-10-6：削除(POST /diagramsはAI生成の受け付けに差し替え)
@@ -79,6 +81,35 @@ async def test_update_diagram_increments_version(db_session: AsyncSession) -> No
 
     assert result.version == 2
     assert len(result.semantic_model.elements) == 1
+
+
+# Phase-11-1:追記
+async def test_update_diagram_passes_layout_model_to_service(db_session: AsyncSession) -> None:
+    project = await create_project(db_session)
+    created = await create_empty_diagram(db_session, project.id, "component")
+    new_model = ComponentSemanticModel.model_validate(
+        {"elements": [{"id": "c1", "name": "auth"}], "relations": []}
+    )
+    layout = LayoutModel.model_validate(
+        {
+            "width": 200,
+            "height": 100,
+            "nodes": {"c1": {"x": 40, "y": 20, "w": 100, "h": 40, "lane": 0, "row": 0}},
+            "edges": {},
+            "metrics": {"crossings": 0, "overlaps": 0, "collisions": 0},
+        }
+    )
+
+    result = await update_diagram(
+        created.id,
+        UmlDiagramUpdate(version=1, semantic_model=new_model, layout_model=layout),
+        db_session,
+        project,
+    )
+
+    assert result.version == 2
+    assert result.layout_model is not None
+    assert result.layout_model.nodes["c1"].x == 40
 
 
 async def test_update_diagram_raises_conflict_on_stale_version(db_session: AsyncSession) -> None:

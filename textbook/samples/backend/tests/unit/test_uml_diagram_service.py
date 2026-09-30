@@ -1,4 +1,4 @@
-# 作成：Phase-8-3｜更新：Phase-9-5,10-5,10-6
+# 作成：Phase-8-3｜更新：Phase-9-5,10-5,10-6,11-1
 # Phase-9-5:追記 ── app.services.errors.LayoutNodeLimitExceededError,
 #   app.services.errors.LayoutValidationFailedError, app.uml.validation.structural.MAX_ELEMENTS
 # Phase-10-5:追記 ── app.services.errors.UmlGenerationInProgressError,
@@ -8,6 +8,7 @@
 #   `service.create(project_id=project.id, notation=...)`を
 #   `create_empty_diagram(db_session, project.id, ...)`(tests/fixtures/uml.py)へ一括置換した
 #   (同じ置換が多数あるため、各行へのタグは省略しここに1回だけ記す)。
+# Phase-11-1:追記 ── app.uml.layout.LayoutModel
 import uuid
 
 import pytest
@@ -24,6 +25,7 @@ from app.services.errors import (
 )
 from app.services.uml_diagram_service import UmlDiagramService
 from app.uml.domain import ComponentSemanticModel, DfdSemanticModel, SemanticModelAdapter
+from app.uml.layout import LayoutModel
 from app.uml.validation.structural import MAX_ELEMENTS
 
 
@@ -302,3 +304,72 @@ async def test_validate_does_not_warn_for_data_item_used_by_another_dfd(
 
     unreferenced = {w.element_id for w in result.warnings if w.code == "UNREFERENCED_DATA_ITEM"}
     assert unreferenced == {str(unused.id)}
+
+
+# Phase-11-1:追記
+async def test_update_saves_manual_layout_with_same_version(db_session: AsyncSession) -> None:
+    project = await create_project(db_session)
+    service = UmlDiagramService(db_session)
+    diagram = await create_empty_diagram(db_session, project.id, "component")
+    model = ComponentSemanticModel.model_validate(
+        {"elements": [{"id": "c1", "name": "auth"}], "relations": []}
+    )
+    layout = LayoutModel.model_validate(
+        {
+            "width": 200,
+            "height": 100,
+            "nodes": {
+                "c1": {"x": 40, "y": 20, "w": 100, "h": 40, "lane": 0, "row": 0},
+                "deleted": {"x": 0, "y": 0, "w": 10, "h": 10, "lane": 0, "row": 1},
+            },
+            "edges": {},
+            "metrics": {"crossings": 0, "overlaps": 0, "collisions": 0},
+        }
+    )
+
+    updated = await service.update(
+        project_id=project.id,
+        diagram_id=diagram.id,
+        expected_version=1,
+        semantic_model=model,
+        layout_model=layout,
+    )
+
+    assert updated.version == 2
+    assert updated.layout_model is not None
+    assert set(updated.layout_model["nodes"]) == {"c1"}
+    assert updated.layout_model["nodes"]["c1"]["x"] == 40
+
+
+async def test_update_without_layout_keeps_saved_layout_but_drops_deleted_elements(
+    db_session: AsyncSession,
+) -> None:
+    project = await create_project(db_session)
+    service = UmlDiagramService(db_session)
+    diagram = await create_empty_diagram(db_session, project.id, "component")
+    model = ComponentSemanticModel.model_validate(
+        {
+            "elements": [
+                {"id": "c1", "name": "認証API", "layer": "API層"},
+                {"id": "c2", "name": "認証サービス", "layer": "Service層"},
+            ],
+            "relations": [{"id": "r1", "source_id": "c1", "target_id": "c2"}],
+        }
+    )
+    await service.update(
+        project_id=project.id, diagram_id=diagram.id, expected_version=1, semantic_model=model
+    )
+    laid_out = await service.compute_layout(project_id=project.id, diagram_id=diagram.id)
+    assert laid_out.layout_model is not None
+    c1_before = laid_out.layout_model["nodes"]["c1"]
+    only_c1 = ComponentSemanticModel.model_validate(
+        {"elements": [{"id": "c1", "name": "認証API", "layer": "API層"}], "relations": []}
+    )
+
+    updated = await service.update(
+        project_id=project.id, diagram_id=diagram.id, expected_version=2, semantic_model=only_c1
+    )
+
+    assert updated.layout_model is not None
+    assert updated.layout_model["nodes"] == {"c1": c1_before}
+    assert updated.layout_model["edges"] == {}

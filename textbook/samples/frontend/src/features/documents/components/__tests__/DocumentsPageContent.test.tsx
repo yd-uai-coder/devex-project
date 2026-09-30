@@ -1,4 +1,4 @@
-// 作成：Phase-3-6
+// 作成：Phase-3-6｜更新：Phase-11-4
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -65,6 +65,16 @@ describe("DocumentsPageContent", () => {
     const onCompleted = useGenerationPollingMock.mock.calls[0][2] as () => void;
     onCompleted();
     expect(useDocumentsStore.getState().onRegenerationCompleted).toHaveBeenCalledWith("p1");
+  });
+
+  // Phase-11-4:追記
+  it("設計図の生成・一覧画面へのリンクを表示する", () => {
+    renderContent();
+
+    expect(screen.getByRole("link", { name: "設計図を生成する →" })).toHaveAttribute(
+      "href",
+      "/projects/p1/uml",
+    );
   });
 
   it("ドキュメントが無ければ空状態メッセージを表示する", () => {

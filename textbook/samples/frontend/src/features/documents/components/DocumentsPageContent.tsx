@@ -1,4 +1,4 @@
-// 作成：Phase-3-6
+// 作成：Phase-3-6｜更新：Phase-11-4
 "use client";
 
 import { useEffect } from "react";
@@ -33,6 +33,10 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
         <XStack gap="$3" alignItems="center">
           <Link href={`/projects/${projectId}/chat`}>
             <Text color="$blue10">チャットに戻る</Text>
+          </Link>
+          {/* Phase-11-4:追記(SCR-005 から設計図の生成・一覧画面への導線) */}
+          <Link href={`/projects/${projectId}/uml`}>
+            <Text color="$blue10">設計図を生成する →</Text>
           </Link>
           <Button size="$3" disabled={regenerating} onPress={() => regenerate(projectId)}>
             {regenerating ? "再生成中..." : "再生成する"}

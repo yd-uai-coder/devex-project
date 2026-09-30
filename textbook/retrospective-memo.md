@@ -67,3 +67,10 @@
 - **概要**: Vercelの`NEXT_PUBLIC_API_URL`に末尾スラッシュがあると`${base}${path}`が`//api/...`になり、`Path=/api/v1/auth`のhttpOnly Cookie(リフレッシュトークン)が送られず、F5でログインが切れる。通常のAPI呼び出しは`//`でも成功するため気づきにくい。
 - **判断理由**: 設定ミスを運用手順(「末尾スラッシュ無しで設定する」)だけに頼らず、コード側でURLを正規化して吸収した。`devex-api`/`devex-ui`は他プロジェクトのテンプレートでもあるため、`base-url.ts`はテンプレート側にも反映する価値がある。`OPERATIONS.md`「devex-ui(Vercel)デプロイ手順」にも注意書きを追記した。
 - **対象外**: バックエンド側のCookie属性(`Path`/`SameSite`/`Domain`)は変更していない(正しく動作していたため)。
+
+## `[テンプレート反映候補]` FE の `ApiError` にバックエンドの `code` を載せる
+
+- **発生**: [`Phase-11-2.md`](./Phase-11/Phase-11-2.md)
+- **概要**: `devex-ui`の`ApiError`は`status`と`message`しか持たず、`devex-api`の共通エラー形式`{detail, code}`の`code`を捨てていた。409の「競合」と「生成中」のように、同じstatusで扱いを変えたい場面があったため、`code?: string`を足した。`devex-ui/CLAUDE.md`の説明も更新済み。
+- **判断理由**: `devex-api`はテンプレートの段階から`code`付きのエラー形式を持っている。FE側もテンプレートの段階で`code`を受け取れるようにしておけば、利用側のアプリで同じ改修をせずに済む。任意項目なので、既存の呼び出し側への影響は無い。
+- **対象外**: `downloadDocument`など、`apiFetch`を通さない生の`fetch`の箇所は変えていない。

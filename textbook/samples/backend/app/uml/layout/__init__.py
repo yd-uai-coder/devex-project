@@ -1,4 +1,4 @@
-# 作成：Phase-9-5
+# 作成：Phase-9-5｜更新：Phase-11-1
 # 写経レベル: コア ── 意味モデル→LayoutStateのアダプタ設計(kind/text組み立て)そのもの。
 """意味モデル(`app.uml.domain`)からレイアウトを計算するエントリポイント。
 
@@ -28,6 +28,8 @@ from app.uml.layout.model import (
     LayoutNode,
     LayoutState,
 )
+# Phase-11-1:追記 ── app.uml.layout.reconcile.reconcile_layout
+from app.uml.layout.reconcile import reconcile_layout
 
 _AnySemanticModel = ComponentSemanticModel | ErSemanticModel | DfdSemanticModel
 
@@ -111,4 +113,7 @@ def compute_layout(diagram_id: str, model: _AnySemanticModel) -> LayoutModel:
     return _to_layout_model(state)
 
 
-__all__ = ["LayoutModel", "compute_layout"]
+# Phase-11-1：更新
+# __all__ = ["LayoutModel", "compute_layout"]
+# ↓↓
+__all__ = ["LayoutModel", "compute_layout", "reconcile_layout"]
