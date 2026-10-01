@@ -37,6 +37,7 @@
 * **GeneratedDocument（生成ドキュメント）**: ヒアリング結果を基に生成された4種のMarkdownテキスト（要件定義、外部設計、内部設計、実装計画）およびそのバージョンを管理。
 * **PromptTemplate（プロンプトテンプレート）**: ※Should have要件を見据え、WebアプリやAPI向けなどのテンプレート定義を保持。
 * **IntakeFile（添付ファイル）**: 初期ヒアリング入力時にアップロードされた参考資料(txt/Markdown/PDF、最大3ファイル)から抽出したテキストを管理。
+* **DesignStage（詳細設計の段階、ステージ4）**: 詳細設計モードの段階1〜6ごとの成果物(意味モデル)と承認状態を管理(⑩、Phase 15で確定)。
 
 ### 2. テーブル定義
 
@@ -58,6 +59,7 @@
 | user_id | UUID | FK (`users.id`), NOT NULL | 所有ユーザーID |
 | title | VARCHAR(255) | NOT NULL | プロジェクト名 / アイデア概要 |
 | status | VARCHAR(50) | NOT NULL, DEFAULT 'interviewing' | 状態 (interviewing: ヒアリング中, generating: 生成中, completed: 完了, revising: 修正中。completed後に新規チャットメッセージを送るとrevisingへ遷移する) |
+| mode | VARCHAR(20) | NOT NULL, DEFAULT 'simple'（※ステージ4、Phase 15で新設） | 作成時に選んだモード。`simple`(簡易ドキュメントモード: 4文書の一括生成)/`detailed`(詳細設計モード: 要件定義・外部設計の後に段階1〜7)。作成後は変えない。既存の行は`simple`にする([外部設計書](external_design.md) 2.7節) |
 | template_id | UUID | FK (`prompt_templates.id`), NULL可（※ステージ2対応） | SCR-003で選択したテンプレート。クライアント側のプリフィルのみで終わらせず、プロジェクトのライフサイクル全体(ヒアリング再開・再生成時)を通じて選択したテンプレートを保持するためサーバー側に永続化する(⑤`prompt_templates`テーブル参照) |
 | intake | JSONB | NULL可 | 初期ヒアリング入力([外部設計書](external_design.md) 2.5節3項)をそのまま保持。`system_overview`/`goals_raw`/`notes_raw`/`environment` を含む |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
@@ -170,6 +172,24 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | results | JSONB | NOT NULL | 対象ごとの`{subject, diagram_id, outcome: succeeded\|failed\|skipped, reason_code, message}`。`reason_code`は`QUOTA_EXCEEDED`/`TOKEN_LIMIT`/`INVALID_OUTPUT`/`GENERATION_FAILED` |
 | started_at / finished_at | TIMESTAMP | started_at NOT NULL | 開始・終了日時 |
 
+#### ⑩ `design_stages` テーブル(ステージ4、Phase 15で新設予定)
+
+詳細設計モード([外部設計書](external_design.md) 2.7節)の段階ごとの成果物と承認状態。方針はPhase 14で確定し、カラムの詳細はPhase 15で確定する。
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | 段階ID |
+| project_id | UUID | FK (`projects.id`, ondelete CASCADE), NOT NULL | プロジェクトID |
+| stage | SMALLINT | NOT NULL | 段階番号(1〜6) |
+| status | VARCHAR(20) | NOT NULL | `draft`/`reviewing`/`approved` |
+| model | JSONB | NULL可 | 段階の意味モデル(機能一覧・処理概要表・CRUD図・モジュール一覧・手順・処理ロジック等の表)。図(DFD・ER・構成図)は既存の`uml_diagrams`・`data_items`を使う |
+| version | INT | NOT NULL | 楽観ロック用バージョン |
+| approved_version | INT | NULL可 | 最後に承認したときの`version` |
+| input_fingerprint | JSONB | NULL可 | 承認したときに入力にした前段(段階・文書)の承認済みの版。前段の今の承認済みの版と食い違えば「古い」と判定する(Phase 13の`source_doc_versions`と同じ考え方) |
+| created_at / updated_at | TIMESTAMP | NOT NULL | 作成・更新日時 |
+
+`UNIQUE(project_id, stage)`。前の段階を承認し直しても後ろの段階は自動で作り直さず、陳腐化の表示にとどめる(再生成は人が指示する)。プロジェクトのモードは`projects.mode`(②`projects`テーブル)で持つ。`design_stages`の行を持つのは`mode='detailed'`のプロジェクトだけ。
+
 ---
 
 ## 3.3 バックエンド処理・モジュール設計
@@ -208,6 +228,8 @@ backend/
   * ヒアリング完了時、「要件定義」「外部設計」「内部設計」「実装計画」のそれぞれに特化したプロンプトを、この順に**連鎖的に**実行する。要件定義のみチャット全履歴をコンテキストとしてインプットし、以降の3文書は生の対話履歴を再解釈せず、前段で確定した文書だけを入力にする(外部設計は要件定義を、内部設計は要件定義+外部設計を、実装計画は要件定義+内部設計を入力にする)。こうすることで4文書間の記述の一貫性を確保する。
   * バックグラウンドタスクとして非同期実行され、進捗や結果をデータベース (`generated_documents`) に保存。`generate()`開始時点の`project.status`(`interviewing`または`revising`)を保持しておき、`generating`への変更を経て、成功時は`completed`へ、失敗時は保持していた開始時点のステータスへ差し戻す(`revising`からの再生成に失敗した場合に`interviewing`へ戻ってしまい「生成済みだった」という文脈を失うことを防ぐ)。
   * **内部設計書の固定形式の見出し(Phase 10)**: UML図の生成対象を決定的に列挙できるよう、内部設計書プロンプトで3.2節のテーブル見出しを`### テーブル: <テーブル名>`、3.3節の「処理別データフロー」小節の処理見出しを`#### DF-<連番>: <HTTPメソッド> <パス>`(バッチは`<バッチ名>`)に固定する。各処理の下には「元/データ/変換/先」の表と`- データ項目: <名前>(<フィールド…>)`を書かせる。
+  * **モードごとの生成(ステージ4、Phase 15で追加予定)**: `projects.mode='simple'`は今と同じく4文書を連鎖生成する。`'detailed'`は要件定義・外部設計の2文書だけを生成し(自己診断つき)、内部設計・実装計画は詳細設計モードの段階(3.3節「4.」)へ引き継ぐ。
+  * **モジュール一覧の表(ステージ4、Phase 15で追加予定)**: 簡易ドキュメントモードの内部設計書プロンプトの3.3節に、ファイル単位の「モジュール一覧」(パス/層/責務/主な依存先)の表を求める指示を足す。詳細設計モードの段階4と同じ列で、簡易ドキュメントモードでもファイル単位の責務が分かるようにする(Phase 14の決定#6)。
   * **自己診断ステップ**: 4文書の生成完了後、生成した文書自体を入力として追加のLLM呼び出しを行い、不足・不明瞭な点を「最重要/中程度/軽微」の3段階に分類して抽出する([要件定義書](requirements.md) 1.4節「ドキュメント自己診断機能」)。抽出結果は`sender='others'`の`chat_histories`行として保存し、ユーザーへの提示は`chat_service.py`側のチャット表示ロジックが担う。
 
 ### 2. APIエンドポイント一覧
@@ -216,7 +238,7 @@ backend/
 | :--- | :--- | :--- | :--- |
 | **POST** | `/api/v1/auth/register` | 新規ユーザー登録 | 不要 |
 | **POST** | `/api/v1/auth/login` | ログイン（JWT発行） | 不要 |
-| **POST** | `/api/v1/projects` | 新規プロジェクト作成(初期ヒアリング入力を`intake`として受け取る。添付ファイル最大3件・txt/md/pdfのみを伴う場合は`multipart/form-data`になる。[外部設計書](external_design.md) 2.5節3項・5項参照) | 必要 |
+| **POST** | `/api/v1/projects` | 新規プロジェクト作成(初期ヒアリング入力を`intake`として受け取る。ステージ4では`mode`(`simple`/`detailed`、省略時`simple`)も受け取る。添付ファイル最大3件・txt/md/pdfのみを伴う場合は`multipart/form-data`になる。[外部設計書](external_design.md) 2.5節3項・5項参照) | 必要 |
 | **GET** | `/api/v1/projects` | ユーザーのプロジェクト一覧取得 | 必要 |
 | **GET** | `/api/v1/projects/{id}` | 特定プロジェクトの詳細・状態取得(添付ファイルのサマリ ── ファイル名・形式・`status` ── を含む。`extracted_text`本文は含めない) | 必要 |
 | **POST** | `/api/v1/projects/{id}/chat` | チャットメッセージ送信・AI応答取得（ストリーミング対応） | 必要 |
@@ -257,17 +279,37 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 | 処理別データフロー(Must) | DFD | 本節の「処理別データフロー」小節(Phase 10で内部設計書プロンプトに追加済み。APIエンドポイント/バッチ単位の`#### DF-<n>`見出し。要素表は「元/データ/変換/先」) |
 | 振る舞い(Should、Phase 14) | アクティビティ図 | [外部設計書](external_design.md) 2.2節「画面一覧・画面遷移フロー」 |
 
+> **[Phase 14 で確定 ── 〈アクティビティ図を実装しない〉]** 当初〈旧Phase 14でアクティビティ図を追加する予定〉→ 撤回。理由〈ステージ3はPhase 13で終了した。振る舞いは詳細設計モードの「05 主要処理の手順」で扱う(本節「4. 詳細設計モード」)〉。
+
 `internal_design`(本文書)にcomponent/ER/DFDを寄せているのは、`external_design.md`が画面・API等の利用者向け仕様のみを扱うのに対し、本文書の3.2/3.3節が既にモジュール構造・データモデルを扱っており、実装者向けの構造図・データ構造図の置き場として一貫するため。承認済みの図と要素表は、上記セクションにアンカーコメント(`<!-- uml:diagram:<diagram_id>:start v=<version> -->`〜`<!-- uml:diagram:<diagram_id>:end -->`)経由でプレビュー時にSVGとして差し込む(M9a、Phase 13)。内部設計書生成プロンプトへの「処理別データフロー」節の追加はPhase 10で実施済み。
 
 **図の反映・アンカー・陳腐化(Phase 13で確定)**:
 * **アンカー**: 図のIDを含むため、文書を生成するLLMには書かせず、反映のときにバックエンドが見出しを基準に挿入する(プロンプトは変えない)。挿入先はcomponentが`## 3.3`直下、ERが`## 3.2`直下、DFDが対象の`#### DF-<n>: <処理名>`直下。見つからなければ末尾の`## 付録: 設計図`節に入れる。同じ図のアンカーが既にあれば、その位置のまま中身を置き換える。`v=<version>`は反映したときの図の`version`で、文書の復元で古いアンカーも一緒に戻る。
 * **反映**: 承認と同じトランザクションで、`is_current`の版の本文をアンカーの範囲だけ書き換える(版は増やさない。D1案A)。範囲の中身は、題名の注意書きと要素表(component: 名称/種別/説明/依存先、ER: カラムと関連、DFD: 元/データ/変換/先とデータ項目)。文書の再生成・復元でアンカーが消えた場合は、一括の再反映(`POST /uml/reflect`)で戻す。
 * **陳腐化**: (a) 図が古い = `source_doc_versions.internal_design` ≠ 表示中の内部設計書の版(「等しくない」で比べる。復元で番号が下がるため)。(b) 文書が古い = アンカーの`v`と図の状態・`version`の食い違い(`reflected`/`not_reflected`/`outdated`/`not_applicable`)。文書チェーンに沿った下流への伝播はPhase 13b(M9b)で扱う。
+  > **[Phase 14 で確定 ── 〈文書チェーンの伝播をM9bで扱わない〉]** 当初〈Phase 13b(M9b)で扱う予定〉→ 撤回。理由〈M9bを撤回した。前の段階の変更が後ろへ伝わる仕組みは、詳細設計モードの段階の陳腐化(3.2節⑩`design_stages.input_fingerprint`)として作る〉。
 * 詳細は[`textbook/Phase-13/Phase-13-introduction.md`](../textbook/Phase-13/Phase-13-introduction.md)参照。
 
 **DFD検証規則(Phase 10で確定)**: DFDは「APIエンドポイント/バッチごとに1枚」のフラットな構成に確定した(Phase 10)。診断8(`appendix/stage3-requirements-organization.md`)のDFD検証規則5点のうち「上位図と下位図の境界フローが一致する」は、上位図・下位図の階層を持たないため撤回した。「どこからも参照されないデータ項目がない」は、図単体ではなくプロジェクト内の全DFDを横断して判定する。詳細は[`textbook/Phase-10/Phase-10-4.md`](../textbook/Phase-10/Phase-10-4.md)参照。
 
 **UML図のAI生成(Phase 10)**: `POST /uml/diagrams`は受け付け(検証・対象の図を`generating`化・履歴作成)までをリクエスト内で行い、生成自体はBackgroundTasksで対象を1件ずつ実行する。入力は内部設計書の現行版から記法ごとに必要な節だけを抽出する(component: 3.1+3.3、ER: 3.2(部分図は選んだテーブルのみ)、DFD: 3.2+対象のDF節+既存データ辞書)。構造化出力は`include_raw=True`で呼び、`finish_reason=MAX_TOKENS`(トークン上限。再試行しない)と解釈失敗(再試行する)を区別する。クォータ超過で止まった場合、残りの対象はLLMを呼ばずに未着手(skipped)として履歴に残す。同時実行はプロジェクトごとに1本。詳細は[`textbook/Phase-10/Phase-10-introduction.md`](../textbook/Phase-10/Phase-10-introduction.md)参照。
+
+### 4. 詳細設計モード(ステージ4)
+
+[外部設計書](external_design.md) 2.7節の詳細設計モードの内部の方針(Phase 14で確定)。構想は[`appendix/detailed-design-mode-organization.md`](../appendix/detailed-design-mode-organization.md)、経緯は[`textbook/Phase-14/Phase-14-1.md`](../textbook/Phase-14/Phase-14-1.md)参照。
+
+* **正本は段階の意味モデル**: 詳細設計書(HTML・Markdown)は、承認済みの段階の意味モデル(`design_stages.model`と、図の`uml_diagrams`)から決定的に組み立てる表示である。散文を正本にしないため、図や表の変更を散文へ戻す処理(旧M9b)は要らない。
+* **詳細設計書の章構成**: 01 機能(処理)一覧 / 02 データフロー / 03 データモデル / 04 ソフトウェア構造 / 05 主要処理の手順 / 06 処理ロジックの詳細(任意) / 07 横断事項(例外とHTTP・認証・トランザクション・ログ)。01〜06は段階1〜6と1対1。
+* **ID体系**:
+  * 処理ID: `F-01`… 段階1で振り、再生成しても変えない(今の`DF-<n>`が再生成で振り直される問題を避ける)。以降の章はこのIDで互いを参照する。
+  * 手順ID: `<処理ID>#<手順番号>`(`F-01#4`、分岐は`F-01#4a`)。文書全体で一意。
+  * 処理ロジックID: `L-01`…
+* **05と06の紐づけの正本**: 手順の行が持つ`logic`(L-ID)の1か所だけに持つ。06の「呼ばれる手順」、05の索引の「詳細(06)」、06の逆引き表、処理 × モジュールの関与表は、すべてそこから導く。組み立ての前に、手順が参照するL-IDが06に存在することを検証する(参照切れの検出)。
+* **関与表の列**: 呼び出し先のうち、段階4のモジュール一覧のパスだけ(利用者・スケジューラ等の外部の役者は含めない)。
+* **出力の組み立て**: HTML・Markdownとも、ステージ3のzip出力と同じ層(バックエンドの`app/uml/export`・`uml_sync_service`の並び)で組み立てる。HTMLは全文字をエスケープし、外部を読み込まない。Markdownはリンクを持たない。devex-uiのデモ(`src/features/detailed-design/demo/procedureModel.ts`の`toHtml`・`toMarkdown`)は形式の見本で、本実装はバックエンドへ移す。
+* **機能グループ**: 段階1の下書きで、APIのリソース名(`/api/v1/<リソース>`)から決定的に初期値を作り、人が確定する。
+* **CRUD図**: 段階2のDFDの線の向きから、R(ストア → 処理)とW(処理 → ストア)を決定的に作る。Wの C/U/D の区別と、DFDに描いていない処理の分は、AIが処理概要表から下書きし、人が確定する。
+* **簡易ドキュメントモードとの関係**: 簡易ドキュメントモードの内部設計書にも、段階4と同じ列のモジュール一覧の表を足す(3.3節1.の`doc_generator_service.py`参照)。それ以外の簡易ドキュメントモードの挙動は変えない。
 
 ---
 

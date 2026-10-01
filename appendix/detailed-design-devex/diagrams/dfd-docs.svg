@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="698" viewBox="0 0 960 698" font-family='"Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","Hiragino Kaku Gothic ProN",sans-serif' font-size="14">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker></defs>
+<rect width="960" height="698" fill="#ffffff"/>
+<path d="M783.3,122.0 L783.3,167.0 L271.8,167.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M701.7,464.0 L285.8,464.0 L285.8,207.0 L271.8,207.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M271.8,183.0 L717.4,183.0 L717.4,271.0 L731.4,271.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M793.3,252.0 L793.3,175.0 L271.8,175.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M166.7,206.0 L166.7,534.0 L679.7,534.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M271.8,199.0 L687.7,199.0 L687.7,444.0 L701.7,444.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M271.8,191.0 L713.0,191.0 L713.0,360.0 L727.0,360.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M803.3,122.0 L803.3,136.0 L950.0,136.0 L950.0,646.0 L558.2,646.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M679.7,548.0 L572.2,548.0 L572.2,628.0 L558.2,628.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M558.2,637.0 L665.7,637.0 L665.7,562.0 L679.7,562.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M401.8,637.0 L10.0,637.0 L10.0,103.0 L745.3,103.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="745.3" y="84.0" width="96.0" height="38.0" fill="#efefef" stroke="#8c8c8c" stroke-width="1.5"/>
+<text x="793.3" y="108.0" text-anchor="middle" fill="#1a1a1a">利用者</text>
+<rect x="731.4" y="252.0" width="123.8" height="38.0" fill="#efefef" stroke="#8c8c8c" stroke-width="1.5"/>
+<text x="793.3" y="276.0" text-anchor="middle" fill="#1a1a1a">Gemini(LLM)</text>
+<rect x="61.5" y="168.0" width="210.3" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="166.7" y="192.0" text-anchor="middle" fill="#1a1a1a">F-12 設計書4種を生成する</text>
+<rect x="401.8" y="618.0" width="156.5" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="480.0" y="642.0" text-anchor="middle" fill="#1a1a1a">F-16 版を復元する</text>
+<path d="M727.0,342.0 a66.3,6 0 0 1 132.7,0 v36.0 a66.3,6 0 0 1 -132.7,0 z" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><path d="M727.0,342.0 a66.3,6 0 0 0 132.7,0" fill="none" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="793.3" y="367.0" text-anchor="middle" fill="#1a1a1a">D1 projects</text>
+<path d="M701.7,436.0 a91.6,6 0 0 1 183.2,0 v36.0 a91.6,6 0 0 1 -183.2,0 z" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><path d="M701.7,436.0 a91.6,6 0 0 0 183.2,0" fill="none" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="793.3" y="461.0" text-anchor="middle" fill="#1a1a1a">D2 chat_histories</text>
+<path d="M679.7,530.0 a113.7,6 0 0 1 227.3,0 v36.0 a113.7,6 0 0 1 -227.3,0 z" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><path d="M679.7,530.0 a113.7,6 0 0 0 227.3,0" fill="none" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="793.3" y="555.0" text-anchor="middle" fill="#1a1a1a">D5 generated_documents</text>
+<rect x="493.2" y="144.0" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="527.6" y="159.0" text-anchor="middle" font-size="14" fill="#222">生成指示</text>
+<rect x="459.4" y="441.0" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="493.8" y="456.0" text-anchor="middle" font-size="14" fill="#222">対話履歴</text>
+<rect x="723.4" y="217.0" width="112.9" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="779.9" y="232.0" text-anchor="middle" font-size="14" fill="#222">生成プロンプト</text>
+<rect x="799.3" y="188.1" width="54.1" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="826.4" y="203.1" text-anchor="middle" font-size="14" fill="#222">設計書</text>
+<rect x="396.1" y="511.0" width="54.1" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="423.2" y="526.0" text-anchor="middle" font-size="14" fill="#222">設計書</text>
+<rect x="445.4" y="202.0" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="479.8" y="217.0" text-anchor="middle" font-size="14" fill="#222">自己診断</text>
+<rect x="719.0" y="299.3" width="39.4" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="738.7" y="314.3" text-anchor="middle" font-size="14" fill="#222">状態</text>
+<rect x="956.0" y="381.0" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="990.4" y="396.0" text-anchor="middle" font-size="14" fill="#222">版の指定</text>
+<rect x="598.9" y="551.0" width="54.1" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="626.0" y="566.0" text-anchor="middle" font-size="14" fill="#222">設計書</text>
+<rect x="584.9" y="614.0" width="54.1" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="612.0" y="629.0" text-anchor="middle" font-size="14" fill="#222">設計書</text>
+<rect x="350.6" y="80.0" width="54.1" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="377.7" y="95.0" text-anchor="middle" font-size="14" fill="#222">設計書</text>
+</svg>

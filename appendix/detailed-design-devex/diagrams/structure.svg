@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="832" viewBox="0 0 960 832" font-family='"Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","Hiragino Kaku Gothic ProN",sans-serif' font-size="14">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker></defs>
+<rect width="960" height="832" fill="#ffffff"/>
+<path d="M47.1,311.0 L33.1,311.0 L33.1,103.0 L55.9,103.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M160.9,311.0 L272.0,311.0 L272.0,376.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M152.1,112.0 L292.0,112.0 L292.0,376.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M152.1,94.0 L775.1,94.0 L775.1,480.0 L789.1,480.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M152.1,103.0 L575.0,103.0 L575.0,197.0 L589.0,197.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M341.3,395.0 L574.0,395.0 L574.0,498.0 L789.1,498.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M262.0,414.0 L262.0,771.0 L599.3,771.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M282.0,414.0 L282.0,687.0 L405.4,687.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M322.0,414.0 L322.0,489.0 L415.7,489.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M302.0,414.0 L302.0,593.0 L414.6,593.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M312.0,376.0 L312.0,217.0 L589.0,217.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M554.6,687.0 L568.6,687.0 L568.6,489.0 L544.3,489.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M480.0,564.0 L480.0,518.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M856.0,508.0 L856.0,574.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="47.1" y="292.0" width="113.8" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="104.0" y="316.0" text-anchor="middle" fill="#1a1a1a">api/routes</text>
+<rect x="55.9" y="84.0" width="96.2" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="104.0" y="108.0" text-anchor="middle" fill="#1a1a1a">api/deps</text>
+<rect x="45.9" y="168.0" width="116.2" height="78.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="104.0" y="192.0" text-anchor="middle" fill="#1a1a1a">api/error_</text>
+<text x="104.0" y="212.0" text-anchor="middle" fill="#1a1a1a">handlers・</text>
+<text x="104.0" y="232.0" text-anchor="middle" fill="#1a1a1a">middleware</text>
+<rect x="242.7" y="376.0" width="98.6" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="292.0" y="400.0" text-anchor="middle" fill="#1a1a1a">services</text>
+<rect x="405.4" y="668.0" width="149.1" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="480.0" y="692.0" text-anchor="middle" fill="#1a1a1a">uml/generation</text>
+<rect x="415.7" y="460.0" width="128.5" height="58.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="480.0" y="484.0" text-anchor="middle" fill="#1a1a1a">uml/domain・</text>
+<text x="480.0" y="504.0" text-anchor="middle" fill="#1a1a1a">validation</text>
+<rect x="414.5" y="564.0" width="130.9" height="58.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="480.0" y="588.0" text-anchor="middle" fill="#1a1a1a">uml/layout・</text>
+<text x="480.0" y="608.0" text-anchor="middle" fill="#1a1a1a">export・sync</text>
+<rect x="599.3" y="752.0" width="137.4" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="668.0" y="776.0" text-anchor="middle" fill="#1a1a1a">ai/llm・graph</text>
+<rect x="589.0" y="178.0" width="157.9" height="58.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="668.0" y="202.0" text-anchor="middle" fill="#1a1a1a">infrastructure/</text>
+<text x="668.0" y="222.0" text-anchor="middle" fill="#1a1a1a">redis</text>
+<rect x="789.1" y="470.0" width="133.8" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="856.0" y="494.0" text-anchor="middle" fill="#1a1a1a">repositories</text>
+<rect x="808.0" y="574.0" width="96.0" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="856.0" y="598.0" text-anchor="middle" fill="#1a1a1a">models</text>
+</svg>

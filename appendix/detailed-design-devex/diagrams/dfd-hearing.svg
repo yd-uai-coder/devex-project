@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="708" viewBox="0 0 960 708" font-family='"Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","Hiragino Kaku Gothic ProN",sans-serif' font-size="14">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker></defs>
+<rect width="960" height="708" fill="#ffffff"/>
+<path d="M745.3,94.0 L281.7,94.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M281.7,112.0 L295.7,112.0 L295.7,390.0 L727.0,390.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M146.7,122.0 L146.7,642.0 L710.5,642.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M281.7,103.0 L687.7,103.0 L687.7,178.0 L701.7,178.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M186.7,122.0 L186.7,461.0 L731.4,461.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M731.4,469.0 L166.7,469.0 L166.7,122.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M745.3,103.0 L609.0,103.0 L609.0,176.0 L595.0,176.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M701.7,192.0 L595.0,192.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M692.9,286.0 L609.0,286.0 L609.0,208.0 L595.0,208.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M500.0,211.0 L500.0,332.0 L869.3,332.0 L869.3,469.0 L855.3,469.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M731.4,453.0 L460.0,453.0 L460.0,211.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M595.0,200.0 L648.4,200.0 L648.4,206.0 L701.7,206.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M480.0,211.0 L480.0,370.0 L727.0,370.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M595.0,184.0 L636.7,184.0 L636.7,112.0 L745.3,112.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M885.0,192.0 L899.0,192.0 L899.0,557.0 L609.7,557.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M609.7,549.0 L717.4,549.0 L717.4,485.0 L731.4,485.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M731.4,477.0 L623.7,477.0 L623.7,541.0 L609.7,541.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M609.7,565.0 L950.0,565.0 L950.0,136.0 L793.3,136.0 L793.3,122.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="745.3" y="84.0" width="96.0" height="38.0" fill="#efefef" stroke="#8c8c8c" stroke-width="1.5"/>
+<text x="793.3" y="108.0" text-anchor="middle" fill="#1a1a1a">利用者</text>
+<rect x="731.4" y="450.0" width="123.8" height="38.0" fill="#efefef" stroke="#8c8c8c" stroke-width="1.5"/>
+<text x="793.3" y="474.0" text-anchor="middle" fill="#1a1a1a">Gemini(LLM)</text>
+<rect x="51.7" y="84.0" width="230.0" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="166.7" y="108.0" text-anchor="middle" fill="#1a1a1a">F-06 プロジェクトを作成する</text>
+<rect x="365.0" y="173.0" width="230.0" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="480.0" y="197.0" text-anchor="middle" fill="#1a1a1a">F-09 ヒアリングの発言を送る</text>
+<rect x="350.3" y="534.0" width="259.4" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="480.0" y="558.0" text-anchor="middle" fill="#1a1a1a">F-11 ヒアリングの完了を判定する</text>
+<path d="M727.0,362.0 a66.3,6 0 0 1 132.7,0 v36.0 a66.3,6 0 0 1 -132.7,0 z" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><path d="M727.0,362.0 a66.3,6 0 0 0 132.7,0" fill="none" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="793.3" y="387.0" text-anchor="middle" fill="#1a1a1a">D1 projects</text>
+<path d="M701.7,174.0 a91.6,6 0 0 1 183.2,0 v36.0 a91.6,6 0 0 1 -183.2,0 z" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><path d="M701.7,174.0 a91.6,6 0 0 0 183.2,0" fill="none" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="793.3" y="199.0" text-anchor="middle" fill="#1a1a1a">D2 chat_histories</text>
+<path d="M710.5,624.0 a82.8,6 0 0 1 165.6,0 v36.0 a82.8,6 0 0 1 -165.6,0 z" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><path d="M710.5,624.0 a82.8,6 0 0 0 165.6,0" fill="none" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="793.3" y="649.0" text-anchor="middle" fill="#1a1a1a">D3 intake_files</text>
+<path d="M692.9,268.0 a100.4,6 0 0 1 200.9,0 v36.0 a100.4,6 0 0 1 -200.9,0 z" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><path d="M692.9,268.0 a100.4,6 0 0 0 200.9,0" fill="none" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="793.3" y="293.0" text-anchor="middle" fill="#1a1a1a">D4 prompt_templates</text>
+<rect x="479.1" y="71.0" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="513.5" y="86.0" text-anchor="middle" font-size="14" fill="#222">初期入力</text>
+<rect x="462.2" y="393.0" width="98.2" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="511.3" y="408.0" text-anchor="middle" font-size="14" fill="#222">プロジェクト</text>
+<rect x="379.5" y="619.0" width="98.2" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="428.6" y="634.0" text-anchor="middle" font-size="14" fill="#222">添付テキスト</text>
+<rect x="450.3" y="106.0" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="484.7" y="121.0" text-anchor="middle" font-size="14" fill="#222">対話履歴</text>
+<rect x="293.6" y="438.0" width="112.9" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="350.1" y="453.0" text-anchor="middle" font-size="14" fill="#222">対話プロンプト</text>
+<rect x="419.6" y="472.0" width="58.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="449.0" y="487.0" text-anchor="middle" font-size="14" fill="#222">AI応答</text>
+<rect x="563.6" y="129.5" width="39.4" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="583.3" y="144.5" text-anchor="middle" font-size="14" fill="#222">発言</text>
+<rect x="614.0" y="169.0" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="648.4" y="184.0" text-anchor="middle" font-size="14" fill="#222">対話履歴</text>
+<rect x="585.1" y="263.0" width="98.2" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="634.2" y="278.0" text-anchor="middle" font-size="14" fill="#222">テンプレート</text>
+<rect x="554.3" y="309.0" width="112.9" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="610.8" y="324.0" text-anchor="middle" font-size="14" fill="#222">対話プロンプト</text>
+<rect x="566.3" y="430.0" width="58.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="595.7" y="445.0" text-anchor="middle" font-size="14" fill="#222">AI応答</text>
+<rect x="630.0" y="209.0" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="664.4" y="224.0" text-anchor="middle" font-size="14" fill="#222">対話履歴</text>
+<rect x="583.8" y="347.0" width="39.4" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="603.5" y="362.0" text-anchor="middle" font-size="14" fill="#222">状態</text>
+<rect x="661.6" y="115.0" width="58.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="691.0" y="130.0" text-anchor="middle" font-size="14" fill="#222">AI応答</text>
+<rect x="719.9" y="534.0" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="754.3" y="549.0" text-anchor="middle" font-size="14" fill="#222">対話履歴</text>
+<rect x="723.4" y="507.0" width="112.9" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="779.9" y="522.0" text-anchor="middle" font-size="14" fill="#222">対話プロンプト</text>
+<rect x="643.1" y="480.0" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="677.5" y="495.0" text-anchor="middle" font-size="14" fill="#222">判定結果</text>
+<rect x="956.0" y="340.5" width="68.8" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="990.4" y="355.5" text-anchor="middle" font-size="14" fill="#222">判定結果</text>
+</svg>

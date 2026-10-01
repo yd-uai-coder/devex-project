@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="1490" viewBox="0 0 340 1490" font-family='"Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","Hiragino Kaku Gothic ProN",sans-serif' font-size="14">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker></defs>
+<rect width="340" height="1490" fill="#ffffff"/>
+<path d="M170.0,248.0 L170.0,294.0" fill="none" stroke="#444" stroke-width="1.6"/>
+<path d="M71.6,166.0 L10.0,166.0 L10.0,666.0 L65.0,666.0" fill="none" stroke="#444" stroke-width="1.6"/>
+<path d="M268.4,156.0 L330.0,156.0 L330.0,1216.0 L264.0,1216.0" fill="none" stroke="#444" stroke-width="1.6"/>
+<path d="M309.5,1026.0 L323.5,1026.0 L323.5,176.0 L268.4,176.0" fill="none" stroke="#444" stroke-width="1.6"/>
+<path d="M170.0,944.0 L170.0,898.0" fill="none" stroke="#444" stroke-width="1.6"/>
+<path d="M73.4,846.0 L10.0,846.0 L10.0,1386.0 L54.0,1386.0" fill="none" stroke="#444" stroke-width="1.6"/>
+<rect x="71.6" y="84.0" width="196.8" height="164.0" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><rect x="71.6" y="84.0" width="196.8" height="29.0" fill="#3b6fa8" fill-opacity="0.28" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="85.6" y="107.0" font-size="14" font-weight="bold" fill="#1a1a1a">projects</text>
+<text x="85.6" y="130.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">PK id: UUID</text>
+<text x="85.6" y="150.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">FK user_id: UUID</text>
+<text x="85.6" y="170.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">title: VARCHAR(255)</text>
+<text x="85.6" y="190.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">status: VARCHAR(50)</text>
+<text x="85.6" y="210.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">intake: JSONB</text>
+<text x="85.6" y="230.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">FK template_id: UUID</text>
+<rect x="26.5" y="294.0" width="287.0" height="244.0" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><rect x="26.5" y="294.0" width="287.0" height="29.0" fill="#3b6fa8" fill-opacity="0.28" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="40.5" y="317.0" font-size="14" font-weight="bold" fill="#1a1a1a">uml_diagrams</text>
+<text x="40.5" y="340.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">PK id: UUID</text>
+<text x="40.5" y="360.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">FK project_id: UUID</text>
+<text x="40.5" y="380.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">notation: VARCHAR(50)</text>
+<text x="40.5" y="400.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">subject: VARCHAR(255)</text>
+<text x="40.5" y="420.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">semantic_model: JSONB</text>
+<text x="40.5" y="440.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">layout_model: JSONB</text>
+<text x="40.5" y="460.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">status: VARCHAR(20)</text>
+<text x="40.5" y="480.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">version: INTEGER</text>
+<text x="40.5" y="500.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">generation_status: VARCHAR(20)</text>
+<text x="40.5" y="520.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">source_doc_versions: JSONB</text>
+<rect x="65.0" y="584.0" width="210.0" height="164.0" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><rect x="65.0" y="584.0" width="210.0" height="29.0" fill="#3b6fa8" fill-opacity="0.28" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="79.0" y="607.0" font-size="14" font-weight="bold" fill="#1a1a1a">uml_generation_runs</text>
+<text x="79.0" y="630.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">PK id: UUID</text>
+<text x="79.0" y="650.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">FK project_id: UUID</text>
+<text x="79.0" y="670.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">notation: VARCHAR(50)</text>
+<text x="79.0" y="690.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">requested: JSONB</text>
+<text x="79.0" y="710.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">status: VARCHAR(20)</text>
+<text x="79.0" y="730.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">results: JSONB</text>
+<rect x="76.0" y="1154.0" width="187.9" height="124.0" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><rect x="76.0" y="1154.0" width="187.9" height="29.0" fill="#3b6fa8" fill-opacity="0.28" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="90.0" y="1177.0" font-size="14" font-weight="bold" fill="#1a1a1a">data_items</text>
+<text x="90.0" y="1200.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">PK id: UUID</text>
+<text x="90.0" y="1220.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">FK project_id: UUID</text>
+<text x="90.0" y="1240.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">name: VARCHAR(255)</text>
+<text x="90.0" y="1260.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">fields: JSONB</text>
+<rect x="30.5" y="944.0" width="279.1" height="164.0" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><rect x="30.5" y="944.0" width="279.1" height="29.0" fill="#3b6fa8" fill-opacity="0.28" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="44.5" y="967.0" font-size="14" font-weight="bold" fill="#1a1a1a">users</text>
+<text x="44.5" y="990.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">PK id: UUID</text>
+<text x="44.5" y="1010.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">email: VARCHAR(255)</text>
+<text x="44.5" y="1030.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">hashed_password: VARCHAR(255)</text>
+<text x="44.5" y="1050.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">full_name: VARCHAR(255)</text>
+<text x="44.5" y="1070.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">is_active: BOOLEAN</text>
+<text x="44.5" y="1090.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">is_superuser: BOOLEAN</text>
+<rect x="73.4" y="794.0" width="193.2" height="104.0" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><rect x="73.4" y="794.0" width="193.2" height="29.0" fill="#3b6fa8" fill-opacity="0.28" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="87.4" y="817.0" font-size="14" font-weight="bold" fill="#1a1a1a">conversations</text>
+<text x="87.4" y="840.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">PK id: UUID</text>
+<text x="87.4" y="860.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">FK user_id: UUID</text>
+<text x="87.4" y="880.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">title: VARCHAR(255)</text>
+<rect x="54.0" y="1324.0" width="232.0" height="124.0" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><rect x="54.0" y="1324.0" width="232.0" height="29.0" fill="#3b6fa8" fill-opacity="0.28" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="68.0" y="1347.0" font-size="14" font-weight="bold" fill="#1a1a1a">messages</text>
+<text x="68.0" y="1370.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">PK id: UUID</text>
+<text x="68.0" y="1390.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">FK conversation_id: UUID</text>
+<text x="68.0" y="1410.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">role: VARCHAR(32)</text>
+<text x="68.0" y="1430.0" font-size="14" font-family='"Noto Sans Mono CJK JP","Cascadia Mono",Consolas,"Noto Sans JP",monospace' fill="#1a1a1a">content: TEXT</text>
+<rect x="176.0" y="261.0" width="35.9" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="193.9" y="276.0" text-anchor="middle" font-size="14" fill="#222">1:N</text>
+<rect x="-31.9" y="406.0" width="35.9" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="-13.9" y="421.0" text-anchor="middle" font-size="14" fill="#222">1:N</text>
+<rect x="336.0" y="676.0" width="35.9" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="353.9" y="691.0" text-anchor="middle" font-size="14" fill="#222">1:N</text>
+<rect x="281.7" y="591.0" width="35.9" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="299.6" y="606.0" text-anchor="middle" font-size="14" fill="#222">1:N</text>
+<rect x="176.0" y="911.0" width="35.9" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="193.9" y="926.0" text-anchor="middle" font-size="14" fill="#222">1:N</text>
+<rect x="-31.9" y="1106.0" width="35.9" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="-13.9" y="1121.0" text-anchor="middle" font-size="14" fill="#222">1:N</text>
+</svg>
