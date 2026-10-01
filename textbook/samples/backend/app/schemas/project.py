@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3
+# 作成：Phase-2-3｜更新：Phase-6-3,15-1
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 import uuid
 from datetime import datetime
@@ -8,6 +8,10 @@ from pydantic import BaseModel, ConfigDict
 
 ProjectStatus = Literal["interviewing", "generating", "completed", "revising"]
 IntakeFileStatus = Literal["processed", "failed"]
+# Phase-15-1:追記
+# simple: 簡易ドキュメントモード(4文書の一括生成)
+# detailed: 詳細設計モード(docs/external_design.md 2.7節)
+ProjectMode = Literal["simple", "detailed"]
 
 
 class IntakeFileRead(BaseModel):
@@ -30,6 +34,8 @@ class ProjectRead(BaseModel):
     id: uuid.UUID
     title: str
     status: ProjectStatus
+    # Phase-15-1:追記
+    mode: ProjectMode
     created_at: datetime
     updated_at: datetime
 

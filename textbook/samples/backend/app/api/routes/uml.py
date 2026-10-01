@@ -1,4 +1,4 @@
-# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1,12-1,12-4,13-2,13-3,13-4
+# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1,12-1,12-4,13-2,13-3,13-4,15-3
 # 写経レベル: コア ── prefixにproject_idを含める構成・エンドポイント構成そのもの。
 # Phase-10-6:追記 ── fastapi.BackgroundTasks, app.schemas.uml_generation(DfdSubjectRead,
 #   UmlCandidatesRead, UmlGenerateRequest, UmlGenerationRunRead),
@@ -87,7 +87,13 @@ async def generate_diagrams(
 async def list_diagrams(
     session: SessionDep, current_project: CurrentProjectDep
 ) -> list[UmlDiagramRead]:
-    """プロジェクトのUML図一覧を取得する(更新日時の降順)。"""
+    # Phase-15-3：更新
+    # """プロジェクトのUML図一覧を取得する(更新日時の降順)。"""
+    # diagrams = await UmlDiagramService(session).list_for_project(current_project.id)
+    # ↓↓
+    """プロジェクトのUML図一覧を取得する(更新日時の降順)。画面は生成の完了をこの一覧の
+    ポーリングで待つため、止まった生成(15分超)はここで回収してから返す。"""
+    await UmlGenerationService(session).recover_stale(current_project.id)
     diagrams = await UmlDiagramService(session).list_for_project(current_project.id)
     return [UmlDiagramRead.model_validate(d) for d in diagrams]
 

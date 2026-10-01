@@ -79,6 +79,7 @@
 - [`Phase-11-1.md`](../Phase-11/Phase-11-1.md): `LayoutEdgeGeometry.points`の空リストを「折れ点なし」(D2。手動移動したノードにつながる辺)の意味として明記した。`app/uml/layout/reconcile.py`(`reconcile_layout`)を追加し、`__init__`から re-export した。
 - [`Phase-11-7.md`](../Phase-11/Phase-11-7.md): `ranking.py`の行の割り当てを、レーンごとに1行1ノードの最長経路法に改めた(`_longest_path_rank` → `_assign_rows`)。同じレーンで同じ深さの要素が同じ`(lane, row)`になり、ノードが重なる不具合があった。既存のひし形のテストはこの不具合を期待値として固定していたため改めた。`LayoutMetrics`の3指標が線についてのものであることを明記した。
 - [`Phase-12-2.md`](../Phase-12/Phase-12-2.md): 辺ラベル(ERの多重度・DFDのデータ項目名)を`labels.edge_labels`で組み立てて`compute_layout(..., label_texts)`に渡し、移植済みの`place_labels`で配置した位置を`LayoutEdgeGeometry.label_pos`に保存するようにした。[`Phase-12-3.md`](../Phase-12/Phase-12-3.md)で、出力と共有するため`_element_kind`/`_element_text`/`finalize._label_size`を公開名にした。
+- [`Phase-15-5.md`](../Phase-15/Phase-15-5.md): `crossing_reduction.optimize`を、近似の評価(中心を結ぶ線分)で並べてから簡易な実経路の評価で仕上げる2段にし、回数・時間の上限を置いた。経路探索の全体(`pipeline.route`)は最後の1回だけになった。
 
 ## Phase完了チェック(#22)
 

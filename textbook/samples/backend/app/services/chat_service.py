@@ -1,9 +1,10 @@
-# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5
+# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5,15-3
 # 写経レベル: コア ── MVPコアループ(ヒアリングフロー)そのもの。LangGraphを使わない設計判断も含む。
 # Phase-2-5:追記 ── app.services.llm_retry.invoke_with_retry
 # Phase-6-3:追記 ── app.models.prompt_template.PromptTemplate,
 #   app.repositories.prompt_template.PromptTemplateRepository
 # Phase-6-5:追記 ── time, structlog, app.services.llm_retry.prompt_char_count
+# Phase-15-3:追記 ── app.services.llm_retry.as_llm_error
 # Phase-8-5:追記 ── uuid
 import json
 import time
@@ -21,7 +22,7 @@ from app.models.prompt_template import PromptTemplate
 from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.prompt_template import PromptTemplateRepository
 from app.schemas.generation import HearingCompletionCheck
-from app.services.llm_retry import invoke_with_retry, prompt_char_count
+from app.services.llm_retry import as_llm_error, invoke_with_retry, prompt_char_count
 
 logger = structlog.get_logger(__name__)
 
@@ -129,12 +130,25 @@ class ChatService:
         # docstring参照)ため、DEBUGログ(レイテンシ・プロンプト文字数)はここで個別に記録する。
         started = time.monotonic()
         chunks: list[str] = []
-        async for chunk in llm.astream(messages):
-            piece = extract_text_content(chunk.content)
-            if not piece:
-                continue
-            chunks.append(piece)
-            yield piece
+        # Phase-15-3：更新(気づき#2: 途中の失敗を共通の例外に揃える)
+        # async for chunk in llm.astream(messages):
+        #     piece = extract_text_content(chunk.content)
+        #     if not piece:
+        #         continue
+        #     chunks.append(piece)
+        #     yield piece
+        # ↓↓
+        try:
+            async for chunk in llm.astream(messages):
+                piece = extract_text_content(chunk.content)
+                if not piece:
+                    continue
+                chunks.append(piece)
+                yield piece
+        except Exception as exc:
+            # 再試行はしない(送信済みの断片があるため。llm_retry.pyのdocstring参照)。
+            # 失敗の種類だけを共通の例外に揃え、ルートがSSEの`event: error`で伝える
+            raise as_llm_error(exc) from exc
         logger.debug(
             "llm_call_succeeded",
             prompt_chars=prompt_char_count(messages),

@@ -1,4 +1,4 @@
-// 作成：Phase-3-4｜更新：Phase-6-4
+// 作成：Phase-3-4｜更新：Phase-6-4,15-7
 "use client";
 
 import { useRef, useState } from "react";
@@ -16,6 +16,8 @@ import { CollapsibleSection } from "@/components/ui/form/CollapsibleSection";
 import { FileUploadField } from "@/features/hearing/components/FileUploadField";
 // Phase-6-4:追記
 import { TemplateSelectField } from "@/features/hearing/components/TemplateSelectField";
+// Phase-15-7:追記 ── ProjectMode(@/features/dashboard/api/projects)
+import type { ProjectMode } from "@/features/dashboard/api/projects";
 import { createProject } from "@/features/hearing/api/createProject";
 import { intakeSchema } from "@/features/hearing/schemas";
 import type { IntakeValues } from "@/features/hearing/schemas";
@@ -86,7 +88,11 @@ const DEFAULT_VALUES: IntakeValues = {
   files: [],
 };
 
-export function IntakeForm() {
+// Phase-15-7：更新
+// export function IntakeForm() {
+// ↓↓
+// mode: ダッシュボードのモード選択ダイアログで選んだモード(作成後は変えない)
+export function IntakeForm({ mode = "simple" }: { mode?: ProjectMode }) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
   // Phase-6-4:追記 ── テンプレート選択でenvironmentがプリフィルされた際、折りたたまれたままだと
@@ -107,7 +113,10 @@ export function IntakeForm() {
         async (values) => {
           setSubmitError(null);
           try {
-            const project = await createProject(values);
+            // Phase-15-7：更新
+            // const project = await createProject(values);
+            // ↓↓
+            const project = await createProject({ ...values, mode });
             createdProjectIdRef.current = project.id;
             resolve(true);
           } catch (err) {

@@ -1,6 +1,7 @@
-// 作成：Phase-3-4｜更新：Phase-6-4
+// 作成：Phase-3-4｜更新：Phase-6-4,15-6
+// Phase-15-6:追記 ── ProjectMode(@/features/dashboard/api/projects)
 import { apiFetch } from "@/lib/api/client";
-import type { ProjectRead } from "@/features/dashboard/api/projects";
+import type { ProjectMode, ProjectRead } from "@/features/dashboard/api/projects";
 import type { EnvironmentValues } from "@/features/hearing/schemas";
 
 export type CreateProjectInput = {
@@ -9,6 +10,9 @@ export type CreateProjectInput = {
   notesRaw: string;
   // Phase-6-4:追記
   templateId: string | null;
+  // Phase-15-6:追記
+  // 省略時はバックエンドの既定(simple)になる
+  mode?: ProjectMode;
   environment: EnvironmentValues;
   files: File[];
 };
@@ -26,6 +30,10 @@ export function createProject(input: CreateProjectInput): Promise<ProjectRead> {
   // Phase-6-4:追記
   if (input.templateId) {
     formData.set("template_id", input.templateId);
+  }
+  // Phase-15-6:追記
+  if (input.mode) {
+    formData.set("mode", input.mode);
   }
 
   const { languages, frameworks, databases, deployTargets } = input.environment;

@@ -1,4 +1,4 @@
-// 作成：Phase-3-4｜更新：Phase-6-4
+// 作成：Phase-3-4｜更新：Phase-6-4,15-7
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,10 +13,16 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }));
 
-function renderForm() {
+// Phase-15-7：更新
+// function renderForm() {
+// ↓↓
+function renderForm(mode?: "simple" | "detailed") {
   return render(
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+      {/* Phase-15-7：更新
       <IntakeForm />
+          ↓↓ */}
+      <IntakeForm mode={mode} />
     </TamaguiProvider>,
   );
 }
@@ -86,8 +92,27 @@ describe("IntakeForm", () => {
       deploy_targets: [],
     });
     expect(body.getAll("files")).toHaveLength(1);
+    // Phase-15-7:追記
+    // mode を渡さなければ簡易ドキュメントモードで作成する
+    expect(body.get("mode")).toBe("simple");
 
     await vi.waitFor(() => expect(push).toHaveBeenCalledWith("/projects/p1/chat"));
+  // Phase-15-7:追記
+  }, 15000);
+
+  it("mode=detailedを渡すと、詳細設計モードでプロジェクトを作成する", async () => {
+    stub.queue({ status: 200, body: [] }); // テンプレート一覧(マウント時に取得)
+    stub.queue({ status: 201, body: { id: "p2", title: "t", status: "interviewing", mode: "detailed" } });
+    const user = userEvent.setup();
+    renderForm("detailed");
+
+    await user.type(screen.getByLabelText("システム概要"), "備品予約");
+    await user.type(screen.getByLabelText("実現したいこと"), "重複を防ぐ");
+    await user.click(screen.getByRole("button", { name: "ヒアリングを始める" }));
+
+    await vi.waitFor(() => expect(stub.requests).toHaveLength(2));
+    const body = stub.requests[1].init?.body as FormData;
+    expect(body.get("mode")).toBe("detailed");
   }, 15000);
 
   it("テンプレートを選択すると環境設定にプリフィルされ、template_idが送信される", async () => {

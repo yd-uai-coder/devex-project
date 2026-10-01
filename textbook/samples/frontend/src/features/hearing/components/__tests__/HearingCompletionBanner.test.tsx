@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-6-6
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8
 // Phase-6-6:追記 ── vitest.beforeEach, @/features/hearing/hearing-store.useHearingStore
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
@@ -47,14 +47,39 @@ describe("HearingCompletionBanner", () => {
     expect(screen.getByRole("button", { name: "この内容で設計書を生成する" })).toBeInTheDocument();
   });
 
-  it("ボタン押下でonApproveを呼ぶ", async () => {
+  // Phase-15-8：更新(押すと確認ダイアログを開き、「生成する」で onApprove を呼ぶ)
+  // it("ボタン押下でonApproveを呼ぶ", async () => {
+  //   const onApprove = vi.fn();
+  //   const user = userEvent.setup();
+  //   renderBanner({ onApprove });
+  //
+  //   await user.click(screen.getByRole("button", { name: "この内容で設計書を生成する" }));
+  //
+  //   expect(onApprove).toHaveBeenCalledTimes(1);
+  // });
+  // ↓↓
+  it("ボタン押下で確認ダイアログを開き、「生成する」でonApproveを呼ぶ", async () => {
     const onApprove = vi.fn();
     const user = userEvent.setup();
     renderBanner({ onApprove });
 
     await user.click(screen.getByRole("button", { name: "この内容で設計書を生成する" }));
+    expect(onApprove).not.toHaveBeenCalled();
+    // ダイアログ内のボタンは jsdom ではロールのクエリで「隠れている」扱いになるため、aria-label で取る
+    await user.click(screen.getByLabelText("生成する"));
 
     expect(onApprove).toHaveBeenCalledTimes(1);
+  });
+
+  it("確認ダイアログでキャンセルするとonApproveを呼ばない", async () => {
+    const onApprove = vi.fn();
+    const user = userEvent.setup();
+    renderBanner({ onApprove });
+
+    await user.click(screen.getByRole("button", { name: "この内容で設計書を生成する" }));
+    await user.click(screen.getByLabelText("キャンセル"));
+
+    expect(onApprove).not.toHaveBeenCalled();
   });
 
   it("approving=trueならボタンが無効化され文言が変わる", () => {

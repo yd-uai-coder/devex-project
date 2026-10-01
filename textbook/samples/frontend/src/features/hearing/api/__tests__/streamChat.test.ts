@@ -1,6 +1,7 @@
-// 作成：Phase-3-5
+// 作成：Phase-3-5｜更新：Phase-15-6
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { streamChat, StreamChatError } from "../streamChat";
+// Phase-15-6:追記 ── parseEvent
+import { parseEvent, streamChat, StreamChatError } from "../streamChat";
 import { useAuthStore } from "@/components/auth/auth-store";
 
 vi.mock("@/components/auth/auth-store", async () => {
@@ -91,5 +92,43 @@ describe("streamChat", () => {
         // 何もしない
       }
     }).rejects.toThrow(StreamChatError);
+  });
+  // Phase-15-6:追記
+  it("event: error を受け取ったら、code と detail を持つ StreamChatError を投げる", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        sseResponse([
+          'data: {"delta":"途中まで"}\n\n',
+          'event: error\ndata: {"code":"LLM_QUOTA_EXCEEDED","detail":"本日の利用上限に達しました。"}\n\n',
+        ]),
+      ),
+    );
+
+    const deltas: string[] = [];
+    const error = await (async () => {
+      try {
+        for await (const delta of streamChat("p1", "hello")) deltas.push(delta);
+      } catch (err) {
+        return err;
+      }
+    })();
+
+    expect(deltas).toEqual(["途中まで"]);
+    expect(error).toBeInstanceOf(StreamChatError);
+    expect((error as StreamChatError).code).toBe("LLM_QUOTA_EXCEEDED");
+    expect((error as StreamChatError).message).toBe("本日の利用上限に達しました。");
+  });
+});
+
+// Phase-15-6:追記
+describe("parseEvent", () => {
+  it("data の無いイベントや delta の無い JSON は無視する", () => {
+    expect(parseEvent(": keep-alive")).toEqual({ kind: "ignored" });
+    expect(parseEvent('data: {"other":1}')).toEqual({ kind: "ignored" });
+  });
+
+  it("壊れた error イベントは既定の文言にする", () => {
+    expect(parseEvent("event: error\ndata: not-json")).toMatchObject({ kind: "error" });
   });
 });

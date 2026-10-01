@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -237,3 +237,46 @@ class UmlDiagramNotApprovedError(ConflictError):
     出力は承認済みの図だけに許す(ダウンロードは最終成果物。D6)。"""
 
     code: ClassVar[str | None] = "UML_DIAGRAM_NOT_APPROVED"
+
+
+# Phase-15-2:追記
+# 詳細設計モード(ステージ4)
+class DesignStagesNotAvailableError(ConflictError):
+    """詳細設計モードでないプロジェクト(`projects.mode='simple'`)の段階を扱おうとした場合に送出する。
+    モードは作成時に決まり、後から変えられない。"""
+
+    code: ClassVar[str | None] = "DESIGN_STAGES_NOT_AVAILABLE"
+
+
+class DesignStageNotFoundError(NotFoundError):
+    """まだ作られていない(未着手の)段階を承認しようとした場合に送出する。"""
+
+    code: ClassVar[str | None] = "RESOURCE_NOT_FOUND"
+
+
+class DesignStageVersionConflictError(ConflictError):
+    """段階の保存・承認時、リクエストのversionがDB上のversionと一致しない場合に送出する(楽観ロック)。"""
+
+    code: ClassVar[str | None] = "VERSION_CONFLICT"
+
+
+class DesignStageLockedError(ConflictError):
+    """入力(前の段階の承認・文書)がそろっておらず、まだ開いていない段階を保存・承認しようとした
+    場合に送出する。前の段階を承認すると次の段階が開く。"""
+
+    code: ClassVar[str | None] = "DESIGN_STAGE_LOCKED"
+
+
+class DesignStageNotApprovableError(ConflictError):
+    """承認できない段階(承認済みで古くない・内容が空)を承認しようとした場合に送出する。"""
+
+    code: ClassVar[str | None] = "DESIGN_STAGE_NOT_APPROVABLE"
+
+
+# Phase-15-3:追記
+class DocGenerationInProgressError(ConflictError):
+    """設計書の生成が実行中(`projects.status='generating'`)のプロジェクトで、生成を再度要求した
+    場合に送出する。二重実行で生成が並行し、版の番号が重複するのを防ぐ(画面側のボタンの無効化と
+    二重で塞ぐ)。"""
+
+    code: ClassVar[str | None] = "DOC_GENERATION_IN_PROGRESS"

@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-4-2
+// 作成：Phase-3-5｜更新：Phase-4-2,15-8
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -24,6 +24,8 @@ describe("ChatPanel", () => {
       sending: false,
       streamingReply: "",
       connectionLost: false,
+      // Phase-15-8:追記
+      streamError: null,
       completion: null,
       generationTriggered: false,
       loadHistory: vi.fn().mockResolvedValue(undefined),
@@ -124,8 +126,20 @@ describe("ChatPanel", () => {
     renderPanel();
 
     await user.click(screen.getByRole("button", { name: "この内容で設計書を生成する" }));
+    // Phase-15-8:追記 ── 確認ダイアログで確定する(ダイアログ内のボタンは aria-label で取る)
+    await user.click(screen.getByLabelText("生成する"));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("生成の開始に失敗しました");
     expect(screen.getByRole("button", { name: "この内容で設計書を生成する" })).not.toBeDisabled();
+  });
+  // Phase-15-8:追記
+  it("バックエンドが伝えた失敗の理由を表示し、保存されていないことを伝える", () => {
+    useHearingStore.setState({ streamError: "本日の利用上限に達しました。" });
+
+    renderPanel();
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "本日の利用上限に達しました。 送信したメッセージは保存されていません。",
+    );
   });
 });

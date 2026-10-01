@@ -1,6 +1,9 @@
-// 作成：Phase-3-5｜更新：Phase-6-6
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8
 // Phase-6-6:追記 ── @/features/hearing/hearing-store.useHearingStore
+// Phase-15-8:追記 ── useState(react), ConfirmDialog
+import { useState } from "react";
 import { Button, Text, YStack } from "tamagui";
+import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { useHearingStore } from "@/features/hearing/hearing-store";
 import type { HearingCompletionCheck } from "@/features/hearing/api/hearingApi";
 
@@ -17,6 +20,8 @@ export function HearingCompletionBanner({ completion, onApprove, approving }: He
   // 承認させない。projectStatusはsendMessage(completed→revising)・approveAndGenerate
   // (→generating)でstore側が追従させるため、ここで購読するだけでボタンが再描画される。
   const projectStatus = useHearingStore((s) => s.projectStatus);
+  // Phase-15-8:追記
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!completion.is_sufficient) return null;
 
@@ -37,13 +42,32 @@ export function HearingCompletionBanner({ completion, onApprove, approving }: He
         {approving ? "生成を開始しています..." : "この内容で設計書を生成する"}
       </Button>
       ↓↓ */}
+      {/* Phase-15-8：更新(生成は数分かかり、やり直すとAIの利用枠も使うため、押す前に確認する。気づき#4)
       <Button theme="green" disabled={projectStatus === "completed" || approving} onPress={onApprove}>
+          ↓↓ */}
+      <Button
+        theme="green"
+        disabled={projectStatus === "completed" || approving}
+        onPress={() => setConfirmOpen(true)}
+      >
         {projectStatus === "completed"
           ? "設計書は生成済みです"
           : approving
             ? "生成を開始しています..."
             : "この内容で設計書を生成する"}
       </Button>
+      {/* Phase-15-8:追記 */}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="設計書を生成しますか"
+        description="この内容で設計書を生成します。生成には数分かかり、その間はチャットを送れません。"
+        confirmLabel="生成する"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onApprove();
+        }}
+      />
     </YStack>
   );
 }

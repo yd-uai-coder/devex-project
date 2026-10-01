@@ -1,9 +1,11 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3
 # 写経レベル: コア ── 添付ファイルのバリデーション順序・失敗時の非ブロッキング方針など、ドメイン判断を体現する箇所。
 # Phase-6-3:追記 ── app.repositories.prompt_template.PromptTemplateRepository,
 #   app.services.errors.PromptTemplateNotFoundError
 # Phase-6-5:追記 ── structlog
 # Phase-8-5:追記 ── app.schemas.project.IntakeFileRead, app.schemas.project.ProjectDetail
+# Phase-15-1:追記 ── app.schemas.project.ProjectMode
+# Phase-15-3:追記 ── app.services.doc_generator_service.DocGeneratorService
 import uuid
 from dataclasses import dataclass
 
@@ -15,7 +17,8 @@ from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.intake_file import IntakeFileRepository
 from app.repositories.project import ProjectRepository
 from app.repositories.prompt_template import PromptTemplateRepository
-from app.schemas.project import IntakeFileRead, ProjectDetail
+from app.schemas.project import IntakeFileRead, ProjectDetail, ProjectMode
+from app.services.doc_generator_service import DocGeneratorService
 from app.services.errors import (
     FileTooLargeError,
     PromptTemplateNotFoundError,
@@ -61,6 +64,8 @@ class ProjectService:
         files: list[UploadedFileInput],
         # Phase-6-3:追記 ── SCR-003で選択したテンプレートのID(任意)
         template_id: uuid.UUID | None = None,
+        # Phase-15-1:追記 ── 作成時に選んだモード(作成後は変えない)
+        mode: ProjectMode = "simple",
     ) -> Project:
         """プロジェクトを作成し、初期ヒアリング入力と添付ファイルの内容をchat_historiesへ記録する。"""
         if len(files) > MAX_FILES_PER_PROJECT:
@@ -74,7 +79,10 @@ class ProjectService:
 
         title = (intake.get("system_overview") or "").strip()[:255] or "無題のプロジェクト"
         project = await self._projects.create(
-            user_id=user_id, title=title, intake=intake, template_id=template_id
+            # Phase-15-1：更新
+            # user_id=user_id, title=title, intake=intake, template_id=template_id
+            # ↓↓
+            user_id=user_id, title=title, intake=intake, template_id=template_id, mode=mode
         )
         filenames = [file.filename for file in files]
         await self._chat_histories.add(
@@ -100,12 +108,22 @@ class ProjectService:
     async def get_detail(self, project: Project) -> ProjectDetail:
         """プロジェクトの詳細(初期ヒアリング入力・添付ファイルサマリを含む)を返す。
         Project単体のカラムに加え、別Repository(IntakeFile)の取得・整形も
-        このメソッドに集約する(ルーター層はRepositoryを直接参照しない)。"""
+        # Phase-15-3：更新
+        # このメソッドに集約する(ルーター層はRepositoryを直接参照しない)。"""
+        # intake_files =
+        # ↓↓
+        このメソッドに集約する(ルーター層はRepositoryを直接参照しない)。
+
+        画面は生成の完了をこの取得のポーリングで待つため、止まった「生成中」(15分超)はここで
+        回収する(DocGeneratorService.recover_if_stale)。"""
+        await DocGeneratorService(self._session).recover_if_stale(project)
         intake_files = await self._intake_files.list_for_project(project.id)
         return ProjectDetail(
             id=project.id,
             title=project.title,
             status=project.status,  # type: ignore[arg-type]
+            # Phase-15-1:追記
+            mode=project.mode,  # type: ignore[arg-type]
             created_at=project.created_at,
             updated_at=project.updated_at,
             intake=project.intake,

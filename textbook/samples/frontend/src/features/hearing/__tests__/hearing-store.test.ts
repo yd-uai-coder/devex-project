@@ -1,13 +1,22 @@
-// 作成：Phase-3-5｜更新：Phase-6-6
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useHearingStore } from "../hearing-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
-vi.mock("@/features/hearing/api/streamChat", () => ({
-  streamChat: vi.fn(),
-}));
+// Phase-15-8：更新(StreamChatError は本物を使う。ストアが instanceof で見分けるため)
+// vi.mock("@/features/hearing/api/streamChat", () => ({
+//   streamChat: vi.fn(),
+// }));
+// ↓↓
+vi.mock("@/features/hearing/api/streamChat", async () => {
+  const actual = await vi.importActual<typeof import("@/features/hearing/api/streamChat")>(
+    "@/features/hearing/api/streamChat",
+  );
+  return { ...actual, streamChat: vi.fn() };
+});
 
-import { streamChat } from "@/features/hearing/api/streamChat";
+// Phase-15-8:追記 ── StreamChatError
+import { streamChat, StreamChatError } from "@/features/hearing/api/streamChat";
 
 async function* fakeStream(deltas: string[]) {
   for (const delta of deltas) yield delta;
@@ -20,6 +29,8 @@ function resetStore() {
     sending: false,
     streamingReply: "",
     connectionLost: false,
+    // Phase-15-8:追記
+    streamError: null,
     completion: null,
     generationTriggered: false,
     projectStatus: null,
@@ -137,8 +148,29 @@ describe("useHearingStore", () => {
     expect(sending).toBe(false);
     expect(connectionLost).toBe(true);
     expect(streamingReply).toBe("");
-    // ユーザー発話はサーバー側で既に永続化されている前提のため、ローカル表示は残す
+    // Phase-15-8：更新(発話はストリームの最後に保存されるため、元のコメントの前提は誤りだった)
+    // // ユーザー発話はサーバー側で既に永続化されている前提のため、ローカル表示は残す
+    // ↓↓
+    // 接続の切断では発話が保存されたかどうか分からないため、ローカル表示は残す
     expect(messages.map((m) => m.sender)).toEqual(["user"]);
+  });
+
+  // Phase-15-8:追記
+  it("バックエンドがevent: errorで失敗を伝えたら、発話の表示を取り消して理由を見せる", async () => {
+    vi.mocked(streamChat).mockImplementation(async function* () {
+      throw new StreamChatError("本日の利用上限に達しました。", "LLM_QUOTA_EXCEEDED");
+    });
+
+    await useHearingStore.getState().sendMessage("p1", "こんにちは");
+
+    const { sending, connectionLost, streamError, messages } = useHearingStore.getState();
+    expect(sending).toBe(false);
+    expect(connectionLost).toBe(false);
+    expect(streamError).toBe("本日の利用上限に達しました。");
+    expect(messages).toEqual([]);
+
+    useHearingStore.getState().dismissConnectionLost();
+    expect(useHearingStore.getState().streamError).toBeNull();
   });
 
   it("approveAndGenerate()はtriggerGenerationを呼びgenerationTriggeredを立てる", async () => {

@@ -1,4 +1,4 @@
-# 更新：Phase-4-3,6-5
+# 更新：Phase-4-3,6-5,15-4
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。本Phaseまで
 # サンプルとして写経対象になったことが無く、今回が初めてのsamples反映(以下は差分のみでなく
 # 全文)。E2E_FAKE_LLM・LLM_TIMEOUT_SECONDS以外はdevex-api/backend/app/core/config.pyの
@@ -42,7 +42,12 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    # Phase-15-4：更新(気づき#8: Cookie(14日)に揃える)
+    # REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    # ↓↓
+    # refresh の JWT・Redis の TTL・Cookie の max_age は、すべてこの日数から導く
+    # (Phase 15 で14日に統一)
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 14
 
     # AI
     GOOGLE_API_KEY: str | None = None

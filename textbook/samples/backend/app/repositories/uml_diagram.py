@@ -1,4 +1,4 @@
-# 作成：Phase-8-2｜更新：Phase-10-4
+# 作成：Phase-8-2｜更新：Phase-10-4,15-3
 # 写経レベル: コア ── 所有権スコープのget_by_id override。楽観ロックの版チェックは
 # サービス層(app/services/uml_diagram_service.py)に置き、ここでは純粋な永続化のみ。
 import uuid
@@ -70,6 +70,11 @@ class UmlDiagramRepository(CRUDRepository[UmlDiagram]):
     ) -> UmlDiagram | None:
         """(project_id, notation, subject)で図を1件取得する(再生成時の上書き対象の検索)。"""
         return await self.find_one(project_id=project_id, notation=notation, subject=subject)
+
+    # Phase-15-3:追記
+    async def list_generating(self, project_id: uuid.UUID) -> list[UmlDiagram]:
+        """指定プロジェクトのAI生成中の図を返す(止まった生成の回収用)。"""
+        return await self.list_all(project_id=project_id, generation_status="generating")
 
     async def has_generating(self, project_id: uuid.UUID) -> bool:
         """指定プロジェクトにAI生成中の図があるかどうか(生成はプロジェクトごとに1本に限る)。"""

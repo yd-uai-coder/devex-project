@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -16,26 +16,45 @@
 # ↓↓
 # Phase-12-4：更新 ── urllib.parse.quote を削除し、app.api.responses.content_disposition を追記
 #   (_content_disposition を UML 図の出力と共有するため app/api/responses.py へ移した)
+# Phase-15-1:追記 ── app.schemas.project.ProjectMode
+# Phase-15-3:追記 ── structlog, app.core.errors.AppError
 import json
 import uuid
 from typing import Annotated
 
+import structlog
 from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, status
 from fastapi.responses import Response, StreamingResponse
 
 from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
 from app.api.responses import content_disposition
-from app.core.errors import BadRequestError
+from app.core.errors import AppError, BadRequestError
 from app.schemas.document import DocType, GeneratedDocumentRead
 from app.schemas.generation import HearingCompletionCheck
 from app.schemas.hearing import ChatHistoryRead, HearingMessageRequest
-from app.schemas.project import ProjectDetail, ProjectRead
+from app.schemas.project import ProjectDetail, ProjectMode, ProjectRead
 from app.services.chat_service import ChatService
 from app.services.doc_generator_service import DocGeneratorService, generate_documents
 from app.services.errors import GenerationFailedError, LLMQuotaExceededError
 from app.services.project import ProjectService, UploadedFileInput
 
+# Phase-15-3:追記
+logger = structlog.get_logger(__name__)
+
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+
+# Phase-15-3:追記 ── 気づき#2: ストリーム途中の失敗をSSEのイベントにする
+def _sse_error_event(exc: Exception) -> str:
+    """ストリームの途中で起きた失敗を`event: error`のSSEイベントにする(`{code, detail}`は
+    通常のエラーレスポンスと同じ形)。応答のヘッダーは送信済みでステータスコードを変えられないため、
+    失敗はイベントで伝える。AppError以外の例外は詳細を返さず、ログにだけ残す。"""
+    if isinstance(exc, AppError):
+        body = {"code": exc.code or "INTERNAL_SERVER_ERROR", "detail": str(exc)}
+    else:
+        logger.error("chat_stream_failed", error_type=type(exc).__name__, exc_info=exc)
+        body = {"code": "INTERNAL_SERVER_ERROR", "detail": "応答の生成中にエラーが発生しました。"}
+    return f"event: error\ndata: {json.dumps(body, ensure_ascii=False)}\n\n"
 
 
 @router.post("", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
@@ -48,6 +67,8 @@ async def create_project(
     environment: Annotated[str | None, Form()] = None,
     # Phase-6-3:追記 ── SCR-003で選択したテンプレートのID(任意)
     template_id: Annotated[uuid.UUID | None, Form()] = None,
+    # Phase-15-1:追記 ── 作成時に選んだモード(省略時は簡易ドキュメントモード)
+    mode: Annotated[ProjectMode, Form()] = "simple",
     files: Annotated[list[UploadFile], File()] = [],
 ) -> ProjectRead:
     """初期ヒアリング入力(+添付ファイル最大3件、txt/md/pdfのみ)を受け取り、新規プロジェクトを作成する。"""
@@ -61,7 +82,14 @@ async def create_project(
         UploadedFileInput(filename=f.filename or "unnamed", data=await f.read()) for f in files
     ]
     project = await ProjectService(session).create(
-        user_id=current_user.id, intake=intake, files=file_inputs, template_id=template_id
+        # Phase-15-1：更新
+        # user_id=current_user.id, intake=intake, files=file_inputs, template_id=template_id
+        # ↓↓
+        user_id=current_user.id,
+        intake=intake,
+        files=file_inputs,
+        template_id=template_id,
+        mode=mode,
     )
     try:
         await ChatService(session).generate_opening_reply(project)
@@ -108,11 +136,24 @@ async def send_hearing_message(
 ) -> StreamingResponse:
     """ヒアリングチャットへメッセージを送信し、AI応答をSSE(Server-Sent Events)でストリーミング返却する。"""
 
+    # Phase-15-3：更新
+    # async def event_stream():
+    #     async for chunk in ChatService(session).stream_reply(
+    #         current_project, user_message=payload.message
+    #     ):
+    #         yield f"data: {json.dumps({'delta': chunk}, ensure_ascii=False)}\n\n"
+    #     yield "data: [DONE]\n\n"
+    # ↓↓
     async def event_stream():
-        async for chunk in ChatService(session).stream_reply(
-            current_project, user_message=payload.message
-        ):
-            yield f"data: {json.dumps({'delta': chunk}, ensure_ascii=False)}\n\n"
+        try:
+            async for chunk in ChatService(session).stream_reply(
+                current_project, user_message=payload.message
+            ):
+                yield f"data: {json.dumps({'delta': chunk}, ensure_ascii=False)}\n\n"
+        except Exception as exc:  # noqa: BLE001 -- 200を返した後なので、失敗はSSEのイベントで伝える
+            await session.rollback()
+            yield _sse_error_event(exc)
+            return
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
@@ -143,22 +184,25 @@ async def get_hearing_completion(
     return await ChatService(session).check_completion(current_project)
 
 
-# Phase-2-4：更新(所有者チェック無し専用メソッドを増やすのではなく、既存の所有者スコープ版
-# get_by_idに統一する設計へ変更。理由はPhase-2-4.md「設計判断」参照)
+# Phase-15-3：更新(気づき#4: 受け付け時に409・generatingにし、受け付け前の状態を渡す。Phase-2-4でuser_idを足した経緯はPhase-2-4.md参照)
 # @router.post("/{project_id}/generate", status_code=status.HTTP_202_ACCEPTED)
 # async def trigger_generation(
-#     current_project: CurrentProjectDep, background_tasks: BackgroundTasks
+#     current_project: CurrentProjectDep,
+#     current_user: CurrentUserDep,
+#     background_tasks: BackgroundTasks,
 # ) -> None:
 #     """設計書4種の一括生成(+自己診断)をバックグラウンドでトリガーする。
 #
-#     project_idのみをbackground taskへ渡す(SessionDepのセッションはbackground task実行前に
-#     クローズされるため、リクエストのセッションはそのまま渡さない。詳細は
-#     doc_generator_service.generate_documentsのdocstring参照)。
+#     project_id・user_idの値のみをbackground taskへ渡す(SessionDepのセッションはbackground task
+#     実行前にクローズされるため、リクエストのセッションやORMオブジェクトはそのまま渡さない。詳細は
+#     doc_generator_service.generate_documentsのdocstring参照)。user_idも渡すのは、所有者チェック
+#     無しの専用メソッドを増やすのではなく、既存の所有者スコープ版get_by_idに統一するため。
 #     """
-#     background_tasks.add_task(generate_documents, current_project.id)
+#     background_tasks.add_task(generate_documents, current_project.id, current_user.id)
 # ↓↓
 @router.post("/{project_id}/generate", status_code=status.HTTP_202_ACCEPTED)
 async def trigger_generation(
+    session: SessionDep,
     current_project: CurrentProjectDep,
     current_user: CurrentUserDep,
     background_tasks: BackgroundTasks,
@@ -169,8 +213,16 @@ async def trigger_generation(
     実行前にクローズされるため、リクエストのセッションやORMオブジェクトはそのまま渡さない。詳細は
     doc_generator_service.generate_documentsのdocstring参照)。user_idも渡すのは、所有者チェック
     無しの専用メソッドを増やすのではなく、既存の所有者スコープ版get_by_idに統一するため。
+
+    生成中なら409(DOC_GENERATION_IN_PROGRESS)。受け付けた時点で`generating`にし、受け付ける前の
+    状態(失敗時に戻す先)をbackground taskへ渡す。
     """
-    background_tasks.add_task(generate_documents, current_project.id, current_user.id)
+    status_before_generation = await DocGeneratorService(session).request_generation(
+        current_project
+    )
+    background_tasks.add_task(
+        generate_documents, current_project.id, current_user.id, status_before_generation
+    )
 
 
 # Phase-2-4:追記

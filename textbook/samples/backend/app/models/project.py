@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4
+# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2
 # 写経レベル: 定型 ── 既存User/Conversationと同型のORMモデル定義。
 import uuid
 from datetime import datetime
@@ -10,9 +10,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base, PortableJSON
 
 # Phase-8-2:追記 ── app.models.data_item.DataItem, app.models.uml_diagram.UmlDiagram
+# Phase-15-2:追記 ── app.models.design_stage.DesignStage(TYPE_CHECKING のみ)
 if TYPE_CHECKING:
     from app.models.chat_history import ChatHistory
     from app.models.data_item import DataItem
+    from app.models.design_stage import DesignStage
     from app.models.generated_document import GeneratedDocument
     from app.models.intake_file import IntakeFile
     from app.models.uml_diagram import UmlDiagram
@@ -34,6 +36,13 @@ class Project(Base):
     # status: 'interviewing'(ヒアリング中) / 'generating'(生成中) / 'completed'(完了) /
     # 'revising'(修正中。completed後に新規チャットメッセージを送るとここへ遷移する)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="interviewing")
+    # Phase-15-1:追記
+    # mode: 作成時に選んだモード。'simple'(簡易ドキュメントモード: 4文書の一括生成) /
+    # 'detailed'(詳細設計モード: 要件定義・外部設計の後に段階1〜7)。作成後は変えない
+    # (モードで生成する文書の組と段階のデータの有無が変わり、途中で変えると両方に当てはまらない状態ができる)
+    mode: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="simple", server_default="simple"
+    )
     # intake: 初期ヒアリング入力(system_overview/goals_raw/notes_raw/environment)をそのまま保持する
     intake: Mapped[dict | None] = mapped_column(PortableJSON, nullable=True)
     # Phase-6-3:追記 ── SCR-003で選択したテンプレート(prompt_templates.id)。intake JSONには含めず
@@ -69,5 +78,9 @@ class Project(Base):
     )
     # Phase-10-4:追記
     uml_generation_runs: Mapped[list["UmlGenerationRun"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    # Phase-15-2:追記
+    design_stages: Mapped[list["DesignStage"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )

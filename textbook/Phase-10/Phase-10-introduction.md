@@ -122,6 +122,7 @@
 ## 後続 Phase での改訂
 
 - [`Phase-13-1.md`](../Phase-13/Phase-13-1.md)で、10-1 の `app/uml/generation/sections.py` に見出し行の直後の位置を返す `find_section_heading_end`・`find_dfd_heading_end` を追記した(図を反映するアンカーの挿入位置に使う)。既存の関数は変えていない。
+- [`Phase-15-3.md`](../Phase-15/Phase-15-3.md): 15分を超えて生成中のまま止まった図と生成履歴を回収する`UmlGenerationService.recover_stale`を足し、受け付け時と図の一覧の取得時に呼ぶようにした。理由コードに`STALE_GENERATION`を足した。
 
 ## Phase 完了チェック(#22)
 

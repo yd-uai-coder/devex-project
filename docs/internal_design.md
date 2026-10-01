@@ -37,7 +37,7 @@
 * **GeneratedDocument（生成ドキュメント）**: ヒアリング結果を基に生成された4種のMarkdownテキスト（要件定義、外部設計、内部設計、実装計画）およびそのバージョンを管理。
 * **PromptTemplate（プロンプトテンプレート）**: ※Should have要件を見据え、WebアプリやAPI向けなどのテンプレート定義を保持。
 * **IntakeFile（添付ファイル）**: 初期ヒアリング入力時にアップロードされた参考資料(txt/Markdown/PDF、最大3ファイル)から抽出したテキストを管理。
-* **DesignStage（詳細設計の段階、ステージ4）**: 詳細設計モードの段階1〜6ごとの成果物(意味モデル)と承認状態を管理(⑩、Phase 15で確定)。
+* **DesignStage（詳細設計の段階、ステージ4）**: 詳細設計モードの段階1〜7ごとの成果物(意味モデル)と承認状態を管理(⑩、Phase 15で新設)。
 
 ### 2. テーブル定義
 
@@ -59,7 +59,7 @@
 | user_id | UUID | FK (`users.id`), NOT NULL | 所有ユーザーID |
 | title | VARCHAR(255) | NOT NULL | プロジェクト名 / アイデア概要 |
 | status | VARCHAR(50) | NOT NULL, DEFAULT 'interviewing' | 状態 (interviewing: ヒアリング中, generating: 生成中, completed: 完了, revising: 修正中。completed後に新規チャットメッセージを送るとrevisingへ遷移する) |
-| mode | VARCHAR(20) | NOT NULL, DEFAULT 'simple'（※ステージ4、Phase 15で新設） | 作成時に選んだモード。`simple`(簡易ドキュメントモード: 4文書の一括生成)/`detailed`(詳細設計モード: 要件定義・外部設計の後に段階1〜7)。作成後は変えない。既存の行は`simple`にする([外部設計書](external_design.md) 2.7節) |
+| mode | VARCHAR(20) | NOT NULL, DEFAULT 'simple'（※ステージ4、Phase 15）  | 作成時に選んだモード。`simple`(簡易ドキュメントモード: 4文書の一括生成)/`detailed`(詳細設計モード: 要件定義・外部設計の後に段階1〜7)。作成後は変えない。既存の行は`simple`にする([外部設計書](external_design.md) 2.7節) |
 | template_id | UUID | FK (`prompt_templates.id`), NULL可（※ステージ2対応） | SCR-003で選択したテンプレート。クライアント側のプリフィルのみで終わらせず、プロジェクトのライフサイクル全体(ヒアリング再開・再生成時)を通じて選択したテンプレートを保持するためサーバー側に永続化する(⑤`prompt_templates`テーブル参照) |
 | intake | JSONB | NULL可 | 初期ヒアリング入力([外部設計書](external_design.md) 2.5節3項)をそのまま保持。`system_overview`/`goals_raw`/`notes_raw`/`environment` を含む |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
@@ -86,6 +86,8 @@
 | version | INT | NOT NULL, DEFAULT 1 | バージョン番号 |
 | is_current | BOOLEAN | NOT NULL, DEFAULT false | 現在表示中のバージョンか。同一`project_id`+`doc_type`につきちょうど1行のみ`true`(ステージ2追補) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+
+`UNIQUE(project_id, doc_type, version)`(Phase 15)。生成の二重実行は409と画面のボタンの無効化で塞ぎ、それをすり抜けた並行実行もDBで止める。
 
 **バージョニング方針**: 「再生成する」ボタン押下時は既存行を上書きせず新バージョンを追加する。同一`project_id`+`doc_type`につき直近3バージョンまで保管し、4件目が生成された時点で最も古いバージョンを削除する。
 
@@ -169,26 +171,26 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | notation | VARCHAR(50) | NOT NULL | 図記法 |
 | requested | JSONB | NOT NULL | 受け付けた対象(`[{subject, diagram_id}]`、受け付け順) |
 | status | VARCHAR(20) | NOT NULL | `running`/`completed`/`partial`/`failed` |
-| results | JSONB | NOT NULL | 対象ごとの`{subject, diagram_id, outcome: succeeded\|failed\|skipped, reason_code, message}`。`reason_code`は`QUOTA_EXCEEDED`/`TOKEN_LIMIT`/`INVALID_OUTPUT`/`GENERATION_FAILED` |
+| results | JSONB | NOT NULL | 対象ごとの`{subject, diagram_id, outcome: succeeded\|failed\|skipped, reason_code, message}`。`reason_code`は`QUOTA_EXCEEDED`/`TOKEN_LIMIT`/`INVALID_OUTPUT`/`GENERATION_FAILED`/`STALE_GENERATION`(15分を超えて実行中のまま止まったものを回収した。Phase 15) |
 | started_at / finished_at | TIMESTAMP | started_at NOT NULL | 開始・終了日時 |
 
-#### ⑩ `design_stages` テーブル(ステージ4、Phase 15で新設予定)
+#### ⑩ `design_stages` テーブル(ステージ4、Phase 15で新設)
 
-詳細設計モード([外部設計書](external_design.md) 2.7節)の段階ごとの成果物と承認状態。方針はPhase 14で確定し、カラムの詳細はPhase 15で確定する。
+詳細設計モード([外部設計書](external_design.md) 2.7節)の段階ごとの成果物と承認状態。方針はPhase 14で確定し、カラムの詳細はPhase 15で確定した([`textbook/Phase-15/Phase-15-2.md`](../textbook/Phase-15/Phase-15-2.md))。
 
 | カラム名 | データ型 | 制約 | 説明 |
 | :--- | :--- | :--- | :--- |
 | id | UUID | PK | 段階ID |
 | project_id | UUID | FK (`projects.id`, ondelete CASCADE), NOT NULL | プロジェクトID |
-| stage | SMALLINT | NOT NULL | 段階番号(1〜6) |
-| status | VARCHAR(20) | NOT NULL | `draft`/`reviewing`/`approved` |
+| stage | SMALLINT | NOT NULL, CHECK 1〜7 | 段階番号(1〜7。段階7 実装計画も同じ承認の流れに乗せる) |
+| status | VARCHAR(20) | NOT NULL | `draft`(AIの下書き)/`reviewing`(人が保存した)/`approved`。画面の「未着手」(行が無い)と「古い」(入力が承認時から変わった)は保存せず、`app/detailed_design/stages.py`の`derive_states`が導く |
 | model | JSONB | NULL可 | 段階の意味モデル(機能一覧・処理概要表・CRUD図・モジュール一覧・手順・処理ロジック等の表)。図(DFD・ER・構成図)は既存の`uml_diagrams`・`data_items`を使う |
-| version | INT | NOT NULL | 楽観ロック用バージョン |
+| version | INT | NOT NULL | 楽観ロック用バージョン。保存で+1、承認では増やさない(承認済みを保存すると`reviewing`に戻る) |
 | approved_version | INT | NULL可 | 最後に承認したときの`version` |
-| input_fingerprint | JSONB | NULL可 | 承認したときに入力にした前段(段階・文書)の承認済みの版。前段の今の承認済みの版と食い違えば「古い」と判定する(Phase 13の`source_doc_versions`と同じ考え方) |
+| input_fingerprint | JSONB | NULL可 | 承認したときに入力にした前段の版(`{"stage:<n>": 承認済みの版, "doc:<doc_type>": 表示中の版}`)。今の値と「等しくない」ものがあれば「古い」と判定する(Phase 13の`source_doc_versions`と同じ考え方)。承認済みでない段階の今の値は`null`なので、前の段階を編集した時点で後ろの段階が古くなり、古さは後ろへ順に伝わる |
 | created_at / updated_at | TIMESTAMP | NOT NULL | 作成・更新日時 |
 
-`UNIQUE(project_id, stage)`。前の段階を承認し直しても後ろの段階は自動で作り直さず、陳腐化の表示にとどめる(再生成は人が指示する)。プロジェクトのモードは`projects.mode`(②`projects`テーブル)で持つ。`design_stages`の行を持つのは`mode='detailed'`のプロジェクトだけ。
+`UNIQUE(project_id, stage)`。段階ごとの入力は`STAGE_INPUTS`(1: 外部設計 / 2: 段階1+要件定義 / 3: 段階2 / 4: 段階1〜3+要件定義 / 5: 段階2・4 / 6: 段階5 / 7: 段階1〜6+要件定義・外部設計)。入力がそろっていない段階は保存も承認もできない(409 `DESIGN_STAGE_LOCKED`)。前の段階を承認し直しても後ろの段階は自動で作り直さず、陳腐化の表示にとどめる(再生成は人が指示する。古い段階は内容を変えずに「承認し直す」こともできる)。プロジェクトのモードは`projects.mode`(②`projects`テーブル)で持つ。`design_stages`の行を持つのは`mode='detailed'`のプロジェクトだけ。
 
 ---
 
@@ -228,8 +230,9 @@ backend/
   * ヒアリング完了時、「要件定義」「外部設計」「内部設計」「実装計画」のそれぞれに特化したプロンプトを、この順に**連鎖的に**実行する。要件定義のみチャット全履歴をコンテキストとしてインプットし、以降の3文書は生の対話履歴を再解釈せず、前段で確定した文書だけを入力にする(外部設計は要件定義を、内部設計は要件定義+外部設計を、実装計画は要件定義+内部設計を入力にする)。こうすることで4文書間の記述の一貫性を確保する。
   * バックグラウンドタスクとして非同期実行され、進捗や結果をデータベース (`generated_documents`) に保存。`generate()`開始時点の`project.status`(`interviewing`または`revising`)を保持しておき、`generating`への変更を経て、成功時は`completed`へ、失敗時は保持していた開始時点のステータスへ差し戻す(`revising`からの再生成に失敗した場合に`interviewing`へ戻ってしまい「生成済みだった」という文脈を失うことを防ぐ)。
   * **内部設計書の固定形式の見出し(Phase 10)**: UML図の生成対象を決定的に列挙できるよう、内部設計書プロンプトで3.2節のテーブル見出しを`### テーブル: <テーブル名>`、3.3節の「処理別データフロー」小節の処理見出しを`#### DF-<連番>: <HTTPメソッド> <パス>`(バッチは`<バッチ名>`)に固定する。各処理の下には「元/データ/変換/先」の表と`- データ項目: <名前>(<フィールド…>)`を書かせる。
-  * **モードごとの生成(ステージ4、Phase 15で追加予定)**: `projects.mode='simple'`は今と同じく4文書を連鎖生成する。`'detailed'`は要件定義・外部設計の2文書だけを生成し(自己診断つき)、内部設計・実装計画は詳細設計モードの段階(3.3節「4.」)へ引き継ぐ。
-  * **モジュール一覧の表(ステージ4、Phase 15で追加予定)**: 簡易ドキュメントモードの内部設計書プロンプトの3.3節に、ファイル単位の「モジュール一覧」(パス/層/責務/主な依存先)の表を求める指示を足す。詳細設計モードの段階4と同じ列で、簡易ドキュメントモードでもファイル単位の責務が分かるようにする(Phase 14の決定#6)。
+  * **生成の受け付け・失敗・固着(Phase 15)**: 生成の要求(`POST /generate`)の時点で`generating`にし、生成中なら409(`DOC_GENERATION_IN_PROGRESS`)にする。失敗したときは rollback で途中の版と古い版の削除を取り消してから、状態を戻し、失敗の通知(生の例外の文字列は含めない)だけを commit する。15分を超えて`generating`のままのプロジェクトは、プロジェクトの取得時と生成の要求時に、文書があれば`revising`、無ければ`interviewing`へ戻す(中断の通知をチャットに残す)。
+  * **モードごとの生成(ステージ4、Phase 15)**: `projects.mode='simple'`は今と同じく4文書を連鎖生成する。`'detailed'`は要件定義・外部設計の2文書だけを生成し(自己診断つき)、内部設計・実装計画は詳細設計モードの段階(3.3節「4.」)へ引き継ぐ。
+  * **モジュール一覧の表(ステージ4、Phase 15)**: 簡易ドキュメントモードの内部設計書プロンプトの3.3節に、ファイル単位の「モジュール一覧」(パス/層/責務/主な依存先)の表を求める指示を足す。詳細設計モードの段階4と同じ列で、簡易ドキュメントモードでもファイル単位の責務が分かるようにする(Phase 14の決定#6)。
   * **自己診断ステップ**: 4文書の生成完了後、生成した文書自体を入力として追加のLLM呼び出しを行い、不足・不明瞭な点を「最重要/中程度/軽微」の3段階に分類して抽出する([要件定義書](requirements.md) 1.4節「ドキュメント自己診断機能」)。抽出結果は`sender='others'`の`chat_histories`行として保存し、ユーザーへの提示は`chat_service.py`側のチャット表示ロジックが担う。
 
 ### 2. APIエンドポイント一覧
@@ -241,16 +244,16 @@ backend/
 | **POST** | `/api/v1/projects` | 新規プロジェクト作成(初期ヒアリング入力を`intake`として受け取る。ステージ4では`mode`(`simple`/`detailed`、省略時`simple`)も受け取る。添付ファイル最大3件・txt/md/pdfのみを伴う場合は`multipart/form-data`になる。[外部設計書](external_design.md) 2.5節3項・5項参照) | 必要 |
 | **GET** | `/api/v1/projects` | ユーザーのプロジェクト一覧取得 | 必要 |
 | **GET** | `/api/v1/projects/{id}` | 特定プロジェクトの詳細・状態取得(添付ファイルのサマリ ── ファイル名・形式・`status` ── を含む。`extracted_text`本文は含めない) | 必要 |
-| **POST** | `/api/v1/projects/{id}/chat` | チャットメッセージ送信・AI応答取得（ストリーミング対応） | 必要 |
+| **POST** | `/api/v1/projects/{id}/chat` | チャットメッセージ送信・AI応答取得（ストリーミング対応）。途中で失敗したときは`event: error`(`data: {code, detail}`)を送って終える(200を返した後のため。発話は保存しない。Phase 15) | 必要 |
 | **GET** | `/api/v1/projects/{id}/chat` | 特定プロジェクトのチャット履歴取得 | 必要 |
-| **POST** | `/api/v1/projects/{id}/generate` | 設計書4種の自動生成トリガー（非同期） | 必要 |
+| **POST** | `/api/v1/projects/{id}/generate` | 設計書の自動生成トリガー（非同期。簡易ドキュメントモードは4種、詳細設計モードは要件定義・外部設計の2種。生成中は409 `DOC_GENERATION_IN_PROGRESS`。Phase 15） | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents` | 生成された設計書一覧(doc_typeごとの現在表示中(`is_current`)の版のみ)・内容の取得 | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents/{doc_id}/download` | 指定Markdownドキュメントのダウンロード | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents/{doc_type}/versions` | （※ステージ2、SCR-006向け）指定doc_typeの保持済みバージョン一覧(最大3件)を取得 | 必要 |
 | **POST** | `/api/v1/projects/{id}/documents/{doc_type}/versions/{version}/restore` | （※ステージ2、SCR-006向け）指定バージョンを表示中(`is_current`)に切り替える。新バージョンは作らない(3.2節バージョニング方針参照) | 必要 |
 | **GET** | `/api/v1/prompt-templates` | （※ステージ2、SCR-003向け）選択可能なプロンプトテンプレート一覧の取得(固定シードデータ) | 必要 |
 | **POST** | `/api/v1/projects/{id}/uml/diagrams` | （※ステージ3、Phase 10）UML設計図のAI生成の受け付け(`202`、非同期。`{notation, subjects: [{subject, tables?}]}`、1回5件まで。同じ対象の図は上書き) | 必要 |
-| **GET** | `/api/v1/projects/{id}/uml/diagrams` | （※ステージ3、Phase 10）UML図の一覧(`generation_status`のポーリングに使う) | 必要 |
+| **GET** | `/api/v1/projects/{id}/uml/diagrams` | （※ステージ3、Phase 10）UML図の一覧(`generation_status`のポーリングに使う。15分を超えて生成中のまま止まった図は、返す前に`failed`へ戻す。Phase 15) | 必要 |
 | **GET** | `/api/v1/projects/{id}/uml/candidates` | （※ステージ3、Phase 10）生成対象の候補(内部設計書から列挙したDFDの処理・ERのテーブル) | 必要 |
 | **GET** | `/api/v1/projects/{id}/uml/generation-runs` | （※ステージ3、Phase 10）AI生成の履歴(対象ごとの結果と、止まった理由) | 必要 |
 | **GET** | `/api/v1/projects/{id}/uml/diagrams/{diagram_id}` | （※ステージ3、Phase 8）UML図の取得 | 必要 |
@@ -267,6 +270,9 @@ backend/
 | **POST** | `/api/v1/projects/{id}/uml/reflect` | （※ステージ3、Phase 13）承認済みの図すべてを内部設計書の表示中の版へ反映し直す(`{reflected}`。版は増やさない。内部設計書が無ければ404) | 必要 |
 | **GET** | `/api/v1/projects/{id}/uml/embeds` | （※ステージ3、Phase 13）文書のプレビューに差し込む図(承認済みの図のSVG)と、図と文書の食い違い(`source_outdated`・`doc_state`)。状態は変えない | 必要 |
 | **GET** | `/api/v1/projects/{id}/uml/bundle` | （※ステージ3、Phase 13）内部設計書のmd+反映済みの図(SVG・drawio)のzip。zipに入れた図はapproved→exported | 必要 |
+| **GET** | `/api/v1/projects/{id}/design-stages` | （※ステージ4、Phase 15）段階1〜7の状態(`state`・`is_open`・`missing_inputs`・`version`・`approved_version`・`model`)。未着手の段階も含む。詳細設計モードでなければ409 `DESIGN_STAGES_NOT_AVAILABLE` | 必要 |
+| **PUT** | `/api/v1/projects/{id}/design-stages/{stage}` | （※ステージ4、Phase 15）段階の内容の保存(`{version, model}`。未着手は`version: null`で作る。楽観ロック。承認済みは`reviewing`に戻る。開いていない段階は409 `DESIGN_STAGE_LOCKED`) | 必要 |
+| **POST** | `/api/v1/projects/{id}/design-stages/{stage}/approve` | （※ステージ4、Phase 15）段階の承認(`{version}`。下書き・レビュー中・古いが対象。承認時に`input_fingerprint`を記録する。versionは増やさない。承認済みで古くない・内容が空は409 `DESIGN_STAGE_NOT_APPROVABLE`) | 必要 |
 
 ### 3. UML設計図パイプラインの図↔文書対応(ステージ3、D5)
 
@@ -337,6 +343,8 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 * `FILE_TOO_LARGE`: 添付ファイルが1ファイルあたりの上限(5MB)を超えている(`FileTooLargeError`)
 * `UML_SOURCE_DOCUMENT_MISSING` / `UML_GENERATION_IN_PROGRESS`(409)、`UML_SUBJECT_NOT_FOUND` / `ER_SCOPE_REQUIRED` / `TOO_MANY_SUBJECTS`(400): UML図のAI生成の受け付け時の検証(ステージ3、Phase 10)
 * `LLM_TOKEN_LIMIT` / `LLM_INVALID_OUTPUT`: UML図のAI生成で、トークン上限超過/構造化出力の解釈失敗(バックグラウンド実行中に発生するため、HTTPレスポンスではなく生成履歴`uml_generation_runs`の`reason_code`として記録する。Phase 10)
+* `DOC_GENERATION_IN_PROGRESS`(409): 設計書の生成中に、生成を再度要求した(Phase 15)
+* `DESIGN_STAGES_NOT_AVAILABLE` / `DESIGN_STAGE_LOCKED` / `DESIGN_STAGE_NOT_APPROVABLE`(409): 詳細設計モードの段階(Phase 15)。段階の版の不一致は`VERSION_CONFLICT`(409、UML図と共通)
 * `INTERNAL_SERVER_ERROR`: `AppError`以外の予期せぬ例外をキャッチする最終防衛ラインのハンドラが返す(スタックトレース等の詳細はレスポンスに含めずサーバーログにのみ記録)
 
 **`UNAUTHORIZED`について**: 認証境界(`app/api/deps.py`の`get_current_user`)は意図的に`AppError`ではなく生の`HTTPException`を使っており(認証失敗の理由を外部に細かく漏らさないため)、`code`フィールドは付与されない。レスポンス形自体は`{"detail": "..."}`のまま変わらない。

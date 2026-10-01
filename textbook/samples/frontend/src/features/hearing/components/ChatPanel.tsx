@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-4-2
+// 作成：Phase-3-5｜更新：Phase-4-2,15-8
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,6 +13,8 @@ export function ChatPanel({ projectId }: { projectId: string }) {
   const streamingReply = useHearingStore((s) => s.streamingReply);
   const sending = useHearingStore((s) => s.sending);
   const connectionLost = useHearingStore((s) => s.connectionLost);
+  // Phase-15-8:追記
+  const streamError = useHearingStore((s) => s.streamError);
   const completion = useHearingStore((s) => s.completion);
   const generationTriggered = useHearingStore((s) => s.generationTriggered);
   const loadHistory = useHearingStore((s) => s.loadHistory);
@@ -46,6 +48,8 @@ export function ChatPanel({ projectId }: { projectId: string }) {
   // }
   // ↓↓
   async function handleApprove() {
+    // Phase-15-8:追記 ── 二度押しの防止(ボタンも approving の間は無効にする)
+    if (approving) return;
     setApproveError(null);
     setApproving(true);
     try {
@@ -71,6 +75,26 @@ export function ChatPanel({ projectId }: { projectId: string }) {
           backgroundColor="$red2"
         >
           <Text color="$color9">接続が切れました。直前のメッセージが保存されていない可能性があります。</Text>
+          <Button size="$2" onPress={dismissConnectionLost}>
+            閉じる
+          </Button>
+        </XStack>
+      ) : null}
+      {/* Phase-15-8:追記 ── バックエンドが SSE の event: error で伝えた失敗(気づき#2) */}
+      {streamError ? (
+        <XStack
+          role="alert"
+          aria-live="polite"
+          justifyContent="space-between"
+          alignItems="center"
+          gap="$3"
+          padding="$3"
+          borderRadius="$4"
+          backgroundColor="$red2"
+        >
+          <Text color="$color9">
+            {streamError} 送信したメッセージは保存されていません。もう一度送信してください。
+          </Text>
           <Button size="$2" onPress={dismissConnectionLost}>
             閉じる
           </Button>

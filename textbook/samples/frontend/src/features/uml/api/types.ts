@@ -1,4 +1,4 @@
-// 作成：Phase-11-2｜更新：Phase-12-2,12-5,13-5
+// 作成：Phase-11-2｜更新：Phase-12-2,12-5,13-5,15-8
 // 写経レベル: 定型 ── バックエンドの Pydantic スキーマを snake_case のまま写した型定義。
 // devex-api の UML API(app/api/routes/uml.py)が返す・受け取る JSON の型。
 // バックエンドの Pydantic スキーマに合わせて snake_case のまま手書きする(既存 feature と同じ方針)。
@@ -144,7 +144,12 @@ export type GenerationReasonCode =
   | "QUOTA_EXCEEDED"
   | "TOKEN_LIMIT"
   | "INVALID_OUTPUT"
-  | "GENERATION_FAILED";
+  // Phase-15-8：更新
+  // | "GENERATION_FAILED";
+  // ↓↓
+  | "GENERATION_FAILED"
+  // 生成中のまま止まった(15分超)ものを、一覧の取得時にバックエンドが失敗へ戻した
+  | "STALE_GENERATION";
 export type UmlGenerationResultRead = {
   subject: string;
   diagram_id: string;

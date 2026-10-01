@@ -1,4 +1,4 @@
-# 作成：Phase-10-4
+# 作成：Phase-10-4｜更新：Phase-15-3
 # 写経レベル: 定型 ── CRUDRepositoryを継承した永続化操作のみ。
 import uuid
 
@@ -33,6 +33,11 @@ class UmlGenerationRunRepository(CRUDRepository[UmlGenerationRun]):
     ) -> UmlGenerationRun | None:
         """履歴IDとプロジェクトIDの両方が一致するものだけを取得する。"""
         return await self.find_one(id=run_id, project_id=project_id)
+
+    # Phase-15-3:追記
+    async def list_running(self, project_id: uuid.UUID) -> list[UmlGenerationRun]:
+        """指定プロジェクトの実行中('running')の生成履歴を返す(止まった生成の回収用)。"""
+        return await self.list_all(project_id=project_id, status="running")
 
     async def list_recent(
         self, project_id: uuid.UUID, *, limit: int = 20

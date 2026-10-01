@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-2-4,6-3
+# 作成：Phase-2-1｜更新：Phase-2-4,6-3,15-1
 # 写経レベル: 定型 ── ConversationRepositoryと同型のowner scoped CRUD。
 import uuid
 
@@ -19,9 +19,16 @@ class ProjectRepository(CRUDRepository[Project]):
         intake: dict | None = None,
         # Phase-6-3:追記 ── SCR-003で選択したテンプレートのID(任意)
         template_id: uuid.UUID | None = None,
+        # Phase-15-1:追記
+        mode: str = "simple",
     ) -> Project:
         """新規プロジェクトをセッションに追加し、flushしてIDを確定させた状態で返す。"""
-        project = Project(user_id=user_id, title=title, intake=intake, template_id=template_id)
+        # Phase-15-1：更新
+        # project = Project(user_id=user_id, title=title, intake=intake, template_id=template_id)
+        # ↓↓
+        project = Project(
+            user_id=user_id, title=title, intake=intake, template_id=template_id, mode=mode
+        )
         self._session.add(project)
         await self._session.flush()
         return project

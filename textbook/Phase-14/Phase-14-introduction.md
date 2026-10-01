@@ -84,7 +84,7 @@ Phase 13 の完了後、コンポーネント図の粒度が粗い(`api-service-
 
 ## 後続 Phase での改訂
 
-(なし)
+- [`Phase-15-2.md`](../Phase-15/Phase-15-2.md): `design_stages.stage`の範囲を、docs ⑩ の「1〜6」から1〜7に改めた(段階7 実装計画も同じ承認の流れに乗せるため)。保存する状態は`draft`/`reviewing`/`approved`の3つで、「未着手」「古い」は導く値にした。
 
 ## Phase 完了チェック(#22)
 

@@ -1,4 +1,4 @@
-// 作成：Phase-11-4
+// 作成：Phase-11-4｜更新：Phase-15-8
 // 写経レベル: 定型 ── 列挙値の表示ラベル。
 import type {
   DiagramStatus,
@@ -43,6 +43,8 @@ export const REASON_LABELS: Record<GenerationReasonCode, string> = {
   TOKEN_LIMIT: "出力が長すぎて途中で止まりました",
   INVALID_OUTPUT: "AIの出力が形式に合いませんでした",
   GENERATION_FAILED: "生成に失敗しました",
+  // Phase-15-8:追記
+  STALE_GENERATION: "時間内に終わらなかったため中断しました",
 };
 
 // component・ER 全体図は subject が空文字

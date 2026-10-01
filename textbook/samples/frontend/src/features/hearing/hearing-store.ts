@@ -1,6 +1,7 @@
-// 作成：Phase-3-5｜更新：Phase-6-6
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8
+// Phase-15-8:追記 ── StreamChatError(@/features/hearing/api/streamChat)
 import { create } from "zustand";
-import { streamChat } from "@/features/hearing/api/streamChat";
+import { streamChat, StreamChatError } from "@/features/hearing/api/streamChat";
 import {
   getChatHistory,
   getHearingCompletion,
@@ -20,6 +21,10 @@ type HearingStore = {
   streamingReply: string;
   // SSE接続が完了前に切れた場合に立てるフラグ(#17: 冪等性キーが無いため自動再送はしない)。
   connectionLost: boolean;
+  // Phase-15-8:追記
+  // バックエンドがSSEの`event: error`で伝えた失敗の内容(クォータ超過など)。接続の切断
+  // (connectionLost)と分けて、何が起きたかを利用者に見せる。
+  streamError: string | null;
   completion: HearingCompletionCheck | null;
   // 「今まさに生成が進行中で、完了をポーリングして自動遷移すべき」ことを表す
   // (status==="generating"のときのみtrue)。過去に生成済み(completed/revising)は
@@ -40,6 +45,8 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   sending: false,
   streamingReply: "",
   connectionLost: false,
+  // Phase-15-8:追記
+  streamError: null,
   completion: null,
   generationTriggered: false,
   projectStatus: null,
@@ -71,9 +78,14 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   },
 
   sendMessage: async (projectId, text) => {
-    // ユーザー発話はChatService.stream_reply内でストリーム開始前に永続化される
-    // (devex-api app/services/chat_service.py参照)ため、ここで即座にローカル表示しても
-    // 安全(ストリームが途中で切れても、この発話自体がロストすることはない)。
+    // Phase-15-8：更新(元のコメントは実装と食い違っていた(発話はストリームの最後にまとめて保存される))
+    // // ユーザー発話はChatService.stream_reply内でストリーム開始前に永続化される
+    // // (devex-api app/services/chat_service.py参照)ため、ここで即座にローカル表示しても
+    // // 安全(ストリームが途中で切れても、この発話自体がロストすることはない)。
+    // ↓↓
+    // ユーザー発話は、AI応答の保存と同じタイミング(ストリームの最後)でまとめて永続化される
+    // (devex-api app/services/chat_service.py)。途中で失敗するとバックエンドは発話ごと
+    // 巻き戻すため、失敗を伝えられたときはこの楽観的な表示を取り消す。
     const optimisticUserMessage: ChatHistoryEntry = {
       id: `local-user-${Date.now()}`,
       sender: "user",
@@ -96,6 +108,8 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       sending: true,
       streamingReply: "",
       connectionLost: false,
+      // Phase-15-8:追記
+      streamError: null,
       projectStatus: state.projectStatus === "completed" ? "revising" : state.projectStatus,
     }));
 
@@ -119,7 +133,24 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       } catch {
         // 完了判定の失敗はチャット自体をブロックしない
       }
-    } catch {
+    // Phase-15-8：更新(気づき#2: event: error で伝えられた失敗を見分ける)
+    // } catch {
+    //   // 接続切断等。自動再送はせず、ユーザーに再接続を促すバナーを表示するに留める
+    //   // (Phase-2-5の既知の簡略化: SSE切断時のAI応答部分永続化は行っていない)。
+    //   set({ sending: false, connectionLost: true, streamingReply: "" });
+    // }
+    // ↓↓
+    } catch (err) {
+      if (err instanceof StreamChatError && err.code) {
+        // バックエンドが失敗を伝えた(発話は保存されていない)。表示した発話を取り消し、理由を見せる
+        set((state) => ({
+          messages: state.messages.filter((m) => m.id !== optimisticUserMessage.id),
+          sending: false,
+          streamingReply: "",
+          streamError: err.message,
+        }));
+        return;
+      }
       // 接続切断等。自動再送はせず、ユーザーに再接続を促すバナーを表示するに留める
       // (Phase-2-5の既知の簡略化: SSE切断時のAI応答部分永続化は行っていない)。
       set({ sending: false, connectionLost: true, streamingReply: "" });
@@ -135,5 +166,8 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
     set({ generationTriggered: true, projectStatus: "generating", completion: null });
   },
 
-  dismissConnectionLost: () => set({ connectionLost: false }),
+  // Phase-15-8：更新
+  // dismissConnectionLost: () => set({ connectionLost: false }),
+  // ↓↓
+  dismissConnectionLost: () => set({ connectionLost: false, streamError: null }),
 }));
