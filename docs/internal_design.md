@@ -183,14 +183,19 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | id | UUID | PK | 段階ID |
 | project_id | UUID | FK (`projects.id`, ondelete CASCADE), NOT NULL | プロジェクトID |
 | stage | SMALLINT | NOT NULL, CHECK 1〜7 | 段階番号(1〜7。段階7 実装計画も同じ承認の流れに乗せる) |
-| status | VARCHAR(20) | NOT NULL | `draft`(AIの下書き)/`reviewing`(人が保存した)/`approved`。画面の「未着手」(行が無い)と「古い」(入力が承認時から変わった)は保存せず、`app/detailed_design/stages.py`の`derive_states`が導く |
+| status | VARCHAR(20) | NOT NULL | `draft`(AIの下書き)/`regenerated`(内容のある段階をAIが作り直した・未承認。画面は「再生成済(未承認)」。Phase 16)/`reviewing`(人が保存した)/`approved`。画面の「未着手」(行が無い)と「古い」(入力が承認時から変わった)は保存せず、`app/detailed_design/stages.py`の`derive_states`が導く |
 | model | JSONB | NULL可 | 段階の意味モデル(機能一覧・処理概要表・CRUD図・モジュール一覧・手順・処理ロジック等の表)。図(DFD・ER・構成図)は既存の`uml_diagrams`・`data_items`を使う |
 | version | INT | NOT NULL | 楽観ロック用バージョン。保存で+1、承認では増やさない(承認済みを保存すると`reviewing`に戻る) |
 | approved_version | INT | NULL可 | 最後に承認したときの`version` |
-| input_fingerprint | JSONB | NULL可 | 承認したときに入力にした前段の版(`{"stage:<n>": 承認済みの版, "doc:<doc_type>": 表示中の版}`)。今の値と「等しくない」ものがあれば「古い」と判定する(Phase 13の`source_doc_versions`と同じ考え方)。承認済みでない段階の今の値は`null`なので、前の段階を編集した時点で後ろの段階が古くなり、古さは後ろへ順に伝わる |
+| generation_status | VARCHAR(20) | NULL可 | AIの下書きの生成の状態(`generating`/`completed`/`failed`。NULLはまだ生成していない)。レビューの状態`status`とは別の軸(UML図と同じ)。生成中は、その段階の生成・保存・承認を409(`DESIGN_STAGE_GENERATION_IN_PROGRESS`)にする(Phase 16) |
+| generation_error | TEXT | NULL可 | 直近の生成が失敗した理由(ユーザー向けの文言。Phase 16) |
+| generation_started_at | TIMESTAMP | NULL可 | 生成を始めた時刻。15分を超えて生成中のままなら、生成の受け付け時と一覧の取得時に`failed`へ戻す(Phase 16) |
+| input_fingerprint | JSONB | NULL可 | 承認したとき・AIの下書きを生成したとき(Phase 16)に入力にした前段の版(`{"stage:<n>": 承認済みの版, "doc:<doc_type>": 表示中の版}`)。今の値と「等しくない」ものがあれば「古い」と判定する(Phase 13の`source_doc_versions`と同じ考え方)。承認済みでない段階の今の値は`null`なので、前の段階を編集した時点で後ろの段階が古くなり、古さは後ろへ順に伝わる |
 | created_at / updated_at | TIMESTAMP | NOT NULL | 作成・更新日時 |
 
 `UNIQUE(project_id, stage)`。段階ごとの入力は`STAGE_INPUTS`(1: 外部設計 / 2: 段階1+要件定義 / 3: 段階2 / 4: 段階1〜3+要件定義 / 5: 段階2・4 / 6: 段階5 / 7: 段階1〜6+要件定義・外部設計)。入力がそろっていない段階は保存も承認もできない(409 `DESIGN_STAGE_LOCKED`)。前の段階を承認し直しても後ろの段階は自動で作り直さず、陳腐化の表示にとどめる(再生成は人が指示する。古い段階は内容を変えずに「承認し直す」こともできる)。プロジェクトのモードは`projects.mode`(②`projects`テーブル)で持つ。`design_stages`の行を持つのは`mode='detailed'`のプロジェクトだけ。
+
+**段階1の`model`の形(Phase 16で確定)**: `{groups: [機能グループ名], functions: [{id: "F-01", name, kind: "API"|"API+バッチ"|"バッチ"|"画面"|"その他", trigger, screens: [画面ID], group_initial, group, summary}], next_number}`(`app/detailed_design/function_list.py`の`FunctionListModel`)。`kind`の「画面」は、サーバーを呼ばずに画面の中で完結する非自明な演算・描画で、`trigger`は`SCR-005: <操作>`の形。`group_initial`はAPIのパスから決定的に作った初期値(APIでない処理はAIの提案)、`group`は人の確定値。`next_number`は次に振る処理IDの番号で、消えた番号は再利用しない。段階ごとの検証(`app/detailed_design/validation.py`の`STAGE_VALIDATORS`)にエラーがあると承認できない(409 `DESIGN_STAGE_INVALID`)。警告は承認を止めない。検証の結果は保存せず、取得のたびに計算して`issues`で返す([`textbook/Phase-16/Phase-16-2.md`](../textbook/Phase-16/Phase-16-2.md))。
 
 ---
 
@@ -232,6 +237,7 @@ backend/
   * **内部設計書の固定形式の見出し(Phase 10)**: UML図の生成対象を決定的に列挙できるよう、内部設計書プロンプトで3.2節のテーブル見出しを`### テーブル: <テーブル名>`、3.3節の「処理別データフロー」小節の処理見出しを`#### DF-<連番>: <HTTPメソッド> <パス>`(バッチは`<バッチ名>`)に固定する。各処理の下には「元/データ/変換/先」の表と`- データ項目: <名前>(<フィールド…>)`を書かせる。
   * **生成の受け付け・失敗・固着(Phase 15)**: 生成の要求(`POST /generate`)の時点で`generating`にし、生成中なら409(`DOC_GENERATION_IN_PROGRESS`)にする。失敗したときは rollback で途中の版と古い版の削除を取り消してから、状態を戻し、失敗の通知(生の例外の文字列は含めない)だけを commit する。15分を超えて`generating`のままのプロジェクトは、プロジェクトの取得時と生成の要求時に、文書があれば`revising`、無ければ`interviewing`へ戻す(中断の通知をチャットに残す)。
   * **モードごとの生成(ステージ4、Phase 15)**: `projects.mode='simple'`は今と同じく4文書を連鎖生成する。`'detailed'`は要件定義・外部設計の2文書だけを生成し(自己診断つき)、内部設計・実装計画は詳細設計モードの段階(3.3節「4.」)へ引き継ぐ。
+  * **外部設計書のAPI一覧(Phase 16)**: 外部設計書プロンプトに「2.6 API一覧」(メソッド/パス/概要/関連画面の表)を求める指示を足す。両方のモードで同じ。詳細設計モードの段階1が、機能グループの初期値をAPIのパスから決め、下書きに漏れたAPIを照合する材料にする。内部設計書プロンプトの3.3節のAPI表は、2.6と同じメソッド・パスを使い、内部の担当の観点で概要を書かせる([`textbook/Phase-16/Phase-16-1.md`](../textbook/Phase-16/Phase-16-1.md))。
   * **モジュール一覧の表(ステージ4、Phase 15)**: 簡易ドキュメントモードの内部設計書プロンプトの3.3節に、ファイル単位の「モジュール一覧」(パス/層/責務/主な依存先)の表を求める指示を足す。詳細設計モードの段階4と同じ列で、簡易ドキュメントモードでもファイル単位の責務が分かるようにする(Phase 14の決定#6)。
   * **自己診断ステップ**: 4文書の生成完了後、生成した文書自体を入力として追加のLLM呼び出しを行い、不足・不明瞭な点を「最重要/中程度/軽微」の3段階に分類して抽出する([要件定義書](requirements.md) 1.4節「ドキュメント自己診断機能」)。抽出結果は`sender='others'`の`chat_histories`行として保存し、ユーザーへの提示は`chat_service.py`側のチャット表示ロジックが担う。
 
@@ -270,9 +276,10 @@ backend/
 | **POST** | `/api/v1/projects/{id}/uml/reflect` | （※ステージ3、Phase 13）承認済みの図すべてを内部設計書の表示中の版へ反映し直す(`{reflected}`。版は増やさない。内部設計書が無ければ404) | 必要 |
 | **GET** | `/api/v1/projects/{id}/uml/embeds` | （※ステージ3、Phase 13）文書のプレビューに差し込む図(承認済みの図のSVG)と、図と文書の食い違い(`source_outdated`・`doc_state`)。状態は変えない | 必要 |
 | **GET** | `/api/v1/projects/{id}/uml/bundle` | （※ステージ3、Phase 13）内部設計書のmd+反映済みの図(SVG・drawio)のzip。zipに入れた図はapproved→exported | 必要 |
-| **GET** | `/api/v1/projects/{id}/design-stages` | （※ステージ4、Phase 15）段階1〜7の状態(`state`・`is_open`・`missing_inputs`・`version`・`approved_version`・`model`)。未着手の段階も含む。詳細設計モードでなければ409 `DESIGN_STAGES_NOT_AVAILABLE` | 必要 |
+| **GET** | `/api/v1/projects/{id}/design-stages` | （※ステージ4、Phase 15）段階1〜7の状態(`state`・`is_open`・`missing_inputs`・`version`・`approved_version`・`model`。Phase 16で`generation_status`・`generation_error`・`issues`を追加)。未着手の段階も含む。止まった生成(15分超)はここで回収する。詳細設計モードでなければ409 `DESIGN_STAGES_NOT_AVAILABLE` | 必要 |
 | **PUT** | `/api/v1/projects/{id}/design-stages/{stage}` | （※ステージ4、Phase 15）段階の内容の保存(`{version, model}`。未着手は`version: null`で作る。楽観ロック。承認済みは`reviewing`に戻る。開いていない段階は409 `DESIGN_STAGE_LOCKED`) | 必要 |
-| **POST** | `/api/v1/projects/{id}/design-stages/{stage}/approve` | （※ステージ4、Phase 15）段階の承認(`{version}`。下書き・レビュー中・古いが対象。承認時に`input_fingerprint`を記録する。versionは増やさない。承認済みで古くない・内容が空は409 `DESIGN_STAGE_NOT_APPROVABLE`) | 必要 |
+| **POST** | `/api/v1/projects/{id}/design-stages/{stage}/approve` | （※ステージ4、Phase 15）段階の承認(`{version}`。下書き・レビュー中・古いが対象。承認時に`input_fingerprint`を記録する。versionは増やさない。承認済みで古くない・内容が空は409 `DESIGN_STAGE_NOT_APPROVABLE`。段階ごとの検証にエラーがあれば409 `DESIGN_STAGE_INVALID`(Phase 16)) | 必要 |
+| **POST** | `/api/v1/projects/{id}/design-stages/{stage}/generate` | （※ステージ4、Phase 16）段階のAIの下書きの生成を受け付ける(202。段階は`generating`になり、裏で生成して`draft`・version+1で保存する。画面は一覧をポーリングする)。生成に対応していない段階は409 `DESIGN_STAGE_GENERATION_NOT_SUPPORTED`(Phase 16は段階1だけ)、生成中は409 `DESIGN_STAGE_GENERATION_IN_PROGRESS`、開いていない段階は409 `DESIGN_STAGE_LOCKED` | 必要 |
 
 ### 3. UML設計図パイプラインの図↔文書対応(ステージ3、D5)
 
@@ -313,9 +320,11 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 * **05と06の紐づけの正本**: 手順の行が持つ`logic`(L-ID)の1か所だけに持つ。06の「呼ばれる手順」、05の索引の「詳細(06)」、06の逆引き表、処理 × モジュールの関与表は、すべてそこから導く。組み立ての前に、手順が参照するL-IDが06に存在することを検証する(参照切れの検出)。
 * **関与表の列**: 呼び出し先のうち、段階4のモジュール一覧のパスだけ(利用者・スケジューラ等の外部の役者は含めない)。
 * **出力の組み立て**: HTML・Markdownとも、ステージ3のzip出力と同じ層(バックエンドの`app/uml/export`・`uml_sync_service`の並び)で組み立てる。HTMLは全文字をエスケープし、外部を読み込まない。Markdownはリンクを持たない。devex-uiのデモ(`src/features/detailed-design/demo/procedureModel.ts`の`toHtml`・`toMarkdown`)は形式の見本で、本実装はバックエンドへ移す。
-* **機能グループ**: 段階1の下書きで、APIのリソース名(`/api/v1/<リソース>`)から決定的に初期値を作り、人が確定する。
+* **機能グループ**: 段階1の下書きで、APIのリソース名(`/api/v1/<リソース>`、親の個別の対象に属するものは`/api/v1/<親>/{id}/<リソース>`の子のリソース名)から決定的に初期値を作り、人が確定する。APIのパスは外部設計書の「2.6 API一覧」から取る(Phase 16)。
+* **段階1の下書き(Phase 16)**: AIには外部設計書から処理を列挙させるだけにし、処理IDと機能グループの初期値はコードで決める。再生成では、前の版の行とトリガー(メソッド+正規化したパス。APIでなければ名称)で突き合わせ、一致した行は処理IDと人が確定した機能グループを引き継ぐ。生成は受け付けとバックグラウンドの実行に分ける(`app/services/design_stage_generation_service.py`。UML図の生成と同じ形)。
 * **CRUD図**: 段階2のDFDの線の向きから、R(ストア → 処理)とW(処理 → ストア)を決定的に作る。Wの C/U/D の区別と、DFDに描いていない処理の分は、AIが処理概要表から下書きし、人が確定する。
 * **簡易ドキュメントモードとの関係**: 簡易ドキュメントモードの内部設計書にも、段階4と同じ列のモジュール一覧の表を足す(3.3節1.の`doc_generator_service.py`参照)。それ以外の簡易ドキュメントモードの挙動は変えない。
+  > **[Phase 16 で確定 ── 〈外部設計書の構成は簡易ドキュメントモードでも変える〉]** 当初〈モジュール一覧の表のほかは、簡易ドキュメントモードの挙動を変えない〉→ 外部設計書の「2.6 API一覧」は両方のモードで出す。理由〈ユーザーの選択。API仕様は実務でも外部設計(基本設計)に置くことが多く、プロンプトをモードで分けずに済む。重なる内部設計書3.3節のAPI表は、2.6と同じメソッド・パスを使わせてそろえる〉。
 
 ---
 
@@ -345,6 +354,7 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 * `LLM_TOKEN_LIMIT` / `LLM_INVALID_OUTPUT`: UML図のAI生成で、トークン上限超過/構造化出力の解釈失敗(バックグラウンド実行中に発生するため、HTTPレスポンスではなく生成履歴`uml_generation_runs`の`reason_code`として記録する。Phase 10)
 * `DOC_GENERATION_IN_PROGRESS`(409): 設計書の生成中に、生成を再度要求した(Phase 15)
 * `DESIGN_STAGES_NOT_AVAILABLE` / `DESIGN_STAGE_LOCKED` / `DESIGN_STAGE_NOT_APPROVABLE`(409): 詳細設計モードの段階(Phase 15)。段階の版の不一致は`VERSION_CONFLICT`(409、UML図と共通)
+* `DESIGN_STAGE_INVALID` / `DESIGN_STAGE_GENERATION_NOT_SUPPORTED` / `DESIGN_STAGE_GENERATION_IN_PROGRESS`(409): 段階ごとの検証のエラーがある段階の承認 / 生成に対応していない段階の生成 / 生成中の段階の生成・保存・承認(Phase 16)
 * `INTERNAL_SERVER_ERROR`: `AppError`以外の予期せぬ例外をキャッチする最終防衛ラインのハンドラが返す(スタックトレース等の詳細はレスポンスに含めずサーバーログにのみ記録)
 
 **`UNAUTHORIZED`について**: 認証境界(`app/api/deps.py`の`get_current_user`)は意図的に`AppError`ではなく生の`HTTPException`を使っており(認証失敗の理由を外部に細かく漏らさないため)、`code`フィールドは付与されない。レスポンス形自体は`{"detail": "..."}`のまま変わらない。

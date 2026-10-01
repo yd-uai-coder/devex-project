@@ -1,4 +1,4 @@
-# 作成：Phase-15-2
+# 作成：Phase-15-2｜更新：Phase-16-2
 # 写経レベル: 定型 ── テスト用のプロジェクトの組み立て。
 """詳細設計モードのテストで使うプロジェクトの組み立て(段階のサービス・ルートのテストで共有する)。"""
 
@@ -29,3 +29,25 @@ async def create_detailed_project(
             )
     await session.commit()
     return project
+
+
+# Phase-16-2:追記
+def function_list_model(*, group: str = "reservations") -> dict:
+    """段階1の検証を通る最小の機能一覧(処理1件・機能グループ1つ)。`group`を一覧に無い名前に
+    すると、検証のエラー(UNKNOWN_GROUP)になる。"""
+    return {
+        "groups": ["reservations"],
+        "functions": [
+            {
+                "id": "F-01",
+                "name": "予約を登録する",
+                "kind": "API",
+                "trigger": "POST /api/v1/reservations",
+                "screens": ["SCR-001"],
+                "group_initial": "reservations",
+                "group": group,
+                "summary": "予約を保存する",
+            }
+        ],
+        "next_number": 2,
+    }

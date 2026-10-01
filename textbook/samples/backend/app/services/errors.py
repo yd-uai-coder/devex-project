@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -271,6 +271,29 @@ class DesignStageNotApprovableError(ConflictError):
     """承認できない段階(承認済みで古くない・内容が空)を承認しようとした場合に送出する。"""
 
     code: ClassVar[str | None] = "DESIGN_STAGE_NOT_APPROVABLE"
+
+
+# Phase-16-3:追記
+class DesignStageInvalidError(ConflictError):
+    """段階ごとの検証(app/detailed_design/validation.py)でエラーがある段階を承認しようとした場合に
+    送出する。警告だけなら承認できる。指摘の一覧は段階の取得(`issues`)で確かめる。"""
+
+    code: ClassVar[str | None] = "DESIGN_STAGE_INVALID"
+
+
+class DesignStageGenerationInProgressError(ConflictError):
+    """段階の下書きを生成中に、その段階の生成・保存・承認を要求した場合に送出する。
+    生成の結果で人の編集を上書きしないため、生成が終わるまで待たせる。"""
+
+    code: ClassVar[str | None] = "DESIGN_STAGE_GENERATION_IN_PROGRESS"
+
+
+# Phase-16-4:追記
+class DesignStageGenerationNotSupportedError(ConflictError):
+    """AIの下書きの生成にまだ対応していない段階の生成を要求した場合に送出する
+    (Phase 16 は段階1だけ)。"""
+
+    code: ClassVar[str | None] = "DESIGN_STAGE_GENERATION_NOT_SUPPORTED"
 
 
 # Phase-15-3:追記

@@ -1,4 +1,4 @@
-// 作成：Phase-15-7
+// 作成：Phase-15-7｜更新：Phase-16-6
 // 写経レベル: 定型
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -14,7 +14,10 @@ describe("StageStepper", () => {
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <StageStepper
           stages={makeStages({
-            1: { state: "approved" },
+            // Phase-16-6：更新
+            // 1: { state: "approved" },
+            // ↓↓
+            1: { state: "regenerated" },
             2: { state: "outdated" },
           })}
           selectedStage={2}
@@ -25,7 +28,11 @@ describe("StageStepper", () => {
 
     expect(screen.getAllByRole("button")).toHaveLength(7);
     expect(
-      screen.getByRole("button", { name: "段階1 機能一覧(承認済み)" }),
+      // Phase-16-6：更新
+      // screen.getByRole("button", { name: "段階1 機能一覧(承認済み)" }),
+      // ↓↓
+      // 作り直した段階(Phase 16)
+      screen.getByRole("button", { name: "段階1 機能一覧(再生成済(未承認))" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "段階2 データフロー(古い)" }),

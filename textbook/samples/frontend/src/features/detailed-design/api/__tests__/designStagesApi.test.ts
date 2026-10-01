@@ -1,8 +1,10 @@
-// 作成：Phase-15-6
+// 作成：Phase-15-6｜更新：Phase-16-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
+// Phase-16-5:追記 ── ../designStagesApi.generateDesignStage
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   approveDesignStage,
+  generateDesignStage,
   listDesignStages,
   saveDesignStage,
 } from "../designStagesApi";
@@ -18,6 +20,10 @@ const STAGE1: DesignStageRead = {
   approved_version: null,
   model: { functions: [] },
   updated_at: "2026-10-01T00:00:00Z",
+  // Phase-16-5:追記
+  generation_status: null,
+  generation_error: null,
+  issues: [],
 };
 
 describe("designStagesApi", () => {
@@ -70,5 +76,21 @@ describe("designStagesApi", () => {
     );
     expect(request.init?.method).toBe("POST");
     expect(JSON.parse(request.init?.body as string)).toEqual({ version: 1 });
+  });
+
+  // Phase-16-5:追記
+  it("generateDesignStageはPOST /design-stages/{stage}/generateを呼ぶ", async () => {
+    stub.queue({
+      status: 202,
+      body: { ...STAGE1, generation_status: "generating" },
+    });
+
+    const accepted = await generateDesignStage("p1", 1);
+
+    expect(accepted.generation_status).toBe("generating");
+    expect(stub.requests[0].url).toContain(
+      "/api/v1/projects/p1/design-stages/1/generate",
+    );
+    expect(stub.requests[0].init?.method).toBe("POST");
   });
 });

@@ -1,9 +1,12 @@
-// 作成：Phase-15-7
+// 作成：Phase-15-7｜更新：Phase-16-6
 // 写経レベル: コア ── 承認の後に全段階を取り直す(後ろの段階が開く・古いが消える)。
+// Phase-16-6:追記 ── @/features/detailed-design/api/designStagesApi.generateDesignStage, @/features/detailed-design/api/designStagesApi.saveDesignStage
 import { create } from "zustand";
 import {
   approveDesignStage,
+  generateDesignStage,
   listDesignStages,
+  saveDesignStage,
 } from "@/features/detailed-design/api/designStagesApi";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 import { ApiError } from "@/lib/api/client";
@@ -19,10 +22,22 @@ type DetailedDesignStore = {
   // 承認の失敗(409 VERSION_CONFLICT など)。段階の一覧の取得の失敗(error)とは分けて出す。
   actionError: string | null;
   approving: boolean;
+  // Phase-16-6:追記
+  saving: boolean;
+  // 生成の受け付け(POST)を待っている間。受け付けた後の「生成中」は段階の generation_status で見る
+  requestingGeneration: boolean;
 
   fetchStages: (projectId: string) => Promise<void>;
   selectStage: (stage: number) => void;
   approve: (projectId: string, stage: number) => Promise<void>;
+  // Phase-16-6:追記
+  // 保存に成功したら true(画面は編集中の内容を保存済みとして扱う)
+  save: (
+    projectId: string,
+    stage: number,
+    model: Record<string, unknown>,
+  ) => Promise<boolean>;
+  generate: (projectId: string, stage: number) => Promise<void>;
 };
 
 // 最初に開く段階: まだ承認されていない最初の段階(すべて承認済みなら段階7)。
@@ -30,9 +45,23 @@ export function firstPendingStage(stages: DesignStageRead[]): number {
   return stages.find((s) => s.state !== "approved")?.stage ?? 7;
 }
 
+// Phase-16-6:追記
+const CODE_MESSAGES: Record<string, string> = {
+  VERSION_CONFLICT:
+    "他の画面でこの段階が更新されました。最新の内容を読み込み直しました。",
+  DESIGN_STAGE_INVALID:
+    "検証のエラーがあるため承認できません。エラーを直して保存してから承認してください。",
+  DESIGN_STAGE_GENERATION_IN_PROGRESS:
+    "この段階の下書きを生成中です。完了してからもう一度お試しください。",
+};
+
 function messageOf(err: unknown, fallback: string): string {
-  if (err instanceof ApiError && err.code === "VERSION_CONFLICT") {
-    return "他の画面でこの段階が更新されました。最新の内容を読み込み直しました。";
+  // Phase-16-6：更新
+  // if (err instanceof ApiError && err.code === "VERSION_CONFLICT") {
+  //   return "他の画面でこの段階が更新されました。最新の内容を読み込み直しました。";
+  // ↓↓
+  if (err instanceof ApiError && err.code && CODE_MESSAGES[err.code]) {
+    return CODE_MESSAGES[err.code];
   }
   return err instanceof Error ? err.message : fallback;
 }
@@ -46,6 +75,9 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
     error: null,
     actionError: null,
     approving: false,
+    // Phase-16-6:追記
+    saving: false,
+    requestingGeneration: false,
 
     fetchStages: async (projectId) => {
       const switching = get().projectId !== projectId;
@@ -83,6 +115,41 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
         set({ approving: false });
       }
       // 承認すると、後ろの段階が開いたり「古い」が消えたりするため、全段階を取り直す
+      await get().fetchStages(projectId);
+    },
+
+    // Phase-16-6:追記
+    save: async (projectId, stage, model) => {
+      const current = get().stages.find((s) => s.stage === stage);
+      if (!current) return false;
+      set({ saving: true, actionError: null });
+      let saved = false;
+      try {
+        await saveDesignStage(projectId, stage, {
+          version: current.version,
+          model,
+        });
+        saved = true;
+      } catch (err) {
+        set({ actionError: messageOf(err, "保存に失敗しました") });
+      } finally {
+        set({ saving: false });
+      }
+      // 保存すると、承認済みの段階はレビュー中に戻り、後ろの段階が「古い」になるため、全段階を取り直す
+      await get().fetchStages(projectId);
+      return saved;
+    },
+
+    generate: async (projectId, stage) => {
+      set({ requestingGeneration: true, actionError: null });
+      try {
+        await generateDesignStage(projectId, stage);
+      } catch (err) {
+        set({ actionError: messageOf(err, "下書きの生成を始められませんでした") });
+      } finally {
+        set({ requestingGeneration: false });
+      }
+      // 受け付けた段階は generation_status が generating になる(画面はそれを見てポーリングする)
       await get().fetchStages(projectId);
     },
   }),

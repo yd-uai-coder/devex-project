@@ -1,11 +1,36 @@
-// 作成：Phase-15-6
+// 作成：Phase-15-6｜更新：Phase-16-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
-// 画面に出す5つの状態。DB に保存するのは draft / reviewing / approved の3つで、
-// not_started(行が無い)と outdated(入力が承認時から変わった)はバックエンドが導く。
+// Phase-16-5：更新
+// // 画面に出す5つの状態。DB に保存するのは draft / reviewing / approved の3つで、
+// // not_started(行が無い)と outdated(入力が承認時から変わった)はバックエンドが導く。
+// ↓↓
+// 画面に出す6つの状態。DB に保存するのは draft / regenerated / reviewing / approved の4つで、
+// not_started(行が無い)と outdated(入力が承認時・生成時から変わった)はバックエンドが導く。
+// regenerated は、内容のある段階を AI が作り直した(未承認)状態(Phase 16)。
 export type StageState =
-  "not_started" | "draft" | "reviewing" | "approved" | "outdated";
+  // Phase-16-5：更新
+  // "not_started" | "draft" | "reviewing" | "approved" | "outdated";
+  // ↓↓
+  | "not_started"
+  | "draft"
+  | "regenerated"
+  | "reviewing"
+  | "approved"
+  | "outdated";
+
+// Phase-16-5:追記
+// 段階ごとの検証の指摘(Phase 16)。error があると承認できない。warning は承認を止めない。
+export type StageIssue = {
+  severity: "error" | "warning";
+  code: string;
+  message: string;
+  target: string | null;
+};
+
+// AIの下書きの生成の状態。null はまだ生成していない。
+export type StageGenerationStatus = "generating" | "completed" | "failed";
 
 export type DesignStageRead = {
   stage: number;
@@ -17,4 +42,31 @@ export type DesignStageRead = {
   approved_version: number | null;
   model: Record<string, unknown> | null;
   updated_at: string | null;
+  // Phase-16-5:追記
+  generation_status: StageGenerationStatus | null;
+  // 直近の生成が失敗した理由(ユーザー向けの文言)
+  generation_error: string | null;
+  issues: StageIssue[];
+};
+
+// Phase-16-5:追記
+// 段階1 機能(処理)一覧の意味モデル(devex-api app/detailed_design/function_list.py)。
+// 画面: サーバーを呼ばず画面の中で完結する演算・描画(trigger は「SCR-005: 操作」の形)
+export type FunctionKind = "API" | "API+バッチ" | "バッチ" | "画面" | "その他";
+
+export type FunctionRow = {
+  id: string; // 処理ID(F-01…)。再生成しても変わらない
+  name: string;
+  kind: FunctionKind;
+  trigger: string; // API は「POST /api/v1/projects」の形
+  screens: string[];
+  group_initial: string; // API のパスから決めた機能グループの初期値
+  group: string; // 人が確定した機能グループ
+  summary: string;
+};
+
+export type FunctionListModel = {
+  groups: string[];
+  functions: FunctionRow[];
+  next_number: number; // 次に振る番号(消えた番号は再利用しない)
 };

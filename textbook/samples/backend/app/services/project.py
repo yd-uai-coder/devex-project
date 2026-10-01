@@ -108,14 +108,11 @@ class ProjectService:
     async def get_detail(self, project: Project) -> ProjectDetail:
         """プロジェクトの詳細(初期ヒアリング入力・添付ファイルサマリを含む)を返す。
         Project単体のカラムに加え、別Repository(IntakeFile)の取得・整形も
-        # Phase-15-3：更新
-        # このメソッドに集約する(ルーター層はRepositoryを直接参照しない)。"""
-        # intake_files =
-        # ↓↓
         このメソッドに集約する(ルーター層はRepositoryを直接参照しない)。
 
         画面は生成の完了をこの取得のポーリングで待つため、止まった「生成中」(15分超)はここで
         回収する(DocGeneratorService.recover_if_stale)。"""
+        # Phase-15-3:追記(文書文字列の後ろ1段落も Phase-15-3 で足した)
         await DocGeneratorService(self._session).recover_if_stale(project)
         intake_files = await self._intake_files.list_for_project(project.id)
         return ProjectDetail(

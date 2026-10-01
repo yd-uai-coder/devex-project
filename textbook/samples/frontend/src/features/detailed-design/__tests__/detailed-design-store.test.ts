@@ -1,11 +1,12 @@
-// 作成：Phase-15-7
+// 作成：Phase-15-7｜更新：Phase-16-6
 // 写経レベル: コア ── 版の競合と、承認後の取り直し。
+// Phase-16-6:追記 ── ../test-utils/stageFixtures.makeFunctionList
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   firstPendingStage,
   useDetailedDesignStore,
 } from "../detailed-design-store";
-import { makeStages } from "../test-utils/stageFixtures";
+import { makeFunctionList, makeStages } from "../test-utils/stageFixtures";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
 function resetStore() {
@@ -17,6 +18,9 @@ function resetStore() {
     error: null,
     actionError: null,
     approving: false,
+    // Phase-16-6:追記
+    saving: false,
+    requestingGeneration: false,
   });
 }
 
@@ -113,5 +117,46 @@ describe("useDetailedDesignStore", () => {
       "読み込み直しました",
     );
     expect(useDetailedDesignStore.getState().approving).toBe(false);
+  });
+
+  // Phase-16-6:追記
+  it("saveは見ていた版で保存し、全段階を取り直す", async () => {
+    useDetailedDesignStore.setState({
+      projectId: "p1",
+      stages: makeStages({ 1: { state: "draft", version: 2 } }),
+    });
+    stub.queue({ status: 200, body: {} });
+    stub.queue({
+      status: 200,
+      body: makeStages({ 1: { state: "reviewing", version: 3 } }),
+    });
+
+    const saved = await useDetailedDesignStore
+      .getState()
+      .save("p1", 1, makeFunctionList());
+
+    expect(saved).toBe(true);
+    expect(stub.requests[0].init?.method).toBe("PUT");
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toMatchObject({
+      version: 2,
+      model: { next_number: 2 },
+    });
+    expect(useDetailedDesignStore.getState().stages[0].version).toBe(3);
+  });
+
+  it("generateは生成を受け付けてから取り直し、生成中の409は理由を伝える", async () => {
+    useDetailedDesignStore.setState({ projectId: "p1", stages: makeStages() });
+    stub.queue({
+      status: 409,
+      body: { detail: "busy", code: "DESIGN_STAGE_GENERATION_IN_PROGRESS" },
+    });
+    stub.queue({ status: 200, body: makeStages() });
+
+    await useDetailedDesignStore.getState().generate("p1", 1);
+
+    expect(stub.requests[0].url).toContain("/design-stages/1/generate");
+    expect(stub.requests[1].url).toContain("/design-stages");
+    expect(useDetailedDesignStore.getState().actionError).toContain("生成中");
+    expect(useDetailedDesignStore.getState().requestingGeneration).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-// 作成：Phase-15-7
+// 作成：Phase-15-7｜更新：Phase-16-6
 // 写経レベル: 定型 ── 7段階の並びと状態の色。
 "use client";
 
@@ -12,6 +12,8 @@ import { STAGE_TITLES, STATE_LABELS } from "@/features/detailed-design/labels";
 const STATE_COLORS: Record<StageState, string> = {
   not_started: "$color10",
   draft: "$blue10",
+  // Phase-16-6:追記
+  regenerated: "$purple10",
   reviewing: "$orange10",
   approved: "$green10",
   outdated: "$red10",

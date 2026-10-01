@@ -1,4 +1,4 @@
-// 作成：Phase-15-7
+// 作成：Phase-15-7｜更新：Phase-16-6
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -59,6 +59,8 @@ export function DetailedDesignPageContent({
           />
           {current ? (
             <StageWorkArea
+              // Phase-16-6:追記
+              projectId={projectId}
               stage={current}
               approving={approving}
               actionError={actionError}

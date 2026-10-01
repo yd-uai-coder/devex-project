@@ -1,4 +1,4 @@
-// 作成：Phase-15-6
+// 作成：Phase-15-6｜更新：Phase-16-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 import { apiFetch } from "@/lib/api/client";
 import type { DesignStageRead } from "./types";
@@ -35,5 +35,17 @@ export function approveDesignStage(
   return apiFetch<DesignStageRead>(`${base(projectId)}/${stage}/approve`, {
     method: "POST",
     body: JSON.stringify({ version }),
+  });
+}
+
+// Phase-16-5:追記
+// 段階のAIの下書きの生成を受け付ける(202)。生成はバックグラウンドで進むので、完了は
+// listDesignStages のポーリング(generation_status)で待つ。Phase 16 は段階1だけ。
+export function generateDesignStage(
+  projectId: string,
+  stage: number,
+): Promise<DesignStageRead> {
+  return apiFetch<DesignStageRead>(`${base(projectId)}/${stage}/generate`, {
+    method: "POST",
   });
 }

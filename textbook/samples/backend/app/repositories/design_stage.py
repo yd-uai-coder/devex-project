@@ -1,4 +1,4 @@
-# 作成：Phase-15-2
+# 作成：Phase-15-2｜更新：Phase-16-3
 # 写経レベル: 定型 ── CRUDRepository を継承した永続化のみ。
 import uuid
 
@@ -13,9 +13,13 @@ class DesignStageRepository(CRUDRepository[DesignStage]):
     model = DesignStage
 
     async def create(
-        self, *, project_id: uuid.UUID, stage: int, model: dict, status: str = "draft"
+        # Phase-16-3：更新
+        # self, *, project_id: uuid.UUID, stage: int, model: dict, status: str = "draft"
+        # ↓↓
+        self, *, project_id: uuid.UUID, stage: int, model: dict | None, status: str = "draft"
     ) -> DesignStage:
-        """新しい段階の行を追加し、flushしてIDを確定させた状態で返す(versionは1)。"""
+        """新しい段階の行を追加し、flushしてIDを確定させた状態で返す(versionは1)。
+        `model`がNoneの行は、AIの下書きの生成を受け付けたばかりの段階(Phase 16)。"""
         row = DesignStage(project_id=project_id, stage=stage, model=model, status=status)
         self._session.add(row)
         await self._session.flush()

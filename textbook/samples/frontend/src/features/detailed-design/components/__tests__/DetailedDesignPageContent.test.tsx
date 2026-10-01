@@ -1,5 +1,6 @@
-// 作成：Phase-15-7
+// 作成：Phase-15-7｜更新：Phase-16-6
 // 写経レベル: 定型
+// Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -7,7 +8,7 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DetailedDesignPageContent } from "../DetailedDesignPageContent";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
-import { makeStages } from "../../test-utils/stageFixtures";
+import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
 
 function renderContent() {
   return render(
@@ -21,7 +22,12 @@ describe("DetailedDesignPageContent", () => {
   beforeEach(() => {
     useDetailedDesignStore.setState({
       projectId: "p1",
-      stages: makeStages({ 1: { state: "reviewing", version: 1 } }),
+      // Phase-16-6：更新
+      // stages: makeStages({ 1: { state: "reviewing", version: 1 } }),
+      // ↓↓
+      stages: makeStages({
+        1: { state: "reviewing", version: 1, model: makeFunctionList() },
+      }),
       selectedStage: 1,
       status: "success",
       error: null,

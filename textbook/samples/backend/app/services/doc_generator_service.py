@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -84,7 +84,17 @@ _DOC_TYPE_PROMPTS: dict[str, str] = {
         "- 主要画面ごとに`### 画面ID: 画面名`の小見出しを立て、構成要素"
         "（入力項目、表示項目、操作ボタン、アクション）を記述する\n\n"
         "## 2.4 外部システム・API連携仕様\n- 連携する外部サービス／API、認証方式、データ連携タイミング\n\n"
-        "## 2.5 データ入出力仕様\n- ファイル入出力（CSV、JSON等）、受付フォーマット・バリデーションルール"
+        # Phase-16-1：更新(自システムのAPI一覧を外部設計書に持たせる。詳細設計モードの段階1が、
+        # 機能グループの初期値をAPIのパスから決め、下書きの漏れを照合する材料にする。両モード共通)
+        # "## 2.5 データ入出力仕様\n- ファイル入出力（CSV、JSON等）、受付フォーマット・バリデーションルール"
+        # ↓↓
+        "## 2.5 データ入出力仕様\n- ファイル入出力（CSV、JSON等）、受付フォーマット・バリデーションルール\n\n"
+        "## 2.6 API一覧\n"
+        "- 本システム自身が提供するAPIを、Markdownテーブル(メソッド/パス/概要/関連画面)で"
+        "すべて列挙する\n"
+        "- パスは`/api/v1/<リソース>`の形で書き、個別の対象は`{id}`のように波括弧で示す。"
+        "親リソースに属するものは`/api/v1/<親リソース>/{id}/<リソース>`とする\n"
+        "- 関連画面は2.2の画面IDで書く(複数は`/`区切り、画面が無いものは`—`)"
         + _COMMON_FORMAT_GUIDANCE
     ),
     "internal_design": (
@@ -107,7 +117,12 @@ _DOC_TYPE_PROMPTS: dict[str, str] = {
         # Phase-10-1：更新(診断8: 処理ごとのデータの流れを構造化して書かせる「処理別データフロー」節)
         # "- APIエンドポイント一覧はMarkdownテーブル(メソッド/パス/概要)で示す\n\n"
         # ↓↓
-        "- APIエンドポイント一覧はMarkdownテーブル(メソッド/パス/概要)で示す\n"
+        # Phase-16-1：更新(外部設計書2.6のAPI一覧と、メソッド・パスをそろえさせる)
+        # "- APIエンドポイント一覧はMarkdownテーブル(メソッド/パス/概要)で示す\n"
+        # ↓↓
+        "- APIエンドポイント一覧はMarkdownテーブル(メソッド/パス/概要)で示す。"
+        "外部設計書2.6のAPI一覧と同じメソッド・パスを使い、内部の担当(ルート・サービス)の"
+        "観点で概要を書く\n"
         # Phase-15-1:追記 ── ファイル単位の責務表(詳細設計モードの段階4と同じ列。関わる処理の列は処理IDが無いので持たない)
         "- 続けて『### モジュール一覧』の小節を設け、ファイル単位の責務を"
         "Markdownテーブル(パス/層/責務/主な依存先)で示す。"
@@ -291,17 +306,6 @@ class DocGeneratorService:
         ユーザーが再度「生成する」を押せなくなるため。`revising`から始まった再生成が
         失敗した場合に`interviewing`へ巻き戻すと、既に生成済みだったという文脈が失われる
         ため、開始時点の状態を記憶しておいて戻す。
-        # Phase-15-3：更新
-        # 失敗内容は`sender='others'`のchat_historiesにも記録し、チャット画面に表示できるようにする。
-        # """
-        # project = await self._projects.get_by_id(project_id, user_id=user_id)
-        # if project is None:
-        #     return
-        #
-        # status_before_generation = project.status
-        # project.status = "generating"
-        # await self._session.commit()
-        # ↓↓
         失敗内容は`sender='others'`のchat_historiesにも記録し、チャット画面に表示できるようにする。
         失敗したときは、途中まで作った版と古い版の削除を rollback で取り消してから状態を戻す
         (4文書の組がそろわない状態を残さないため)。
@@ -313,6 +317,12 @@ class DocGeneratorService:
         if project is None:
             return
 
+        # Phase-15-3：更新(受け付け(request_generation)を経た呼び出しは、そこで generating に
+        # 切り替え済み。文書文字列の後ろ2段落も Phase-15-3 で足した)
+        # status_before_generation = project.status
+        # project.status = "generating"
+        # await self._session.commit()
+        # ↓↓
         if status_before_generation is None:
             status_before_generation = project.status
             project.status = "generating"
