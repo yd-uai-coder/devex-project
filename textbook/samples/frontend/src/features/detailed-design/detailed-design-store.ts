@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9
 // 写経レベル: コア ── 承認の後に全段階を取り直す(後ろの段階が開く・古いが消える)。
 // Phase-16-6:追記 ── @/features/detailed-design/api/designStagesApi.generateDesignStage, @/features/detailed-design/api/designStagesApi.saveDesignStage
 // Phase-18-9:追記 ── @/features/detailed-design/labels.approvalBlockers
@@ -31,7 +31,11 @@ type DetailedDesignStore = {
 
   fetchStages: (projectId: string) => Promise<void>;
   selectStage: (stage: number) => void;
-  approve: (projectId: string, stage: number) => Promise<void>;
+  // Phase-18-9：更新
+  // approve: (projectId: string, stage: number) => Promise<void>;
+  // ↓↓
+  // 承認できたら true(画面は承認の完了ダイアログを出す。Phase 18)
+  approve: (projectId: string, stage: number) => Promise<boolean>;
   // Phase-16-6:追記
   // 保存に成功したら true(画面は編集中の内容を保存済みとして扱う)
   save: (
@@ -107,7 +111,10 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
 
     approve: async (projectId, stage) => {
       const current = get().stages.find((s) => s.stage === stage);
-      if (!current || current.version === null) return;
+      // Phase-18-9：更新(承認できたかを返す。以下の return false・return approved も同じ)
+      // if (!current || current.version === null) return;
+      // ↓↓
+      if (!current || current.version === null) return false;
       // Phase-18-9:追記
       // 図(DFD・ER)が未承認なら、API を呼ばずに理由を出す(Phase 18)
       const blockers = approvalBlockers(current);
@@ -118,11 +125,15 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
             "図のエディタで承認してから、段階を承認してください。",
           ].join(" "),
         });
-        return;
+        return false;
       }
       set({ approving: true, actionError: null });
+      // Phase-18-9:追記
+      let approved = false;
       try {
         await approveDesignStage(projectId, stage, current.version);
+        // Phase-18-9:追記
+        approved = true;
       } catch (err) {
         set({ actionError: messageOf(err, "承認に失敗しました") });
       } finally {
@@ -130,6 +141,8 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
       }
       // 承認すると、後ろの段階が開いたり「古い」が消えたりするため、全段階を取り直す
       await get().fetchStages(projectId);
+      // Phase-18-9:追記
+      return approved;
     },
 
     // Phase-16-6:追記

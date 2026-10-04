@@ -429,4 +429,7 @@
 3. 回答と対応方針:
    - (1) 画面だけで直した。図の未承認(`DFD_NOT_APPROVED`・`ER_NOT_APPROVED`)は検証の結果の一覧に出さず、承認ボタンも止めない。承認を押すと API を呼ばずに理由を出す。バックエンドは検証のエラーのまま残し、承認を 409 で断る。
    - (2) 原因は、`UmlCanvas` の `onSelectionChange` がレンダーのたびに作り直されていたこと。React Flow は、この関数が変わるたびに選択を通知し直す。要素を追加して選択が変わると、表示がまだ古いうちに古い選択が通知され、ストアの選択と往復し続けた。`useCallback` で固定し、jsdom の再現テストを足した。SCR-007 と段階2の DFD のエディタも同じ部品なので、同時に直る。
-   - 記録: [`Phase-18-9.md`](./Phase-18/Phase-18-9.md)「画面確認後の修正」、[`Phase-18-introduction.md`](./Phase-18/Phase-18-introduction.md)、`docs/external_design.md` 2.7節。
+   - (3)(コミット後の追加の報告)ER 図の「+」「-」などの操作ボタンが、ダークモードで白地に白文字になり読めない。ライト・ダークとも白地・黒字に統一し、他の段階も確認してほしい → React Flow の既定(ライト)は背景が白で文字色が `inherit` のため、ページの白い文字色を受け継いでいた。`UmlCanvas` の `<Controls>` に CSS 変数を渡して固定色にした。`<Controls>` は `UmlCanvas` の1か所だけで、SCR-007・段階2・段階3が共有しているので、全段階がそろう。
+   - (4)(追加の報告)CRUD 図で `Encountered two children with the same key, new_table` → 「テーブルを追加」が名前を毎回 `new_table` にしていたため、同名のテーブルが2つでき、テーブル名を key にしている CRUD 図の列が重なった。追加時に `new_table_2`… と空いている名前を付け、CRUD 図の列は名前の重複を除き、段階3の検証に `DUPLICATE_TABLE`(エラー)を足した(テーブル名は CRUD 図のセルを引く鍵のため)。
+   - (5)(追加の要望)段階の承認ボタンを押したら、ダイアログで「段階N-{段階名}を承認しました。」と出し、「次の段階へ進む」ボタンで次の段階へ移りたい → 全段階に共通の画面(`DetailedDesignPageContent`)に置いた。`approve` が承認できたかを返すようにし、既存の `ConfirmDialog` にキャンセル側の文言を変える・隠す任意の引数を足して使い回した。「閉じる」で留まり、段階7は「閉じる」だけ。
+   - 記録: [`Phase-18-9.md`](./Phase-18/Phase-18-9.md)「画面確認後の修正」、[`Phase-18-1.md`](./Phase-18/Phase-18-1.md)、[`Phase-18-introduction.md`](./Phase-18/Phase-18-introduction.md)、`docs/external_design.md` 2.7節・`docs/internal_design.md`。

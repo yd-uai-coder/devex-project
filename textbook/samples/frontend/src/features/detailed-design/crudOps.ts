@@ -89,8 +89,21 @@ export function setCellOps(
 }
 
 // CRUD 図の列。ER のテーブルの並びに、ER に無いテーブルのセル(直す必要がある)を後ろに足す。
+// ER に同じ名前のテーブルが2つあっても、列は1つにする(列の key が重ならないように。名前の重複は
+// 段階3の検証のエラー DUPLICATE_TABLE で知らせる。Phase 18)。
 export function crudTables(erTables: string[], model: CrudModel): string[] {
-  const keys = new Set(erTables.map(tableKey));
+  // Phase-18-8：更新(画面確認後の修正。ER のテーブル名の重複も除く)
+  // const keys = new Set(erTables.map(tableKey));
+  // ↓↓
+  const keys = new Set<string>();
+  const unique: string[] = [];
+  for (const table of erTables) {
+    const key = tableKey(table);
+    if (!keys.has(key)) {
+      keys.add(key);
+      unique.push(table);
+    }
+  }
   const extra: string[] = [];
   for (const cell of model.cells) {
     const key = tableKey(cell.table);
@@ -99,5 +112,8 @@ export function crudTables(erTables: string[], model: CrudModel): string[] {
       extra.push(cell.table);
     }
   }
-  return [...erTables, ...extra];
+  // Phase-18-8：更新
+  // return [...erTables, ...extra];
+  // ↓↓
+  return [...unique, ...extra];
 }

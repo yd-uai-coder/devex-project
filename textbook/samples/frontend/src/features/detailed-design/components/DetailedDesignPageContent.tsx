@@ -1,13 +1,16 @@
-// 作成：Phase-15-7｜更新：Phase-16-6
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
-import { useEffect } from "react";
+// Phase-18-9:追記 ── react.useState, @/components/ui/layout-blocks/ConfirmDialog.ConfirmDialog, @/features/detailed-design/labels.STAGE_TITLES
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { H2, Text, XStack, YStack } from "tamagui";
+import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StageStepper } from "@/features/detailed-design/components/StageStepper";
 import { StageWorkArea } from "@/features/detailed-design/components/StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import { STAGE_TITLES } from "@/features/detailed-design/labels";
 
 // 詳細設計画面(SCR-008)。左に段階1〜7のステッパー、右に選んだ段階の作業領域を置く
 // (docs/external_design.md 2.7節「段階の進め方」)。
@@ -25,12 +28,24 @@ export function DetailedDesignPageContent({
   const fetchStages = useDetailedDesignStore((s) => s.fetchStages);
   const selectStage = useDetailedDesignStore((s) => s.selectStage);
   const approve = useDetailedDesignStore((s) => s.approve);
+  // Phase-18-9:追記
+  // 承認を終えた段階(完了のダイアログを出している間だけ値を持つ。Phase 18)
+  const [approvedStage, setApprovedStage] = useState<number | null>(null);
 
   useEffect(() => {
     void fetchStages(projectId);
   }, [projectId, fetchStages]);
 
   const current = stages.find((s) => s.stage === selectedStage);
+  // Phase-18-9:追記
+  const nextStage =
+    approvedStage !== null && stages.some((s) => s.stage === approvedStage + 1)
+      ? approvedStage + 1
+      : null;
+
+  const startApproval = async (stage: number) => {
+    if (await approve(projectId, stage)) setApprovedStage(stage);
+  };
 
   return (
     <YStack paddingVertical="$4" gap="$4">
@@ -64,11 +79,33 @@ export function DetailedDesignPageContent({
               stage={current}
               approving={approving}
               actionError={actionError}
-              onApprove={() => void approve(projectId, current.stage)}
+              // Phase-18-9：更新
+              // onApprove={() => void approve(projectId, current.stage)}
+              // ↓↓
+              onApprove={() => void startApproval(current.stage)}
             />
           ) : null}
         </XStack>
       ) : null}
+
+      {/* Phase-18-9:追記 */}
+      {/* 段階を承認したら知らせ、次の段階へ進めるようにする(最後の段階は閉じるだけ。Phase 18) */}
+      <ConfirmDialog
+        open={approvedStage !== null}
+        title="承認しました"
+        description={
+          approvedStage !== null
+            ? `段階${approvedStage}-${STAGE_TITLES[approvedStage] ?? ""}を承認しました。`
+            : ""
+        }
+        confirmLabel={nextStage !== null ? "次の段階へ進む" : "閉じる"}
+        cancelLabel={nextStage !== null ? "閉じる" : null}
+        onConfirm={() => {
+          if (nextStage !== null) selectStage(nextStage);
+          setApprovedStage(null);
+        }}
+        onCancel={() => setApprovedStage(null)}
+      />
     </YStack>
   );
 }

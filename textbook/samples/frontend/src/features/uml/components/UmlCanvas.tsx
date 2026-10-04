@@ -3,8 +3,8 @@
 "use client";
 
 // Phase-11-6:追記 ── @xyflow/react(OnConnect, OnSelectionChangeFunc)
-// Phase-18-9:追記 ── react.useCallback
-import { useCallback, useEffect, useMemo, useState } from "react";
+// Phase-18-9:追記 ── react.useCallback, react.CSSProperties
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   Background,
   Controls,
@@ -42,8 +42,20 @@ export const NODE_TYPES: NodeTypes = {
 };
 export const EDGE_TYPES: EdgeTypes = { orthogonal: OrthogonalEdge };
 
+// Phase-18-9:追記
+// 拡大・縮小などの操作ボタンは、ライト・ダークとも白地に黒字に固定する。React Flow の既定(ライト)は
+// 背景が白で文字色が inherit なので、ダークモードではページの白い文字色を受け継ぎ、白地に白になっていた
+// (Phase 18 の画面確認で見つかった)。CSS 変数を上書きする。
+export const CONTROLS_STYLE = {
+  "--xy-controls-button-background-color": "#fefefe",
+  "--xy-controls-button-background-color-hover": "#f4f4f4",
+  "--xy-controls-button-color": "#1a1a1a",
+  "--xy-controls-button-color-hover": "#000",
+  "--xy-controls-button-border-color": "#eee",
+} as CSSProperties;
+
 // Phase-11-6：更新(選択もストアで持つようにした)
-// // React Flow のキャンバス。正本(意味モデル + 配置)はストアにあり、ここでは
+// React Flow のキャンバス。正本(意味モデル + 配置)はストアにあり、ここでは
 // // Adapter で nodes/edges に変換して表示する。ドラッグ中の途中経過と選択状態だけは
 // // React Flow 側のローカル state で持ち、ドラッグを離した時点でストアへ位置を戻す。
 // ↓↓
@@ -184,7 +196,10 @@ export function UmlCanvas() {
           fitView
         >
           <Background />
-          <Controls />
+          {/* Phase-18-9：更新 */}
+          {/* <Controls /> */}
+          {/* ↓↓ */}
+          <Controls style={CONTROLS_STYLE} />
         </ReactFlow>
       </div>
     </>

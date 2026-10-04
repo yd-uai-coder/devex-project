@@ -1,5 +1,5 @@
 // 作成：Phase-11-6｜更新：Phase-18-6
-// Phase-18-6:追記 ── ../editOps.updateTableDescription
+// Phase-18-6:追記 ── ../editOps(updateTableDescription, nextTableName)
 import { describe, expect, it } from "vitest";
 import {
   addColumn,
@@ -9,6 +9,7 @@ import {
   deleteElement,
   deleteRelation,
   nextId,
+  nextTableName,
   updateColumn,
   updateElement,
   updateRelation,
@@ -40,6 +41,16 @@ describe("addElement", () => {
     expect(er.model.elements.at(-1)).toMatchObject({ kind: "table", columns: [{ name: "id" }] });
     expect(store.id).toBe("s2");
     expect(store.model.elements.at(-1)).toMatchObject({ element_type: "data_store" });
+  });
+
+  // Phase-18-6:追記
+  it("ER のテーブルは、使われていない名前で足す(Phase 18)", () => {
+    const first = addElement(ER_MODEL);
+    const second = addElement(first.model);
+    const names = second.model.elements.map((el) => el.name);
+
+    expect(names.slice(-2)).toEqual(["new_table", "new_table_2"]);
+    expect(nextTableName(second.model)).toBe("new_table_3");
   });
 
   it("引数のモデルを書き換えない", () => {

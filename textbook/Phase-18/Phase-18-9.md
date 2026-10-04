@@ -83,7 +83,7 @@ npx vitest run src/features/detailed-design/components
 
 ## 画面確認後の修正
 
-Phase 18 の実装後、ユーザーが画面で確かめて見つかった2点を直した(経緯は [`q_a.md`](../q_a.md) の「Phase 18 作業後」)。
+Phase 18 の実装後、ユーザーが画面で確かめて見つかった4点を直し、承認の後の流れを1つ足した(経緯は [`q_a.md`](../q_a.md) の「Phase 18 作業後」)。
 
 ### この節で更新したファイル
 
@@ -92,13 +92,13 @@ Phase 18 の実装後、ユーザーが画面で確かめて見つかった2点�
 | [`detailed-design/labels.ts`](../samples/frontend/src/features/detailed-design/labels.ts) | 更新 | **コア** | `APPROVAL_TIME_CODES`・`visibleIssues`・`approvalBlockers`。`hasErrors` は図の未承認を数えない |
 | [`detailed-design/components/StageIssueList.tsx`](../samples/frontend/src/features/detailed-design/components/StageIssueList.tsx) | 更新 | 定型 | 一覧に出す前に `visibleIssues` で図の未承認を除く |
 | [`detailed-design/detailed-design-store.ts`](../samples/frontend/src/features/detailed-design/detailed-design-store.ts) | 更新 | **コア** | `approve` は図の未承認があれば API を呼ばず、理由を `actionError` に出す |
-| [`uml/components/UmlCanvas.tsx`](../samples/frontend/src/features/uml/components/UmlCanvas.tsx) | 更新 | **コア** | `onSelectionChange` を `useCallback` で固定する |
+| [`uml/components/UmlCanvas.tsx`](../samples/frontend/src/features/uml/components/UmlCanvas.tsx) | 更新 | **コア** | `onSelectionChange` を `useCallback` で固定する。操作ボタンの配色 `CONTROLS_STYLE` |
 | ── ここからテスト ── | | | |
 | [`detailed-design/__tests__/labels.test.ts`](../samples/frontend/src/features/detailed-design/__tests__/labels.test.ts) | 更新 | 定型 | 図の未承認だけなら承認ボタンは押せ、一覧から除き、承認を止める理由として返す |
 | [`detailed-design/__tests__/detailed-design-store.test.ts`](../samples/frontend/src/features/detailed-design/__tests__/detailed-design-store.test.ts) | 更新 | 定型 | 図が未承認なら API を呼ばずに理由を出す |
 | [`detailed-design/components/__tests__/StageIssueList.test.tsx`](../samples/frontend/src/features/detailed-design/components/__tests__/StageIssueList.test.tsx) | 更新 | 定型 | 図の未承認のエラーは一覧に出さない |
 | [`detailed-design/components/__tests__/DataFlowPanel.test.tsx`](../samples/frontend/src/features/detailed-design/components/__tests__/DataFlowPanel.test.tsx)・[`DataModelPanel.test.tsx`](../samples/frontend/src/features/detailed-design/components/__tests__/DataModelPanel.test.tsx) | 更新 | 定型 | DFD・ER の未承認が一覧に出ないこと |
-| [`uml/components/__tests__/UmlCanvas.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/UmlCanvas.test.tsx) | 更新 | **コア** | 要素を選んだまま要素を追加しても、選択が往復しない(再現テスト) |
+| [`uml/components/__tests__/UmlCanvas.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/UmlCanvas.test.tsx) | 更新 | **コア** | 要素を選んだまま要素を追加しても、選択が往復しない(再現テスト)。ダークテーマでも操作ボタンが白地に黒字 |
 
 ### 1. 図の未承認は、段階の承認を押したときに出す
 
@@ -130,6 +130,34 @@ if (blockers.length > 0) {   // API は呼ばない
 **修正**: `onSelectionChange` を `useCallback`(依存は `select`)で固定した。通知は React Flow の選択が実際に変わったときだけ出るので、`setNodes(derived)` で表示が新しい選択に追いついてから1回だけ通知される。`UmlCanvas` は SCR-007 と段階2の DFD のエディタでも使う部品なので、そちらも同時に直る。
 
 **テスト**: 直す前に、jsdom で同じエラーを再現するテストを書いた(ER のテーブルを選んだ状態で `addElement()`)。直した後は通り、新しいテーブルが選ばれる。
+
+### 3. 図の操作ボタン(拡大・縮小など)が、ダークモードで読めない
+
+**原因**: React Flow 12 の既定の配色(ライト)では、操作ボタンの背景は白(`--xy-controls-button-background-color-default: #fefefe`)だが、文字色は `inherit`(親の文字色を受け継ぐ)。アイコンは `fill: currentColor` なので、ダークモードではページの白い文字色を受け継ぎ、白地に白になっていた。
+
+**修正**: ライト・ダークとも白地に黒字に統一する(ユーザーの指定)。`UmlCanvas` のモジュール定数 `CONTROLS_STYLE` で React Flow の CSS 変数(背景・ホバー・文字色・枠)を上書きし、`<Controls style={CONTROLS_STYLE} />` に渡す。`<Controls />` を使うのは `UmlCanvas` の1か所だけで、SCR-007・段階2の DFD・段階3の ER が同じ部品を使うので、全段階でそろう(段階1と Phase 14 のデモは React Flow を使っていない)。
+
+### 4. 「テーブルを追加」を2回押すと、CRUD 図で key が重複する
+
+**原因**: ER のエディタの「テーブルを追加」は、名前を毎回 `new_table` にしていた(`uml/model/editOps.ts` の `addElement`)。2回押すと同じ名前のテーブルが2つでき、テーブル名を列の key にしている `CrudMatrix` で `Encountered two children with the same key` になった。テーブル名は CRUD 図のセルを引く鍵でもあるので、名前が重なると、どちらのテーブルのセルかが決まらない(人が同じ名前に改名しても同じことが起きる)。
+
+**修正**(3か所。元の章のファイルを直し、samples には元の章のタグを付けた):
+
+| どこで | ファイル | 修正 |
+|---|---|---|
+| 追加で重複を作らない | `uml/model/editOps.ts`(18-6) | `nextTableName`: 使われていない `new_table`・`new_table_2`… を付ける(SCR-007 にも効く) |
+| 表が壊れない | `detailed-design/crudOps.ts`(18-8) | `crudTables`: ER のテーブル名も `tableKey` で重複を除く |
+| 承認を止める | BE `app/detailed_design/validation.py`(18-1) | エラー `DUPLICATE_TABLE`「ER のテーブル名「x」が重複しています。」。一覧に常に出す |
+
+### 5. 段階の承認の後に、完了のダイアログと「次の段階へ進む」(ユーザーの要望)
+
+段階の承認ボタンを押して承認できたら、ダイアログで「段階N-{段階名}を承認しました。」と知らせ、「次の段階へ進む」で次の段階を選ぶ(「閉じる」はその段階に留まる)。段階7は次が無いので「閉じる」だけを出す。全段階に共通の動きなので、段階のパネルではなく `DetailedDesignPageContent` に置いた。
+
+| ファイル | 修正 |
+|---|---|
+| `detailed-design/detailed-design-store.ts` | `approve` が承認できたかを `boolean` で返す(図の未承認・API の失敗は false) |
+| `detailed-design/components/DetailedDesignPageContent.tsx` | 承認できたら `approvedStage` を持ち、`ConfirmDialog` を出す |
+| `components/ui/layout-blocks/ConfirmDialog.tsx`(Phase 15-8 の部品) | 任意の `cancelLabel`(既定「キャンセル」、`null` なら出さない)。完了の知らせにも使えるようにした(#17: 消費者は承認の完了ダイアログ) |
 
 ### 動作確認(実施済み)
 

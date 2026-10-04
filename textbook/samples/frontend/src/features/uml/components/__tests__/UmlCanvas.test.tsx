@@ -1,10 +1,10 @@
 // 作成：Phase-11-5｜更新：Phase-18-9
 import { beforeEach, describe, expect, it } from "vitest";
-// Phase-18-9:追記 ── @testing-library/react.act
+// Phase-18-9:追記 ── @testing-library/react.act, ../UmlCanvas.CONTROLS_STYLE
 import { act, render, screen } from "@testing-library/react";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
-import { EDGE_TYPES, NODE_TYPES, UmlCanvas } from "../UmlCanvas";
+import { CONTROLS_STYLE, EDGE_TYPES, NODE_TYPES, UmlCanvas } from "../UmlCanvas";
 import { ComponentNode } from "../nodes/ComponentNode";
 import { DfdNode } from "../nodes/DfdNode";
 import { ErTableNode } from "../nodes/ErTableNode";
@@ -95,5 +95,20 @@ describe("UmlCanvas", () => {
 
     expect(screen.getByText("new_table")).toBeInTheDocument();
     expect(useUmlEditorStore.getState().selection).toEqual({ kind: "element", id: "t3" });
+  });
+
+  // Phase-18-9:追記
+  it("拡大・縮小などの操作ボタンは、ダークテーマでも白地に黒字にする(Phase 18)", () => {
+    useUmlEditorStore.setState({ model: ER_MODEL, layout: placeMissingNodes(ER_MODEL, null) });
+    const { container } = render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="dark">
+        <UmlCanvas />
+      </TamaguiProvider>,
+    );
+
+    const controls = container.querySelector(".react-flow__controls") as HTMLElement;
+    expect(controls.style.getPropertyValue("--xy-controls-button-background-color")).toBe("#fefefe");
+    expect(controls.style.getPropertyValue("--xy-controls-button-color")).toBe("#1a1a1a");
+    expect(CONTROLS_STYLE).toMatchObject({ "--xy-controls-button-border-color": "#eee" });
   });
 });

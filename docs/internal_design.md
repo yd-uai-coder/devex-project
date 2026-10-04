@@ -332,7 +332,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * `design_stages.model`(段階3)は`{cells: [{function_id, table, ops, draft}]}`(CRUD 図のセル)だけ。`ops`は C・R・U・D をこの順に並べた文字列、`draft`は AI の下書きのまま人が確定していない印。ER は`uml_diagrams`(notation=er、subject=`''`の1枚)、テーブル定義は ER の列の`constraints`・`description`とテーブルの`description`が正本で、model に複製しない(`app/detailed_design/data_model.py`)。
   * R/W の導出: 段階2で DFD を描くと選んだグループの DFD について、データストア → 処理 を R、処理 → データストア を W とする。データストアと ER のテーブルは名前で突き合わせる(前後の空白を除いて小文字)。`merge_crud`は、読みの線のセルに R を足し、書き込みの線のセルは C/U/D が無くても空で残す(検証のエラーで人に決めさせる)。
   * 下書き: ER(LLM 1回。入力は DFD のデータストア名・データ辞書・処理概要表。出力スキーマは段階3専用で制約・説明つき)→ CRUD 図(LLM 1回。DFD の R/W を「決まったもの」として渡す)を順に呼び、ER と段階を1トランザクションで書く。再生成は置き換え(前の版の人の確定は引き継がない)。ER は同じ行を上書きし承認はやり直し(`app/detailed_design/data_model_drafting.py`、`_save_diagram`)。
-  * 検証(`STAGE_VALIDATORS[3]`)は、ER の要約(`ErDiagramSummary`)と DFD の R/W(`DfdDiagramSummary.accesses`)を`StageSources`で受け取る。エラー: ER が無い・生成中・未承認、セルの処理ID・テーブルが不明・重複、操作の形が不正、DFD の読みに R が無い・書き込みに C/U/D が無い。警告: 下書きのセルが残っている、DFD のデータストアが ER に無い、どの処理も触れないテーブル、主キーの無いテーブル。
+  * 検証(`STAGE_VALIDATORS[3]`)は、ER の要約(`ErDiagramSummary`)と DFD の R/W(`DfdDiagramSummary.accesses`)を`StageSources`で受け取る。エラー: ER が無い・生成中・未承認、ER のテーブル名の重複(CRUD 図のセルを引く鍵のため)、セルの処理ID・テーブルが不明・重複、操作の形が不正、DFD の読みに R が無い・書き込みに C/U/D が無い。警告: 下書きのセルが残っている、DFD のデータストアが ER に無い、どの処理も触れないテーブル、主キーの無いテーブル。
   * 承認で`draft`をすべて外す(承認 = 人の一括確定。version は増やさない)。段階の一覧(`DesignStageRead`)の段階3は、DFD から決まる R/W を`dfd_accesses`で返す(画面で導き直さないため)。
   * 段階の外の正本の編集: 詳細設計モードで ER を保存・自動レイアウトすると、承認済みの段階3を`reviewing`・version+1 に戻す(`UmlDiagramService._reopen_stage`。記法 → 段階の対応表で DFD と共通)。
 * **簡易ドキュメントモードとの関係**: 簡易ドキュメントモードの内部設計書にも、段階4と同じ列のモジュール一覧の表を足す(3.3節1.の`doc_generator_service.py`参照)。それ以外の簡易ドキュメントモードの挙動は変えない。
