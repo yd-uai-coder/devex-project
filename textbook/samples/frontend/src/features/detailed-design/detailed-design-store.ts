@@ -1,6 +1,7 @@
-// 作成：Phase-15-7｜更新：Phase-16-6
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9
 // 写経レベル: コア ── 承認の後に全段階を取り直す(後ろの段階が開く・古いが消える)。
 // Phase-16-6:追記 ── @/features/detailed-design/api/designStagesApi.generateDesignStage, @/features/detailed-design/api/designStagesApi.saveDesignStage
+// Phase-18-9:追記 ── @/features/detailed-design/labels.approvalBlockers
 import { create } from "zustand";
 import {
   approveDesignStage,
@@ -9,6 +10,7 @@ import {
   saveDesignStage,
 } from "@/features/detailed-design/api/designStagesApi";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
+import { approvalBlockers } from "@/features/detailed-design/labels";
 import { ApiError } from "@/lib/api/client";
 import type { AsyncStatus } from "@/lib/api/types";
 
@@ -106,6 +108,18 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
     approve: async (projectId, stage) => {
       const current = get().stages.find((s) => s.stage === stage);
       if (!current || current.version === null) return;
+      // Phase-18-9:追記
+      // 図(DFD・ER)が未承認なら、API を呼ばずに理由を出す(Phase 18)
+      const blockers = approvalBlockers(current);
+      if (blockers.length > 0) {
+        set({
+          actionError: [
+            ...blockers.map((issue) => issue.message),
+            "図のエディタで承認してから、段階を承認してください。",
+          ].join(" "),
+        });
+        return;
+      }
       set({ approving: true, actionError: null });
       try {
         await approveDesignStage(projectId, stage, current.version);

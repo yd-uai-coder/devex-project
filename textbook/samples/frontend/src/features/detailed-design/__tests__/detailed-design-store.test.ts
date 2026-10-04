@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9
 // 写経レベル: コア ── 版の競合と、承認後の取り直し。
 // Phase-16-6:追記 ── ../test-utils/stageFixtures.makeFunctionList
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -95,6 +95,24 @@ describe("useDetailedDesignStore", () => {
     });
     expect(stub.requests[1].url).toContain("/design-stages");
     expect(useDetailedDesignStore.getState().stages[0].state).toBe("approved");
+  });
+
+  // Phase-18-9:追記
+  it("図が未承認なら、承認の API を呼ばずに理由を出す(Phase 18)", async () => {
+    useDetailedDesignStore.setState({
+      projectId: "p1",
+      stages: makeStages({
+        1: { state: "reviewing", version: 3, issues: [{ severity: "error" as const, code: "ER_NOT_APPROVED", message: "ER が承認されていません。", target: null }] },
+      }),
+    });
+
+    await useDetailedDesignStore.getState().approve("p1", 1);
+
+    expect(stub.requests).toHaveLength(0);
+    expect(useDetailedDesignStore.getState().actionError).toBe(
+      "ER が承認されていません。 図のエディタで承認してから、段階を承認してください。",
+    );
+    expect(useDetailedDesignStore.getState().approving).toBe(false);
   });
 
   it("承認の版の競合は、読み込み直したことを伝える", async () => {

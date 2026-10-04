@@ -1,6 +1,7 @@
-// 作成：Phase-11-5
+// 作成：Phase-11-5｜更新：Phase-18-9
 import { beforeEach, describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+// Phase-18-9:追記 ── @testing-library/react.act
+import { act, render, screen } from "@testing-library/react";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { EDGE_TYPES, NODE_TYPES, UmlCanvas } from "../UmlCanvas";
@@ -77,5 +78,22 @@ describe("UmlCanvas", () => {
     // 処理の説明は枠に入れず、ツールチップで見せる(エンジンは名前だけで寸法を決めるため)
     expect(screen.getByTitle("認証する")).toBeInTheDocument();
     expect(screen.getByText("users")).toBeInTheDocument();
+  });
+
+  // Phase-18-9:追記
+  it("要素を選んだ状態で要素を追加しても、選択が往復せず新しい要素が選ばれる(Phase 18)", () => {
+    // onSelectionChange の参照がレンダーごとに変わると、React Flow が古い選択を通知し直し、
+    // ストアの選択と往復して Maximum update depth exceeded になっていた
+    useUmlEditorStore.setState({
+      model: ER_MODEL,
+      layout: placeMissingNodes(ER_MODEL, null),
+      selection: { kind: "element", id: "t1" },
+    });
+    renderCanvas();
+
+    act(() => useUmlEditorStore.getState().addElement());
+
+    expect(screen.getByText("new_table")).toBeInTheDocument();
+    expect(useUmlEditorStore.getState().selection).toEqual({ kind: "element", id: "t3" });
   });
 });

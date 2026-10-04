@@ -1,7 +1,8 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-16-5:追記 ── ../designStagesApi.generateDesignStage
 // Phase-17-5:追記 ── ../types.MAX_DFD_GROUPS, @/features/detailed-design/test-utils/stageFixtures.makeDataFlow
+// Phase-18-5:追記 ── ../types.ER_SUBJECT, @/features/detailed-design/test-utils/stageFixtures.makeCrud
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   approveDesignStage,
@@ -9,9 +10,9 @@ import {
   listDesignStages,
   saveDesignStage,
 } from "../designStagesApi";
-import { MAX_DFD_GROUPS, type DesignStageRead } from "../types";
+import { ER_SUBJECT, MAX_DFD_GROUPS, type DesignStageRead } from "../types";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
-import { makeDataFlow } from "@/features/detailed-design/test-utils/stageFixtures";
+import { makeCrud, makeDataFlow } from "@/features/detailed-design/test-utils/stageFixtures";
 
 const STAGE1: DesignStageRead = {
   stage: 1,
@@ -26,6 +27,8 @@ const STAGE1: DesignStageRead = {
   generation_status: null,
   generation_error: null,
   issues: [],
+  // Phase-18-5:追記
+  dfd_accesses: [],
 };
 
 describe("designStagesApi", () => {
@@ -106,5 +109,23 @@ describe("designStagesApi", () => {
       "/api/v1/projects/p1/design-stages/1/generate",
     );
     expect(stub.requests[0].init?.method).toBe("POST");
+  });
+
+  // Phase-18-5:追記
+  it("段階3は CRUD 図を保存し、DFD から決まる R/W を受け取る", async () => {
+    const accesses = [{ function_id: "F-01", table: "reservations", kind: "write" as const }];
+    stub.queue({
+      status: 200,
+      body: { ...STAGE1, stage: 3, model: makeCrud("C", true), dfd_accesses: accesses },
+    });
+
+    const saved = await saveDesignStage("p1", 3, { version: 2, model: makeCrud("CU") });
+
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({
+      version: 2,
+      model: { cells: [{ function_id: "F-01", table: "reservations", ops: "CU", draft: false }] },
+    });
+    expect(saved.dfd_accesses).toEqual(accesses);
+    expect(ER_SUBJECT).toBe("");
   });
 });

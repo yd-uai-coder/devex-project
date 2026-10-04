@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 """詳細設計モードの段階のAIの下書きの生成(docs/external_design.md 2.7節「各段階の共通サイクル」)。
 
@@ -13,13 +13,18 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
   直後でも「古い」と判定されるため(Phase 16 の修正)。
 - 15分を超えて生成中のまま止まった段階は、受け付け時と一覧の取得時に失敗へ戻す
   (app/services/generation_staleness.py)。
-- 生成できる段階は`STAGE_GENERATORS`に登録したものだけ(Phase 16 は段階1、Phase 17 で段階2)。
+- 生成できる段階は`STAGE_GENERATORS`に登録したものだけ(Phase 16 は段階1、Phase 17 で段階2、
+  Phase 18 で段階3)。
 - 段階2は、段階の内容のほかに機能グループの DFD(`uml_diagrams`)とデータ項目(`data_items`)も
   書く。段階の保存と同じトランザクションで書き、失敗したらまとめて取り消す。そのため生成の関数には
   `StageGenerationContext`でセッションとプロジェクトを渡す(Phase 17)。
+- 段階3は、段階の内容(CRUD 図)のほかに ER(`uml_diagrams`、subject='')も書く。段階2と同じく
+  1つのトランザクションで書く(Phase 18)。
 """
 
 # Phase-17-3:追記 ── dataclasses.dataclass, langchain_core.messages.BaseMessage, pydantic.BaseModel, app.detailed_design.data_flow(MAX_DFD_GROUPS, DataFlowModel, dfd_subject, group_functions, merge_summaries), app.detailed_design.data_flow_drafting(GroupDfdGenerationOutput, ProcessSummaryGenerationOutput, build_group_dfd_messages, build_summary_messages, to_dfd_output, to_summary_drafts), app.detailed_design.stages.Fingerprint, app.repositories.uml_diagram.UmlDiagramRepository, app.services.data_item_service.DataItemService, app.services.errors.DesignStageInvalidError, app.uml.domain(NOTATION_TO_VIEW, DfdSemanticModel), app.uml.generation.mapper(required_data_items, to_dfd), app.uml.generation.prompts.ExistingDataItem
+# Phase-18-3:追記 ── app.detailed_design.data_model(ER_SUBJECT, merge_crud), app.detailed_design.data_model_drafting(CrudGenerationOutput, DataModelErOutput, build_crud_messages, build_er_messages, data_store_names, to_crud_drafts, to_er_model), app.detailed_design.validation.selected_dfd_accesses
+# Phase-18-3：更新(app.uml.domain の DfdSemanticModel → NotationType。_save_group_dfd を _save_diagram に共通化したため)
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
@@ -48,6 +53,16 @@ from app.detailed_design.data_flow_drafting import (
     to_dfd_output,
     to_summary_drafts,
 )
+from app.detailed_design.data_model import ER_SUBJECT, merge_crud
+from app.detailed_design.data_model_drafting import (
+    CrudGenerationOutput,
+    DataModelErOutput,
+    build_crud_messages,
+    build_er_messages,
+    data_store_names,
+    to_crud_drafts,
+    to_er_model,
+)
 from app.detailed_design.drafting import (
     FunctionListGenerationOutput,
     build_function_list_messages,
@@ -55,7 +70,7 @@ from app.detailed_design.drafting import (
 )
 from app.detailed_design.function_list import FunctionListModel, merge_draft
 from app.detailed_design.stages import Fingerprint
-from app.detailed_design.validation import StageSources
+from app.detailed_design.validation import StageSources, selected_dfd_accesses
 from app.models.project import Project
 from app.repositories.design_stage import DesignStageRepository
 from app.repositories.project import ProjectRepository
@@ -71,7 +86,7 @@ from app.services.errors import (
 )
 from app.services.generation_staleness import is_stale
 from app.services.llm_retry import invoke_with_retry
-from app.uml.domain import NOTATION_TO_VIEW, DfdSemanticModel
+from app.uml.domain import NOTATION_TO_VIEW, NotationType
 from app.uml.generation.failures import ReasonCode, classify_failure, unwrap_structured_result
 from app.uml.generation.mapper import required_data_items, to_dfd
 from app.uml.generation.prompts import ExistingDataItem
@@ -193,28 +208,85 @@ async def generate_data_flow(context: StageGenerationContext) -> dict:
         ids_by_name = await data_items.resolve_by_name(
             context.project_id, required_data_items(converted)
         )
-        await _save_group_dfd(context, group, to_dfd(converted, ids_by_name))
+        # Phase-18-3：更新
+        # await _save_group_dfd(context, group, to_dfd(converted, ids_by_name))
+        # ↓↓
+        await _save_diagram(context, "dfd", dfd_subject(group), to_dfd(converted, ids_by_name))
     return model.model_dump(mode="json")
 
 
-async def _save_group_dfd(
-    context: StageGenerationContext, group: str, model: DfdSemanticModel
+# Phase-18-3:追記
+async def generate_data_model(context: StageGenerationContext) -> dict:
+    """段階3: DFD のデータストアとデータ辞書から ER(テーブル定義を含む)を下書きし、そのテーブルで
+    CRUD 図を下書きする。DFD の線から決まる R/W は`merge_crud`が足す。
+
+    ER は`uml_diagrams`の同じ行(subject='')を上書きし、承認はやり直しになる。CRUD 図は前の版を
+    使わずに置き換える(作り直しは、段階2が変わって DFD の R/W が変わったときに行うため)。"""
+    function_list = FunctionListModel.model_validate(context.sources.stages.get(1) or {})
+    data_flow = DataFlowModel.model_validate(context.sources.stages.get(2) or {})
+    accesses = selected_dfd_accesses(context.sources)
+    existing = [
+        ExistingDataItem(name=item.name, field_names=[f["name"] for f in item.fields])
+        for item in await DataItemService(context.session).list_for_project(context.project_id)
+    ]
+
+    er_output = await _invoke_structured(
+        context.llm,
+        DataModelErOutput,
+        build_er_messages(data_store_names(accesses), existing, data_flow.summaries),
+    )
+    er = to_er_model(er_output)
+    await _save_diagram(context, "er", ER_SUBJECT, er)
+
+    tables = [element.name for element in er.elements]
+    crud_output = await _invoke_structured(
+        context.llm,
+        CrudGenerationOutput,
+        build_crud_messages(function_list.functions, data_flow.summaries, tables, accesses),
+    )
+    model = merge_crud(to_crud_drafts(crud_output), accesses, function_list, tables)
+    return model.model_dump(mode="json")
+
+
+# Phase-18-3：更新
+# async def _save_group_dfd(
+#     context: StageGenerationContext, group: str, model: DfdSemanticModel
+# ) -> None:
+#     """機能グループの DFD を、同じ subject の行に上書きする(無ければ作る)。commitしない。
+#     配置は消して、画面で最初に開いたときに自動レイアウトさせる(UML図の再生成と同じ)。"""
+#     diagrams = UmlDiagramRepository(context.session)
+#     subject = dfd_subject(group)
+#     diagram = await diagrams.get_by_subject(
+#         project_id=context.project_id, notation="dfd", subject=subject
+#     )
+#     if diagram is None:
+#         diagram = await diagrams.create(
+#             project_id=context.project_id,
+#             view=NOTATION_TO_VIEW["dfd"],
+#             notation="dfd",
+#             semantic_model={},
+#             subject=subject,
+#         )
+# ↓↓
+async def _save_diagram(
+    context: StageGenerationContext, notation: NotationType, subject: str, model: BaseModel
 ) -> None:
-    """機能グループの DFD を、同じ subject の行に上書きする(無ければ作る)。commitしない。
-    配置は消して、画面で最初に開いたときに自動レイアウトさせる(UML図の再生成と同じ)。"""
+    """段階の図(段階2の DFD・段階3の ER)を、同じ notation・subject の行に上書きする(無ければ
+    作る)。commitしない。配置は消して、画面で最初に開いたときに自動レイアウトさせる(UML図の
+    再生成と同じ)。"""
     diagrams = UmlDiagramRepository(context.session)
-    subject = dfd_subject(group)
     diagram = await diagrams.get_by_subject(
-        project_id=context.project_id, notation="dfd", subject=subject
+        project_id=context.project_id, notation=notation, subject=subject
     )
     if diagram is None:
         diagram = await diagrams.create(
             project_id=context.project_id,
-            view=NOTATION_TO_VIEW["dfd"],
-            notation="dfd",
+            view=NOTATION_TO_VIEW[notation],
+            notation=notation,
             semantic_model={},
             subject=subject,
         )
+    # Phase-18-3：更新はここまで(以下は Phase 17 の _save_group_dfd と同じ)
     diagram.semantic_model = model.model_dump(mode="json")
     diagram.layout_model = None
     diagram.status = "draft"
@@ -229,6 +301,8 @@ STAGE_GENERATORS: dict[int, StageGenerator] = {
     1: generate_function_list,
     # Phase-17-3:追記
     2: generate_data_flow,
+    # Phase-18-3:追記
+    3: generate_data_model,
 }
 
 

@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -32,6 +32,15 @@ export type StageIssue = {
 // AIの下書きの生成の状態。null はまだ生成していない。
 export type StageGenerationStatus = "generating" | "completed" | "failed";
 
+// Phase-18-5:追記
+// 段階2の DFD の線から決まる、処理とテーブルの関わり(段階3の CRUD 図の固定部分。Phase 18)。
+// table は ER のテーブル名(ER に無いデータストアは、小文字にしたデータストア名)。
+export type DfdAccess = {
+  function_id: string;
+  table: string;
+  kind: "read" | "write";
+};
+
 export type DesignStageRead = {
   stage: number;
   state: StageState;
@@ -47,6 +56,9 @@ export type DesignStageRead = {
   // 直近の生成が失敗した理由(ユーザー向けの文言)
   generation_error: string | null;
   issues: StageIssue[];
+  // Phase-18-5:追記
+  // 段階3だけが持つ、DFD から決まる R/W(バックエンドが導いた結果。Phase 18)
+  dfd_accesses: DfdAccess[];
 };
 
 // Phase-16-5:追記
@@ -89,3 +101,22 @@ export type DataFlowModel = {
 
 // 1回の生成で DFD を描けるグループの数の上限(devex-api の MAX_DFD_GROUPS と同じ)
 export const MAX_DFD_GROUPS = 5;
+
+// Phase-18-5:追記
+// 段階3 データモデルの意味モデル(devex-api app/detailed_design/data_model.py)。
+// ER・テーブル定義は uml_diagrams(notation=er、subject='')が正本で、ここには CRUD 図のセルだけを
+// 持つ(Phase 18)。ops は C・R・U・D をこの順に並べた文字列(「CR」など)。draft は AI の下書きの
+// まま人が確定していない印(人が直すと外れ、段階3の承認で残りも外れる)。
+export type CrudCell = {
+  function_id: string; // 段階1の処理ID
+  table: string; // ER のテーブル名
+  ops: string;
+  draft: boolean;
+};
+
+export type CrudModel = {
+  cells: CrudCell[]; // 操作の無いセルは持たない
+};
+
+// 段階3の ER を uml_diagrams で識別するキー(devex-api の ER_SUBJECT と同じ。全体1枚)
+export const ER_SUBJECT = "";

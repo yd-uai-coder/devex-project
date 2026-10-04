@@ -1,8 +1,16 @@
-// 作成：Phase-15-7｜更新：Phase-16-6
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../labels.hasErrors, ../test-utils/stageFixtures.makeFunctionList
 import { describe, expect, it } from "vitest";
-import { canApprove, describeMissingInput, hasErrors } from "../labels";
+// Phase-18-9:追記 ── ../labels(APPROVAL_TIME_CODES, approvalBlockers, visibleIssues)
+import {
+  APPROVAL_TIME_CODES,
+  approvalBlockers,
+  canApprove,
+  describeMissingInput,
+  hasErrors,
+  visibleIssues,
+} from "../labels";
 import { makeFunctionList, makeStages } from "../test-utils/stageFixtures";
 
 // Phase-16-6:追記
@@ -62,5 +70,24 @@ describe("canApprove(Phase 16)", () => {
     expect(
       canApprove({ ...stage1, issues: [{ ...error, severity: "warning" }] }),
     ).toBe(true);
+  });
+});
+
+// Phase-18-9:追記
+describe("図の未承認は承認時に出す(Phase 18)", () => {
+  const ER_PENDING = { severity: "error" as const, code: "ER_NOT_APPROVED", message: "ER が承認されていません。", target: null };
+  const OTHER = { ...ER_PENDING, code: "DFD_WRITE_MISSING", message: "C/U/D がありません" };
+
+  it("図の未承認だけなら承認ボタンは押せ、一覧からは除き、承認を止める理由として返す", () => {
+    const [, , stage3] = makeStages({
+      3: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: { cells: [] }, issues: [ER_PENDING] },
+    });
+
+    expect(APPROVAL_TIME_CODES.has("DFD_NOT_APPROVED")).toBe(true);
+    expect(hasErrors(stage3)).toBe(false);
+    expect(canApprove(stage3)).toBe(true);
+    expect(visibleIssues(stage3.issues)).toEqual([]);
+    expect(approvalBlockers(stage3)).toEqual([ER_PENDING]);
+    expect(hasErrors({ ...stage3, issues: [ER_PENDING, OTHER] })).toBe(true);
   });
 });

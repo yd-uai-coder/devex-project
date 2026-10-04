@@ -1,7 +1,9 @@
-// 作成：Phase-15-7｜更新：Phase-16-6
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9
 // 写経レベル: コア ── 状態の言葉と、承認できる条件(古い段階は承認し直せる)。
+// Phase-18-9:追記 ── @/features/detailed-design/api/types.StageIssue
 import type {
   DesignStageRead,
+  StageIssue,
   StageState,
 } from "@/features/detailed-design/api/types";
 
@@ -41,8 +43,35 @@ export function describeMissingInput(key: string): string {
 }
 
 // Phase-16-6:追記
+// Phase-18-9：更新(図の未承認は承認時に出すので、承認ボタンを止めるエラーから除く)
+// export function hasErrors(stage: DesignStageRead): boolean {
+//   return stage.issues.some((issue) => issue.severity === "error");
+// }
+// ↓↓
+// 図の承認待ち(段階2の DFD・段階3の ER)。図のエディタで承認すれば消える指摘なので、検証の結果の
+// 一覧には常に出さず、段階の承認を押したときに理由として出す(承認ボタンは押せるようにする)。
+// バックエンドは検証のエラーのまま残し、承認を 409 で断る(画面を通らない承認の守り。Phase 18)。
+export const APPROVAL_TIME_CODES: ReadonlySet<string> = new Set([
+  "DFD_NOT_APPROVED",
+  "ER_NOT_APPROVED",
+]);
+
+const isApprovalTime = (issue: StageIssue) =>
+  issue.severity === "error" && APPROVAL_TIME_CODES.has(issue.code);
+
+// 検証の結果の一覧に出す指摘(承認時に出すものを除く)。
+export function visibleIssues(issues: StageIssue[]): StageIssue[] {
+  return issues.filter((issue) => !isApprovalTime(issue));
+}
+
+// 段階の承認を押したときに、承認を止めて理由として出す指摘。
+export function approvalBlockers(stage: DesignStageRead): StageIssue[] {
+  return stage.issues.filter(isApprovalTime);
+}
+
+// 承認ボタンを止める検証のエラーがあるか(承認時に出すものは数えない)。
 export function hasErrors(stage: DesignStageRead): boolean {
-  return stage.issues.some((issue) => issue.severity === "error");
+  return visibleIssues(stage.issues).some((issue) => issue.severity === "error");
 }
 
 // 承認ボタンを押せるか。古い段階は、内容を変えずに承認し直せる(入力の版を記録し直す)。

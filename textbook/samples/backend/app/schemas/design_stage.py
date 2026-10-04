@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3
+# 作成：Phase-15-2｜更新：Phase-16-3,18-3
 # 写経レベル: 定型 ── Pydantic スキーマ。
 # Phase-16-3:追記 ── typing.Literal, pydantic.Field
 from datetime import datetime
@@ -20,6 +20,16 @@ class StageIssueRead(BaseModel):
     target: str | None = None
 
 
+# Phase-18-3:追記
+class DfdAccessRead(BaseModel):
+    """段階2の DFD の線から決まる、処理とテーブルの関わり1つ(段階3の CRUD 図の固定部分。Phase 18)。
+    `table`は ER のテーブル名(ER に無いデータストアは、正規化したデータストア名)。"""
+
+    function_id: str
+    table: str
+    kind: Literal["read", "write"]
+
+
 class DesignStageRead(BaseModel):
     """段階1つ分の状態。未着手の段階も含めて、段階1〜7を常に返す(行が無ければversion等はNone)。
 
@@ -28,7 +38,8 @@ class DesignStageRead(BaseModel):
 
     `generation_status`はAIの下書きの生成の状態(None=まだ生成していない/generating/completed/
     failed)、`generation_error`は直近の生成が失敗した理由(ユーザー向けの文言)。`issues`は段階ごとの
-    検証の結果(Phase 16)。"""
+    検証の結果(Phase 16)。`dfd_accesses`は段階3だけが持つ、DFD から決まる R/W(Phase 18。画面で
+    DFD を読み直して導き直さないよう、導いた結果を渡す)。"""
 
     stage: int
     state: StageState
@@ -42,6 +53,8 @@ class DesignStageRead(BaseModel):
     generation_status: Literal["generating", "completed", "failed"] | None = None
     generation_error: str | None = None
     issues: list[StageIssueRead] = Field(default_factory=list)
+    # Phase-18-3:追記
+    dfd_accesses: list[DfdAccessRead] = Field(default_factory=list)
 
 
 class DesignStageSave(BaseModel):

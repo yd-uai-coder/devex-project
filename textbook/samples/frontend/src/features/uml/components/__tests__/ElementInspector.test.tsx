@@ -1,4 +1,4 @@
-// 作成：Phase-11-6
+// 作成：Phase-11-6｜更新：Phase-18-6
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -32,6 +32,8 @@ describe("ElementInspector", () => {
     addColumn: vi.fn(),
     updateColumn: vi.fn(),
     deleteColumn: vi.fn(),
+    // Phase-18-6:追記
+    updateTableDescription: vi.fn(),
   };
 
   beforeEach(() => {
@@ -80,6 +82,22 @@ describe("ElementInspector", () => {
     expect(actions.updateColumn).toHaveBeenCalledWith("t2", 1, { nullable: true });
     expect(actions.deleteColumn).toHaveBeenCalledWith("t2", 0);
     expect(actions.addColumn).toHaveBeenCalledWith("t2");
+  });
+
+  // Phase-18-6:追記
+  it("ER のテーブルの説明と、カラムの制約・説明を編集できる(Phase 18)", () => {
+    useUmlEditorStore.setState({ model: ER_MODEL, selection: { kind: "element", id: "t2" } });
+    renderInspector();
+
+    fireEvent.change(screen.getByLabelText("テーブルの説明"), { target: { value: "記事" } });
+    fireEvent.change(screen.getByLabelText("カラム2の制約"), { target: { value: "FK → users" } });
+    fireEvent.change(screen.getByLabelText("カラム2の説明"), { target: { value: "書いた人" } });
+
+    // ER では汎用の「説明」(null を入れる)を出さない
+    expect(screen.queryByLabelText("説明")).not.toBeInTheDocument();
+    expect(actions.updateTableDescription).toHaveBeenCalledWith("t2", "記事");
+    expect(actions.updateColumn).toHaveBeenCalledWith("t2", 1, { constraints: "FK → users" });
+    expect(actions.updateColumn).toHaveBeenCalledWith("t2", 1, { description: "書いた人" });
   });
 
   it("DFD のフローはデータ辞書の項目から選び直せる", async () => {

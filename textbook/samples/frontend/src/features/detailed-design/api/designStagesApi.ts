@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5
+// 作成：Phase-15-6｜更新：Phase-16-5,18-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 import { apiFetch } from "@/lib/api/client";
 import type { DesignStageRead } from "./types";
@@ -40,7 +40,7 @@ export function approveDesignStage(
 
 // Phase-16-5:追記
 // 段階のAIの下書きの生成を受け付ける(202)。生成はバックグラウンドで進むので、完了は
-// listDesignStages のポーリング(generation_status)で待つ。Phase 17 の時点で段階1・2。
+// listDesignStages のポーリング(generation_status)で待つ。Phase 18 の時点で段階1〜3。
 // 段階2は、保存した DFD を描くグループの数が上限を超えていると 409 DESIGN_STAGE_INVALID。
 export function generateDesignStage(
   projectId: string,

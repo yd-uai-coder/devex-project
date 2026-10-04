@@ -1,9 +1,10 @@
-// 作成：Phase-11-5｜更新：Phase-11-6
+// 作成：Phase-11-5｜更新：Phase-11-6,18-9
 // 写経レベル: コア ── 正本から表示を作り直す一方向の流れと、ドラッグ確定時だけ位置を戻す設計。
 "use client";
 
 // Phase-11-6:追記 ── @xyflow/react(OnConnect, OnSelectionChangeFunc)
-import { useEffect, useMemo, useState } from "react";
+// Phase-18-9:追記 ── react.useCallback
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Background,
   Controls,
@@ -106,21 +107,41 @@ export function UmlCanvas() {
   };
 
   // Phase-11-6:追記
+  // Phase-18-9：更新(onSelectionChange を useCallback で固定した)
+  // // キャンバスで選んだものを属性パネルの編集対象にする。同じ対象なら更新しない
+  // // (選択をストアへ戻す → 表示を作り直す → 選択イベント、の往復を止めるため)。
+  // const onSelectionChange: OnSelectionChangeFunc<UmlFlowNode, UmlFlowEdge> = ({
+  //   nodes: selectedNodes,
+  //   edges: selectedEdges,
+  // }) => {
+  //   const next = selectedNodes[0]
+  //     ? { kind: "element" as const, id: selectedNodes[0].id }
+  //     : selectedEdges[0]
+  //       ? { kind: "relation" as const, id: selectedEdges[0].id }
+  //       : null;
+  //   const current = useUmlEditorStore.getState().selection;
+  //   if (next?.id === current?.id && next?.kind === current?.kind) return;
+  //   select(next);
+  // };
+  // ↓↓
   // キャンバスで選んだものを属性パネルの編集対象にする。同じ対象なら更新しない
   // (選択をストアへ戻す → 表示を作り直す → 選択イベント、の往復を止めるため)。
-  const onSelectionChange: OnSelectionChangeFunc<UmlFlowNode, UmlFlowEdge> = ({
-    nodes: selectedNodes,
-    edges: selectedEdges,
-  }) => {
-    const next = selectedNodes[0]
-      ? { kind: "element" as const, id: selectedNodes[0].id }
-      : selectedEdges[0]
-        ? { kind: "relation" as const, id: selectedEdges[0].id }
-        : null;
-    const current = useUmlEditorStore.getState().selection;
-    if (next?.id === current?.id && next?.kind === current?.kind) return;
-    select(next);
-  };
+  // useCallback で参照を固定する。React Flow は onSelectionChange が変わるたびに選択を通知し直すので、
+  // レンダーごとに作り直すと、要素の追加で選択が変わったとき(表示がまだ古い選択のうちに)古い選択が
+  // 通知され、ストアの選択と往復し続けた(Phase 18 の画面確認で見つかった)。
+  const onSelectionChange = useCallback<OnSelectionChangeFunc<UmlFlowNode, UmlFlowEdge>>(
+    ({ nodes: selectedNodes, edges: selectedEdges }) => {
+      const next = selectedNodes[0]
+        ? { kind: "element" as const, id: selectedNodes[0].id }
+        : selectedEdges[0]
+          ? { kind: "relation" as const, id: selectedEdges[0].id }
+          : null;
+      const current = useUmlEditorStore.getState().selection;
+      if (next?.id === current?.id && next?.kind === current?.kind) return;
+      select(next);
+    },
+    [select],
+  );
 
   // ハンドルからハンドルへドラッグして線を追加する。追加や削除は React Flow の state ではなく
   // 意味モデルへの操作として行い、表示は Adapter が作り直す。

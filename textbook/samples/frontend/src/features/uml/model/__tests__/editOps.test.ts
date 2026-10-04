@@ -1,4 +1,5 @@
-// 作成：Phase-11-6
+// 作成：Phase-11-6｜更新：Phase-18-6
+// Phase-18-6:追記 ── ../editOps.updateTableDescription
 import { describe, expect, it } from "vitest";
 import {
   addColumn,
@@ -11,6 +12,7 @@ import {
   updateColumn,
   updateElement,
   updateRelation,
+  updateTableDescription,
 } from "../editOps";
 import {
   COMPONENT_MODEL,
@@ -109,6 +111,15 @@ describe("ER のカラム表", () => {
     expect(columnsOf(added as typeof ER_MODEL)).toHaveLength(2);
     expect(columnsOf(updated as typeof ER_MODEL)[1]).toMatchObject({ name: "email", nullable: false });
     expect(columnsOf(deleted as typeof ER_MODEL).map((c) => c.name)).toEqual(["email"]);
+  });
+
+  // Phase-18-6:追記
+  it("テーブルの説明を書き換える(古い ER のテーブルにも足す。Phase 18)", () => {
+    const updated = updateTableDescription(ER_MODEL, "t1", "利用者") as typeof ER_MODEL;
+
+    expect(updated.elements[0].description).toBe("利用者");
+    expect(updated.elements[1]).toBe(ER_MODEL.elements[1]);
+    expect(updateTableDescription(COMPONENT_MODEL, "c1", "x")).toBe(COMPONENT_MODEL);
   });
 
   it("ER 以外のモデルはそのまま返す", () => {

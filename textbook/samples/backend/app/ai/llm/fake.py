@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -23,11 +23,19 @@ from pydantic import BaseModel
 
 # Phase-16-4:追記 ── app.detailed_design.drafting.FunctionListGenerationOutput, GeneratedFunction
 # Phase-17-2:追記 ── app.detailed_design.data_flow_drafting.GeneratedGroupProcess, GeneratedSummary, GroupDfdGenerationOutput, ProcessSummaryGenerationOutput
+# Phase-18-2:追記 ── app.detailed_design.data_model_drafting.CrudGenerationOutput, DataModelErOutput, DraftedColumn, DraftedTable, GeneratedCrudCell
 from app.detailed_design.data_flow_drafting import (
     GeneratedGroupProcess,
     GeneratedSummary,
     GroupDfdGenerationOutput,
     ProcessSummaryGenerationOutput,
+)
+from app.detailed_design.data_model_drafting import (
+    CrudGenerationOutput,
+    DataModelErOutput,
+    DraftedColumn,
+    DraftedTable,
+    GeneratedCrudCell,
 )
 from app.detailed_design.drafting import FunctionListGenerationOutput, GeneratedFunction
 from app.schemas.generation import HearingCompletionCheck
@@ -224,6 +232,45 @@ _UML_OUTPUTS[GroupDfdGenerationOutput] = GroupDfdGenerationOutput(
         GeneratedFlow(id="f3", source_id="s1", target_id="F-02", data_item_name="予約"),
         GeneratedFlow(id="f4", source_id="F-02", target_id="e1", data_item_name="予約"),
     ],
+)
+
+# Phase-18-2:追記
+# 詳細設計モードの段階3(データモデル)の下書き(Phase 18)。段階2の下書きの DFD のデータストア
+# reservations(F-01 が書き、F-02 が読む)に対応する
+_UML_OUTPUTS[DataModelErOutput] = DataModelErOutput(
+    tables=[
+        DraftedTable(
+            id="t1",
+            name="reservations",
+            description="[E2E Fake] 備品の予約",
+            columns=[
+                DraftedColumn(
+                    name="id",
+                    type="UUID",
+                    is_primary_key=True,
+                    is_foreign_key=False,
+                    nullable=False,
+                    description="予約ID",
+                ),
+                DraftedColumn(
+                    name="item_id",
+                    type="UUID",
+                    is_primary_key=False,
+                    is_foreign_key=False,
+                    nullable=False,
+                    constraints="INDEX",
+                    description="予約する備品",
+                ),
+            ],
+        )
+    ],
+    relations=[],
+)
+_UML_OUTPUTS[CrudGenerationOutput] = CrudGenerationOutput(
+    cells=[
+        GeneratedCrudCell(function_id="F-01", table="reservations", ops="C"),
+        GeneratedCrudCell(function_id="F-02", table="reservations", ops="R"),
+    ]
 )
 
 _HEARING_REPLY = "[E2E Fake] 承知しました。次に、想定している主なユーザー層を教えてください。"

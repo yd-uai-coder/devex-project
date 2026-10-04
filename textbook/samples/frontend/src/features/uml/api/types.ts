@@ -1,4 +1,4 @@
-// 作成：Phase-11-2｜更新：Phase-12-2,12-5,13-5,15-8,17-5
+// 作成：Phase-11-2｜更新：Phase-12-2,12-5,13-5,15-8,17-5,18-5
 // 写経レベル: 定型 ── バックエンドの Pydantic スキーマを snake_case のまま写した型定義。
 // devex-api の UML API(app/api/routes/uml.py)が返す・受け取る JSON の型。
 // バックエンドの Pydantic スキーマに合わせて snake_case のまま手書きする(既存 feature と同じ方針)。
@@ -37,8 +37,22 @@ export type ErColumn = {
   is_primary_key: boolean;
   is_foreign_key: boolean;
   nullable: boolean;
+  // Phase-18-5:追記
+  // テーブル定義の制約・説明(詳細設計モードの段階3。古い ER には無い。Phase 18)
+  constraints?: string;
+  description?: string;
 };
-export type ErElement = { id: string; name: string; kind: "table"; columns: ErColumn[] };
+// Phase-18-5：更新
+// export type ErElement = { id: string; name: string; kind: "table"; columns: ErColumn[] };
+// ↓↓
+export type ErElement = {
+  id: string;
+  name: string;
+  kind: "table";
+  columns: ErColumn[];
+  // テーブル単位の注記(複合一意制約・役割など。古い ER には無い。Phase 18)
+  description?: string;
+};
 export type ErRelationType = "one_to_one" | "one_to_many" | "many_to_many";
 export type ErRelation = {
   id: string;

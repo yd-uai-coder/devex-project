@@ -1,7 +1,8 @@
-// 作成：Phase-11-2｜更新：Phase-12-5,13-5,17-5
+// 作成：Phase-11-2｜更新：Phase-12-5,13-5,17-5,18-5
 // Phase-12-5:追記 ── vitest.vi, umlApi(approveDiagram, exportDiagram), client.ApiError
 // Phase-13-5:追記 ── umlApi(downloadBundle, listEmbeds, reflectDiagrams)
 // Phase-17-5:追記 ── umlApi(createDataItem, deleteDataItem, updateDataItem)
+// Phase-18-5:追記 ── ../types.ErSemanticModel
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   approveDiagram,
@@ -22,6 +23,7 @@ import {
   updateDiagram,
   validateDiagram,
 } from "../umlApi";
+import type { ErSemanticModel } from "../types";
 import { ApiError } from "@/lib/api/client";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import { COMPONENT_LAYOUT, COMPONENT_MODEL, makeCandidates } from "@/features/uml/test-utils/umlFixtures";
@@ -79,6 +81,42 @@ describe("umlApi", () => {
   });
 
   // Phase-17-5:追記
+  // Phase-18-5:追記
+  it("updateDiagram は ER の列・テーブルの制約と説明もそのまま送る(Phase 18)", async () => {
+    const model: ErSemanticModel = {
+      notation: "er",
+      elements: [
+        {
+          id: "t1",
+          name: "users",
+          kind: "table",
+          description: "利用者",
+          columns: [
+            {
+              name: "email",
+              type: "VARCHAR(255)",
+              is_primary_key: false,
+              is_foreign_key: false,
+              nullable: false,
+              constraints: "UNIQUE",
+              description: "ログイン ID",
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    await updateDiagram("p1", "d1", { version: 1, semantic_model: model, layout_model: null });
+
+    const sent = JSON.parse(stub.requests[0].init?.body as string);
+    expect(sent.semantic_model.elements[0].description).toBe("利用者");
+    expect(sent.semantic_model.elements[0].columns[0]).toMatchObject({
+      constraints: "UNIQUE",
+      description: "ログイン ID",
+    });
+  });
+
   it("データ辞書の作成・更新・削除は POST・PUT・DELETE を呼ぶ", async () => {
     const payload = { name: "予約", fields: [{ name: "id", type: "UUID" }] };
     stub.queue({ status: 201, body: { id: "i1", ...payload } });

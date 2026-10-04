@@ -1,4 +1,4 @@
-// 作成：Phase-11-6
+// 作成：Phase-11-6｜更新：Phase-18-6
 // 写経レベル: コア ── 編集を React Flow ではなく意味モデルへの純粋な操作として行う設計と、削除の連鎖(参照切れを残さない)。
 import type {
   ComponentElement,
@@ -215,6 +215,21 @@ export function updateColumn(
 
 export function deleteColumn(model: SemanticModel, tableId: string, index: number): SemanticModel {
   return mapTable(model, tableId, (columns) => columns.filter((_, i) => i !== index));
+}
+
+// Phase-18-6:追記
+// ER のテーブルの説明(複合一意制約・役割など)を書き換える。古い ER のテーブルには description が
+// 無いので、updateElement(記法に無い属性は足さない)ではなくこちらで足す(Phase 18)。
+export function updateTableDescription(
+  model: SemanticModel,
+  tableId: string,
+  description: string,
+): SemanticModel {
+  if (model.notation !== "er") return model;
+  return {
+    ...model,
+    elements: model.elements.map((el) => (el.id === tableId ? { ...el, description } : el)),
+  };
 }
 
 function mapTable(

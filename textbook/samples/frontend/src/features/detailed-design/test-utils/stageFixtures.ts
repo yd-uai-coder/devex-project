@@ -1,8 +1,10 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
+// Phase-18-5:追記 ── @/features/detailed-design/api/types.CrudModel
 import type {
+  CrudModel,
   DataFlowModel,
   DesignStageRead,
   FunctionListModel,
@@ -40,6 +42,12 @@ export function makeDataFlow(dfdGroups: string[] = []): DataFlowModel {
   };
 }
 
+// Phase-18-5:追記
+// makeFunctionList の F-01 が reservations に書く、段階3の CRUD 図(セル1つ。テスト専用)。
+export function makeCrud(ops = "C", draft = false): CrudModel {
+  return { cells: [{ function_id: "F-01", table: "reservations", ops, draft }] };
+}
+
 // 段階1〜7の一覧の雛形。overrides で段階ごとに上書きする(テスト専用)。
 export function makeStages(
   overrides: Partial<Record<number, Partial<DesignStageRead>>> = {},
@@ -57,6 +65,8 @@ export function makeStages(
     generation_status: null,
     generation_error: null,
     issues: [],
+    // Phase-18-5:追記
+    dfd_accesses: [],
     ...overrides[stage],
   }));
 }

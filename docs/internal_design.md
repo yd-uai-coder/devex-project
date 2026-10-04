@@ -132,9 +132,9 @@
 | project_id | UUID | FK (`projects.id`), NOT NULL | プロジェクトID |
 | view | VARCHAR(50) | NOT NULL | 設計ビュー(`structure`/`data`/`dataflow`等) |
 | notation | VARCHAR(50) | NOT NULL | 図記法(`component`/`er`/`dfd`。初期実装対象) |
-| subject | VARCHAR(255) | NOT NULL, DEFAULT '' | 同じ記法の中で図を識別するキー(component: `''`、ER: 全体なら`''`・部分図ならグループ名、DFD: 処理名(詳細設計モードでは段階2の機能グループ名。Phase 17)。Phase 10で追加) |
+| subject | VARCHAR(255) | NOT NULL, DEFAULT '' | 同じ記法の中で図を識別するキー(component: `''`、ER: 全体なら`''`・部分図ならグループ名(詳細設計モードの段階3の ER は全体`''`の1枚だけ。Phase 18)、DFD: 処理名(詳細設計モードでは段階2の機能グループ名。Phase 17)。Phase 10で追加) |
 | scope | JSONB | NULL可 | AIに渡した対象の選択(ER部分図の`{"tables": [...]}`。再生成で再利用する。Phase 10で追加) |
-| semantic_model | JSONB | NOT NULL | 意味モデル(要素・関係。Single Source of Truth) |
+| semantic_model | JSONB | NOT NULL | 意味モデル(要素・関係。Single Source of Truth)。ER の列は任意の`constraints`・`description`、テーブルは任意の`description`を持つ(詳細設計モードのテーブル定義の正本。既定は空文字。Phase 18) |
 | layout_model | JSONB | NULL可 | 自動レイアウト結果(ノード座標・辺の折れ点・辺ラベルの中心`label_pos`(Phase 12)。手動移動後は折れ点とラベル位置を破棄しsmoothstep/orthogonalEdgeStyleに委ねる) |
 | style_model | JSONB | NULL可 | 表示スタイル |
 | status | VARCHAR(20) | NOT NULL, DEFAULT 'draft' | `draft`/`reviewing`/`approved`/`exported`(遷移規則は`app/uml/domain/status.py`。保存・自動レイアウトで`reviewing`、承認で`approved`、出力で`exported`、AI再生成で`draft`。Phase 12) |
@@ -146,7 +146,7 @@
 
 所有権は`projects.user_id`経由で既存の`CurrentProjectDep`により検証する(既存パターンを踏襲)。
 
-`UNIQUE(project_id, notation, subject)`(Phase 10)。AIによる再生成は同じ行を上書きする(semantic_modelを置換し、layout_modelを破棄、status='draft'、version+1)。`source_doc_versions`は生成時に`{"internal_design": <version>}`を記録する(詳細設計モードの段階2の DFD は、段階2の入力の版`{"stage:1": <version>, "doc:requirements": <version>}`を記録する。Phase 17)。
+`UNIQUE(project_id, notation, subject)`(Phase 10)。AIによる再生成は同じ行を上書きする(semantic_modelを置換し、layout_modelを破棄、status='draft'、version+1)。`source_doc_versions`は生成時に`{"internal_design": <version>}`を記録する(詳細設計モードの段階2の DFD は、段階2の入力の版`{"stage:1": <version>, "doc:requirements": <version>}`を記録する。Phase 17。段階3の ER は`{"stage:2": <version>}`。Phase 18)。
 
 #### ⑧ `data_items` テーブル(ステージ3、Phase 8で新設)
 
@@ -328,6 +328,13 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * 検証(`STAGE_VALIDATORS[2]`)は、承認済みの段階1の内容と DFD の要約を`StageSources`で受け取る。エラー: 処理概要表の過不足・重複、グループの上限・重複・不明、選んだグループの DFD が無い・生成中・未承認。警告: 処理概要表の空欄、DFD の処理とグループの過不足。
   * 段階の外の正本の編集: 詳細設計モードで DFD を保存・自動レイアウトする、またはデータ項目を作成・更新・削除すると、承認済みの段階2を`reviewing`・version+1 に戻す(`DesignStageService.mark_edited`)。段階3が段階2の承認した版で陳腐化を判定するため。
 * **CRUD図**: 段階2のDFDの線の向きから、R(ストア → 処理)とW(処理 → ストア)を決定的に作る。Wの C/U/D の区別と、DFDに描いていない処理の分は、AIが処理概要表から下書きし、人が確定する。
+* **段階3 データモデル(Phase 18)**:
+  * `design_stages.model`(段階3)は`{cells: [{function_id, table, ops, draft}]}`(CRUD 図のセル)だけ。`ops`は C・R・U・D をこの順に並べた文字列、`draft`は AI の下書きのまま人が確定していない印。ER は`uml_diagrams`(notation=er、subject=`''`の1枚)、テーブル定義は ER の列の`constraints`・`description`とテーブルの`description`が正本で、model に複製しない(`app/detailed_design/data_model.py`)。
+  * R/W の導出: 段階2で DFD を描くと選んだグループの DFD について、データストア → 処理 を R、処理 → データストア を W とする。データストアと ER のテーブルは名前で突き合わせる(前後の空白を除いて小文字)。`merge_crud`は、読みの線のセルに R を足し、書き込みの線のセルは C/U/D が無くても空で残す(検証のエラーで人に決めさせる)。
+  * 下書き: ER(LLM 1回。入力は DFD のデータストア名・データ辞書・処理概要表。出力スキーマは段階3専用で制約・説明つき)→ CRUD 図(LLM 1回。DFD の R/W を「決まったもの」として渡す)を順に呼び、ER と段階を1トランザクションで書く。再生成は置き換え(前の版の人の確定は引き継がない)。ER は同じ行を上書きし承認はやり直し(`app/detailed_design/data_model_drafting.py`、`_save_diagram`)。
+  * 検証(`STAGE_VALIDATORS[3]`)は、ER の要約(`ErDiagramSummary`)と DFD の R/W(`DfdDiagramSummary.accesses`)を`StageSources`で受け取る。エラー: ER が無い・生成中・未承認、セルの処理ID・テーブルが不明・重複、操作の形が不正、DFD の読みに R が無い・書き込みに C/U/D が無い。警告: 下書きのセルが残っている、DFD のデータストアが ER に無い、どの処理も触れないテーブル、主キーの無いテーブル。
+  * 承認で`draft`をすべて外す(承認 = 人の一括確定。version は増やさない)。段階の一覧(`DesignStageRead`)の段階3は、DFD から決まる R/W を`dfd_accesses`で返す(画面で導き直さないため)。
+  * 段階の外の正本の編集: 詳細設計モードで ER を保存・自動レイアウトすると、承認済みの段階3を`reviewing`・version+1 に戻す(`UmlDiagramService._reopen_stage`。記法 → 段階の対応表で DFD と共通)。
 * **簡易ドキュメントモードとの関係**: 簡易ドキュメントモードの内部設計書にも、段階4と同じ列のモジュール一覧の表を足す(3.3節1.の`doc_generator_service.py`参照)。それ以外の簡易ドキュメントモードの挙動は変えない。
   > **[Phase 16 で確定 ── 〈外部設計書の構成は簡易ドキュメントモードでも変える〉]** 当初〈モジュール一覧の表のほかは、簡易ドキュメントモードの挙動を変えない〉→ 外部設計書の「2.6 API一覧」は両方のモードで出す。理由〈ユーザーの選択。API仕様は実務でも外部設計(基本設計)に置くことが多く、プロンプトをモードで分けずに済む。重なる内部設計書3.3節のAPI表は、2.6と同じメソッド・パスを使わせてそろえる〉。
 
