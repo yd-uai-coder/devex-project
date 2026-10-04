@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3
+# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3
 # 写経レベル: 定型 ── テスト用のプロジェクトの組み立て。
 """詳細設計モードのテストで使うプロジェクトの組み立て(段階のサービス・ルートのテストで共有する)。"""
 
@@ -234,4 +234,41 @@ async def create_stage5_project(session: AsyncSession) -> Project:
     stages = DesignStageService(session)
     await stages.save(project, stage=4, expected_version=None, model=module_list_model())
     await stages.approve(project, stage=4, expected_version=1)
+    return project
+
+
+# Phase-21-1:追記
+def logic_model(
+    *,
+    module: str = "app/api/routes/reservations.py",
+    function: str = "create_reservation",
+    pre: str = "利用者は認証済み",
+) -> dict:
+    """`procedure_model()`の手順 F-01#1 が呼ぶ関数1つの詳細。段階6の検証を通る。
+    `function`を手順に無い名前にすると、検証のエラー(UNCALLED_LOGIC)になる。"""
+    return {
+        "logics": [
+            {
+                "module": module,
+                "function": function,
+                "signature": "async def create_reservation(payload) -> Reservation",
+                "args": "payload: 予約リクエスト",
+                "returns": "保存済みの予約",
+                "raises": "ValidationError(422)",
+                "pre": pre,
+                "post": "予約が1件増える",
+                "pseudo": [{"text": "本文を検証する", "sub": ["不正なら 422"]}],
+            }
+        ]
+    }
+
+
+# Phase-21-3:追記
+async def create_stage6_project(session: AsyncSession) -> Project:
+    """段階1〜5を承認したプロジェクト(段階6が開いている)。段階5は F-01 の手順(`procedure_model()`。
+    手順 F-01#1 が app/api/routes/reservations.py の create_reservation を呼ぶ)を持つ。"""
+    project = await create_stage5_project(session)
+    stages = DesignStageService(session)
+    await stages.save(project, stage=5, expected_version=None, model=procedure_model())
+    await stages.approve(project, stage=5, expected_version=1)
     return project

@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正)
 // 写経レベル: コア ── 版の競合と、承認後の取り直し。
 // Phase-16-6:追記 ── ../test-utils/stageFixtures.makeFunctionList
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -21,6 +21,10 @@ function resetStore() {
     // Phase-16-6:追記
     saving: false,
     requestingGeneration: false,
+    // Phase-21-4:追記
+    focus: null,
+    // Phase-21-7:追記(画面確認後の修正。タブの保持)
+    tabs: {},
   });
 }
 
@@ -198,5 +202,51 @@ describe("useDetailedDesignStore", () => {
     expect(stub.requests[0].url).toContain("/design-stages/5/generate");
     expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ function_ids: ["F-09"] });
     expect(useDetailedDesignStore.getState().actionError).toBe("選ばれていない処理です: F-09");
+  });
+
+  // Phase-21-4:追記
+  it("generateは段階6の対象の関数を本文の logics で渡す(Phase 21)", async () => {
+    useDetailedDesignStore.setState({ projectId: "p1", stages: makeStages() });
+    stub.queue({ status: 202, body: makeStages()[5] });
+    stub.queue({ status: 200, body: makeStages() });
+    const logics = [{ module: "app/services/reservation.py", function: "create" }];
+
+    await useDetailedDesignStore.getState().generate("p1", 6, undefined, logics);
+
+    expect(stub.requests[0].url).toContain("/design-stages/6/generate");
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ logics });
+  });
+
+  it("jumpToは段階を選んで移動先を覚え、clearFocus・selectStageで消える(Phase 21)", () => {
+    useDetailedDesignStore.setState({ selectedStage: 5, actionError: "前の失敗" });
+
+    useDetailedDesignStore.getState().jumpTo(6, "app/api/routes/reservations.py::create_reservation");
+    expect(useDetailedDesignStore.getState()).toMatchObject({
+      selectedStage: 6,
+      actionError: null,
+      focus: { stage: 6, target: "app/api/routes/reservations.py::create_reservation" },
+    });
+
+    useDetailedDesignStore.getState().clearFocus();
+    expect(useDetailedDesignStore.getState().focus).toBeNull();
+
+    useDetailedDesignStore.getState().jumpTo(5, "F-01#1");
+    useDetailedDesignStore.getState().selectStage(3);
+    expect(useDetailedDesignStore.getState().focus).toBeNull();
+  });
+
+  // Phase-21-7:追記(画面確認後の修正。タブの保持)
+  it("setTabはタブの選択を覚え、別のプロジェクトを開くと消える(Phase 21 の画面確認後)", async () => {
+    useDetailedDesignStore.setState({ projectId: "p1", stages: makeStages() });
+    useDetailedDesignStore.getState().setTab("6:outer", "F-02");
+    expect(useDetailedDesignStore.getState().tabs).toEqual({ "6:outer": "F-02" });
+
+    stub.queue({ status: 200, body: makeStages() });
+    await useDetailedDesignStore.getState().fetchStages("p1");
+    expect(useDetailedDesignStore.getState().tabs).toEqual({ "6:outer": "F-02" });
+
+    stub.queue({ status: 200, body: makeStages() });
+    await useDetailedDesignStore.getState().fetchStages("p2");
+    expect(useDetailedDesignStore.getState().tabs).toEqual({});
   });
 });

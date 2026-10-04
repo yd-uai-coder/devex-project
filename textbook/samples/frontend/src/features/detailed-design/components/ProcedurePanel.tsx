@@ -1,7 +1,9 @@
-// 作成：Phase-20-7
+// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正。保存バー・タブの保持)
 // 写経レベル: コア ── 生成は保存した選択から、まとめて(手順の無い処理)とタブごと(1処理)の2通り。
 "use client";
 
+// Phase-21-7:追記(画面確認後の修正) ── @/features/detailed-design/components/StageSaveBar.StageSaveBar
+// Phase-21-8:追記 ── @/features/detailed-design/logicOps(logicIdsByKey, toLogics)
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -13,10 +15,12 @@ import {
 } from "@/features/detailed-design/api/types";
 import { ProcedureStepTable } from "@/features/detailed-design/components/ProcedureStepTable";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
+import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
+import { logicIdsByKey, toLogics } from "@/features/detailed-design/logicOps";
 import { toModuleList } from "@/features/detailed-design/moduleListOps";
 import {
   buildIndex,
@@ -26,6 +30,11 @@ import {
   toProcedures,
 } from "@/features/detailed-design/procedureOps";
 
+// Phase-21-7:追記(画面確認後の修正。保存・生成でパネルが作り直されてもタブを保つ)
+// ストアに覚えるタブの選択の鍵(処理ごとの手順のタブ)
+const TAB_KEY = "5:procedure";
+
+// ── ここから Phase-20-7 の作成分 ──
 // 外すと手順が失われる処理を外すときの確認
 const UNSELECT_CONFIRM = "この処理の手順は、保存すると失われます。外しますか?";
 
@@ -34,6 +43,11 @@ const UNSELECT_CONFIRM = "この処理の手順は、保存すると失われま
 // 結果を持つ。入力の段階1(機能一覧)と段階4(モジュール一覧のパス)はストアの段階の一覧から読む。
 // 編集中の内容はこのコンポーネントの中だけに持ち、保存して初めてサーバーへ送る(段階2の DataFlowPanel
 // と同じ形)。生成は保存した内容を使うので、保存していない編集がある間は押せない(Phase 20)。
+// Phase-21-8:追記
+// 段階6に詳細がある手順には「詳細 L-02」のバッジを出し、押すと段階6のその関数へ移る(保存していない
+// 編集があれば確かめる)。段階6の「呼ばれる手順」から移ってきたときは、その処理のタブを開いて手順の行を
+// 強調する(Phase 21)。
+// ── ここから Phase-20-7 の作成分 ──
 export function ProcedurePanel({
   projectId,
   stage,
@@ -51,14 +65,53 @@ export function ProcedurePanel({
   const stage4Model = useDetailedDesignStore(
     (s) => s.stages.find((item) => item.stage === 4)?.model ?? null,
   );
+  // Phase-21-8:追記
+  const stage6Model = useDetailedDesignStore(
+    (s) => s.stages.find((item) => item.stage === 6)?.model ?? null,
+  );
+  // ── ここから Phase-20-7 の作成分 ──
   const save = useDetailedDesignStore((s) => s.save);
   const generate = useDetailedDesignStore((s) => s.generate);
+  // Phase-21-8:追記
+  const focus = useDetailedDesignStore((s) => s.focus);
+  const jumpTo = useDetailedDesignStore((s) => s.jumpTo);
+  const clearFocus = useDetailedDesignStore((s) => s.clearFocus);
+  // ── ここから Phase-20-7 の作成分 ──
 
   const functionList = toFunctionList(stage1Model);
   const modulePaths = toModuleList(stage4Model).modules.map((row) => row.path.trim());
+  // Phase-21-8:追記
+  const detailIds = logicIdsByKey(toLogics(stage6Model));
+  // ── ここから Phase-20-7 の作成分 ──
   const saved = toProcedures(stage.model);
   const [draft, setDraft] = useState<ProcedureModel>(saved);
-  const [selected, setSelected] = useState<string | null>(null);
+  // Phase-21-8：更新(段階6から移ってきたときは、その処理のタブと手順の行から始める)
+  // const [selected, setSelected] = useState<string | null>(null);
+  // ↓↓
+  // 段階6から移ってきたとき(focus の target は手順ID F-01#4)は、その処理のタブと手順の行から始める
+  const [highlighted] = useState<string | null>(() =>
+    focus?.stage === stage.stage ? focus.target : null,
+  );
+  // Phase-21-7：更新(画面確認後の修正。保存・生成でパネルが作り直されてもタブを保つ)
+  // const [selected, setSelected] = useState<string | null>(() =>
+  //   highlighted !== null ? highlighted.split("#")[0] : null,
+  // );
+  // ↓↓
+  // タブの選択はストアにも覚えておき、保存・生成でパネルが作り直されても同じタブに戻す
+  const setTab = useDetailedDesignStore((s) => s.setTab);
+  const [selected, setSelectedState] = useState<string | null>(() =>
+    highlighted !== null
+      ? highlighted.split("#")[0]
+      : (useDetailedDesignStore.getState().tabs[TAB_KEY] ?? null),
+  );
+  const setSelected = (functionId: string | null) => {
+    setSelectedState(functionId);
+    setTab(TAB_KEY, functionId);
+  };
+  // ── ここから Phase-21-8 の作成分 ──
+  // 移る前の確認を出している移動先(段階6の関数の鍵)
+  const [leaving, setLeaving] = useState<string | null>(null);
+  // ── ここから Phase-20-7 の作成分 ──
   // 作り直しの確認を出している処理
   const [confirming, setConfirming] = useState<string | null>(null);
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
@@ -66,6 +119,15 @@ export function ProcedurePanel({
   useEffect(() => {
     onDirtyChange(dirty);
   }, [dirty, onDirtyChange]);
+
+  // Phase-21-8:追記
+  // 移動先は一度読んだら消す(段階を選び直したときに、また同じ行へ移らないように)
+  useEffect(() => {
+    if (focus?.stage === stage.stage) clearFocus();
+  }, [focus, stage.stage, clearFocus]);
+
+  const goToDetail = (key: string) => (dirty ? setLeaving(key) : jumpTo(6, key));
+  // ── ここから Phase-20-7 の作成分 ──
 
   const generating = stage.generation_status === "generating";
   const { timedOut } = useStageGenerationPolling(projectId, generating);
@@ -87,6 +149,15 @@ export function ProcedurePanel({
 
   return (
     <YStack gap="$4">
+      {/* Phase-21-7:追記(画面確認後の修正) */}
+      <StageSaveBar
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
+
+      {/* ── ここから Phase-20-7 の作成分 ── */}
       <YStack gap="$2">
         <Text fontWeight="700">手順を書く処理</Text>
         <Paragraph color="$color11" fontSize="$2">
@@ -280,26 +351,52 @@ export function ProcedurePanel({
             modulePaths={modulePaths}
             disabled={!stage.is_open}
             onChange={setDraft}
+            // Phase-21-8:追記
+            detailIds={detailIds}
+            onDetailPress={goToDetail}
+            highlightedStep={highlighted}
           />
         </YStack>
       ) : (
         <Text color="$color11">手順を書く処理はまだ選ばれていません。</Text>
       )}
 
-      <XStack gap="$3" alignItems="center" flexWrap="wrap">
-        <StyledButton
-          disabled={!dirty || saving || generating || !stage.is_open}
-          onPress={() => void save(projectId, stage.stage, draft)}
-        >
-          {saving ? "保存しています..." : "保存する"}
-        </StyledButton>
-        {dirty ? (
-          <Text color="$color11" fontSize="$2">
-            保存していない編集があります。
-          </Text>
-        ) : null}
-      </XStack>
+      {/* Phase-21-7：更新(画面確認後の修正。保存の操作を StageSaveBar にして、上部にも同じものを置いた)
+         <XStack gap="$3" alignItems="center" flexWrap="wrap">
+           <StyledButton
+             disabled={!dirty || saving || generating || !stage.is_open}
+             onPress={() => void save(projectId, stage.stage, draft)}
+           >
+             {saving ? "保存しています..." : "保存する"}
+           </StyledButton>
+           {dirty ? (
+             <Text color="$color11" fontSize="$2">
+               保存していない編集があります。
+             </Text>
+           ) : null}
+         </XStack>
+         ↓↓ */}
+      <StageSaveBar
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
 
+      {/* Phase-21-8:追記 */}
+      <ConfirmDialog
+        open={leaving !== null}
+        title="段階6へ移りますか?"
+        description="保存していない編集は失われます。"
+        confirmLabel="移る"
+        onConfirm={() => {
+          if (leaving !== null) jumpTo(6, leaving);
+          setLeaving(null);
+        }}
+        onCancel={() => setLeaving(null)}
+      />
+
+      {/* ── ここから Phase-20-7 の作成分 ── */}
       <StageIssueList issues={stage.issues} />
     </YStack>
   );

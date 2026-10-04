@@ -66,7 +66,7 @@
   * Phase 18: 段階3 データモデル(ER・テーブル定義・CRUD図、ER の編集による段階3の差し戻し) ── **完了**([`textbook/Phase-18/Phase-18-introduction.md`](../textbook/Phase-18/Phase-18-introduction.md))
   * Phase 19: 段階4 ソフトウェア構造(構成図(層)・モジュール一覧、構成図の編集による段階4の差し戻し) ── **完了**([`textbook/Phase-19/Phase-19-introduction.md`](../textbook/Phase-19/Phase-19-introduction.md))
   * Phase 20: 段階5 主要処理の手順(処理の選択・処理ごとの下書き・索引・関与表・タブ。レビュー画面はPhase 14のデモの見せ方を採用) ── **完了**([`textbook/Phase-20/Phase-20-introduction.md`](../textbook/Phase-20/Phase-20-introduction.md))
-  * Phase 21: 段階6 処理ロジックの詳細(05の手順から選んだ関数・呼ばれる手順・逆引き、段階6を飛ばす操作)
+  * Phase 21: 段階6 処理ロジックの詳細(05の手順から選んだ関数・関数ごとの下書き・呼ばれる手順・逆引き・05↔06のバッジによる段階をまたぐ移動、段階6を飛ばす操作(0件で承認)) ── **完了**([`textbook/Phase-21/Phase-21-introduction.md`](../textbook/Phase-21/Phase-21-introduction.md))
   * Phase 22: 詳細設計書の組み立てと出力・実装計画・統合/E2E(HTML+md+図のzip、段階7、デプロイでの確認)
   * (Phase 16の着手時に段階1と段階2を、Phase 20の着手時に段階5と段階6を別のPhaseに分け、そのたびに以降の番号を1つずつ送った)
 * **マイルストーン5**: 詳細設計モードで、段階1〜6を承認して詳細設計書(HTML+md)をダウンロードできる。

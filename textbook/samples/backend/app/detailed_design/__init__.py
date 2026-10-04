@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -9,6 +9,7 @@
 # Phase-19-1:追記 ── app.detailed_design.structure.STRUCTURE_STAGE, STRUCTURE_SUBJECT, ModuleDraft, ModuleListModel, ModuleRow, component_layers, merge_modules, module_ref_matches, path_variants(画面確認後の修正); app.detailed_design.validation.ComponentDiagramSummary
 # Phase-20-1:追記 ── app.detailed_design.procedure.MAX_PROCEDURE_TARGETS, PROCEDURE_STAGE, Procedure, ProcedureDraft, ProcedureModel, ProcedureStep, is_external_actor, merge_procedure, number_steps, pending_function_ids, resolve_callee, step_id
 # Phase-20-3:追記 ── app.detailed_design.procedure.generation_targets
+# Phase-21-1:追記 ── app.detailed_design.logic.LOGIC_STAGE, MAX_LOGIC_TARGETS, LogicCandidate, LogicDraft, LogicModel, LogicRow, PseudoStep, calling_steps, is_drafted, logic_candidates, logic_id, logic_key, merge_logic, pending_logic_keys
 from app.detailed_design.api_list import (
     ApiEndpoint,
     endpoint_key,
@@ -48,6 +49,22 @@ from app.detailed_design.function_list import (
     FunctionRow,
     initial_group,
     merge_draft,
+)
+from app.detailed_design.logic import (
+    LOGIC_STAGE,
+    MAX_LOGIC_TARGETS,
+    LogicCandidate,
+    LogicDraft,
+    LogicModel,
+    LogicRow,
+    PseudoStep,
+    calling_steps,
+    is_drafted,
+    logic_candidates,
+    logic_id,
+    logic_key,
+    merge_logic,
+    pending_logic_keys,
 )
 from app.detailed_design.procedure import (
     MAX_PROCEDURE_TARGETS,
@@ -112,8 +129,12 @@ __all__ = [
     "DATA_MODEL_STAGE",
     # Phase-18-1:追記
     "ER_SUBJECT",
+    # Phase-21-1:追記
+    "LOGIC_STAGE",
     # Phase-17-1:追記
     "MAX_DFD_GROUPS",
+    # Phase-21-1:追記
+    "MAX_LOGIC_TARGETS",
     # Phase-20-1:追記
     "MAX_PROCEDURE_TARGETS",
     "PROCEDURE_STAGE",
@@ -144,6 +165,11 @@ __all__ = [
     "FunctionDraft",
     "FunctionListModel",
     "FunctionRow",
+    # Phase-21-1:追記
+    "LogicCandidate",
+    "LogicDraft",
+    "LogicModel",
+    "LogicRow",
     # Phase-19-1:追記
     "ModuleDraft",
     "ModuleListModel",
@@ -157,6 +183,9 @@ __all__ = [
     "ProcessSummaryDraft",
     # Phase-17-1:追記
     "ProcessSummaryRow",
+    # Phase-21-1:追記
+    "PseudoStep",
+    # ── ここから Phase-15-2 の作成分 ──
     "StageInputs",
     "StageIssue",
     "StageRecord",
@@ -164,6 +193,9 @@ __all__ = [
     "StageState",
     "StageView",
     "StoredStatus",
+    # Phase-21-1:追記
+    "calling_steps",
+    # ── ここから Phase-15-2 の作成分 ──
     "can_approve",
     # Phase-19-1:追記
     "component_layers",
@@ -186,11 +218,19 @@ __all__ = [
     "group_functions",
     "has_errors",
     "initial_group",
+    # Phase-21-1:追記
+    "is_drafted",
     # Phase-20-1:追記
     "is_external_actor",
+    # Phase-21-1:追記
+    "logic_candidates",
+    "logic_id",
+    "logic_key",
     # Phase-18-1:追記
     "merge_crud",
     "merge_draft",
+    # Phase-21-1:追記
+    "merge_logic",
     # Phase-19-1:追記
     "merge_modules",
     # Phase-20-1:追記
@@ -208,6 +248,9 @@ __all__ = [
     "path_variants",
     # Phase-20-1:追記
     "pending_function_ids",
+    # Phase-21-1:追記
+    "pending_logic_keys",
+    # Phase-20-1:追記
     "resolve_callee",
     # Phase-18-1:追記
     "selected_dfd_accesses",

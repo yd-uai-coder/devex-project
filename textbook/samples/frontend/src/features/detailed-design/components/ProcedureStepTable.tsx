@@ -1,12 +1,21 @@
-// 作成：Phase-20-6
+// 作成：Phase-20-6｜更新：Phase-21-8
 // 写経レベル: コア ── 分岐の行の見せ方と、一覧に無い呼び出し先の印(検証のエラーと同じ条件)。
 "use client";
 
-import { useId } from "react";
+// Phase-21-8:追記 ── react.useEffect, react.useRef, @/features/detailed-design/components/tableStyles.BADGE, @/features/detailed-design/logicOps.logicKey
+import { useEffect, useId, useRef } from "react";
 import { Paragraph, Text, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import type { ProcedureModel, ProcedureStep } from "@/features/detailed-design/api/types";
-import { CELL, HEAD, INPUT, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
+import {
+  BADGE,
+  CELL,
+  HEAD,
+  INPUT,
+  MONO,
+  TABLE,
+} from "@/features/detailed-design/components/tableStyles";
+import { logicKey } from "@/features/detailed-design/logicOps";
 import {
   addBranch,
   addStep,
@@ -26,20 +35,41 @@ const ACTORS = ["利用者", "スケジューラ"];
 // 保存は呼び出し元が行う。番号は並び順から導くので、行の追加・削除で振り直される。呼び出し先は段階4の
 // モジュール一覧のパスを候補に出し、一覧に無いパスには印を出す(関与表の列の鍵のため。検証のエラーと
 // 同じ。Phase 20)。分岐の行は、条件(処理内容の欄)と結果(分岐・例外の欄)だけを書く。
+// Phase-21-8:追記
+// 段階6に詳細がある手順(呼び出し先と関数が 06 の項目と一致する行)は、処理内容の下に「詳細 L-02 ↓」の
+// バッジを出し、押すと段階6のその関数へ移る。段階6から移ってきた手順の行は強調して見える位置へ送る
+// (Phase 21)。
+// ── ここから Phase-20-6 の作成分 ──
 export function ProcedureStepTable({
   model,
   functionId,
   modulePaths,
   disabled,
   onChange,
+  // Phase-21-8:追記
+  detailIds,
+  onDetailPress,
+  highlightedStep = null,
 }: {
   model: ProcedureModel;
   functionId: string;
   modulePaths: string[]; // 段階4(承認済み)のモジュール一覧のパス
   disabled: boolean;
   onChange: (model: ProcedureModel) => void;
+  // Phase-21-8:追記
+  detailIds?: Map<string, string>; // 段階6の関数の鍵 → L-ID(logicOps の logicIdsByKey)
+  onDetailPress?: (key: string) => void;
+  highlightedStep?: string | null; // 強調する手順ID(段階6のバッジから移ってきたとき)
 }) {
   const listId = useId();
+  // Phase-21-8:追記
+  const rows = useRef(new Map<string, HTMLTableRowElement>());
+
+  useEffect(() => {
+    if (highlightedStep) rows.current.get(highlightedStep)?.scrollIntoView({ block: "center" });
+  }, [highlightedStep]);
+  // ── ここから Phase-20-6 の作成分 ──
+
   const procedure = model.procedures.find((p) => p.function_id === functionId);
   if (!procedure) return null;
   const numbers = numberSteps(procedure.steps);
@@ -120,9 +150,30 @@ export function ProcedureStepTable({
                 const unknown =
                   !step.is_branch &&
                   (callee === "" || (!isExternalActor(callee) && !known.has(callee)));
+                // Phase-21-8:追記
+                const key = logicKey(callee, step.call);
+                const detail = step.is_branch ? undefined : detailIds?.get(key);
+                const background =
+                  id === highlightedStep
+                    ? "var(--yellow4)"
+                    : step.is_branch
+                      ? "var(--color2)"
+                      : undefined;
+                // ── ここから Phase-20-6 の作成分 ──
                 return (
                   // 行は位置で扱う(番号は並び順から導くので、行に固有の鍵が無い)
-                  <tr key={index} style={step.is_branch ? { background: "var(--color2)" } : undefined}>
+                  // Phase-21-8：更新(行の参照・強調の印・背景を足す)
+                  // <tr key={index} style={step.is_branch ? { background: "var(--color2)" } : undefined}>
+                  // ↓↓
+                  <tr
+                    key={index}
+                    ref={(el) => {
+                      if (el) rows.current.set(id, el);
+                      else rows.current.delete(id);
+                    }}
+                    aria-current={id === highlightedStep ? "true" : undefined}
+                    style={background ? { background } : undefined}
+                  >
                     <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>{numbers[index]}</td>
                     {step.is_branch ? (
                       <>
@@ -155,6 +206,17 @@ export function ProcedureStepTable({
                         <td style={{ ...CELL, minWidth: 130 }}>{field(index, "data", "渡すデータ")}</td>
                         <td style={{ ...CELL, minWidth: 220 }}>
                           {field(index, "action", "処理内容", { multiline: true })}
+                          {/* Phase-21-8:追記 */}
+                          {detail ? (
+                            <button
+                              type="button"
+                              style={{ ...BADGE, cursor: "pointer", marginTop: 2 }}
+                              aria-label={`${id} の詳細 ${detail} へ移る`}
+                              onClick={() => onDetailPress?.(key)}
+                            >
+                              詳細 {detail} ↓
+                            </button>
+                          ) : null}
                         </td>
                         <td style={{ ...CELL, minWidth: 120 }}>{field(index, "result", "結果")}</td>
                         <td style={{ ...CELL, minWidth: 120 }}>

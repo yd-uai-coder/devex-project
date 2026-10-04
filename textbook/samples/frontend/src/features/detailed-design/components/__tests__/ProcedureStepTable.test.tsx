@@ -1,5 +1,6 @@
-// 作成：Phase-20-6
+// 作成：Phase-20-6｜更新：Phase-21-8
 // 写経レベル: 定型 ── 表の編集が onChange に渡ることと、番号・印の出方を確かめる。
+// Phase-21-8:追記 ── @/features/detailed-design/logicOps.logicKey
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -8,6 +9,7 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { ProcedureStepTable } from "../ProcedureStepTable";
 import type { ProcedureModel } from "@/features/detailed-design/api/types";
+import { logicKey } from "@/features/detailed-design/logicOps";
 import { makeProcedures, makeStep } from "../../test-utils/stageFixtures";
 
 // SUT: ProcedureStepTable / ドライバ: render と操作 / スタブ: onChange(呼び出し元への通知を受け取る)。
@@ -116,5 +118,35 @@ describe("ProcedureStepTable", () => {
       </TamaguiProvider>,
     );
     expect(container.querySelector("table")).toBeNull();
+  });
+
+  // Phase-21-8:追記
+  // 段階6の詳細バッジと、段階6から移ってきた行の強調(Phase 21)
+  it("段階6に詳細がある手順には詳細バッジを出し、押すと関数の鍵を返す。強調する行に印を付ける", async () => {
+    const user = userEvent.setup();
+    const onDetailPress = vi.fn();
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <ProcedureStepTable
+          model={makeProcedures()}
+          functionId="F-01"
+          modulePaths={[ROUTE]}
+          disabled={false}
+          onChange={vi.fn()}
+          detailIds={new Map([[logicKey(ROUTE, "create_reservation"), "L-02"]])}
+          onDetailPress={onDetailPress}
+          highlightedStep="F-01#1"
+        />
+      </TamaguiProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "F-01#1 の詳細 L-02 へ移る" }));
+    expect(onDetailPress).toHaveBeenCalledWith(logicKey(ROUTE, "create_reservation"));
+    expect(screen.getByText("詳細 L-02 ↓")).toBeInTheDocument();
+    expect(screen.getByLabelText("F-01#1 の処理内容").closest("tr")).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    expect(screen.getByLabelText("F-01#1a の条件").closest("tr")).not.toHaveAttribute("aria-current");
   });
 });

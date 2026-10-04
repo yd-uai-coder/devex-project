@@ -1,7 +1,8 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正)
 // 写経レベル: コア ── 承認の後に全段階を取り直す(後ろの段階が開く・古いが消える)。
 // Phase-16-6:追記 ── @/features/detailed-design/api/designStagesApi.generateDesignStage, @/features/detailed-design/api/designStagesApi.saveDesignStage
 // Phase-18-9:追記 ── @/features/detailed-design/labels.approvalBlockers
+// Phase-21-4:追記 ── @/features/detailed-design/api/types.LogicTarget
 import { create } from "zustand";
 import {
   approveDesignStage,
@@ -9,11 +10,17 @@ import {
   listDesignStages,
   saveDesignStage,
 } from "@/features/detailed-design/api/designStagesApi";
-import type { DesignStageRead } from "@/features/detailed-design/api/types";
+import type { DesignStageRead, LogicTarget } from "@/features/detailed-design/api/types";
 import { approvalBlockers } from "@/features/detailed-design/labels";
 import { ApiError } from "@/lib/api/client";
 import type { AsyncStatus } from "@/lib/api/types";
 
+// Phase-21-4:追記
+// 段階をまたいで移動した先(Phase 21)。target は、段階5なら手順ID(F-01#4)、段階6なら関数の鍵
+// (logicOps の logicKey)。移動先のパネルが開いたときに読み、そのタブを開いて行を強調してから消す。
+export type StageFocus = { stage: number; target: string };
+
+// ── ここから Phase-15-7 の作成分 ──
 // 詳細設計画面(SCR-008)の状態。段階の一覧と、選んでいる段階を持つ。
 type DetailedDesignStore = {
   projectId: string | null;
@@ -28,7 +35,14 @@ type DetailedDesignStore = {
   saving: boolean;
   // 生成の受け付け(POST)を待っている間。受け付けた後の「生成中」は段階の generation_status で見る
   requestingGeneration: boolean;
+  // Phase-21-4:追記
+  focus: StageFocus | null;
+  // Phase-21-7:追記(画面確認後の修正。保存・生成でパネルが作り直されてもタブを保つ)
+  // パネルのタブの選択(鍵 → タブ)。保存・生成でパネルが作り直されても、開いていたタブに戻すため
+  // (Phase 21 の画面確認後)。鍵は "5:procedure"・"6:outer"・"6:inner" など、段階と場所で決める。
+  tabs: Record<string, string | null>;
 
+  // ── ここから Phase-15-7 の作成分 ──
   fetchStages: (projectId: string) => Promise<void>;
   selectStage: (stage: number) => void;
   // Phase-18-9：更新
@@ -43,11 +57,23 @@ type DetailedDesignStore = {
     stage: number,
     model: Record<string, unknown>,
   ) => Promise<boolean>;
-  // Phase-20-4：更新
-  // generate: (projectId: string, stage: number) => Promise<void>;
+  // Phase-21-4：更新(段階6の対象の関数 logics を足す)
+  // // 段階5は functionIds で下書きを作る処理を選べる(Phase 20)
+  // generate: (projectId: string, stage: number, functionIds?: string[]) => Promise<void>;
   // ↓↓
-  // 段階5は functionIds で下書きを作る処理を選べる(Phase 20)
-  generate: (projectId: string, stage: number, functionIds?: string[]) => Promise<void>;
+  // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を選べる(Phase 20・21)
+  generate: (
+    projectId: string,
+    stage: number,
+    functionIds?: string[],
+    logics?: LogicTarget[],
+  ) => Promise<void>;
+  // Phase-21-4:追記
+  // 05↔06 のバッジから、相手の段階のタブ・行へ移る(Phase 21)
+  jumpTo: (stage: number, target: string) => void;
+  clearFocus: () => void;
+  // Phase-21-7:追記(画面確認後の修正。保存・生成でパネルが作り直されてもタブを保つ)
+  setTab: (key: string, value: string | null) => void;
 };
 
 // 最初に開く段階: まだ承認されていない最初の段階(すべて承認済みなら段階7)。
@@ -88,13 +114,22 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
     // Phase-16-6:追記
     saving: false,
     requestingGeneration: false,
+    // Phase-21-4:追記
+    focus: null,
+    // Phase-21-7:追記(画面確認後の修正。保存・生成でパネルが作り直されてもタブを保つ)
+    tabs: {},
+    // ── ここから Phase-15-7 の作成分 ──
 
     fetchStages: async (projectId) => {
       const switching = get().projectId !== projectId;
       set({
         status: "loading",
         error: null,
-        ...(switching ? { projectId, stages: [] } : {}),
+        // Phase-21-7：更新(画面確認後の修正。保存・生成でパネルが作り直されてもタブを保つ)
+        // ...(switching ? { projectId, stages: [] } : {}),
+        // ↓↓
+        ...(switching ? { projectId, stages: [], tabs: {} } : {}),
+        // ── ここから Phase-15-7 の作成分 ──
       });
       try {
         const stages = await listDesignStages(projectId);
@@ -111,7 +146,11 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
       }
     },
 
-    selectStage: (stage) => set({ selectedStage: stage, actionError: null }),
+    // Phase-21-4：更新(段階を選び直したら、段階またぎの移動先を消す)
+    // selectStage: (stage) => set({ selectedStage: stage, actionError: null }),
+    // ↓↓
+    selectStage: (stage) => set({ selectedStage: stage, actionError: null, focus: null }),
+    // ── ここから Phase-15-7 の作成分 ──
 
     approve: async (projectId, stage) => {
       const current = get().stages.find((s) => s.stage === stage);
@@ -180,10 +219,17 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
     //     set({ actionError: messageOf(err, "下書きの生成を始められませんでした") });
     //   } finally {
     // ↓↓
-    generate: async (projectId, stage, functionIds) => {
+    // Phase-21-4：更新(段階6の対象の関数 logics を渡す)
+    // generate: async (projectId, stage, functionIds) => {
+    //   set({ requestingGeneration: true, actionError: null });
+    //   try {
+    //     await generateDesignStage(projectId, stage, functionIds);
+    // ↓↓
+    generate: async (projectId, stage, functionIds, logics) => {
       set({ requestingGeneration: true, actionError: null });
       try {
-        await generateDesignStage(projectId, stage, functionIds);
+        await generateDesignStage(projectId, stage, functionIds, logics);
+      // ── ここから Phase-20-4 の作成分 ──
       } catch (err) {
         // 生成の受け付けの 409 DESIGN_STAGE_INVALID(対象の数・選択)は、承認の文言でなくサーバーの理由を出す
         const invalid = err instanceof ApiError && err.code === "DESIGN_STAGE_INVALID";
@@ -198,5 +244,14 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
       // 受け付けた段階は generation_status が generating になる(画面はそれを見てポーリングする)
       await get().fetchStages(projectId);
     },
+
+    // Phase-21-4:追記
+    jumpTo: (stage, target) =>
+      set({ selectedStage: stage, actionError: null, focus: { stage, target } }),
+
+    clearFocus: () => set({ focus: null }),
+
+    // Phase-21-7:追記(画面確認後の修正。保存・生成でパネルが作り直されてもタブを保つ)
+    setTab: (key, value) => set((state) => ({ tabs: { ...state.tabs, [key]: value } })),
   }),
 );

@@ -1,4 +1,4 @@
-// 作成：Phase-16-6
+// 作成：Phase-16-6｜更新：Phase-21-7(画面確認後の修正)
 // 写経レベル: コア ── 生成・確認・編集・保存の流れを画面越しに確かめる。
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -60,7 +60,11 @@ describe("FunctionListPanel", () => {
   it("行を編集すると保存できるようになり、編集した内容を保存する", async () => {
     const user = userEvent.setup();
     const onDirtyChange = renderPanel(draftStage());
-    expect(screen.getByRole("button", { name: "保存する" })).toHaveAttribute(
+    // Phase-21-7：更新(画面確認後の修正。保存の操作が上下2つになったので先頭を取る)
+    // expect(screen.getByRole("button", { name: "保存する" })).toHaveAttribute(
+    // ↓↓
+    expect(screen.getAllByRole("button", { name: "保存する" })[0]).toHaveAttribute(
+    // ── ここから Phase-16-6 の作成分 ──
       "aria-disabled",
       "true",
     );
@@ -68,7 +72,11 @@ describe("FunctionListPanel", () => {
     const name = screen.getByRole("textbox", { name: "F-01 の名称" });
     await user.clear(name);
     await user.type(name, "予約する");
-    await user.click(screen.getByRole("button", { name: "保存する" }));
+    // Phase-21-7：更新(画面確認後の修正。保存の操作が上下2つになったので先頭を取る)
+    // await user.click(screen.getByRole("button", { name: "保存する" }));
+    // ↓↓
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+    // ── ここから Phase-16-6 の作成分 ──
 
     expect(onDirtyChange).toHaveBeenLastCalledWith(true);
     const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];

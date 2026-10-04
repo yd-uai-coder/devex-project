@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -26,6 +26,7 @@ from pydantic import BaseModel
 # Phase-18-2:追記 ── app.detailed_design.data_model_drafting.CrudGenerationOutput, DataModelErOutput, DraftedColumn, DraftedTable, GeneratedCrudCell
 # Phase-19-2:追記 ── app.detailed_design.structure_drafting.GeneratedModuleRow, ModuleListGenerationOutput
 # Phase-20-2:追記 ── app.detailed_design.procedure_drafting.GeneratedStep, ProcedureGenerationOutput
+# Phase-21-2:追記 ── app.detailed_design.logic_drafting.GeneratedPseudoStep, LogicGenerationOutput
 from app.detailed_design.data_flow_drafting import (
     GeneratedGroupProcess,
     GeneratedSummary,
@@ -40,6 +41,7 @@ from app.detailed_design.data_model_drafting import (
     GeneratedCrudCell,
 )
 from app.detailed_design.drafting import FunctionListGenerationOutput, GeneratedFunction
+from app.detailed_design.logic_drafting import GeneratedPseudoStep, LogicGenerationOutput
 from app.detailed_design.procedure_drafting import GeneratedStep, ProcedureGenerationOutput
 from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleListGenerationOutput
 from app.schemas.generation import HearingCompletionCheck
@@ -364,6 +366,22 @@ _UML_OUTPUTS[ProcedureGenerationOutput] = ProcedureGenerationOutput(
     ],
 )
 
+# Phase-21-2:追記
+# 詳細設計モードの段階6(処理ロジックの詳細)の関数の詳細(Phase 21)。どの関数にも同じ詳細を返す
+_UML_OUTPUTS[LogicGenerationOutput] = LogicGenerationOutput(
+    signature="async def create(self, payload: ReservationCreate) -> Reservation",
+    args="payload: 予約リクエスト",
+    returns="保存済みの予約",
+    raises="ReservationConflictError(409)",
+    pre="[E2E Fake] 利用者は認証済み",
+    post="[E2E Fake] 予約が1件増える",
+    pseudo=[
+        GeneratedPseudoStep(text="期間が重なる予約を数える", sub=["重なりがあれば 409"]),
+        GeneratedPseudoStep(text="予約を保存して返す", sub=[]),
+    ],
+)
+
+# ── ここから Phase-4-3 の作成分 ──
 _HEARING_REPLY = "[E2E Fake] 承知しました。次に、想定している主なユーザー層を教えてください。"
 _SELF_DIAGNOSIS_REPLY = "[E2E Fake] 自己診断: 特に致命的な不足点はありません。"
 

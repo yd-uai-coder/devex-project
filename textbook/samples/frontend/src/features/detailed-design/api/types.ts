@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -170,3 +170,34 @@ export type ProcedureModel = {
 
 // 1回の生成で下書きを作れる処理の数の上限(devex-api の MAX_PROCEDURE_TARGETS と同じ)
 export const MAX_PROCEDURE_TARGETS = 5;
+
+// Phase-21-4:追記
+// 段階6 処理ロジックの詳細の意味モデル(devex-api app/detailed_design/logic.py)。人が選んだ関数ごとに
+// シグネチャ〜事後条件と擬似フローを持つ(Phase 21)。L-ID は保存せず並び順から導く(logicOps の logicId)。
+// 05 との紐づけは (module, function) と段階5の手順の (callee, call) の一致から導く。0件で承認 = 段階6を飛ばす。
+export type PseudoStep = {
+  text: string; // この段で行うこと
+  sub: string[]; // 条件の分かれ目・細かい手順の箇条
+};
+
+export type LogicRow = {
+  module: string; // 段階4のモジュール一覧のパス(= 手順の callee)
+  function: string; // 手順の call
+  signature: string;
+  args: string;
+  returns: string;
+  raises: string;
+  pre: string; // 事前条件
+  post: string; // 事後条件
+  pseudo: PseudoStep[];
+};
+
+export type LogicModel = {
+  logics: LogicRow[]; // 選んだ関数(シグネチャと擬似フローが空ならまだ下書きが無い)
+};
+
+// 段階6の生成で下書きを作る関数の指定(devex-api の LogicTarget)
+export type LogicTarget = { module: string; function: string };
+
+// 1回の生成で下書きを作れる関数の数の上限(devex-api の MAX_LOGIC_TARGETS と同じ)
+export const MAX_LOGIC_TARGETS = 5;

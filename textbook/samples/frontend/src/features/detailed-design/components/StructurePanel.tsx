@@ -1,7 +1,8 @@
-// 作成：Phase-19-7
+// 作成：Phase-19-7｜更新：Phase-21-7(画面確認後の修正)
 // 写経レベル: コア ── モジュール一覧だけを段階の model として保存し、構成図の未保存の編集も段階の dirty に含めること。
 "use client";
 
+// Phase-21-7:追記(画面確認後の修正) ── @/features/detailed-design/components/StageSaveBar.StageSaveBar
 import { useEffect, useState } from "react";
 import { Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -14,6 +15,7 @@ import {
 import { ModuleListTable } from "@/features/detailed-design/components/ModuleListTable";
 import { StageDiagramSection } from "@/features/detailed-design/components/StageDiagramSection";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
+import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
 import {
@@ -71,6 +73,16 @@ export function StructurePanel({
 
   return (
     <YStack gap="$4">
+      {/* Phase-21-7:追記(画面確認後の修正) */}
+      <StageSaveBar
+        label="モジュール一覧を保存する"
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
+
+      {/* ── ここから Phase-19-7 の作成分 ── */}
       <YStack gap="$2">
         <XStack gap="$3" alignItems="center" flexWrap="wrap">
           <StyledButton
@@ -136,19 +148,28 @@ export function StructurePanel({
         />
       )}
 
-      <XStack gap="$3" alignItems="center" flexWrap="wrap">
-        <StyledButton
-          disabled={!dirty || saving || generating || !stage.is_open}
-          onPress={() => void save(projectId, stage.stage, draft)}
-        >
-          {saving ? "保存しています..." : "モジュール一覧を保存する"}
-        </StyledButton>
-        {dirty ? (
-          <Text color="$color11" fontSize="$2">
-            保存していない編集があります。
-          </Text>
-        ) : null}
-      </XStack>
+      {/* Phase-21-7：更新(画面確認後の修正。保存の操作を StageSaveBar にして、上部にも同じものを置いた)
+         <XStack gap="$3" alignItems="center" flexWrap="wrap">
+           <StyledButton
+             disabled={!dirty || saving || generating || !stage.is_open}
+             onPress={() => void save(projectId, stage.stage, draft)}
+           >
+             {saving ? "保存しています..." : "モジュール一覧を保存する"}
+           </StyledButton>
+           {dirty ? (
+             <Text color="$color11" fontSize="$2">
+               保存していない編集があります。
+             </Text>
+           ) : null}
+         </XStack>
+         ↓↓ */}
+      <StageSaveBar
+        label="モジュール一覧を保存する"
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
 
       <StageIssueList issues={stage.issues} />
     </YStack>

@@ -1,5 +1,6 @@
-// 作成：Phase-20-7
+// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正)
 // 写経レベル: コア ── 生成の対象・作り直しの確認・関与表の反映を確かめる。
+// Phase-21-8:追記 ── ../../test-utils/stageFixtures.makeLogics
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -10,6 +11,7 @@ import { useDetailedDesignStore } from "@/features/detailed-design/detailed-desi
 import type { DesignStageRead, FunctionListModel } from "@/features/detailed-design/api/types";
 import {
   makeFunctionList,
+  makeLogics,
   makeModuleList,
   makeProcedures,
   makeStages,
@@ -63,6 +65,11 @@ describe("ProcedurePanel", () => {
       fetchStages: vi.fn().mockResolvedValue(undefined),
       save: vi.fn().mockResolvedValue(true),
       generate: vi.fn().mockResolvedValue(undefined),
+      // Phase-21-8:追記
+      focus: null,
+      selectedStage: 5,
+      // Phase-21-7:追記(画面確認後の修正。タブの保持)
+      tabs: {},
     });
   });
 
@@ -78,7 +85,11 @@ describe("ProcedurePanel", () => {
       screen.getByRole("button", { name: "手順の無い処理の下書きを生成する(0件)" }),
     ).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("保存すると、この処理の下書きを生成できます。")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "保存する" }));
+    // Phase-21-7：更新(画面確認後の修正。保存の操作が上下2つになったので先頭を取る)
+    // await user.click(screen.getByRole("button", { name: "保存する" }));
+    // ↓↓
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+    // ── ここから Phase-20-7 の作成分 ──
     const [, stage, model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(stage).toBe(5);
     expect(model).toEqual({
@@ -193,5 +204,76 @@ describe("ProcedurePanel", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent("AIの利用上限に達しました");
     expect(screen.getByText("エラー: 呼び出し先が無い")).toBeInTheDocument();
+  });
+
+  // Phase-21-8:追記
+  // 段階6との行き来(Phase 21)
+  it("段階6に詳細がある手順のバッジから段階6へ移り、保存していない編集があれば確かめる", async () => {
+    const user = userEvent.setup();
+    const stage = setup({ state: "reviewing", version: 2, model: makeProcedures() });
+    const stages = useDetailedDesignStore.getState().stages;
+    useDetailedDesignStore.setState({
+      stages: stages.map((s) => (s.stage === 6 ? { ...s, model: makeLogics() } : s)),
+    });
+    renderPanel(stage);
+
+    await user.type(screen.getByLabelText("F-01 の選定理由"), "追記");
+    await user.click(screen.getByRole("button", { name: "F-01#1 の詳細 L-01 へ移る" }));
+    expect(screen.getByText("保存していない編集は失われます。")).toBeInTheDocument();
+    expect(useDetailedDesignStore.getState().selectedStage).toBe(5);
+    await user.click(screen.getByLabelText("移る"));
+
+    expect(useDetailedDesignStore.getState()).toMatchObject({
+      selectedStage: 6,
+      focus: { stage: 6, target: `${ROUTE}::create_reservation` },
+    });
+  });
+
+  it("段階6から移ってきたときは、その処理のタブを開いて手順の行を強調し、移動先を消す", () => {
+    const procedures = {
+      procedures: [
+        ...makeProcedures().procedures,
+        { function_id: "F-02", reason: "", note: "", steps: [makeStep({ action: "一覧を返す" })] },
+      ],
+    };
+    const stage = setup({ state: "reviewing", version: 2, model: procedures });
+    useDetailedDesignStore.setState({ focus: { stage: 5, target: "F-02#1" } });
+    renderPanel(stage);
+
+    expect(screen.getByRole("tab", { name: "F-02 予約を一覧する" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByLabelText("F-02#1 の処理内容").closest("tr")).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    expect(useDetailedDesignStore.getState().focus).toBeNull();
+  });
+
+  // Phase-21-7:追記(画面確認後の修正。タブの保持)
+  it("保存・生成でパネルが作り直されても、開いていた処理のタブのまま(Phase 21 の画面確認後)", async () => {
+    const user = userEvent.setup();
+    const procedures = {
+      procedures: [
+        ...makeProcedures().procedures,
+        { function_id: "F-02", reason: "", note: "", steps: [makeStep({ action: "一覧を返す" })] },
+      ],
+    };
+    const stage = setup({ state: "reviewing", version: 2, model: procedures });
+    const view = render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <ProcedurePanel projectId="p1" stage={stage} onDirtyChange={vi.fn()} />
+      </TamaguiProvider>,
+    );
+
+    await user.click(screen.getByRole("tab", { name: "F-02 予約を一覧する" }));
+    view.unmount();
+    renderPanel({ ...stage, version: 3 });
+
+    expect(screen.getByRole("tab", { name: "F-02 予約を一覧する" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   });
 });

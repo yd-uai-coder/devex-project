@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-4,20-3
+# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3
 # 写経レベル: 定型 ── サービスを呼ぶだけの薄いルート。
 # Phase-16-4:追記 ── fastapi.BackgroundTasks, fastapi.status, app.services.design_stage_generation_service.DesignStageGenerationService, app.services.design_stage_generation_service.run_design_stage_generation
 # Phase-20-3:追記 ── app.schemas.design_stage.DesignStageGenerate
@@ -50,9 +50,10 @@ async def generate_design_stage(
     # Phase-20-3:追記
     payload: DesignStageGenerate | None = None,
 ) -> DesignStageRead:
-    """段階のAIの下書きの生成を受け付け、バックグラウンドで実行する(Phase 20 の時点で段階1〜5)。
+    """段階のAIの下書きの生成を受け付け、バックグラウンドで実行する(Phase 21 の時点で段階1〜6)。
     段階は「生成中」になり、終わると`completed`/`failed`になる。background taskには値だけを渡す
-    (doc生成・UML図の生成と同じ理由)。段階5は、本文の`function_ids`で下書きを作る処理を選べる。"""
+    (doc生成・UML図の生成と同じ理由)。段階5は、本文の`function_ids`で下書きを作る処理を選べる。
+    段階6は、本文の`logics`で下書きを作る関数を選べる。"""
     # Phase-20-3：更新
     # accepted = await DesignStageGenerationService(session).request_generation(
     #     current_project, stage=stage
@@ -62,8 +63,25 @@ async def generate_design_stage(
     # )
     # ↓↓
     function_ids = payload.function_ids if payload is not None else None
+    # Phase-21-3：更新(段階6の対象の関数を受け取り、受け付けと実行へ渡す)
+    # accepted = await DesignStageGenerationService(session).request_generation(
+    #     current_project, stage=stage, function_ids=function_ids
+    # )
+    # background_tasks.add_task(
+    #     run_design_stage_generation,
+    #     current_project.id,
+    #     current_project.user_id,
+    #     stage,
+    #     function_ids,
+    # )
+    # ↓↓
+    logics = (
+        [(t.module, t.function) for t in payload.logics]
+        if payload is not None and payload.logics is not None
+        else None
+    )
     accepted = await DesignStageGenerationService(session).request_generation(
-        current_project, stage=stage, function_ids=function_ids
+        current_project, stage=stage, function_ids=function_ids, logics=logics
     )
     background_tasks.add_task(
         run_design_stage_generation,
@@ -71,7 +89,9 @@ async def generate_design_stage(
         current_project.user_id,
         stage,
         function_ids,
+        logics,
     )
+    # ── ここから Phase-16-4 の作成分 ──
     return accepted
 
 

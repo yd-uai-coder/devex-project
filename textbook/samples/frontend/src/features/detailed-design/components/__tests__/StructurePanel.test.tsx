@@ -1,4 +1,4 @@
-// 作成：Phase-19-7
+// 作成：Phase-19-7｜更新：Phase-21-7(画面確認後の修正)
 // 写経レベル: 定型
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
@@ -85,7 +85,11 @@ describe("StructurePanel", () => {
       "aria-disabled",
       "true",
     );
-    await user.click(screen.getByRole("button", { name: "モジュール一覧を保存する" }));
+    // Phase-21-7：更新(画面確認後の修正。保存の操作が上下2つになったので先頭を取る)
+    // await user.click(screen.getByRole("button", { name: "モジュール一覧を保存する" }));
+    // ↓↓
+    await user.click(screen.getAllByRole("button", { name: "モジュール一覧を保存する" })[0]);
+    // ── ここから Phase-19-7 の作成分 ──
     const [, stage, model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(stage).toBe(4);
     expect(model).toEqual(makeModuleList("Service層"));

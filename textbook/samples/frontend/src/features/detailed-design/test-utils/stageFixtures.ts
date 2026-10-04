@@ -1,15 +1,18 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
 // Phase-18-5:追記 ── @/features/detailed-design/api/types.CrudModel
 // Phase-19-5:追記 ── @/features/detailed-design/api/types.ModuleListModel
 // Phase-20-4:追記 ── @/features/detailed-design/api/types.ProcedureModel, ProcedureStep
+// Phase-21-4:追記 ── @/features/detailed-design/api/types.LogicModel, LogicRow
 import type {
   CrudModel,
   DataFlowModel,
   DesignStageRead,
   FunctionListModel,
+  LogicModel,
+  LogicRow,
   ModuleListModel,
   ProcedureModel,
   ProcedureStep,
@@ -99,6 +102,27 @@ export function makeProcedures(): ProcedureModel {
       { function_id: "F-01", reason: "検証", note: "", steps: [makeStep(), makeBranch()] },
     ],
   };
+}
+
+// Phase-21-4:追記
+// makeProcedures の手順 F-01#1 が呼ぶ関数1つの詳細(段階6の検証を通る。テスト専用)。
+export function makeLogic(patch: Partial<LogicRow> = {}): LogicRow {
+  return {
+    module: "app/api/routes/reservations.py",
+    function: "create_reservation",
+    signature: "async def create_reservation(payload) -> Reservation",
+    args: "payload: 予約リクエスト",
+    returns: "保存済みの予約",
+    raises: "ValidationError(422)",
+    pre: "利用者は認証済み",
+    post: "予約が1件増える",
+    pseudo: [{ text: "本文を検証する", sub: ["不正なら 422"] }],
+    ...patch,
+  };
+}
+
+export function makeLogics(): LogicModel {
+  return { logics: [makeLogic()] };
 }
 
 // ── ここから Phase-15-7 の作成分 ──

@@ -1,4 +1,4 @@
-// 作成：Phase-17-6｜更新：Phase-17-7,17-8,18-9
+// 作成：Phase-17-6｜更新：Phase-17-7,17-8,18-9,21-7(画面確認後の修正)
 // 写経レベル: コア ── 段階1の内容をストアに置き、グループの選択 → 保存 → 生成の順を確かめる。
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // Phase-17-7：更新
@@ -80,7 +80,11 @@ describe("DataFlowPanel", () => {
       "aria-disabled",
       "true",
     );
-    await user.click(screen.getByRole("button", { name: "保存する" }));
+    // Phase-21-7：更新(画面確認後の修正。保存の操作が上下2つになったので先頭を取る)
+    // await user.click(screen.getByRole("button", { name: "保存する" }));
+    // ↓↓
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+    // ── ここから Phase-17-6 の作成分 ──
     const [, stage, model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(stage).toBe(2);
     expect(model).toEqual({ dfd_groups: ["reservations"], summaries: [] });
@@ -114,7 +118,11 @@ describe("DataFlowPanel", () => {
     const output = screen.getByRole("textbox", { name: "F-01 の出力" });
     await user.clear(output);
     await user.type(output, "予約ID");
-    await user.click(screen.getByRole("button", { name: "保存する" }));
+    // Phase-21-7：更新(画面確認後の修正。保存の操作が上下2つになったので先頭を取る)
+    // await user.click(screen.getByRole("button", { name: "保存する" }));
+    // ↓↓
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+    // ── ここから Phase-17-6 の作成分 ──
 
     const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(model).toMatchObject({ summaries: [{ function_id: "F-01", output: "予約ID" }] });

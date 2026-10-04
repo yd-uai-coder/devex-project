@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-16-5:追記 ── ../designStagesApi.generateDesignStage
 // Phase-17-5:追記 ── ../types.MAX_DFD_GROUPS, @/features/detailed-design/test-utils/stageFixtures.makeDataFlow
@@ -121,6 +121,17 @@ describe("designStagesApi", () => {
 
     expect(stub.requests[0].url).toContain("/api/v1/projects/p1/design-stages/5/generate");
     expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ function_ids: ["F-02"] });
+  });
+
+  // Phase-21-4:追記
+  it("段階6は下書きを作る関数を本文の logics で渡す(Phase 21)", async () => {
+    stub.queue({ status: 202, body: { ...STAGE1, stage: 6, generation_status: "generating" } });
+    const logics = [{ module: "app/services/reservation.py", function: "create" }];
+
+    await generateDesignStage("p1", 6, undefined, logics);
+
+    expect(stub.requests[0].url).toContain("/api/v1/projects/p1/design-stages/6/generate");
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ logics });
   });
 
   // Phase-18-5:追記

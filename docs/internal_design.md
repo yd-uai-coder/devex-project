@@ -349,6 +349,14 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * 生成の対象: `POST /design-stages/5/generate`の本文`{function_ids?}`(省略すると、選んだ処理のうち手順の無いもの。`generation_targets`)。受け付けで、対象が空・選ばれていない処理・5件超(`MAX_PROCEDURE_TARGETS`)を409`DESIGN_STAGE_INVALID`で断る。段階5以外への指定も断る。対象は background task に値で渡し、`StageGenerationContext.targets`で生成の関数へ渡す。状態は、対象の処理にもともと手順があれば`regenerated`。
   * 検証(`STAGE_VALIDATORS[5]`)は、段階1の機能一覧と段階4のモジュール一覧を`StageSources.stages`から読む。エラー: 形が不正、処理が0件、処理IDが機能一覧に無い・重複、手順が0件、先頭の行が分岐、呼び出し先が空、パスの形の呼び出し先がモジュール一覧のパスと完全一致しない(関与表の列の鍵のため)。警告: 選定理由が空、モジュールを呼ぶ手順の関数が空。指摘の`target`は処理IDか手順ID。
   * 索引と関与表は画面(`devex-ui`の`procedureOps.ts`)が編集中の内容から導く。関与表の列は、段階4のモジュール一覧のパスのうち呼び出し先に現れるもの(一覧の並び)。
+* **段階6 処理ロジックの詳細(Phase 21)**:
+  * `design_stages.model`(段階6)は`{logics: [{module, function, signature, args, returns, raises, pre, post, pseudo: [{text, sub}]}]}`だけ。`logics`は人が選んだ関数(シグネチャと擬似フローが空の行は未生成)。`module`は段階4のモジュール一覧のパス、`function`は手順の`call`で、この組が05との紐づけの鍵(`logic_key`)。L-IDは保存せず、並び順から`logic_id`で導く(`app/detailed_design/logic.py`)。
+  * 候補と「呼ばれる手順」は、段階5の手順のうち分岐でなく・呼び出し先がパスで・関数が空でない行を(呼び出し先, 関数)ごとにまとめて導く(`logic_candidates`・`calling_steps`。手順IDは`number_steps`・`step_id`を再利用)。
+  * 下書き: 対象の関数ごとに LLM 1回(入力はモジュール一覧の行(層・責務・依存先)、その関数を呼ぶ手順と直後の分岐の行、ER のテーブル名。`NAMING_RULES`を足す。モジュール・関数の名前とL-IDは書かせない。シグネチャの言語はモジュールのパスから判断させ、要件定義は入力にしない)。`merge_logic`は対象の関数の詳細だけを置き換え、他の関数は残す(`app/detailed_design/logic_drafting.py`、`generate_logics`)。
+  * 生成の対象: `POST /design-stages/6/generate`の本文`{logics?: [{module, function}]}`(省略すると、選んだ関数のうち詳細の無いもの)。受け付けで、対象が空・選ばれていない関数・5件超(`MAX_LOGIC_TARGETS`)を409`DESIGN_STAGE_INVALID`で断る。段階6以外への指定も断る。対象は`logic_key`の文字列で`StageGenerationContext.targets`に渡す。状態は、対象の関数にもともと詳細があれば`regenerated`。
+  * 検証(`STAGE_VALIDATORS[6]`)は、段階5の手順を`StageSources.stages`から読む。エラー: 形が不正、モジュール・関数が空、(モジュール, 関数)の重複、段階5のどの手順からも呼ばれない(`UNCALLED_LOGIC`)、詳細が無い。警告: 事前条件・事後条件が空。指摘の`target`はL-ID。0件は指摘なし。
+  * 段階6を飛ばす: 専用のAPIは持たず、`{logics: []}`を保存して承認する(画面の「段階6を飛ばす」)。段階7の入力(`STAGE_INPUTS[7]`)に段階6の承認が要るため。段階5を承認し直すと、他の段階と同じく段階6は「古い」になり、「このまま承認し直す」で済む。組み立て(Phase 22)は、0件で承認済みの段階6を「06 省略」として出す。
+  * 逆引き・05の詳細バッジ・段階をまたぐ移動は画面(`devex-ui`の`logicOps.ts`・`LogicPanel`・`ProcedurePanel`)が導く。移動先(段階と手順IDまたは関数の鍵)はストアの`focus`に置き、移動先のパネルが一度だけ読んで消す。
 * **下書きの表記の規則(Phase 19 の画面確認後)**: 詳細設計モードの全段階の下書きの system プロンプトの末尾に、共通の規則`NAMING_RULES`(`app/detailed_design/prompt_rules.py`)を足す。簡易ドキュメントモードのプロンプトには入れない。
   * 名称・説明・責務・層の名前・注釈は日本語で書く。英語の識別子を説明の代わりに使わない(必要なら「日本語の名称(識別子)」と併記。構成図の箱は「サービス(services)」の形)。
   * ファイル・ディレクトリのパス、テーブル名・列名、クラス名・関数名・変数名などの識別子は、技術スタックの命名規則に従って英語で書く(ユーザーの規則「新規のディレクトリ名・ファイル名は日本語を基本とし、互換性に問題がある場合は英語」の互換性の条件が、Python・TypeScript などのパスでは常に当てはまるとみなした)。

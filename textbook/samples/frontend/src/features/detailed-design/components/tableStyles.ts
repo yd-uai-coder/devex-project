@@ -1,4 +1,4 @@
-// 作成：Phase-17-6
+// 作成：Phase-17-6｜更新：Phase-21-6
 // 写経レベル: 定型 ── FunctionListPanel から切り出した表の見た目。
 import type { CSSProperties } from "react";
 
@@ -34,4 +34,19 @@ export const OPTION: CSSProperties = { background: "var(--background)", color: "
 export const MONO: CSSProperties = {
   fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",
   fontSize: 12,
+};
+
+// Phase-21-6:追記
+// 05↔06 の紐づけのバッジ(06 の「呼ばれる手順」・05 の「詳細 L-02」。Phase 21)。押せるときは button に
+// 付け、cursor を足す。
+export const BADGE: CSSProperties = {
+  display: "inline-block",
+  padding: "0 6px",
+  marginRight: 4,
+  border: "1px solid var(--blue8)",
+  borderRadius: 10,
+  color: "var(--blue11)",
+  background: "var(--blue2)",
+  fontSize: 12,
+  fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",
 };

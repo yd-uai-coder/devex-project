@@ -1,7 +1,8 @@
-// 作成：Phase-18-9
+// 作成：Phase-18-9｜更新：Phase-21-7(画面確認後の修正)
 // 写経レベル: コア ── CRUD 図だけを段階の model として保存し、ER の未保存の編集も段階の dirty に含めること。
 "use client";
 
+// Phase-21-7:追記(画面確認後の修正) ── @/features/detailed-design/components/StageSaveBar.StageSaveBar
 import { useEffect, useState } from "react";
 import { Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -10,6 +11,7 @@ import type { CrudModel, DesignStageRead } from "@/features/detailed-design/api/
 import { CrudMatrix } from "@/features/detailed-design/components/CrudMatrix";
 import { ErEditorSection } from "@/features/detailed-design/components/ErEditorSection";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
+import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import { TableDefinitionTable } from "@/features/detailed-design/components/TableDefinitionTable";
 import { crudTables, hasCrudDraft, toCrud } from "@/features/detailed-design/crudOps";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
@@ -69,6 +71,16 @@ export function DataModelPanel({
 
   return (
     <YStack gap="$4">
+      {/* Phase-21-7:追記(画面確認後の修正) */}
+      <StageSaveBar
+        label="CRUD 図を保存する"
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
+
+      {/* ── ここから Phase-18-9 の作成分 ── */}
       <YStack gap="$2">
         <XStack gap="$3" alignItems="center" flexWrap="wrap">
           <StyledButton
@@ -133,19 +145,28 @@ export function DataModelPanel({
         />
       )}
 
-      <XStack gap="$3" alignItems="center" flexWrap="wrap">
-        <StyledButton
-          disabled={!dirty || saving || generating || !stage.is_open}
-          onPress={() => void save(projectId, stage.stage, draft)}
-        >
-          {saving ? "保存しています..." : "CRUD 図を保存する"}
-        </StyledButton>
-        {dirty ? (
-          <Text color="$color11" fontSize="$2">
-            保存していない編集があります。
-          </Text>
-        ) : null}
-      </XStack>
+      {/* Phase-21-7：更新(画面確認後の修正。保存の操作を StageSaveBar にして、上部にも同じものを置いた)
+         <XStack gap="$3" alignItems="center" flexWrap="wrap">
+           <StyledButton
+             disabled={!dirty || saving || generating || !stage.is_open}
+             onPress={() => void save(projectId, stage.stage, draft)}
+           >
+             {saving ? "保存しています..." : "CRUD 図を保存する"}
+           </StyledButton>
+           {dirty ? (
+             <Text color="$color11" fontSize="$2">
+               保存していない編集があります。
+             </Text>
+           ) : null}
+         </XStack>
+         ↓↓ */}
+      <StageSaveBar
+        label="CRUD 図を保存する"
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
 
       <StageIssueList issues={stage.issues} />
     </YStack>

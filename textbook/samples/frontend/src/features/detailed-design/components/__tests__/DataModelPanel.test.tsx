@@ -1,4 +1,4 @@
-// 作成：Phase-18-9
+// 作成：Phase-18-9｜更新：Phase-21-7(画面確認後の修正)
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -87,7 +87,11 @@ describe("DataModelPanel", () => {
       "aria-disabled",
       "true",
     );
-    await user.click(screen.getByRole("button", { name: "CRUD 図を保存する" }));
+    // Phase-21-7：更新(画面確認後の修正。保存の操作が上下2つになったので先頭を取る)
+    // await user.click(screen.getByRole("button", { name: "CRUD 図を保存する" }));
+    // ↓↓
+    await user.click(screen.getAllByRole("button", { name: "CRUD 図を保存する" })[0]);
+    // ── ここから Phase-18-9 の作成分 ──
     const [, stage, model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(stage).toBe(3);
     expect(model).toEqual({

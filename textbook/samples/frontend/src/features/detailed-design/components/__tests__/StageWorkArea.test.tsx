@@ -1,8 +1,9 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7,20-7
+// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7,20-7,21-7,21-7(画面確認後の修正)
 // 写経レベル: コア ── 状態ごとのボタンと表示。
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-17-6:追記 ── @/features/detailed-design/detailed-design-store.useDetailedDesignStore
 // Phase-20-7:追記 ── ../../test-utils/stageFixtures.makeModuleList
+// Phase-21-7:追記 ── ../../test-utils/stageFixtures.makeProcedures
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,6 +14,7 @@ import { useDetailedDesignStore } from "@/features/detailed-design/detailed-desi
 import {
   makeFunctionList,
   makeModuleList,
+  makeProcedures,
   makeStages,
 } from "../../test-utils/stageFixtures";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
@@ -81,7 +83,11 @@ describe("StageWorkArea", () => {
   });
 
   // Phase-20-7:追記
-  it("開いた段階5には主要処理の手順のパネルを出し、段階6はまだ準備中(Phase 20)", () => {
+  // Phase-21-7：更新(段階6にもパネルを登録したので、テスト名から「段階6はまだ準備中」を外した)
+  // it("開いた段階5には主要処理の手順のパネルを出し、段階6はまだ準備中(Phase 20)", () => {
+  // ↓↓
+  it("開いた段階5には主要処理の手順のパネルを出す(Phase 20)", () => {
+  // ── ここから Phase-20-7 の作成分 ──
     const stages = makeStages({
       1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
       2: { state: "approved", version: 3, approved_version: 3 },
@@ -97,9 +103,37 @@ describe("StageWorkArea", () => {
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
+  // Phase-21-7:追記
+  it("開いた段階6には処理ロジックのパネルを出し、「飛ばす」から承認を始められる(Phase 21)", async () => {
+    const user = userEvent.setup();
+    const stages = makeStages({
+      5: { state: "approved", version: 1, approved_version: 1, model: makeProcedures() },
+      6: { is_open: true, missing_inputs: [] },
+    });
+    useDetailedDesignStore.setState({ stages, save: vi.fn().mockResolvedValue(true) });
+    const onApprove = renderArea(stages[5]);
+
+    expect(screen.getByText("詳細を書く関数")).toBeInTheDocument();
+    // Phase-21-7：更新(画面確認後の修正。保存の操作が上下2つになったので先頭を取る)
+    // await user.click(screen.getByRole("button", { name: "段階6を飛ばす(06を書かない)" }));
+    // ↓↓
+    await user.click(screen.getAllByRole("button", { name: "段階6を飛ばす(06を書かない)" })[0]);
+    // ── ここから Phase-21-7 の作成分 ──
+    await user.click(screen.getByLabelText("飛ばして承認する"));
+
+    expect(useDetailedDesignStore.getState().save).toHaveBeenCalledWith("p1", 6, { logics: [] });
+    expect(onApprove).toHaveBeenCalled();
+  });
+
+  // ── ここから Phase-15-7 の作成分 ──
   it("登録の無い段階は、開いていれば準備中を出す", () => {
-    const stages = makeStages({ 6: { is_open: true, missing_inputs: [] } });
-    renderArea(stages[5]);
+    // Phase-21-7：更新(段階6にもパネルを登録したので、登録の無い例を段階7にした)
+    // const stages = makeStages({ 6: { is_open: true, missing_inputs: [] } });
+    // renderArea(stages[5]);
+    // ↓↓
+    const stages = makeStages({ 7: { is_open: true, missing_inputs: [] } });
+    renderArea(stages[6]);
+    // ── ここから Phase-15-7 の作成分 ──
 
     expect(screen.getByText(/準備中/)).toBeInTheDocument();
   });

@@ -1,7 +1,8 @@
-// 作成：Phase-16-6｜更新：Phase-17-6
+// 作成：Phase-16-6｜更新：Phase-17-6,21-7(画面確認後の修正)
 // 写経レベル: コア ── 編集中の内容を手元に持ち、保存して初めて送ること。作り直す前の確認と、生成中の操作の止め方。
 "use client";
 
+// Phase-21-7:追記(画面確認後の修正) ── @/features/detailed-design/components/StageSaveBar.StageSaveBar
 // Phase-17-6:追記 ── @/features/detailed-design/components/StageIssueList.StageIssueList, @/features/detailed-design/components/tableStyles(CELL, HEAD, INPUT, MONO, OPTION, TABLE)
 // Phase-17-6：削除 ── react.CSSProperties(表の見た目を tableStyles.ts へ移した)
 import { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ import type {
   FunctionListModel,
 } from "@/features/detailed-design/api/types";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
+import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import {
   CELL,
   HEAD,
@@ -112,6 +114,15 @@ export function FunctionListPanel({
 
   return (
     <YStack gap="$4">
+      {/* Phase-21-7:追記(画面確認後の修正) */}
+      <StageSaveBar
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
+
+      {/* ── ここから Phase-16-6 の作成分 ── */}
       <YStack gap="$2">
         <XStack gap="$3" alignItems="center" flexWrap="wrap">
           <StyledButton
@@ -319,26 +330,43 @@ export function FunctionListPanel({
         </>
       ) : null}
 
-      <XStack gap="$3" alignItems="center" flexWrap="wrap">
-        <StyledButton
-          theme="gray"
-          disabled={!stage.is_open || generating}
-          onPress={() => setDraft((m) => addRow(m))}
-        >
-          処理を追加
-        </StyledButton>
-        <StyledButton
-          disabled={!dirty || saving || generating || !stage.is_open}
-          onPress={() => void save(projectId, stage.stage, draft)}
-        >
-          {saving ? "保存しています..." : "保存する"}
-        </StyledButton>
-        {dirty ? (
-          <Text color="$color11" fontSize="$2">
-            保存していない編集があります。
-          </Text>
-        ) : null}
-      </XStack>
+      {/* Phase-21-7：更新(画面確認後の修正。保存の操作を StageSaveBar にして、上部にも同じものを置いた)
+         <XStack gap="$3" alignItems="center" flexWrap="wrap">
+           <StyledButton
+             theme="gray"
+             disabled={!stage.is_open || generating}
+             onPress={() => setDraft((m) => addRow(m))}
+           >
+             処理を追加
+           </StyledButton>
+           <StyledButton
+             disabled={!dirty || saving || generating || !stage.is_open}
+             onPress={() => void save(projectId, stage.stage, draft)}
+           >
+             {saving ? "保存しています..." : "保存する"}
+           </StyledButton>
+           {dirty ? (
+             <Text color="$color11" fontSize="$2">
+               保存していない編集があります。
+             </Text>
+           ) : null}
+         </XStack>
+         ↓↓ */}
+      <StageSaveBar
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+        leading={
+          <StyledButton
+            theme="gray"
+            disabled={!stage.is_open || generating}
+            onPress={() => setDraft((m) => addRow(m))}
+          >
+            処理を追加
+          </StyledButton>
+        }
+      />
 
       {/* Phase-17-6：更新(段階2のパネルと共有するため StageIssueList へ切り出した)
          {stage.issues.length > 0 ? (
