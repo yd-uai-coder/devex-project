@@ -1,5 +1,6 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
+# Phase-23-4：更新(docstring: 段階7の生成を書いた)
 """詳細設計モードの段階のAIの下書きの生成(docs/external_design.md 2.7節「各段階の共通サイクル」)。
 
 受け付け(`request_generation`、リクエスト内)と実行(`execute`、バックグラウンド)を分ける。
@@ -14,7 +15,7 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 - 15分を超えて生成中のまま止まった段階は、受け付け時と一覧の取得時に失敗へ戻す
   (app/services/generation_staleness.py)。
 - 生成できる段階は`STAGE_GENERATORS`に登録したものだけ(Phase 16 は段階1、Phase 17 で段階2、
-  Phase 18 で段階3、Phase 19 で段階4、Phase 20 で段階5、Phase 21 で段階6)。
+  Phase 18 で段階3、Phase 19 で段階4、Phase 20 で段階5、Phase 21 で段階6、Phase 23 で段階7)。
 - 段階2は、段階の内容のほかに機能グループの DFD(`uml_diagrams`)とデータ項目(`data_items`)も
   書く。段階の保存と同じトランザクションで書き、失敗したらまとめて取り消す。そのため生成の関数には
   `StageGenerationContext`でセッションとプロジェクトを渡す(Phase 17)。
@@ -27,6 +28,8 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
   (Phase 20)。
 - 段階6は、段階5と同じく関数ごとに下書きを作る(1関数 LLM 1回)。対象は(モジュール, 関数)の鍵
   (`logic_key`)で受け渡す(Phase 21)。
+- 段階7は、横断事項と実装計画を順に下書きする(LLM 2回)。入力の詳細設計書は、出力と同じ組み立て
+  (`DetailedDesignExportService.collect`・`to_markdown`)で 01〜06章の md にする(Phase 23)。
 """
 
 # Phase-17-3:追記 ── dataclasses.dataclass, langchain_core.messages.BaseMessage, pydantic.BaseModel, app.detailed_design.data_flow(MAX_DFD_GROUPS, DataFlowModel, dfd_subject, group_functions, merge_summaries), app.detailed_design.data_flow_drafting(GroupDfdGenerationOutput, ProcessSummaryGenerationOutput, build_group_dfd_messages, build_summary_messages, to_dfd_output, to_summary_drafts), app.detailed_design.stages.Fingerprint, app.repositories.uml_diagram.UmlDiagramRepository, app.services.data_item_service.DataItemService, app.services.errors.DesignStageInvalidError, app.uml.domain(NOTATION_TO_VIEW, DfdSemanticModel), app.uml.generation.mapper(required_data_items, to_dfd), app.uml.generation.prompts.ExistingDataItem
@@ -34,6 +37,7 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 # Phase-19-3:追記 ── app.detailed_design.data_model.CrudModel, app.detailed_design.structure(STRUCTURE_SUBJECT, merge_modules), app.detailed_design.structure_drafting(ModuleListGenerationOutput, build_component_messages, build_module_messages, to_module_drafts), app.uml.generation.mapper.to_component, app.uml.generation.schemas.ComponentGenerationOutput
 # Phase-20-3:追記 ── app.detailed_design.procedure(MAX_PROCEDURE_TARGETS, PROCEDURE_STAGE, ProcedureModel, generation_targets, merge_procedure), app.detailed_design.procedure_drafting(ProcedureGenerationOutput, build_procedure_messages, to_procedure_draft), app.detailed_design.structure.ModuleListModel
 # Phase-21-3:追記 ── app.detailed_design.logic(LOGIC_STAGE, MAX_LOGIC_TARGETS, LogicModel, is_drafted, logic_key, merge_logic, generation_targets as logic_generation_targets), app.detailed_design.logic_drafting(LogicGenerationOutput, build_logic_messages, calling_step_rows, to_logic_draft)
+# Phase-23-4:追記 ── app.detailed_design.document(CHAPTERS, to_markdown), app.detailed_design.plan(PLAN_STAGE, normalize_plan), app.detailed_design.plan_drafting(CrossCuttingGenerationOutput, PlanGenerationOutput, build_crosscutting_messages, build_plan_messages, to_crosscutting, to_plan_model), app.services.detailed_design_export_service.DetailedDesignExportService
 # Phase-18-3：更新(app.uml.domain の DfdSemanticModel → NotationType。_save_group_dfd を _save_diagram に共通化したため)
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
@@ -73,6 +77,7 @@ from app.detailed_design.data_model_drafting import (
     to_crud_drafts,
     to_er_model,
 )
+from app.detailed_design.document import CHAPTERS, to_markdown
 from app.detailed_design.drafting import (
     FunctionListGenerationOutput,
     build_function_list_messages,
@@ -93,6 +98,15 @@ from app.detailed_design.logic_drafting import (
     build_logic_messages,
     calling_step_rows,
     to_logic_draft,
+)
+from app.detailed_design.plan import PLAN_STAGE, normalize_plan
+from app.detailed_design.plan_drafting import (
+    CrossCuttingGenerationOutput,
+    PlanGenerationOutput,
+    build_crosscutting_messages,
+    build_plan_messages,
+    to_crosscutting,
+    to_plan_model,
 )
 from app.detailed_design.procedure import (
     MAX_PROCEDURE_TARGETS,
@@ -122,6 +136,7 @@ from app.repositories.uml_diagram import UmlDiagramRepository
 from app.schemas.design_stage import DesignStageRead
 from app.services.data_item_service import DataItemService
 from app.services.design_stage_service import DesignStageService
+from app.services.detailed_design_export_service import DetailedDesignExportService
 from app.services.errors import (
     DesignStageGenerationInProgressError,
     DesignStageGenerationNotSupportedError,
@@ -427,6 +442,39 @@ async def generate_logics(context: StageGenerationContext) -> dict:
 #             subject=subject,
 #         )
 # ↓↓
+# Phase-23-4:追記
+async def generate_plan(context: StageGenerationContext) -> dict:
+    """段階7: 横断事項を下書きし、それを入力に実装計画を下書きする(LLM 2回)。
+
+    詳細設計書は 01〜06章だけを md にして渡す(07 横断事項は、この段階自身が作るため)。図は
+    描かない(md の画像は入力に要らず、図を`exported`にもしない)。作り直しは全体を置き換える
+    (段階4と同じ)。"""
+    project = await context.session.get(Project, context.project_id)
+    if project is None:
+        raise RuntimeError("project not found")
+    collected = await DetailedDesignExportService(context.session).collect(project, render=False)
+    chapters = [chapter for chapter in CHAPTERS if chapter.stage < PLAN_STAGE]
+    design = to_markdown(collected.source, chapters)
+    requirements = context.sources.documents.get("requirements", "")
+    external_design = context.sources.documents.get("external_design", "")
+    function_list = FunctionListModel.model_validate(context.sources.stages.get(1) or {})
+    modules = ModuleListModel.model_validate(context.sources.stages.get(4) or {}).modules
+
+    crosscutting_output = await _invoke_structured(
+        context.llm,
+        CrossCuttingGenerationOutput,
+        build_crosscutting_messages(requirements, external_design, design),
+    )
+    crosscutting = to_crosscutting(crosscutting_output)
+    plan_output = await _invoke_structured(
+        context.llm,
+        PlanGenerationOutput,
+        build_plan_messages(requirements, design, crosscutting, function_list.functions),
+    )
+    model = normalize_plan(to_plan_model(crosscutting, plan_output), [row.path for row in modules])
+    return model.model_dump(mode="json")
+
+
 async def _save_diagram(
     context: StageGenerationContext, notation: NotationType, subject: str, model: BaseModel
 ) -> None:
@@ -468,6 +516,8 @@ STAGE_GENERATORS: dict[int, StageGenerator] = {
     5: generate_procedures,
     # Phase-21-3:追記
     6: generate_logics,
+    # Phase-23-4:追記
+    7: generate_plan,
 }
 
 

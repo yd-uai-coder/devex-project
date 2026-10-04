@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6
 // 写経レベル: コア ── 状態の言葉と、承認できる条件(古い段階は承認し直せる)。
 // Phase-18-9:追記 ── @/features/detailed-design/api/types.StageIssue
 import type {
@@ -15,7 +15,10 @@ export const STAGE_TITLES: Record<number, string> = {
   4: "ソフトウェア構造",
   5: "主要処理の手順",
   6: "処理ロジックの詳細(任意)",
-  7: "実装計画",
+  // Phase-23-6：更新
+  // 7: "実装計画",
+  // ↓↓
+  7: "横断事項と実装計画",
 };
 
 export const STATE_LABELS: Record<StageState, string> = {

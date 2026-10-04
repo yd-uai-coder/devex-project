@@ -1,21 +1,28 @@
-# 作成：Phase-22-5
+# 作成：Phase-22-5｜更新：Phase-23-3
 # 写経レベル: コア ── 承認済みの章の図だけを描いて載せ、出力した図を exported にする。
-"""詳細設計書(HTML+md+図)を zip にまとめるユースケース(Phase 22)。
+# Phase-23-3：更新(docstring: 実装計画と、入力を集める collect を段階7の生成も使うこと)
+"""詳細設計書(HTML+md+図)と実装計画を zip にまとめるユースケース(Phase 22・23)。
 
 docs/internal_design.md 3.3節「4. 詳細設計モード」の「詳細設計書の組み立て」。
 
-- 入力: 段階1〜6の状態と承認済みの内容(`DesignStageService.overview`)、承認済みの章が使う図
+- 入力: 段階1〜7の状態と承認済みの内容(`DesignStageService.overview`)、承認済みの章が使う図
   (段階2の DFD・段階3の ER・段階4の構成図)、データ辞書。
 - 組み立て: 純粋関数(`app.detailed_design.document`)が md と HTML を作る。図の描画は
   ステージ3の zip と同じ規則(`app.uml.export.render_diagram`)。
 - zip に入れた図は`exported`にする(図のファイルを出力した記録。ステージ3の zip と同じ)。
+- 段階7の実装計画は、詳細設計書とは別のファイル(implementation_plan.md・.html)にする(Phase 23)。
+
+入力を集める部分(`collect`)は、段階7の下書きの生成も使う(Phase 23。#17: 消費者は段階7の
+生成)。生成では図を描かず(`render=False`)、図を`exported`にもしない。
 
 ダウンロードは、どの段階が承認済みでもいつでもできる。承認していない段階の章は「未承認」になる
 (Phase 22 の決定)。
 """
 
+# Phase-23-3:追記 ── dataclasses(dataclass, field), app.detailed_design.document(DocumentSource, to_plan_html, to_plan_markdown)
 import uuid
 import zipfile
+from dataclasses import dataclass, field
 from io import BytesIO
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,10 +31,13 @@ from app.detailed_design.data_flow import DataFlowModel, dfd_subject
 from app.detailed_design.data_model import ER_SUBJECT
 from app.detailed_design.document import (
     DataItemEntry,
+    DocumentSource,
     RenderedDiagram,
     document_source,
     to_html,
     to_markdown,
+    to_plan_html,
+    to_plan_markdown,
 )
 from app.detailed_design.stages import StageState
 from app.detailed_design.structure import STRUCTURE_SUBJECT
@@ -51,6 +61,19 @@ DOCUMENT_FILENAME = "detailed_design.zip"
 DOCUMENT_HTML_NAME = "detailed_design.html"
 DOCUMENT_MARKDOWN_NAME = "detailed_design.md"
 DOCUMENT_DIAGRAM_DIR = "diagrams"
+# Phase-23-3:追記
+PLAN_HTML_NAME = "implementation_plan.html"
+PLAN_MARKDOWN_NAME = "implementation_plan.md"
+
+
+@dataclass
+class CollectedDocument:
+    """組み立ての入力と、描いた図。`files`は zip の中のパス → 図の SVG・draw.io の本文、
+    `rendered`は描いた図の行(zip に入れたら`exported`にする)。図を描かないときは両方空。"""
+
+    source: DocumentSource
+    files: dict[str, str] = field(default_factory=dict)
+    rendered: list[UmlDiagram] = field(default_factory=list)
 
 
 class DetailedDesignExportService:
@@ -62,23 +85,151 @@ class DetailedDesignExportService:
         self._diagrams = UmlDiagramRepository(session)
         self._data_items = DataItemRepository(session)
 
+    # Phase-23-3：更新(bundle を、入力を集める collect と zip に書く bundle に分けた。図を描かない
+    # collect(render=False) は段階7の下書きの生成が使う。#17)
+    # async def bundle(self, project: Project) -> BundleFile:
+    #     """詳細設計書の HTML・md と、載せた図の SVG・draw.io を zip にまとめる。
+    #     簡易ドキュメントモードのプロジェクトは`DesignStagesNotAvailableError`(409)。"""
+    #     views, sources = await self._stages.overview(project)
+    #     states: dict[int, StageState] = {stage: view.state for stage, view in views.items()}
+    #     approved = sources.stages
+    #     items = await self._data_items.list_for_project(project.id)
+    #     names = {item.id: item.name for item in items}
+    #
+    #     files: dict[str, str] = {}
+    #     used: set[str] = set()
+    #     exported: list[UmlDiagram] = []
+    #
+    #     def add(diagram: UmlDiagram | None) -> RenderedDiagram | None:
+    #         """承認済みの図を描いて zip に足す(承認済みでない図・配置の無い図は載せない。図の
+    #         承認には配置が要るので、配置の無い承認済みの図は通常は無い)。"""
+    #         if diagram is None or not _is_approved(diagram) or diagram.layout_model is None:
+    #             return None
+    #         model = SemanticModelAdapter.validate_python(diagram.semantic_model)
+    #         title = diagram_title(model.notation, diagram.subject)
+    #         base = unique_base(
+    #             export_filename(model.notation, diagram.subject, "svg").removesuffix(".svg"), used
+    #         )
+    #         svg_path = f"{DOCUMENT_DIAGRAM_DIR}/{base}.svg"
+    #         svg = render_diagram(
+    #             model, diagram.layout_model, names, "svg", diagram_id=str(diagram.id), title=title
+    #         )
+    #         files[svg_path] = svg
+    #         files[f"{DOCUMENT_DIAGRAM_DIR}/{base}.drawio"] = render_diagram(
+    #             model,
+    #             diagram.layout_model,
+    #             names,
+    #             "drawio",
+    #             diagram_id=str(diagram.id),
+    #             title=title,
+    #         )
+    #         exported.append(diagram)
+    #         return RenderedDiagram(title=title, path=svg_path, svg=svg)
+    #
+    #     # 段階2: 承認済みなら、選んだ機能グループの DFD を載せる
+    #     dfd_diagrams: dict[str, RenderedDiagram] = {}
+    #     dfd_models: list[dict] = []
+    #     if 2 in approved:
+    #         for group in DataFlowModel.model_validate(approved[2]).dfd_groups:
+    #             diagram = await self._get(project.id, "dfd", dfd_subject(group))
+    #             rendered = add(diagram)
+    #             if diagram is not None and rendered is not None:
+    #                 dfd_diagrams[group] = rendered
+    #                 dfd_models.append(diagram.semantic_model or {})
+    #
+    #     # 段階3: 承認済みなら ER(図とテーブル定義の正本)
+    #     er = er_diagram = None
+    #     if 3 in approved:
+    #         er_row = await self._get(project.id, "er", ER_SUBJECT)
+    #         er_diagram = add(er_row)
+    #         if er_row is not None and er_diagram is not None:
+    #             er = ErSemanticModel.model_validate(er_row.semantic_model or {})
+    #
+    #     # 段階4: 承認済みなら構成図
+    #     component_diagram = None
+    #     if 4 in approved:
+    #         component_diagram = add(await self._get(project.id, "component", STRUCTURE_SUBJECT))
+    #
+    #     source = document_source(
+    #         project.title,
+    #         states,
+    #         approved,
+    #         dfd_diagrams=dfd_diagrams,
+    #         dfd_models=tuple(dfd_models),
+    #         data_items=tuple(
+    #             DataItemEntry(
+    #                 id=str(item.id),
+    #                 name=item.name,
+    #                 fields=tuple(str(f.get("name", "")) for f in item.fields),
+    #             )
+    #             for item in items
+    #         ),
+    #         er=er,
+    #         er_diagram=er_diagram,
+    #         component_diagram=component_diagram,
+    #     )
+    #
+    #     buffer = BytesIO()
+    #     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+    #         archive.writestr(DOCUMENT_HTML_NAME, to_html(source))
+    #         archive.writestr(DOCUMENT_MARKDOWN_NAME, to_markdown(source))
+    #         for path, content in files.items():
+    #             archive.writestr(path, content)
+    #
+    #     for diagram in exported:
+    #         diagram.status = STATUS_AFTER_EXPORT
+    #     await self._session.flush()
+    #     await self._session.commit()
+    #     return BundleFile(
+    #         filename=DOCUMENT_FILENAME, content=buffer.getvalue(), media_type="application/zip"
+    #     )
+    # ↓↓
     async def bundle(self, project: Project) -> BundleFile:
-        """詳細設計書の HTML・md と、載せた図の SVG・draw.io を zip にまとめる。
+        """詳細設計書の HTML・md、実装計画の HTML・md と、載せた図の SVG・draw.io を zip に
+        まとめる。簡易ドキュメントモードのプロジェクトは`DesignStagesNotAvailableError`(409)。"""
+        collected = await self.collect(project, render=True)
+        source = collected.source
+
+        buffer = BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(DOCUMENT_HTML_NAME, to_html(source))
+            archive.writestr(DOCUMENT_MARKDOWN_NAME, to_markdown(source))
+            archive.writestr(PLAN_HTML_NAME, to_plan_html(source))
+            archive.writestr(PLAN_MARKDOWN_NAME, to_plan_markdown(source))
+            for path, content in collected.files.items():
+                archive.writestr(path, content)
+
+        for diagram in collected.rendered:
+            diagram.status = STATUS_AFTER_EXPORT
+        await self._session.flush()
+        await self._session.commit()
+        return BundleFile(
+            filename=DOCUMENT_FILENAME, content=buffer.getvalue(), media_type="application/zip"
+        )
+
+    async def collect(self, project: Project, *, render: bool) -> CollectedDocument:
+        """組み立ての入力を集める。`render`なら承認済みの図を描く(zip 用)。描かないときも、
+        図の意味モデル(DFD の線・ER のテーブル)は表の導出に使うので読む。DB は書き換えない。
         簡易ドキュメントモードのプロジェクトは`DesignStagesNotAvailableError`(409)。"""
         views, sources = await self._stages.overview(project)
         states: dict[int, StageState] = {stage: view.state for stage, view in views.items()}
         approved = sources.stages
         items = await self._data_items.list_for_project(project.id)
         names = {item.id: item.name for item in items}
-
-        files: dict[str, str] = {}
+        collected_files: dict[str, str] = {}
+        rendered: list[UmlDiagram] = []
         used: set[str] = set()
-        exported: list[UmlDiagram] = []
 
-        def add(diagram: UmlDiagram | None) -> RenderedDiagram | None:
-            """承認済みの図を描いて zip に足す(承認済みでない図・配置の無い図は載せない。図の
-            承認には配置が要るので、配置の無い承認済みの図は通常は無い)。"""
-            if diagram is None or not _is_approved(diagram) or diagram.layout_model is None:
+        def usable(diagram: UmlDiagram | None) -> bool:
+            """載せられる図か(承認済みで、描くなら配置がある。図の承認には配置が要るので、
+            配置の無い承認済みの図は通常は無い)。"""
+            if diagram is None or not _is_approved(diagram):
+                return False
+            return not render or diagram.layout_model is not None
+
+        def draw(diagram: UmlDiagram) -> RenderedDiagram | None:
+            """図を描いて zip のファイルに足す(`render`でなければ描かない)。"""
+            if not render:
                 return None
             model = SemanticModelAdapter.validate_python(diagram.semantic_model)
             title = diagram_title(model.notation, diagram.subject)
@@ -89,8 +240,8 @@ class DetailedDesignExportService:
             svg = render_diagram(
                 model, diagram.layout_model, names, "svg", diagram_id=str(diagram.id), title=title
             )
-            files[svg_path] = svg
-            files[f"{DOCUMENT_DIAGRAM_DIR}/{base}.drawio"] = render_diagram(
+            collected_files[svg_path] = svg
+            collected_files[f"{DOCUMENT_DIAGRAM_DIR}/{base}.drawio"] = render_diagram(
                 model,
                 diagram.layout_model,
                 names,
@@ -98,7 +249,7 @@ class DetailedDesignExportService:
                 diagram_id=str(diagram.id),
                 title=title,
             )
-            exported.append(diagram)
+            rendered.append(diagram)
             return RenderedDiagram(title=title, path=svg_path, svg=svg)
 
         # 段階2: 承認済みなら、選んだ機能グループの DFD を載せる
@@ -107,23 +258,27 @@ class DetailedDesignExportService:
         if 2 in approved:
             for group in DataFlowModel.model_validate(approved[2]).dfd_groups:
                 diagram = await self._get(project.id, "dfd", dfd_subject(group))
-                rendered = add(diagram)
-                if diagram is not None and rendered is not None:
-                    dfd_diagrams[group] = rendered
-                    dfd_models.append(diagram.semantic_model or {})
+                if diagram is None or not usable(diagram):
+                    continue
+                dfd_models.append(diagram.semantic_model or {})
+                drawn = draw(diagram)
+                if drawn is not None:
+                    dfd_diagrams[group] = drawn
 
         # 段階3: 承認済みなら ER(図とテーブル定義の正本)
         er = er_diagram = None
         if 3 in approved:
             er_row = await self._get(project.id, "er", ER_SUBJECT)
-            er_diagram = add(er_row)
-            if er_row is not None and er_diagram is not None:
+            if er_row is not None and usable(er_row):
                 er = ErSemanticModel.model_validate(er_row.semantic_model or {})
+                er_diagram = draw(er_row)
 
         # 段階4: 承認済みなら構成図
         component_diagram = None
         if 4 in approved:
-            component_diagram = add(await self._get(project.id, "component", STRUCTURE_SUBJECT))
+            component = await self._get(project.id, "component", STRUCTURE_SUBJECT)
+            if component is not None and usable(component):
+                component_diagram = draw(component)
 
         source = document_source(
             project.title,
@@ -143,21 +298,7 @@ class DetailedDesignExportService:
             er_diagram=er_diagram,
             component_diagram=component_diagram,
         )
-
-        buffer = BytesIO()
-        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-            archive.writestr(DOCUMENT_HTML_NAME, to_html(source))
-            archive.writestr(DOCUMENT_MARKDOWN_NAME, to_markdown(source))
-            for path, content in files.items():
-                archive.writestr(path, content)
-
-        for diagram in exported:
-            diagram.status = STATUS_AFTER_EXPORT
-        await self._session.flush()
-        await self._session.commit()
-        return BundleFile(
-            filename=DOCUMENT_FILENAME, content=buffer.getvalue(), media_type="application/zip"
-        )
+        return CollectedDocument(source=source, files=collected_files, rendered=rendered)
 
     async def _get(
         self, project_id: uuid.UUID, notation: NotationType, subject: str

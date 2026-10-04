@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -9,6 +9,7 @@
 # Phase-19-1:追記 ── app.detailed_design.structure.STRUCTURE_STAGE, STRUCTURE_SUBJECT, ModuleDraft, ModuleListModel, ModuleRow, component_layers, merge_modules, module_ref_matches, path_variants(画面確認後の修正); app.detailed_design.validation.ComponentDiagramSummary
 # Phase-20-1:追記 ── app.detailed_design.procedure.MAX_PROCEDURE_TARGETS, PROCEDURE_STAGE, Procedure, ProcedureDraft, ProcedureModel, ProcedureStep, is_external_actor, merge_procedure, number_steps, pending_function_ids, resolve_callee, step_id
 # Phase-20-3:追記 ── app.detailed_design.procedure.generation_targets
+# Phase-23-1:追記 ── app.detailed_design.plan.CROSSCUTTING_TOPICS, PLAN_STAGE, PRIORITIES, TASK_AREAS, CrossCuttingRow, Milestone, PlanModel, PlanTask, Risk, milestone_id, missing_topics, normalize_plan, planned_function_ids, unplanned_functions
 # Phase-21-1:追記 ── app.detailed_design.logic.LOGIC_STAGE, MAX_LOGIC_TARGETS, LogicCandidate, LogicDraft, LogicModel, LogicRow, PseudoStep, calling_steps, is_drafted, logic_candidates, logic_id, logic_key, merge_logic, pending_logic_keys
 from app.detailed_design.api_list import (
     ApiEndpoint,
@@ -66,6 +67,22 @@ from app.detailed_design.logic import (
     merge_logic,
     pending_logic_keys,
 )
+from app.detailed_design.plan import (
+    CROSSCUTTING_TOPICS,
+    PLAN_STAGE,
+    PRIORITIES,
+    TASK_AREAS,
+    CrossCuttingRow,
+    Milestone,
+    PlanModel,
+    PlanTask,
+    Risk,
+    milestone_id,
+    missing_topics,
+    normalize_plan,
+    planned_function_ids,
+    unplanned_functions,
+)
 from app.detailed_design.procedure import (
     MAX_PROCEDURE_TARGETS,
     PROCEDURE_STAGE,
@@ -121,6 +138,8 @@ from app.detailed_design.validation import (
 
 # Phase-16-1・16-2：更新(__all__ に上の追記の名前を足した。並びはアルファベット順)
 __all__ = [
+    # Phase-23-1:追記
+    "CROSSCUTTING_TOPICS",
     # Phase-18-1:追記
     "CRUD_OPS",
     # Phase-17-1:追記
@@ -137,6 +156,9 @@ __all__ = [
     "MAX_LOGIC_TARGETS",
     # Phase-20-1:追記
     "MAX_PROCEDURE_TARGETS",
+    # Phase-23-1:追記
+    "PLAN_STAGE",
+    "PRIORITIES",
     "PROCEDURE_STAGE",
     "STAGES",
     "STAGE_INPUTS",
@@ -144,9 +166,13 @@ __all__ = [
     # Phase-19-1:追記
     "STRUCTURE_STAGE",
     "STRUCTURE_SUBJECT",
+    # Phase-23-1:追記
+    "TASK_AREAS",
     "ApiEndpoint",
     # Phase-19-1:追記
     "ComponentDiagramSummary",
+    # Phase-23-1:追記
+    "CrossCuttingRow",
     # Phase-18-1:追記
     "CrudCell",
     # Phase-18-1:追記
@@ -170,10 +196,15 @@ __all__ = [
     "LogicDraft",
     "LogicModel",
     "LogicRow",
+    # Phase-23-1:追記
+    "Milestone",
     # Phase-19-1:追記
     "ModuleDraft",
     "ModuleListModel",
     "ModuleRow",
+    # Phase-23-1:追記
+    "PlanModel",
+    "PlanTask",
     # Phase-20-1:追記
     "Procedure",
     "ProcedureDraft",
@@ -185,6 +216,8 @@ __all__ = [
     "ProcessSummaryRow",
     # Phase-21-1:追記
     "PseudoStep",
+    # Phase-23-1:追記
+    "Risk",
     # ── ここから Phase-15-2 の作成分 ──
     "StageInputs",
     "StageIssue",
@@ -235,12 +268,17 @@ __all__ = [
     "merge_modules",
     # Phase-20-1:追記
     "merge_procedure",
+    # Phase-23-1:追記
+    "milestone_id",
+    "missing_topics",
     # Phase-19-1:追記(画面確認後の修正)
     "module_ref_matches",
     # Phase-17-1:追記
     "merge_summaries",
     # Phase-18-1:追記
     "normalize_ops",
+    # Phase-23-1:追記
+    "normalize_plan",
     # Phase-20-1:追記
     "number_steps",
     "parse_trigger",
@@ -250,6 +288,8 @@ __all__ = [
     "pending_function_ids",
     # Phase-21-1:追記
     "pending_logic_keys",
+    # Phase-23-1:追記
+    "planned_function_ids",
     # Phase-20-1:追記
     "resolve_callee",
     # Phase-18-1:追記
@@ -262,5 +302,7 @@ __all__ = [
     # Phase-18-1:追記
     "tables_without_primary_key",
     "trigger_key",
+    # Phase-23-1:追記
+    "unplanned_functions",
     "validate_stage",
 ]

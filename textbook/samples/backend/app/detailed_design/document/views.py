@@ -1,5 +1,6 @@
-# 作成：Phase-22-2
+# 作成：Phase-22-2｜更新：Phase-23-2
 # 写経レベル: コア ── 05↔06・関与表・CRUD の記号を、保存せず画面と同じ規則で導く。
+# Phase-23-2：更新(docstring: 実装計画の処理の割り当て)
 """詳細設計書の表を、承認済みの意味モデルから導く(純粋関数)。
 
 docs/internal_design.md 3.3節「4. 詳細設計モード」の「詳細設計書の組み立て」。
@@ -12,8 +13,11 @@ md と HTML は同じ表を出すので、表の中身はここで1回だけ導�
   (モジュール, 関数)の一致から`logic_key`で導く(Phase 20 の決定。デモの`logic`欄は使わない)。
 - CRUD 図の記号は、DFD の線(`dfd_accesses`)から決まる部分と人が確定した部分を分けて見せる
   (Phase 18 からの持ち越し。出力見本 appendix/detailed-design-devex の3分類)。
+- 実装計画の「処理の割り当て」は、処理ごとに、その処理を書いたマイルストーンの M-ID を導く
+  (Phase 23。計画の漏れが表で見える)。
 """
 
+# Phase-23-2:追記 ── app.detailed_design.plan(PlanModel, milestone_id)
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -21,6 +25,7 @@ from typing import Any, Literal
 from app.detailed_design.data_model import CrudModel, dfd_accesses, table_key
 from app.detailed_design.function_list import FunctionListModel, FunctionRow
 from app.detailed_design.logic import LogicModel, LogicRow, calling_steps, logic_id, logic_key
+from app.detailed_design.plan import PlanModel, milestone_id
 from app.detailed_design.procedure import (
     Procedure,
     ProcedureModel,
@@ -220,3 +225,32 @@ def _mark(op: str, function_id: str, table: str, accesses: set[tuple[str, str, s
     if op in "CUD" and (function_id, key, "write") in accesses:
         return CrudMark(op, "dfd_write")
     return CrudMark(op, "human")
+
+
+# Phase-23-2:追記
+# ---------------------------------------------------------------------------
+# 実装計画: 処理の割り当て(Phase 23)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class FunctionPlan:
+    """処理1つの割り当て。`milestones`は、その処理をマイルストーンかタスクに書いた M-ID
+    (計画の並び順)。空なら計画の漏れ。"""
+
+    function_id: str
+    name: str
+    milestones: tuple[str, ...]
+
+
+def function_plans(plan: PlanModel, function_list: FunctionListModel | None) -> list[FunctionPlan]:
+    """機能一覧の処理ごとに、割り当てたマイルストーンを導く(機能一覧の並び)。"""
+    found: dict[str, list[str]] = {}
+    for index, milestone in enumerate(plan.milestones):
+        ids = list(milestone.function_ids)
+        for task in milestone.tasks:
+            ids += task.function_ids
+        for function_id in dict.fromkeys(f.strip() for f in ids):
+            found.setdefault(function_id, []).append(milestone_id(index))
+    functions = function_list.functions if function_list is not None else []
+    return [FunctionPlan(row.id, row.name, tuple(found.get(row.id, []))) for row in functions]

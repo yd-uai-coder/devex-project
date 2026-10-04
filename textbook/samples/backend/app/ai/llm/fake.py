@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -27,6 +27,7 @@ from pydantic import BaseModel
 # Phase-19-2:追記 ── app.detailed_design.structure_drafting.GeneratedModuleRow, ModuleListGenerationOutput
 # Phase-20-2:追記 ── app.detailed_design.procedure_drafting.GeneratedStep, ProcedureGenerationOutput
 # Phase-21-2:追記 ── app.detailed_design.logic_drafting.GeneratedPseudoStep, LogicGenerationOutput
+# Phase-23-4:追記 ── app.detailed_design.plan_drafting(CrossCuttingGenerationOutput, GeneratedCrossCutting, GeneratedMilestone, GeneratedRisk, GeneratedTask, PlanGenerationOutput)
 from app.detailed_design.data_flow_drafting import (
     GeneratedGroupProcess,
     GeneratedSummary,
@@ -42,6 +43,14 @@ from app.detailed_design.data_model_drafting import (
 )
 from app.detailed_design.drafting import FunctionListGenerationOutput, GeneratedFunction
 from app.detailed_design.logic_drafting import GeneratedPseudoStep, LogicGenerationOutput
+from app.detailed_design.plan_drafting import (
+    CrossCuttingGenerationOutput,
+    GeneratedCrossCutting,
+    GeneratedMilestone,
+    GeneratedRisk,
+    GeneratedTask,
+    PlanGenerationOutput,
+)
 from app.detailed_design.procedure_drafting import GeneratedStep, ProcedureGenerationOutput
 from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleListGenerationOutput
 from app.schemas.generation import HearingCompletionCheck
@@ -382,6 +391,38 @@ _UML_OUTPUTS[LogicGenerationOutput] = LogicGenerationOutput(
 )
 
 # ── ここから Phase-4-3 の作成分 ──
+# Phase-23-4:追記
+# 詳細設計モードの段階7(横断事項と実装計画)の下書き(Phase 23)。段階1の2処理(F-01・F-02)と、
+# 段階4のモジュール一覧のパスにそろえる
+_UML_OUTPUTS[CrossCuttingGenerationOutput] = CrossCuttingGenerationOutput(
+    crosscutting=[
+        GeneratedCrossCutting(
+            topic=topic, policy=f"[E2E Fake] {topic}の方針", modules=["app/main.py"]
+        )
+        for topic in ("例外と HTTP", "認証", "トランザクション", "ログ")
+    ]
+)
+_UML_OUTPUTS[PlanGenerationOutput] = PlanGenerationOutput(
+    milestones=[
+        GeneratedMilestone(
+            name="[E2E Fake] 予約の登録と一覧",
+            goal="予約を登録して一覧で確かめられる",
+            priority="Must",
+            function_ids=["F-01", "F-02"],
+            tasks=[
+                GeneratedTask(
+                    area="バックエンド",
+                    title="予約の API とサービスを作る",
+                    modules=["app/api/routes/reservations.py", "app/services/reservation.py"],
+                    function_ids=["F-01", "F-02"],
+                ),
+            ],
+        )
+    ],
+    environment="[E2E Fake] Python 3.13・PostgreSQL・GitHub Actions",
+    risks=[GeneratedRisk(risk="[E2E Fake] 予約の重複", mitigation="一意制約で防ぐ")],
+)
+
 _HEARING_REPLY = "[E2E Fake] 承知しました。次に、想定している主なユーザー層を教えてください。"
 _SELF_DIAGNOSIS_REPLY = "[E2E Fake] 自己診断: 特に致命的な不足点はありません。"
 

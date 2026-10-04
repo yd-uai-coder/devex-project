@@ -1,4 +1,4 @@
-# 作成：Phase-22-1
+# 作成：Phase-22-1｜更新：Phase-23-2
 # 写経レベル: コア ── 章の状態(承認/省略/未承認)と、承認済みの内容だけを渡すことを確かめる。
 """詳細設計書の組み立ての入力と章の状態のテスト。
 
@@ -23,7 +23,10 @@ from app.detailed_design.document import (
 from app.detailed_design.stages import StageState
 
 
-def test_chapters_are_01_to_06_mapped_to_stages_1_to_6() -> None:
+# Phase-23-2：更新
+# def test_chapters_are_01_to_06_mapped_to_stages_1_to_6() -> None:
+# ↓↓
+def test_chapters_are_01_to_07_mapped_to_stages_1_to_7() -> None:
     assert [(c.stage, c.number) for c in CHAPTERS] == [
         (1, "01"),
         (2, "02"),
@@ -31,6 +34,8 @@ def test_chapters_are_01_to_06_mapped_to_stages_1_to_6() -> None:
         (4, "04"),
         (5, "05"),
         (6, "06"),
+        # Phase-23-2:追記
+        (7, "07"),
     ]
 
 
@@ -57,6 +62,8 @@ def test_chapter_statuses_treat_missing_stage_as_unapproved() -> None:
         4: "unapproved",
         5: "unapproved",
         6: "unapproved",
+        # Phase-23-2:追記
+        7: "unapproved",
     }
 
 

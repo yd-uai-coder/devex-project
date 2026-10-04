@@ -57,7 +57,7 @@
 ### ステージ4：詳細設計モード ── 【Could have】
 
 * **目的**: 要件定義・外部設計の後に、段階ごとに人が承認しながら詳細設計書を組み立てる「詳細設計モード」を増設する。現行の4文書一括生成は「簡易ドキュメントモード」としてそのまま残す。実務の詳細設計(C4・arc42・日本の詳細設計の成果物)に構成を合わせ、人がコーディングするのに十分な資料をシステムが作ることを目指す(AIによる自動コーディングは理想形であり、要件ではない)。構想は[`appendix/detailed-design-mode-organization.md`](../appendix/detailed-design-mode-organization.md)参照。
-* **段階**: 1 機能(処理)一覧 → 2 機能グループごとのDFD・データ辞書・処理概要表 → 3 ER・テーブル定義・CRUD図 → 4 構成図(層)+モジュール一覧 → 5 選んだ処理の番号付き手順 → 6(任意)選んだ関数の処理ロジックの詳細 → 7 実装計画。各段階は人が承認してから次の段階の入力にする([内部設計書](internal_design.md) 3.3節「4. 詳細設計モード」参照)。
+* **段階**: 1 機能(処理)一覧 → 2 機能グループごとのDFD・データ辞書・処理概要表 → 3 ER・テーブル定義・CRUD図 → 4 構成図(層)+モジュール一覧 → 5 選んだ処理の番号付き手順 → 6(任意)選んだ関数の処理ロジックの詳細 → 7 横断事項と実装計画(Phase 23で改称)。各段階は人が承認してから次の段階の入力にする([内部設計書](internal_design.md) 3.3節「4. 詳細設計モード」参照)。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・再利用するステージ3の資産は[`textbook/Phase-14/Phase-14-4.md`](../textbook/Phase-14/Phase-14-4.md)参照):
   * Phase 14: 要件定義フェーズ(仕様診断・05/06章の表現と出力形式の確定・docs反映。実装は見せ方を確かめるデモページのみ)
   * Phase 15: モードと段階の土台+既存機能の修正(モード選択ダイアログと`projects.mode`・モードごとの生成・`design_stages`・段階の承認と陳腐化・SCR-008の骨格、簡易ドキュメントモードの内部設計書へのモジュール一覧表、出力見本の気づき#1〜#10の修正と自動レイアウトの高速化) ── **完了**([`textbook/Phase-15/Phase-15-introduction.md`](../textbook/Phase-15/Phase-15-introduction.md))
@@ -68,7 +68,7 @@
   * Phase 20: 段階5 主要処理の手順(処理の選択・処理ごとの下書き・索引・関与表・タブ。レビュー画面はPhase 14のデモの見せ方を採用) ── **完了**([`textbook/Phase-20/Phase-20-introduction.md`](../textbook/Phase-20/Phase-20-introduction.md))
   * Phase 21: 段階6 処理ロジックの詳細(05の手順から選んだ関数・関数ごとの下書き・呼ばれる手順・逆引き・05↔06のバッジによる段階をまたぐ移動、段階6を飛ばす操作(0件で承認)) ── **完了**([`textbook/Phase-21/Phase-21-introduction.md`](../textbook/Phase-21/Phase-21-introduction.md))
   * Phase 22: 詳細設計書の組み立てと出力(01〜06章のHTML+md+図のzip、未承認の章と「06 省略」、SCR-008のダウンロード) ── **完了**([`textbook/Phase-22/Phase-22-introduction.md`](../textbook/Phase-22/Phase-22-introduction.md))
-  * Phase 23: 段階7 実装計画(生成・検証・作業領域)と07 横断事項の扱い
+  * Phase 23: 段階7 横断事項と実装計画(生成・検証・作業領域、07章、zip の実装計画) ── **完了**([`textbook/Phase-23/Phase-23-introduction.md`](../textbook/Phase-23/Phase-23-introduction.md))
   * Phase 24: 統合/E2E・デプロイでの確認(詳細設計モードのE2E、開発用・本番のマイグレーションの適用)
   * (Phase 16の着手時に段階1と段階2を、Phase 20の着手時に段階5と段階6を、Phase 22の着手時に組み立て・段階7・統合/E2Eを別のPhaseに分け、そのたびに以降の番号を送った)
 * **マイルストーン5**: 詳細設計モードで、段階1〜6を承認して詳細設計書(HTML+md)をダウンロードできる。(Phase 22で達成)

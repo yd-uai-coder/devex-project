@@ -528,3 +528,30 @@
    - (3) いつでも可、未承認の章は「未承認」(推奨どおり)。承認済みの段階だけを本文に組み立て、0件で承認した段階6の06章は「省略」と書く。
    - Claude の判断(計画の承認で確定): 組み立ては純粋関数のパッケージ `app/detailed_design/document/`(source・views・markdown・html)、DB・図の描画・zip は `DetailedDesignExportService`。05↔06 は手順の (callee, call) と `logic_key` の一致から導く(デモの `logic` 欄は使わない)。CRUD 図の記号は DFD の線との突き合わせで3分類(Phase 18 からの持ち越し)。処理ID は圧縮しない(Phase 19 からの持ち越し)。HTML の文字はすべてエスケープし、図の SVG だけそのまま埋め込む。図の描画・名前の重複除け(BE)と `fetchAttachment`(FE)を共有の場所へ移した(#17)。zip に入れた図は `exported`。
    - 記録: [`Phase-22/`](./Phase-22/Phase-22-introduction.md)、`docs/*.md`、[`Phase-14-4.md`](./Phase-14/Phase-14-4.md)。
+
+### Phase 23 開始時 ── 段階7の形・07 横断事項・生成の入力・zip
+
+1. Phase 23(「Phase23を開始する」で開始。2026-10-04)
+2. Claude からの質問への回答:
+   - (1) 段階7(実装計画)の意味モデルの形。選択肢は「構造化する(マイルストーン・タスク・開発環境・リスクの表。処理ID・パスを検証で突き合わせる)」(推奨)「Markdown 1本」。
+   - (2) 07 横断事項(例外と HTTP・認証・トランザクション・ログ)の作り方。選択肢は「段階7で一緒に作る」(推奨)「新しい段階にする(段階7 = 横断事項、段階8 = 実装計画)」「07 は出さない」。
+   - (3) 段階7の生成で LLM に何を入力するか(簡易モードは「要件定義+内部設計書」)。選択肢は「組み立てた md(01〜06章)」(推奨)「段階の model を要約」。
+   - (4) 段階7の成果物を zip にどう入れるか。選択肢は「別ファイルで同じ zip」(推奨)「詳細設計書の後ろの章」「zip に入れない」。
+3. 回答と対応方針:
+   - (1) 構造化する(推奨どおり)。`{crosscutting, milestones[tasks], environment, risks}`。
+   - (2) 段階7で一緒に作る(推奨どおり)。段階の数は1〜7のまま(マイグレーション不要)。段階7の名前を「横断事項と実装計画」に改めた。
+   - (3) 組み立てた md(推奨どおり)。出力と同じ組み立て(`collect(render=False)`・`to_markdown`)で01〜06章を作って渡す。
+   - (4) 別ファイルで同じ zip(推奨どおり)。`implementation_plan.{html,md}`。07 は詳細設計書の中。未承認なら「未承認」。
+   - Claude の判断(計画の承認で確定): タスクはマイルストーンの中に入れ子で持つ(見本ではタスクがマイルストーンの名前を持っていたが、改名で切れるため)。M-ID は保存せず並び順から導く。計画の漏れは警告、無い処理ID・パスはエラー。下書きのモジュールは `resolve_callee` でパスにそろえる。LLM は2回(横断事項 → 実装計画)。作り直しは全体の置き換え。出力サービスの入力の集め方を `collect` に切り出し(#17。消費者は段階7の生成)、FE の `ListInput` を共有の部品に切り出した(#17。消費者は段階7の表)。E2E の偽の LLM にも段階7を登録した。
+   - 記録: [`Phase-23/`](./Phase-23/Phase-23-introduction.md)、`docs/*.md`、[`Phase-14-4.md`](./Phase-14/Phase-14-4.md)、[`Phase-22-introduction.md`](./Phase-22/Phase-22-introduction.md)「後続 Phase での改訂」。
+
+### Phase 23 画面確認後 ── 環境ファイルの検証エラー
+
+1. Phase 23(画面確認。2026-10-04)
+2. 質問・相談: 段階7の AI の下書きが、モジュール一覧に無いという検証エラーになる。中には `Dockerfile`・`docker-compose.yml` などの環境面のファイルもあり、詳細設計のモジュール一覧には当然入っていない。作成ファイルの例として示しはするが、検証はしない仕様にしたい。
+3. 回答と対応方針:
+   - 横断事項とタスクのファイルの欄(`modules`)の検証(`UNKNOWN_MODULE`)をやめた。処理ID の検証(`UNKNOWN_FUNCTION`)と、計画の漏れの警告(`UNPLANNED_FUNCTION`)は残した。
+   - 欄の名前(`modules`)と保存の形は変えない。`normalize_plan` は、モジュール一覧の1行だけに当たるものだけパスにそろえる。当たらない環境のファイルはそのまま残る。
+   - プロンプトでは、ファイルの欄に、モジュール一覧のパスのほか、環境・設定のファイル(`Dockerfile`・`docker-compose.yml`・CI の設定など)も書いてよいとした。
+   - 見出しは「作成・変更するファイル(例)」「関わるファイル(例)」に改めた(md・HTML・画面)。画面の説明には「検証はしません」と書いた。
+   - 記録: [`Phase-23-introduction.md`](./Phase-23/Phase-23-introduction.md)(撤回の blockquote)、[`Phase-23-1.md`](./Phase-23/Phase-23-1.md)、`docs/internal_design.md`・`docs/external_design.md`。

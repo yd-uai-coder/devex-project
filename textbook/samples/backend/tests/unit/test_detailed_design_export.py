@@ -1,4 +1,4 @@
-# 作成：Phase-22-5
+# 作成：Phase-22-5｜更新：Phase-23-3
 # 写経レベル: 定型 ── zip の構成・未承認の章・図の exported・ルート・共通化した描画を確かめる。
 """詳細設計書の zip の出力のテスト(サービス・ルート・図の描画の共通化)。
 
@@ -74,6 +74,9 @@ async def test_bundle_contains_html_md_and_diagrams(db_session: AsyncSession) ->
         "diagrams/dfd_reservations.svg",
         "diagrams/er.drawio",
         "diagrams/er.svg",
+        # Phase-23-3:追記
+        "implementation_plan.html",
+        "implementation_plan.md",
     ]
     markdown = archive.read("detailed_design.md").decode()
     assert "未承認" not in markdown

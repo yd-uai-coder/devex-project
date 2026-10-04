@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4
 # 写経レベル: コア ── 生成の受け付け → 実行 → 失敗・回収をサービス越しに確かめる。段階2は DFD・データ項目まで1トランザクションで書くこと。
 """段階の下書きの生成(受け付け・実行・回収)と、生成・検証に関わる段階のAPIのテスト。
 
@@ -259,16 +259,23 @@ async def test_failed_generation_records_reason(
 
 
 async def test_generation_rejects_unsupported_locked_and_running_stages(
-    db_session: AsyncSession,
+    # Phase-23-4：更新
+    # db_session: AsyncSession,
+    # ↓↓
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     project = await _project(db_session)
     service = DesignStageGenerationService(db_session)
 
-    with pytest.raises(DesignStageGenerationNotSupportedError):
-        # Phase-21-3：更新(段階6も生成できるようになったので、対応していない例を段階7にした)
-        # await service.request_generation(project, stage=6)
-        # ↓↓
-        await service.request_generation(project, stage=7)
+    # Phase-23-4：更新
+    # with pytest.raises(DesignStageGenerationNotSupportedError):
+    #     await service.request_generation(project, stage=7)
+    # ↓↓
+    # 段階1〜7のすべてに生成がある(Phase 23)ので、登録を外して「未対応」の断りを確かめる
+    with monkeypatch.context() as patch:
+        patch.delitem(STAGE_GENERATORS, 1)
+        with pytest.raises(DesignStageGenerationNotSupportedError):
+            await service.request_generation(project, stage=1)
         # ── ここから Phase-16-4 の作成分 ──
     no_docs = await create_detailed_project(db_session, with_documents=False)
     with pytest.raises(DesignStageLockedError):

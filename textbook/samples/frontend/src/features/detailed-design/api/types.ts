@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -201,3 +201,45 @@ export type LogicTarget = { module: string; function: string };
 
 // 1回の生成で下書きを作れる関数の数の上限(devex-api の MAX_LOGIC_TARGETS と同じ)
 export const MAX_LOGIC_TARGETS = 5;
+
+// Phase-23-5:追記
+// 段階7 横断事項と実装計画の意味モデル(devex-api app/detailed_design/plan.py。Phase 23)。07 横断事項と
+// 実装計画を1つの model に持つ。タスクはマイルストーンの中に入れ子にする(改名で参照が切れないため)。
+// マイルストーンの番号(M-01…)は保存せず並び順から導く(planOps の milestoneId)。
+export type Priority = "Must" | "Should" | "Could";
+export type TaskArea = "準備" | "バックエンド" | "フロントエンド" | "テスト" | "デプロイ";
+
+export type CrossCuttingRow = {
+  topic: string; // 項目(例外と HTTP など)
+  policy: string; // 方針
+  modules: string[]; // 関わるファイルの例(段階4のパスや設定のファイル。検証しない)
+};
+
+export type PlanTask = {
+  area: TaskArea;
+  title: string;
+  modules: string[];
+  function_ids: string[];
+};
+
+export type Milestone = {
+  name: string;
+  goal: string;
+  priority: Priority;
+  function_ids: string[]; // このマイルストーンで動くようにする処理
+  tasks: PlanTask[];
+};
+
+export type Risk = { risk: string; mitigation: string };
+
+export type PlanModel = {
+  crosscutting: CrossCuttingRow[];
+  milestones: Milestone[];
+  environment: string; // 開発環境・CI/CD・事前準備
+  risks: Risk[];
+};
+
+// devex-api の PRIORITIES・TASK_AREAS・CROSSCUTTING_TOPICS と同じ値
+export const PRIORITIES: Priority[] = ["Must", "Should", "Could"];
+export const TASK_AREAS: TaskArea[] = ["準備", "バックエンド", "フロントエンド", "テスト", "デプロイ"];
+export const CROSSCUTTING_TOPICS = ["例外と HTTP", "認証", "トランザクション", "ログ"];

@@ -1,4 +1,4 @@
-# 作成：Phase-22-1｜更新：Phase-22-2,22-3,22-4
+# 作成：Phase-22-1｜更新：Phase-22-2,22-3,22-4,23-2
 # 写経レベル: 定型 ── re-export のみ。章ごとに、その章で作るモジュールの名前を足す(前方 import を避けるため)。
 """詳細設計書(HTML・Markdown)の組み立て(純粋関数)。
 
@@ -18,8 +18,9 @@ DB の読み取り・図の描画・zip はサービス(app/services/detailed_de
 # Phase-22-3:追記 ── app.detailed_design.document.markdown.to_markdown
 # Phase-22-4:追記 ── app.detailed_design.document.html.to_html
 # (__all__ にも、各章で同じ名前を追記する)
-from app.detailed_design.document.html import to_html
-from app.detailed_design.document.markdown import to_markdown
+# Phase-23-2:追記 ── html.to_plan_html, markdown.to_plan_markdown, views(FunctionPlan, function_plans)
+from app.detailed_design.document.html import to_html, to_plan_html
+from app.detailed_design.document.markdown import to_markdown, to_plan_markdown
 from app.detailed_design.document.source import (
     CHAPTERS,
     Chapter,
@@ -34,12 +35,14 @@ from app.detailed_design.document.source import (
 from app.detailed_design.document.views import (
     CrudMark,
     CrudMatrix,
+    FunctionPlan,
     Involvement,
     LogicView,
     StepView,
     anchor,
     crud_matrix,
     data_item_usage,
+    function_plans,
     involvement,
     linked_logic_ids,
     logic_ids,
@@ -55,6 +58,8 @@ __all__ = [
     "CrudMatrix",
     "DataItemEntry",
     "DocumentSource",
+    # Phase-23-2:追記
+    "FunctionPlan",
     "Involvement",
     "LogicView",
     "RenderedDiagram",
@@ -65,6 +70,8 @@ __all__ = [
     "crud_matrix",
     "data_item_usage",
     "document_source",
+    # Phase-23-2:追記
+    "function_plans",
     "involvement",
     "linked_logic_ids",
     "logic_ids",
@@ -72,4 +79,7 @@ __all__ = [
     "procedure_steps",
     "to_html",
     "to_markdown",
+    # Phase-23-2:追記
+    "to_plan_html",
+    "to_plan_markdown",
 ]
