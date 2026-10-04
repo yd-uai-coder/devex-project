@@ -85,6 +85,7 @@ rule #18(セッション境界ルール)は「振り返りファイルへの書�
 ## 後続 Phase での改訂(#12)
 
 - [`Phase-10-1.md`](../Phase-10/Phase-10-1.md)・[`Phase-10-5.md`](../Phase-10/Phase-10-5.md): `app/ai/llm/fake.py`(E2eFakeLLM)の内部設計書の応答を、UML図の生成候補(テーブル見出し・DF見出し)を含む固定文面にした。UML生成の出力スキーマ3種への固定応答と、`with_structured_output(schema, include_raw=True)`への対応も追加した。
+- [`Phase-24-2.md`](../Phase-24/Phase-24-2.md): `e2e/devex-flow.spec.ts` が Phase 15 のモード選択ダイアログと生成の確認ダイアログで壊れていたため直した。登録・作成・ヒアリングの操作は `e2e/helpers.ts` に切り出し、詳細設計モードの E2E と共有した。
 
 ## 次のフェーズ
 

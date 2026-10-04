@@ -1,8 +1,10 @@
-// 作成：Phase-15-7｜更新：Phase-16-6
+// 作成：Phase-15-7｜更新：Phase-16-6,24(完了後の UI 調整)
 // 写経レベル: 定型 ── 7段階の並びと状態の色。
 "use client";
 
+// Phase-24:追記(完了後の UI 調整) ── @/components/layout/layout-constants.HEADER_HEIGHT
 import { Text, XStack, YStack } from "tamagui";
+import { HEADER_HEIGHT } from "@/components/layout/layout-constants";
 import type {
   DesignStageRead,
   StageState,
@@ -30,7 +32,20 @@ export function StageStepper({
   onSelect: (stage: number) => void;
 }) {
   return (
-    <YStack role="navigation" aria-label="段階" gap="$2" minWidth={220}>
+    // Phase-24：更新(完了後の UI 調整)
+    // <YStack role="navigation" aria-label="段階" gap="$2" minWidth={220}>
+    // ↓↓
+    // 広い画面では作業領域の横に並ぶので、スクロールしても見えるように固定のヘッダーの下に
+    // 貼り付ける(top は AppShell の本文の上余白と同じ)。狭い画面では作業領域の上の段に回るため、
+    // 貼り付けると作業領域に重なる。そこで $md 以上の幅でだけ貼り付ける。
+    <YStack
+      role="navigation"
+      aria-label="段階"
+      gap="$2"
+      minWidth={220}
+      alignSelf="flex-start"
+      $md={{ position: "sticky", top: HEADER_HEIGHT + 16, zIndex: 10 }}
+    >
       {stages.map((s) => {
         const selected = s.stage === selectedStage;
         return (

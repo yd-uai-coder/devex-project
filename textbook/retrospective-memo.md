@@ -74,3 +74,17 @@
 - **概要**: `devex-ui`の`ApiError`は`status`と`message`しか持たず、`devex-api`の共通エラー形式`{detail, code}`の`code`を捨てていた。409の「競合」と「生成中」のように、同じstatusで扱いを変えたい場面があったため、`code?: string`を足した。`devex-ui/CLAUDE.md`の説明も更新済み。
 - **判断理由**: `devex-api`はテンプレートの段階から`code`付きのエラー形式を持っている。FE側もテンプレートの段階で`code`を受け取れるようにしておけば、利用側のアプリで同じ改修をせずに済む。任意項目なので、既存の呼び出し側への影響は無い。
 - **対象外**: `downloadDocument`など、`apiFetch`を通さない生の`fetch`の箇所は変えていない。
+
+## `[テンプレート反映候補]` 自動デプロイでマイグレーションを新しいコードの起動より前に流す
+
+- **発生**: [`Phase-24-4.md`](./Phase-24/Phase-24-4.md)
+- **概要**: `devex-api/.github/workflows/deploy.yml` の VPS での順序を、`up -d --build` → `exec alembic upgrade head` から、`build backend` → `run --rm backend alembic upgrade head` → `up -d` に改めた。`OPERATIONS.md` の初回デプロイ(3節)も同じ順序にした。
+- **判断理由**: 以前の順序では、マイグレーションが失敗すると、新しいコードが古いスキーマで動いてしまう。新しい順序なら `set -e` で止まり、古いコードが古いスキーマのまま動き続ける。Devex に固有の話ではなく、FastAPI + Alembic + docker compose のテンプレート全般に効く。
+- **対象外**: 列の削除・改名のように、古いコードが新しいスキーマで動けない変更は、この順序でも防げない(2回のデプロイに分ける expand → contract が要る)。テンプレートには、この注意書きも添えるとよい。
+
+## `[テンプレート反映候補]` E2E を CI で流す
+
+- **発生**: [`Phase-24-2.md`](./Phase-24/Phase-24-2.md)
+- **概要**: Phase 4 の E2E(Playwright)は、Phase 15 のダイアログの追加で壊れていた。Phase 24 まで気づかなかった。手元でしか流していないため。CI で流すには、Actions の上で docker compose(偽 LLM のオーバーレイ)と next dev を立てる必要がある。
+- **判断理由**: 今の E2E は3本で約1.5分なので、CI の時間としては許容できる。devex-ui・devex-api のテンプレートにも「偽 LLM で E2E を CI で流す」形を持たせておくと、利用側のアプリでも同じ見落としを防げる。
+- **対象外**: Phase 24 では CI への追加はしていない(本番の確認の後に、相談して決める)。

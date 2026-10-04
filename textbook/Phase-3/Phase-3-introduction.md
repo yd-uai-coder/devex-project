@@ -87,6 +87,7 @@
 - [`Phase-11-2.md`](../Phase-11/Phase-11-2.md): `src/lib/api/client.ts`の`ApiError`に、共通エラー形式の`code`(任意)を追加した。
 - [`Phase-11-4.md`](../Phase-11/Phase-11-4.md): `src/hooks/useGenerationPolling.ts`の`POLL_INTERVAL_MS`・`POLL_TIMEOUT_MS`を export し、UML 生成のポーリングで再利用した。
 - [`Phase-12-5.md`](../Phase-12/Phase-12-5.md): 文書ダウンロードの`parseFilename`(`documentsApi.ts`)と保存処理(`DocumentMarkdownView.tsx`)を、UML図の出力と共有するため`src/lib/api/download.ts`へ移した。`client.ts`の`toApiError`を export した。
+- Phase 24 完了後の UI 調整([`q_a.md`](../q_a.md)「Phase 24 完了後 ── UI の調整」): `MessageBubble.tsx` の Markdown に `ul`・`ol` の左余白(`paddingLeft: 1.5em`)を付け、リストのマーカーが吹き出しの外へはみ出さないようにした(原因は `globals.css` の `* { padding: 0 }`)。
 - [`Phase-15-6.md`](../Phase-15/Phase-15-6.md): `streamChat.ts`が`event: error`を解釈し、`StreamChatError`に`code`を持たせた(`parseEvent`は種類つきの結果を返す)。[`Phase-15-7.md`](../Phase-15/Phase-15-7.md)・[`Phase-15-8.md`](../Phase-15/Phase-15-8.md): ダッシュボードの作成リンクをモード選択ダイアログに替え、文書画面の再生成に確認ダイアログを挟み、受け付けの失敗で`regenerating`を下ろすようにした。`hearing-store.sendMessage`のコメント(「発話はストリームの前に保存される」)は実装と食い違っていたので直した。
 
 ## 次のフェーズ

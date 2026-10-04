@@ -32,7 +32,7 @@
 | 21 | 段階6 処理ロジックの詳細 | 05 の手順から選んだ関数の処理ロジック(06は任意。段階6を飛ばす操作を含む) | 段階6 / 06章 | 20 | 完了([Phase 21](../Phase-21/Phase-21-introduction.md)) |
 | 22 | 詳細設計書の組み立てと出力 | 承認済みの段階から詳細設計書(01〜06章の HTML+md+図の zip)を組み立てる。未承認の章と「06 省略」、SCR-008 のダウンロード | 01〜06章 | 15〜21 | 完了([Phase 22](../Phase-22/Phase-22-introduction.md)) |
 | 23 | 段階7 横断事項と実装計画 | 段階7の生成・検証・作業領域、07章(横断事項)、zip の実装計画 | 段階7 / 07章 | 22 | 完了([Phase 23](../Phase-23/Phase-23-introduction.md)) |
-| 24 | 統合/E2E・デプロイでの確認 | 詳細設計モードの E2E、開発用・本番のマイグレーションの適用とデプロイでの確認 | 全体 | 23 | 予定 |
+| 24 | 統合/E2E・デプロイでの確認 | 詳細設計モードの E2E、開発用・本番のマイグレーションの適用とデプロイでの確認 | 全体 | 23 | 完了([Phase 24](../Phase-24/Phase-24-introduction.md))。本番での確認はユーザーの実施待ち |
 
 ## Phase ごとの成果物と再利用する資産
 
@@ -47,7 +47,7 @@
 | 21 | 処理ロジックの意味モデルと生成(対象は 05 の手順から人が選ぶ関数)、「呼ばれる手順」の導出 | 06章のレビュー画面(双方向のバッジ・逆引き表)、段階6を飛ばす操作 | Phase 14 のデモの `procedureModel.ts`(逆引きの見本) |
 | 22 | 詳細設計書の組み立て(HTML・md、`app/detailed_design/document/`)と zip 出力(`GET /design-stages/document`) | 詳細設計書のダウンロード(`DesignDocumentBar`) | zip 出力(Phase 13 `uml_sync_service`・`app/uml/export/files.py`)、SVG・drawio 出力(Phase 12)、デモの `toHtml`・`toMarkdown`(形式の見本) |
 | 23 | 段階7(実装計画)の生成・検証、07 横断事項 | 段階7の作業領域 | 簡易ドキュメントモードの実装計画のプロンプト(`doc_generator_service.py`) |
-| 24 | 詳細設計モードの E2E 用の偽の LLM の出力 | 詳細設計モードの E2E(Playwright) | Phase 13 までの E2E(`e2e/devex-flow.spec.ts`)、`E2E_FAKE_LLM` |
+| 24 | 偽の LLM の段階1〜7の契約テスト(`test_fake_llm_detailed_design.py`)、自動デプロイの順序(`deploy.yml`) | 詳細設計モードの E2E(`e2e/detailed-design-flow.spec.ts`)、共通の操作(`e2e/helpers.ts`)、簡易モードの E2E の修復 | Phase 13 までの E2E(`e2e/devex-flow.spec.ts`)、`E2E_FAKE_LLM` |
 
 ## 依存関係
 

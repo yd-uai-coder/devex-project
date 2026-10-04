@@ -555,3 +555,34 @@
    - プロンプトでは、ファイルの欄に、モジュール一覧のパスのほか、環境・設定のファイル(`Dockerfile`・`docker-compose.yml`・CI の設定など)も書いてよいとした。
    - 見出しは「作成・変更するファイル(例)」「関わるファイル(例)」に改めた(md・HTML・画面)。画面の説明には「検証はしません」と書いた。
    - 記録: [`Phase-23-introduction.md`](./Phase-23/Phase-23-introduction.md)(撤回の blockquote)、[`Phase-23-1.md`](./Phase-23/Phase-23-1.md)、`docs/internal_design.md`・`docs/external_design.md`。
+
+### Phase 24 開始時 ── 本番デプロイの分担・E2E の範囲・デプロイの順序
+
+1. Phase 24(「Phase24を開始する」で開始。2026-10-04)
+2. Claude からの質問への回答:
+   - (1) 本番デプロイまで行うか(本番はステージ2のまま。devex-api は main への push で CI が VPS にデプロイし、ステージ3・4のマイグレーションが走る。devex-ui は main への push で Vercel がデプロイする)。選択肢は「手順を用意し、push はユーザー」(推奨)「Claude が push まで行う」「今回はしない」。
+   - (2) 詳細設計モードの E2E の範囲。選択肢は「段階1〜7の承認と zip まで」(推奨)「BE の API 統合テスト+短い E2E」「両方とも通しで」。
+   - (3) CI のデプロイで、マイグレーションを新しいコードの起動より前にするか。選択肢は「変える」(推奨)「今のまま」。
+3. 回答と対応方針:
+   - (1) 手順を用意し、push はユーザー(推奨どおり)。`OPERATIONS.md` 10節に、バックアップ → 重複の確認 → PR・マージ → ログと `/health` → devex-ui の push → 本番で両モードを通す、の手順を書いた。結果は [`Phase-24-4.md`](./Phase-24/Phase-24-4.md) に記録する。
+   - (2) 段階1〜7の承認と zip まで(推奨どおり)。調べたところ、簡易モードの E2E が Phase 15 のダイアログで壊れていたので、あわせて直した。
+   - (3) 変える(推奨どおり)。build → `run --rm` で `alembic upgrade head` → `up -d`。ローカルの本番相当の構成で、順序とロールバック(6本の往復)を確かめた。
+   - Claude の判断(計画の承認で確定): 偽 LLM の段階1〜7の出力を、BE の単体テストで生成・検証・承認・出力の経路に通す(契約テスト。E2E が落ちたときの切り分け用)。E2E の共通の操作を `e2e/helpers.ts` に切り出す(#17。消費者は簡易・詳細の2つの spec)。段階6は飛ばさず関数を1つ生成する。インフラのファイルは samples に写さない(Phase 5 の前例)。
+   - 調べて分かったこと: 開発用 DB は既に head だった(申し送りの「未適用」は古い)。origin/main の `b2e34e5` は、stage4 に含まれる `ae19b15` と同じ中身のマージで、stage4 をマージしても衝突しない。本番で走るマイグレーションは6本(当初7本と数えていたのは誤り)。
+   - 記録: [`Phase-24/`](./Phase-24/Phase-24-introduction.md)、`docs/implementation_plan.md`、[`Phase-14-4.md`](./Phase-14/Phase-14-4.md)、[`Phase-4-introduction.md`](./Phase-4/Phase-4-introduction.md)「後続 Phase での改訂」、`devex-api/OPERATIONS.md`。
+
+### Phase 24 完了後 ── UI の調整
+
+1. Phase 24 完了後(2026-10-04)。新しい Phase・章は作らず、本体と samples に直接反映する指示。
+2. 質問・相談:
+   - (1) ヒアリングのチャット画面で、AI の返答の箇条書き・番号付きリストのマーカーが、吹き出しの枠の外にはみ出ている。枠の中に収めたい。
+   - (2) 詳細設計モードの左の段階の一覧を固定し、スクロールに追従させたい。
+3. 回答と対応方針:
+   - (1) 原因は `globals.css` の `* { padding: 0; margin: 0; }`。`ul`・`ol` の既定の左余白も消えるので、外側に描かれるマーカーが枠の外に出る。文書の画面(`DocumentMarkdownView.tsx`)と同じく、`MessageBubble.tsx` で ReactMarkdown の `components` に `ul`・`ol` の `paddingLeft: "1.5em"` を渡した。
+   - (2) `StageStepper.tsx` の一番外を、`$md` 以上の幅で `position: sticky`・`top: HEADER_HEIGHT + 16`(固定のヘッダーの下。`AppShell` の本文の上余白と同じ)にした。あわせて `alignSelf="flex-start"` を付けた。狭い画面では作業領域の上の段に回って重なるので、貼り付けない。
+   - 確認: Playwright(偽 LLM の backend)で測った。
+     - リストは左余白24pxで、吹き出しの内側に収まった。
+     - ステッパーは、スクロール後に y=80 で止まった。幅600px では `static` だった。
+     - 関係するテスト(78件)・`tsc` も成功した。
+     - (1) は、ユーザーの最初の確認では「直っていない」だった。貼られた HTML の `<ol>`・`<ul>` に `style` が無く、リロード前の画面だったため。リロードで直ったことを、ユーザーが確かめた。LLM の返答の入れ子のリスト(`<ol><li><p>…</p><ul>…</ul></li></ol>`)の構造には問題が無く、入れ子の `ul` にも同じ余白が付く。
+   - 記録: [`Phase-3-introduction.md`](./Phase-3/Phase-3-introduction.md)・[`Phase-15-introduction.md`](./Phase-15/Phase-15-introduction.md)「後続 Phase での改訂」。samples のタグは `Phase-24(完了後の UI 調整)`。
