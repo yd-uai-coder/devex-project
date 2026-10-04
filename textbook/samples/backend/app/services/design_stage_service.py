@@ -1,7 +1,8 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
 # Phase-16-4:追記 ── app.detailed_design.Fingerprint
+# Phase-17-3:追記 ── app.detailed_design.validation.DfdDiagramSummary, app.models.uml_diagram.UmlDiagram, app.repositories.uml_diagram.UmlDiagramRepository
 import uuid
 
 import structlog
@@ -16,12 +17,19 @@ from app.detailed_design import (
     current_inputs,
     derive_states,
 )
-from app.detailed_design.validation import StageSources, has_errors, validate_stage
+from app.detailed_design.validation import (
+    DfdDiagramSummary,
+    StageSources,
+    has_errors,
+    validate_stage,
+)
 from app.models.design_stage import DesignStage
 from app.models.generated_document import GeneratedDocument
 from app.models.project import Project
+from app.models.uml_diagram import UmlDiagram
 from app.repositories.design_stage import DesignStageRepository
 from app.repositories.generated_document import GeneratedDocumentRepository
+from app.repositories.uml_diagram import UmlDiagramRepository
 from app.schemas.design_stage import DesignStageRead, StageIssueRead
 from app.services.errors import (
     DesignStageGenerationInProgressError,
@@ -51,25 +59,31 @@ class DesignStageService:
         self._session = session
         self._stages = DesignStageRepository(session)
         self._documents = GeneratedDocumentRepository(session)
+        # Phase-17-3:追記
+        self._diagrams = UmlDiagramRepository(session)
 
     async def list_stages(self, project: Project) -> list[DesignStageRead]:
         """段階1〜7の状態を返す(未着手の段階も含む)。"""
         _ensure_detailed(project)
-        # Phase-16-3：更新
-        # rows, views = await self._load(project.id)
-        # return [_to_read(views[stage], rows.get(stage)) for stage in STAGE_INPUTS]
-        # ↓↓
         rows, views, documents = await self._load(project.id)
-        sources = _sources(documents)
+        # Phase-17-3：更新
+        # sources = _sources(documents)
+        # ↓↓
+        sources = await self._sources(project.id, rows, views, documents)
         return [_to_read(views[stage], rows.get(stage), sources) for stage in STAGE_INPUTS]
 
     async def stage_view(
         self, project: Project, stage: int
     ) -> tuple[DesignStage | None, StageView, StageSources]:
-        """段階1つ分の行(未着手ならNone)・状態・入力の文書の本文を返す(下書きの生成が使う)。"""
+        """段階1つ分の行(未着手ならNone)・状態・入力(文書の本文・承認済みの段階の内容・DFD の
+        要約)を返す(下書きの生成が使う)。"""
         _ensure_detailed(project)
         rows, views, documents = await self._load(project.id)
-        return rows.get(stage), views[stage], _sources(documents)
+        # Phase-17-3：更新
+        # return rows.get(stage), views[stage], _sources(documents)
+        # ↓↓
+        sources = await self._sources(project.id, rows, views, documents)
+        return rows.get(stage), views[stage], sources
 
     # Phase-16-4:追記
     async def current_fingerprint(self, project: Project, stage: int) -> Fingerprint:
@@ -115,6 +129,24 @@ class DesignStageService:
         await self._session.refresh(row)
         return await self._read_one(project.id, stage)
 
+    # Phase-17-4:追記
+    async def mark_edited(self, project_id: uuid.UUID, stage: int) -> bool:
+        """段階の内容のうち、段階の外に正本を持つもの(段階2の DFD・データ辞書)が直されたとき、
+        承認済みの段階を人の編集と同じ扱いで差し戻す(`reviewing`へ戻し、versionを増やす)。
+        差し戻したらTrue。
+
+        段階の`model`の保存を経ずに内容が変わっても、承認をやり直させ、後ろの段階に「古い」を
+        伝えるため(後ろの段階は、承認した版の番号で陳腐化を判定する)。承認済みでない段階は何も
+        しない。行の無いプロジェクト(簡易ドキュメントモード)も何もしない。呼び出し元の保存と同じ
+        トランザクションで使うため、commitしない(Phase 17)。"""
+        row = await self._stages.get(project_id=project_id, stage=stage)
+        if row is None or row.status != "approved":
+            return False
+        row.status = STATUS_AFTER_EDIT
+        row.version += 1
+        logger.info("design_stage_reopened", project_id=str(project_id), stage=stage)
+        return True
+
     async def approve(
         self, project: Project, *, stage: int, expected_version: int
     ) -> DesignStageRead:
@@ -141,8 +173,11 @@ class DesignStageService:
             raise DesignStageNotApprovableError(f"Stage {stage} is already approved")
         if not row.model:
             raise DesignStageNotApprovableError(f"Stage {stage} has no content")
-        # Phase-16-3:追記
-        if has_errors(validate_stage(stage, row.model, _sources(documents))):
+        # Phase-17-3：更新
+        # if has_errors(validate_stage(stage, row.model, _sources(documents))):
+        # ↓↓
+        sources = await self._sources(project.id, rows, views, documents)
+        if has_errors(validate_stage(stage, row.model, sources)):
             raise DesignStageInvalidError(f"Stage {stage} has validation errors")
 
         row.status = "approved"
@@ -179,12 +214,41 @@ class DesignStageService:
         return rows, views, documents
 
     async def _read_one(self, project_id: uuid.UUID, stage: int) -> DesignStageRead:
-        # Phase-16-3：更新
-        # rows, views = await self._load(project_id)
-        # return _to_read(views[stage], rows.get(stage))
-        # ↓↓
         rows, views, documents = await self._load(project_id)
-        return _to_read(views[stage], rows.get(stage), _sources(documents))
+        # Phase-17-3：更新
+        # return _to_read(views[stage], rows.get(stage), _sources(documents))
+        # ↓↓
+        sources = await self._sources(project_id, rows, views, documents)
+        return _to_read(views[stage], rows.get(stage), sources)
+
+    # Phase-17-3:追記
+    async def _sources(
+        self,
+        project_id: uuid.UUID,
+        rows: dict[int, DesignStage],
+        views: dict[int, StageView],
+        documents: dict[str, GeneratedDocument | None],
+    ) -> StageSources:
+        """段階ごとの検証・下書きの生成に渡す入力。
+
+        - 文書: 入力になる文書の表示中の版の本文。
+        - 段階: 承認済み(古くない)段階の内容。後ろの段階は、承認済みの前の段階だけを入力にする。
+        - DFD: 機能グループの DFD(段階2)の要約。詳細設計モードでは DFD はすべて段階2のもの。
+        """
+        diagrams = await self._diagrams.list_by_notation(project_id, "dfd")
+        return StageSources(
+            documents={
+                doc_type: document.content
+                for doc_type, document in documents.items()
+                if document is not None
+            },
+            stages={
+                stage: row.model
+                for stage, row in rows.items()
+                if views[stage].state == "approved" and row.model
+            },
+            dfd_diagrams={diagram.subject: _dfd_summary(diagram) for diagram in diagrams},
+        )
 
     # Phase-16-3：更新
     # async def _doc_versions(self, project_id: uuid.UUID) -> dict[str, int | None]:
@@ -215,14 +279,25 @@ def _doc_versions(documents: dict[str, GeneratedDocument | None]) -> dict[str, i
     }
 
 
-def _sources(documents: dict[str, GeneratedDocument | None]) -> StageSources:
-    """段階ごとの検証・下書きの生成に渡す、入力の文書の本文。"""
-    return StageSources(
-        documents={
-            doc_type: document.content
-            for doc_type, document in documents.items()
-            if document is not None
-        }
+# Phase-17-3：更新(入力の組み立ては、DFD を読むためにサービスのメソッド _sources へ移した)
+# def _sources(documents: dict[str, GeneratedDocument | None]) -> StageSources:
+#     """段階ごとの検証・下書きの生成に渡す、入力の文書の本文。"""
+#     return StageSources(
+#         documents={
+#             doc_type: document.content
+#             for doc_type, document in documents.items()
+#             if document is not None
+#         }
+#     )
+# ↓↓
+def _dfd_summary(diagram: UmlDiagram) -> DfdDiagramSummary:
+    elements = (diagram.semantic_model or {}).get("elements", [])
+    return DfdDiagramSummary(
+        status=diagram.status,
+        generation_status=diagram.generation_status,
+        process_ids=tuple(
+            str(e.get("id")) for e in elements if e.get("element_type") == "process"
+        ),
     )
 
 

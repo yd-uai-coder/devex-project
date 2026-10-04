@@ -1,9 +1,11 @@
-// 作成：Phase-11-5｜更新：Phase-11-6,12-5
+// 作成：Phase-11-5｜更新：Phase-11-6,12-5,17-7
+// Phase-17-7:追記 ── ../UmlDiagramEditor.UmlDiagramEditor
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
+import { UmlDiagramEditor } from "../UmlDiagramEditor";
 import { UmlDiagramPageContent } from "../UmlDiagramPageContent";
 import { useUmlEditorStore } from "@/features/uml/uml-editor-store";
 import { makeDiagram } from "@/features/uml/test-utils/umlFixtures";
@@ -68,6 +70,20 @@ describe("UmlDiagramPageContent", () => {
     // ↓↓
     // 状態表示と承認・出力は DiagramReviewActions.test.tsx で検証する
     expect(screen.getByText("review-actions")).toBeInTheDocument();
+    expect(screen.getByText("canvas")).toBeInTheDocument();
+  });
+
+  // Phase-17-7:追記
+  it("エディタだけなら見出しと一覧へ戻るリンクを持たない(段階2の DFD のタブで使う)", () => {
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <UmlDiagramEditor projectId="p1" diagramId="d1" />
+      </TamaguiProvider>,
+    );
+
+    expect(useUmlEditorStore.getState().load).toHaveBeenCalledWith("p1", "d1");
+    expect(screen.queryByRole("heading")).not.toBeInTheDocument();
+    expect(screen.queryByText("設計図の一覧に戻る")).not.toBeInTheDocument();
     expect(screen.getByText("canvas")).toBeInTheDocument();
   });
 

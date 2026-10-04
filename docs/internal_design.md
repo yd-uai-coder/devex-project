@@ -132,7 +132,7 @@
 | project_id | UUID | FK (`projects.id`), NOT NULL | プロジェクトID |
 | view | VARCHAR(50) | NOT NULL | 設計ビュー(`structure`/`data`/`dataflow`等) |
 | notation | VARCHAR(50) | NOT NULL | 図記法(`component`/`er`/`dfd`。初期実装対象) |
-| subject | VARCHAR(255) | NOT NULL, DEFAULT '' | 同じ記法の中で図を識別するキー(component: `''`、ER: 全体なら`''`・部分図ならグループ名、DFD: 処理名。Phase 10で追加) |
+| subject | VARCHAR(255) | NOT NULL, DEFAULT '' | 同じ記法の中で図を識別するキー(component: `''`、ER: 全体なら`''`・部分図ならグループ名、DFD: 処理名(詳細設計モードでは段階2の機能グループ名。Phase 17)。Phase 10で追加) |
 | scope | JSONB | NULL可 | AIに渡した対象の選択(ER部分図の`{"tables": [...]}`。再生成で再利用する。Phase 10で追加) |
 | semantic_model | JSONB | NOT NULL | 意味モデル(要素・関係。Single Source of Truth) |
 | layout_model | JSONB | NULL可 | 自動レイアウト結果(ノード座標・辺の折れ点・辺ラベルの中心`label_pos`(Phase 12)。手動移動後は折れ点とラベル位置を破棄しsmoothstep/orthogonalEdgeStyleに委ねる) |
@@ -146,7 +146,7 @@
 
 所有権は`projects.user_id`経由で既存の`CurrentProjectDep`により検証する(既存パターンを踏襲)。
 
-`UNIQUE(project_id, notation, subject)`(Phase 10)。AIによる再生成は同じ行を上書きする(semantic_modelを置換し、layout_modelを破棄、status='draft'、version+1)。`source_doc_versions`は生成時に`{"internal_design": <version>}`を記録する。
+`UNIQUE(project_id, notation, subject)`(Phase 10)。AIによる再生成は同じ行を上書きする(semantic_modelを置換し、layout_modelを破棄、status='draft'、version+1)。`source_doc_versions`は生成時に`{"internal_design": <version>}`を記録する(詳細設計モードの段階2の DFD は、段階2の入力の版`{"stage:1": <version>, "doc:requirements": <version>}`を記録する。Phase 17)。
 
 #### ⑧ `data_items` テーブル(ステージ3、Phase 8で新設)
 
@@ -322,6 +322,11 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 * **出力の組み立て**: HTML・Markdownとも、ステージ3のzip出力と同じ層(バックエンドの`app/uml/export`・`uml_sync_service`の並び)で組み立てる。HTMLは全文字をエスケープし、外部を読み込まない。Markdownはリンクを持たない。devex-uiのデモ(`src/features/detailed-design/demo/procedureModel.ts`の`toHtml`・`toMarkdown`)は形式の見本で、本実装はバックエンドへ移す。
 * **機能グループ**: 段階1の下書きで、APIのリソース名(`/api/v1/<リソース>`、親の個別の対象に属するものは`/api/v1/<親>/{id}/<リソース>`の子のリソース名)から決定的に初期値を作り、人が確定する。APIのパスは外部設計書の「2.6 API一覧」から取る(Phase 16)。
 * **段階1の下書き(Phase 16)**: AIには外部設計書から処理を列挙させるだけにし、処理IDと機能グループの初期値はコードで決める。再生成では、前の版の行とトリガー(メソッド+正規化したパス。APIでなければ名称)で突き合わせ、一致した行は処理IDと人が確定した機能グループを引き継ぐ。生成は受け付けとバックグラウンドの実行に分ける(`app/services/design_stage_generation_service.py`。UML図の生成と同じ形)。
+* **段階2 データフロー(Phase 17)**:
+  * `design_stages.model`(段階2)は`{dfd_groups, summaries}`(DFD を描く機能グループ・全処理の処理概要表`{function_id, input, process, output}`)だけ。DFD は`uml_diagrams`(notation=dfd、subject=機能グループ名)、データ辞書は`data_items`が正本で、model に複製しない(`app/detailed_design/data_flow.py`)。
+  * 下書きは、処理概要表(LLM 1回)→ 選んだグループごとの DFD(1グループ LLM 1回、5グループまで)を順に呼び、段階・DFD・データ項目を1トランザクションで書く(失敗したらまとめて取り消す)。DFD の処理の箱は処理IDで、AIには`function_id`だけを書かせ、ステージ3の出力スキーマ`DfdGenerationOutput`に組み替えて写像(`app/uml/generation/mapper.py`)を再利用する(`app/detailed_design/data_flow_drafting.py`)。再生成では`dfd_groups`を引き継ぎ、選んだグループの DFD は同じ行を上書きする(承認はやり直し)。
+  * 検証(`STAGE_VALIDATORS[2]`)は、承認済みの段階1の内容と DFD の要約を`StageSources`で受け取る。エラー: 処理概要表の過不足・重複、グループの上限・重複・不明、選んだグループの DFD が無い・生成中・未承認。警告: 処理概要表の空欄、DFD の処理とグループの過不足。
+  * 段階の外の正本の編集: 詳細設計モードで DFD を保存・自動レイアウトする、またはデータ項目を作成・更新・削除すると、承認済みの段階2を`reviewing`・version+1 に戻す(`DesignStageService.mark_edited`)。段階3が段階2の承認した版で陳腐化を判定するため。
 * **CRUD図**: 段階2のDFDの線の向きから、R(ストア → 処理)とW(処理 → ストア)を決定的に作る。Wの C/U/D の区別と、DFDに描いていない処理の分は、AIが処理概要表から下書きし、人が確定する。
 * **簡易ドキュメントモードとの関係**: 簡易ドキュメントモードの内部設計書にも、段階4と同じ列のモジュール一覧の表を足す(3.3節1.の`doc_generator_service.py`参照)。それ以外の簡易ドキュメントモードの挙動は変えない。
   > **[Phase 16 で確定 ── 〈外部設計書の構成は簡易ドキュメントモードでも変える〉]** 当初〈モジュール一覧の表のほかは、簡易ドキュメントモードの挙動を変えない〉→ 外部設計書の「2.6 API一覧」は両方のモードで出す。理由〈ユーザーの選択。API仕様は実務でも外部設計(基本設計)に置くことが多く、プロンプトをモードで分けずに済む。重なる内部設計書3.3節のAPI表は、2.6と同じメソッド・パスを使わせてそろえる〉。

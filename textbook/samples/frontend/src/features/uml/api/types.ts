@@ -1,4 +1,4 @@
-// 作成：Phase-11-2｜更新：Phase-12-2,12-5,13-5,15-8
+// 作成：Phase-11-2｜更新：Phase-12-2,12-5,13-5,15-8,17-5
 // 写経レベル: 定型 ── バックエンドの Pydantic スキーマを snake_case のまま写した型定義。
 // devex-api の UML API(app/api/routes/uml.py)が返す・受け取る JSON の型。
 // バックエンドの Pydantic スキーマに合わせて snake_case のまま手書きする(既存 feature と同じ方針)。
@@ -178,6 +178,9 @@ export type DataItemRead = {
   created_at: string;
   updated_at: string;
 };
+// Phase-17-5:追記
+// 作成・更新の本文(更新は name・fields を丸ごと置き換える。Phase 17)
+export type DataItemWrite = { name: string; fields: DataItemField[] };
 
 // ---- 検証(app/uml/validation/base.py) ----
 export type ValidationIssue = { code: string; message: string; element_id: string | null };

@@ -40,7 +40,8 @@ export function approveDesignStage(
 
 // Phase-16-5:追記
 // 段階のAIの下書きの生成を受け付ける(202)。生成はバックグラウンドで進むので、完了は
-// listDesignStages のポーリング(generation_status)で待つ。Phase 16 は段階1だけ。
+// listDesignStages のポーリング(generation_status)で待つ。Phase 17 の時点で段階1・2。
+// 段階2は、保存した DFD を描くグループの数が上限を超えていると 409 DESIGN_STAGE_INVALID。
 export function generateDesignStage(
   projectId: string,
   stage: number,

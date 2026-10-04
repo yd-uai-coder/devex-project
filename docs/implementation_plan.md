@@ -62,7 +62,7 @@
   * Phase 14: 要件定義フェーズ(仕様診断・05/06章の表現と出力形式の確定・docs反映。実装は見せ方を確かめるデモページのみ)
   * Phase 15: モードと段階の土台+既存機能の修正(モード選択ダイアログと`projects.mode`・モードごとの生成・`design_stages`・段階の承認と陳腐化・SCR-008の骨格、簡易ドキュメントモードの内部設計書へのモジュール一覧表、出力見本の気づき#1〜#10の修正と自動レイアウトの高速化) ── **完了**([`textbook/Phase-15/Phase-15-introduction.md`](../textbook/Phase-15/Phase-15-introduction.md))
   * Phase 16: 段階1 機能一覧(外部設計書へのAPI一覧の追加、処理IDの採番と引き継ぎ、機能グループの初期値、段階ごとの検証、AIの下書きの生成、機能一覧の編集画面) ── **完了**([`textbook/Phase-16/Phase-16-introduction.md`](../textbook/Phase-16/Phase-16-introduction.md))
-  * Phase 17: 段階2 データフロー(機能グループごとのDFD・データ辞書・処理概要表)
+  * Phase 17: 段階2 データフロー(機能グループごとのDFD・データ辞書・処理概要表、DFD・データ辞書の編集による段階2の差し戻し) ── **完了**([`textbook/Phase-17/Phase-17-introduction.md`](../textbook/Phase-17/Phase-17-introduction.md))
   * Phase 18: 段階3 データモデル(ER・テーブル定義・CRUD図)
   * Phase 19: 段階4 ソフトウェア構造(構成図(層)・モジュール一覧)
   * Phase 20: 段階5・6 主要処理の手順・処理ロジックの詳細(レビュー画面はPhase 14のデモを採用)

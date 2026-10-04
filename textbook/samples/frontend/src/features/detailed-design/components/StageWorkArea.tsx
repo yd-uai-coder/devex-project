@@ -1,12 +1,14 @@
-// 作成：Phase-15-7｜更新：Phase-16-6
+// 作成：Phase-15-7｜更新：Phase-16-6,17-6
 // 写経レベル: コア ── 足りない入力・古い表示・承認を、全段階に共通の部分として持つ。
 "use client";
 
 // Phase-16-6:追記 ── react.useState, @/features/detailed-design/components/FunctionListPanel.FunctionListPanel
-import { useState } from "react";
+// Phase-17-6:追記 ── react.ComponentType, @/features/detailed-design/components/DataFlowPanel.DataFlowPanel
+import { useState, type ComponentType } from "react";
 import { H3, Paragraph, Text, XStack, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
+import { DataFlowPanel } from "@/features/detailed-design/components/DataFlowPanel";
 import { FunctionListPanel } from "@/features/detailed-design/components/FunctionListPanel";
 import {
   canApprove,
@@ -15,12 +17,26 @@ import {
   STATE_LABELS,
 } from "@/features/detailed-design/labels";
 
-// Phase-16-6：更新
-// // 選んだ段階の作業領域。段階ごとの中身(下書きの生成・表や図の編集)は段階の実装で足す。
-// // ここでは全段階に共通の部分(状態・足りない入力・古い表示・承認)だけを持つ。
+// Phase-17-6:追記
+// 段階ごとの中身のパネルが受け取る値(どの段階のパネルも同じ形にする)。
+type StagePanelProps = {
+  projectId: string;
+  stage: DesignStageRead;
+  onDirtyChange: (dirty: boolean) => void;
+};
+
+// 段階番号 → その段階の中身のパネル。登録の無い段階は「準備中」を出す(段階3以降は各段階の Phase で足す)。
+const STAGE_PANELS: Partial<Record<number, ComponentType<StagePanelProps>>> = {
+  1: FunctionListPanel,
+  2: DataFlowPanel,
+};
+
+// Phase-17-6：更新
+// // 選んだ段階の作業領域。全段階に共通の部分(状態・足りない入力・古い表示・承認)を持ち、
+// // 段階ごとの中身(下書きの生成・表や図の編集)は段階の実装で足す(Phase 16 は段階1)。
 // ↓↓
 // 選んだ段階の作業領域。全段階に共通の部分(状態・足りない入力・古い表示・承認)を持ち、
-// 段階ごとの中身(下書きの生成・表や図の編集)は段階の実装で足す(Phase 16 は段階1)。
+// 段階ごとの中身(下書きの生成・表や図の編集)は STAGE_PANELS に登録したパネルが持つ。
 export function StageWorkArea({
   // Phase-16-6:追記
   projectId,
@@ -39,7 +55,11 @@ export function StageWorkArea({
   // Phase-16-6:追記
   // 段階の中身に保存していない編集があるか。あるうちは承認させない(承認されるのは保存済みの版のため)
   const [dirty, setDirty] = useState(false);
-  const hasPanel = stage.stage === 1 && stage.is_open;
+  // Phase-17-6：更新
+  // const hasPanel = stage.stage === 1 && stage.is_open;
+  // ↓↓
+  const Panel = stage.is_open ? STAGE_PANELS[stage.stage] : undefined;
+  const hasPanel = Panel !== undefined;
 
   return (
     <YStack flex={1} gap="$3">
@@ -81,8 +101,12 @@ export function StageWorkArea({
            </Text>
          </YStack>
          ↓↓ */}
-      {hasPanel ? (
-        <FunctionListPanel
+      {/* Phase-17-6：更新
+         {hasPanel ? (
+           <FunctionListPanel
+         ↓↓ */}
+      {Panel ? (
+        <Panel
           // 保存・生成で版や生成の状態が変わったら作り直し、編集中の内容をサーバーの内容に戻す
           key={`${stage.version}-${stage.generation_status}`}
           projectId={projectId}

@@ -1,12 +1,14 @@
-// 作成：Phase-15-7｜更新：Phase-16-6
+// 作成：Phase-15-7｜更新：Phase-16-6,17-6
 // 写経レベル: コア ── 状態ごとのボタンと表示。
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
+// Phase-17-6:追記 ── @/features/detailed-design/detailed-design-store.useDetailedDesignStore
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { StageWorkArea } from "../StageWorkArea";
+import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 
@@ -31,6 +33,19 @@ function renderArea(
 }
 
 describe("StageWorkArea", () => {
+  // Phase-17-6:追記
+  it("開いた段階2には、データフローのパネルを出す", () => {
+    const stages = makeStages({
+      1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
+      2: { is_open: true, missing_inputs: [] },
+    });
+    useDetailedDesignStore.setState({ stages });
+    renderArea(stages[1]);
+
+    expect(screen.getByText("DFD を描く機能グループ")).toBeInTheDocument();
+    expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
+  });
+
   it("開いていない段階は、足りない入力を示し、承認できない", () => {
     const [, stage2] = makeStages();
     renderArea(stage2);

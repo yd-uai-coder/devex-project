@@ -1,14 +1,16 @@
-// 作成：Phase-11-2｜更新：Phase-12-5,13-5
+// 作成：Phase-11-2｜更新：Phase-12-5,13-5,17-5
 // 写経レベル: 定型 ── apiFetch の薄いラッパー(既存 documentsApi.ts と同じ形)。
 // Phase-12-5:追記 ── auth-store.useAuthStore, base-url.API_BASE_URL, client.toApiError,
 //   download.parseFilename, types(ExportFormat, UmlDiagramApprove)
 // Phase-13-5:追記 ── types(UmlEmbedRead, UmlReflectRead)
+// Phase-17-5:追記 ── types.DataItemWrite
 import { useAuthStore } from "@/components/auth/auth-store";
 import { API_BASE_URL } from "@/lib/api/base-url";
 import { apiFetch, toApiError } from "@/lib/api/client";
 import { parseFilename } from "@/lib/api/download";
 import type {
   DataItemRead,
+  DataItemWrite,
   ExportFormat,
   UmlCandidatesRead,
   UmlDiagramApprove,
@@ -82,6 +84,31 @@ export function listDataItems(projectId: string): Promise<DataItemRead[]> {
 }
 
 // Phase-12-5:追記
+// Phase-17-5:追記
+// データ辞書の作成・更新・削除(Phase 17。段階2の画面のデータ辞書の表が使う)。
+// 409: DATA_ITEM_NAME_CONFLICT(同じ名前がある)。詳細設計モードでは、承認済みの段階2が差し戻される
+export function createDataItem(projectId: string, payload: DataItemWrite): Promise<DataItemRead> {
+  return apiFetch<DataItemRead>(umlPath(projectId, "/data-items"), {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateDataItem(
+  projectId: string,
+  itemId: string,
+  payload: DataItemWrite,
+): Promise<DataItemRead> {
+  return apiFetch<DataItemRead>(umlPath(projectId, `/data-items/${itemId}`), {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteDataItem(projectId: string, itemId: string): Promise<void> {
+  return apiFetch<void>(umlPath(projectId, `/data-items/${itemId}`), { method: "DELETE" });
+}
+
 // 承認(M7)。version は画面で見ていた版。409: VERSION_CONFLICT / UML_DIAGRAM_NOT_APPROVABLE、
 // 400: UML_LAYOUT_REQUIRED / UML_APPROVAL_VALIDATION_FAILED(一覧は validateDiagram で取り直す)
 export function approveDiagram(

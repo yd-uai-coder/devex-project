@@ -129,7 +129,7 @@ Claude の判断で決めたこと(計画の承認で確定):
 
 ## 後続 Phase での改訂
 
-(なし)
+- 申し送りの「段階2(Phase 17)」の3点は、[Phase 17](../Phase-17/Phase-17-introduction.md) で回収した(DFD の入力を段階1の機能グループに切り替え、`STAGE_GENERATORS`・`STAGE_VALIDATORS` に段階2を登録。自動レイアウトの上限は据え置き、案C は実施しない)。あわせて、生成の関数の引数を `StageGenerationContext` にまとめ(17-3)、`FunctionListPanel` の表の見た目と検証の結果の一覧を共有の部品に切り出した(17-6)。
 
 ## Phase 完了チェック(#22)
 

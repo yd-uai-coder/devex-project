@@ -1,8 +1,10 @@
-// 作成：Phase-16-6
+// 作成：Phase-16-6｜更新：Phase-17-6
 // 写経レベル: コア ── 編集中の内容を手元に持ち、保存して初めて送ること。作り直す前の確認と、生成中の操作の止め方。
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+// Phase-17-6:追記 ── @/features/detailed-design/components/StageIssueList.StageIssueList, @/features/detailed-design/components/tableStyles(CELL, HEAD, INPUT, MONO, OPTION, TABLE)
+// Phase-17-6：削除 ── react.CSSProperties(表の見た目を tableStyles.ts へ移した)
+import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
@@ -12,6 +14,15 @@ import type {
   FunctionKind,
   FunctionListModel,
 } from "@/features/detailed-design/api/types";
+import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
+import {
+  CELL,
+  HEAD,
+  INPUT,
+  MONO,
+  OPTION,
+  TABLE,
+} from "@/features/detailed-design/components/tableStyles";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import {
   addGroup,
@@ -27,39 +38,39 @@ import {
   updateRow,
 } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
-
-// 表は列が多く横に長いので、Tamagui の部品ではなく素の table と入力欄で詰めて並べる
-// (Phase 14 のデモ demo/DetailedDesignDemoPageContent.tsx と同じ書き方)。
-const CELL: CSSProperties = {
-  padding: "4px 6px",
-  borderBottom: "1px solid var(--borderColor)",
-  textAlign: "left",
-  verticalAlign: "top",
-};
-const HEAD: CSSProperties = { ...CELL, background: "var(--color3)", whiteSpace: "nowrap" };
-const TABLE: CSSProperties = {
-  borderCollapse: "collapse",
-  fontSize: 13,
-  color: "var(--color)",
-  width: "100%",
-};
-// 背景はテーマの色にする。transparent だと、セレクトの選択肢(ブラウザが描くポップアップ)が
-// 既定の白になり、ダークモードでは文字と同じ色になって読めない(Phase 16 の修正)。
-const INPUT: CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "2px 4px",
-  font: "inherit",
-  color: "var(--color)",
-  background: "var(--background)",
-  border: "1px solid var(--borderColor)",
-  borderRadius: 4,
-};
-const OPTION: CSSProperties = { background: "var(--background)", color: "var(--color)" };
-const MONO: CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",
-  fontSize: 12,
-};
+// Phase-17-6：削除(段階2の表と共有するため components/tableStyles.ts へ移した)
+// // 表は列が多く横に長いので、Tamagui の部品ではなく素の table と入力欄で詰めて並べる
+// // (Phase 14 のデモ demo/DetailedDesignDemoPageContent.tsx と同じ書き方)。
+// const CELL: CSSProperties = {
+//   padding: "4px 6px",
+//   borderBottom: "1px solid var(--borderColor)",
+//   textAlign: "left",
+//   verticalAlign: "top",
+// };
+// const HEAD: CSSProperties = { ...CELL, background: "var(--color3)", whiteSpace: "nowrap" };
+// const TABLE: CSSProperties = {
+//   borderCollapse: "collapse",
+//   fontSize: 13,
+//   color: "var(--color)",
+//   width: "100%",
+// };
+// // 背景はテーマの色にする。transparent だと、セレクトの選択肢(ブラウザが描くポップアップ)が
+// // 既定の白になり、ダークモードでは文字と同じ色になって読めない(Phase 16 の修正)。
+// const INPUT: CSSProperties = {
+//   width: "100%",
+//   boxSizing: "border-box",
+//   padding: "2px 4px",
+//   font: "inherit",
+//   color: "var(--color)",
+//   background: "var(--background)",
+//   border: "1px solid var(--borderColor)",
+//   borderRadius: 4,
+// };
+// const OPTION: CSSProperties = { background: "var(--background)", color: "var(--color)" };
+// const MONO: CSSProperties = {
+//   fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",
+//   fontSize: 12,
+// };
 
 // 段階1(機能一覧)の作業領域の中身。AIの下書きの生成、機能グループと機能一覧の表の編集、
 // 検証の結果、保存を持つ。編集中の内容はこのコンポーネントの中だけに持ち、保存して初めて
@@ -329,20 +340,23 @@ export function FunctionListPanel({
         ) : null}
       </XStack>
 
-      {stage.issues.length > 0 ? (
-        <YStack gap="$1" aria-label="検証の結果">
-          <Text fontWeight="700">検証の結果(保存した内容)</Text>
-          {stage.issues.map((issue, index) => (
-            <Text
-              key={`${issue.code}-${issue.target ?? ""}-${index}`}
-              color={issue.severity === "error" ? "$red10" : "$orange10"}
-              fontSize="$2"
-            >
-              {issue.severity === "error" ? "エラー" : "警告"}: {issue.message}
-            </Text>
-          ))}
-        </YStack>
-      ) : null}
+      {/* Phase-17-6：更新(段階2のパネルと共有するため StageIssueList へ切り出した)
+         {stage.issues.length > 0 ? (
+           <YStack gap="$1" aria-label="検証の結果">
+             <Text fontWeight="700">検証の結果(保存した内容)</Text>
+             {stage.issues.map((issue, index) => (
+               <Text
+                 key={`${issue.code}-${issue.target ?? ""}-${index}`}
+                 color={issue.severity === "error" ? "$red10" : "$orange10"}
+                 fontSize="$2"
+               >
+                 {issue.severity === "error" ? "エラー" : "警告"}: {issue.message}
+               </Text>
+             ))}
+           </YStack>
+         ) : null}
+         ↓↓ */}
+      <StageIssueList issues={stage.issues} />
     </YStack>
   );
 }

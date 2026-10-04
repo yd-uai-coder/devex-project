@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -22,6 +22,13 @@ from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
 
 # Phase-16-4:追記 ── app.detailed_design.drafting.FunctionListGenerationOutput, GeneratedFunction
+# Phase-17-2:追記 ── app.detailed_design.data_flow_drafting.GeneratedGroupProcess, GeneratedSummary, GroupDfdGenerationOutput, ProcessSummaryGenerationOutput
+from app.detailed_design.data_flow_drafting import (
+    GeneratedGroupProcess,
+    GeneratedSummary,
+    GroupDfdGenerationOutput,
+    ProcessSummaryGenerationOutput,
+)
 from app.detailed_design.drafting import FunctionListGenerationOutput, GeneratedFunction
 from app.schemas.generation import HearingCompletionCheck
 from app.uml.generation.schemas import (
@@ -173,6 +180,50 @@ _UML_OUTPUTS[FunctionListGenerationOutput] = FunctionListGenerationOutput(
             summary="[E2E Fake] 利用者の予約を返す",
         ),
     ]
+)
+
+# Phase-17-2:追記
+# 詳細設計モードの段階2(データフロー)の下書き(Phase 17)。段階1の下書きの2処理(F-01・F-02、
+# 機能グループ reservations)に対応する
+_UML_OUTPUTS[ProcessSummaryGenerationOutput] = ProcessSummaryGenerationOutput(
+    rows=[
+        GeneratedSummary(
+            function_id="F-01",
+            input="予約リクエスト",
+            process="[E2E Fake] 備品と期間を検証して保存する",
+            output="予約",
+        ),
+        GeneratedSummary(
+            function_id="F-02",
+            input="利用者",
+            process="[E2E Fake] 利用者の予約を新しい順に返す",
+            output="予約の一覧",
+        ),
+    ]
+)
+_UML_OUTPUTS[GroupDfdGenerationOutput] = GroupDfdGenerationOutput(
+    data_items=[
+        GeneratedDataItem(
+            name="予約リクエスト", fields=[GeneratedDataItemField(name="item_id", type="UUID")]
+        ),
+        GeneratedDataItem(name="予約", fields=[GeneratedDataItemField(name="id", type="UUID")]),
+    ],
+    processes=[
+        GeneratedGroupProcess(
+            function_id="F-01", description="[E2E Fake] 検証して保存", layer="受け付け"
+        ),
+        GeneratedGroupProcess(
+            function_id="F-02", description="[E2E Fake] 予約を返す", layer="参照"
+        ),
+    ],
+    external_entities=[GeneratedNode(id="e1", name="利用者")],
+    data_stores=[GeneratedNode(id="s1", name="reservations")],
+    flows=[
+        GeneratedFlow(id="f1", source_id="e1", target_id="F-01", data_item_name="予約リクエスト"),
+        GeneratedFlow(id="f2", source_id="F-01", target_id="s1", data_item_name="予約"),
+        GeneratedFlow(id="f3", source_id="s1", target_id="F-02", data_item_name="予約"),
+        GeneratedFlow(id="f4", source_id="F-02", target_id="e1", data_item_name="予約"),
+    ],
 )
 
 _HEARING_REPLY = "[E2E Fake] 承知しました。次に、想定している主なユーザー層を教えてください。"

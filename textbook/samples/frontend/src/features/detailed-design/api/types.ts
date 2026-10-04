@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -70,3 +70,22 @@ export type FunctionListModel = {
   functions: FunctionRow[];
   next_number: number; // 次に振る番号(消えた番号は再利用しない)
 };
+
+// Phase-17-5:追記
+// 段階2 データフローの意味モデル(devex-api app/detailed_design/data_flow.py)。
+// DFD 本体は uml_diagrams(notation=dfd、subject=機能グループ名)、データ辞書は data_items が正本で、
+// ここには持たない(Phase 17)。
+export type ProcessSummaryRow = {
+  function_id: string; // 段階1の処理ID
+  input: string;
+  process: string;
+  output: string;
+};
+
+export type DataFlowModel = {
+  dfd_groups: string[]; // DFD を描く機能グループ(人が選ぶ。最大 MAX_DFD_GROUPS)
+  summaries: ProcessSummaryRow[]; // 全処理の処理概要表(機能一覧の並び)
+};
+
+// 1回の生成で DFD を描けるグループの数の上限(devex-api の MAX_DFD_GROUPS と同じ)
+export const MAX_DFD_GROUPS = 5;

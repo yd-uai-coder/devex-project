@@ -1,7 +1,9 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
+// Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
 import type {
+  DataFlowModel,
   DesignStageRead,
   FunctionListModel,
 } from "@/features/detailed-design/api/types";
@@ -24,6 +26,17 @@ export function makeFunctionList(): FunctionListModel {
       },
     ],
     next_number: 2,
+  };
+}
+
+// Phase-17-5:追記
+// makeFunctionList の処理1件に対応する、段階2の処理概要表(DFD を描くグループは既定で無し。テスト専用)。
+export function makeDataFlow(dfdGroups: string[] = []): DataFlowModel {
+  return {
+    dfd_groups: dfdGroups,
+    summaries: [
+      { function_id: "F-01", input: "予約の内容", process: "重複を確かめて保存する", output: "予約" },
+    ],
   };
 }
 

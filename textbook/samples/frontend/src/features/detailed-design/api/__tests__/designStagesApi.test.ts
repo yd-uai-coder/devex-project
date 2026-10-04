@@ -1,6 +1,7 @@
-// 作成：Phase-15-6｜更新：Phase-16-5
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-16-5:追記 ── ../designStagesApi.generateDesignStage
+// Phase-17-5:追記 ── ../types.MAX_DFD_GROUPS, @/features/detailed-design/test-utils/stageFixtures.makeDataFlow
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   approveDesignStage,
@@ -8,8 +9,9 @@ import {
   listDesignStages,
   saveDesignStage,
 } from "../designStagesApi";
-import type { DesignStageRead } from "../types";
+import { MAX_DFD_GROUPS, type DesignStageRead } from "../types";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
+import { makeDataFlow } from "@/features/detailed-design/test-utils/stageFixtures";
 
 const STAGE1: DesignStageRead = {
   stage: 1,
@@ -59,6 +61,18 @@ describe("designStagesApi", () => {
       version: null,
       model: { functions: [] },
     });
+  });
+
+  // Phase-17-5:追記
+  it("段階2のデータフローもsaveDesignStageでそのまま送る", async () => {
+    stub.queue({ status: 200, body: { ...STAGE1, stage: 2 } });
+    const model = makeDataFlow(["reservations"]);
+
+    await saveDesignStage("p1", 2, { version: 1, model });
+
+    expect(stub.requests[0].url).toContain("/design-stages/2");
+    expect(JSON.parse(stub.requests[0].init?.body as string).model).toEqual(model);
+    expect(MAX_DFD_GROUPS).toBe(5);
   });
 
   it("approveDesignStageはPOST /approveでversionを送る", async () => {
