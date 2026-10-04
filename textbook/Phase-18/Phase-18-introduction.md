@@ -134,7 +134,7 @@ FE は、1つのファイルを複数の章で書き足さないように章の�
 ## 後続 Phase への申し送り
 
 - **段階4(Phase 19)**: モジュール一覧の「関わる処理」「依存先」の入力に、段階3の CRUD 図(処理 × テーブル)と ER を使う。CRUD 図は `design_stages.model`(段階3)の `cells`、ER は `uml_diagrams`(notation=er、subject='')。
-- **組み立て(Phase 21)**: 03章のテーブル定義は ER の `columns[].constraints / description` と `elements[].description` から組み立てる。CRUD 図の記号は、出力見本(`build.py` の `crud_cells`)のように「DFD から決まる部分」と「人が確定した部分」を見分けられる形にするか、Phase 21 で決める(段階3の model は承認で下書きの印を外すので、承認後に残るのは DFD の R/W(`dfd_accesses`)との突き合わせだけ)。
+- **組み立て(Phase 22)**: 03章のテーブル定義は ER の `columns[].constraints / description` と `elements[].description` から組み立てる。CRUD 図の記号は、出力見本(`build.py` の `crud_cells`)のように「DFD から決まる部分」と「人が確定した部分」を見分けられる形にするか、Phase 22 で決める(段階3の model は承認で下書きの印を外すので、承認後に残るのは DFD の R/W(`dfd_accesses`)との突き合わせだけ)。
 - **データストア名の揺れ**: DFD のデータストアと ER のテーブルは名前で突き合わせる。名前が揃っていないと、検証の警告(`STORE_NOT_IN_ER`)が出て、その線は CRUD 図の固定部分にならない。AI には「データストアの名前をそのままテーブル名に使う」と指示しているが、人が DFD や ER を改名したときの追従はしていない。
 - **既存のプロジェクト**: 段階3は新しく使えるようになっただけで、既存のデータの移行は無い。
 - **開発環境への反映**: 開発用 DB には、Phase 15・16 のマイグレーション(c1d2e3f4a5b6〜f4a5b6c7d8e9)が未適用のまま(本 Phase はマイグレーションなし)。

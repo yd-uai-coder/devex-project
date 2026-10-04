@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,18-3
+# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3
 # 写経レベル: 定型 ── Pydantic スキーマ。
 # Phase-16-3:追記 ── typing.Literal, pydantic.Field
 from datetime import datetime
@@ -68,3 +68,11 @@ class DesignStageApprove(BaseModel):
     """段階の承認リクエスト。`version`は画面が見ていた版(見ていない内容を承認しないため)。"""
 
     version: int
+
+
+# Phase-20-3:追記
+class DesignStageGenerate(BaseModel):
+    """段階の下書きの生成リクエスト(本文は省略できる)。`function_ids`は段階5だけが使う、下書きを
+    作る処理の処理ID(省略すると、選んだ処理のうちまだ手順の無いもの。Phase 20)。"""
+
+    function_ids: list[str] | None = None

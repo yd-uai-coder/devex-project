@@ -1,7 +1,8 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7
+// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7,20-7
 // 写経レベル: コア ── 状態ごとのボタンと表示。
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-17-6:追記 ── @/features/detailed-design/detailed-design-store.useDetailedDesignStore
+// Phase-20-7:追記 ── ../../test-utils/stageFixtures.makeModuleList
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -9,7 +10,11 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { StageWorkArea } from "../StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
-import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
+import {
+  makeFunctionList,
+  makeModuleList,
+  makeStages,
+} from "../../test-utils/stageFixtures";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 
 function renderArea(
@@ -73,6 +78,30 @@ describe("StageWorkArea", () => {
 
     expect(screen.getByText("モジュール一覧")).toBeInTheDocument();
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
+  });
+
+  // Phase-20-7:追記
+  it("開いた段階5には主要処理の手順のパネルを出し、段階6はまだ準備中(Phase 20)", () => {
+    const stages = makeStages({
+      1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
+      2: { state: "approved", version: 3, approved_version: 3 },
+      3: { state: "approved", version: 1, approved_version: 1 },
+      4: { state: "approved", version: 1, approved_version: 1, model: makeModuleList() },
+      5: { is_open: true, missing_inputs: [] },
+      6: { is_open: true, missing_inputs: [] },
+    });
+    useDetailedDesignStore.setState({ stages });
+    renderArea(stages[4]);
+
+    expect(screen.getByText("手順を書く処理")).toBeInTheDocument();
+    expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
+  });
+
+  it("登録の無い段階は、開いていれば準備中を出す", () => {
+    const stages = makeStages({ 6: { is_open: true, missing_inputs: [] } });
+    renderArea(stages[5]);
+
+    expect(screen.getByText(/準備中/)).toBeInTheDocument();
   });
 
   // ── ここから Phase-15-7 の作成分 ──

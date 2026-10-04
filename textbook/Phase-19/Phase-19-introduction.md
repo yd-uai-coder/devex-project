@@ -129,8 +129,8 @@ FE は、1つのファイルを複数の章で書き足さないように章の�
 - **段階5以降の下書きのプロンプト**: `app/detailed_design/prompt_rules.py` の `NAMING_RULES` を末尾に足す(表記の規則は詳細設計モードの全段階で共通。ユーザーの決定)。手順の「呼び出し先」とモジュール一覧のパスの照合には `module_ref_matches`(区切り単位の部分一致)を使える。
 
 - **段階5(Phase 20)**: 手順の「呼び出し先」は、モジュール一覧のパス(`design_stages.model`(段階4)の `modules[].path`)で書く。関与表の列もこのパスだけにする(利用者・スケジューラ等の外部の役者は含めない。[`docs/internal_design.md`](../../docs/internal_design.md) 3.3節)。パスの重複は段階4の検証のエラーなので、承認済みの段階4ではパスが一意である。
-- **段階6を飛ばす操作**: [Phase 15](../Phase-15/Phase-15-introduction.md) の申し送りは「Phase 19 で決める」だったが、番号を送る前の記述で、段階6は Phase 20(段階5・6)の範囲である。Phase 20 で決める。
-- **組み立て(Phase 21)**: 04章の構成図は `uml_diagrams`(notation=component、subject='')の SVG、モジュール一覧は段階4の `modules`(`all_functions` は「全処理」、`functions` は処理IDの並び。出力見本のように「F-01〜F-04」とまとめるかは Phase 21 で決める)。
+- **段階6を飛ばす操作**: [Phase 15](../Phase-15/Phase-15-introduction.md) の申し送りは「Phase 19 で決める」だったが、番号を送る前の記述である。Phase 20 の着手時に段階5と段階6を分けたので、段階6を扱う Phase 21 で決める。
+- **組み立て(Phase 22)**: 04章の構成図は `uml_diagrams`(notation=component、subject='')の SVG、モジュール一覧は段階4の `modules`(`all_functions` は「全処理」、`functions` は処理IDの並び。出力見本のように「F-01〜F-04」とまとめるかは Phase 22 で決める)。
 - **構成図の層とモジュール一覧の層**: 名前で突き合わせる(一致しなければ警告 `UNKNOWN_LAYER`)。構成図で層を改名したときの、モジュール一覧の追従はしていない(人が選び直す)。
 - **既存のプロジェクト**: 段階4は新しく使えるようになっただけで、既存のデータの移行は無い。
 - **開発環境への反映**: 開発用 DB には、Phase 15・16 のマイグレーション(c1d2e3f4a5b6〜f4a5b6c7d8e9)が未適用のまま(本 Phase はマイグレーションなし)。

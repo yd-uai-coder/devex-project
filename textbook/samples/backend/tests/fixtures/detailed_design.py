@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3
+# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3
 # 写経レベル: 定型 ── テスト用のプロジェクトの組み立て。
 """詳細設計モードのテストで使うプロジェクトの組み立て(段階のサービス・ルートのテストで共有する)。"""
 
@@ -184,4 +184,54 @@ async def create_stage4_project(session: AsyncSession) -> Project:
     stages = DesignStageService(session)
     await stages.save(project, stage=3, expected_version=None, model=crud_model())
     await stages.approve(project, stage=3, expected_version=1)
+    return project
+
+
+# Phase-20-1:追記
+def procedure_model(
+    *, callee: str = "app/api/routes/reservations.py", reason: str = "検証"
+) -> dict:
+    """`function_list_model()`の F-01 の手順(利用者 → `callee`、分岐1つ)。段階5の検証を通る。
+    `callee`をモジュール一覧に無いパスにすると、検証のエラー(UNKNOWN_CALLEE)になる。"""
+    return {
+        "procedures": [
+            {
+                "function_id": "F-01",
+                "reason": reason,
+                "note": "",
+                "steps": [
+                    {
+                        "caller": "利用者",
+                        "callee": callee,
+                        "call": "create_reservation",
+                        "data": "予約リクエスト",
+                        "action": "本文を検証する",
+                        "result": "予約",
+                        "db": "reservations C",
+                        "branch": "1a へ",
+                    },
+                    {"action": "本文が不正", "branch": "422", "is_branch": True},
+                ],
+            }
+        ]
+    }
+
+
+# Phase-20-3:追記
+async def create_stage5_project(session: AsyncSession) -> Project:
+    """段階1〜4を承認したプロジェクト(段階5が開いている)。段階4は構成図(承認済み)と、
+    モジュール app/api/routes/reservations.py の1行を持つ。"""
+    project = await create_stage4_project(session)
+    diagram = await UmlDiagramRepository(session).create(
+        project_id=project.id,
+        view="structure",
+        notation="component",
+        semantic_model=component_model(),
+        subject="",
+    )
+    diagram.status = "approved"
+    await session.commit()
+    stages = DesignStageService(session)
+    await stages.save(project, stage=4, expected_version=None, model=module_list_model())
+    await stages.approve(project, stage=4, expected_version=1)
     return project

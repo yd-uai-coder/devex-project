@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7
+// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7,20-7
 // 写経レベル: コア ── 足りない入力・古い表示・承認を、全段階に共通の部分として持つ。
 "use client";
 
@@ -6,6 +6,7 @@
 // Phase-17-6:追記 ── react.ComponentType, @/features/detailed-design/components/DataFlowPanel.DataFlowPanel
 // Phase-18-9:追記 ── @/features/detailed-design/components/DataModelPanel.DataModelPanel
 // Phase-19-7:追記 ── @/features/detailed-design/components/StructurePanel.StructurePanel
+// Phase-20-7:追記 ── @/features/detailed-design/components/ProcedurePanel.ProcedurePanel
 import { useState, type ComponentType } from "react";
 import { H3, Paragraph, Text, XStack, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
@@ -13,6 +14,7 @@ import type { DesignStageRead } from "@/features/detailed-design/api/types";
 import { DataFlowPanel } from "@/features/detailed-design/components/DataFlowPanel";
 import { DataModelPanel } from "@/features/detailed-design/components/DataModelPanel";
 import { FunctionListPanel } from "@/features/detailed-design/components/FunctionListPanel";
+import { ProcedurePanel } from "@/features/detailed-design/components/ProcedurePanel";
 import { StructurePanel } from "@/features/detailed-design/components/StructurePanel";
 import {
   canApprove,
@@ -29,7 +31,7 @@ type StagePanelProps = {
   onDirtyChange: (dirty: boolean) => void;
 };
 
-// 段階番号 → その段階の中身のパネル。登録の無い段階は「準備中」を出す(段階5以降は各段階の Phase で足す)。
+// 段階番号 → その段階の中身のパネル。登録の無い段階は「準備中」を出す(段階6以降は各段階の Phase で足す)。
 const STAGE_PANELS: Partial<Record<number, ComponentType<StagePanelProps>>> = {
   1: FunctionListPanel,
   2: DataFlowPanel,
@@ -37,6 +39,8 @@ const STAGE_PANELS: Partial<Record<number, ComponentType<StagePanelProps>>> = {
   3: DataModelPanel,
   // Phase-19-7:追記
   4: StructurePanel,
+  // Phase-20-7:追記
+  5: ProcedurePanel,
 };
 
 // Phase-17-6：更新

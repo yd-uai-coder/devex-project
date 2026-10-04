@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -140,3 +140,33 @@ export type ModuleListModel = {
 
 // 段階4の構成図を uml_diagrams で識別するキー(devex-api の STRUCTURE_SUBJECT と同じ。全体1枚)
 export const STRUCTURE_SUBJECT = "";
+
+// Phase-20-4:追記
+// 段階5 主要処理の手順の意味モデル(devex-api app/detailed_design/procedure.py)。人が選んだ処理ごとに
+// 手順の表を持つ(Phase 20)。手順番号は保存せず、並び順と is_branch から導く(procedureOps の
+// numberSteps)。06(段階6)との紐づけは持たず、(callee, call) と段階6の (モジュール, 関数) の一致から導く。
+export type ProcedureStep = {
+  caller: string; // 呼び出し元(モジュールのパスか外部の役者)。分岐の行は空
+  callee: string; // 呼び出し先。モジュール一覧のパス(関与表の列の鍵)か外部の役者(「/」を含まない名前)
+  call: string; // 呼び出し先で呼ぶ関数・メソッド
+  data: string;
+  action: string; // 処理内容。分岐の行は分岐する条件
+  result: string;
+  db: string; // DB 操作(「reservations C」など)
+  branch: string; // 分岐・例外。分岐の行はその結果
+  is_branch: boolean; // 分岐の行(元の手順の直後に置く)
+};
+
+export type Procedure = {
+  function_id: string; // 段階1の処理ID
+  reason: string; // 手順を書く対象に選んだ理由
+  note: string; // トランザクションの範囲などの注記
+  steps: ProcedureStep[]; // 空ならまだ下書きを作っていない
+};
+
+export type ProcedureModel = {
+  procedures: Procedure[]; // 選んだ処理(機能一覧の順)
+};
+
+// 1回の生成で下書きを作れる処理の数の上限(devex-api の MAX_PROCEDURE_TARGETS と同じ)
+export const MAX_PROCEDURE_TARGETS = 5;

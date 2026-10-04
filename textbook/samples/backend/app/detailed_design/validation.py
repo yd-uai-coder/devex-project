@@ -1,4 +1,4 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1
 # 写経レベル: コア ── 段階ごとの検証の登録(STAGE_VALIDATORS)と、エラーと警告の分け方。
 """段階ごとの内容の検証(純粋関数)。
 
@@ -7,17 +7,19 @@ app/services/design_stage_service.py)に加えて、段階ごとの検証で「�
 止めない(UML図の検証と同じ考え方。app/uml/validation/)。保存は検証の結果によらず通す(編集の
 途中の状態も保存できるようにするため)。
 
-段階ごとの検証は`STAGE_VALIDATORS`に登録する。今は段階1〜4で、段階5以降は各段階の Phase で
+段階ごとの検証は`STAGE_VALIDATORS`に登録する。今は段階1〜5で、段階6以降は各段階の Phase で
 足す(登録の無い段階は検証なし)。検証には段階の内容のほかに入力の文書の本文が要ることがあるので、
 `StageSources`で渡す(段階1は外部設計書のAPI一覧と照らして、下書きの漏れを警告する)。
 段階2は、入力の段階1の内容と、機能グループの DFD(`uml_diagrams`)の要約も使う(Phase 17)。
 段階3は、段階1・2の内容と、DFD の線から読み取った R/W と、ER の要約を使う(Phase 18)。
 段階4は、段階1の内容と、構成図の要約を使う(Phase 19)。
+段階5は、段階1の内容と、段階4のモジュール一覧(手順の呼び出し先の鍵)を使う(Phase 20)。
 """
 
 # Phase-17-1:追記 ── app.detailed_design.data_flow.APPROVED_DIAGRAM_STATUSES, app.detailed_design.data_flow.MAX_DFD_GROUPS, app.detailed_design.data_flow.DataFlowModel, app.detailed_design.data_flow.dfd_subject, app.detailed_design.data_flow.group_functions
 # Phase-18-1:追記 ── app.detailed_design.data_model.CrudModel, DfdAccess, is_canonical_ops, table_key
 # Phase-19-1:追記 ── app.detailed_design.structure.ModuleListModel, module_ref_matches(画面確認後の修正)
+# Phase-20-1:追記 ── app.detailed_design.procedure(ProcedureModel, is_external_actor, number_steps, step_id)
 from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -40,6 +42,12 @@ from app.detailed_design.data_model import (
     table_key,
 )
 from app.detailed_design.function_list import FunctionListModel, function_number
+from app.detailed_design.procedure import (
+    ProcedureModel,
+    is_external_actor,
+    number_steps,
+    step_id,
+)
 from app.detailed_design.structure import ModuleListModel, module_ref_matches
 
 Severity = Literal["error", "warning"]
@@ -457,6 +465,67 @@ def validate_structure(model: Mapping[str, Any], sources: StageSources) -> list[
     return issues
 
 
+# Phase-20-1:追記
+def validate_procedures(model: Mapping[str, Any], sources: StageSources) -> list[StageIssue]:
+    """段階5(主要処理の手順)の検証。
+
+    エラー: 形が不正 / 処理が0件 / 処理IDが機能一覧に無い・重複 / 手順が0件 /
+    先頭の行が分岐 / 手順の呼び出し先が空 / パスの形(`/`を含む)の呼び出し先が、モジュール一覧の
+    パスと完全一致しない(関与表の列の鍵のため)。
+    警告: 選定理由が空 / モジュールを呼ぶ手順の関数が空(段階6で関数を選べないため)。
+    """
+    try:
+        parsed = ProcedureModel.model_validate(model)
+    except ValidationError as exc:
+        return [_error("INVALID_MODEL", f"手順の形が正しくありません: {exc}")]
+    function_list = FunctionListModel.model_validate(sources.stages.get(1) or {})
+    function_ids = {row.id for row in function_list.functions}
+    modules = ModuleListModel.model_validate(sources.stages.get(4) or {})
+    paths = {row.path.strip() for row in modules.modules}
+
+    issues: list[StageIssue] = []
+    if not parsed.procedures:
+        issues.append(_error("EMPTY_PROCEDURES", "手順を書く処理が1つも選ばれていません。"))
+    counts = Counter(procedure.function_id for procedure in parsed.procedures)
+    for function_id, count in counts.items():
+        if count > 1:
+            message = f"{function_id} が2回選ばれています。"
+            issues.append(_error("DUPLICATE_PROCEDURE", message, function_id))
+    for procedure in parsed.procedures:
+        function_id = procedure.function_id
+        if function_id not in function_ids:
+            message = f"処理 {function_id} が、機能一覧にありません。"
+            issues.append(_error("UNKNOWN_FUNCTION", message, function_id))
+        if not procedure.reason.strip():
+            message = f"{function_id} の選定理由が空です。"
+            issues.append(_warning("EMPTY_REASON", message, function_id))
+        if not procedure.steps:
+            message = f"{function_id} の手順がありません(下書きを生成するか、行を足してください)。"
+            issues.append(_error("EMPTY_STEPS", message, function_id))
+            continue
+        if procedure.steps[0].is_branch:
+            message = f"{function_id} の先頭の行が分岐です(分岐は元の手順の直後に置きます)。"
+            issues.append(_error("LEADING_BRANCH", message, function_id))
+        for step, number in zip(procedure.steps, number_steps(procedure.steps), strict=True):
+            if step.is_branch:
+                continue
+            target = step_id(function_id, number)
+            callee = step.callee.strip()
+            if not callee:
+                message = f"手順 {target} の呼び出し先が空です。"
+                issues.append(_error("EMPTY_CALLEE", message, target))
+            elif not is_external_actor(callee) and callee not in paths:
+                # 関与表の列はモジュール一覧のパスなので、当たらない呼び出し先は表から漏れる
+                message = (
+                    f"手順 {target} の呼び出し先「{callee}」が、モジュール一覧のパスにありません。"
+                )
+                issues.append(_error("UNKNOWN_CALLEE", message, target))
+            elif not is_external_actor(callee) and not step.call.strip():
+                message = f"手順 {target} の呼ぶ関数が空です(段階6で関数を選べません)。"
+                issues.append(_warning("EMPTY_CALL", message, target))
+    return issues
+
+
 # ── ここから Phase-16-2 の作成分 ──
 def _error(code: str, message: str, target: str | None = None) -> StageIssue:
     return StageIssue("error", code, message, target)
@@ -475,6 +544,8 @@ STAGE_VALIDATORS: dict[int, StageValidator] = {
     3: validate_data_model,
     # Phase-19-1:追記
     4: validate_structure,
+    # Phase-20-1:追記
+    5: validate_procedures,
 }
 
 

@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -25,6 +25,7 @@ from pydantic import BaseModel
 # Phase-17-2:追記 ── app.detailed_design.data_flow_drafting.GeneratedGroupProcess, GeneratedSummary, GroupDfdGenerationOutput, ProcessSummaryGenerationOutput
 # Phase-18-2:追記 ── app.detailed_design.data_model_drafting.CrudGenerationOutput, DataModelErOutput, DraftedColumn, DraftedTable, GeneratedCrudCell
 # Phase-19-2:追記 ── app.detailed_design.structure_drafting.GeneratedModuleRow, ModuleListGenerationOutput
+# Phase-20-2:追記 ── app.detailed_design.procedure_drafting.GeneratedStep, ProcedureGenerationOutput
 from app.detailed_design.data_flow_drafting import (
     GeneratedGroupProcess,
     GeneratedSummary,
@@ -39,6 +40,7 @@ from app.detailed_design.data_model_drafting import (
     GeneratedCrudCell,
 )
 from app.detailed_design.drafting import FunctionListGenerationOutput, GeneratedFunction
+from app.detailed_design.procedure_drafting import GeneratedStep, ProcedureGenerationOutput
 from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleListGenerationOutput
 from app.schemas.generation import HearingCompletionCheck
 from app.uml.generation.schemas import (
@@ -308,6 +310,60 @@ _UML_OUTPUTS[ModuleListGenerationOutput] = ModuleListGenerationOutput(
 )
 
 # ── ここから Phase-4-3 の作成分 ──
+# Phase-20-2:追記
+# 詳細設計モードの段階5(主要処理の手順)の手順(Phase 20)。どの処理にも同じ手順を返す。
+# 呼び出し先は、上のモジュール一覧のパスにそろえる
+_UML_OUTPUTS[ProcedureGenerationOutput] = ProcedureGenerationOutput(
+    reason="[E2E Fake] 予約の重複を防ぐ確認がある",
+    note="[E2E Fake] 手順 2〜3 が1つのトランザクション",
+    steps=[
+        GeneratedStep(
+            caller="利用者",
+            callee="app/api/routes/reservations.py",
+            call="create_reservation",
+            data="予約リクエスト",
+            action="本文を型で検証する",
+            result="ReservationCreate",
+            db="—",
+            branch="1a へ",
+            is_branch=False,
+        ),
+        GeneratedStep(
+            caller="",
+            callee="",
+            call="",
+            data="",
+            action="本文の型が不正",
+            result="",
+            db="",
+            branch="422",
+            is_branch=True,
+        ),
+        GeneratedStep(
+            caller="app/api/routes/reservations.py",
+            callee="app/services/reservation.py",
+            call="ReservationService.create",
+            data="予約リクエスト",
+            action="重複を確かめて予約を保存する",
+            result="予約",
+            db="reservations C",
+            branch="—",
+            is_branch=False,
+        ),
+        GeneratedStep(
+            caller="app/api/routes/reservations.py",
+            callee="利用者",
+            call="",
+            data="予約",
+            action="応答に詰めて返す",
+            result="201 Created",
+            db="—",
+            branch="—",
+            is_branch=False,
+        ),
+    ],
+)
+
 _HEARING_REPLY = "[E2E Fake] 承知しました。次に、想定している主なユーザー層を教えてください。"
 _SELF_DIAGNOSIS_REPLY = "[E2E Fake] 自己診断: 特に致命的な不足点はありません。"
 
