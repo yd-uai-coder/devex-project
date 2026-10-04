@@ -1,4 +1,4 @@
-# 作成：Phase-13-2｜更新：Phase-13-3,13-4
+# 作成：Phase-13-2｜更新：Phase-13-3,13-4,22-5
 # 写経レベル: コア ── 反映を「表示中の版のin-place更新」にする判断(D1案A)と、
 #   承認・再反映・埋め込み・zipで同じ「反映済みか」の規則を共有する設計。
 # Phase-13-3:追記 ── dataclasses.dataclass,
@@ -7,6 +7,8 @@
 #   app.uml.sync(SyncState, diagram_sync_state, parse_anchors)
 # Phase-13-4:追記 ── zipfile, io.BytesIO, app.uml.domain.STATUS_AFTER_EXPORT,
 #   app.uml.export.export_filename, app.uml.sync(ImageLink, with_image_links)
+# Phase-22-5：更新 ── app.uml.export(build_render, render_content)・app.uml.layout(LayoutModel, edge_labels)
+#   を外し、app.uml.export(render_diagram, unique_base) を足した(描画と名前の重複除けを共通化)
 """承認済みのUML図を内部設計書へ反映する(M9a)ユースケース。
 
 - 反映(13-2): 承認済みの図の要素表を、内部設計書の表示中の版にアンカーで差し込む。
@@ -43,12 +45,11 @@ from app.uml.domain import (
 )
 from app.uml.export import (
     ExportFormat,
-    build_render,
     diagram_title,
     export_filename,
-    render_content,
+    render_diagram,
+    unique_base,
 )
-from app.uml.layout import LayoutModel, edge_labels
 from app.uml.sync import (
     DataItemSummary,
     ImageLink,
@@ -196,7 +197,10 @@ class UmlSyncService:
             if not _is_approved(diagram) or str(diagram.id) not in anchored:
                 continue
             model = SemanticModelAdapter.validate_python(diagram.semantic_model)
-            base = _unique_base(
+            # Phase-22-5：更新
+            # base = _unique_base(
+            # ↓↓
+            base = unique_base(
                 export_filename(model.notation, diagram.subject, "svg").removesuffix(".svg"),
                 used_bases,
             )
@@ -262,28 +266,42 @@ def _apply(content: str, diagram: UmlDiagram, data_items: dict[uuid.UUID, DataIt
 
 
 # Phase-13-3:追記
+# Phase-22-5：更新
+# def _render(
+#     diagram: UmlDiagram, model: _AnyModel, names: dict[uuid.UUID, str], fmt: ExportFormat
+# ) -> str:
+#     """承認済みの図を、出力と同じ規則で描く(承認の条件で、全要素の配置があることは確かめ済み)。"""
+#     layout = LayoutModel.model_validate(diagram.layout_model)
+#     render = build_render(model, layout, edge_labels(model, names))
+#     return render_content(
+#         render,
+#         fmt,
+#         diagram_id=str(diagram.id),
+#         title=diagram_title(model.notation, diagram.subject),
+#     )
+# ↓↓
 def _render(
     diagram: UmlDiagram, model: _AnyModel, names: dict[uuid.UUID, str], fmt: ExportFormat
 ) -> str:
-    """承認済みの図を、出力と同じ規則で描く(承認の条件で、全要素の配置があることは確かめ済み)。"""
-    layout = LayoutModel.model_validate(diagram.layout_model)
-    render = build_render(model, layout, edge_labels(model, names))
-    return render_content(
-        render,
+    """承認済みの図を、出力と同じ規則で描く(規則は`app.uml.export.render_diagram`。Phase 22)。"""
+    return render_diagram(
+        model,
+        diagram.layout_model,
+        names,
         fmt,
         diagram_id=str(diagram.id),
         title=diagram_title(model.notation, diagram.subject),
     )
 
 
-# Phase-13-4:追記
-def _unique_base(base: str, used: set[str]) -> str:
-    """zipの中でファイル名が重ならないようにする。禁止文字を`_`に置き換えた結果、別の図と
-    同じ名前になることがあるため、2つ目以降に`_2`、`_3`…を付ける。"""
-    candidate = base
-    suffix = 2
-    while candidate in used:
-        candidate = f"{base}_{suffix}"
-        suffix += 1
-    used.add(candidate)
-    return candidate
+# Phase-22-5：削除(app/uml/export/files.py の unique_base へ移した)
+# def _unique_base(base: str, used: set[str]) -> str:
+#     """zipの中でファイル名が重ならないようにする。禁止文字を`_`に置き換えた結果、別の図と
+#     同じ名前になることがあるため、2つ目以降に`_2`、`_3`…を付ける。"""
+#     candidate = base
+#     suffix = 2
+#     while candidate in used:
+#         candidate = f"{base}_{suffix}"
+#         suffix += 1
+#     used.add(candidate)
+#     return candidate

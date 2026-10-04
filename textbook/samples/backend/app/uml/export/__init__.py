@@ -1,4 +1,4 @@
-# 作成：Phase-12-3｜更新：Phase-13-2
+# 作成：Phase-12-3｜更新：Phase-13-2,22-5
 # 写経レベル: 定型 ── re-export のみ。
 """承認済みのUML図をdraw.io(.drawio)とSVGに書き出す(M8。決定的、AI非依存)。
 
@@ -10,6 +10,7 @@
 
 # Phase-13-2:追記 ── app.uml.export.files(MEDIA_TYPES, ExportFormat, diagram_title,
 #   export_filename, render_content)。__all__ にも同じ名前を追記
+# Phase-22-5:追記 ── app.uml.export.files(render_diagram, unique_base)。__all__ にも同じ名前を追記
 from app.uml.export.drawio import to_drawio
 from app.uml.export.files import (
     MEDIA_TYPES,
@@ -17,6 +18,8 @@ from app.uml.export.files import (
     diagram_title,
     export_filename,
     render_content,
+    render_diagram,
+    unique_base,
 )
 from app.uml.export.render import RenderDiagram, build_render, orthogonal_fallback
 from app.uml.export.svg import to_svg
@@ -30,6 +33,8 @@ __all__ = [
     "export_filename",
     "orthogonal_fallback",
     "render_content",
+    "render_diagram",
     "to_drawio",
     "to_svg",
+    "unique_base",
 ]

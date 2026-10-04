@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -52,6 +52,16 @@ describe("DetailedDesignPageContent", () => {
     expect(
       screen.getByRole("link", { name: "← ドキュメントに戻る" }),
     ).toHaveAttribute("href", "/projects/p1/documents");
+  });
+
+  // Phase-22-6:追記
+  it("詳細設計書のダウンロードを上部に出す(Phase 22)", () => {
+    renderContent();
+
+    expect(
+      screen.getByRole("button", { name: "詳細設計書をダウンロード(.zip)" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("6 件が未承認");
   });
 
   it("承認ボタンでapprove(projectId, 段階)を呼ぶ", async () => {

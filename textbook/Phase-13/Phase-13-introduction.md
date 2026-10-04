@@ -165,6 +165,7 @@ zip:    GET /uml/bundle ─ with_image_links + svg/drawio → zipfile → export
 ## 後続 Phase での改訂
 
 - Phase 14: ステージ3は本 Phase で終了とし、申し送りの Phase 13b(M9b)と旧 Phase 14 を撤回した([`Phase-14-1.md`](../Phase-14/Phase-14-1.md))。
+- Phase 22: 詳細設計書の zip も同じ規則で図を描くため、`uml_sync_service.py` の `_render` の中身と `_unique_base` を `app/uml/export/files.py` の `render_diagram`・`unique_base` へ、FE の `umlApi.ts` の `fetchAttachment` を `src/lib/api/download.ts` へ移した(#17。[`Phase-22-5.md`](../Phase-22/Phase-22-5.md)・[`Phase-22-6.md`](../Phase-22/Phase-22-6.md))。
 
 ## Phase 完了チェック(#22)
 

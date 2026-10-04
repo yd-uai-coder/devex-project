@@ -279,6 +279,7 @@ backend/
 | **GET** | `/api/v1/projects/{id}/design-stages` | （※ステージ4、Phase 15）段階1〜7の状態(`state`・`is_open`・`missing_inputs`・`version`・`approved_version`・`model`。Phase 16で`generation_status`・`generation_error`・`issues`を追加)。未着手の段階も含む。止まった生成(15分超)はここで回収する。詳細設計モードでなければ409 `DESIGN_STAGES_NOT_AVAILABLE` | 必要 |
 | **PUT** | `/api/v1/projects/{id}/design-stages/{stage}` | （※ステージ4、Phase 15）段階の内容の保存(`{version, model}`。未着手は`version: null`で作る。楽観ロック。承認済みは`reviewing`に戻る。開いていない段階は409 `DESIGN_STAGE_LOCKED`) | 必要 |
 | **POST** | `/api/v1/projects/{id}/design-stages/{stage}/approve` | （※ステージ4、Phase 15）段階の承認(`{version}`。下書き・レビュー中・古いが対象。承認時に`input_fingerprint`を記録する。versionは増やさない。承認済みで古くない・内容が空は409 `DESIGN_STAGE_NOT_APPROVABLE`。段階ごとの検証にエラーがあれば409 `DESIGN_STAGE_INVALID`(Phase 16)) | 必要 |
+| **GET** | `/api/v1/projects/{id}/design-stages/document` | （※ステージ4、Phase 22）詳細設計書の zip(`detailed_design.html`・`detailed_design.md`・`diagrams/*.svg|.drawio`)。いつでもダウンロードでき、承認していない段階の章は「未承認」、0件で承認した段階6は「省略」。zip に入れた図は`exported`になる。詳細設計モードでなければ409 `DESIGN_STAGES_NOT_AVAILABLE` | 必要 |
 | **POST** | `/api/v1/projects/{id}/design-stages/{stage}/generate` | （※ステージ4、Phase 16）段階のAIの下書きの生成を受け付ける(202。段階は`generating`になり、裏で生成して`draft`・version+1で保存する。画面は一覧をポーリングする)。生成に対応していない段階は409 `DESIGN_STAGE_GENERATION_NOT_SUPPORTED`(Phase 16は段階1だけ)、生成中は409 `DESIGN_STAGE_GENERATION_IN_PROGRESS`、開いていない段階は409 `DESIGN_STAGE_LOCKED` | 必要 |
 
 ### 3. UML設計図パイプラインの図↔文書対応(ステージ3、D5)
@@ -313,6 +314,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 
 * **正本は段階の意味モデル**: 詳細設計書(HTML・Markdown)は、承認済みの段階の意味モデル(`design_stages.model`と、図の`uml_diagrams`)から決定的に組み立てる表示である。散文を正本にしないため、図や表の変更を散文へ戻す処理(旧M9b)は要らない。
 * **詳細設計書の章構成**: 01 機能(処理)一覧 / 02 データフロー / 03 データモデル / 04 ソフトウェア構造 / 05 主要処理の手順 / 06 処理ロジックの詳細(任意) / 07 横断事項(例外とHTTP・認証・トランザクション・ログ)。01〜06は段階1〜6と1対1。
+  > **[Phase 22 で確定 ── 〈07 横断事項を Phase 22 の組み立てに含めない〉]** 当初〈07 横断事項まで組み立てる予定〉→ 保留。理由〈01〜06は段階1〜6の承認済みの意味モデルから組み立てるが、07 の元になる段階のデータが無い(段階7は実装計画)。07 をどう作るか(段階7と同時に生成するか、別の段階にするか)は Phase 23(段階7)で決める。経緯は[`textbook/Phase-22/Phase-22-introduction.md`](../textbook/Phase-22/Phase-22-introduction.md)参照〉。
 * **ID体系**:
   * 処理ID: `F-01`… 段階1で振り、再生成しても変えない(今の`DF-<n>`が再生成で振り直される問題を避ける)。以降の章はこのIDで互いを参照する。
   * 手順ID: `<処理ID>#<手順番号>`(`F-01#4`、分岐は`F-01#4a`)。文書全体で一意。
@@ -321,6 +323,12 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   > **[Phase 20 で確定 ── 〈手順の行に logic を持たせない〉]** 当初〈05と06の紐づけを手順の行の`logic`(L-ID)に持つ予定〉→ 撤回。理由〈段階6は段階5を入力にするため、段階6で関数を選ぶたびに承認済みの段階5の`logic`を書き換えることになる。すると段階5が差し戻され、段階6が「古い」になる循環が起きる。紐づけは、手順の行の(呼び出し先`callee`, 関数`call`)と、段階6の項目の(モジュール, 関数)の一致から導く。06の「呼ばれる手順」・05の詳細バッジと索引の「詳細(06)」・06の逆引き表はこの一致から導き、保存する紐づけは持たない。手順番号が編集で振り直されても紐づけは切れない。経緯は[`textbook/Phase-20/Phase-20-introduction.md`](../textbook/Phase-20/Phase-20-introduction.md)参照〉。
 * **関与表の列**: 呼び出し先のうち、段階4のモジュール一覧のパスだけ(利用者・スケジューラ等の外部の役者は含めない)。
 * **出力の組み立て**: HTML・Markdownとも、ステージ3のzip出力と同じ層(バックエンドの`app/uml/export`・`uml_sync_service`の並び)で組み立てる。HTMLは全文字をエスケープし、外部を読み込まない。Markdownはリンクを持たない。devex-uiのデモ(`src/features/detailed-design/demo/procedureModel.ts`の`toHtml`・`toMarkdown`)は形式の見本で、本実装はバックエンドへ移す。
+* **詳細設計書の組み立て(Phase 22)**:
+  * 純粋関数のパッケージ`app/detailed_design/document/`(`source`: 入力`DocumentSource`と章の状態 / `views`: 表の導出 / `markdown`・`html`: 書き出し)と、DB の読み取り・図の描画・zip を受け持つ`app/services/detailed_design_export_service.py`に分ける。devex-ui のデモは書式の見本として残す。
+  * 章の状態: 段階が承認済み(古くない)なら本文を組み立てる。段階6が0件で承認済みなら「省略」。それ以外(未着手・下書き・レビュー中・古い)は「未承認」とだけ書き、途中の内容は出さない。ダウンロードはいつでもできる。
+  * 導出: 手順番号・手順IDは`number_steps`・`step_id`、L-IDは`logic_id`、05↔06は手順の(callee, call)と`logic_key`の一致、関与表の列はモジュール一覧の並び(呼ばれたものだけ)、データ辞書の「使う処理」は DFD の線の端の処理の箱。CRUD 図の記号は`dfd_accesses`で3つに分ける(R が DFD の線から決まる / C・U・D の書き込みは DFD から決まり区別は人が確定 / DFD に描いていない分で人が確定)。HTML は色、md は印(なし・`+`・`*`)で書き分ける。
+  * 載せる図: 承認済みの段階2の`dfd_groups`の DFD、段階3の ER、段階4の構成図のうち、承認済み(出力済みを含む)で配置のあるもの。描画はステージ3の zip と同じ`app.uml.export.render_diagram`(Phase 22 で`uml_sync_service`から移した。名前の重複除けの`unique_base`も同じ)。zip に入れた図は`exported`にする。
+  * zip の中身: `detailed_design.html`・`detailed_design.md`・`diagrams/*.svg`・`diagrams/*.drawio`。md は図を相対パスの画像(`![題](diagrams/x.svg)`)で載せる(章の間のリンクと生の HTML は持たない)。HTML は文字をすべて`html.escape`し、図の SVG だけはそのまま埋め込む(自前の出力エンジンが中の文字をエスケープ済みのため)。
 * **機能グループ**: 段階1の下書きで、APIのリソース名(`/api/v1/<リソース>`、親の個別の対象に属するものは`/api/v1/<親>/{id}/<リソース>`の子のリソース名)から決定的に初期値を作り、人が確定する。APIのパスは外部設計書の「2.6 API一覧」から取る(Phase 16)。
 * **段階1の下書き(Phase 16)**: AIには外部設計書から処理を列挙させるだけにし、処理IDと機能グループの初期値はコードで決める。再生成では、前の版の行とトリガー(メソッド+正規化したパス。APIでなければ名称)で突き合わせ、一致した行は処理IDと人が確定した機能グループを引き継ぐ。生成は受け付けとバックグラウンドの実行に分ける(`app/services/design_stage_generation_service.py`。UML図の生成と同じ形)。
 * **段階2 データフロー(Phase 17)**:

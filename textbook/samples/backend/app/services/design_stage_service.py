@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
 # Phase-16-4:追記 ── app.detailed_design.Fingerprint
@@ -98,6 +98,15 @@ class DesignStageService:
         # ↓↓
         sources = await self._sources(project.id, rows, views, documents)
         return rows.get(stage), views[stage], sources
+
+    # Phase-22-5:追記
+    async def overview(self, project: Project) -> tuple[dict[int, StageView], StageSources]:
+        """全段階の状態と、承認済みの段階の内容(`StageSources.stages`)を返す(詳細設計書の
+        組み立てが使う。Phase 22)。"""
+        _ensure_detailed(project)
+        rows, views, documents = await self._load(project.id)
+        sources = await self._sources(project.id, rows, views, documents)
+        return views, sources
 
     # Phase-16-4:追記
     async def current_fingerprint(self, project: Project, stage: int) -> Fingerprint:

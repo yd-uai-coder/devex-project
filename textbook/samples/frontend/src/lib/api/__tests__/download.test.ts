@@ -1,6 +1,8 @@
-// 作成：Phase-12-5｜更新：Phase-13-5
+// 作成：Phase-12-5｜更新：Phase-13-5,22-6
+// Phase-22-6:追記 ── ../download.fetchAttachment, @/lib/api/client.ApiError
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { parseFilename, saveFile } from "../download";
+import { fetchAttachment, parseFilename, saveFile } from "../download";
+import { ApiError } from "@/lib/api/client";
 
 describe("parseFilename", () => {
   it("filename*(UTF-8)を優先し、無ければ filename を使う", () => {
@@ -46,5 +48,33 @@ describe("saveFile", () => {
 
     expect(createObjectURL).toHaveBeenCalledWith(zip);
     vi.unstubAllGlobals();
+  });
+});
+
+// Phase-22-6:追記
+describe("fetchAttachment", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("成功ならレスポンスをそのまま返し、失敗は code 付きの ApiError にする", async () => {
+    const ok = new Response("x", { status: 200 });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ detail: "m", code: "DESIGN_STAGES_NOT_AVAILABLE" }), {
+          status: 409,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchAttachment("/api/v1/x")).resolves.toBe(ok);
+    const error = await fetchAttachment("/api/v1/x").catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(409);
+    expect((error as ApiError).code).toBe("DESIGN_STAGES_NOT_AVAILABLE");
+    expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/api\/v1\/x$/);
   });
 });

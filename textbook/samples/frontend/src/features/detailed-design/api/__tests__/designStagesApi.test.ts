@@ -1,11 +1,13 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-16-5:追記 ── ../designStagesApi.generateDesignStage
 // Phase-17-5:追記 ── ../types.MAX_DFD_GROUPS, @/features/detailed-design/test-utils/stageFixtures.makeDataFlow
 // Phase-18-5:追記 ── ../types.ER_SUBJECT, @/features/detailed-design/test-utils/stageFixtures.makeCrud
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+// Phase-22-6:追記 ── vitest.vi, ../designStagesApi.downloadDetailedDesign
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   approveDesignStage,
+  downloadDetailedDesign,
   generateDesignStage,
   listDesignStages,
   saveDesignStage,
@@ -150,5 +152,34 @@ describe("designStagesApi", () => {
     });
     expect(saved.dfd_accesses).toEqual(accesses);
     expect(ER_SUBJECT).toBe("");
+  });
+});
+
+// Phase-22-6:追記
+describe("downloadDetailedDesign", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("GET .../design-stages/document の zip を Blob のまま受け取り、ファイル名を返す", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(new Uint8Array([0x50, 0x4b, 0x03, 0x04]), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/zip",
+          "Content-Disposition": 'attachment; filename="detailed_design.zip"',
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await downloadDetailedDesign("p1");
+
+    expect(String(fetchMock.mock.calls[0][0])).toMatch(
+      /\/api\/v1\/projects\/p1\/design-stages\/document$/,
+    );
+    expect(result.filename).toBe("detailed_design.zip");
+    expect(result.content).toBeInstanceOf(Blob);
+    expect(result.content.size).toBe(4);
   });
 });

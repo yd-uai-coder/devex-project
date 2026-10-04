@@ -1,12 +1,16 @@
-# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3
+# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5
 # 写経レベル: 定型 ── サービスを呼ぶだけの薄いルート。
 # Phase-16-4:追記 ── fastapi.BackgroundTasks, fastapi.status, app.services.design_stage_generation_service.DesignStageGenerationService, app.services.design_stage_generation_service.run_design_stage_generation
 # Phase-20-3:追記 ── app.schemas.design_stage.DesignStageGenerate
+# Phase-22-5:追記 ── fastapi.responses.Response, app.api.responses.content_disposition,
+#   app.services.detailed_design_export_service.DetailedDesignExportService
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Path, status
+from fastapi.responses import Response
 
 from app.api.deps import CurrentProjectDep, SessionDep
+from app.api.responses import content_disposition
 from app.schemas.design_stage import (
     DesignStageApprove,
     DesignStageGenerate,
@@ -18,6 +22,7 @@ from app.services.design_stage_generation_service import (
     run_design_stage_generation,
 )
 from app.services.design_stage_service import DesignStageService
+from app.services.detailed_design_export_service import DetailedDesignExportService
 
 # UMLと同じく、プロジェクト配下の独立したサブツリーとしてprefixにproject_idを含める
 router = APIRouter(prefix="/projects/{project_id}/design-stages", tags=["design-stages"])
@@ -39,6 +44,22 @@ async def list_design_stages(
 
 
 # Phase-16-4:追記
+# Phase-22-5:追記
+@router.get("/document")
+async def download_detailed_design(
+    session: SessionDep, current_project: CurrentProjectDep
+) -> Response:
+    """詳細設計書(HTML・md)と載せた図(SVG・draw.io)を zip でダウンロードする(Phase 22)。
+    いつでもダウンロードでき、承認していない段階の章は「未承認」になる。zip に入れた図は
+    `exported`になる。簡易ドキュメントモードのプロジェクトは409。"""
+    bundle = await DetailedDesignExportService(session).bundle(current_project)
+    return Response(
+        content=bundle.content,
+        media_type=bundle.media_type,
+        headers={"Content-Disposition": content_disposition(bundle.filename)},
+    )
+
+
 @router.post(
     "/{stage}/generate", response_model=DesignStageRead, status_code=status.HTTP_202_ACCEPTED
 )

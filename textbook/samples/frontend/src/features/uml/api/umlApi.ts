@@ -1,13 +1,13 @@
-// 作成：Phase-11-2｜更新：Phase-12-5,13-5,17-5
+// 作成：Phase-11-2｜更新：Phase-12-5,13-5,17-5,22-6
 // 写経レベル: 定型 ── apiFetch の薄いラッパー(既存 documentsApi.ts と同じ形)。
 // Phase-12-5:追記 ── auth-store.useAuthStore, base-url.API_BASE_URL, client.toApiError,
 //   download.parseFilename, types(ExportFormat, UmlDiagramApprove)
 // Phase-13-5:追記 ── types(UmlEmbedRead, UmlReflectRead)
 // Phase-17-5:追記 ── types.DataItemWrite
-import { useAuthStore } from "@/components/auth/auth-store";
-import { API_BASE_URL } from "@/lib/api/base-url";
-import { apiFetch, toApiError } from "@/lib/api/client";
-import { parseFilename } from "@/lib/api/download";
+// Phase-22-6：更新 ── auth-store.useAuthStore・base-url.API_BASE_URL・client.toApiError を外し、
+//   download.fetchAttachment を足した(fetchAttachment を download.ts へ移したため)
+import { apiFetch } from "@/lib/api/client";
+import { fetchAttachment, parseFilename } from "@/lib/api/download";
 import type {
   DataItemRead,
   DataItemWrite,
@@ -158,18 +158,18 @@ export async function exportDiagram(
   return { filename, content, mimeType: EXPORT_MIME_TYPES[format] };
 }
 
-// Phase-13-5:追記
-// ファイルを返すエンドポイント(Content-Disposition 付き)を生の fetch で呼ぶ。
-// 失敗は apiFetch と同じ ApiError(code 付き)にする。
-async function fetchAttachment(path: string): Promise<Response> {
-  const accessToken = useAuthStore.getState().accessToken;
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: "include",
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-  });
-  if (!res.ok) throw await toApiError(res);
-  return res;
-}
+// Phase-22-6：削除(@/lib/api/download.ts の fetchAttachment へ移した)
+// // ファイルを返すエンドポイント(Content-Disposition 付き)を生の fetch で呼ぶ。
+// // 失敗は apiFetch と同じ ApiError(code 付き)にする。
+// async function fetchAttachment(path: string): Promise<Response> {
+//   const accessToken = useAuthStore.getState().accessToken;
+//   const res = await fetch(`${API_BASE_URL}${path}`, {
+//     credentials: "include",
+//     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+//   });
+//   if (!res.ok) throw await toApiError(res);
+//   return res;
+// }
 
 // 文書のプレビューに差し込む図と、図と文書の食い違い(M9a)。状態は変えない。
 export function listEmbeds(projectId: string): Promise<UmlEmbedRead[]> {
