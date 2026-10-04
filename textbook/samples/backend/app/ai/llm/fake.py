@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -24,6 +24,7 @@ from pydantic import BaseModel
 # Phase-16-4:追記 ── app.detailed_design.drafting.FunctionListGenerationOutput, GeneratedFunction
 # Phase-17-2:追記 ── app.detailed_design.data_flow_drafting.GeneratedGroupProcess, GeneratedSummary, GroupDfdGenerationOutput, ProcessSummaryGenerationOutput
 # Phase-18-2:追記 ── app.detailed_design.data_model_drafting.CrudGenerationOutput, DataModelErOutput, DraftedColumn, DraftedTable, GeneratedCrudCell
+# Phase-19-2:追記 ── app.detailed_design.structure_drafting.GeneratedModuleRow, ModuleListGenerationOutput
 from app.detailed_design.data_flow_drafting import (
     GeneratedGroupProcess,
     GeneratedSummary,
@@ -38,6 +39,7 @@ from app.detailed_design.data_model_drafting import (
     GeneratedCrudCell,
 )
 from app.detailed_design.drafting import FunctionListGenerationOutput, GeneratedFunction
+from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleListGenerationOutput
 from app.schemas.generation import HearingCompletionCheck
 from app.uml.generation.schemas import (
     ComponentGenerationOutput,
@@ -273,6 +275,39 @@ _UML_OUTPUTS[CrudGenerationOutput] = CrudGenerationOutput(
     ]
 )
 
+# Phase-19-2:追記
+# 詳細設計モードの段階4(ソフトウェア構造)のモジュール一覧(Phase 19)。構成図は上の
+# ComponentGenerationOutput(層 api・service)をそのまま使い、その層にそろえる
+_UML_OUTPUTS[ModuleListGenerationOutput] = ModuleListGenerationOutput(
+    modules=[
+        GeneratedModuleRow(
+            path="app/main.py",
+            layer="api",
+            responsibility="[E2E Fake] アプリの組み立て",
+            depends_on=["app/api/routes/reservations.py"],
+            functions=[],
+            all_functions=True,
+        ),
+        GeneratedModuleRow(
+            path="app/api/routes/reservations.py",
+            layer="api",
+            responsibility="[E2E Fake] 予約の API",
+            depends_on=["app/services/reservation.py"],
+            functions=["F-01", "F-02"],
+            all_functions=False,
+        ),
+        GeneratedModuleRow(
+            path="app/services/reservation.py",
+            layer="service",
+            responsibility="[E2E Fake] 予約の登録と一覧",
+            depends_on=["sqlalchemy"],
+            functions=["F-01", "F-02"],
+            all_functions=False,
+        ),
+    ]
+)
+
+# ── ここから Phase-4-3 の作成分 ──
 _HEARING_REPLY = "[E2E Fake] 承知しました。次に、想定している主なユーザー層を教えてください。"
 _SELF_DIAGNOSIS_REPLY = "[E2E Fake] 自己診断: 特に致命的な不足点はありません。"
 

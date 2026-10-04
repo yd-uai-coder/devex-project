@@ -1,4 +1,4 @@
-# 作成：Phase-18-2
+# 作成：Phase-18-2｜更新：Phase-19-2
 # 写経レベル: コア ── DFD から決まる部分を AI に「決まったもの」として渡し、AI には残りだけを決めさせる。
 """段階3(データモデル)のAIの下書きの入出力(純粋関数。docs/external_design.md 2.7節)。
 
@@ -15,6 +15,7 @@ AI に決めさせるのは、書き込みの C/U/D の区別と、DFD を描い
 部分を書き漏らしても、`merge_crud`が DFD から足し直す。
 """
 
+# Phase-19-2:追記(画面確認後の修正) ── app.detailed_design.prompt_rules.NAMING_RULES
 from collections.abc import Sequence
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -23,6 +24,7 @@ from pydantic import BaseModel, Field
 from app.detailed_design.data_flow import ProcessSummaryRow
 from app.detailed_design.data_model import CrudDraft, DfdAccess
 from app.detailed_design.function_list import FunctionRow
+from app.detailed_design.prompt_rules import NAMING_RULES
 from app.uml.domain.er import ErColumn, ErElement, ErRelation, ErSemanticModel
 from app.uml.generation.prompts import ExistingDataItem
 from app.uml.generation.schemas import GeneratedColumn, GeneratedTableRelation
@@ -84,6 +86,8 @@ ER_SYSTEM_PROMPT = (
     "- relations の source_id は参照される側(1側)、target_id は外部キーを持つ側のテーブルID\n"
     f"- テーブルは合計{MAX_ELEMENTS}個以内に収める\n"
     "- 入力に書かれていない業務のテーブルを創作しない"
+    # Phase-19-2:追記(画面確認後の修正)
+    + NAMING_RULES
 )
 
 CRUD_SYSTEM_PROMPT = (
@@ -95,6 +99,8 @@ CRUD_SYSTEM_PROMPT = (
     "- DFD に無い処理も、【処理概要表】から操作を判断して書く\n"
     "- 操作の無いセルは書かない。function_id と table は入力の値をそのまま書く\n"
     "- 処理概要表から読み取れない操作を創作しない"
+    # Phase-19-2:追記(画面確認後の修正)
+    + NAMING_RULES
 )
 
 

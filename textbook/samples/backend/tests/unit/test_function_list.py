@@ -1,4 +1,4 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1
 # 写経レベル: コア ── 再生成で処理IDと機能グループが引き継がれることを確かめる。
 """段階1 機能一覧の組み立て(処理IDの採番と引き継ぎ・機能グループの初期値)と検証のテスト。
 
@@ -170,11 +170,11 @@ def test_validate_warns_duplicate_trigger_and_missing_api() -> None:
 
 
 def test_stages_without_validator_have_no_issues() -> None:
-    # Phase-18-1：更新
-    # assert set(STAGE_VALIDATORS) == {1, 2}
-    # assert validate_stage(3, {"anything": 1}, StageSources()) == []
+    # Phase-19-1：更新(段階4にも検証を登録したので、登録の無い例を段階5にした)
+    # assert set(STAGE_VALIDATORS) == {1, 2, 3}
+    # assert validate_stage(4, {"anything": 1}, StageSources()) == []
     # ↓↓
-    assert set(STAGE_VALIDATORS) == {1, 2, 3}
-    assert validate_stage(4, {"anything": 1}, StageSources()) == []
+    assert set(STAGE_VALIDATORS) == {1, 2, 3, 4}
+    assert validate_stage(5, {"anything": 1}, StageSources()) == []
     assert validate_stage(1, None, StageSources()) == []
     assert has_errors([StageIssue("warning", "W", "w")]) is False

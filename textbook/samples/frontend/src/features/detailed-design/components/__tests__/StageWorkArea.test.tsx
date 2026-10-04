@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9
+// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7
 // 写経レベル: コア ── 状態ごとのボタンと表示。
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-17-6:追記 ── @/features/detailed-design/detailed-design-store.useDetailedDesignStore
@@ -60,6 +60,22 @@ describe("StageWorkArea", () => {
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
+  // Phase-19-7:追記
+  it("開いた段階4には、ソフトウェア構造のパネルを出す(Phase 19)", () => {
+    const stages = makeStages({
+      1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
+      2: { state: "approved", version: 3, approved_version: 3 },
+      3: { state: "approved", version: 1, approved_version: 1 },
+      4: { is_open: true, missing_inputs: [] },
+    });
+    useDetailedDesignStore.setState({ stages });
+    renderArea(stages[3]);
+
+    expect(screen.getByText("モジュール一覧")).toBeInTheDocument();
+    expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
+  });
+
+  // ── ここから Phase-15-7 の作成分 ──
   it("開いていない段階は、足りない入力を示し、承認できない", () => {
     const [, stage2] = makeStages();
     renderArea(stage2);

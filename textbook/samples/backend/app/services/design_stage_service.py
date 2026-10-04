@@ -1,9 +1,10 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
 # Phase-16-4:追記 ── app.detailed_design.Fingerprint
 # Phase-17-3:追記 ── app.detailed_design.validation.DfdDiagramSummary, app.models.uml_diagram.UmlDiagram, app.repositories.uml_diagram.UmlDiagramRepository
 # Phase-18-3:追記 ── app.detailed_design(DATA_MODEL_STAGE, ER_SUBJECT, confirm_drafts, dfd_accesses, er_table_names, table_key, tables_without_primary_key), app.detailed_design.validation(ErDiagramSummary, selected_dfd_accesses), app.schemas.design_stage.DfdAccessRead
+# Phase-19-3:追記 ── app.detailed_design(STRUCTURE_SUBJECT, component_layers), app.detailed_design.validation.ComponentDiagramSummary
 import uuid
 
 import structlog
@@ -13,10 +14,12 @@ from app.detailed_design import (
     DATA_MODEL_STAGE,
     ER_SUBJECT,
     STAGE_INPUTS,
+    STRUCTURE_SUBJECT,
     Fingerprint,
     StageRecord,
     StageView,
     can_approve,
+    component_layers,
     confirm_drafts,
     current_inputs,
     derive_states,
@@ -26,6 +29,7 @@ from app.detailed_design import (
     tables_without_primary_key,
 )
 from app.detailed_design.validation import (
+    ComponentDiagramSummary,
     DfdDiagramSummary,
     ErDiagramSummary,
     StageSources,
@@ -250,11 +254,16 @@ class DesignStageService:
         - DFD: 機能グループの DFD(段階2)の要約と、線から読み取った R/W(段階3)。詳細設計モードでは
           DFD はすべて段階2のもの。
         - ER: 段階3の ER(全体1枚)の要約。
+        - 構成図: 段階4の構成図(全体1枚)の要約。
         """
         diagrams = await self._diagrams.list_by_notation(project_id, "dfd")
         # Phase-18-3:追記
         er = await self._diagrams.get_by_subject(
             project_id=project_id, notation="er", subject=ER_SUBJECT
+        )
+        # Phase-19-3:追記
+        component = await self._diagrams.get_by_subject(
+            project_id=project_id, notation="component", subject=STRUCTURE_SUBJECT
         )
         return StageSources(
             documents={
@@ -270,6 +279,8 @@ class DesignStageService:
             dfd_diagrams={diagram.subject: _dfd_summary(diagram) for diagram in diagrams},
             # Phase-18-3:追記
             er_diagram=_er_summary(er) if er is not None else None,
+            # Phase-19-3:追記
+            component_diagram=_component_summary(component) if component is not None else None,
         )
 
     # Phase-16-3：更新
@@ -335,6 +346,16 @@ def _er_summary(diagram: UmlDiagram) -> ErDiagramSummary:
     )
 
 
+# Phase-19-3:追記
+def _component_summary(diagram: UmlDiagram) -> ComponentDiagramSummary:
+    return ComponentDiagramSummary(
+        status=diagram.status,
+        generation_status=diagram.generation_status,
+        layers=tuple(component_layers(diagram.semantic_model)),
+    )
+
+
+# ── ここから Phase-15-2 の作成分 ──
 def _ensure_detailed(project: Project) -> None:
     if project.mode != "detailed":
         raise DesignStagesNotAvailableError(

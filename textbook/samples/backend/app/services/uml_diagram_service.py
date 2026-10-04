@@ -1,4 +1,4 @@
-# 作成：Phase-8-3｜更新：Phase-9-5,10-5,10-6,11-1,12-1,12-2,12-4,13-2,17-4,18-4
+# 作成：Phase-8-3｜更新：Phase-9-5,10-5,10-6,11-1,12-1,12-2,12-4,13-2,17-4,18-4,19-4
 # 写経レベル: コア ── 楽観ロック・notation不変チェック・生成中ガード・DFDの横断検証の設計判断そのもの。
 # Phase-9-5:追記 ── asyncio, app.services.errors.LayoutNodeLimitExceededError,
 #   app.services.errors.LayoutValidationFailedError, app.uml.layout.compute_layout,
@@ -22,6 +22,7 @@
 #   このモジュールからimportしているため、app.uml.exportから取り込んだ名前をそのまま公開する)
 # Phase-17-4:追記 ── app.detailed_design.data_flow.DATA_FLOW_STAGE, app.services.design_stage_service.DesignStageService
 # Phase-18-4:追記 ── app.detailed_design.data_model.DATA_MODEL_STAGE
+# Phase-19-4:追記 ── app.detailed_design.structure.STRUCTURE_STAGE
 import asyncio
 import uuid
 from dataclasses import dataclass
@@ -31,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import BadRequestError
 from app.detailed_design.data_flow import DATA_FLOW_STAGE
 from app.detailed_design.data_model import DATA_MODEL_STAGE
+from app.detailed_design.structure import STRUCTURE_STAGE
 from app.models.uml_diagram import UmlDiagram
 from app.repositories.data_item import DataItemRepository
 from app.repositories.uml_diagram import UmlDiagramRepository
@@ -428,9 +430,9 @@ class UmlDiagramService:
     #         )
     # ↓↓
     async def _reopen_stage(self, diagram: UmlDiagram) -> None:
-        """詳細設計モードの DFD は段階2の、ER は段階3の内容の一部なので、図の承認がやり直しになる
-        保存・配置では、承認済みのその段階も差し戻す(段階の行が無い簡易ドキュメントモードでは
-        何もしない)。"""
+        """詳細設計モードの DFD は段階2の、ER は段階3の、構成図(component)は段階4の内容の一部
+        なので、図の承認がやり直しになる保存・配置では、承認済みのその段階も差し戻す(段階の行が
+        無い簡易ドキュメントモードでは何もしない)。"""
         stage = _STAGE_OF_NOTATION.get(diagram.notation)
         if stage is not None:
             await DesignStageService(self._session).mark_edited(diagram.project_id, stage)
@@ -459,8 +461,15 @@ class UmlDiagramService:
 
 # Phase-12-1:追記
 # Phase-18-4:追記
-# 詳細設計モードで、図がどの段階の内容の一部か(図の編集でその段階を差し戻す。Phase 17・18)
-_STAGE_OF_NOTATION: dict[str, int] = {"dfd": DATA_FLOW_STAGE, "er": DATA_MODEL_STAGE}
+# Phase-19-4：更新(構成図の編集で段階4を差し戻す)
+# _STAGE_OF_NOTATION: dict[str, int] = {"dfd": DATA_FLOW_STAGE, "er": DATA_MODEL_STAGE}
+# ↓↓
+# 詳細設計モードで、図がどの段階の内容の一部か(図の編集でその段階を差し戻す。Phase 17〜19)
+_STAGE_OF_NOTATION: dict[str, int] = {
+    "dfd": DATA_FLOW_STAGE,
+    "er": DATA_MODEL_STAGE,
+    "component": STRUCTURE_STAGE,
+}
 
 
 def _ensure_version(diagram: UmlDiagram, expected_version: int) -> None:

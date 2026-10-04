@@ -1,4 +1,4 @@
-# 作成：Phase-17-2
+# 作成：Phase-17-2｜更新：Phase-19-2
 # 写経レベル: コア ── 処理の箱を処理IDにし、ステージ3の出力スキーマへ組み替えて写像を再利用する判断。
 """段階2(データフロー)のAIの下書きの入出力(純粋関数。docs/external_design.md 2.7節)。
 
@@ -14,6 +14,7 @@ DFD の処理の箱は段階1の処理IDにする(詳細設計書の02章で、�
 意味モデルへの変換は`app/uml/generation/mapper.py`をそのまま使える。
 """
 
+# Phase-19-2:追記(画面確認後の修正) ── app.detailed_design.prompt_rules.NAMING_RULES
 from collections.abc import Sequence
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -21,6 +22,7 @@ from pydantic import BaseModel, Field
 
 from app.detailed_design.data_flow import ProcessSummaryDraft, ProcessSummaryRow
 from app.detailed_design.function_list import FunctionRow
+from app.detailed_design.prompt_rules import NAMING_RULES
 from app.uml.generation.prompts import ExistingDataItem
 from app.uml.generation.schemas import (
     DfdGenerationOutput,
@@ -76,6 +78,8 @@ SUMMARY_SYSTEM_PROMPT = (
     "- 入力・出力は、データの名前(利用者の入力・保存するデータ・返す結果)で短く書く\n"
     "- 処理内容は、検証・判定・保存・外部サービスの呼び出しを、行う順に1〜3文で書く\n"
     "- 【要件定義書】に書かれていない仕様を創作しない"
+    # Phase-19-2:追記(画面確認後の修正)
+    + NAMING_RULES
 )
 
 DFD_SYSTEM_PROMPT = (
@@ -94,6 +98,8 @@ DFD_SYSTEM_PROMPT = (
     "- IDは図の中で一意にし、フローの source_id/target_id は、処理なら処理ID、"
     "それ以外は定義済みのIDを指す\n"
     "- 【処理概要表】【要件定義書】に書かれていない要素を創作しない"
+    # Phase-19-2:追記(画面確認後の修正)
+    + NAMING_RULES
 )
 
 

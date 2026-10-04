@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -6,6 +6,7 @@
 # Phase-16-2:追記 ── app.detailed_design.function_list.FunctionDraft, FunctionListModel, FunctionRow, initial_group, merge_draft; app.detailed_design.validation.STAGE_VALIDATORS, StageIssue, StageSources, has_errors, validate_stage
 # Phase-17-1:追記 ── app.detailed_design.data_flow.DATA_FLOW_STAGE, MAX_DFD_GROUPS, DataFlowModel, ProcessSummaryDraft, ProcessSummaryRow, dfd_subject, group_functions, merge_summaries; app.detailed_design.validation.DfdDiagramSummary
 # Phase-18-1:追記 ── app.detailed_design.data_model.CRUD_OPS, DATA_MODEL_STAGE, ER_SUBJECT, CrudCell, CrudDraft, CrudModel, DfdAccess, confirm_drafts, dfd_accesses, er_table_names, merge_crud, normalize_ops, table_key, tables_without_primary_key; app.detailed_design.validation.ErDiagramSummary, selected_dfd_accesses
+# Phase-19-1:追記 ── app.detailed_design.structure.STRUCTURE_STAGE, STRUCTURE_SUBJECT, ModuleDraft, ModuleListModel, ModuleRow, component_layers, merge_modules, module_ref_matches, path_variants(画面確認後の修正); app.detailed_design.validation.ComponentDiagramSummary
 from app.detailed_design.api_list import (
     ApiEndpoint,
     endpoint_key,
@@ -61,8 +62,20 @@ from app.detailed_design.stages import (
     doc_key,
     stage_key,
 )
+from app.detailed_design.structure import (
+    STRUCTURE_STAGE,
+    STRUCTURE_SUBJECT,
+    ModuleDraft,
+    ModuleListModel,
+    ModuleRow,
+    component_layers,
+    merge_modules,
+    module_ref_matches,
+    path_variants,
+)
 from app.detailed_design.validation import (
     STAGE_VALIDATORS,
+    ComponentDiagramSummary,
     DfdDiagramSummary,
     ErDiagramSummary,
     StageIssue,
@@ -87,7 +100,12 @@ __all__ = [
     "STAGES",
     "STAGE_INPUTS",
     "STAGE_VALIDATORS",
+    # Phase-19-1:追記
+    "STRUCTURE_STAGE",
+    "STRUCTURE_SUBJECT",
     "ApiEndpoint",
+    # Phase-19-1:追記
+    "ComponentDiagramSummary",
     # Phase-18-1:追記
     "CrudCell",
     # Phase-18-1:追記
@@ -106,6 +124,10 @@ __all__ = [
     "FunctionDraft",
     "FunctionListModel",
     "FunctionRow",
+    # Phase-19-1:追記
+    "ModuleDraft",
+    "ModuleListModel",
+    "ModuleRow",
     # Phase-17-1:追記
     "ProcessSummaryDraft",
     # Phase-17-1:追記
@@ -118,6 +140,8 @@ __all__ = [
     "StageView",
     "StoredStatus",
     "can_approve",
+    # Phase-19-1:追記
+    "component_layers",
     # Phase-18-1:追記
     "confirm_drafts",
     "current_inputs",
@@ -138,11 +162,17 @@ __all__ = [
     # Phase-18-1:追記
     "merge_crud",
     "merge_draft",
+    # Phase-19-1:追記
+    "merge_modules",
+    # Phase-19-1:追記(画面確認後の修正)
+    "module_ref_matches",
     # Phase-17-1:追記
     "merge_summaries",
     # Phase-18-1:追記
     "normalize_ops",
     "parse_trigger",
+    # Phase-19-1:追記(画面確認後の修正)
+    "path_variants",
     # Phase-18-1:追記
     "selected_dfd_accesses",
     "stage_key",

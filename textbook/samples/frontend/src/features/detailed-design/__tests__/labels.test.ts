@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../labels.hasErrors, ../test-utils/stageFixtures.makeFunctionList
 import { describe, expect, it } from "vitest";
@@ -84,6 +84,8 @@ describe("図の未承認は承認時に出す(Phase 18)", () => {
     });
 
     expect(APPROVAL_TIME_CODES.has("DFD_NOT_APPROVED")).toBe(true);
+    // Phase-19-5:追記
+    expect(APPROVAL_TIME_CODES.has("COMPONENT_NOT_APPROVED")).toBe(true);
     expect(hasErrors(stage3)).toBe(false);
     expect(canApprove(stage3)).toBe(true);
     expect(visibleIssues(stage3.issues)).toEqual([]);

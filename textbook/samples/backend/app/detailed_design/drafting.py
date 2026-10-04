@@ -1,4 +1,4 @@
-# 作成：Phase-16-4
+# 作成：Phase-16-4｜更新：Phase-19-2
 # 写経レベル: コア ── AI に処理IDと機能グループを書かせない、という入出力の切り方。
 """段階1(機能一覧)のAIの下書きの入出力(純粋関数。docs/external_design.md 2.7節)。
 
@@ -7,12 +7,14 @@ AIには、外部設計書から「処理」を列挙させるだけにする。
 再生成のたびにIDや初期値が揺れて、後の段階の参照や人の確定値が壊れるため。
 """
 
+# Phase-19-2:追記(画面確認後の修正) ── app.detailed_design.prompt_rules.NAMING_RULES
 from typing import Literal
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
 from app.detailed_design.function_list import FunctionDraft
+from app.detailed_design.prompt_rules import NAMING_RULES
 
 
 class GeneratedFunction(BaseModel):
@@ -56,6 +58,8 @@ SYSTEM_PROMPT = (
     "入力欄の表示や画面遷移のような単純なものは加えない\n"
     "- screens には、外部設計書の画面一覧(2.2)の画面IDを書く\n"
     "- 処理IDは書かない(システムが振る)。並びは、利用者の操作の流れに沿った順にする"
+    # Phase-19-2:追記(画面確認後の修正)
+    + NAMING_RULES
 )
 
 

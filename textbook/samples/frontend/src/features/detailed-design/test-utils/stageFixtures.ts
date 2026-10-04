@@ -1,13 +1,15 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
 // Phase-18-5:追記 ── @/features/detailed-design/api/types.CrudModel
+// Phase-19-5:追記 ── @/features/detailed-design/api/types.ModuleListModel
 import type {
   CrudModel,
   DataFlowModel,
   DesignStageRead,
   FunctionListModel,
+  ModuleListModel,
 } from "@/features/detailed-design/api/types";
 
 // Phase-16-6:追記
@@ -48,6 +50,24 @@ export function makeCrud(ops = "C", draft = false): CrudModel {
   return { cells: [{ function_id: "F-01", table: "reservations", ops, draft }] };
 }
 
+// Phase-19-5:追記
+// makeFunctionList の F-01 に関わる、段階4のモジュール一覧(行1つ。テスト専用)。
+export function makeModuleList(layer = "api"): ModuleListModel {
+  return {
+    modules: [
+      {
+        path: "app/api/routes/reservations.py",
+        layer,
+        responsibility: "予約の API",
+        depends_on: [],
+        functions: ["F-01"],
+        all_functions: false,
+      },
+    ],
+  };
+}
+
+// ── ここから Phase-15-7 の作成分 ──
 // 段階1〜7の一覧の雛形。overrides で段階ごとに上書きする(テスト専用)。
 export function makeStages(
   overrides: Partial<Record<number, Partial<DesignStageRead>>> = {},
