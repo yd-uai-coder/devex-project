@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整)
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -160,10 +160,11 @@ class LayoutValidationFailedError(BadRequestError):
 
 
 # Phase-10-5:追記 ── ステージ3 Phase 10: UML図のAI生成
-class UmlSourceDocumentMissingError(ConflictError):
-    """UML図の生成元となる内部設計書(現行版)がまだ生成されていない場合に送出する。"""
-
-    code: ClassVar[str | None] = "UML_SOURCE_DOCUMENT_MISSING"
+# Phase-24：削除
+# class UmlSourceDocumentMissingError(ConflictError):
+#     """UML図の生成元となる内部設計書(現行版)がまだ生成されていない場合に送出する。"""
+#
+#     code: ClassVar[str | None] = "UML_SOURCE_DOCUMENT_MISSING"
 
 
 class UmlGenerationInProgressError(ConflictError):
@@ -172,26 +173,27 @@ class UmlGenerationInProgressError(ConflictError):
     生成中の図の更新(PUT)・レイアウト実行も、生成結果で上書きされるため同じ例外で拒否する。"""
 
     code: ClassVar[str | None] = "UML_GENERATION_IN_PROGRESS"
-
-
-class UmlSubjectNotFoundError(BadRequestError):
-    """生成対象(subject)が内部設計書から列挙した候補に無い場合に送出する
-    (DFDの処理名、ER部分図のテーブル名、component/ER全体以外のsubject指定など)。"""
-
-    code: ClassVar[str | None] = "UML_SUBJECT_NOT_FOUND"
-
-
-class ErScopeRequiredError(BadRequestError):
-    """ER図の全体生成でテーブル数が上限(MAX_ELEMENTS)を超える場合、または部分図に
-    テーブルの選択が無い場合に送出する(部分図として、対象のテーブルを選んで生成し直す)。"""
-
-    code: ClassVar[str | None] = "ER_SCOPE_REQUIRED"
-
-
-class TooManySubjectsError(BadRequestError):
-    """1回の生成リクエストで指定した対象が上限(MAX_SUBJECTS_PER_REQUEST)を超える場合に送出する。"""
-
-    code: ClassVar[str | None] = "TOO_MANY_SUBJECTS"
+# Phase-24：削除
+#
+#
+# class UmlSubjectNotFoundError(BadRequestError):
+#     """生成対象(subject)が内部設計書から列挙した候補に無い場合に送出する
+#     (DFDの処理名、ER部分図のテーブル名、component/ER全体以外のsubject指定など)。"""
+#
+#     code: ClassVar[str | None] = "UML_SUBJECT_NOT_FOUND"
+#
+#
+# class ErScopeRequiredError(BadRequestError):
+#     """ER図の全体生成でテーブル数が上限(MAX_ELEMENTS)を超える場合、または部分図に
+#     テーブルの選択が無い場合に送出する(部分図として、対象のテーブルを選んで生成し直す)。"""
+#
+#     code: ClassVar[str | None] = "ER_SCOPE_REQUIRED"
+#
+#
+# class TooManySubjectsError(BadRequestError):
+#     """1回の生成リクエストで指定した対象が上限(MAX_SUBJECTS_PER_REQUEST)を超える場合に送出する。"""
+#
+#     code: ClassVar[str | None] = "TOO_MANY_SUBJECTS"
 
 
 class LLMTokenLimitError(BadGatewayError):

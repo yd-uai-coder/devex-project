@@ -1,24 +1,12 @@
-# 作成：Phase-10-3
+# 作成：Phase-10-3｜更新：24(完了後の調整)
+# Phase-24：削除 ── app.uml.domain.ComponentSemanticModel, app.uml.domain.DfdSemanticModel, app.uml.domain.ErSemanticModel, app.uml.generation.to_er, app.uml.generation.to_semantic_model, tests.fixtures.uml.er_output
 import uuid
 
 import pytest
-from tests.fixtures.uml import component_output, dfd_output, er_output
+from tests.fixtures.uml import component_output, dfd_output
 
-from app.uml.domain import (
-    ComponentSemanticModel,
-    DfdDataStore,
-    DfdExternalEntity,
-    DfdProcess,
-    DfdSemanticModel,
-    ErSemanticModel,
-)
-from app.uml.generation import (
-    required_data_items,
-    to_component,
-    to_dfd,
-    to_er,
-    to_semantic_model,
-)
+from app.uml.domain import DfdDataStore, DfdExternalEntity, DfdProcess
+from app.uml.generation import required_data_items, to_component, to_dfd
 from app.uml.generation.schemas import GeneratedFlow
 from app.uml.validation import validate_diagram
 
@@ -29,15 +17,16 @@ def test_to_component_keeps_layer_for_lane_assignment() -> None:
     assert [(e.id, e.layer) for e in model.elements] == [("m1", "api"), ("m2", "service")]
     assert model.relations[0].source_id == "m1"
     assert validate_diagram(model).is_valid
-
-
-def test_to_er_maps_columns_and_multiplicity() -> None:
-    model = to_er(er_output())
-
-    reservations = model.elements[1]
-    assert [c.name for c in reservations.columns] == ["id", "user_id"]
-    assert reservations.columns[1].is_foreign_key
-    assert model.relations[0].relation_type == "one_to_many"
+# Phase-24：削除
+#
+#
+# def test_to_er_maps_columns_and_multiplicity() -> None:
+#     model = to_er(er_output())
+#
+#     reservations = model.elements[1]
+#     assert [c.name for c in reservations.columns] == ["id", "user_id"]
+#     assert reservations.columns[1].is_foreign_key
+#     assert model.relations[0].relation_type == "one_to_many"
 
 
 def test_required_data_items_includes_undeclared_flow_references() -> None:
@@ -68,10 +57,11 @@ def test_to_dfd_resolves_data_item_names_to_ids() -> None:
 def test_to_dfd_raises_when_name_is_not_resolved() -> None:
     with pytest.raises(KeyError):
         to_dfd(dfd_output(), {})
-
-
-def test_to_semantic_model_dispatches_by_output_type() -> None:
-    assert isinstance(to_semantic_model(component_output()), ComponentSemanticModel)
-    assert isinstance(to_semantic_model(er_output()), ErSemanticModel)
-    dfd = to_semantic_model(dfd_output(), {"予約リクエスト": uuid.uuid4()})
-    assert isinstance(dfd, DfdSemanticModel)
+# Phase-24：削除
+#
+#
+# def test_to_semantic_model_dispatches_by_output_type() -> None:
+#     assert isinstance(to_semantic_model(component_output()), ComponentSemanticModel)
+#     assert isinstance(to_semantic_model(er_output()), ErSemanticModel)
+#     dfd = to_semantic_model(dfd_output(), {"予約リクエスト": uuid.uuid4()})
+#     assert isinstance(dfd, DfdSemanticModel)

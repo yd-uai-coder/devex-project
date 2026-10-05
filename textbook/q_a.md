@@ -586,3 +586,39 @@
      - 関係するテスト(78件)・`tsc` も成功した。
      - (1) は、ユーザーの最初の確認では「直っていない」だった。貼られた HTML の `<ol>`・`<ul>` に `style` が無く、リロード前の画面だったため。リロードで直ったことを、ユーザーが確かめた。LLM の返答の入れ子のリスト(`<ol><li><p>…</p><ul>…</ul></li></ol>`)の構造には問題が無く、入れ子の `ul` にも同じ余白が付く。
    - 記録: [`Phase-3-introduction.md`](./Phase-3/Phase-3-introduction.md)・[`Phase-15-introduction.md`](./Phase-15/Phase-15-introduction.md)「後続 Phase での改訂」。samples のタグは `Phase-24(完了後の UI 調整)`。
+
+### Phase 24 完了後 ── 文書プレビューの不具合・簡易モードの設計図の削除・モード表示
+
+1. Phase 24 完了後(2026-10-05)。新しい Phase・章は作らず、本体と samples に直接反映する指示。
+2. 質問・相談:
+   - (1) 不具合: 簡易モードのプロジェクトの文書プレビュー → ダッシュボード → 詳細モードのプロジェクトの文書プレビューの順に移ると、内部設計と実装計画のタブが出て、押すと前のプロジェクトの内容が出る。逆の順では、その2つのタブが出ない。ブラウザを更新すると直る。
+   - (2) 簡易ドキュメントモードから設計図を作る機能は不要(リンクは手で削除済み)。詳細設計モードと共有しているソースを確かめてから削除したい。
+   - (3) ダッシュボードのプロジェクト一覧に、簡易モードか詳細モードかを表示したい。
+   - 作業中の追加の指示: プロジェクト本体のコメントには「Phase 24 完了後に削除」「Phase N で変更」を書かない。コメントは機能や処理の説明と、機能面の実装の意図だけにする。
+3. 回答と対応方針:
+   - (1) 原因は `documents-store.ts` のキャッシュの判定(20秒)。プロジェクトを見ずに取得を飛ばしていた。タブは文書の一覧から作るので、前のプロジェクトのタブが残った。ストアに `projectId` を持たせ、別のプロジェクトでは前の内容を捨てて取り直すようにした(`detailed-design-store` と同じ形)。同じ形の問題があった `hearing-store.ts` も直した。
+     - 確認: ページを読み直さない遷移(クライアント側の遷移)の再現手順を、一時的な E2E で流した。修正前のストアでは「内部設計」のタブが残って失敗し、修正後は成功した。
+   - (2) Claude からの質問への回答: 削除の範囲は「FE と BE の両方。DB のテーブル・列は残す」(推奨どおり)。手で消したデモページの中身(`features/uml/demo`・`features/detailed-design/demo`)も削除する(推奨どおり)。
+     - 削除したもの:
+       - FE: 設計図の画面(`/projects/[id]/uml`)・`uml-store`・生成のパネルと履歴・図の一覧・生成のポーリング・デモ、文書のプレビューへの図の差し込み(`DiagramEmbed`・`DiagramSyncBar`・`useDiagramEmbeds`・`anchors.ts`)、メニューの「開発用」。
+       - BE: `uml_generation_service.py`・`uml_sync_service.py`・`app/uml/sync/`・`uml_generation_run` のリポジトリ・生成のスキーマ、生成・候補・履歴・反映・埋め込み・zip の API。あわせて `app/uml/generation/` の簡易モード専用の部分、生成専用のエラー4つ、`update_content_in_place`、偽 LLM の ER・DFD の出力。
+     - 残したもの(詳細設計モードが使う): 図のエディタ・キャンバス・図の編集・検証・自動レイアウト・承認・出力の API、データ辞書、`failures.py`・`to_component`・`to_dfd`・構成図と DFD の出力スキーマ・`ExistingDataItem`・`extract_section`。
+     - DB: `uml_generation_runs` テーブルと `uml_diagrams.scope` 列は残した。ORM のモデルも、テーブルと食い違わないよう残した。
+     - 気づき: 以前に図を反映した内部設計書には、アンカー(HTML コメント)が残る。react-markdown はこれを文字として表示してしまうため、文書のプレビューを `skipHtml` にした。
+   - (3) `ProjectListItem.tsx` の題名の前に、モードのバッジを出した。文言は「簡易」「詳細」(ユーザーの指定)。
+   - コメントの方針: 今回の変更で本体に入れたコメントから、Phase の経緯を外した。このセッションで先にコミットした e2e・`deploy.yml`・`OPERATIONS.md` も同じく直した。経緯は samples のタグと教材だけに書く。
+     - それより前のコメントには、Phase の記述が多く残っている。消すかどうかは別に確認する。
+     - その後のユーザーの決定:
+       - 本体から一括で消す。範囲は経緯の記述すべて。具体的には、Phase の番号・ステージ番号・決定番号(M7・D5 など)・進行ルールの番号(#17)・気づきの番号・診断の番号・教材や appendix への参照・「画面確認後」「このセッションでの決定」など。
+       - samples は変えない(テスト名の「(Phase N)」も samples ではそのまま)。
+       - 教材のリンク切れ(約70本)はこのままにする。
+     - 実施: devex-api・devex-ui のコード・テスト・マイグレーション・設定・`OPERATIONS.md` から、経緯の記述を外した。機能の理由は、現在形の説明として残した。本体に紛れ込んでいた samples 形式のヘッダ(`// 作成：Phase-3-2` など3ファイル)と、`// Phase-6-4:追記` も消した。
+     - 確認: 経緯の grep が0件(SVG の path・Docker のビルドステージを除く)。BE 628件・FE 537件が成功し、`ruff`・`tsc`・`lint` も通った。削除した行が、コメント・docstring・md の文・テスト名だけであることを確かめた。
+   - 検証:
+     - BE 628件・FE 537件が成功した。`ruff`・`pyright`(既知の1件だけ)・`tsc`・`lint`・`build` も通った。
+     - E2E 3本と、上の一時的な spec も成功した。
+     - samples と本体を、タグとコメントを除いて比べ、新しい差が無いことを確かめた。
+   - 記録:
+     - [`Phase-3`](./Phase-3/Phase-3-introduction.md)・[`Phase-10`](./Phase-10/Phase-10-introduction.md)〜[`Phase-14`](./Phase-14/Phase-14-introduction.md) の introduction の「後続 Phase での改訂」
+     - `docs/*.md`(撤回の blockquote)
+     - samples のタグは `Phase-24`、ヘッダは `更新：…,24(完了後の調整)`

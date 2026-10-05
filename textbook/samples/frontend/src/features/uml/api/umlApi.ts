@@ -1,4 +1,4 @@
-// 作成：Phase-11-2｜更新：Phase-12-5,13-5,17-5,22-6
+// 作成：Phase-11-2｜更新：Phase-12-5,13-5,17-5,22-6,24(完了後の調整)
 // 写経レベル: 定型 ── apiFetch の薄いラッパー(既存 documentsApi.ts と同じ形)。
 // Phase-12-5:追記 ── auth-store.useAuthStore, base-url.API_BASE_URL, client.toApiError,
 //   download.parseFilename, types(ExportFormat, UmlDiagramApprove)
@@ -12,14 +12,16 @@ import type {
   DataItemRead,
   DataItemWrite,
   ExportFormat,
-  UmlCandidatesRead,
+  // Phase-24：削除
+  // UmlCandidatesRead,
   UmlDiagramApprove,
   UmlDiagramRead,
   UmlDiagramUpdate,
-  UmlEmbedRead,
-  UmlGenerateRequest,
-  UmlGenerationRunRead,
-  UmlReflectRead,
+  // Phase-24：削除
+  // UmlEmbedRead,
+  // UmlGenerateRequest,
+  // UmlGenerationRunRead,
+  // UmlReflectRead,
   ValidationResult,
 } from "@/features/uml/api/types";
 
@@ -45,25 +47,26 @@ export function updateDiagram(
     method: "PUT",
     body: JSON.stringify(payload),
   });
-}
-
-// 202 で受け付けるだけ。完了は listDiagrams の generation_status をポーリングして判定する。
-export function generateDiagrams(
-  projectId: string,
-  payload: UmlGenerateRequest,
-): Promise<UmlGenerationRunRead> {
-  return apiFetch<UmlGenerationRunRead>(umlPath(projectId, "/diagrams"), {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export function getCandidates(projectId: string): Promise<UmlCandidatesRead> {
-  return apiFetch<UmlCandidatesRead>(umlPath(projectId, "/candidates"));
-}
-
-export function listGenerationRuns(projectId: string): Promise<UmlGenerationRunRead[]> {
-  return apiFetch<UmlGenerationRunRead[]>(umlPath(projectId, "/generation-runs"));
+// Phase-24：削除
+// }
+//
+// // 202 で受け付けるだけ。完了は listDiagrams の generation_status をポーリングして判定する。
+// export function generateDiagrams(
+//   projectId: string,
+//   payload: UmlGenerateRequest,
+// ): Promise<UmlGenerationRunRead> {
+//   return apiFetch<UmlGenerationRunRead>(umlPath(projectId, "/diagrams"), {
+//     method: "POST",
+//     body: JSON.stringify(payload),
+//   });
+// }
+//
+// export function getCandidates(projectId: string): Promise<UmlCandidatesRead> {
+//   return apiFetch<UmlCandidatesRead>(umlPath(projectId, "/candidates"));
+// }
+//
+// export function listGenerationRuns(projectId: string): Promise<UmlGenerationRunRead[]> {
+//   return apiFetch<UmlGenerationRunRead[]>(umlPath(projectId, "/generation-runs"));
 }
 
 export function validateDiagram(projectId: string, diagramId: string): Promise<ValidationResult> {
@@ -170,24 +173,25 @@ export async function exportDiagram(
 //   if (!res.ok) throw await toApiError(res);
 //   return res;
 // }
-
-// 文書のプレビューに差し込む図と、図と文書の食い違い(M9a)。状態は変えない。
-export function listEmbeds(projectId: string): Promise<UmlEmbedRead[]> {
-  return apiFetch<UmlEmbedRead[]>(umlPath(projectId, "/embeds"));
-}
-
-// 承認済みの図すべてを内部設計書へ反映し直す。404: 内部設計書が無い
-export function reflectDiagrams(projectId: string): Promise<UmlReflectRead> {
-  return apiFetch<UmlReflectRead>(umlPath(projectId, "/reflect"), { method: "POST" });
-}
-
-export type DownloadedBundle = { filename: string; content: Blob };
-
-// 内部設計書の md と、反映済みの図(SVG・draw.io)の zip(D8)。入れた図は exported になる。
-// zip はバイナリなので text() ではなく blob() で受け取る。
-export async function downloadBundle(projectId: string): Promise<DownloadedBundle> {
-  const res = await fetchAttachment(umlPath(projectId, "/bundle"));
-  const content = await res.blob();
-  const filename = parseFilename(res.headers.get("Content-Disposition")) ?? "internal_design.zip";
-  return { filename, content };
-}
+// Phase-24：削除
+//
+// // 文書のプレビューに差し込む図と、図と文書の食い違い(M9a)。状態は変えない。
+// export function listEmbeds(projectId: string): Promise<UmlEmbedRead[]> {
+//   return apiFetch<UmlEmbedRead[]>(umlPath(projectId, "/embeds"));
+// }
+//
+// // 承認済みの図すべてを内部設計書へ反映し直す。404: 内部設計書が無い
+// export function reflectDiagrams(projectId: string): Promise<UmlReflectRead> {
+//   return apiFetch<UmlReflectRead>(umlPath(projectId, "/reflect"), { method: "POST" });
+// }
+//
+// export type DownloadedBundle = { filename: string; content: Blob };
+//
+// // 内部設計書の md と、反映済みの図(SVG・draw.io)の zip(D8)。入れた図は exported になる。
+// // zip はバイナリなので text() ではなく blob() で受け取る。
+// export async function downloadBundle(projectId: string): Promise<DownloadedBundle> {
+//   const res = await fetchAttachment(umlPath(projectId, "/bundle"));
+//   const content = await res.blob();
+//   const filename = parseFilename(res.headers.get("Content-Disposition")) ?? "internal_design.zip";
+//   return { filename, content };
+// }

@@ -1,4 +1,4 @@
-# 作成：Phase-22-5｜更新：Phase-23-3
+# 作成：Phase-22-5｜更新：Phase-23-3,24(完了後の調整)
 # 写経レベル: コア ── 承認済みの章の図だけを描いて載せ、出力した図を exported にする。
 # Phase-23-3：更新(docstring: 実装計画と、入力を集める collect を段階7の生成も使うこと)
 """詳細設計書(HTML+md+図)と実装計画を zip にまとめるユースケース(Phase 22・23)。
@@ -19,6 +19,7 @@ docs/internal_design.md 3.3節「4. 詳細設計モード」の「詳細設計�
 (Phase 22 の決定)。
 """
 
+# Phase-24：削除 ── app.services.uml_sync_service.BundleFile
 # Phase-23-3:追記 ── dataclasses(dataclass, field), app.detailed_design.document(DocumentSource, to_plan_html, to_plan_markdown)
 import uuid
 import zipfile
@@ -46,7 +47,6 @@ from app.models.uml_diagram import UmlDiagram
 from app.repositories.data_item import DataItemRepository
 from app.repositories.uml_diagram import UmlDiagramRepository
 from app.services.design_stage_service import DesignStageService
-from app.services.uml_sync_service import BundleFile
 from app.uml.domain import (
     STATUS_AFTER_EXPORT,
     ErSemanticModel,
@@ -64,6 +64,16 @@ DOCUMENT_DIAGRAM_DIR = "diagrams"
 # Phase-23-3:追記
 PLAN_HTML_NAME = "implementation_plan.html"
 PLAN_MARKDOWN_NAME = "implementation_plan.md"
+
+
+# Phase-24:追記
+@dataclass(frozen=True)
+class BundleFile:
+    """zipでまとめたダウンロード1件分(ルートがそのままレスポンスにする)。"""
+
+    filename: str
+    content: bytes
+    media_type: str
 
 
 @dataclass

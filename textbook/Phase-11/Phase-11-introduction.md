@@ -128,6 +128,7 @@
 
 - [`Phase-12-2.md`](../Phase-12/Phase-12-2.md): `reconcile_layout`が、折れ点を捨てた辺(`points=[]`)の`label_pos`も捨てるようにした。FE の`LayoutEdgeGeometry`型に`label_pos?`を足した(12-5)。
 - [`Phase-12-5.md`](../Phase-12/Phase-12-5.md): レビュー画面の状態表示を`DiagramReviewActions`(承認・出力の操作)へ移し、ストアに`approve`/`exportDiagram`を足した。申し送りだった M7 と`points=[]`の辺の draw.io 出力は Phase 12 で解消した。
+- Phase 24 完了後の調整([`q_a.md`](../q_a.md)「Phase 24 完了後 ── 文書プレビューの不具合・簡易モードの設計図の削除・モード表示」): 簡易モードの設計図の画面(SCR-007。`UmlPageContent`・`UmlDiagramPageContent`・`GenerationPanel`・`GenerationRunHistory`・`DiagramList`・`uml-store`・`/uml-demo` のデモ)を削除した。図のエディタ(`UmlDiagramEditor` など)は、詳細設計モードの段階2〜4が使うので残した。
 
 ## Phase 完了チェック(#22)
 

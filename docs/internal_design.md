@@ -162,6 +162,9 @@
 
 #### ⑨ `uml_generation_runs` テーブル(ステージ3、Phase 10で新設)
 
+> **[Phase 24 で確定 ── 〈`uml_generation_runs`を使わない〉]** 当初〈簡易ドキュメントモードの設計図の生成の履歴を記録する〉→ 撤回。理由〈簡易モードの設計図を削除した(外部設計書 2.6節の撤回を参照)。テーブルは既存のデータを残すため消さず、書き込む処理は無い〉。
+
+
 UML図のAI生成リクエスト1回分の履歴。一括生成の途中でクォータ超過・トークン上限等で止まった場合に、対象ごとの結果(生成済み/失敗/未着手)と理由をユーザーが確認できるようにする。図の数による上限は設けず、止まった理由と「再度の生成指示が必要なこと」をここで伝える。
 
 | カラム名 | データ型 | 制約 | 説明 |
@@ -281,6 +284,8 @@ backend/
 | **POST** | `/api/v1/projects/{id}/design-stages/{stage}/approve` | （※ステージ4、Phase 15）段階の承認(`{version}`。下書き・レビュー中・古いが対象。承認時に`input_fingerprint`を記録する。versionは増やさない。承認済みで古くない・内容が空は409 `DESIGN_STAGE_NOT_APPROVABLE`。段階ごとの検証にエラーがあれば409 `DESIGN_STAGE_INVALID`(Phase 16)) | 必要 |
 | **GET** | `/api/v1/projects/{id}/design-stages/document` | （※ステージ4、Phase 22）詳細設計書の zip(`detailed_design.html`・`detailed_design.md`・`diagrams/*.svg|.drawio`)。いつでもダウンロードでき、承認していない段階の章は「未承認」、0件で承認した段階6は「省略」。zip に入れた図は`exported`になる。詳細設計モードでなければ409 `DESIGN_STAGES_NOT_AVAILABLE` | 必要 |
 | **POST** | `/api/v1/projects/{id}/design-stages/{stage}/generate` | （※ステージ4、Phase 16）段階のAIの下書きの生成を受け付ける(202。段階は`generating`になり、裏で生成して`draft`・version+1で保存する。画面は一覧をポーリングする)。生成に対応していない段階は409 `DESIGN_STAGE_GENERATION_NOT_SUPPORTED`(Phase 16は段階1だけ)、生成中は409 `DESIGN_STAGE_GENERATION_IN_PROGRESS`、開いていない段階は409 `DESIGN_STAGE_LOCKED` | 必要 |
+
+> **[Phase 24 で確定 ── 〈簡易モードの設計図の API を削除〉]** 当初〈上の表の`POST /uml/diagrams`(生成)・`/uml/candidates`・`/uml/generation-runs`・`/uml/reflect`・`/uml/embeds`・`/uml/bundle`を提供する〉→ 撤回。理由〈簡易ドキュメントモードの設計図(SCR-007)を削除した([外部設計書](external_design.md) 2.6節の撤回を参照)。残りの`/uml/...`(図の取得・一覧・更新・検証・自動レイアウト・承認・出力、データ辞書)は、詳細設計モードの段階2〜4が使う〉。
 
 ### 3. UML設計図パイプラインの図↔文書対応(ステージ3、D5)
 

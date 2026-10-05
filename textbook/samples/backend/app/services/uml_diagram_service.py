@@ -1,4 +1,4 @@
-# 作成：Phase-8-3｜更新：Phase-9-5,10-5,10-6,11-1,12-1,12-2,12-4,13-2,17-4,18-4,19-4
+# 作成：Phase-8-3｜更新：Phase-9-5,10-5,10-6,11-1,12-1,12-2,12-4,13-2,17-4,18-4,19-4,24(完了後の調整)
 # 写経レベル: コア ── 楽観ロック・notation不変チェック・生成中ガード・DFDの横断検証の設計判断そのもの。
 # Phase-9-5:追記 ── asyncio, app.services.errors.LayoutNodeLimitExceededError,
 #   app.services.errors.LayoutValidationFailedError, app.uml.layout.compute_layout,
@@ -20,6 +20,7 @@
 # Phase-13-2：削除 ── re, typing.Literal, app.uml.domain.NotationType, app.uml.export(to_drawio, to_svg)
 #   (題名・ファイル名・形式の分岐をapp/uml/export/files.pyへ移した。ExportFormatはルートが
 #   このモジュールからimportしているため、app.uml.exportから取り込んだ名前をそのまま公開する)
+# Phase-24：削除 ── app.services.uml_sync_service.UmlSyncService
 # Phase-17-4:追記 ── app.detailed_design.data_flow.DATA_FLOW_STAGE, app.services.design_stage_service.DesignStageService
 # Phase-18-4:追記 ── app.detailed_design.data_model.DATA_MODEL_STAGE
 # Phase-19-4:追記 ── app.detailed_design.structure.STRUCTURE_STAGE
@@ -48,7 +49,6 @@ from app.services.errors import (
     UmlGenerationInProgressError,
     UmlLayoutRequiredError,
 )
-from app.services.uml_sync_service import UmlSyncService
 from app.uml.domain import (
     STATUS_AFTER_APPROVE,
     STATUS_AFTER_EDIT,
@@ -107,7 +107,8 @@ class UmlDiagramService:
     # (Phase 8のプレースホルダーだった`create`はPhase 10で廃止した)。"""
     # ↓↓
     """UML設計図(component/er/dfd)に対するユースケース(一覧・取得・更新・検証・レイアウト・承認)を
-    担当するサービス。AI生成(M1)はapp/services/uml_generation_service.pyが担う
+    担当するサービス。詳細設計モードの段階2〜4の図(DFD・ER・構成図)の編集・承認・出力に使う。
+    図の AI 生成は段階の生成(app/services/design_stage_generation_service.py)が担う。
     (Phase 8のプレースホルダーだった`create`はPhase 10で廃止した)。"""
 
     def __init__(self, session: AsyncSession) -> None:
@@ -116,7 +117,8 @@ class UmlDiagramService:
         self._diagrams = UmlDiagramRepository(session)
         self._data_items = DataItemRepository(session)
         # Phase-13-2:追記
-        self._sync = UmlSyncService(session)
+        # Phase-24：削除
+        # self._sync = UmlSyncService(session)
 
     async def list_for_project(self, project_id: uuid.UUID) -> list[UmlDiagram]:
         """指定プロジェクトのUML図一覧を取得する。"""
@@ -329,8 +331,9 @@ class UmlDiagramService:
 
         diagram.status = STATUS_AFTER_APPROVE
         # Phase-13-2:追記
-        # 承認した内容を、同じトランザクションで内部設計書へ反映する(M9a。版は増やさない)
-        await self._sync.reflect(diagram)
+        # Phase-24：削除
+        # # 承認した内容を、同じトランザクションで内部設計書へ反映する(M9a。版は増やさない)
+        # await self._sync.reflect(diagram)
         await self._session.flush()
         await self._session.commit()
         await self._session.refresh(diagram)

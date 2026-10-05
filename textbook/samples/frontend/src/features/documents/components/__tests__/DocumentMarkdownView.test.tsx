@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-6,13-6
+// 作成：Phase-3-6｜更新：Phase-6-6,13-6,24(完了後の調整)
 // Phase-13-6:追記 ── @/lib/api/test-utils/fetch-stub.stubFetch, umlFixtures.makeEmbed,
 //   documentsApi.DocType(SAMPLE_DOC の doc_type を internal_design に差し替えられるようにする)
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,7 +9,8 @@ import tamaguiConfig from "@/tamagui.config";
 import { DocumentMarkdownView } from "../DocumentMarkdownView";
 import type { DocType } from "@/features/documents/api/documentsApi";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
-import { makeEmbed } from "@/features/uml/test-utils/umlFixtures";
+// Phase-24：削除
+// import { makeEmbed } from "@/features/uml/test-utils/umlFixtures";
 
 const SAMPLE_DOC = {
   id: "d1",
@@ -123,12 +124,19 @@ describe("DocumentMarkdownView", () => {
   });
 
   // Phase-13-6:追記 ── 内部設計書への図の差し込み(M9a)
-  it("内部設計書では、アンカーの位置に図を差し込み、要素表も描く", async () => {
+  // Phase-24：更新
+  // it("内部設計書では、アンカーの位置に図を差し込み、要素表も描く", async () => {
+  // ↓↓
+  it("内部設計書も普通の Markdown として描き、設計図の埋め込みは取得しない", () => {
+    // 簡易モードの設計図(ステージ3)を削除した後も、以前に図を反映した内部設計書には
+    // アンカー(HTML コメント)が残る。skipHtml で生の HTML を描かないので、本文だけが出る
     const stub = stubFetch();
-    stub.queue({ body: [makeEmbed()] });
+    // Phase-24：削除
+    // stub.queue({ body: [makeEmbed()] });
     const content = [
-      "## 3.3 バックエンド処理",
-      "",
+      // Phase-24：削除
+      // "## 3.3 バックエンド処理",
+      // "",
       "<!-- uml:diagram:d1:start v=2 -->",
       "",
       "| 名称 | 種別 |",
@@ -136,8 +144,9 @@ describe("DocumentMarkdownView", () => {
       "| 認証API | モジュール |",
       "",
       "<!-- uml:diagram:d1:end -->",
-      "",
-      "- 主要処理ロジック",
+      // Phase-24：削除
+      // "",
+      // "- 主要処理ロジック",
     ].join("\n");
     render(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
@@ -148,19 +157,23 @@ describe("DocumentMarkdownView", () => {
       </TamaguiProvider>,
     );
 
-    expect(await screen.findByRole("img", { name: "コンポーネント図(全体)" })).toBeInTheDocument();
+    // Phase-24：削除
+    // expect(await screen.findByRole("img", { name: "コンポーネント図(全体)" })).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "認証API" })).toBeInTheDocument();
-    expect(screen.getByText("主要処理ロジック")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "図を再反映" })).toBeInTheDocument();
-    expect(stub.requests[0].url).toMatch(/\/projects\/p1\/uml\/embeds$/);
-    stub.restore();
-  });
-
-  it("内部設計書以外では図の埋め込みを取得しない", () => {
-    const stub = stubFetch();
-    renderView();
-
-    expect(screen.queryByRole("button", { name: "図を再反映" })).not.toBeInTheDocument();
+    // Phase-24：更新
+    // expect(screen.getByText("主要処理ロジック")).toBeInTheDocument();
+    // expect(screen.getByRole("button", { name: "図を再反映" })).toBeInTheDocument();
+    // expect(stub.requests[0].url).toMatch(/\/projects\/p1\/uml\/embeds$/);
+    // stub.restore();
+    // });
+    //
+    // it("内部設計書以外では図の埋め込みを取得しない", () => {
+    // const stub = stubFetch();
+    // renderView();
+    //
+    // expect(screen.queryByRole("button", { name: "図を再反映" })).not.toBeInTheDocument();
+    // ↓↓
+    expect(screen.queryByText(/uml:diagram/)).not.toBeInTheDocument();
     expect(stub.requests).toHaveLength(0);
     stub.restore();
   });

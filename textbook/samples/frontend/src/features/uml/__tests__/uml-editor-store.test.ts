@@ -1,10 +1,11 @@
-// 作成：Phase-11-5｜更新：Phase-11-6,12-5,13-6
+// 作成：Phase-11-5｜更新：Phase-11-6,12-5,13-6,24(完了後の調整)
 // Phase-11-6:追記 ── umlFixtures(DFD_MODEL, ER_MODEL), reactFlowAdapter.placeMissingNodes
 // Phase-12-5:追記 ── vitest.vi, @/lib/api/download(saveFile をスパイする)
 // Phase-13-6:追記 ── @/features/documents/documents-store.useDocumentsStore
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useUmlEditorStore } from "../uml-editor-store";
-import { useDocumentsStore } from "@/features/documents/documents-store";
+// Phase-24：削除
+// import { useDocumentsStore } from "@/features/documents/documents-store";
 import * as download from "@/lib/api/download";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import { placeMissingNodes } from "@/features/uml/adapters/reactFlowAdapter";
@@ -247,16 +248,17 @@ describe("useUmlEditorStore", () => {
     });
 
     // Phase-13-6:追記
-    it("承認すると内部設計書へ反映されるので、文書一覧のキャッシュを捨てる", async () => {
-      useDocumentsStore.setState({ fetchedAt: Date.now() });
-      await loadDiagram();
-      stub.queue({ body: makeDiagram({ status: "approved" }) });
-
-      await useUmlEditorStore.getState().approve();
-
-      expect(useDocumentsStore.getState().fetchedAt).toBeNull();
-    });
-
+    // Phase-24：削除
+    // it("承認すると内部設計書へ反映されるので、文書一覧のキャッシュを捨てる", async () => {
+    //   useDocumentsStore.setState({ fetchedAt: Date.now() });
+    //   await loadDiagram();
+    //   stub.queue({ body: makeDiagram({ status: "approved" }) });
+    //
+    //   await useUmlEditorStore.getState().approve();
+    //
+    //   expect(useDocumentsStore.getState().fetchedAt).toBeNull();
+    // });
+    //
     // ── ここから Phase-12-5 の作成分 ──
     it("承認で version が合わなければ競合として扱う", async () => {
       await loadDiagram();

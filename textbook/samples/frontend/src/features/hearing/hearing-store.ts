@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-8
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整)
 // Phase-15-8:追記 ── StreamChatError(@/features/hearing/api/streamChat)
 import { create } from "zustand";
 import { streamChat, StreamChatError } from "@/features/hearing/api/streamChat";
@@ -13,6 +13,10 @@ import type { ProjectStatus } from "@/features/dashboard/api/projects";
 import type { AsyncStatus } from "@/lib/api/types";
 
 type HearingStore = {
+  // Phase-24:追記
+  // 今の内容がどのプロジェクトのものか。別のプロジェクトを開いたら、前の会話・完了判定を
+  // 捨ててから読む(ストアは画面をまたいで残るため)。
+  projectId: string | null;
   messages: ChatHistoryEntry[];
   historyStatus: AsyncStatus;
   sending: boolean;
@@ -39,7 +43,22 @@ type HearingStore = {
   dismissConnectionLost: () => void;
 };
 
+// Phase-24:追記
+// 別のプロジェクトを開いたときに戻す値
+const PROJECT_INITIAL = {
+  messages: [] as ChatHistoryEntry[],
+  sending: false,
+  streamingReply: "",
+  connectionLost: false,
+  streamError: null,
+  completion: null,
+  generationTriggered: false,
+  projectStatus: null,
+} as const;
+
 export const useHearingStore = create<HearingStore>((set, get) => ({
+  // Phase-24:追記
+  projectId: null,
   messages: [],
   historyStatus: "idle",
   sending: false,
@@ -52,12 +71,19 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   projectStatus: null,
 
   loadHistory: async (projectId) => {
+    // Phase-24:追記
+    if (get().projectId !== projectId) {
+      set({ projectId, ...PROJECT_INITIAL });
+    }
     set({ historyStatus: "loading" });
     try {
       const [messages, project] = await Promise.all([
         getChatHistory(projectId),
         getProject(projectId),
       ]);
+      // Phase-24:追記
+      // 取得中に別のプロジェクトへ移っていたら、古い結果で上書きしない
+      if (get().projectId !== projectId) return;
       const generationTriggered = project.status === "generating";
       set({ messages, historyStatus: "success", generationTriggered, projectStatus: project.status });
 

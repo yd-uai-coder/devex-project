@@ -1,4 +1,4 @@
-// 作成：Phase-11-2｜更新：Phase-13-6
+// 作成：Phase-11-2｜更新：Phase-13-6,24(完了後の調整)
 // 写経レベル: 定型 ── テスト用のサンプルデータ。
 // Phase-13-6:追記 ── types.UmlEmbedRead
 import type {
@@ -7,10 +7,12 @@ import type {
   DfdSemanticModel,
   ErSemanticModel,
   LayoutModel,
-  UmlCandidatesRead,
+  // Phase-24：削除
+  // UmlCandidatesRead,
   UmlDiagramRead,
-  UmlEmbedRead,
-  UmlGenerationRunRead,
+  // Phase-24：削除
+  // UmlEmbedRead,
+  // UmlGenerationRunRead,
 } from "@/features/uml/api/types";
 
 // UML 機能のテストで共有するサンプルデータ(バックエンドの応答と同じ形)。
@@ -106,47 +108,47 @@ export function makeDiagram(overrides: Partial<UmlDiagramRead> = {}): UmlDiagram
     ...overrides,
   };
 }
-
-export function makeCandidates(overrides: Partial<UmlCandidatesRead> = {}): UmlCandidatesRead {
-  return {
-    internal_design_version: 1,
-    dfd_subjects: [
-      { code: "DF-1", title: "ログイン" },
-      { code: "DF-2", title: "プロジェクト作成" },
-    ],
-    er_tables: ["users", "projects"],
-    ...overrides,
-  };
-}
-
-// Phase-13-6:追記
-// GET .../uml/embeds の1件(承認済みで、文書に反映済み)
-export function makeEmbed(overrides: Partial<UmlEmbedRead> = {}): UmlEmbedRead {
-  return {
-    diagram_id: "d1",
-    notation: "component",
-    subject: "",
-    title: "コンポーネント図(全体)",
-    status: "approved",
-    version: 2,
-    source_outdated: false,
-    doc_state: "reflected",
-    svg: '<svg xmlns="http://www.w3.org/2000/svg"><text>認証API</text></svg>',
-    ...overrides,
-  };
-}
-
-export function makeRun(overrides: Partial<UmlGenerationRunRead> = {}): UmlGenerationRunRead {
-  return {
-    id: "run1",
-    notation: "dfd",
-    status: "completed",
-    requested: [{ subject: "ログイン", diagram_id: "d1" }],
-    results: [
-      { subject: "ログイン", diagram_id: "d1", outcome: "succeeded", reason_code: null, message: null },
-    ],
-    started_at: "2026-09-30T00:00:00Z",
-    finished_at: "2026-09-30T00:01:00Z",
-    ...overrides,
-  };
-}
+// Phase-24：削除
+//
+// export function makeCandidates(overrides: Partial<UmlCandidatesRead> = {}): UmlCandidatesRead {
+//   return {
+//     internal_design_version: 1,
+//     dfd_subjects: [
+//       { code: "DF-1", title: "ログイン" },
+//       { code: "DF-2", title: "プロジェクト作成" },
+//     ],
+//     er_tables: ["users", "projects"],
+//     ...overrides,
+//   };
+// }
+//
+// // GET .../uml/embeds の1件(承認済みで、文書に反映済み)
+// export function makeEmbed(overrides: Partial<UmlEmbedRead> = {}): UmlEmbedRead {
+//   return {
+//     diagram_id: "d1",
+//     notation: "component",
+//     subject: "",
+//     title: "コンポーネント図(全体)",
+//     status: "approved",
+//     version: 2,
+//     source_outdated: false,
+//     doc_state: "reflected",
+//     svg: '<svg xmlns="http://www.w3.org/2000/svg"><text>認証API</text></svg>',
+//     ...overrides,
+//   };
+// }
+//
+// export function makeRun(overrides: Partial<UmlGenerationRunRead> = {}): UmlGenerationRunRead {
+//   return {
+//     id: "run1",
+//     notation: "dfd",
+//     status: "completed",
+//     requested: [{ subject: "ログイン", diagram_id: "d1" }],
+//     results: [
+//       { subject: "ログイン", diagram_id: "d1", outcome: "succeeded", reason_code: null, message: null },
+//     ],
+//     started_at: "2026-09-30T00:00:00Z",
+//     finished_at: "2026-09-30T00:01:00Z",
+//     ...overrides,
+//   };
+// }

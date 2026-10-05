@@ -1,4 +1,4 @@
-// 作成：Phase-11-2｜更新：Phase-12-2,12-5,13-5,15-8,17-5,18-5
+// 作成：Phase-11-2｜更新：Phase-12-2,12-5,13-5,15-8,17-5,18-5,24(完了後の調整)
 // 写経レベル: 定型 ── バックエンドの Pydantic スキーマを snake_case のまま写した型定義。
 // devex-api の UML API(app/api/routes/uml.py)が返す・受け取る JSON の型。
 // バックエンドの Pydantic スキーマに合わせて snake_case のまま手書きする(既存 feature と同じ方針)。
@@ -142,47 +142,45 @@ export type UmlDiagramApprove = { version: number };
 // 出力の形式(GET .../export/drawio | .../export/svg)
 export type ExportFormat = "drawio" | "svg";
 
-// ---- 生成(app/schemas/uml_generation.py) ----
-export type UmlSubjectSpec = { subject?: string; tables?: string[] | null };
-export type UmlGenerateRequest = { notation: NotationType; subjects?: UmlSubjectSpec[] };
-export type DfdSubjectRead = { code: string; title: string };
-export type UmlCandidatesRead = {
-  // 内部設計書が無いときは null
-  internal_design_version: number | null;
-  dfd_subjects: DfdSubjectRead[];
-  er_tables: string[];
-};
-export type GenerationOutcome = "succeeded" | "failed" | "skipped";
-// app/uml/generation/failures.py
-export type GenerationReasonCode =
-  | "QUOTA_EXCEEDED"
-  | "TOKEN_LIMIT"
-  | "INVALID_OUTPUT"
-  // Phase-15-8：更新
-  // | "GENERATION_FAILED";
-  // ↓↓
-  | "GENERATION_FAILED"
-  // 生成中のまま止まった(15分超)ものを、一覧の取得時にバックエンドが失敗へ戻した
-  | "STALE_GENERATION";
-export type UmlGenerationResultRead = {
-  subject: string;
-  diagram_id: string;
-  outcome: GenerationOutcome;
-  reason_code: GenerationReasonCode | null;
-  message: string | null;
-};
-export type GenerationRunStatus = "running" | "completed" | "partial" | "failed";
-export type UmlGenerationRunRead = {
-  id: string;
-  notation: NotationType;
-  status: GenerationRunStatus;
-  requested: { subject: string; diagram_id: string }[];
-  // 202 の応答では空。対象ごとに処理が終わるたびに追加される
-  results: UmlGenerationResultRead[];
-  started_at: string;
-  finished_at: string | null;
-};
-
+// Phase-24：削除
+// // ---- 生成(app/schemas/uml_generation.py) ----
+// export type UmlSubjectSpec = { subject?: string; tables?: string[] | null };
+// export type UmlGenerateRequest = { notation: NotationType; subjects?: UmlSubjectSpec[] };
+// export type DfdSubjectRead = { code: string; title: string };
+// export type UmlCandidatesRead = {
+//   // 内部設計書が無いときは null
+//   internal_design_version: number | null;
+//   dfd_subjects: DfdSubjectRead[];
+//   er_tables: string[];
+// };
+// export type GenerationOutcome = "succeeded" | "failed" | "skipped";
+// // app/uml/generation/failures.py
+// export type GenerationReasonCode =
+//   | "QUOTA_EXCEEDED"
+//   | "TOKEN_LIMIT"
+//   | "INVALID_OUTPUT"
+//   | "GENERATION_FAILED"
+//   // 生成中のまま止まった(15分超)ものを、一覧の取得時にバックエンドが失敗へ戻した
+//   | "STALE_GENERATION";
+// export type UmlGenerationResultRead = {
+//   subject: string;
+//   diagram_id: string;
+//   outcome: GenerationOutcome;
+//   reason_code: GenerationReasonCode | null;
+//   message: string | null;
+// };
+// export type GenerationRunStatus = "running" | "completed" | "partial" | "failed";
+// export type UmlGenerationRunRead = {
+//   id: string;
+//   notation: NotationType;
+//   status: GenerationRunStatus;
+//   requested: { subject: string; diagram_id: string }[];
+//   // 202 の応答では空。対象ごとに処理が終わるたびに追加される
+//   results: UmlGenerationResultRead[];
+//   started_at: string;
+//   finished_at: string | null;
+// };
+//
 // ---- データ辞書(app/schemas/data_item.py) ----
 export type DataItemField = { name: string; type?: string | null; required?: boolean | null };
 export type DataItemRead = {
@@ -199,26 +197,26 @@ export type DataItemWrite = { name: string; fields: DataItemField[] };
 // ---- 検証(app/uml/validation/base.py) ----
 export type ValidationIssue = { code: string; message: string; element_id: string | null };
 export type ValidationResult = { errors: ValidationIssue[]; warnings: ValidationIssue[] };
-
-// Phase-13-5:追記
-// ---- 内部設計書への反映(app/schemas/uml_diagram.py UmlReflectRead / UmlEmbedRead) ----
-// 文書に反映した内容と、図の今の状態の関係(app/uml/sync/staleness.py)
-//   reflected: 反映済み / not_reflected: 承認済みだが文書に無い(再生成・復元で消えた)
-//   outdated: 文書の内容が古い(承認後に編集された) / not_applicable: まだ承認されていない
-export type DocState = "reflected" | "not_reflected" | "outdated" | "not_applicable";
-
-export type UmlReflectRead = { reflected: number };
-
-export type UmlEmbedRead = {
-  diagram_id: string;
-  notation: NotationType;
-  subject: string;
-  title: string;
-  status: DiagramStatus;
-  version: number;
-  // 図を生成した後に、内部設計書が再生成・復元された(図が古い)
-  source_outdated: boolean;
-  doc_state: DocState;
-  // 承認済みの図だけ。プレビューでは img の data URI にして表示する(スクリプトを実行させない)
-  svg: string | null;
-};
+// Phase-24：削除
+//
+// // ---- 内部設計書への反映(app/schemas/uml_diagram.py UmlReflectRead / UmlEmbedRead) ----
+// // 文書に反映した内容と、図の今の状態の関係(app/uml/sync/staleness.py)
+// //   reflected: 反映済み / not_reflected: 承認済みだが文書に無い(再生成・復元で消えた)
+// //   outdated: 文書の内容が古い(承認後に編集された) / not_applicable: まだ承認されていない
+// export type DocState = "reflected" | "not_reflected" | "outdated" | "not_applicable";
+//
+// export type UmlReflectRead = { reflected: number };
+//
+// export type UmlEmbedRead = {
+//   diagram_id: string;
+//   notation: NotationType;
+//   subject: string;
+//   title: string;
+//   status: DiagramStatus;
+//   version: number;
+//   // 図を生成した後に、内部設計書が再生成・復元された(図が古い)
+//   source_outdated: boolean;
+//   doc_state: DocState;
+//   // 承認済みの図だけ。プレビューでは img の data URI にして表示する(スクリプトを実行させない)
+//   svg: string | null;
+// };

@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整)
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -10,6 +10,7 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 手がかりに、外部から一切設定を注入されなくても意味のある応答を返せるよう、ステートレスかつ
 決定論的に応答を組み立てる設計にした。
 """
+# Phase-24：削除 ── app.uml.generation.schemas.DfdGenerationOutput, app.uml.generation.schemas.ErGenerationOutput, app.uml.generation.schemas.GeneratedColumn, app.uml.generation.schemas.GeneratedProcess, app.uml.generation.schemas.GeneratedTable
 from __future__ import annotations
 
 # Phase-10-5:追記 ── app.uml.generation.schemas(UML生成の出力スキーマ一式)
@@ -56,17 +57,12 @@ from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleLis
 from app.schemas.generation import HearingCompletionCheck
 from app.uml.generation.schemas import (
     ComponentGenerationOutput,
-    DfdGenerationOutput,
-    ErGenerationOutput,
-    GeneratedColumn,
     GeneratedDataItem,
     GeneratedDataItemField,
     GeneratedDependency,
     GeneratedFlow,
     GeneratedModule,
     GeneratedNode,
-    GeneratedProcess,
-    GeneratedTable,
 )
 
 # ヒアリング完了(is_sufficient=True)と判定するまでに要するHumanMessage数(末尾の判定プロンプト
@@ -103,8 +99,12 @@ _DOC_TYPE_LABELS: dict[str, str] = {
 }
 
 # Phase-10-1:追記
-# 内部設計書だけは、UML図の生成候補(3.2節のテーブル見出し・処理別データフローのDF見出し)を
-# E2Eでも列挙できるよう、内部設計書プロンプトが指示する固定形式の見出しを含めて返す(Phase 10)。
+# Phase-24：更新
+# # 内部設計書だけは、UML図の生成候補(3.2節のテーブル見出し・処理別データフローのDF見出し)を
+# # E2Eでも列挙できるよう、内部設計書プロンプトが指示する固定形式の見出しを含めて返す(Phase 10)。
+# ↓↓
+# 内部設計書は、内部設計書プロンプトが指示する固定形式の見出し(3.2節のテーブル・処理別データフロー)
+# を含めて返す。
 _INTERNAL_DESIGN_REPLY = (
     "# 内部設計書(E2E Fake)\n\n"
     "## 3.1 技術スタック選定・アーキテクチャ方針\n- api / service / repository の3層構成\n\n"
@@ -131,7 +131,10 @@ _EXTERNAL_DESIGN_REPLY = (
 )
 
 # Phase-10-5:追記
-# UML図の生成(Phase 10)で返す固定の構造化出力。記法ごとに、検証(M4)を通る最小の図にする。
+# Phase-24：更新
+# # UML図の生成(Phase 10)で返す固定の構造化出力。記法ごとに、検証(M4)を通る最小の図にする。
+# ↓↓
+# 構造化出力で返す固定の出力(スキーマの型ごと)。構成図は段階4がそのまま使う。
 _UML_OUTPUTS: dict[type[BaseModel], BaseModel] = {
     ComponentGenerationOutput: ComponentGenerationOutput(
         modules=[
@@ -141,46 +144,47 @@ _UML_OUTPUTS: dict[type[BaseModel], BaseModel] = {
             ),
         ],
         dependencies=[GeneratedDependency(id="d1", source_id="m1", target_id="m2")],
-    ),
-    ErGenerationOutput: ErGenerationOutput(
-        tables=[
-            GeneratedTable(
-                id="t1",
-                name="reservations",
-                columns=[
-                    GeneratedColumn(
-                        name="id",
-                        type="UUID",
-                        is_primary_key=True,
-                        is_foreign_key=False,
-                        nullable=False,
-                    )
-                ],
-            )
-        ],
-        relations=[],
-    ),
-    DfdGenerationOutput: DfdGenerationOutput(
-        data_items=[
-            GeneratedDataItem(
-                name="予約リクエスト",
-                fields=[GeneratedDataItemField(name="item_id", type="UUID")],
-            )
-        ],
-        processes=[
-            GeneratedProcess(
-                id="p1",
-                name="予約を登録する",
-                description="[E2E Fake] 検証して保存",
-                layer="service",
-            )
-        ],
-        external_entities=[GeneratedNode(id="e1", name="利用者")],
-        data_stores=[GeneratedNode(id="s1", name="reservations")],
-        flows=[
-            GeneratedFlow(id="f1", source_id="e1", target_id="p1", data_item_name="予約リクエスト"),
-            GeneratedFlow(id="f2", source_id="p1", target_id="s1", data_item_name="予約リクエスト"),
-        ],
+    # Phase-24：削除
+    # ),
+    # ErGenerationOutput: ErGenerationOutput(
+    #     tables=[
+    #         GeneratedTable(
+    #             id="t1",
+    #             name="reservations",
+    #             columns=[
+    #                 GeneratedColumn(
+    #                     name="id",
+    #                     type="UUID",
+    #                     is_primary_key=True,
+    #                     is_foreign_key=False,
+    #                     nullable=False,
+    #                 )
+    #             ],
+    #         )
+    #     ],
+    #     relations=[],
+    # ),
+    # DfdGenerationOutput: DfdGenerationOutput(
+    #     data_items=[
+    #         GeneratedDataItem(
+    #             name="予約リクエスト",
+    #             fields=[GeneratedDataItemField(name="item_id", type="UUID")],
+    #         )
+    #     ],
+    #     processes=[
+    #         GeneratedProcess(
+    #             id="p1",
+    #             name="予約を登録する",
+    #             description="[E2E Fake] 検証して保存",
+    #             layer="service",
+    #         )
+    #     ],
+    #     external_entities=[GeneratedNode(id="e1", name="利用者")],
+    #     data_stores=[GeneratedNode(id="s1", name="reservations")],
+    #     flows=[
+    #         GeneratedFlow(id="f1", source_id="e1", target_id="p1", data_item_name="予約リクエスト"),
+    #         GeneratedFlow(id="f2", source_id="p1", target_id="s1", data_item_name="予約リクエスト"),
+    #     ],
     ),
 }
 

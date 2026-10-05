@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整)
 # 写経レベル: コア ── 実機検証で発見した2件の不具合(ヒアリング完了判定の誤カウント、
 # doc_type判別の誤マッチ)の回帰テスト。当初はPlaywright(Phase 4-4)のみで検証する設計にして
 # いたが、両方ともpytestレベルの単体テストで安価に検知できる性質のバグだったため、事後的に
@@ -99,28 +99,34 @@ async def test_astream_yields_a_single_chunk_with_the_same_reply() -> None:
 
 
 # Phase-10-1:追記
-async def test_internal_design_reply_has_uml_generation_candidates() -> None:
-    """Phase 10: E2E用の内部設計書は、UML図の生成候補(テーブル見出し・DF見出し)を含む。"""
-    from app.uml.generation import extract_dfd_subjects, extract_er_tables
-
-    llm = E2eFakeLLM()
-    messages = [
-        SystemMessage(content=_DOC_TYPE_PROMPTS["internal_design"]),
-        HumanMessage(content="dummy input"),
-    ]
-    result = await llm.ainvoke(messages)
-    assert isinstance(result.content, str)
-
-    assert extract_er_tables(result.content) == ["reservations"]
-    assert [s.title for s in extract_dfd_subjects(result.content)] == ["POST /api/v1/reservations"]
-
-
-# Phase-10-5:追記
+# Phase-24：更新
+# async def test_internal_design_reply_has_uml_generation_candidates() -> None:
+#     """Phase 10: E2E用の内部設計書は、UML図の生成候補(テーブル見出し・DF見出し)を含む。"""
+#     from app.uml.generation import extract_dfd_subjects, extract_er_tables
+# ↓↓
 async def test_uml_schemas_return_parsed_output_with_raw_when_include_raw() -> None:
-    from app.uml.generation import GENERATION_SCHEMAS
+    from app.uml.generation import ComponentGenerationOutput
 
     llm = E2eFakeLLM()
-    for schema in GENERATION_SCHEMAS.values():
+    # Phase-24：更新
+    # messages = [
+    #     SystemMessage(content=_DOC_TYPE_PROMPTS["internal_design"]),
+    #     HumanMessage(content="dummy input"),
+    # ]
+    # result = await llm.ainvoke(messages)
+    # assert isinstance(result.content, str)
+    #
+    # assert extract_er_tables(result.content) == ["reservations"]
+    # assert [s.title for s in extract_dfd_subjects(result.content)] == ["POST /api/v1/reservations"]
+    #
+    #
+    # async def test_uml_schemas_return_parsed_output_with_raw_when_include_raw() -> None:
+    # from app.uml.generation import GENERATION_SCHEMAS
+    #
+    # llm = E2eFakeLLM()
+    # for schema in GENERATION_SCHEMAS.values():
+    # ↓↓
+    for schema in (ComponentGenerationOutput,):
         result = await llm.with_structured_output(schema, include_raw=True).ainvoke([])
         assert isinstance(result["parsed"], schema)
         assert result["raw"].response_metadata["finish_reason"] == "STOP"

@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整)
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -101,17 +101,28 @@ describe("DocumentsPageContent", () => {
   });
 
   // Phase-11-4:追記
-  it("設計図の生成・一覧画面へのリンクを表示する", () => {
+  // Phase-24：更新
+  // it("設計図の生成・一覧画面へのリンクを表示する", () => {
+  // ↓↓
+  it("簡易ドキュメントモードでは、詳細設計へ進むリンクを出さない", () => {
+    useDocumentsStore.setState({ projectMode: "simple" });
+
     renderContent();
 
-    expect(screen.getByRole("link", { name: "設計図を生成する →" })).toHaveAttribute(
-      "href",
-      "/projects/p1/uml",
-    );
+    // Phase-24：更新
+    // expect(screen.getByRole("link", { name: "設計図を生成する →" })).toHaveAttribute(
+    //   "href",
+    //   "/projects/p1/uml",
+    // );
+    // ↓↓
+    expect(screen.queryByRole("link", { name: "詳細設計へ進む →" })).not.toBeInTheDocument();
   });
 
   // Phase-15-7:追記
-  it("詳細設計モードでは、設計図の生成ではなく詳細設計へ進むリンクを表示する", () => {
+  // Phase-24：更新
+  // it("詳細設計モードでは、設計図の生成ではなく詳細設計へ進むリンクを表示する", () => {
+  // ↓↓
+  it("詳細設計モードでは、詳細設計へ進むリンクを表示する", () => {
     useDocumentsStore.setState({ projectMode: "detailed" });
 
     renderContent();
@@ -120,7 +131,8 @@ describe("DocumentsPageContent", () => {
       "href",
       "/projects/p1/detailed-design",
     );
-    expect(screen.queryByRole("link", { name: "設計図を生成する →" })).not.toBeInTheDocument();
+    // Phase-24：削除
+    // expect(screen.queryByRole("link", { name: "設計図を生成する →" })).not.toBeInTheDocument();
   });
 
   it("ドキュメントが無ければ空状態メッセージを表示する", () => {

@@ -1,4 +1,4 @@
-# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1,12-1,12-4
+# 作成：Phase-8-4｜更新：Phase-9-5,10-6,11-1,12-1,12-4,24(完了後の調整)
 # Phase-9-5:追記 ── app.api.routes.uml.compute_diagram_layout
 # Phase-10-6:追記 ── fastapi.BackgroundTasks, tests.fixtures.uml(create_empty_diagram, create_project,
 #   create_project_with_internal_design), app.api.routes.uml(generate_diagrams, list_diagrams,
@@ -15,15 +15,14 @@
 #   app.api.routes.uml(export_diagram_drawio, export_diagram_svg),
 #   app.services.errors.UmlDiagramNotApprovedError
 
+# Phase-24：削除 ── app.api.routes.uml.generate_diagrams, app.api.routes.uml.list_generation_candidates, app.api.routes.uml.list_generation_runs, app.schemas.uml_generation.UmlGenerateRequest, app.schemas.uml_generation.UmlSubjectSpec, app.services.uml_generation_service.run_uml_generation, fastapi.BackgroundTasks, tests.fixtures.uml.create_project_with_internal_design
 import uuid
 
 import pytest
-from fastapi import BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from tests.fixtures.uml import (
     create_empty_diagram,
     create_project,
-    create_project_with_internal_design,
 )
 
 from app.api.responses import content_disposition
@@ -32,24 +31,19 @@ from app.api.routes.uml import (
     compute_diagram_layout,
     export_diagram_drawio,
     export_diagram_svg,
-    generate_diagrams,
     get_diagram,
     list_diagrams,
-    list_generation_candidates,
-    list_generation_runs,
     update_diagram,
     validate_diagram,
 )
 from app.core.errors import BadRequestError
 from app.schemas.uml_diagram import UmlDiagramApprove, UmlDiagramUpdate
-from app.schemas.uml_generation import UmlGenerateRequest, UmlSubjectSpec
 from app.services.errors import (
     UmlDiagramNotApprovedError,
     UmlDiagramNotFoundError,
     UmlDiagramVersionConflictError,
     UmlLayoutRequiredError,
 )
-from app.services.uml_generation_service import run_uml_generation
 from app.uml.domain import ComponentSemanticModel, DfdSemanticModel
 from app.uml.layout import LayoutModel
 
@@ -184,64 +178,69 @@ async def test_compute_diagram_layout_returns_layout_model(db_session: AsyncSess
 
 
 # Phase-10-6:追記
-async def test_generate_diagrams_accepts_and_schedules_background_generation(
-    db_session: AsyncSession,
-) -> None:
-    project = await create_project_with_internal_design(db_session)
-    background_tasks = BackgroundTasks()
-    payload = UmlGenerateRequest(
-        notation="dfd", subjects=[UmlSubjectSpec(subject="POST /api/v1/reservations")]
-    )
-
-    run = await generate_diagrams(payload, db_session, project, background_tasks)
-
-    assert run.status == "running"
-    assert run.results == []
-    assert len(background_tasks.tasks) == 1
-    task = background_tasks.tasks[0]
-    assert task.func is run_uml_generation
-    assert task.args == (project.id, run.id)
-
-
-# Phase-10-6:追記
-async def test_list_diagrams_includes_generation_state(db_session: AsyncSession) -> None:
-    project = await create_project_with_internal_design(db_session)
-    await generate_diagrams(
-        UmlGenerateRequest(notation="component"), db_session, project, BackgroundTasks()
-    )
+# Phase-24：更新
+# async def test_generate_diagrams_accepts_and_schedules_background_generation(
+#     db_session: AsyncSession,
+# ) -> None:
+#     project = await create_project_with_internal_design(db_session)
+#     background_tasks = BackgroundTasks()
+#     payload = UmlGenerateRequest(
+#         notation="dfd", subjects=[UmlSubjectSpec(subject="POST /api/v1/reservations")]
+#     )
+#
+#     run = await generate_diagrams(payload, db_session, project, background_tasks)
+#
+#     assert run.status == "running"
+#     assert run.results == []
+#     assert len(background_tasks.tasks) == 1
+#     task = background_tasks.tasks[0]
+#     assert task.func is run_uml_generation
+#     assert task.args == (project.id, run.id)
+#
+#
+# async def test_list_diagrams_includes_generation_state(db_session: AsyncSession) -> None:
+#     project = await create_project_with_internal_design(db_session)
+#     await generate_diagrams(
+#         UmlGenerateRequest(notation="component"), db_session, project, BackgroundTasks()
+#     )
+# ↓↓
+async def test_list_diagrams_returns_project_diagrams(db_session: AsyncSession) -> None:
+    project = await create_project(db_session)
+    await create_empty_diagram(db_session, project.id, "component")
 
     diagrams = await list_diagrams(db_session, project)
 
-    assert [(d.notation, d.subject, d.generation_status) for d in diagrams] == [
-        ("component", "", "generating")
-    ]
-
-
-# Phase-10-6:追記
-async def test_list_generation_candidates_returns_dfd_subjects_and_er_tables(
-    db_session: AsyncSession,
-) -> None:
-    project = await create_project_with_internal_design(db_session)
-
-    candidates = await list_generation_candidates(db_session, project)
-
-    assert candidates.internal_design_version == 1
-    assert candidates.dfd_subjects[0].code == "DF-1"
-    assert candidates.er_tables == ["users", "reservations"]
-
-
-# Phase-10-6:追記
-async def test_list_generation_runs_returns_requested_history(db_session: AsyncSession) -> None:
-    project = await create_project_with_internal_design(db_session)
-    await generate_diagrams(
-        UmlGenerateRequest(notation="component"), db_session, project, BackgroundTasks()
-    )
-
-    runs = await list_generation_runs(db_session, project)
-
-    assert len(runs) == 1
-    assert runs[0].notation == "component"
-    assert runs[0].status == "running"
+    # Phase-24：更新
+    # assert [(d.notation, d.subject, d.generation_status) for d in diagrams] == [
+    #     ("component", "", "generating")
+    # ]
+    #
+    #
+    # async def test_list_generation_candidates_returns_dfd_subjects_and_er_tables(
+    # db_session: AsyncSession,
+    # ) -> None:
+    # project = await create_project_with_internal_design(db_session)
+    #
+    # candidates = await list_generation_candidates(db_session, project)
+    #
+    # assert candidates.internal_design_version == 1
+    # assert candidates.dfd_subjects[0].code == "DF-1"
+    # assert candidates.er_tables == ["users", "reservations"]
+    #
+    #
+    # async def test_list_generation_runs_returns_requested_history(db_session: AsyncSession) -> None:
+    # project = await create_project_with_internal_design(db_session)
+    # await generate_diagrams(
+    #     UmlGenerateRequest(notation="component"), db_session, project, BackgroundTasks()
+    # )
+    #
+    # runs = await list_generation_runs(db_session, project)
+    #
+    # assert len(runs) == 1
+    # assert runs[0].notation == "component"
+    # assert runs[0].status == "running"
+    # ↓↓
+    assert [(d.notation, d.generation_status) for d in diagrams] == [("component", "completed")]
 
 
 # Phase-12-1:追記 ── 承認

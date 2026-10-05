@@ -1,4 +1,4 @@
-// 作成：Phase-11-5｜更新：Phase-11-6,12-5,13-6,18-6
+// 作成：Phase-11-5｜更新：Phase-11-6,12-5,13-6,18-6,24(完了後の調整)
 // 写経レベル: コア ── 正本(意味モデル+配置)と表示の分離、保存・自動レイアウト・検証の「先に保存してから」の順序、409 の扱い。
 // Phase-11-6:追記 ── umlApi.validateDiagram, types(DfdElementType, ErColumn, ValidationResult),
 //   @/features/uml/model/editOps の全操作と ElementPatch / RelationPatch
@@ -7,7 +7,8 @@
 // Phase-18-6:追記 ── @/features/uml/model/editOps.updateTableDescription
 import { create } from "zustand";
 import { ApiError } from "@/lib/api/client";
-import { useDocumentsStore } from "@/features/documents/documents-store";
+// Phase-24：削除
+// import { useDocumentsStore } from "@/features/documents/documents-store";
 import {
   approveDiagram,
   computeLayout,
@@ -336,8 +337,9 @@ export const useUmlEditorStore = create<UmlEditorStore>((set, get) => {
         const current = get().diagram ?? diagram;
         set(fromServer(await approveDiagram(projectId, current.id, current.version)));
         // Phase-13-6:追記
-        // 承認と同時に内部設計書へ反映される(本文が変わる)ので、文書一覧のキャッシュを捨てる
-        useDocumentsStore.setState({ fetchedAt: null });
+        // Phase-24：削除
+        // // 承認と同時に内部設計書へ反映される(本文が変わる)ので、文書一覧のキャッシュを捨てる
+        // useDocumentsStore.setState({ fetchedAt: null });
       } catch (err) {
         if (err instanceof ApiError && err.code === "VERSION_CONFLICT") {
           set({ conflict: true });

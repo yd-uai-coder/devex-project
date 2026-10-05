@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-8
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整)
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useHearingStore } from "../hearing-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
@@ -24,6 +24,8 @@ async function* fakeStream(deltas: string[]) {
 
 function resetStore() {
   useHearingStore.setState({
+    // Phase-24:追記
+    projectId: null,
     messages: [],
     historyStatus: "idle",
     sending: false,
@@ -62,6 +64,25 @@ describe("useHearingStore", () => {
 
     expect(useHearingStore.getState().messages).toHaveLength(1);
     expect(useHearingStore.getState().historyStatus).toBe("success");
+  // Phase-24:追記
+  });
+
+  it("loadHistory()は別のプロジェクトを開くと、前の会話と完了判定を捨ててから読む", async () => {
+    useHearingStore.setState({
+      projectId: "p1",
+      messages: [{ id: "1", sender: "user", message: "hi", created_at: "2026-01-01T00:00:00Z" }],
+      completion: { is_sufficient: true, summary: "前のプロジェクト", missing_points: [] },
+    });
+    stub.queue({ status: 200, body: [] });
+    stub.queue({ status: 200, body: { id: "p2", status: "completed" } });
+
+    const pending = useHearingStore.getState().loadHistory("p2");
+    expect(useHearingStore.getState().messages).toEqual([]);
+    expect(useHearingStore.getState().completion).toBeNull();
+    await pending;
+
+    expect(useHearingStore.getState().projectId).toBe("p2");
+    expect(useHearingStore.getState().completion).toBeNull();
   });
 
   it("loadHistory()はstatus==='interviewing'のとき完了判定を取り直し、"

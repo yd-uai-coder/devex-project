@@ -1,4 +1,4 @@
-// 作成：Phase-3-3
+// 作成：Phase-3-3｜更新：24(完了後の調整)
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { TamaguiProvider } from "tamagui";
@@ -42,6 +42,8 @@ describe("ProjectList", () => {
           id: "p1",
           title: "Project 1",
           status: "interviewing",
+          // Phase-24:追記
+          mode: "simple",
           created_at: "2026-01-01T00:00:00Z",
           updated_at: "2026-01-01T00:00:00Z",
         },
@@ -49,6 +51,8 @@ describe("ProjectList", () => {
           id: "p2",
           title: "Project 2",
           status: "completed",
+          // Phase-24:追記
+          mode: "detailed",
           created_at: "2026-01-02T00:00:00Z",
           updated_at: "2026-01-02T00:00:00Z",
         },
@@ -58,6 +62,10 @@ describe("ProjectList", () => {
 
     expect(await screen.findByText("Project 1")).toBeInTheDocument();
     expect(screen.getByText("Project 2")).toBeInTheDocument();
+    // Phase-24:追記
+    // 作成時のモードを短いバッジで見分ける
+    expect(screen.getByText("簡易")).toBeInTheDocument();
+    expect(screen.getByText("詳細")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Project 1/ })).toHaveAttribute("href", "/projects/p1/chat");
     expect(screen.getByRole("link", { name: /Project 2/ })).toHaveAttribute(
       "href",

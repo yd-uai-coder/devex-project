@@ -166,6 +166,7 @@ zip:    GET /uml/bundle ─ with_image_links + svg/drawio → zipfile → export
 
 - Phase 14: ステージ3は本 Phase で終了とし、申し送りの Phase 13b(M9b)と旧 Phase 14 を撤回した([`Phase-14-1.md`](../Phase-14/Phase-14-1.md))。
 - Phase 22: 詳細設計書の zip も同じ規則で図を描くため、`uml_sync_service.py` の `_render` の中身と `_unique_base` を `app/uml/export/files.py` の `render_diagram`・`unique_base` へ、FE の `umlApi.ts` の `fetchAttachment` を `src/lib/api/download.ts` へ移した(#17。[`Phase-22-5.md`](../Phase-22/Phase-22-5.md)・[`Phase-22-6.md`](../Phase-22/Phase-22-6.md))。
+- Phase 24 完了後の調整([`q_a.md`](../q_a.md)「Phase 24 完了後 ── 文書プレビューの不具合・簡易モードの設計図の削除・モード表示」): 簡易モードの設計図を削除したので、本 Phase の内部設計書への反映・アンカー・陳腐化・zip(`uml_sync_service.py`・`app/uml/sync/`・`DiagramEmbed`・`DiagramSyncBar`・`useDiagramEmbeds`・`anchors.ts`)を削除した。`BundleFile` は詳細設計書の出力サービスへ移した。文書のプレビューは `skipHtml` にして、以前に反映したアンカーを表示しない。
 
 ## Phase 完了チェック(#22)
 

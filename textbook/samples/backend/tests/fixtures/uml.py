@@ -1,4 +1,4 @@
-# 作成：Phase-10-1｜更新：Phase-10-3,10-4,13-2
+# 作成：Phase-10-1｜更新：Phase-10-3,10-4,13-2,24(完了後の調整)
 # 写経レベル: 定型 ── テストで共有するサンプル文書・作成ヘルパー・LLM出力のサンプル。
 """UML図の生成・検証まわりのテストで共有するフィクスチャ(Phase 10)。
 
@@ -16,6 +16,7 @@
 # Phase-10-3:追記 ── app.uml.generation.schemas(ComponentGenerationOutput ほか出力スキーマ一式)
 # Phase-13-2:追記 ── app.services.uml_diagram_service.UmlDiagramService,
 #   app.uml.domain.SemanticModelAdapter
+# Phase-24：削除 ── app.uml.generation.schemas.ErGenerationOutput, app.uml.generation.schemas.GeneratedColumn, app.uml.generation.schemas.GeneratedTable, app.uml.generation.schemas.GeneratedTableRelation
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,8 +36,6 @@ from app.uml.domain import (
 from app.uml.generation.schemas import (
     ComponentGenerationOutput,
     DfdGenerationOutput,
-    ErGenerationOutput,
-    GeneratedColumn,
     GeneratedDataItem,
     GeneratedDataItemField,
     GeneratedDependency,
@@ -44,8 +43,6 @@ from app.uml.generation.schemas import (
     GeneratedModule,
     GeneratedNode,
     GeneratedProcess,
-    GeneratedTable,
-    GeneratedTableRelation,
 )
 
 # Phase-10-1:追記
@@ -149,26 +146,27 @@ def component_output() -> ComponentGenerationOutput:
     )
 
 
-def er_output() -> ErGenerationOutput:
-    pk = GeneratedColumn(
-        name="id", type="UUID", is_primary_key=True, is_foreign_key=False, nullable=False
-    )
-    fk = GeneratedColumn(
-        name="user_id", type="UUID", is_primary_key=False, is_foreign_key=True, nullable=False
-    )
-    return ErGenerationOutput(
-        tables=[
-            GeneratedTable(id="t1", name="users", columns=[pk]),
-            GeneratedTable(id="t2", name="reservations", columns=[pk, fk]),
-        ],
-        relations=[
-            GeneratedTableRelation(
-                id="r1", source_id="t1", target_id="t2", relation_type="one_to_many"
-            )
-        ],
-    )
-
-
+# Phase-24：削除
+# def er_output() -> ErGenerationOutput:
+#     pk = GeneratedColumn(
+#         name="id", type="UUID", is_primary_key=True, is_foreign_key=False, nullable=False
+#     )
+#     fk = GeneratedColumn(
+#         name="user_id", type="UUID", is_primary_key=False, is_foreign_key=True, nullable=False
+#     )
+#     return ErGenerationOutput(
+#         tables=[
+#             GeneratedTable(id="t1", name="users", columns=[pk]),
+#             GeneratedTable(id="t2", name="reservations", columns=[pk, fk]),
+#         ],
+#         relations=[
+#             GeneratedTableRelation(
+#                 id="r1", source_id="t1", target_id="t2", relation_type="one_to_many"
+#             )
+#         ],
+#     )
+#
+#
 def dfd_output(data_item_name: str = "予約リクエスト") -> DfdGenerationOutput:
     return DfdGenerationOutput(
         data_items=[

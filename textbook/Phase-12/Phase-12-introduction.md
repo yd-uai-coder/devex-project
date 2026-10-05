@@ -147,6 +147,7 @@
 
 - [`Phase-13-2.md`](../Phase-13/Phase-13-2.md)で、12-4 が `uml_diagram_service.py` のモジュール関数として置いた `_diagram_title`・`_export_filename`・`_MEDIA_TYPES`・形式の分岐を、`app/uml/export/files.py`(`diagram_title`・`export_filename`・`MEDIA_TYPES`・`render_content`)へ移した。反映・埋め込み・zip のサービスと共有するためである。あわせて、12-1 の `approve` が、承認と同じトランザクションで内部設計書へ反映するようになった。
 - [`Phase-13-5.md`](../Phase-13/Phase-13-5.md)で、12-5 の `saveFile` が Blob も受け取るようにし、`exportDiagram` の生の fetch を `fetchAttachment` に切り出した(zip のダウンロードと共有する)。
+- Phase 24 完了後の調整([`q_a.md`](../q_a.md)「Phase 24 完了後 ── 文書プレビューの不具合・簡易モードの設計図の削除・モード表示」): 12-1 の `approve` から、内部設計書への反映(`_sync.reflect`)を外した。承認・出力そのものは詳細設計モードが使うので残した。
 
 ## Phase 完了チェック(#22)
 

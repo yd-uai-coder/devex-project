@@ -1,4 +1,4 @@
-// 更新：Phase-3-1,3-2,3-3,3-4
+// 更新：Phase-3-1,3-2,3-3,3-4,24(完了後の調整)
 export type MenuLeaf = { label: string; href: string };
 export type MenuGroup = { label: string; children: MenuLeaf[] };
 
@@ -16,52 +16,14 @@ export const MENU_TREE: MenuGroup[] = [
       { label: "データ絞り込み・並び替え", href: "/data/data-filter-sort" },
     ],
   },
-  {
-    label: "Form Parts",
-    children: [
-      { label: "カレンダー", href: "/form-parts/calendar" },
-      { label: "インライン編集フィールド", href: "/form-parts/editable-text" },
-      { label: "入力サジェスト", href: "/form-parts/suggest" },
-      { label: "トークン入力", href: "/form-parts/token-input" },
-      { label: "入力チェック", href: "/form-parts/validations" },
-      // Phase-3-4:追記 ── ファイルアップロードの汎用コンポーネント化に伴うデモページ登録
-      { label: "ファイルアップロード", href: "/form-parts/file-upload" },
-    ],
-  },
-  {
-    label: "Gallery",
-    children: [
-      { label: "カルーセル(スライダー)", href: "/gallery/carousel" },
-      { label: "ギャラリー", href: "/gallery/gallery" },
-    ],
-  },
-  {
-    label: "Layout",
-    children: [
-      { label: "アコーディオン", href: "/layout/accordion" },
-      { label: "カラムレイアウト", href: "/layout/columns" },
-      { label: "フォームレイアウト", href: "/layout/form" },
-      { label: "グリッドレイアウト", href: "/layout/grid" },
-      { label: "ファーストビュー", href: "/layout/hero" },
-      { label: "テーブルレイアウト", href: "/layout/table" },
-      { label: "タブレイアウト", href: "/layout/tabs" },
-    ],
-  },
-  {
-    label: "Others",
-    children: [
-      { label: "カウント", href: "/others/count" },
-      { label: "認証ガード", href: "/others/protected-demo" },
-      { label: "サイズ・カラーサンプル", href: "/others/size-color-sample" },
-      { label: "シャッフル", href: "/others/shuffle" }
-    ],
-  },
-  {
-    label: "Auth",
-    children: [
-      { label: "ユーザー登録", href: "/register" },
-      { label: "ログイン", href: "/login" },
-      { label: "ダッシュボード", href: "/dashboard" },
-    ],
-  },
+  // Phase-24：削除
+  // {
+  //   label: "開発用",
+  //   children: [
+  //     // バックエンド無しで UML 画面の挙動を確かめるデモ(Phase 11 時点)
+  //     { label: "UML設計図デモ", href: "/uml-demo" },
+  //     // 詳細設計モードの 05・06 章の見せ方の提案(仮データ)
+  //     { label: "詳細設計 05・06章デモ", href: "/detailed-design-demo" },
+  //   ],
+  // },
 ];

@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整)
 # 写経レベル: コア ── バージョニング(直近3件保持・最古削除)はdocs/internal_design.md 3.2節の
 # ドメイン規則をそのままロジック化した箇所であり、慎重な写経・理解が必要。
 # Phase-6-1: list_versions/get_versionはSCR-006向けの定型的な参照系メソッド(写経レベル: 定型)。
@@ -126,17 +126,17 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
             row.is_current = row is target
         await self._session.flush()
         return target
-
-    # Phase-13-2:追記 ── 図の反映(M9a、D1案A)。版を増やさずに表示中の版の本文を書き換える。
-    async def update_content_in_place(
-        self, document: GeneratedDocument, content: str
-    ) -> GeneratedDocument:
-        """既存の版の本文を書き換える(版は増やさず、他の版は消さない)。
-
-        「既存版の内容は書き換えない」(doc_generator_service.restore_version)の唯一の例外で、
-        承認済みのUML図の要素表をアンカーの範囲に反映するときだけ使う(D1案A)。反映した内容は
-        正本(uml_diagrams)から決定的に作り直せるため、履歴に残さず、保持数(3件)も消費しない。
-        create_versionで反映すると、反映3回でAIが生成した原本が保持数から押し出される。"""
-        document.content = content
-        await self._session.flush()
-        return document
+    # Phase-24：削除
+    #
+    # async def update_content_in_place(
+    #     self, document: GeneratedDocument, content: str
+    # ) -> GeneratedDocument:
+    #     """既存の版の本文を書き換える(版は増やさず、他の版は消さない)。
+    #
+    #     「既存版の内容は書き換えない」(doc_generator_service.restore_version)の唯一の例外で、
+    #     承認済みのUML図の要素表をアンカーの範囲に反映するときだけ使う(D1案A)。反映した内容は
+    #     正本(uml_diagrams)から決定的に作り直せるため、履歴に残さず、保持数(3件)も消費しない。
+    #     create_versionで反映すると、反映3回でAIが生成した原本が保持数から押し出される。"""
+    #     document.content = content
+    #     await self._session.flush()
+    #     return document

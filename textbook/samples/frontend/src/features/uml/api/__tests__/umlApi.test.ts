@@ -1,4 +1,4 @@
-// 作成：Phase-11-2｜更新：Phase-12-5,13-5,17-5,18-5
+// 作成：Phase-11-2｜更新：Phase-12-5,13-5,17-5,18-5,24(完了後の調整)
 // Phase-12-5:追記 ── vitest.vi, umlApi(approveDiagram, exportDiagram), client.ApiError
 // Phase-13-5:追記 ── umlApi(downloadBundle, listEmbeds, reflectDiagrams)
 // Phase-17-5:追記 ── umlApi(createDataItem, deleteDataItem, updateDataItem)
@@ -9,16 +9,19 @@ import {
   computeLayout,
   createDataItem,
   deleteDataItem,
-  downloadBundle,
+  // Phase-24：削除
+  // downloadBundle,
   exportDiagram,
-  generateDiagrams,
-  getCandidates,
+  // Phase-24：削除
+  // generateDiagrams,
+  // getCandidates,
   getDiagram,
   listDataItems,
   listDiagrams,
-  listEmbeds,
-  listGenerationRuns,
-  reflectDiagrams,
+  // Phase-24：削除
+  // listEmbeds,
+  // listGenerationRuns,
+  // reflectDiagrams,
   updateDataItem,
   updateDiagram,
   validateDiagram,
@@ -26,7 +29,10 @@ import {
 import type { ErSemanticModel } from "../types";
 import { ApiError } from "@/lib/api/client";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
-import { COMPONENT_LAYOUT, COMPONENT_MODEL, makeCandidates } from "@/features/uml/test-utils/umlFixtures";
+// Phase-24：更新
+// import { COMPONENT_LAYOUT, COMPONENT_MODEL, makeCandidates } from "@/features/uml/test-utils/umlFixtures";
+// ↓↓
+import { COMPONENT_LAYOUT, COMPONENT_MODEL } from "@/features/uml/test-utils/umlFixtures";
 
 const BASE = "/api/v1/projects/p1/uml";
 
@@ -44,8 +50,9 @@ describe("umlApi", () => {
   it.each([
     ["listDiagrams", () => listDiagrams("p1"), `${BASE}/diagrams`],
     ["getDiagram", () => getDiagram("p1", "d1"), `${BASE}/diagrams/d1`],
-    ["getCandidates", () => getCandidates("p1"), `${BASE}/candidates`],
-    ["listGenerationRuns", () => listGenerationRuns("p1"), `${BASE}/generation-runs`],
+    // Phase-24：削除
+    // ["getCandidates", () => getCandidates("p1"), `${BASE}/candidates`],
+    // ["listGenerationRuns", () => listGenerationRuns("p1"), `${BASE}/generation-runs`],
     ["listDataItems", () => listDataItems("p1"), `${BASE}/data-items`],
   ])("%s は GET %s を呼ぶ", async (_name, call, path) => {
     await call();
@@ -136,30 +143,31 @@ describe("umlApi", () => {
     ]);
     expect(JSON.parse(stub.requests[1].init?.body as string)).toEqual(payload);
   });
-
-  it("generateDiagrams は notation と subjects を POST し、202 の生成履歴を返す", async () => {
-    stub.queue({ status: 202, body: { id: "run1", results: [] } });
-
-    const run = await generateDiagrams("p1", {
-      notation: "dfd",
-      subjects: [{ subject: "ログイン" }],
-    });
-
-    expect(stub.requests[0].url).toMatch(new RegExp(`${BASE}/diagrams$`));
-    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({
-      notation: "dfd",
-      subjects: [{ subject: "ログイン" }],
-    });
-    expect(run.id).toBe("run1");
-  });
-
-  it("getCandidates の応答をそのまま返す", async () => {
-    stub.queue({ status: 200, body: makeCandidates() });
-
-    const candidates = await getCandidates("p1");
-
-    expect(candidates.dfd_subjects).toHaveLength(2);
-  });
+  // Phase-24：削除
+  //
+  // it("generateDiagrams は notation と subjects を POST し、202 の生成履歴を返す", async () => {
+  //   stub.queue({ status: 202, body: { id: "run1", results: [] } });
+  //
+  //   const run = await generateDiagrams("p1", {
+  //     notation: "dfd",
+  //     subjects: [{ subject: "ログイン" }],
+  //   });
+  //
+  //   expect(stub.requests[0].url).toMatch(new RegExp(`${BASE}/diagrams$`));
+  //   expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({
+  //     notation: "dfd",
+  //     subjects: [{ subject: "ログイン" }],
+  //   });
+  //   expect(run.id).toBe("run1");
+  // });
+  //
+  // it("getCandidates の応答をそのまま返す", async () => {
+  //   stub.queue({ status: 200, body: makeCandidates() });
+  //
+  //   const candidates = await getCandidates("p1");
+  //
+  //   expect(candidates.dfd_subjects).toHaveLength(2);
+  // });
 });
 
 // Phase-12-5:追記 ── 承認・出力
@@ -224,61 +232,61 @@ describe("exportDiagram", () => {
     expect((error as ApiError).code).toBe("UML_DIAGRAM_NOT_APPROVED");
   });
 });
-
-// Phase-13-5:追記
-describe("内部設計書への反映", () => {
-  let stub: ReturnType<typeof stubFetch>;
-
-  beforeEach(() => {
-    stub = stubFetch();
-  });
-
-  afterEach(() => {
-    stub.restore();
-  });
-
-  it("listEmbeds は GET .../embeds を呼ぶ", async () => {
-    stub.queue({ body: [] });
-
-    await listEmbeds("p1");
-
-    expect(stub.requests[0].url).toMatch(new RegExp(`${BASE}/embeds$`));
-    expect(stub.requests[0].init?.method).toBeUndefined();
-  });
-
-  it("reflectDiagrams は本文なしで POST .../reflect し、反映した数を返す", async () => {
-    stub.queue({ body: { reflected: 2 } });
-
-    const result = await reflectDiagrams("p1");
-
-    expect(stub.requests[0].url).toMatch(new RegExp(`${BASE}/reflect$`));
-    expect(stub.requests[0].init?.method).toBe("POST");
-    expect(result).toEqual({ reflected: 2 });
-  });
-});
-
-describe("downloadBundle", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("zip を Blob のまま受け取り、Content-Disposition のファイル名を返す", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(new Uint8Array([0x50, 0x4b, 0x03, 0x04]), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/zip",
-          "Content-Disposition": 'attachment; filename="internal_design.zip"',
-        },
-      }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    const bundle = await downloadBundle("p1");
-
-    expect(fetchMock.mock.calls[0][0]).toMatch(new RegExp(`${BASE}/bundle$`));
-    expect(bundle.filename).toBe("internal_design.zip");
-    expect(bundle.content).toBeInstanceOf(Blob);
-    expect(bundle.content.size).toBe(4);
-  });
-});
+// Phase-24：削除
+//
+// describe("内部設計書への反映", () => {
+//   let stub: ReturnType<typeof stubFetch>;
+//
+//   beforeEach(() => {
+//     stub = stubFetch();
+//   });
+//
+//   afterEach(() => {
+//     stub.restore();
+//   });
+//
+//   it("listEmbeds は GET .../embeds を呼ぶ", async () => {
+//     stub.queue({ body: [] });
+//
+//     await listEmbeds("p1");
+//
+//     expect(stub.requests[0].url).toMatch(new RegExp(`${BASE}/embeds$`));
+//     expect(stub.requests[0].init?.method).toBeUndefined();
+//   });
+//
+//   it("reflectDiagrams は本文なしで POST .../reflect し、反映した数を返す", async () => {
+//     stub.queue({ body: { reflected: 2 } });
+//
+//     const result = await reflectDiagrams("p1");
+//
+//     expect(stub.requests[0].url).toMatch(new RegExp(`${BASE}/reflect$`));
+//     expect(stub.requests[0].init?.method).toBe("POST");
+//     expect(result).toEqual({ reflected: 2 });
+//   });
+// });
+//
+// describe("downloadBundle", () => {
+//   afterEach(() => {
+//     vi.unstubAllGlobals();
+//   });
+//
+//   it("zip を Blob のまま受け取り、Content-Disposition のファイル名を返す", async () => {
+//     const fetchMock = vi.fn().mockResolvedValue(
+//       new Response(new Uint8Array([0x50, 0x4b, 0x03, 0x04]), {
+//         status: 200,
+//         headers: {
+//           "Content-Type": "application/zip",
+//           "Content-Disposition": 'attachment; filename="internal_design.zip"',
+//         },
+//       }),
+//     );
+//     vi.stubGlobal("fetch", fetchMock);
+//
+//     const bundle = await downloadBundle("p1");
+//
+//     expect(fetchMock.mock.calls[0][0]).toMatch(new RegExp(`${BASE}/bundle$`));
+//     expect(bundle.filename).toBe("internal_design.zip");
+//     expect(bundle.content).toBeInstanceOf(Blob);
+//     expect(bundle.content.size).toBe(4);
+//   });
+// });

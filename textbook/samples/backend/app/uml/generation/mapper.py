@@ -1,4 +1,4 @@
-# 作成：Phase-10-3
+# 作成：Phase-10-3｜更新：24(完了後の調整)
 # 写経レベル: コア ── 名前→UUIDの解決をサービス層に分け、変換を純粋関数にする設計判断。
 """LLMの出力スキーマ(schemas.py)を、ドメインの意味モデル(app/uml/domain)へ変換する純粋関数群。
 
@@ -7,6 +7,7 @@ DFDだけは、データ項目を名前からUUIDへ解決する対応表(`data_
 ここはその結果を受け取って組み替えるだけにする ── 変換ロジックをスタブ無しでテストできるように。
 """
 
+# Phase-24：削除 ── app.uml.domain.ErColumn, app.uml.domain.ErElement, app.uml.domain.ErRelation, app.uml.domain.ErSemanticModel, app.uml.generation.schemas.ErGenerationOutput, app.uml.generation.schemas.GenerationOutput
 import uuid
 from collections.abc import Mapping
 
@@ -20,17 +21,8 @@ from app.uml.domain import (
     DfdFlow,
     DfdProcess,
     DfdSemanticModel,
-    ErColumn,
-    ErElement,
-    ErRelation,
-    ErSemanticModel,
 )
-from app.uml.generation.schemas import (
-    ComponentGenerationOutput,
-    DfdGenerationOutput,
-    ErGenerationOutput,
-    GenerationOutput,
-)
+from app.uml.generation.schemas import ComponentGenerationOutput, DfdGenerationOutput
 
 
 def to_component(output: ComponentGenerationOutput) -> ComponentSemanticModel:
@@ -42,25 +34,26 @@ def to_component(output: ComponentGenerationOutput) -> ComponentSemanticModel:
         relations=[
             ComponentRelation(id=d.id, source_id=d.source_id, target_id=d.target_id)
             for d in output.dependencies
-        ],
-    )
-
-
-def to_er(output: ErGenerationOutput) -> ErSemanticModel:
-    return ErSemanticModel(
-        elements=[
-            ErElement(
-                id=t.id,
-                name=t.name,
-                columns=[ErColumn(**c.model_dump()) for c in t.columns],
-            )
-            for t in output.tables
-        ],
-        relations=[
-            ErRelation(
-                id=r.id, source_id=r.source_id, target_id=r.target_id, relation_type=r.relation_type
-            )
-            for r in output.relations
+        # Phase-24：削除
+        # ],
+        # )
+        #
+        #
+        # def to_er(output: ErGenerationOutput) -> ErSemanticModel:
+        # return ErSemanticModel(
+        # elements=[
+        #     ErElement(
+        #         id=t.id,
+        #         name=t.name,
+        #         columns=[ErColumn(**c.model_dump()) for c in t.columns],
+        #     )
+        #     for t in output.tables
+        # ],
+        # relations=[
+        #     ErRelation(
+        #         id=r.id, source_id=r.source_id, target_id=r.target_id, relation_type=r.relation_type
+        #     )
+        #     for r in output.relations
         ],
     )
 
@@ -101,15 +94,16 @@ def to_dfd(
             for f in output.flows
         ],
     )
-
-
-def to_semantic_model(
-    output: GenerationOutput,
-    data_item_ids_by_name: Mapping[str, uuid.UUID] | None = None,
-) -> ComponentSemanticModel | ErSemanticModel | DfdSemanticModel:
-    """出力スキーマの型に応じて、対応する記法の意味モデルへ変換する。"""
-    if isinstance(output, ComponentGenerationOutput):
-        return to_component(output)
-    if isinstance(output, ErGenerationOutput):
-        return to_er(output)
-    return to_dfd(output, data_item_ids_by_name or {})
+# Phase-24：削除
+#
+#
+# def to_semantic_model(
+#     output: GenerationOutput,
+#     data_item_ids_by_name: Mapping[str, uuid.UUID] | None = None,
+# ) -> ComponentSemanticModel | ErSemanticModel | DfdSemanticModel:
+#     """出力スキーマの型に応じて、対応する記法の意味モデルへ変換する。"""
+#     if isinstance(output, ComponentGenerationOutput):
+#         return to_component(output)
+#     if isinstance(output, ErGenerationOutput):
+#         return to_er(output)
+#     return to_dfd(output, data_item_ids_by_name or {})

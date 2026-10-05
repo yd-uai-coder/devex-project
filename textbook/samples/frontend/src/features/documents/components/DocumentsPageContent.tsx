@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整)
 "use client";
 
 // Phase-15-8:追記 ── useState(react), ConfirmDialog
@@ -49,17 +49,16 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           <Link href={`/projects/${projectId}/chat`}>
             <Text color="$blue10">チャットに戻る</Text>
           </Link>
-          {/* Phase-15-7：更新(詳細設計モードには内部設計書が無い(段階で組み立てる)ため、
-              設計図の生成ではなく詳細設計画面(SCR-008)へ進ませる)
-          <Link href={`/projects/${projectId}/uml`}>
-            <Text color="$blue10">設計図を生成する →</Text>
-          </Link>
-              ↓↓ */}
+          {/* Phase-24：更新
+          {/ * 詳細設計モードには内部設計書が無い(段階で組み立てる)ため、設計図の生成ではなく
+              詳細設計画面(SCR-008)へ進ませる * /}
           {projectMode === "simple" ? (
             <Link href={`/projects/${projectId}/uml`}>
               <Text color="$blue10">設計図を生成する →</Text>
             </Link>
           ) : null}
+          ↓↓ */}
+          {/* 詳細設計モードは、ここから詳細設計画面(SCR-008)へ進む(内部設計書は段階で組み立てる) */}
           {projectMode === "detailed" ? (
             <Link href={`/projects/${projectId}/detailed-design`}>
               <Text color="$blue10">詳細設計へ進む →</Text>
