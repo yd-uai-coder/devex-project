@@ -4,7 +4,7 @@
 
 Phase-8-3のサービス層をREST APIとして公開する。`docs/internal_design.md` 3.3節②のエンドポイント表のうちPhase 8対象分(diagrams CRUD+validate)に加え、本Phaseで新規に確定した`DataItem`用CRUD 4エンドポイントを実装する。
 
-学習モード([introduction](./Phase-8-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-8-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

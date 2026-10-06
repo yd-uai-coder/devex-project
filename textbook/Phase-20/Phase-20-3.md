@@ -4,7 +4,7 @@
 
 段階5の下書きを、処理ごとに生成できるようにする。生成のリクエストに、下書きを作る処理(`function_ids`)を任意で付けられるようにし、受け付け → background task → 実行まで値で渡す。実行は、対象の処理ごとに LLM を1回呼び、対象の処理の手順だけを置き換えて1回で commit する。
 
-学習モード([introduction](./Phase-20-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-20-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

@@ -11,7 +11,7 @@
 
 文書の `.md` ダウンロード(Phase 3-6)と UML の出力で、Content-Disposition からファイル名を取り出す処理と、ファイルを保存させる処理が重なる。そこで、この2つを `src/lib/api/download.ts` に移して共有する(#17)。
 
-学習モード([introduction](./Phase-12-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-12-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
@@ -25,13 +25,13 @@
 | [`src/features/uml/api/umlApi.ts`](../samples/frontend/src/features/uml/api/umlApi.ts) | 更新 | 定型 | `approveDiagram(projectId, id, version)`、`exportDiagram(projectId, id, format) -> {filename, content, mimeType}` |
 | [`src/features/uml/uml-editor-store.ts`](../samples/frontend/src/features/uml/uml-editor-store.ts) | 更新 | **コア** | `approving`/`exporting`、`approve()`、`exportDiagram(format)`。承認の失敗を `code` で分ける |
 | [`src/features/uml/components/DiagramReviewActions.tsx`](../samples/frontend/src/features/uml/components/DiagramReviewActions.tsx) | 新規 | 定型 | 状態ごとのボタンの出し分けと、M7・D6 の注意書き |
-| [`src/features/uml/components/UmlDiagramPageContent.tsx`](../samples/frontend/src/features/uml/components/UmlDiagramPageContent.tsx) | 更新 | 定型 | 状態表示を `DiagramReviewActions` に置き換え、承認・出力の最中は他の操作を止める |
+| `src/features/uml/components/UmlDiagramPageContent.tsx` | 更新 | 定型 | 状態表示を `DiagramReviewActions` に置き換え、承認・出力の最中は他の操作を止める |
 | ── ここからテスト ── | | | |
 | [`src/lib/api/__tests__/download.test.ts`](../samples/frontend/src/lib/api/__tests__/download.test.ts) | 新規 | 定型 | `filename*` の優先・`filename` への後退・null、リンクをクリックして後片付けすること |
 | [`src/features/uml/api/__tests__/umlApi.test.ts`](../samples/frontend/src/features/uml/api/__tests__/umlApi.test.ts) | 更新 | 定型 | 承認の URL・本文、出力のファイル名と本文、失敗の `ApiError.code` |
 | [`src/features/uml/__tests__/uml-editor-store.test.ts`](../samples/frontend/src/features/uml/__tests__/uml-editor-store.test.ts) | 更新 | **コア** | 保存してから保存後の version で承認、検証エラーで検証パネルへ、409 で競合、出力後に取り直し |
 | [`src/features/uml/components/__tests__/DiagramReviewActions.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/DiagramReviewActions.test.tsx) | 新規 | 定型 | 状態ごとのボタン、「保存して承認」、注意書き、未保存・生成中の無効化 |
-| [`src/features/uml/components/__tests__/UmlDiagramPageContent.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/UmlDiagramPageContent.test.tsx) | 更新 | 定型 | `DiagramReviewActions` をモックし、配置されることだけを見る |
+| `src/features/uml/components/__tests__/UmlDiagramPageContent.test.tsx` | 更新 | 定型 | `DiagramReviewActions` をモックし、配置されることだけを見る |
 
 ## 要点の抜粋
 

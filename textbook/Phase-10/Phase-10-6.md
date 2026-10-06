@@ -4,13 +4,13 @@
 
 `POST /projects/{id}/uml/diagrams` を、Phase 8 のプレースホルダー(空の draft を 201 で返す)から、AI 生成の受け付け(202 と生成履歴を返し、バックグラウンドで実行する)に差し替える。あわせて、FE が使う3つの GET を追加する。図の一覧(ポーリング用)、生成対象の候補、生成履歴である。プレースホルダーだった `UmlDiagramService.create` はここで削除する。
 
-学習モード([introduction](./Phase-10-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-10-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
 | ファイル(`devex-api/backend/`基準) | 新規/更新 | 写経レベル | 責務 |
 | --- | --- | --- | --- |
-| [`app/schemas/uml_generation.py`](../samples/backend/app/schemas/uml_generation.py) | 新規 | 定型 | `UmlSubjectSpec`・`UmlGenerateRequest`・`DfdSubjectRead`・`UmlCandidatesRead`・`UmlGenerationResultRead`・`UmlGenerationRunRead` |
+| `app/schemas/uml_generation.py` | 新規 | 定型 | `UmlSubjectSpec`・`UmlGenerateRequest`・`DfdSubjectRead`・`UmlCandidatesRead`・`UmlGenerationResultRead`・`UmlGenerationRunRead` |
 | [`app/schemas/uml_diagram.py`](../samples/backend/app/schemas/uml_diagram.py) | 更新 | 定型 | `UmlDiagramRead` に `subject`・`scope`・`generation_status`・`generation_error`・`source_doc_versions` を追加する。`UmlDiagramCreate` は削除する |
 | [`app/services/uml_diagram_service.py`](../samples/backend/app/services/uml_diagram_service.py) | 更新 | 定型 | `create`(プレースホルダー)とその import を削除する |
 | [`app/api/routes/uml.py`](../samples/backend/app/api/routes/uml.py) | 更新 | 定型 | `POST /diagrams` を 202 に変える(`generate_diagrams`)。`GET /diagrams`・`GET /candidates`・`GET /generation-runs` を追加する |

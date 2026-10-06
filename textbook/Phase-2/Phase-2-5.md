@@ -4,7 +4,7 @@
 
 生成済み設計書をMarkdownファイルとしてダウンロードするAPIを追加し、エラーレスポンスに`code`フィールドを付与する形へ拡張する。LLM呼び出しのリトライ・クォータ判定を共通化(`llm_retry.py`)し、未処理例外のcatch-allハンドラを整備して、Phase 2全体のエラーハンドリングを仕上げる。
 
-納期モード([`Phase-2-introduction.md`](./Phase-2-introduction.md)参照)。#14のSUT/ドライバ/スタブの言語化は省略する。
+自動実装モード: off([introduction](./Phase-2-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。#14のSUT/ドライバ/スタブの言語化は省略する。
 
 サンプルは [`textbook/samples/backend/`](../samples/backend/) に追加した。写経前提として [`Phase-2-1.md`](./Phase-2-1.md)〜[`Phase-2-4.md`](./Phase-2-4.md) の写経が完了していること。
 
@@ -56,7 +56,7 @@
 
 `docs/external_design.md` 2.5節4項の命名規則(`{project_name}_{document_type}_{YYYYMMDD}.md`)はプロジェクト名に日本語が入る前提だが、HTTPヘッダは本来ASCII/Latin-1しか許容しない。RFC 5987に従い、`Content-Disposition`に`filename="..."`(ASCII置換フォールバック)と`filename*=UTF-8''...`(パーセントエンコード済みUTF-8)の両方を含める`_content_disposition`ヘルパーを実装した。日付は生成日時(`GeneratedDocument.created_at`)を使う(ダウンロード日ではない ── 同じバージョンは常に同じファイル名になるようにするため)。
 
-## テスト観点(納期モード: 「動くこと」の確認)
+## テスト観点(旧ルールの納期モード: 「動くこと」の確認)
 
 | ファイル                        | 確認内容                                                                                                                                            |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |

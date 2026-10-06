@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期)
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -18,6 +18,8 @@
 #   (_content_disposition を UML 図の出力と共有するため app/api/responses.py へ移した)
 # Phase-15-1:追記 ── app.schemas.project.ProjectMode
 # Phase-15-3:追記 ── structlog, app.core.errors.AppError
+# Phase-24(T2同期):追記 ── contextlib(ruff の SIM105 に合わせ、try/except/pass を contextlib.suppress にした)
+import contextlib
 import json
 import uuid
 from typing import Annotated
@@ -69,9 +71,15 @@ async def create_project(
     template_id: Annotated[uuid.UUID | None, Form()] = None,
     # Phase-15-1:追記 ── 作成時に選んだモード(省略時は簡易ドキュメントモード)
     mode: Annotated[ProjectMode, Form()] = "simple",
-    files: Annotated[list[UploadFile], File()] = [],
+    # Phase-24(T2同期)：更新(ruff の B006 に合わせ、可変の既定値をやめた)
+    # files: Annotated[list[UploadFile], File()] = [],
+    # ↓↓
+    files: Annotated[list[UploadFile] | None, File()] = None,
 ) -> ProjectRead:
     """初期ヒアリング入力(+添付ファイル最大3件、txt/md/pdfのみ)を受け取り、新規プロジェクトを作成する。"""
+    # Phase-24(T2同期):追記
+    if files is None:
+        files = []
     intake: dict = {
         "system_overview": system_overview,
         "goals_raw": goals_raw,
@@ -91,12 +99,18 @@ async def create_project(
         template_id=template_id,
         mode=mode,
     )
-    try:
-        await ChatService(session).generate_opening_reply(project)
-    except (LLMQuotaExceededError, GenerationFailedError):
+    # Phase-24(T2同期)：更新
+    # try:
+    #     await ChatService(session).generate_opening_reply(project)
+    # except (LLMQuotaExceededError, GenerationFailedError):
+    #     # AIの最初の発話生成に失敗しても、プロジェクト作成自体は成功させる
+    #     # (ユーザーは通常通りチャット欄から発話を始められる)
+    #     pass
+    # ↓↓
+    with contextlib.suppress(LLMQuotaExceededError, GenerationFailedError):
         # AIの最初の発話生成に失敗しても、プロジェクト作成自体は成功させる
         # (ユーザーは通常通りチャット欄から発話を始められる)
-        pass
+        await ChatService(session).generate_opening_reply(project)
     return ProjectRead.model_validate(project)
 
 

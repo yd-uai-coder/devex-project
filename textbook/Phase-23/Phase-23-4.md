@@ -6,7 +6,7 @@
 
 これで、段階1〜7のすべてに生成がそろう(`STAGE_GENERATORS[7]`)。E2E 用の偽の LLM にも、段階7の固定の出力を登録する。
 
-学習モード([introduction](./Phase-23-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-23-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

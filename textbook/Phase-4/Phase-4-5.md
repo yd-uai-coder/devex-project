@@ -4,7 +4,7 @@
 
 `docs/implementation_plan.md` 4.2節の統合テスト・QAタスクのうち「パフォーマンス・セキュリティ確認」(LLM呼び出しタイムアウト時の挙動確認、SQLインジェクション・不正アクセス対策のレビュー)を扱う。Phase 4の最終章として、これまでの章で見つけた欠落(`get_gemini_llm`のtimeout未設定、[`Phase-4-3.md`](./Phase-4-3.md)参照)の検証を完結させ、既存の防御(所有者チェック・ORMのパラメータ化クエリ)が実際にHTTPレイヤーで機能していることを確認する。
 
-学習モード(CLAUDE.md #21: 攻撃面の分析という新規の判断を要し#21(a)の条件を満たさないため)。
+自動実装モード: off([introduction](./Phase-4-introduction.md) 参照)。
 
 サンプルは [`textbook/samples/backend/`](../samples/backend/) に追加・更新した。写経前提として[`Phase-4-1.md`](./Phase-4-1.md)〜[`Phase-4-4.md`](./Phase-4-4.md)の写経が完了していること。
 
@@ -47,7 +47,7 @@
 
 **検証**: 自由記述欄(`system_overview`)にSQLメタ文字を含む文字列(`'; DROP TABLE users; --`)を実際にHTTP経由で送信し、(a) 文字列としてそのまま保存・取得できること、(b) `users`テーブルへの実害が無いこと(プロジェクト一覧が壊れていないこと)を確認する統合テストを追加した。加えて、パスパラメータ(`project_id: uuid.UUID`)へのインジェクション試行が、DBへ到達する以前にPydantic/FastAPIの型検証(422)で弾かれることも確認した。
 
-## テスト観点(学習モード)
+## テスト観点
 
 ### `invoke_with_retry`のTimeoutError処理
 

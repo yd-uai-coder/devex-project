@@ -4,7 +4,7 @@
 
 Devexの稼働に必要な外部APIキー(`GOOGLE_API_KEY`等)の取得先を明示し、`.env`/`.env.example`の管理方針(正本の置き方・Docker用/ホスト用2系統の使い分け・本番起動時の安全装置)を整理する。あわせて`GEMINI_MODEL`をspec確定値(`gemini-2.5-flash-lite`)に修正する。
 
-納期モード([`Phase-1-introduction.md`](./Phase-1-introduction.md) 参照)。#14 の SUT/ドライバ/スタブの言語化は省略し、「動くこと」の確認に留める。[`Phase-1-1.md`](./Phase-1-1.md) で起動したスタックを使って確認する。
+自動実装モード: off([introduction](./Phase-1-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。#14 の SUT/ドライバ/スタブの言語化は省略し、「動くこと」の確認に留める。[`Phase-1-1.md`](./Phase-1-1.md) で起動したスタックを使って確認する。
 
 ## この章で作成・更新したファイル
 
@@ -44,7 +44,7 @@ Devexの稼働に必要な外部APIキー(`GOOGLE_API_KEY`等)の取得先を明
   - [`devex-api/backend/.env.example`](../../devex-api/backend/.env.example) ── `uv run uvicorn ...` でホスト上に直接立てる場合用。`DATABASE_URL`/`REDIS_URL` は `localhost` を使う。
 - **本番相当の安全装置は既存のまま活用する**: `app/core/config.py` の `Settings._reject_unsafe_production_settings` が `ENVIRONMENT=production` 起動時に弱い `JWT_SECRET_KEY`(32文字未満、または `change-me` で始まる)や `DEBUG=true` を拒否する(`tests/unit/test_config_safety.py` で検証済み)。今回の `.env` 修正でも `JWT_SECRET_KEY` は既に32文字以上のランダム値になっていることを確認済み。
 
-## テスト観点(納期モード: 「動くこと」の確認)
+## テスト観点(旧ルールの納期モード: 「動くこと」の確認)
 
 | 確認項目 | 手段 | 結果 |
 |---|---|---|

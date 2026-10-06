@@ -6,7 +6,7 @@
 
 Phase 9 で移植した `finalize.place_labels` は、ラベルがノード・他のラベル・他の線に重ならない位置を探す処理である。devex の意味モデルは辺ラベルを持たないため、`LayoutEdge.label` は常に空で、この処理は何もしていなかった。本章では、ラベルの文字列を意味モデルとデータ辞書から組み立ててエンジンに渡し、見つかった位置を `LayoutEdgeGeometry.label_pos` に保存する。
 
-学習モード([introduction](./Phase-12-introduction.md)参照)。Phase 9 のコード(`layout/__init__.py`・`model.py`)と Phase 11 のコード(`reconcile.py`)への #12 遡及である。
+自動実装モード: on([introduction](./Phase-12-introduction.md) 参照)。Phase 9 のコード(`layout/__init__.py`・`model.py`)と Phase 11 のコード(`reconcile.py`)への #12 遡及である。
 
 ## この章で作成・更新したファイル
 

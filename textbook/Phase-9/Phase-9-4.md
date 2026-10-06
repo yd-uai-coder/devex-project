@@ -4,7 +4,7 @@
 
 経路探索(9-3)後の辺の点列を仕上げる処理(出入口オフセット・通路スロット割当・ポート順序最適化・ラベル配置・指標計測)と、それらを束ねる`route()`相当のオーケストレーション(`pipeline.py`)、さらに行の入れ替えによる交差削減の山登り(`crossing_reduction.py`、移植元との対比での簡略化を含む)を実装する。
 
-学習モード([introduction](./Phase-9-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-9-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

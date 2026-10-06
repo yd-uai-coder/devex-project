@@ -11,7 +11,7 @@ UML 図のレビュー状態(`uml_diagrams.status`)を、仕様どおり `draft 
 
 `exported` への遷移は、出力 API と一緒に 12-4 で行う。
 
-学習モード([introduction](./Phase-12-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-12-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

@@ -4,7 +4,7 @@
 
 詳細設計モードで ER を保存・自動レイアウトしたら、承認済みの段階3を「レビュー中」に戻す。段階2の DFD の差し戻し(17-4)を、図の記法 → 段階の対応表にして ER にも広げる。
 
-学習モード([introduction](./Phase-18-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-18-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

@@ -8,7 +8,7 @@
 - 関数の候補と「呼ばれる手順」は、承認済みの段階5の手順の (`callee`, `call`) から導く。
 - 0件の段階6は検証のエラーにしない。0件で承認することが「段階6を飛ばす」操作になる(着手時の決定1)。
 
-学習モード([introduction](./Phase-21-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-21-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

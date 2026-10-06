@@ -1,4 +1,4 @@
-# 作成：Phase-2-5｜更新：Phase-4-1,6-5,10-5,15-3,15-4
+# 作成：Phase-2-5｜更新：Phase-4-1,6-5,10-5,15-3,15-4,24(T2同期)
 # 写経レベル: コア(Phase 2-5) ── docs/implementation_plan.md 4.4節リスク1(リトライ・クォータ処理)の実装箇所。chat_service.py/doc_generator_service.pyが共有する。
 # Phase-6-5:追記 ── time, structlog, langchain_core.messages.BaseMessage
 # Phase-10-5:追記 ── app.services.errors.LLMTokenLimitError
@@ -34,7 +34,10 @@ def prompt_char_count(messages: Sequence[BaseMessage]) -> int:
     return sum(len(m.content) for m in messages if isinstance(m.content, str))
 
 
-async def invoke_with_retry(
+# Phase-24(T2同期)：更新(ruff の UP047 に合わせ、型引数を PEP 695 の書き方にした)
+# async def invoke_with_retry(
+# ↓↓
+async def invoke_with_retry[T](
     call: Callable[[], Awaitable[T]],
     *,
     # Phase-6-5:追記 ── DEBUGログ用(プロンプト文字数の算出のみに使い、本文はログに含めない)

@@ -9,20 +9,20 @@
 
 DB も HTTP も使わないので、13-2 以降のサービスは、これらを呼んで結果を保存するだけになる。
 
-学習モード([introduction](./Phase-13-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-13-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
 | ファイル(`devex-api/backend/`基準) | 新規/更新 | 写経レベル | 責務 |
 | --- | --- | --- | --- |
 | [`app/uml/generation/sections.py`](../samples/backend/app/uml/generation/sections.py) | 更新 | 定型 | `find_section_heading_end`・`find_dfd_heading_end`(見出し行の直後の位置を返す) |
-| [`app/uml/sync/anchors.py`](../samples/backend/app/uml/sync/anchors.py) | 新規 | **コア** | `AnchorBlock`、`render_block`、`parse_anchors`、`find_block`、`upsert_block`(13-4 で `ImageLink`・`with_image_links` を足す) |
-| [`app/uml/sync/tables.py`](../samples/backend/app/uml/sync/tables.py) | 新規 | **コア** | `DataItemSummary`、`render_element_table`、`render_block_body` |
-| [`app/uml/sync/__init__.py`](../samples/backend/app/uml/sync/__init__.py) | 新規 | 定型 | 公開名の re-export(13-3・13-4 で追記) |
+| `app/uml/sync/anchors.py` | 新規 | **コア** | `AnchorBlock`、`render_block`、`parse_anchors`、`find_block`、`upsert_block`(13-4 で `ImageLink`・`with_image_links` を足す) |
+| `app/uml/sync/tables.py` | 新規 | **コア** | `DataItemSummary`、`render_element_table`、`render_block_body` |
+| `app/uml/sync/__init__.py` | 新規 | 定型 | 公開名の re-export(13-3・13-4 で追記) |
 | ── ここからテスト ── | | | |
 | [`tests/unit/test_uml_generation_sections.py`](../samples/backend/tests/unit/test_uml_generation_sections.py) | 更新 | 定型 | 見出しの直後の位置と、DFD を処理名で探すこと |
-| [`tests/unit/test_uml_sync_anchors.py`](../samples/backend/tests/unit/test_uml_sync_anchors.py) | 新規 | **コア** | 往復、壊れたアンカー、記法ごとの位置、同じ節の2枚目、置換と冪等性、付録へのフォールバック |
-| [`tests/unit/test_uml_sync_tables.py`](../samples/backend/tests/unit/test_uml_sync_tables.py) | 新規 | 定型 | 記法ごとの列、DFD の「変換」の出どころ、セルのエスケープ、注意書き |
+| `tests/unit/test_uml_sync_anchors.py` | 新規 | **コア** | 往復、壊れたアンカー、記法ごとの位置、同じ節の2枚目、置換と冪等性、付録へのフォールバック |
+| `tests/unit/test_uml_sync_tables.py` | 新規 | 定型 | 記法ごとの列、DFD の「変換」の出どころ、セルのエスケープ、注意書き |
 
 ## 要点の抜粋
 

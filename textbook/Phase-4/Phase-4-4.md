@@ -4,7 +4,7 @@
 
 [`Phase-4-3.md`](./Phase-4-3.md)で構築した基盤の上に、`docs/implementation_plan.md` 4.2節が定義するE2Eフロー本体を実装する。「ログイン→プロジェクト作成→チャットヒアリング→設計書生成→ダウンロード」のハッピーパスと、ドキュメントプレビュー画面からの再生成(revising状態への遷移を伴う)の2シナリオを実ブラウザで検証する。
 
-学習モード(CLAUDE.md #21: MVPコアループ自体の実装ではないが、シナリオ設計そのものが新規の判断を要し#21(a)の条件を満たさないため)。
+自動実装モード: off([introduction](./Phase-4-introduction.md) 参照)。
 
 サンプルは [`textbook/samples/frontend/`](../samples/frontend/) に追加した。写経前提として[`Phase-4-3.md`](./Phase-4-3.md)の写経・動作確認が完了していること。
 
@@ -34,7 +34,7 @@
 
 `DocumentTabs.tsx`は`@/components/ui/layout-blocks/LayoutTabs`(Tamaguiの`Tabs`プリミティブのラッパー)を使っており、Tamaguiの`Tabs`はWAI-ARIAのタブパターン(`role="tablist"`/`"tab"`/`"tabpanel"`)に準拠して描画される想定である。ただし本章の作成時点ではPlaywrightを実際のブラウザで動かした実機検証(下記「動作確認」参照)までは行っているが、Tamaguiのバージョンアップ等で描画されるロールが変わる可能性はゼロではない。写経後、`npm run test:e2e`が`getByRole("tab", ...)`の箇所で見つからない場合は、実際のDOM(`npx playwright test --debug`のインスペクタ、または`page.locator(...).click()`前に`await page.pause()`を挟む)を確認しロケータを調整すること。
 
-## テスト観点(学習モード)
+## テスト観点
 
 ### ハッピーパスシナリオ
 

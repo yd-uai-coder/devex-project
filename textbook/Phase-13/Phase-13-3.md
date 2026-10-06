@@ -9,21 +9,21 @@
 
 判定は純粋関数 `diagram_sync_state` にまとめる。あわせて、文書のプレビュー(13-6)に差し込む SVG と判定結果を返す `GET /uml/embeds` を足す。
 
-学習モード([introduction](./Phase-13-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-13-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
 | ファイル(`devex-api/backend/`基準) | 新規/更新 | 写経レベル | 責務 |
 | --- | --- | --- | --- |
-| [`app/uml/sync/staleness.py`](../samples/backend/app/uml/sync/staleness.py) | 新規 | **コア** | `DocState`、`SyncState`、`diagram_sync_state` |
-| [`app/uml/sync/__init__.py`](../samples/backend/app/uml/sync/__init__.py) | 更新 | 定型 | `staleness.py` の公開名を re-export する |
+| `app/uml/sync/staleness.py` | 新規 | **コア** | `DocState`、`SyncState`、`diagram_sync_state` |
+| `app/uml/sync/__init__.py` | 更新 | 定型 | `staleness.py` の公開名を re-export する |
 | [`app/schemas/uml_diagram.py`](../samples/backend/app/schemas/uml_diagram.py) | 更新 | 定型 | `UmlEmbedRead`(図の題名・状態・version・食い違い・SVG) |
-| [`app/services/uml_sync_service.py`](../samples/backend/app/services/uml_sync_service.py) | 更新 | **コア** | `DiagramEmbed`、`list_embeds`、`_data_item_names`、`_render`(出力と同じ規則で描く。状態は変えない) |
+| `app/services/uml_sync_service.py` | 更新 | **コア** | `DiagramEmbed`、`list_embeds`、`_data_item_names`、`_render`(出力と同じ規則で描く。状態は変えない) |
 | [`app/api/routes/uml.py`](../samples/backend/app/api/routes/uml.py) | 更新 | 定型 | `GET /uml/embeds` |
 | ── ここからテスト ── | | | |
-| [`tests/unit/test_uml_sync_staleness.py`](../samples/backend/tests/unit/test_uml_sync_staleness.py) | 新規 | **コア** | 状態×アンカーの表、版の比較(復元で下がる場合を含む) |
-| [`tests/unit/test_uml_sync_service.py`](../samples/backend/tests/unit/test_uml_sync_service.py) | 更新 | **コア** | 再承認で同じ位置の置き換え、状態を変えない SVG、再生成後の双方向の判定、レビュー中の扱い |
-| [`tests/unit/test_uml_sync_routes.py`](../samples/backend/tests/unit/test_uml_sync_routes.py) | 更新 | 定型 | ルートが状態と SVG を詰め替えること |
+| `tests/unit/test_uml_sync_staleness.py` | 新規 | **コア** | 状態×アンカーの表、版の比較(復元で下がる場合を含む) |
+| `tests/unit/test_uml_sync_service.py` | 更新 | **コア** | 再承認で同じ位置の置き換え、状態を変えない SVG、再生成後の双方向の判定、レビュー中の扱い |
+| `tests/unit/test_uml_sync_routes.py` | 更新 | 定型 | ルートが状態と SVG を詰め替えること |
 
 ## 要点の抜粋
 

@@ -9,7 +9,7 @@ UML 図の AI 生成のユースケースを `UmlGenerationService` として実
 
 止まった理由(クォータ超過・トークン上限・出力の解釈失敗)は分類して、履歴と図に残す。あわせて、`UmlDiagramService` に「生成中の図は編集させない」ガードと、DFD の横断検証の集計を加える。
 
-学習モード([introduction](./Phase-10-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-10-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
@@ -20,14 +20,14 @@ UML 図の AI 生成のユースケースを `UmlGenerationService` として実
 | [`app/uml/generation/failures.py`](../samples/backend/app/uml/generation/failures.py) | 新規 | **コア** | `unwrap_structured_result`(include_raw の結果を解釈する)・`classify_failure`(理由コードとユーザー向けの文言)・`SKIPPED_MESSAGE` |
 | [`app/uml/generation/__init__.py`](../samples/backend/app/uml/generation/__init__.py) | 更新 | 定型 | 本章の担当分として、`failures` の公開シンボルを re-export する |
 | [`app/uml/domain/__init__.py`](../samples/backend/app/uml/domain/__init__.py) | 更新 | 定型 | `empty_semantic_model` の利用者についてのコメントを更新する |
-| [`app/services/uml_generation_service.py`](../samples/backend/app/services/uml_generation_service.py) | 新規 | **コア** | `list_candidates`・`list_runs`・`request_generation`・`execute_run` と、background エントリの `run_uml_generation` |
+| `app/services/uml_generation_service.py` | 新規 | **コア** | `list_candidates`・`list_runs`・`request_generation`・`execute_run` と、background エントリの `run_uml_generation` |
 | [`app/services/uml_diagram_service.py`](../samples/backend/app/services/uml_diagram_service.py) | 更新 | **コア** | `update`/`compute_layout` の生成中ガード(`_ensure_not_generating`)、DFD 横断検証の集計(`_validate_model`) |
 | [`app/ai/llm/fake.py`](../samples/backend/app/ai/llm/fake.py) | 更新 | 定型 | E2E 用に、UML スキーマ3種の固定出力を返す。`include_raw` に対応する |
 | ── ここからテスト ── | | | |
 | [`tests/fixtures/fake_llm.py`](../samples/backend/tests/fixtures/fake_llm.py) | 更新 | 定型 | `with_structured_output(schema, include_raw=...)` に対応する。`structured_sequence` に dict(生の応答)を渡せるようにする |
 | [`tests/unit/test_llm_retry.py`](../samples/backend/tests/unit/test_llm_retry.py) | 更新 | 定型 | トークン上限はリトライしないこと |
 | [`tests/unit/test_uml_generation_failures.py`](../samples/backend/tests/unit/test_uml_generation_failures.py) | 新規 | **コア** | MAX_TOKENS と解釈失敗の判別、理由コードの分類(リトライ後の包み直しを含む) |
-| [`tests/unit/test_uml_generation_service.py`](../samples/backend/tests/unit/test_uml_generation_service.py) | 新規 | **コア** | 受け付け時の検証、上書き、ER の scope の再利用、データ辞書の名前解決、クォータ超過での skipped、TOKEN_LIMIT・INVALID_OUTPUT |
+| `tests/unit/test_uml_generation_service.py` | 新規 | **コア** | 受け付け時の検証、上書き、ER の scope の再利用、データ辞書の名前解決、クォータ超過での skipped、TOKEN_LIMIT・INVALID_OUTPUT |
 | [`tests/unit/test_uml_diagram_service.py`](../samples/backend/tests/unit/test_uml_diagram_service.py) | 更新 | **コア** | 生成中ガード、他の DFD が参照する項目は警告しないこと |
 | [`tests/unit/test_fake_llm_e2e.py`](../samples/backend/tests/unit/test_fake_llm_e2e.py) | 更新 | 定型 | E2E 用の UML 出力が include_raw の形で返ること |
 

@@ -4,7 +4,7 @@
 
 Phase 9で行う予定のレイアウトエンジン移植に先立ち、実装に着手せず移植可否・リスクを文書化する。コードのコピーはこの章では行わない。
 
-学習モード(詳細は[introduction](./Phase-7-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-7-introduction.md) 参照)。
 
 ## 調査結果
 

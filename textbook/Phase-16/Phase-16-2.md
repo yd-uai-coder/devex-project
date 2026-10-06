@@ -8,7 +8,7 @@
 - 機能グループの初期値は API のパスから決定的に作り、人が確定した値は再生成で上書きしない。
 - 段階ごとの検証を登録する仕組み(`STAGE_VALIDATORS`)を作り、段階1を最初に登録する。
 
-学習モード([introduction](./Phase-16-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-16-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

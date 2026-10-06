@@ -4,7 +4,7 @@
 
 UML設計図パイプラインの正本(Single Source of Truth)となる意味モデルを、component/ER/DFDの3notationについてPydanticで定義する。DBにも他レイヤーにも依存しない純粋な型定義であり、以降の章(永続化・バリデーション・API)がすべてこの型を再利用する。
 
-学習モード([introduction](./Phase-8-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-8-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

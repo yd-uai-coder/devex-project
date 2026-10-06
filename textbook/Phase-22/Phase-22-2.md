@@ -9,7 +9,7 @@ md と HTML が同じ中身を出せるよう、詳細設計書の表の中身�
 - 02: データ辞書の「使う処理」。
 - 03: CRUD 図の記号(DFD の線から決まる部分と、人が確定した部分の書き分け。Phase 18 からの持ち越し)。
 
-学習モード([introduction](./Phase-22-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-22-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

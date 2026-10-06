@@ -81,7 +81,7 @@ describe("UmlCanvas", () => {
   });
 
   // Phase-18-9:追記
-  it("要素を選んだ状態で要素を追加しても、選択が往復せず新しい要素が選ばれる(Phase 18)", () => {
+  it("要素を選んだ状態で要素を追加しても、選択が往復せず新しい要素が選ばれる", () => {
     // onSelectionChange の参照がレンダーごとに変わると、React Flow が古い選択を通知し直し、
     // ストアの選択と往復して Maximum update depth exceeded になっていた
     useUmlEditorStore.setState({
@@ -98,7 +98,7 @@ describe("UmlCanvas", () => {
   });
 
   // Phase-18-9:追記
-  it("拡大・縮小などの操作ボタンは、ダークテーマでも白地に黒字にする(Phase 18)", () => {
+  it("拡大・縮小などの操作ボタンは、ダークテーマでも白地に黒字にする", () => {
     useUmlEditorStore.setState({ model: ER_MODEL, layout: placeMissingNodes(ER_MODEL, null) });
     const { container } = render(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="dark">

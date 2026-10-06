@@ -8,7 +8,7 @@
 - 段階の API(一覧・保存・承認)のクライアントと型を作る。
 - チャットの SSE が `event: error` を受け取ったら、`code` と `detail` を持つ `StreamChatError` にする。
 
-納期モード([introduction](./Phase-15-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-15-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。
 
 ## この章で作成・更新したファイル
 
@@ -48,7 +48,7 @@ if (event.kind === "delta") yield event.delta;
 
 ## テスト観点
 
-納期モードのため、SUT・ドライバ・スタブの言語化は省略する(#21)。`stubFetch` と、`ReadableStream` で SSE を返す `sseResponse` を使った(既存のテストと同じ)。
+旧ルールの納期モード(旧 #21)で書いたため、SUT・ドライバ・スタブの言語化は省略している。`stubFetch` と、`ReadableStream` で SSE を返す `sseResponse` を使った(既存のテストと同じ)。
 
 ## 動作確認(実施済み)
 

@@ -11,7 +11,7 @@
 | 5 | 結果の保存で例外が出る、または途中で再起動すると、「生成中」のまま残る。以後の生成が 409 で塞がる | 15分を超えた「生成中」を回収する。UML 図は受け付け時と一覧の取得時、文書はプロジェクトの取得時と生成の要求時 |
 | 2 | チャットの SSE は 200 を返してから処理するので、途中で失敗するとストリームが途切れるだけ | 失敗を `event: error`(`{code, detail}`)で送って終える |
 
-学習モード([introduction](./Phase-15-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-15-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
@@ -28,14 +28,14 @@
 | [`app/uml/generation/failures.py`](../samples/backend/app/uml/generation/failures.py) | 更新 | 定型 | 理由コード `STALE_GENERATION`、`STALE_MESSAGE` |
 | [`app/uml/generation/__init__.py`](../samples/backend/app/uml/generation/__init__.py) | 更新 | 定型 | `STALE_MESSAGE` の re-export |
 | [`app/repositories/uml_diagram.py`](../samples/backend/app/repositories/uml_diagram.py) | 更新 | 定型 | `list_generating` |
-| [`app/repositories/uml_generation_run.py`](../samples/backend/app/repositories/uml_generation_run.py) | 更新 | 定型 | `list_running` |
-| [`app/services/uml_generation_service.py`](../samples/backend/app/services/uml_generation_service.py) | 更新 | **コア** | `recover_stale`、受け付け時の回収 |
+| `app/repositories/uml_generation_run.py` | 更新 | 定型 | `list_running` |
+| `app/services/uml_generation_service.py` | 更新 | **コア** | `recover_stale`、受け付け時の回収 |
 | [`app/api/routes/projects.py`](../samples/backend/app/api/routes/projects.py) | 更新 | **コア** | `_sse_error_event`、SSE の失敗、`trigger_generation` の 409 と受け付け前の状態の受け渡し |
 | [`app/api/routes/uml.py`](../samples/backend/app/api/routes/uml.py) | 更新 | 定型 | 図の一覧の取得時に回収する |
 | ── ここからテスト ── | | | |
 | [`tests/unit/test_generation_staleness.py`](../samples/backend/tests/unit/test_generation_staleness.py) | 新規 | 定型 | しきい値の境界、タイムゾーンの無い時刻 |
 | [`tests/unit/test_doc_generation_guard.py`](../samples/backend/tests/unit/test_doc_generation_guard.py) | 新規 | **コア** | ルートの 409 と受け渡し、rollback、回収、一意制約 |
-| [`tests/unit/test_uml_stale_generation.py`](../samples/backend/tests/unit/test_uml_stale_generation.py) | 新規 | **コア** | 図と履歴の回収、一覧のルートでの回収 |
+| `tests/unit/test_uml_stale_generation.py` | 新規 | **コア** | 図と履歴の回収、一覧のルートでの回収 |
 | [`tests/unit/test_chat_stream_errors.py`](../samples/backend/tests/unit/test_chat_stream_errors.py) | 新規 | **コア** | 途中の失敗が `event: error` で届き、発話が残らない |
 
 `GenerationFailedError` の `code = "LLM_API_ERROR"` は、samples には Phase 2-5 からあった。本体の写経で抜けていたので、本体だけ直した(samples の変更は無い)。

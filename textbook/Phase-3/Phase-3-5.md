@@ -4,7 +4,7 @@
 
 `docs/external_design.md` 2.3節SCR-004の後段(チャット画面)を実装する。`POST /api/v1/projects/{id}/chat`のSSEストリーミング応答をリアルタイムに描画し、AI応答のたびにヒアリング完了条件を確認して十分なら構造化サマリを提示、ユーザーの明示的な承認を得てから`POST /generate`を呼ぶ。生成完了は`GET /api/v1/projects/{id}`の`status`をポーリングして検知し、ドキュメントプレビュー([`Phase-3-6.md`](./Phase-3-6.md))へ遷移する。
 
-**学習モード(固定)**([`Phase-3-introduction.md`](./Phase-3-introduction.md)参照)。CLAUDE.md #21によりMVPコアループ(チャット↔4文書生成)そのものであるため。#14のとおりSUT/ドライバ/スタブを言語化する。
+自動実装モード: off([introduction](./Phase-3-introduction.md) 参照)。#14のとおりSUT/ドライバ/スタブを言語化する。
 
 サンプルは [`textbook/samples/frontend/`](../samples/frontend/) に追加した。写経前提として[`Phase-3-1.md`](./Phase-3-1.md)〜[`Phase-3-4.md`](./Phase-3-4.md)の写経が完了していること。本章から`react-markdown`・`remark-gfm`を新規依存として追加する(`npm install react-markdown remark-gfm`)。
 

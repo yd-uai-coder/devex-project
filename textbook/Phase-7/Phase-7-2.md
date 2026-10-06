@@ -4,7 +4,7 @@
 
 [`Phase-7-1.md`](./Phase-7-1.md)で確定したD5(図↔文書対応表)とStage 3のMust/Should/Could区分を、devexの仕様書4点へ反映する。実装ファイルではなく文書更新のみのため、[CLAUDE.md](../../CLAUDE.md) #13(全ファイル解説)・#15(全ファイルimport)・#30(依存順ソート)の対象外(設計フェーズの注記に準拠)。
 
-学習モード(詳細は[introduction](./Phase-7-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-7-introduction.md) 参照)。
 
 ## この章で作成・更新するファイル
 

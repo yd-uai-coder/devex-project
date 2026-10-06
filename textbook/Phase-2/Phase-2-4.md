@@ -4,7 +4,7 @@
 
 ヒアリング完了後、チャット全履歴を入力に4種の設計書(要件定義/外部設計/内部設計/実装計画)をLLMで一括生成し、バージョン管理して保存する`DocGeneratorService`を実装する。生成後の自己診断、FastAPIの`BackgroundTasks`を使った非同期実行の設計もこの章で扱う。
 
-**学習モード**(MVPコアループのためCLAUDE.md #21により固定。[`Phase-2-introduction.md`](./Phase-2-introduction.md)参照)。#14のとおりSUT/ドライバ/スタブを言語化する。
+自動実装モード: off([introduction](./Phase-2-introduction.md) 参照)。#14のとおりSUT/ドライバ/スタブを言語化する。
 
 サンプルは [`textbook/samples/backend/`](../samples/backend/) に追加した。写経前提として [`Phase-2-1.md`](./Phase-2-1.md)〜[`Phase-2-3.md`](./Phase-2-3.md) の写経が完了していること。
 

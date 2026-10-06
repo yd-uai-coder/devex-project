@@ -4,7 +4,7 @@
 
 初期ヒアリング入力(添付ファイル最大3件を含む)を受け付けるプロジェクト作成APIと、LLMとのヒアリング対話をSSEでストリーミング返却する`ChatService`を実装する。添付ファイル(txt/md/pdf)のテキスト化と、ヒアリング完了判定の基礎(構造化出力での5条件判定)までをこの章で対象とする。
 
-**学習モード**(MVPコアループのためCLAUDE.md #21により固定。[`Phase-2-introduction.md`](./Phase-2-introduction.md)参照)。#14のとおりSUT/ドライバ/スタブを言語化する。用語(初出): **SUT**(テスト対象、System Under Test)/ **ドライバ**(テストを実行するテストコード自身)/ **スタブ**(外部依存の代替物、テストダブルの一種)。
+自動実装モード: off([introduction](./Phase-2-introduction.md) 参照)。#14のとおりSUT/ドライバ/スタブを言語化する。用語(初出): **SUT**(テスト対象、System Under Test)/ **ドライバ**(テストを実行するテストコード自身)/ **スタブ**(外部依存の代替物、テストダブルの一種)。
 
 サンプルは [`textbook/samples/backend/`](../samples/backend/) に追加した。写経前提として [`Phase-2-1.md`](./Phase-2-1.md)・[`Phase-2-2.md`](./Phase-2-2.md) の写経が完了していること。
 

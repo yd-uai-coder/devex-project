@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { TamaguiProvider } from "tamagui";
-import tamaguiConfig from "@/tamagui.config";
+import tamaguiConfig from "../../../../../tamagui.config";
 import { ProjectList } from "../ProjectList";
 import { useDashboardStore } from "@/features/dashboard/dashboard-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";

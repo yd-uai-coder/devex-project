@@ -32,7 +32,7 @@ describe("StageIssueList", () => {
   });
 
   // Phase-18-9:追記
-  it("図の未承認のエラーは一覧に出さない(承認を押したときに出す。Phase 18)", () => {
+  it("図の未承認のエラーは一覧に出さない(承認を押したときに出す)", () => {
     render(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <StageIssueList

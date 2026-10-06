@@ -11,29 +11,29 @@
 
 ドキュメント画面(SCR-005)には、この画面への「設計図を生成する →」リンクを置く。
 
-学習モード([introduction](./Phase-11-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-11-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
 | ファイル(`devex-ui/`基準) | 新規/更新 | 写経レベル | 責務 |
 | --- | --- | --- | --- |
 | [`src/hooks/useGenerationPolling.ts`](../samples/frontend/src/hooks/useGenerationPolling.ts) | 更新 | 定型 | `POLL_INTERVAL_MS`・`POLL_TIMEOUT_MS` を export する(UML のポーリングが再利用する) |
-| [`src/features/uml/uml-store.ts`](../samples/frontend/src/features/uml/uml-store.ts) | 新規 | **コア** | `diagrams`・`candidates`・`runs` と `fetchAll`・`refresh`・`generate`、`isGenerating` |
+| `src/features/uml/uml-store.ts` | 新規 | **コア** | `diagrams`・`candidates`・`runs` と `fetchAll`・`refresh`・`generate`、`isGenerating` |
 | [`src/features/uml/labels.ts`](../samples/frontend/src/features/uml/labels.ts) | 新規 | 定型 | 記法・状態・結果・理由コードの表示ラベル、`diagramTitle` |
-| [`src/features/uml/hooks/useUmlGenerationPolling.ts`](../samples/frontend/src/features/uml/hooks/useUmlGenerationPolling.ts) | 新規 | **コア** | 生成中の間 `refresh` を呼ぶ。3分で打ち切り、`resetTimeout` で再開する |
-| [`src/features/uml/components/GenerationPanel.tsx`](../samples/frontend/src/features/uml/components/GenerationPanel.tsx) | 新規 | **コア** | component・ER(全体図/部分図)・DFD(個別/一括、最大5件)の生成指示、旧形式の警告 |
-| [`src/features/uml/components/GenerationRunHistory.tsx`](../samples/frontend/src/features/uml/components/GenerationRunHistory.tsx) | 新規 | **コア** | 実行ごとの状態と、対象ごとの結果・止まった理由(`describeResult`) |
-| [`src/features/uml/components/DiagramList.tsx`](../samples/frontend/src/features/uml/components/DiagramList.tsx) | 新規 | 定型 | 図の一覧とレビュー画面へのリンク。生成中はリンクにしない |
-| [`src/features/uml/components/UmlPageContent.tsx`](../samples/frontend/src/features/uml/components/UmlPageContent.tsx) | 更新 | 定型 | スパイクを置き換える。取得・ポーリング・打ち切り表示と子コンポーネントの配置 |
-| [`src/app/projects/[id]/uml/page.tsx`](../samples/frontend/src/app/projects/[id]/uml/page.tsx) | 更新 | 定型 | スパイクの注記を差し替える(コードは変えない) |
+| `src/features/uml/hooks/useUmlGenerationPolling.ts` | 新規 | **コア** | 生成中の間 `refresh` を呼ぶ。3分で打ち切り、`resetTimeout` で再開する |
+| `src/features/uml/components/GenerationPanel.tsx` | 新規 | **コア** | component・ER(全体図/部分図)・DFD(個別/一括、最大5件)の生成指示、旧形式の警告 |
+| `src/features/uml/components/GenerationRunHistory.tsx` | 新規 | **コア** | 実行ごとの状態と、対象ごとの結果・止まった理由(`describeResult`) |
+| `src/features/uml/components/DiagramList.tsx` | 新規 | 定型 | 図の一覧とレビュー画面へのリンク。生成中はリンクにしない |
+| `src/features/uml/components/UmlPageContent.tsx` | 更新 | 定型 | スパイクを置き換える。取得・ポーリング・打ち切り表示と子コンポーネントの配置 |
+| `src/app/projects/[id]/uml/page.tsx` | 更新 | 定型 | スパイクの注記を差し替える(コードは変えない) |
 | [`src/features/documents/components/DocumentsPageContent.tsx`](../samples/frontend/src/features/documents/components/DocumentsPageContent.tsx) | 更新 | 定型 | 「設計図を生成する →」リンクを追加する |
 | ── ここからテスト ── | | | |
-| [`src/features/uml/__tests__/uml-store.test.ts`](../samples/frontend/src/features/uml/__tests__/uml-store.test.ts) | 新規 | **コア** | 下記テスト観点参照 |
-| [`src/features/uml/hooks/__tests__/useUmlGenerationPolling.test.ts`](../samples/frontend/src/features/uml/hooks/__tests__/useUmlGenerationPolling.test.ts) | 新規 | **コア** | 同上 |
-| [`src/features/uml/components/__tests__/GenerationPanel.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/GenerationPanel.test.tsx) | 新規 | **コア** | 同上 |
-| [`src/features/uml/components/__tests__/GenerationRunHistory.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/GenerationRunHistory.test.tsx) | 新規 | 定型 | 同上 |
-| [`src/features/uml/components/__tests__/DiagramList.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/DiagramList.test.tsx) | 新規 | 定型 | 同上 |
-| [`src/features/uml/components/__tests__/UmlPageContent.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/UmlPageContent.test.tsx) | 更新 | 定型 | スパイクの描画確認を、配線のテストに置き換える |
+| `src/features/uml/__tests__/uml-store.test.ts` | 新規 | **コア** | 下記テスト観点参照 |
+| `src/features/uml/hooks/__tests__/useUmlGenerationPolling.test.ts` | 新規 | **コア** | 同上 |
+| `src/features/uml/components/__tests__/GenerationPanel.test.tsx` | 新規 | **コア** | 同上 |
+| `src/features/uml/components/__tests__/GenerationRunHistory.test.tsx` | 新規 | 定型 | 同上 |
+| `src/features/uml/components/__tests__/DiagramList.test.tsx` | 新規 | 定型 | 同上 |
+| `src/features/uml/components/__tests__/UmlPageContent.test.tsx` | 更新 | 定型 | スパイクの描画確認を、配線のテストに置き換える |
 | [`src/features/documents/components/__tests__/DocumentsPageContent.test.tsx`](../samples/frontend/src/features/documents/components/__tests__/DocumentsPageContent.test.tsx) | 更新 | 定型 | リンクのケースを追加する |
 
 ## 要点の抜粋

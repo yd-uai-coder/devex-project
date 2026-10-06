@@ -1,5 +1,5 @@
 // 作成：Phase-3-2
-"use client";
+"use client"
 
 import Link from "next/link";
 import { H2, Text, YStack } from "tamagui";

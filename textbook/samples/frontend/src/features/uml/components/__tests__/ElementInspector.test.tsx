@@ -85,7 +85,7 @@ describe("ElementInspector", () => {
   });
 
   // Phase-18-6:追記
-  it("ER のテーブルの説明と、カラムの制約・説明を編集できる(Phase 18)", () => {
+  it("ER のテーブルの説明と、カラムの制約・説明を編集できる", () => {
     useUmlEditorStore.setState({ model: ER_MODEL, selection: { kind: "element", id: "t2" } });
     renderInspector();
 

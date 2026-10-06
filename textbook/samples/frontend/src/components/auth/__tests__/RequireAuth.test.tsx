@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { TamaguiProvider } from "tamagui";
-import tamaguiConfig from "@/tamagui.config";
+import tamaguiConfig from "../../../../tamagui.config";
 import { RequireAuth } from "../RequireAuth";
 import { useAuthStore } from "../auth-store";
 

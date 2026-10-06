@@ -1,0 +1,6 @@
+# samples_check.py の例外。1 行 = samples のパス<TAB>本体のパス(比べない場合は -)<TAB>理由
+backend/alembic/versions/9c91eca2a657_devex_domain_tables.py	-	off の Phase 2 の手書きの見本。本体は alembic の autogenerate で生成したため、リビジョン ID・内容とも異なる
+backend/alembic/versions/3f9ce4d4a23b_add_template_id_to_projects.py	-	off の Phase 6 の手書きの見本。本体は alembic の autogenerate で生成したため、リビジョン ID・内容とも異なる
+backend/alembic/versions/b7e1d2c4a9f0_add_is_current_to_generated_documents.py	-	off の Phase 6 の手書きの見本。本体は alembic の autogenerate で生成したため、リビジョン ID・内容とも異なる
+backend/tests/integration/test_security_and_performance.py	-	off の Phase 4 の作成物。本体には写経されていない
+frontend/src/app/globals.css	-	本体の globals.css の末尾に追記する分だけを載せた抜粋(Phase 11-5)

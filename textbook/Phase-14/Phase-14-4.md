@@ -4,7 +4,7 @@
 
 ステージ4(詳細設計モード)で予定している Phase の数と、それぞれの概要・成果物・依存関係・再利用するステージ3の資産を1か所にまとめる。[CLAUDE.md](../../CLAUDE.md) #27 の「実装ロードマップの具体化」に当たる。[`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.1節ステージ4の箇条書きを、実装の単位まで具体化したものである。
 
-学習モード(詳細は [introduction](./Phase-14-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-14-introduction.md) 参照)。
 
 ## この章で作成・更新するファイル
 
@@ -65,7 +65,7 @@
 
 ## 進め方の前提
 
-- 1 Phase = 1セッションを原則とする(#18)。Phase ごとの章の数と、学習モード・納期モードの別(#21)は、各 Phase の introduction で決める。
+- 1 Phase = 1セッションを原則とする(#18)。Phase ごとの章の数と、自動実装モードの on/off(#21。当時は学習モード・納期モードの別)は、各 Phase の introduction で決める。
 - Phase の完了ごとに、ユーザーがテストを実行して確認し、次の Phase への着手を指示する(ステージ3と同じ)。
 
 ## 未確定事項(各 Phase の着手時に決める)

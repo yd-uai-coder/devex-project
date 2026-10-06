@@ -11,7 +11,7 @@
 
 編集は React Flow を経由せず、意味モデルへの純粋な操作(`editOps`)として行う。
 
-学習モード([introduction](./Phase-11-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-11-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
@@ -22,13 +22,13 @@
 | [`src/features/uml/components/ElementInspector.tsx`](../samples/frontend/src/features/uml/components/ElementInspector.tsx) | 新規 | **コア** | 選択中の要素・線の属性を記法ごとに編集する |
 | [`src/features/uml/components/ValidationPanel.tsx`](../samples/frontend/src/features/uml/components/ValidationPanel.tsx) | 新規 | 定型 | エラー・警告の一覧。押すと該当の要素・線を選ぶ |
 | [`src/features/uml/components/UmlCanvas.tsx`](../samples/frontend/src/features/uml/components/UmlCanvas.tsx) | 更新 | **コア** | 選択の同期、ドラッグでの線の追加(`onConnect`)、Delete キーでの削除 |
-| [`src/features/uml/components/UmlDiagramPageContent.tsx`](../samples/frontend/src/features/uml/components/UmlDiagramPageContent.tsx) | 更新 | 定型 | 検証ボタン、記法ごとの要素追加ボタン、属性パネル・検証パネルの配置 |
+| `src/features/uml/components/UmlDiagramPageContent.tsx` | 更新 | 定型 | 検証ボタン、記法ごとの要素追加ボタン、属性パネル・検証パネルの配置 |
 | ── ここからテスト ── | | | |
 | [`src/features/uml/model/__tests__/editOps.test.ts`](../samples/frontend/src/features/uml/model/__tests__/editOps.test.ts) | 新規 | **コア** | 下記テスト観点参照 |
 | [`src/features/uml/__tests__/uml-editor-store.test.ts`](../samples/frontend/src/features/uml/__tests__/uml-editor-store.test.ts) | 更新 | **コア** | 「編集アクション」の describe を追加する |
 | [`src/features/uml/components/__tests__/ElementInspector.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/ElementInspector.test.tsx) | 新規 | 定型 | 同上 |
 | [`src/features/uml/components/__tests__/ValidationPanel.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/ValidationPanel.test.tsx) | 新規 | 定型 | 同上 |
-| [`src/features/uml/components/__tests__/UmlDiagramPageContent.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/UmlDiagramPageContent.test.tsx) | 更新 | 定型 | 検証ボタンと要素追加ボタンのケースを追加する |
+| `src/features/uml/components/__tests__/UmlDiagramPageContent.test.tsx` | 更新 | 定型 | 検証ボタンと要素追加ボタンのケースを追加する |
 
 ## 要点の抜粋
 

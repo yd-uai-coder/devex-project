@@ -252,7 +252,7 @@ describe("ProcedurePanel", () => {
   });
 
   // Phase-21-7:追記(画面確認後の修正。タブの保持)
-  it("保存・生成でパネルが作り直されても、開いていた処理のタブのまま(Phase 21 の画面確認後)", async () => {
+  it("保存・生成でパネルが作り直されても、開いていた処理のタブのまま", async () => {
     const user = userEvent.setup();
     const procedures = {
       procedures: [

@@ -54,7 +54,7 @@ describe("StageWorkArea", () => {
   });
 
   // Phase-18-9:追記
-  it("開いた段階3には、データモデルのパネルを出す(Phase 18)", () => {
+  it("開いた段階3には、データモデルのパネルを出す", () => {
     const stages = makeStages({
       1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
       2: { state: "approved", version: 3, approved_version: 3 },
@@ -68,7 +68,7 @@ describe("StageWorkArea", () => {
   });
 
   // Phase-19-7:追記
-  it("開いた段階4には、ソフトウェア構造のパネルを出す(Phase 19)", () => {
+  it("開いた段階4には、ソフトウェア構造のパネルを出す", () => {
     const stages = makeStages({
       1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
       2: { state: "approved", version: 3, approved_version: 3 },
@@ -84,9 +84,9 @@ describe("StageWorkArea", () => {
 
   // Phase-20-7:追記
   // Phase-21-7：更新(段階6にもパネルを登録したので、テスト名から「段階6はまだ準備中」を外した)
-  // it("開いた段階5には主要処理の手順のパネルを出し、段階6はまだ準備中(Phase 20)", () => {
+  // it("開いた段階5には主要処理の手順のパネルを出し、段階6はまだ準備中", () => {
   // ↓↓
-  it("開いた段階5には主要処理の手順のパネルを出す(Phase 20)", () => {
+  it("開いた段階5には主要処理の手順のパネルを出す", () => {
   // ── ここから Phase-20-7 の作成分 ──
     const stages = makeStages({
       1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
@@ -104,7 +104,7 @@ describe("StageWorkArea", () => {
   });
 
   // Phase-21-7:追記
-  it("開いた段階6には処理ロジックのパネルを出し、「飛ばす」から承認を始められる(Phase 21)", async () => {
+  it("開いた段階6には処理ロジックのパネルを出し、「飛ばす」から承認を始められる", async () => {
     const user = userEvent.setup();
     const stages = makeStages({
       5: { state: "approved", version: 1, approved_version: 1, model: makeProcedures() },

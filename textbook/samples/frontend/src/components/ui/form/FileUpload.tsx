@@ -1,8 +1,11 @@
-// 作成：Phase-3-4
+// 作成：Phase-3-4｜更新：24(T2同期)
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { Button, Label, Text, XStack, YStack } from "tamagui";
+// Phase-24(T2同期)：更新(素の <input> を Tamagui の Input にした)
+// import { Button, Label, Text, XStack, YStack } from "tamagui";
+// ↓↓
+import { Button, GetRef, Label, Text, XStack, YStack, Input, getWebElement } from "tamagui";
 
 export function validateFiles(
   files: File[],
@@ -47,7 +50,10 @@ export default function FileUpload({
 }: FileUploadProps) {
   const inputId = useId();
   const errorId = `${inputId}-error`;
-  const inputRef = useRef<HTMLInputElement>(null);
+  // Phase-24(T2同期)：更新
+  // const inputRef = useRef<HTMLInputElement>(null);
+  // ↓↓
+  const inputRef = useRef<GetRef<typeof Input>>(null);
   const [error, setError] = useState<string | null>(null);
 
   function handleFilesSelected(fileList: FileList | null) {
@@ -59,7 +65,10 @@ export default function FileUpload({
       onChange(nextFiles);
     }
     // 同じファイルを選び直せるよう、選択の都度inputをリセットする
-    if (inputRef.current) inputRef.current.value = "";
+    // Phase-24(T2同期)：更新
+    // if (inputRef.current) inputRef.current.value = "";
+    // ↓↓
+    if (inputRef.current) getWebElement<HTMLInputElement>(inputRef.current).value = "";
   }
 
   function handleRemove(index: number) {
@@ -70,7 +79,10 @@ export default function FileUpload({
   return (
     <YStack gap="$2" marginBottom="$3">
       <Label htmlFor={inputId}>{label}</Label>
+      {/* Phase-24(T2同期)：更新
       <input
+      ↓↓ */}
+      <Input
         ref={inputRef}
         id={inputId}
         type="file"
@@ -79,6 +91,11 @@ export default function FileUpload({
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         onChange={(e) => handleFilesSelected(e.target.files)}
+        // Phase-24(T2同期):追記
+        background="none"
+        borderWidth="0"
+        paddingHorizontal={0}
+        borderRadius={0}
       />
       {value.length > 0 ? (
         <YStack gap="$1">

@@ -20,11 +20,13 @@
 
 ## モード宣言(#21)
 
-全章**学習モード**。写経レベル(#19)は各章とも「コア」が過半数(意味モデルの型設計・楽観ロック・DFD規則はいずれも設計判断そのもの)であり、#21のモード切替条件(a)「定型タグが過半数」を満たさないため。
+自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
+
+> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
 
 ## 章一覧
 
-| 章 | トピック | モード | 依存 |
+| 章 | トピック | 旧モード | 依存 |
 |---|---|---|---|
 | [`Phase-8-1.md`](./Phase-8-1.md) | 意味モデル(`app/uml/domain/`。component/er/dfdのPydantic定義、discriminated union) | 学習 | なし |
 | [`Phase-8-2.md`](./Phase-8-2.md) | 永続化層(`data_items`・`uml_diagrams`のORM・alembic・リポジトリ) | 学習 | 8-1 |

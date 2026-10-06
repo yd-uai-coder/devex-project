@@ -4,7 +4,7 @@
 
 [`Phase-14-1.md`](./Phase-14-1.md)・[`Phase-14-2.md`](./Phase-14-2.md) で決めたことを、devex の仕様書4点へ反映する。あわせて、ステージ3を Phase 13 で終えたこと(Phase 13b・旧 Phase 14 の撤回)を、[CLAUDE.md](../../CLAUDE.md) #12 の撤回の blockquote(`で確定 ──`)で記録する。文書の更新だけなので、#13(全ファイル解説)・#15(全ファイル import)・#30(依存順ソート)の対象外である。
 
-学習モード(詳細は [introduction](./Phase-14-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-14-introduction.md) 参照)。
 
 ## この章で更新したファイル
 

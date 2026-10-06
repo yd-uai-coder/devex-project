@@ -7,20 +7,20 @@
 - zip の中の md では、アンカーの範囲の先頭に、図ファイルへの相対パスの画像リンクを入れる(DB の本文は変えない)。
 - zip に入れた図は `approved` → `exported` にする。
 
-納期モード([introduction](./Phase-13-introduction.md)参照)。zip の組み立て・ルート・ファイル名の重複回避が中心で、「入れた図を `exported` にする」判断は確定事項4で済んでいる。
+自動実装モード: on([introduction](./Phase-13-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。zip の組み立て・ルート・ファイル名の重複回避が中心で、「入れた図を `exported` にする」判断は確定事項4で済んでいる。
 
 ## この章で作成・更新したファイル
 
 | ファイル(`devex-api/backend/`基準) | 新規/更新 | 写経レベル | 責務 |
 | --- | --- | --- | --- |
-| [`app/uml/sync/anchors.py`](../samples/backend/app/uml/sync/anchors.py) | 更新 | 定型 | `ImageLink`、`with_image_links`(純粋) |
-| [`app/uml/sync/__init__.py`](../samples/backend/app/uml/sync/__init__.py) | 更新 | 定型 | `ImageLink`・`with_image_links` の re-export |
-| [`app/services/uml_sync_service.py`](../samples/backend/app/services/uml_sync_service.py) | 更新 | 定型 | `BundleFile`、`bundle`、`_unique_base`、zip の中の名前の定数 |
+| `app/uml/sync/anchors.py` | 更新 | 定型 | `ImageLink`、`with_image_links`(純粋) |
+| `app/uml/sync/__init__.py` | 更新 | 定型 | `ImageLink`・`with_image_links` の re-export |
+| `app/services/uml_sync_service.py` | 更新 | 定型 | `BundleFile`、`bundle`、`_unique_base`、zip の中の名前の定数 |
 | [`app/api/routes/uml.py`](../samples/backend/app/api/routes/uml.py) | 更新 | 定型 | `GET /uml/bundle`(`content_disposition` を再利用) |
 | ── ここからテスト ── | | | |
-| [`tests/unit/test_uml_sync_anchors.py`](../samples/backend/tests/unit/test_uml_sync_anchors.py) | 更新 | 定型 | 指定した図のブロックだけに画像リンクが入ること |
-| [`tests/unit/test_uml_sync_service.py`](../samples/backend/tests/unit/test_uml_sync_service.py) | 更新 | 定型 | zip の中身・`exported`・DB の本文が変わらないこと、文書に無い図を入れないこと、ファイル名の連番 |
-| [`tests/unit/test_uml_sync_routes.py`](../samples/backend/tests/unit/test_uml_sync_routes.py) | 更新 | 定型 | zip の添付として返すこと |
+| `tests/unit/test_uml_sync_anchors.py` | 更新 | 定型 | 指定した図のブロックだけに画像リンクが入ること |
+| `tests/unit/test_uml_sync_service.py` | 更新 | 定型 | zip の中身・`exported`・DB の本文が変わらないこと、文書に無い図を入れないこと、ファイル名の連番 |
+| `tests/unit/test_uml_sync_routes.py` | 更新 | 定型 | zip の添付として返すこと |
 
 ## 要点の抜粋
 
@@ -55,7 +55,7 @@ with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
 
 ## テスト観点(#14)
 
-納期モードのため、SUT・ドライバ・スタブの言語化は省略する(#21)。テストは `zipfile` で開いて、ファイル一覧・md の画像リンク・状態の変化を確かめる。
+旧ルールの納期モード(旧 #21)で書いたため、SUT・ドライバ・スタブの言語化は省略している。テストは `zipfile` で開いて、ファイル一覧・md の画像リンク・状態の変化を確かめる。
 
 ## 動作確認(実施済み)
 

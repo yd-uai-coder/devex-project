@@ -6,7 +6,7 @@
 
 保存の直前に、配置を新しい意味モデルに突き合わせる(`reconcile_layout`)。削除した要素・関係のジオメトリは落とし、追加した要素の座標は補わない。
 
-学習モード([introduction](./Phase-11-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-11-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

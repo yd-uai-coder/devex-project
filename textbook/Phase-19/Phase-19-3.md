@@ -4,7 +4,7 @@
 
 段階4の下書きの生成を、段階1〜3と同じ「受け付け → バックグラウンドで実行」の仕組みに載せる。1回の生成で構成図(LLM 1回)→ モジュール一覧(LLM 1回)を作り、構成図(`uml_diagrams`)と段階4の行を1つのトランザクションで書く。あわせて、段階の検証・生成の入力(`StageSources`)に構成図の要約を足す。
 
-学習モード([introduction](./Phase-19-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-19-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

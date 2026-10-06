@@ -7,7 +7,7 @@ DB から段階の状態と承認済みの内容・図・データ辞書を読�
 - 図の描画と zip の名前の重複除けは、ステージ3の zip(`uml_sync_service`)と同じ関数を使う(#17)。
 - zip に入れた図は `exported` にする。
 
-学習モード([introduction](./Phase-22-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-22-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
@@ -15,7 +15,7 @@ DB から段階の状態と承認済みの内容・図・データ辞書を読�
 | --- | --- | --- | --- |
 | [`app/uml/export/files.py`](../samples/backend/app/uml/export/files.py) | 更新 | 定型 | `render_diagram`(意味モデル+配置+データ辞書の名前 → SVG/drawio)・`unique_base` を `uml_sync_service` から移した |
 | [`app/uml/export/__init__.py`](../samples/backend/app/uml/export/__init__.py) | 更新 | 定型 | 上の2つの re-export |
-| [`app/services/uml_sync_service.py`](../samples/backend/app/services/uml_sync_service.py) | 更新 | 定型 | `_render` は `render_diagram` を呼ぶだけに、`_unique_base` を削除して `unique_base` を使う |
+| `app/services/uml_sync_service.py` | 更新 | 定型 | `_render` は `render_diagram` を呼ぶだけに、`_unique_base` を削除して `unique_base` を使う |
 | [`app/services/design_stage_service.py`](../samples/backend/app/services/design_stage_service.py) | 更新 | 定型 | `overview(project)`: 全段階の状態と `StageSources`(承認済みの内容)を返す |
 | [`app/services/detailed_design_export_service.py`](../samples/backend/app/services/detailed_design_export_service.py) | 新規 | **コア** | `DetailedDesignExportService.bundle(project)`、`DOCUMENT_FILENAME` などの名前、`_is_approved` |
 | [`app/api/routes/design_stages.py`](../samples/backend/app/api/routes/design_stages.py) | 更新 | 定型 | `GET /document`(zip を `Content-Disposition` 付きで返す) |

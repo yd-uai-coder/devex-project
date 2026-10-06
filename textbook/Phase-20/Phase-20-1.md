@@ -8,7 +8,7 @@
 - 手順番号(`1, 1a, 2…`)と手順ID(`F-01#1a`)は導くもので、保存しない。
 - 検証は、段階1の機能一覧と段階4のモジュール一覧を `StageSources.stages` から読む。`STAGE_VALIDATORS[5]` に登録する。
 
-学習モード([introduction](./Phase-20-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-20-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

@@ -4,7 +4,7 @@
 
 [`Phase-6-1.md`](./Phase-6-1.md)で実装したバージョン履歴API(`GET .../versions`・`POST .../versions/{version}/restore`)を使い、SCR-006(バージョン履歴管理画面、Should have)のUIを実装する。ドキュメントプレビュー画面([`Phase-3-6.md`](../Phase-3/Phase-3-6.md)の`DocumentMarkdownView.tsx`)に、開閉式のバージョン履歴パネルを追加し、一覧表示・最新版以外への復元操作を提供する。
 
-**学習モード**([`Phase-6-introduction.md`](./Phase-6-introduction.md)参照。SCR-006のUI/UX詳細が仕様診断#28では「中程度」止まりで未確定だったため、状態管理の置き場所・復元後の画面反映方法など本章内で判断が必要だった)。#14のとおりSUT/ドライバ/スタブを言語化する。
+自動実装モード: off([introduction](./Phase-6-introduction.md) 参照)。#14のとおりSUT/ドライバ/スタブを言語化する。
 
 サンプルは [`textbook/samples/frontend/`](../samples/frontend/) に追加した。写経前提として[`Phase-3-6.md`](../Phase-3/Phase-3-6.md)(`documentsApi.ts`・`documents-store.ts`・`DocumentMarkdownView.tsx`の既存設計)と[`Phase-6-1.md`](./Phase-6-1.md)(本章が呼ぶ2エンドポイント)の写経が完了していること。
 

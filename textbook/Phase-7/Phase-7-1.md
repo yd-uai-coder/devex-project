@@ -4,7 +4,7 @@
 
 Stage 3の要件整理([`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md))で唯一Phase 7に持ち越されていたD5(UML図記法↔文書セクションの対応表)を確定し、Stage 3の要件(Must/Should/Could)を`docs/requirements.md`等へ反映する前段の整理を行う。
 
-学習モード(詳細は[introduction](./Phase-7-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-7-introduction.md) 参照)。
 
 ## D5: 図↔文書対応表の確定
 

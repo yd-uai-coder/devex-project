@@ -4,7 +4,7 @@
 
 SCR-007 の図のエディタの属性パネルで、ER の列の制約・説明と、テーブルの説明を直せるようにする。テーブル定義の正本は ER なので(着手時の決定2)、テーブル定義の編集の場所はここになる。
 
-学習モード([introduction](./Phase-18-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-18-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

@@ -4,7 +4,7 @@
 
 `docs/internal_design.md`が定めるDevexドメインのテーブル(`projects`/`chat_histories`/`generated_documents`/`prompt_templates`/`intake_files`)をSQLAlchemyモデル+Alembicマイグレーションとして実装し、対応するリポジトリ層(CRUD)を用意する。以降の章(2-2〜2-5)が扱う永続化の土台になる。
 
-納期モード([`Phase-2-introduction.md`](./Phase-2-introduction.md)参照)。#14のSUT/ドライバ/スタブの言語化は省略し、テスト観点は簡潔に記す。
+自動実装モード: off([introduction](./Phase-2-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。#14のSUT/ドライバ/スタブの言語化は省略し、テスト観点は簡潔に記す。
 
 サンプルは [`textbook/samples/backend/`](../samples/backend/) に置いた(構成は `devex-api/backend/` と同一パス)。各ファイルは既存の `devex-api/backend/` へ写経すること(devex-api の実ファイルは未変更のまま)。写経後は `docker compose exec backend uv run alembic upgrade head` でマイグレーションを適用する。
 
@@ -74,7 +74,7 @@
 
 `docs/internal_design.md` 3.2節の方針(「新バージョンを追加、直近3バージョンまで保管、4件目生成時に最古を削除」)をそのままコード化: 追加前に既存バージョンを新しい順に取得し、`(既存件数 - (上限-1))`件だけ末尾(=最古側)を削除する。`MAX_VERSIONS_PER_DOC_TYPE = 3`を定数化し、将来の仕様変更(バージョン数の見直し等)に対応しやすくした。
 
-## テスト観点(納期モード: 「動くこと」の確認)
+## テスト観点(旧ルールの納期モード: 「動くこと」の確認)
 
 | ファイル                                    | 確認内容                                                                                                                 |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |

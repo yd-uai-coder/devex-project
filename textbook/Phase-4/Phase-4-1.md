@@ -4,7 +4,7 @@
 
 `docs/implementation_plan.md` 4.2節の統合テスト・QAタスクのうち「バックエンド単体テスト」を扱う。Phase 2の各章(2-1〜2-5)で作成済みの`tests/unit/`・`tests/integration/`を棚卸しし、過去に一度発覚した「サービスは実装済みだがルートが配線されていない」類の抜け漏れが無いかを実際のHTTPレイヤーで再確認する。棚卸しの過程で、[`Phase-1-1.md`](../Phase-1/Phase-1-1.md)で発見されPhase 2でも未解決のまま持ち越されていた統合テスト基盤の既知課題を根本修正し、加えて2件の実害あるバグ(エラーメッセージの英語残存、ルーティング統合の未検証)を見つけて修正・補完する。
 
-納期モード([`Phase-4-introduction.md`](./Phase-4-introduction.md)参照)。#14のSUT/ドライバ/スタブの言語化は省略する。
+自動実装モード: off([introduction](./Phase-4-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。#14のSUT/ドライバ/スタブの言語化は省略する。
 
 サンプルは [`textbook/samples/backend/`](../samples/backend/) に追加・更新した。写経前提として Phase 1〜3(とくに[`Phase-2-1.md`](../Phase-2/Phase-2-1.md)〜[`Phase-2-5.md`](../Phase-2/Phase-2-5.md)、[`Phase-3-1.md`](../Phase-3/Phase-3-1.md)〜[`Phase-3-6.md`](../Phase-3/Phase-3-6.md))の写経が完了していること。
 
@@ -54,7 +54,7 @@ CLAUDE.md #15(前方import禁止)の実importの監査と同じ機会に、Phase
 
 これは[`Phase-4-3.md`](./Phase-4-3.md)が導入する、環境変数`E2E_FAKE_LLM`経由の`E2eFakeLLM`(ブラウザ経由のE2Eテスト専用)とは別の仕組みである。Playwrightは`docker compose`で起動する独立したOSプロセスをHTTP越しに操作するだけであり、pytestプロセス内の関数を`monkeypatch`で差し替える経路がそもそも存在しない。逆にpytestの統合テストは同一プロセス内でFastAPIアプリを直接呼び出す(`httpx.AsyncClient`+`ASGITransport`)ため、`monkeypatch`が使える。「テストの実行形態(同一プロセス内 vs 外部プロセスをHTTP越しに操作)によって、必要なフェイク注入の手段が変わる」という対応関係がこの2つの章の関係である。
 
-## テスト観点(納期モード: 「動くこと」の確認)
+## テスト観点(旧ルールの納期モード: 「動くこと」の確認)
 
 | ファイル | 確認内容 |
 | --- | --- |

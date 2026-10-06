@@ -9,7 +9,7 @@ Phase 4 で作った簡易ドキュメントモードの E2E(`e2e/devex-flow.spe
 
 あわせて、登録からヒアリングまでの操作を `e2e/helpers.ts` に切り出す。24-3 の詳細設計モードの E2E も、同じ順で始まるため(#17)。
 
-納期モード([introduction](./Phase-24-introduction.md) 参照)。SUT/ドライバ/スタブの言語化は省略し、型は `tsc` で確かめる。
+自動実装モード: on([introduction](./Phase-24-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。SUT/ドライバ/スタブの言語化は省略し、型は `tsc` で確かめる。
 
 ## この章で作成・更新したファイル
 

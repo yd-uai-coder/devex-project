@@ -55,7 +55,7 @@ describe("DetailedDesignPageContent", () => {
   });
 
   // Phase-22-6:追記
-  it("詳細設計書のダウンロードを上部に出す(Phase 22)", () => {
+  it("詳細設計書のダウンロードを上部に出す", () => {
     renderContent();
 
     expect(
@@ -98,7 +98,7 @@ describe("DetailedDesignPageContent", () => {
 
   // Phase-18-9:追記
   // ダイアログ内のボタンは jsdom ではロールのクエリで「隠れている」扱いになるため、aria-label で取る
-  it("承認できたら完了のダイアログを出し、「次の段階へ進む」で次の段階を選ぶ(Phase 18)", async () => {
+  it("承認できたら完了のダイアログを出し、「次の段階へ進む」で次の段階を選ぶ", async () => {
     const user = userEvent.setup();
     useDetailedDesignStore.setState({ approve: vi.fn().mockResolvedValue(true) });
     renderContent();

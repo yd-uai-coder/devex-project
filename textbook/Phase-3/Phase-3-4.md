@@ -4,7 +4,7 @@
 
 `docs/external_design.md` 2.3節SCR-004の前段(初期ヒアリング入力)を実装する。システム概要・実現したいこと・補足の3項目と、折りたたみ式の環境設定(言語・フレームワーク・DB・デプロイ環境)・参考資料アップロード(最大3ファイル・txt/Markdown/PDF)を持つフォームを作り、`POST /api/v1/projects`(`multipart/form-data`)でプロジェクトを作成してチャット画面([`Phase-3-5.md`](./Phase-3-5.md))へ引き渡す。
 
-納期モード([`Phase-3-introduction.md`](./Phase-3-introduction.md)参照)。コアループの「入口」ではあるがループ本体(対話往復)ではなく、内容もフォームバリデーション+アップロードのクライアント側ミラーリングが主体のため。#14のSUT/ドライバ/スタブの言語化は省略する。
+自動実装モード: off([introduction](./Phase-3-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。コアループの「入口」ではあるがループ本体(対話往復)ではなく、内容もフォームバリデーション+アップロードのクライアント側ミラーリングが主体のため。#14のSUT/ドライバ/スタブの言語化は省略する。
 
 サンプルは [`textbook/samples/frontend/`](../samples/frontend/) に追加した。写経前提として[`Phase-3-1.md`](./Phase-3-1.md)・[`Phase-3-2.md`](./Phase-3-2.md)・[`Phase-3-3.md`](./Phase-3-3.md)の写経が完了していること。
 

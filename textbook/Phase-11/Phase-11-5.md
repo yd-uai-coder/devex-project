@@ -11,7 +11,7 @@
 
 要素・関係の編集は 11-6 で足す。
 
-学習モード([introduction](./Phase-11-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-11-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
@@ -26,15 +26,15 @@
 | [`src/features/uml/components/nodes/DfdNode.tsx`](../samples/frontend/src/features/uml/components/nodes/DfdNode.tsx) | 新規 | 定型 | 処理(角丸。説明はツールチップ)・外部実体(太枠)・データストア(上下線)を1つの部品で描き分ける |
 | [`src/features/uml/components/edges/OrthogonalEdge.tsx`](../samples/frontend/src/features/uml/components/edges/OrthogonalEdge.tsx) | 新規 | **コア** | エンジンの `points` をそのまま折れ線で描く。`midpointOf` でラベル位置を決める |
 | [`src/features/uml/components/UmlCanvas.tsx`](../samples/frontend/src/features/uml/components/UmlCanvas.tsx) | 新規 | **コア** | ストアの正本を Adapter で表示し、ドラッグ確定時に `moveNodes` を呼ぶ。`NODE_TYPES`/`EDGE_TYPES`(11-6 のタグ部分を除く) |
-| [`src/features/uml/components/UmlDiagramPageContent.tsx`](../samples/frontend/src/features/uml/components/UmlDiagramPageContent.tsx) | 新規 | 定型 | ツールバー(保存・自動レイアウト・状態の表示)、競合・レイアウト失敗の表示(11-6 のタグ部分を除く) |
-| [`src/app/projects/[id]/uml/[diagramId]/page.tsx`](../samples/frontend/src/app/projects/[id]/uml/[diagramId]/page.tsx) | 新規 | 定型 | `params` を解決して `UmlDiagramPageContent` へ渡す |
+| `src/features/uml/components/UmlDiagramPageContent.tsx` | 新規 | 定型 | ツールバー(保存・自動レイアウト・状態の表示)、競合・レイアウト失敗の表示(11-6 のタグ部分を除く) |
+| `src/app/projects/[id]/uml/[diagramId]/page.tsx` | 新規 | 定型 | `params` を解決して `UmlDiagramPageContent` へ渡す |
 | ── ここからテスト ── | | | |
 | [`src/features/uml/__tests__/uml-editor-store.test.ts`](../samples/frontend/src/features/uml/__tests__/uml-editor-store.test.ts) | 新規 | **コア** | 下記テスト観点参照(11-6 のタグ部分を除く) |
 | [`src/features/uml/components/nodes/__tests__/nodeStyles.test.ts`](../samples/frontend/src/features/uml/components/nodes/__tests__/nodeStyles.test.ts) | 新規 | 定型 | 同上 |
 | [`src/features/uml/components/edges/__tests__/OrthogonalEdge.test.ts`](../samples/frontend/src/features/uml/components/edges/__tests__/OrthogonalEdge.test.ts) | 新規 | 定型 | 同上 |
 | [`src/features/uml/components/__tests__/UmlCanvas.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/UmlCanvas.test.tsx) | 新規 | 定型 | 同上(ノード部品と辺部品の登録も直接 import して確かめる) |
-| [`src/features/uml/components/__tests__/UmlDiagramPageContent.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/UmlDiagramPageContent.test.tsx) | 新規 | 定型 | 同上(11-6 のタグ部分を除く) |
-| [`src/app/projects/[id]/uml/[diagramId]/__tests__/page.test.tsx`](../samples/frontend/src/app/projects/[id]/uml/[diagramId]/__tests__/page.test.tsx) | 新規 | 定型 | 同上 |
+| `src/features/uml/components/__tests__/UmlDiagramPageContent.test.tsx` | 新規 | 定型 | 同上(11-6 のタグ部分を除く) |
+| `src/app/projects/[id]/uml/[diagramId]/__tests__/page.test.tsx` | 新規 | 定型 | 同上 |
 
 ## 要点の抜粋
 

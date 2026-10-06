@@ -8,7 +8,7 @@
 - CRUD 図: 入力は機能一覧・処理概要表・ER のテーブル名・DFD の R/W。DFD から決まる部分は「決まったもの」として渡し、AI には C/U/D の区別と DFD に無い処理の分だけを決めさせる。
 - E2E 用の偽 LLM に、段階3の決まった出力を足す。
 
-学習モード([introduction](./Phase-18-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-18-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

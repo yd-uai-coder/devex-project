@@ -4,7 +4,7 @@
 
 M4(構造検証・DFD規則)を純粋関数として実装し、それを呼び出す形でCRUD・楽観ロック・生成トリガーのプレースホルダーを持つサービス層を実装する。`app/uml/validation/`はドメイン層と同じくDB・外部依存を持たない純粋パッケージとし、`app/services/`がDBアクセスとビジネスロジック(楽観ロック・名前一意性チェック)を担う。
 
-学習モード([introduction](./Phase-8-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-8-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

@@ -8,7 +8,7 @@
 - 関数: `listEmbeds`(GET `/uml/embeds`)、`reflectDiagrams`(POST `/uml/reflect`)、`downloadBundle`(GET `/uml/bundle`)
 - `saveFile` を、文字列だけでなく Blob(zip のようなバイナリ)も保存できるようにする。
 
-納期モード([introduction](./Phase-13-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-13-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。
 
 ## この章で作成・更新したファイル
 
@@ -50,7 +50,7 @@ export async function downloadBundle(projectId: string): Promise<DownloadedBundl
 
 ## テスト観点(#14)
 
-納期モードのため、SUT・ドライバ・スタブの言語化は省略する(#21)。JSON の API は既存の `stubFetch`、zip は `fetch` を `Response(Uint8Array)` を返すモックに差し替えて確かめる。
+旧ルールの納期モード(旧 #21)で書いたため、SUT・ドライバ・スタブの言語化は省略している。JSON の API は既存の `stubFetch`、zip は `fetch` を `Response(Uint8Array)` を返すモックに差し替えて確かめる。
 
 ## 動作確認(実施済み)
 

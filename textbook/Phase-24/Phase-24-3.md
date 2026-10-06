@@ -11,7 +11,7 @@
 
 ステージ4のマイルストーン5(段階を承認して詳細設計書をダウンロードできる)を、画面の操作で確かめるテストになる。
 
-学習モード([introduction](./Phase-24-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-24-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

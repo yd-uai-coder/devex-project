@@ -9,7 +9,7 @@
 - 詳細設計モードの段階をどう進めるか(フロー)。
 - 見本の作成で見つかった気づき10件の対応方針。
 
-学習モード(詳細は [introduction](./Phase-14-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-14-introduction.md) 参照)。
 
 ## この章で更新したファイル
 

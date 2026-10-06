@@ -11,7 +11,7 @@
 
 段階ごとの中身(AI の下書き・意味モデルの形・検証)は、Phase 16 以降で足す。
 
-学習モード([introduction](./Phase-15-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-15-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

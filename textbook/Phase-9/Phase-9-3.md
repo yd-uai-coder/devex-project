@@ -4,7 +4,7 @@
 
 移植元エンジンの辺の経路探索(候補生成・妥当性チェック・コスト計算・貪欲選択)を移植する。辺の出入口の側(t/b/l/r)×通路(direct/L1/L2/gap/gutter)の組み合わせを全て候補として生成し、コスト最小のものを選ぶ。
 
-学習モード([introduction](./Phase-9-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-9-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

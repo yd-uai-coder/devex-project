@@ -6,7 +6,7 @@
 
 この不具合は、11-5 のデモページ(`/uml-demo`)をブラウザで確認して見つかった。Phase 9 のコードの修正だが、Phase 11 が未コミットのうちに見つかったため、Phase 11 の章として記録する(#12)。
 
-学習モード([introduction](./Phase-11-introduction.md)参照。行の割り当ては設計判断のため)。
+自動実装モード: on([introduction](./Phase-11-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

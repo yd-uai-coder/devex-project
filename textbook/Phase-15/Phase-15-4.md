@@ -8,7 +8,7 @@
 - **#8**: refresh の Cookie は14日、JWT と Redis の TTL は30日だった。15〜30日目は、サーバーでは有効なのに Cookie が消えていて使えない。14日に揃え、Cookie の寿命を設定から導く。
 - **#9**: `app/infrastructure/http.py` はどこからも使われていない。削除する。
 
-納期モード([introduction](./Phase-15-introduction.md) 参照)。テストは「動くこと」まで確かめる。
+自動実装モード: on([introduction](./Phase-15-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。テストは「動くこと」まで確かめる。
 
 ## この章で作成・更新したファイル
 
@@ -47,7 +47,7 @@ _REFRESH_TOKEN_MAX_AGE_SECONDS = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
 
 ## テスト観点
 
-納期モードのため、SUT・ドライバ・スタブの言語化は省略する(#21)。`_QuotaWorkflow`(Tavily の上限超過を出すワークフロー)で、例外が `LLM_QUOTA_EXCEEDED` になり、再試行しない(呼び出しが1回)ことを確かめた。
+旧ルールの納期モード(旧 #21)で書いたため、SUT・ドライバ・スタブの言語化は省略している。`_QuotaWorkflow`(Tavily の上限超過を出すワークフロー)で、例外が `LLM_QUOTA_EXCEEDED` になり、再試行しない(呼び出しが1回)ことを確かめた。
 
 ## 動作確認(実施済み)
 

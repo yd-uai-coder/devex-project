@@ -4,7 +4,7 @@
 
 段階3の生成を `STAGE_GENERATORS` に登録し、1回の生成で ER と CRUD 図を1トランザクションで書く。段階の入力(`StageSources`)に ER の要約と DFD の R/W を足し、画面にも DFD の R/W を返す。段階3の承認で、CRUD 図の下書きの印を外す。
 
-学習モード([introduction](./Phase-18-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-18-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

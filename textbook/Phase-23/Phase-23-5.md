@@ -8,7 +8,7 @@ FE に段階7の model の型(`PlanModel` ほか)と、画面で model を直す
 - 横断事項・マイルストーン・タスク・リスクの追加・更新・削除と、マイルストーンの並べ替えを行う。
 - マイルストーンの番号(`M-01`…)は、BE と同じく並び順から導く(`milestoneId`)。
 
-学習モード([introduction](./Phase-23-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-23-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

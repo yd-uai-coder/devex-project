@@ -4,7 +4,7 @@
 
 `@xyflow/react`(React Flow)が、devex-uiの実行環境(Next.js 16 + React 19.2.4 + Tamagui 2.6)で問題なく動作するかを検証する。Phase 11(FE: Adapter・React Flowプレビュー/編集の本実装)に先立つ技術検証であり、成果物は使い捨て(本実装時に置き換える)。
 
-学習モード(詳細は[introduction](./Phase-7-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-7-introduction.md) 参照)。
 
 ## この章で作成・更新するファイル
 
@@ -13,10 +13,10 @@
 | ファイル | 新規/更新 | 写経レベル | 責務・要点 |
 |---|---|---|---|
 | `package.json`(devex-ui。samples未収録) | 更新 | 定型 | `@xyflow/react`を`dependencies`へ追加(`npm install @xyflow/react`で`^12.12.0`が入る) |
-| [`src/features/uml/components/UmlPageContent.tsx`](../samples/frontend/src/features/uml/components/UmlPageContent.tsx) | 新規 | 定型 | `"use client"`。ダミーノード2個・エッジ1本を固定表示する`ReactFlow`キャンバス。意味モデルとの連携は持たない |
-| [`src/app/projects/[id]/uml/page.tsx`](../samples/frontend/src/app/projects/[id]/uml/page.tsx) | 新規 | 定型 | `documents/page.tsx`と同じ非同期Server Component + `RequireAuth`パターン。Tamagui/React Flowを使う実処理は`UmlPageContent`(Client Component)に委譲する |
-| [`src/features/uml/components/__tests__/UmlPageContent.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/UmlPageContent.test.tsx) | 新規 | 定型 | マウント確認・`projectId`表示の確認(React Flow自体の描画ロジックは検証対象外) |
-| [`src/app/projects/[id]/uml/__tests__/page.test.tsx`](../samples/frontend/src/app/projects/[id]/uml/__tests__/page.test.tsx) | 新規 | 定型 | `params`解決・`RequireAuth`配線・`UmlPageContent`への委譲の確認 |
+| `src/features/uml/components/UmlPageContent.tsx` | 新規 | 定型 | `"use client"`。ダミーノード2個・エッジ1本を固定表示する`ReactFlow`キャンバス。意味モデルとの連携は持たない |
+| `src/app/projects/[id]/uml/page.tsx` | 新規 | 定型 | `documents/page.tsx`と同じ非同期Server Component + `RequireAuth`パターン。Tamagui/React Flowを使う実処理は`UmlPageContent`(Client Component)に委譲する |
+| `src/features/uml/components/__tests__/UmlPageContent.test.tsx` | 新規 | 定型 | マウント確認・`projectId`表示の確認(React Flow自体の描画ロジックは検証対象外) |
+| `src/app/projects/[id]/uml/__tests__/page.test.tsx` | 新規 | 定型 | `params`解決・`RequireAuth`配線・`UmlPageContent`への委譲の確認 |
 
 ## 設計判断
 

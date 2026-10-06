@@ -8,7 +8,7 @@
 - 検証は、入力の段階1の内容と、機能グループの DFD の要約を `StageSources` で受け取る。
 - 段階2の検証を `STAGE_VALIDATORS` に登録する。
 
-学習モード([introduction](./Phase-17-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-17-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

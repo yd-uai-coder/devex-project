@@ -4,7 +4,7 @@
 
 `docs/external_design.md` SCR-001(ログイン/ユーザー登録画面)を実装する。バックエンドの`POST /api/v1/auth/login`・`POST /api/v1/auth/register`を呼び出すフォームを、既存のフィールドコンポーネント(`InputEmail`/`InputPassword`/`InputSimpleText`)と`react-hook-form`+`zod`のパターンで組み立て、成功時は[`Phase-3-1.md`](./Phase-3-1.md)の`auth-store.ts`に接続する。
 
-納期モード([`Phase-3-introduction.md`](./Phase-3-introduction.md)参照)。#14のSUT/ドライバ/スタブの言語化は省略する。
+自動実装モード: off([introduction](./Phase-3-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。#14のSUT/ドライバ/スタブの言語化は省略する。
 
 サンプルは [`textbook/samples/frontend/`](../samples/frontend/) に追加した。写経前提として[`Phase-3-1.md`](./Phase-3-1.md)(`auth-store.ts`のCookie方式書き換え)の写経が完了していること。
 
@@ -15,7 +15,7 @@
 | ファイル(`devex-ui/`基準) | 新規/更新 | 写経レベル | 責務 |
 |---|---|---|---|
 | [`src/components/ui/form/FormGeneral.tsx`](../samples/frontend/src/components/ui/form/FormGeneral.tsx) | 更新 | **コア** | 送信スピナーを実際の非同期処理(`onBeforeSubmit`)の完了に連動させるよう修正し、`Form.Trigger asChild`の対象を`<Button>`1つに限定(後述) |
-| [`src/components/ui/form/sample-form/LayoutForm.tsx`](../samples/frontend/src/components/ui/form/sample-form/LayoutForm.tsx) | 更新 | 定型 | `FormGeneral`の挙動変更に合わせ、デモの2秒スピナー演出を`demoDelayMs={2000}`で明示的に指定 |
+| `src/components/ui/form/sample-form/LayoutForm.tsx` | 更新 | 定型 | `FormGeneral`の挙動変更に合わせ、デモの2秒スピナー演出を`demoDelayMs={2000}`で明示的に指定 |
 | [`src/components/ui/form/InputSimpleText.tsx`](../samples/frontend/src/components/ui/form/InputSimpleText.tsx) | 更新 | **コア** | エラー時に`aria-invalid`/`aria-describedby`をエラーメッセージ要素(`role="alert"`)と紐づける |
 | [`src/components/ui/form/InputPassword.tsx`](../samples/frontend/src/components/ui/form/InputPassword.tsx) | 更新 | **コア** | 同上 |
 | [`src/features/auth/schemas.ts`](../samples/frontend/src/features/auth/schemas.ts) | 新規 | 定型 | ログイン/登録フォームの`zod`スキーマ(既存`validation-rules.ts`の関数を組み合わせるのみ) |
@@ -24,7 +24,7 @@
 | [`src/app/login/page.tsx`](../samples/frontend/src/app/login/page.tsx) | 新規 | 定型 | `LoginForm`のページラッパー(`useSearchParams`使用のため`Suspense`必須) |
 | [`src/app/register/page.tsx`](../samples/frontend/src/app/register/page.tsx) | 新規 | 定型 | `RegisterForm`のページラッパー |
 | ── ここからテスト(まとめて末尾) ── | | | |
-| [`src/components/ui/form/__tests__/FormGeneral.test.tsx`](../samples/frontend/src/components/ui/form/__tests__/FormGeneral.test.tsx) | 新規 | 定型 | 修正した送信フローの単体テスト |
+| `src/components/ui/form/__tests__/FormGeneral.test.tsx` | 新規 | 定型 | 修正した送信フローの単体テスト |
 | [`src/features/auth/components/__tests__/LoginForm.test.tsx`](../samples/frontend/src/features/auth/components/__tests__/LoginForm.test.tsx) | 新規 | 定型 | バリデーション・成功・失敗・a11y配線の確認 |
 | [`src/features/auth/components/__tests__/RegisterForm.test.tsx`](../samples/frontend/src/features/auth/components/__tests__/RegisterForm.test.tsx) | 新規 | 定型 | 同上(登録) |
 | [`src/app/login/__tests__/page.test.tsx`](../samples/frontend/src/app/login/__tests__/page.test.tsx) | 新規 | 定型 | ページの構成要素(フォーム+リンク)のスモークテスト |

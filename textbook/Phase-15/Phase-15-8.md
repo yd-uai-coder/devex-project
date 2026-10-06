@@ -10,7 +10,7 @@
 
 あわせて、文書画面の再生成で、受け付けの失敗が放置されていた(`regenerating` が立ったままになり、Promise の失敗も拾われない)のを直した。
 
-学習モード([introduction](./Phase-15-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-15-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
@@ -19,7 +19,7 @@
 | [`src/components/ui/layout-blocks/ConfirmDialog.tsx`](../samples/frontend/src/components/ui/layout-blocks/ConfirmDialog.tsx) | 新規 | 定型 | 汎用の確認ダイアログ(題名・説明・確定のボタン名) |
 | [`src/features/uml/api/types.ts`](../samples/frontend/src/features/uml/api/types.ts) | 更新 | 定型 | 理由コード `STALE_GENERATION` |
 | [`src/features/uml/labels.ts`](../samples/frontend/src/features/uml/labels.ts) | 更新 | 定型 | `STALE_GENERATION` の言葉 |
-| [`src/features/uml/components/GenerationPanel.tsx`](../samples/frontend/src/features/uml/components/GenerationPanel.tsx) | 更新 | **コア** | `approvedTargets`、承認済みの図の再生成の確認 |
+| `src/features/uml/components/GenerationPanel.tsx` | 更新 | **コア** | `approvedTargets`、承認済みの図の再生成の確認 |
 | [`src/features/documents/documents-store.ts`](../samples/frontend/src/features/documents/documents-store.ts) | 更新 | 定型 | `regenerateError`、受け付けの失敗で `regenerating` を下ろす |
 | [`src/features/documents/components/DocumentsPageContent.tsx`](../samples/frontend/src/features/documents/components/DocumentsPageContent.tsx) | 更新 | 定型 | 再生成の確認、失敗の表示 |
 | [`src/features/hearing/hearing-store.ts`](../samples/frontend/src/features/hearing/hearing-store.ts) | 更新 | **コア** | `streamError`、`event: error` で発話の表示を取り消す |
@@ -27,8 +27,8 @@
 | [`src/features/hearing/components/ChatPanel.tsx`](../samples/frontend/src/features/hearing/components/ChatPanel.tsx) | 更新 | 定型 | 二度押しの防止、`streamError` の表示 |
 | ── ここからテスト ── | | | |
 | [`src/components/ui/layout-blocks/__tests__/ConfirmDialog.test.tsx`](../samples/frontend/src/components/ui/layout-blocks/__tests__/ConfirmDialog.test.tsx) | 新規 | 定型 | 開閉、確定・キャンセル |
-| [`src/features/uml/__tests__/labels.test.ts`](../samples/frontend/src/features/uml/__tests__/labels.test.ts) | 新規 | 定型 | `STALE_GENERATION` の言葉 |
-| [`src/features/uml/components/__tests__/GenerationPanel.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/GenerationPanel.test.tsx) | 更新 | **コア** | 承認済みの図の確認、`approvedTargets` |
+| `src/features/uml/__tests__/labels.test.ts` | 新規 | 定型 | `STALE_GENERATION` の言葉 |
+| `src/features/uml/components/__tests__/GenerationPanel.test.tsx` | 更新 | **コア** | 承認済みの図の確認、`approvedTargets` |
 | [`src/features/documents/__tests__/documents-store.test.ts`](../samples/frontend/src/features/documents/__tests__/documents-store.test.ts) | 更新 | 定型 | 受け付けの失敗 |
 | [`src/features/documents/components/__tests__/DocumentsPageContent.test.tsx`](../samples/frontend/src/features/documents/components/__tests__/DocumentsPageContent.test.tsx) | 更新 | 定型 | 確認を経た再生成、失敗の表示 |
 | [`src/features/hearing/__tests__/hearing-store.test.ts`](../samples/frontend/src/features/hearing/__tests__/hearing-store.test.ts) | 更新 | **コア** | `event: error` と切断の区別 |

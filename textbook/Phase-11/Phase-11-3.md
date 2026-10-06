@@ -6,7 +6,7 @@
 
 あわせて、配置の無い要素(編集で追加した要素、30件超で自動レイアウトできない図の全要素)に仮の位置を与える格子配置を用意する。
 
-学習モード([introduction](./Phase-11-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-11-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

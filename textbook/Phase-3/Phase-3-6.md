@@ -4,7 +4,7 @@
 
 `docs/external_design.md` 2.3節SCR-005(ドキュメントプレビュー・編集画面)を実装する。`GET /api/v1/projects/{id}/documents`で取得した4種の設計書を4タブで切り替え表示し、クリップボードコピー・ダウンロード・チャットへの導線・再生成を提供する。Phase 3の最終章であり、SCR-004(チャット)→SCR-005(プレビュー)への遷移でMVPコアループの画面一式が完成する。
 
-納期モード([`Phase-3-introduction.md`](./Phase-3-introduction.md)参照)。ドキュメント自体を生成する知性はサーバー側にあり、本画面はレンダリング+タブ切替+ボタン配線のみのため。#14のSUT/ドライバ/スタブの言語化は省略する。
+自動実装モード: off([introduction](./Phase-3-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。ドキュメント自体を生成する知性はサーバー側にあり、本画面はレンダリング+タブ切替+ボタン配線のみのため。#14のSUT/ドライバ/スタブの言語化は省略する。
 
 サンプルは [`textbook/samples/frontend/`](../samples/frontend/) に追加した。写経前提として[`Phase-3-1.md`](./Phase-3-1.md)〜[`Phase-3-5.md`](./Phase-3-5.md)の写経が完了していること。
 

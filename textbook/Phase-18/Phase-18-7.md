@@ -4,7 +4,7 @@
 
 段階3の画面に出すテーブル定義の表を作る。ER(テーブル定義の正本)から組み立てる表示だけで、ここでは編集しない。
 
-学習モード([introduction](./Phase-18-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-18-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

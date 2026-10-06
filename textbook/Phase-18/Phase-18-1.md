@@ -8,7 +8,7 @@
 - DFD の「データストア → 処理」は R、「処理 → データストア」は W。
 - 検証は、ER の要約と DFD の R/W を `StageSources` で受け取る。段階3の検証を `STAGE_VALIDATORS` に登録する。
 
-学習モード([introduction](./Phase-18-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-18-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

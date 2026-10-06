@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4
+// 作成：Phase-3-6｜更新：Phase-11-4,24(T2同期)
 "use client";
 
 import { useEffect, useState } from "react";
@@ -22,7 +22,12 @@ export function useGenerationPolling(
   onCompleted: () => void,
 ): { timedOut: boolean } {
   const [elapsedMs, setElapsedMs] = useState(0);
-  const [timedOut, setTimedOut] = useState(false);
+  // Phase-24(T2同期)：更新(eslint の react-hooks/set-state-in-effect に合わせ、timedOut を state から算出値にした)
+  // const [timedOut, setTimedOut] = useState(false);
+  // ↓↓
+  // timedOutはelapsedMsから導出できるため、別state+同期用useEffectは持たない
+  // (レンダー中に計算するだけで済み、setStateを伴うeffectを1つ減らせる)。
+  const timedOut = elapsedMs >= POLL_TIMEOUT_MS;
 
   const polling = active && !timedOut;
 
@@ -40,17 +45,29 @@ export function useGenerationPolling(
     polling ? POLL_INTERVAL_MS : null,
   );
 
-  useEffect(() => {
-    if (elapsedMs >= POLL_TIMEOUT_MS) {
-      setTimedOut(true);
-    }
-  }, [elapsedMs]);
+  // Phase-24(T2同期)：削除
+  // useEffect(() => {
+  //   if (elapsedMs >= POLL_TIMEOUT_MS) {
+  //     setTimedOut(true);
+  //   }
+  // }, [elapsedMs]);
 
-  // activeがfalseに戻ったら(例: 新しいプロジェクトに切り替わった)状態をリセットする
+  // Phase-24(T2同期)：更新
+  // // activeがfalseに戻ったら(例: 新しいプロジェクトに切り替わった)状態をリセットする
+  // useEffect(() => {
+  //   if (!active) {
+  //     setElapsedMs(0);
+  //     setTimedOut(false);
+  //   }
+  // }, [active]);
+  // ↓↓
+  // activeがfalseに戻ったら(例: 新しいプロジェクトに切り替わった)状態をリセットする。
+  // elapsedMsは外部シグナル(active)に同期する内部stateであり、レンダー中に導出できる
+  // 値ではないためeffectでのsetStateが妥当(eslint-disableはこの1箇所のみに限定する)。
   useEffect(() => {
     if (!active) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setElapsedMs(0);
-      setTimedOut(false);
     }
   }, [active]);
 

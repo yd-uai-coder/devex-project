@@ -89,7 +89,7 @@ describe("umlApi", () => {
 
   // Phase-17-5:追記
   // Phase-18-5:追記
-  it("updateDiagram は ER の列・テーブルの制約と説明もそのまま送る(Phase 18)", async () => {
+  it("updateDiagram は ER の列・テーブルの制約と説明もそのまま送る", async () => {
     const model: ErSemanticModel = {
       notation: "er",
       elements: [

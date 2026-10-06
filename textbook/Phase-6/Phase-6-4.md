@@ -4,7 +4,7 @@
 
 [`Phase-6-3.md`](./Phase-6-3.md)で実装したプロンプトテンプレートAPI(`GET /api/v1/prompt-templates`、`POST /projects`の`template_id`)を使い、SCR-003(プロンプト設定・テンプレート選択画面、Should have)のUIを実装する。ヒアリング開始フォーム(`IntakeForm.tsx`)にテンプレート選択欄を追加し、選択したテンプレートの`default_environment`を環境設定欄へプリフィルし、`template_id`をプロジェクト作成時に送信する。
 
-学習モード([`Phase-6-introduction.md`](./Phase-6-introduction.md)参照。SCR-003のUI/UX詳細は仕様診断#28で「中程度」止まりの未確定事項であり、状態管理の置き場所・プリフィル後の見せ方など本章内で新規の設計判断が必要だった)。
+自動実装モード: off([introduction](./Phase-6-introduction.md) 参照)。
 
 サンプルは [`textbook/samples/frontend/`](../samples/frontend/) に追加した。写経前提として[`Phase-3-4.md`](../Phase-3/Phase-3-4.md)(`IntakeForm.tsx`・`schemas.ts`・`createProject.ts`の既存設計)と[`Phase-6-3.md`](./Phase-6-3.md)(本章が呼ぶAPI)の写経が完了していること。
 

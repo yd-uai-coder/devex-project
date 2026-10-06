@@ -11,7 +11,7 @@
 
 ダウンロードの `Content-Disposition` ヘッダーを組み立てる関数は、Phase 2-5 で文書のダウンロード用に `routes/projects.py` の中に書いた。UML の出力が2つ目の利用者になるので、`app/api/responses.py` へ移して共有する(#17)。
 
-**納期モード**([introduction](./Phase-12-introduction.md)参照。ルートの配線と関数の移動が中心で、定型が過半のため)。#14 の SUT/ドライバ/スタブの言語化は省略し、テストの一覧だけを載せる。
+自動実装モード: on([introduction](./Phase-12-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。#14 の SUT/ドライバ/スタブの言語化は省略し、テストの一覧だけを載せる。
 
 ## この章で作成・更新したファイル
 
@@ -64,7 +64,7 @@ async def export_diagram_drawio(diagram_id, session, current_project) -> Respons
 - **題名**: draw.io のページ名(`<diagram name>`)には、FE の `diagramTitle` と同じ題名(`データフロー図: DF-1 ...`、`コンポーネント図(全体)`)を使う。
 - **`content_disposition` の移動(#17)**: Phase 2-5 の文書ダウンロードと、UML の出力という2つの実在する利用者がいるので、共有した。移動先の `app/api/responses.py` はルート層の部品で、サービス層は HTTP ヘッダーを知らない。
 
-## テスト(納期モードのため一覧のみ)
+## テスト(旧ルールの納期モードのため一覧のみ)
 
 - `test_uml_diagram_service.py`:
   - `test_export_drawio_marks_diagram_exported`

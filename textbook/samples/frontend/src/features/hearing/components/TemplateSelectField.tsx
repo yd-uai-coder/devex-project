@@ -1,4 +1,4 @@
-// 作成：Phase-6-4
+// 作成：Phase-6-4｜更新：24(T2同期)
 // 写経レベル: コア ── 選択解除時にenvironmentを消さない判断・default_environmentのマッピングが
 // ドメイン判断そのもの。
 "use client";
@@ -74,7 +74,9 @@ export function TemplateSelectField({ value, onChange }: TemplateSelectFieldProp
     <RadioGroupWithLabel
       label="テンプレート(任意)"
       width="100%"
+      {/* Phase-24(T2同期)：削除(本体に合わせた)
       orientation="vertical"
+      */}
       items={items}
       value={value ?? NO_TEMPLATE_VALUE}
       onValueChange={(next) => {

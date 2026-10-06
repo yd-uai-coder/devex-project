@@ -10,7 +10,7 @@
 
 あわせて、Phase 12-4 でサービスの中に置いた題名・ファイル名・形式の分岐を、`app/uml/export/files.py` へ移す。反映・埋め込み・zip のサービスと共有するためである。
 
-学習モード([introduction](./Phase-13-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-13-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
@@ -20,7 +20,7 @@
 | [`app/uml/export/__init__.py`](../samples/backend/app/uml/export/__init__.py) | 更新 | 定型 | `files.py` の公開名を re-export する |
 | [`app/repositories/generated_document.py`](../samples/backend/app/repositories/generated_document.py) | 更新 | **コア** | `update_content_in_place`(版を増やさずに本文を書き換える。D1 案A) |
 | [`app/services/doc_generator_service.py`](../samples/backend/app/services/doc_generator_service.py) | 更新 | 定型 | `restore_version` の docstring に、書き換えの例外(反映)を明記 |
-| [`app/services/uml_sync_service.py`](../samples/backend/app/services/uml_sync_service.py) | 新規 | **コア** | `UmlSyncService.reflect`・`reflect_all`、`_is_approved`、`_apply` |
+| `app/services/uml_sync_service.py` | 新規 | **コア** | `UmlSyncService.reflect`・`reflect_all`、`_is_approved`、`_apply` |
 | [`app/services/uml_diagram_service.py`](../samples/backend/app/services/uml_diagram_service.py) | 更新 | **コア** | `approve` の中で `reflect` を呼ぶ。題名・ファイル名・形式の分岐を `files.py` の関数に置き換える |
 | [`app/schemas/uml_diagram.py`](../samples/backend/app/schemas/uml_diagram.py) | 更新 | 定型 | `UmlReflectRead {reflected}` |
 | [`app/api/routes/uml.py`](../samples/backend/app/api/routes/uml.py) | 更新 | 定型 | `POST /uml/reflect` |
@@ -28,8 +28,8 @@
 | [`tests/fixtures/uml.py`](../samples/backend/tests/fixtures/uml.py) | 更新 | 定型 | `TWO_MODULES`、`create_approved_diagram`(保存 → 自動レイアウト → 承認) |
 | [`tests/unit/test_generated_document_repository.py`](../samples/backend/tests/unit/test_generated_document_repository.py) | 更新 | 定型 | in-place 更新で版と他の版が変わらないこと |
 | [`tests/unit/test_uml_export_files.py`](../samples/backend/tests/unit/test_uml_export_files.py) | 新規 | 定型 | 移した関数が移す前と同じ結果になること |
-| [`tests/unit/test_uml_sync_service.py`](../samples/backend/tests/unit/test_uml_sync_service.py) | 新規 | **コア** | 承認で反映・版は据え置き、文書が無くても承認できる、再生成で消えたら再反映、未承認は反映しない、文書が無ければ 404 |
-| [`tests/unit/test_uml_sync_routes.py`](../samples/backend/tests/unit/test_uml_sync_routes.py) | 新規 | 定型 | 反映した数を返す、文書が無ければ 404 |
+| `tests/unit/test_uml_sync_service.py` | 新規 | **コア** | 承認で反映・版は据え置き、文書が無くても承認できる、再生成で消えたら再反映、未承認は反映しない、文書が無ければ 404 |
+| `tests/unit/test_uml_sync_routes.py` | 新規 | 定型 | 反映した数を返す、文書が無ければ 404 |
 
 `uml_diagram_service.py` は `uml_sync_service.py` を import するので、表では後者を先に置いた(#30)。
 

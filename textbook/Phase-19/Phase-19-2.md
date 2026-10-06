@@ -8,7 +8,7 @@
 - モジュール一覧には、先に作った構成図の要素と層・CRUD 図・ER のテーブル・機能一覧を渡す。
 - E2E 用の偽 LLM に、段階4のモジュール一覧の固定の出力を足す。
 
-学習モード([introduction](./Phase-19-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-19-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

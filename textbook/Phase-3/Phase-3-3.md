@@ -4,7 +4,7 @@
 
 `docs/external_design.md` SCR-002(ダッシュボード画面)を実装する。ログイン後の最初の画面として、認証ユーザーのプロジェクト一覧(`GET /api/v1/projects`)を表示し、新規プロジェクト作成(初期ヒアリング入力フォーム、[`Phase-3-4.md`](./Phase-3-4.md))への導線を提供する。
 
-納期モード([`Phase-3-introduction.md`](./Phase-3-introduction.md)参照)。#14のSUT/ドライバ/スタブの言語化は省略する。
+自動実装モード: off([introduction](./Phase-3-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。#14のSUT/ドライバ/スタブの言語化は省略する。
 
 サンプルは [`textbook/samples/frontend/`](../samples/frontend/) に追加した。写経前提として[`Phase-3-1.md`](./Phase-3-1.md)(`auth-store.ts`)・[`Phase-3-2.md`](./Phase-3-2.md)(`FormGeneral.tsx`等の改修)の写経が完了していること。
 

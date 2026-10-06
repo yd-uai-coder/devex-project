@@ -7,7 +7,7 @@
 - DFD の処理の箱は、段階1の処理ID(`F-06` など)にする。
 - AI の出力を、ステージ3の DFD の出力スキーマ `DfdGenerationOutput` に組み替え、データ項目の名前の解決と意味モデルへの写像をそのまま再利用する。
 
-学習モード([introduction](./Phase-17-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-17-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

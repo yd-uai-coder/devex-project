@@ -9,7 +9,7 @@
 1. `build_render`: 意味モデル+配置+辺ラベルから、描画用の中間表現(`RenderDiagram`)を組み立てる。「何を描くか」を決める段。
 2. `to_svg` / `to_drawio`: 中間表現を各形式に書き出す。「どう書くか」を担う段。
 
-学習モード([introduction](./Phase-12-introduction.md)参照)。パッケージはすべて純粋関数で、DB・HTTP に依存しない。
+自動実装モード: on([introduction](./Phase-12-introduction.md) 参照)。パッケージはすべて純粋関数で、DB・HTTP に依存しない。
 
 ## この章で作成・更新したファイル
 

@@ -8,19 +8,19 @@
 - DFD の保存・承認で段階2の検証の結果や状態が変わるので、図の状態・版が変わるたびに段階の一覧を取り直す。
 - DFD のエディタに保存していない編集があるうちは、段階の承認ボタンを止める。
 
-学習モード([introduction](./Phase-17-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-17-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
 | ファイル(`devex-ui/src/features/` 基準) | 新規/更新 | 写経レベル | 責務 |
 | --- | --- | --- | --- |
 | [`uml/components/UmlDiagramEditor.tsx`](../samples/frontend/src/features/uml/components/UmlDiagramEditor.tsx) | 新規 | 定型 | 図1枚のエディタ(`UmlDiagramPageContent` から見出しとリンクを除いて切り出した) |
-| [`uml/components/UmlDiagramPageContent.tsx`](../samples/frontend/src/features/uml/components/UmlDiagramPageContent.tsx) | 更新 | 定型 | 見出しとリンクの下に `UmlDiagramEditor` を置くだけにした |
+| `uml/components/UmlDiagramPageContent.tsx` | 更新 | 定型 | 見出しとリンクの下に `UmlDiagramEditor` を置くだけにした |
 | [`detailed-design/components/DfdEditorTabs.tsx`](../samples/frontend/src/features/detailed-design/components/DfdEditorTabs.tsx) | 新規 | **コア** | 機能グループごとの DFD のタブ。選んだ1枚だけエディタで開く |
 | [`detailed-design/components/DataFlowPanel.tsx`](../samples/frontend/src/features/detailed-design/components/DataFlowPanel.tsx) | 更新 | **コア** | `DfdEditorTabs` を置き、DFD の未保存の編集も段階の dirty に含める |
 | ── ここからテスト ── | | | |
 | [`detailed-design/components/__tests__/DfdEditorTabs.test.tsx`](../samples/frontend/src/features/detailed-design/components/__tests__/DfdEditorTabs.test.tsx) | 新規 | **コア** | 開く図、タブの切り替え、未生成のグループ、生成中、dirty と段階の取り直し |
-| [`uml/components/__tests__/UmlDiagramPageContent.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/UmlDiagramPageContent.test.tsx) | 更新 | 定型 | エディタだけなら見出しとリンクを持たないこと |
+| `uml/components/__tests__/UmlDiagramPageContent.test.tsx` | 更新 | 定型 | エディタだけなら見出しとリンクを持たないこと |
 | [`detailed-design/components/__tests__/DataFlowPanel.test.tsx`](../samples/frontend/src/features/detailed-design/components/__tests__/DataFlowPanel.test.tsx) | 更新 | **コア** | タブを差し替え、渡す値と dirty の合成を確かめる |
 
 ## 要点の抜粋

@@ -4,7 +4,7 @@
 
 Gemini の構造化出力に渡す、UML 図生成専用の出力スキーマ(記法ごとに1つ)を定義する。あわせて、10-1 で抽出した節だけを入力にしてメッセージ列を組み立てる純粋関数を作る。Phase 9 からの申し送り「AI 生成は `layer` を埋める責務を持つ」は、出力スキーマで `layer` を必須にすることで果たす。
 
-学習モード([introduction](./Phase-10-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-10-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
@@ -14,7 +14,7 @@ Gemini の構造化出力に渡す、UML 図生成専用の出力スキーマ(�
 | [`app/uml/generation/prompts.py`](../samples/backend/app/uml/generation/prompts.py) | 新規 | **コア** | `build_source_text`(記法ごとに渡す節を決める)・`build_generation_messages`(SystemMessage+HumanMessage)・`ExistingDataItem` |
 | [`app/uml/generation/__init__.py`](../samples/backend/app/uml/generation/__init__.py) | 更新 | 定型 | 本章の担当分として、`schemas`・`prompts` の公開シンボルを re-export する |
 | ── ここからテスト ── | | | |
-| [`tests/unit/test_uml_generation_prompts.py`](../samples/backend/tests/unit/test_uml_generation_prompts.py) | 新規 | **コア** | スキーマで layer が必須であること、記法ごとの入力の節、DFD で対象の処理と既存のデータ辞書が含まれること |
+| `tests/unit/test_uml_generation_prompts.py` | 新規 | **コア** | スキーマで layer が必須であること、記法ごとの入力の節、DFD で対象の処理と既存のデータ辞書が含まれること |
 
 ## 要点の抜粋
 

@@ -9,7 +9,7 @@ Phase 22 の出力サービス `DetailedDesignExportService.bundle` は、次の
 
 この章では、1 を `collect(project, render=...)` として切り出す。段階7の生成(23-4)が、同じ入力から詳細設計書の md を作れるようにするため。あわせて、zip に `implementation_plan.{html,md}` を足す。
 
-学習モード([introduction](./Phase-23-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-23-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

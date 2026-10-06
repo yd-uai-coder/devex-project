@@ -6,7 +6,7 @@ Phase 8完了後の相談([`textbook/q_a.md`](../q_a.md)参照)で、「routeか
 
 Phase 6-6(動作確認後の修正)と同じ位置づけの追補章。
 
-学習モード([introduction](./Phase-8-introduction.md)参照。既存コードの設計方針そのものを変更する判断のため、納期モードの条件を満たさない)。
+自動実装モード: on([introduction](./Phase-8-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

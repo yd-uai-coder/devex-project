@@ -4,7 +4,7 @@
 
 段階3の ER の埋め込み(`ErEditorSection`)を、記法・対象・名前を引数にした `StageDiagramSection` に共通化し、段階4の構成図にも使う。19-6 の表と組み合わせて段階4の作業領域(`StructurePanel`)を作り、段階 → パネルの対応表に登録する。上から、下書きの生成・構成図(SCR-007 のエディタ)・モジュール一覧・保存・検証の結果の順に並べる。
 
-学習モード([introduction](./Phase-19-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-19-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

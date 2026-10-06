@@ -1,4 +1,4 @@
-// 更新：Phase-3-1
+// 更新：Phase-3-1,24(T2同期)
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
@@ -18,8 +18,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next + Tamagui Templates",
-  description: "Next.js + Tamagui UI template collection",
+  // Phase-24(T2同期)：更新(テンプレートの表題を Devex の表題にした)
+  // title: "Next + Tamagui Templates",
+  // description: "Next.js + Tamagui UI template collection",
+  // ↓↓
+  title: "Devex",
+  description: "AIによるシステム開発を支援するAIツール",
 };
 
 export default function RootLayout({

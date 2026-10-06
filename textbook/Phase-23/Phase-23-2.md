@@ -8,7 +8,7 @@ Phase 22 の組み立て(純粋関数)に、段階7の出力を足す。
 - 実装計画を、詳細設計書とは別の md・HTML(`to_plan_markdown`・`to_plan_html`)にする(着手時の決定4)。
 - `to_markdown`・`to_html` に `chapters` 引数を足し、章を絞れるようにする。段階7の生成は、01〜06章だけを入力にする(23-4)。
 
-学習モード([introduction](./Phase-23-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-23-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

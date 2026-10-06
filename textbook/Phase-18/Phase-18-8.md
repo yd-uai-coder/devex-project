@@ -4,7 +4,7 @@
 
 CRUD 図(処理 × テーブル)の編集操作を純粋関数にまとめ、それを使う CRUD 図の表を作る。DFD の線から決まる R は人の編集でも外させず、人が書き換えたセルは AI の下書きの印を外す。
 
-学習モード([introduction](./Phase-18-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-18-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

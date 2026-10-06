@@ -4,7 +4,7 @@
 
 移植元エンジンの文字幅推定(`wrap`/`tw`/`cw`)を逐語移植し、レイアウト計算の内部表現(`LayoutNode`/`LayoutEdge`/`LayoutState`、出力スキーマ`LayoutModel`)を定義した上で、レーン幅・ノードサイズ・行位置・ポート座標を計算する`geometry.py`を実装する。
 
-学習モード([introduction](./Phase-9-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-9-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

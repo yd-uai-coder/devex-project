@@ -12,7 +12,7 @@
 - **気づき#1**: ルートが `template_id` をサービスへ渡していなかったのを直す。
 - 簡易ドキュメントモードの内部設計書に、ファイル単位の「モジュール一覧」の表を求める([Phase-14-1](../Phase-14/Phase-14-1.md) 決定#6)。
 
-学習モード([introduction](./Phase-15-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-15-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

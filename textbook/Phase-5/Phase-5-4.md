@@ -4,7 +4,7 @@
 
 Phase 5(5-1〜5-3)完了後にユーザーから追加された2件の依頼に対応する: (1) `devex-api`/`devex-ui`のREADME.mdが依然として汎用テンプレートの説明のままである点の是正、rootのREADME.mdへのリンク追加、(2) GitHub Actionsによる自動デプロイ設定の追加。あわせて、CI導入にあたって発覚した`devex-api`の既存lintエラー(49件)を是正する。
 
-納期モード([`Phase-5-introduction.md`](./Phase-5-introduction.md)参照)。
+自動実装モード: off([introduction](./Phase-5-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。
 
 ## この章で作成・更新したファイル
 

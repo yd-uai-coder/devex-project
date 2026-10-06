@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
-import tamaguiConfig from "@/tamagui.config";
+import tamaguiConfig from "../../../../../tamagui.config";
 import FileUpload, { validateFiles } from "../FileUpload";
 import type { FileUploadProps } from "../FileUpload";
 

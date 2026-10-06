@@ -4,7 +4,7 @@
 
 Phase-8-1の意味モデルを永続化するためのORMモデル・alembicマイグレーション・リポジトリを実装する。`data_items`(データ辞書、M2b)と`uml_diagrams`(UML図本体、M3)の2テーブルを新設し、既存の`CRUDRepository[ModelType]`・所有権スコープの`get_by_id`パターン(`ProjectRepository`と同じ考え方)を踏襲する。
 
-学習モード([introduction](./Phase-8-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-8-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

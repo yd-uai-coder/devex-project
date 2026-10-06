@@ -47,7 +47,7 @@ describe("useUmlEditorStore", () => {
     expect(stub.requests).toHaveLength(2);
   });
 
-  it("load は配置が null の図で自動レイアウトを1回実行する(M6 の初回)", async () => {
+  it("load は配置が null の図で自動レイアウトを1回実行する(初回)", async () => {
     stub.queue({ body: makeDiagram({ layout_model: null }) });
     stub.queue({ body: [] });
     stub.queue({ body: makeDiagram() });

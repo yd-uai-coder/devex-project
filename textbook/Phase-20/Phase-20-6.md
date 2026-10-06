@@ -4,7 +4,7 @@
 
 1つの処理の手順を編集する表を作る。列は Phase 14 で確定した7列(呼び出し元 → 呼び出し先 / 渡すデータ / 処理内容 / 結果 / DB 操作 / 分岐・例外)に、番号と「関数」を足したもの。選定理由と注記もここで編集する。編集した内容は `onChange` で呼び出し元(20-7 の `ProcedurePanel`)へ返し、保存は呼び出し元が行う。
 
-学習モード([introduction](./Phase-20-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-20-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

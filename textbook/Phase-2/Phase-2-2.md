@@ -4,7 +4,7 @@
 
 「認証済みユーザーが指定プロジェクトの所有者であること」を保証する依存関数(`get_current_project`/`CurrentProjectDep`)を追加し、以降の章(2-3〜2-5)が作る`/api/v1/projects/{project_id}/...`系ルート全てが、これを1行加えるだけで所有権チェックを済ませられるようにする。あわせて、JWTのリフレッシュトークンの受け渡し方式を、[`docs/internal_design.md`](../../docs/internal_design.md) 3.1節が定める**httpOnly Secure Cookie**方式に更新する(汎用テンプレート由来の`register`/`login`/`refresh`/`logout`がJSONボディでリフレッシュトークンをやり取りしていたため、Devexの決定済み仕様に合わせて改修する)。
 
-納期モード([`Phase-2-introduction.md`](./Phase-2-introduction.md)参照)。#14のSUT/ドライバ/スタブの言語化は省略するが、Cookie設定部分はセキュリティ影響があるため下記「テスト観点」で明記する。
+自動実装モード: off([introduction](./Phase-2-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。#14のSUT/ドライバ/スタブの言語化は省略するが、Cookie設定部分はセキュリティ影響があるため下記「テスト観点」で明記する。
 
 サンプルは [`textbook/samples/backend/`](../samples/backend/) に追加した。写経前提として [`Phase-2-1.md`](./Phase-2-1.md) の写経が完了していること(`Project`/`ProjectRepository`に依存する)。
 

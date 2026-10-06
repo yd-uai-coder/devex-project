@@ -4,7 +4,7 @@
 
 意味モデル(`app/uml/domain`の要素・関係)からレイアウト計算に必要なlane(レーン、列)・row(行)を算出する、移植元には無い新規アルゴリズムを実装する。移植元エンジンは`Diagram.node(id, lane, row, ...)`で人手指定する前提のため、この自動割り当てはdevex独自に設計する必要がある(`appendix/stage3-requirements-organization.md`診断3)。
 
-学習モード([introduction](./Phase-9-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-9-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

@@ -4,7 +4,7 @@
 
 1つの処理の手順を AI に書かせる入力(プロンプト)と、構造化出力のスキーマ、出力を 20-1 の `merge_procedure` に渡す形への変換を作る。E2E 用の固定の出力にも段階5の手順を足す。
 
-学習モード([introduction](./Phase-20-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-20-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

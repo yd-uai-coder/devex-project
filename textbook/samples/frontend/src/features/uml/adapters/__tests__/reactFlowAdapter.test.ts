@@ -31,7 +31,7 @@ describe("toReactFlow", () => {
     });
   });
 
-  it("折れ点がある辺は orthogonal、無い辺は smoothstep にする(D2)", () => {
+  it("折れ点がある辺は orthogonal、無い辺は smoothstep にする", () => {
     const layout = { ...COMPONENT_LAYOUT, edges: {} };
 
     const withPoints = toReactFlow(COMPONENT_MODEL, COMPONENT_LAYOUT, { dataItemNames: {} });

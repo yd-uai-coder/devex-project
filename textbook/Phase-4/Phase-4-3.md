@@ -4,7 +4,7 @@
 
 `docs/implementation_plan.md` 4.2節が定義するE2Eテスト(「ログイン→プロジェクト作成→チャットヒアリング→設計書生成→ダウンロード」)を、実ブラウザで検証できる基盤を作る。devex-uiにPlaywrightを導入し、devex-apiに「実際のGemini APIを一切呼ばず、決定論的な応答を返すFake LLMモード」を新設する。この章はテストシナリオ自体([`Phase-4-4.md`](./Phase-4-4.md))を書くための土台であり、本章では基盤(設定・スタブ・安全策)のみを扱う。
 
-学習モード(CLAUDE.md #21: MVPコアループそのものではないが、新規設計判断を多く含み#21(a)の「定型タグ過半数」条件を満たさないため)。
+自動実装モード: off([introduction](./Phase-4-introduction.md) 参照)。
 
 サンプルは [`textbook/samples/backend/`](../samples/backend/)・[`textbook/samples/frontend/`](../samples/frontend/) に追加・更新した。写経前提として[`Phase-4-1.md`](./Phase-4-1.md)・[`Phase-4-2.md`](./Phase-4-2.md)の写経が完了していること。
 
@@ -67,7 +67,7 @@ CLAUDE.md #3の原則(AIはsamples+教材のみ作成し、実リポジトリの
 
 本章の実機検証の過程で、`ChatGoogleGenerativeAI`に`timeout`(langchain-google-genaiの`timeout`パラメータ、既定`None`=無制限)を渡していなかったことに気づいた。`invoke_with_retry`(Phase 2-5)のリトライは**例外が発生した場合のみ**働く仕組みであり、応答がハングして例外すら発生しない場合には無力である。`settings.LLM_TIMEOUT_SECONDS`(既定60秒)を実クライアント構築時に渡すよう修正した。この発見と対応の詳細な検証(実際にタイムアウトさせた場合の挙動確認)は[`Phase-4-5.md`](./Phase-4-5.md)で扱う。
 
-## テスト観点(学習モード)
+## テスト観点
 
 SUT(テスト対象)/ドライバ(テストコード)/スタブ(テストダブル)の用語は[`Phase-2-3.md`](../Phase-2/Phase-2-3.md)で既出のためここでは関係の明記のみ行う。
 

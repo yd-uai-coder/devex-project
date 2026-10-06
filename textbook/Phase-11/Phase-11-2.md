@@ -4,7 +4,7 @@
 
 FE から UML API(Phase 8〜11-1)を呼ぶための型と関数を用意する。あわせて、`ApiError` にバックエンドの共通エラー形式の `code` を載せる。409 には「他で更新された(`VERSION_CONFLICT`)」と「生成中(`UML_GENERATION_IN_PROGRESS`)」の2つの意味があり、画面で扱いを変える必要があるためである。
 
-**納期モード**([introduction](./Phase-11-introduction.md)参照。型定義と薄いラッパーが中心で、定型が過半のため)。#14 の SUT/ドライバ/スタブの言語化は省略し、テストの一覧だけを載せる。
+自動実装モード: on([introduction](./Phase-11-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。#14 の SUT/ドライバ/スタブの言語化は省略し、テストの一覧だけを載せる。
 
 ## この章で作成・更新したファイル
 
@@ -60,7 +60,7 @@ export function computeLayout(projectId: string, diagramId: string): Promise<Uml
 - **`code` は `ApiError` の任意項目にする**。`code` を返さないエラー(例: notation 不一致の 400)もあるため、必須にはできない。既存の呼び出し側は `message` しか見ていないので、影響は無い。`devex-ui/CLAUDE.md` の `ApiError` の説明も更新した。
 - **フィクスチャをこの章で作る**(#15)。11-3 以降のテストが共有する3記法のサンプルは、ここで一度だけ定義する。
 
-## テスト(納期モードのため一覧のみ)
+## テスト(旧ルールの納期モードのため一覧のみ)
 
 - `client.test.ts`: `stubFetch` で 409・400・422 の応答を返し、`ApiError` の `status`・`message`・`code` を確かめる。
 - `umlApi.test.ts`: `stubFetch` の `requests` で URL・メソッド・本文を確かめる。

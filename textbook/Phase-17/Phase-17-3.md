@@ -9,14 +9,14 @@
 - データ項目の名前の解決を、UML 図の生成と共有する(`DataItemService.resolve_by_name`)。
 - 段階の検証・生成に渡す入力に、承認済みの段階1の内容と DFD の要約を足す。
 
-学習モード([introduction](./Phase-17-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-17-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
 | ファイル(`devex-api/backend/` 基準) | 新規/更新 | 写経レベル | 責務 |
 | --- | --- | --- | --- |
 | [`app/services/data_item_service.py`](../samples/backend/app/services/data_item_service.py) | 更新 | **コア** | `resolve_by_name`(名前でデータ辞書に解決し、無い項目だけ作る。commitしない) |
-| [`app/services/uml_generation_service.py`](../samples/backend/app/services/uml_generation_service.py) | 更新 | 定型 | `_resolve_data_items` の本体を `DataItemService.resolve_by_name` に移した |
+| `app/services/uml_generation_service.py` | 更新 | 定型 | `_resolve_data_items` の本体を `DataItemService.resolve_by_name` に移した |
 | [`app/services/design_stage_service.py`](../samples/backend/app/services/design_stage_service.py) | 更新 | **コア** | `_sources`(文書の本文・承認済みの段階の内容・DFD の要約)、`_dfd_summary` |
 | [`app/services/errors.py`](../samples/backend/app/services/errors.py) | 更新 | 定型 | 文書文字列だけ(`DESIGN_STAGE_INVALID` を生成の受け付けでも使う旨) |
 | [`app/services/design_stage_generation_service.py`](../samples/backend/app/services/design_stage_generation_service.py) | 更新 | **コア** | `StageGenerationContext`、`_invoke_structured`、`generate_data_flow`・`_save_group_dfd`、`STAGE_GENERATORS[2]`、`_has_draft`・`_check_request` |
@@ -24,7 +24,7 @@
 | ── ここからテスト ── | | | |
 | [`tests/unit/test_design_stage_generation.py`](../samples/backend/tests/unit/test_design_stage_generation.py) | 更新 | **コア** | 段階2の生成(DFD・データ項目まで書く、再生成、失敗時の取り消し、上限、グループ無し)、`resolve_by_name` |
 
-既存の [`tests/unit/test_uml_generation_service.py`](../samples/backend/tests/unit/test_uml_generation_service.py)(変更なし)が、移した名前の解決の写経ミスの番人になる(#12-4)。
+既存の `tests/unit/test_uml_generation_service.py`(変更なし)が、移した名前の解決の写経ミスの番人になる(#12-4)。
 
 ## 要点の抜粋
 

@@ -4,7 +4,7 @@
 
 devex-uiの既存`auth-store.ts`はリフレッシュトークンをlocalStorageに永続化しJSONボディでやり取りする設計だったが、バックエンドは[`Phase-2-2.md`](../Phase-2/Phase-2-2.md)でhttpOnly Secure Cookie方式に更新済みである。本章ではフロントエンド側をこのCookie方式に合わせて書き換え、ページリロード後もログイン状態を復元できるようにする(アクセストークンをメモリのみに保持する設計上、リロード直後は`bootstrap()`によるCookie経由のサイレントリフレッシュが唯一の復元手段になる)。
 
-納期モード([`Phase-3-introduction.md`](./Phase-3-introduction.md)参照)。#14のSUT/ドライバ/スタブの言語化は省略するが、Cookie送信部分はセキュリティ影響があるため下記「テスト観点」で明記する。
+自動実装モード: off([introduction](./Phase-3-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。#14のSUT/ドライバ/スタブの言語化は省略するが、Cookie送信部分はセキュリティ影響があるため下記「テスト観点」で明記する。
 
 サンプルは [`textbook/samples/frontend/`](../samples/frontend/) に追加した。写経前提として[`Phase-2-2.md`](../Phase-2/Phase-2-2.md)のバックエンドCookie化(`app/api/deps.py`・`app/schemas/auth.py`・`app/api/routes/auth.py`)の写経が完了していること。
 
@@ -19,14 +19,14 @@ devex-uiの既存`auth-store.ts`はリフレッシュトークンをlocalStorage
 | [`src/components/auth/AuthBootstrap.tsx`](../samples/frontend/src/components/auth/AuthBootstrap.tsx) | 新規 | 定型 | マウント時に`bootstrap()`を1回呼ぶだけの非表示コンポーネント |
 | [`src/components/auth/RequireAuth.tsx`](../samples/frontend/src/components/auth/RequireAuth.tsx) | 更新 | **コア** | `status==="loading"`(復元中)の間はログイン必須ダイアログの表示を保留する |
 | [`src/app/layout.tsx`](../samples/frontend/src/app/layout.tsx) | 更新 | 定型 | ルートレイアウトに`<AuthBootstrap/>`を1箇所マウントする |
-| [`src/app/(pages)/(sample)/others/protected-demo/page.tsx`](../samples/frontend/src/app/(pages)/(sample)/others/protected-demo/page.tsx) | 更新 | 定型 | `login()`呼び出しを新シグネチャ(`accessToken`のみ)に追従させる(デモページの動作自体は変更なし) |
+| `src/app/(pages)/(sample)/others/protected-demo/page.tsx` | 更新 | 定型 | `login()`呼び出しを新シグネチャ(`accessToken`のみ)に追従させる(デモページの動作自体は変更なし) |
 | ── ここからテスト(まとめて末尾) ── | | | |
 | [`src/lib/api/test-utils/fetch-stub.ts`](../samples/frontend/src/lib/api/test-utils/fetch-stub.ts) | 新規(フィクスチャ) | 定型 | `global.fetch`を差し替える最小限のスタブ。以降の章でも流用する |
 | [`src/components/auth/__tests__/auth-store.test.ts`](../samples/frontend/src/components/auth/__tests__/auth-store.test.ts) | 新規 | 定型 | `login`/`logout`/`refreshTokens`/多重リフレッシュ抑止の単体テスト |
 | [`src/components/auth/__tests__/AuthBootstrap.test.tsx`](../samples/frontend/src/components/auth/__tests__/AuthBootstrap.test.tsx) | 新規 | 定型 | マウント時に`bootstrap()`が1回だけ呼ばれ、何もレンダリングしないことの確認 |
 | [`src/components/auth/__tests__/RequireAuth.test.tsx`](../samples/frontend/src/components/auth/__tests__/RequireAuth.test.tsx) | 新規 | 定型 | `status`の3状態(loading/idle/success)ごとの表示切り替えの確認 |
 | [`src/app/__tests__/layout.test.tsx`](../samples/frontend/src/app/__tests__/layout.test.tsx) | 新規 | 定型 | `RootLayout`の要素ツリーに`AuthBootstrap`が含まれることの構造的確認 |
-| [`src/app/(pages)/(sample)/others/protected-demo/__tests__/page.test.tsx`](../samples/frontend/src/app/(pages)/(sample)/others/protected-demo/__tests__/page.test.tsx) | 新規 | 定型 | デモページのモックログインボタンが新シグネチャで動作することの確認 |
+| `src/app/(pages)/(sample)/others/protected-demo/__tests__/page.test.tsx` | 新規 | 定型 | デモページのモックログインボタンが新シグネチャで動作することの確認 |
 
 ## 主要な設計判断
 

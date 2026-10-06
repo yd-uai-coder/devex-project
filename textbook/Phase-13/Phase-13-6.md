@@ -8,30 +8,30 @@
 - 「図を再反映」「図付きでダウンロード(.zip)」のボタンと、D6 の注意書き。
 - 設計図の一覧(`/uml`)に、「図の元になった内部設計書が古い」ことを示す表示。
 
-学習モード([introduction](./Phase-13-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-13-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
 | ファイル(`devex-ui/`基準) | 新規/更新 | 写経レベル | 責務 |
 | --- | --- | --- | --- |
-| [`src/features/documents/anchors.ts`](../samples/frontend/src/features/documents/anchors.ts) | 新規 | **コア** | `DocumentSegment`、`splitByAnchors`、`svgDataUri`(純粋) |
-| [`src/features/documents/hooks/useDiagramEmbeds.ts`](../samples/frontend/src/features/documents/hooks/useDiagramEmbeds.ts) | 新規 | 定型 | 埋め込みの取得・再取得・エラー・取得済みか |
-| [`src/features/documents/components/DiagramEmbed.tsx`](../samples/frontend/src/features/documents/components/DiagramEmbed.tsx) | 新規 | **コア** | `embedNotices`(食い違い → 言葉)、SVG を img の data URI で表示 |
-| [`src/features/documents/components/DiagramSyncBar.tsx`](../samples/frontend/src/features/documents/components/DiagramSyncBar.tsx) | 新規 | 定型 | 反映されていない件数、再反映・zip のボタン、D6 の注意書き |
+| `src/features/documents/anchors.ts` | 新規 | **コア** | `DocumentSegment`、`splitByAnchors`、`svgDataUri`(純粋) |
+| `src/features/documents/hooks/useDiagramEmbeds.ts` | 新規 | 定型 | 埋め込みの取得・再取得・エラー・取得済みか |
+| `src/features/documents/components/DiagramEmbed.tsx` | 新規 | **コア** | `embedNotices`(食い違い → 言葉)、SVG を img の data URI で表示 |
+| `src/features/documents/components/DiagramSyncBar.tsx` | 新規 | 定型 | 反映されていない件数、再反映・zip のボタン、D6 の注意書き |
 | [`src/features/documents/components/DocumentMarkdownView.tsx`](../samples/frontend/src/features/documents/components/DocumentMarkdownView.tsx) | 更新 | **コア** | 内部設計書では `renderWithDiagrams` で分割して描く。再反映・zip の後に文書と埋め込みを取り直す |
-| [`src/features/uml/uml-store.ts`](../samples/frontend/src/features/uml/uml-store.ts) | 更新 | 定型 | `isSourceOutdated`(純粋) |
+| `src/features/uml/uml-store.ts` | 更新 | 定型 | `isSourceOutdated`(純粋) |
 | [`src/features/uml/uml-editor-store.ts`](../samples/frontend/src/features/uml/uml-editor-store.ts) | 更新 | 定型 | 承認に成功したら、文書一覧のキャッシュを捨てる |
-| [`src/features/uml/components/DiagramList.tsx`](../samples/frontend/src/features/uml/components/DiagramList.tsx) | 更新 | 定型 | 「内部設計書が更新されています」の表示 |
+| `src/features/uml/components/DiagramList.tsx` | 更新 | 定型 | 「内部設計書が更新されています」の表示 |
 | ── ここからテスト ── | | | |
 | [`src/features/uml/test-utils/umlFixtures.ts`](../samples/frontend/src/features/uml/test-utils/umlFixtures.ts) | 更新 | 定型 | `makeEmbed` |
-| [`src/features/documents/__tests__/anchors.test.ts`](../samples/frontend/src/features/documents/__tests__/anchors.test.ts) | 新規 | **コア** | 分割、連続した図、壊れたアンカー、繰り返し呼んでも同じ結果、data URI |
-| [`src/features/documents/hooks/__tests__/useDiagramEmbeds.test.ts`](../samples/frontend/src/features/documents/hooks/__tests__/useDiagramEmbeds.test.ts) | 新規 | 定型 | enabled のときだけ取得、失敗の扱い |
-| [`src/features/documents/components/__tests__/DiagramEmbed.test.tsx`](../samples/frontend/src/features/documents/components/__tests__/DiagramEmbed.test.tsx) | 新規 | **コア** | img の data URI、レビュー中の扱い、注意の出し分け |
-| [`src/features/documents/components/__tests__/DiagramSyncBar.test.tsx`](../samples/frontend/src/features/documents/components/__tests__/DiagramSyncBar.test.tsx) | 新規 | 定型 | 件数・注意書き、再反映、zip を Blob で保存、失敗 |
+| `src/features/documents/__tests__/anchors.test.ts` | 新規 | **コア** | 分割、連続した図、壊れたアンカー、繰り返し呼んでも同じ結果、data URI |
+| `src/features/documents/hooks/__tests__/useDiagramEmbeds.test.ts` | 新規 | 定型 | enabled のときだけ取得、失敗の扱い |
+| `src/features/documents/components/__tests__/DiagramEmbed.test.tsx` | 新規 | **コア** | img の data URI、レビュー中の扱い、注意の出し分け |
+| `src/features/documents/components/__tests__/DiagramSyncBar.test.tsx` | 新規 | 定型 | 件数・注意書き、再反映、zip を Blob で保存、失敗 |
 | [`src/features/documents/components/__tests__/DocumentMarkdownView.test.tsx`](../samples/frontend/src/features/documents/components/__tests__/DocumentMarkdownView.test.tsx) | 更新 | 定型 | 内部設計書では図と要素表を描く、それ以外では取得しない |
-| [`src/features/uml/__tests__/uml-store.test.ts`](../samples/frontend/src/features/uml/__tests__/uml-store.test.ts) | 更新 | 定型 | `isSourceOutdated` の表 |
+| `src/features/uml/__tests__/uml-store.test.ts` | 更新 | 定型 | `isSourceOutdated` の表 |
 | [`src/features/uml/__tests__/uml-editor-store.test.ts`](../samples/frontend/src/features/uml/__tests__/uml-editor-store.test.ts) | 更新 | 定型 | 承認で文書一覧のキャッシュを捨てること |
-| [`src/features/uml/components/__tests__/DiagramList.test.tsx`](../samples/frontend/src/features/uml/components/__tests__/DiagramList.test.tsx) | 更新 | 定型 | 版が違う図にだけ表示が出ること |
+| `src/features/uml/components/__tests__/DiagramList.test.tsx` | 更新 | 定型 | 版が違う図にだけ表示が出ること |
 
 ## 要点の抜粋
 

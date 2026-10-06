@@ -1,5 +1,5 @@
 // 作成：Phase-3-2
-"use client";
+"use client"
 
 import { Suspense } from "react";
 import Link from "next/link";

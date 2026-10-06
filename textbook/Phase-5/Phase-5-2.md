@@ -4,7 +4,7 @@
 
 [`docs/implementation_plan.md`](../../docs/implementation_plan.md) WBS区分5「クラウドインフラへのデプロイ検証」と、[`Phase-4-introduction.md`](../Phase-4/Phase-4-introduction.md)が申し送った2点(実Gemini APIキーでの動作確認、`LLM_TIMEOUT_SECONDS`の実測調整)に対応する。`docker-compose.prod.yml`スタックをローカルで本番相当に起動して疎通確認し、devex-uiのVercel向け本番ビルドを検証し、実`GOOGLE_API_KEY`での動作確認結果を`GEMINI_MODEL`・`LLM_TIMEOUT_SECONDS`に反映する。
 
-納期モード([`Phase-5-introduction.md`](./Phase-5-introduction.md)参照)。ただし`LLM_TIMEOUT_SECONDS`・`GEMINI_MODEL`の値の決定は実測に基づく判断のため、理由を明記する。
+自動実装モード: off([introduction](./Phase-5-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。ただし`LLM_TIMEOUT_SECONDS`・`GEMINI_MODEL`の値の決定は実測に基づく判断のため、理由を明記する。
 
 ## この章で作成・更新したファイル
 
@@ -154,7 +154,7 @@ Google側でモデルが廃止され、後継として`gemini-3.5-flash-lite`が
 
 30秒はまだ実測最大値の2.7倍という余裕があるため、`invoke_with_retry`(Phase 2由来、[`Phase-2-3.md`](../Phase-2/Phase-2-3.md)参照)の既定リトライ回数・間隔を変更する必要は無いと判断した(タイムアウト自体が起きる頻度が実測上極めて低いと見込まれるため)。
 
-## テスト観点(納期モード:「動くこと」の確認)
+## テスト観点(旧ルールの納期モード: 「動くこと」の確認)
 
 | 確認項目 | 手段 | 結果 |
 |---|---|---|

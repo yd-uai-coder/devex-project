@@ -4,7 +4,7 @@
 
 意味モデル(`app.uml.domain`)をレイアウト内部表現(`LayoutState`)へ変換するアダプタ(`app/uml/layout/__init__.py`)を実装し、`UmlDiagramService.compute_layout`(ノード数上限チェック・M4検証・`asyncio.to_thread`実行・永続化)と`POST .../diagrams/{id}/layout` APIで一連のパイプラインを完成させる。Phase 8-5で確定した「常にService経由、Repository直参照は層違反として禁止」方針をそのまま踏襲する。
 
-学習モード([introduction](./Phase-9-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-9-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

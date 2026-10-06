@@ -26,11 +26,13 @@
 
 ## モード宣言(#21)
 
-全章**学習モード**とする。Stage 3はMVPコアループ(チャット↔4文書生成)そのものではないため#21の強制対象外だが、新規サブシステムの最初の技術検証・設計判断であり、納期モードの条件(a)「定型タグが過半」を安全側で満たすと言い切れないため。
+自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
+
+> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
 
 ## 章一覧
 
-| 章 | トピック | ファイル作成 | モード | 依存 |
+| 章 | トピック | ファイル作成 | 旧モード | 依存 |
 |---|---|---|---|---|
 | [`Phase-7-1.md`](./Phase-7-1.md) | 仕様診断の確定: D5(図↔文書対応表)の確定根拠、Stage3要件の整理 | なし(設計討議) | 学習 | なし |
 | [`Phase-7-2.md`](./Phase-7-2.md) | `docs/*.md`への反映(D5確定内容・Stage3スコープの文書化) | `docs/`配下4ファイル(更新。文書ファイルのため#13/#15/#30の対象外) | 学習 | 7-1 |
@@ -41,8 +43,8 @@
 
 ## サンプルコード一覧
 
-- [`textbook/samples/frontend/src/features/uml/components/UmlPageContent.tsx`](../samples/frontend/src/features/uml/components/UmlPageContent.tsx)(新規、写経レベル: 定型。7-3)
-- [`textbook/samples/frontend/src/app/projects/[id]/uml/page.tsx`](../samples/frontend/src/app/projects/[id]/uml/page.tsx)(新規、写経レベル: 定型。7-3)
+- `textbook/samples/frontend/src/features/uml/components/UmlPageContent.tsx`(新規、写経レベル: 定型。7-3)
+- `textbook/samples/frontend/src/app/projects/[id]/uml/page.tsx`(新規、写経レベル: 定型。7-3)
 - 上記2ファイルの`__tests__/`配下のテスト(7-3、写経レベル: 定型)
 
 ## 実装前チェックリスト(#11、設計レベルの疑問に限定 #20)

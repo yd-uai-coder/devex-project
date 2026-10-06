@@ -4,7 +4,7 @@
 
 [`appendix/detailed-design-mode-organization.md`](../../appendix/detailed-design-mode-organization.md) 8章の未決事項1〜9を、[CLAUDE.md](../../CLAUDE.md) #28 の3段階(最重要/中程度/軽微)に分けて診断する。Claude が推奨案を示し、ユーザーが決定した。見せ方に関わる8・9は、[`Phase-14-2.md`](./Phase-14-2.md) でデモを作って確かめた。
 
-学習モード(詳細は [introduction](./Phase-14-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-14-introduction.md) 参照)。
 
 ## この章で作成・更新するファイル
 

@@ -8,7 +8,7 @@
 - モジュールのパスは、段階5の関与表の列の鍵になる。そのため空・重複を検証のエラーにする。
 - 検証は、構成図の要約を `StageSources.component_diagram` で受け取る。段階4の検証を `STAGE_VALIDATORS` に登録する。
 
-学習モード([introduction](./Phase-19-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-19-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

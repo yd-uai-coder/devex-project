@@ -1,4 +1,4 @@
-// 作成：Phase-3-2
+// 作成：Phase-3-2｜更新：24(T2同期)
 "use client";
 
 import { useState } from "react";
@@ -69,6 +69,8 @@ export function RegisterForm() {
             onChangeText={field.onChange}
             onBlur={field.onBlur}
             errorMessage={fieldState.error?.message}
+            // Phase-24(T2同期):追記
+            placeholder="名前を入力"
           />
         )}
       />

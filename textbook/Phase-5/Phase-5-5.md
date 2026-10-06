@@ -4,12 +4,12 @@
 
 実際にConoHa VPSへ`docker-compose.prod.yml`をデプロイしたところ、同じVPSに同居する別プロジェクトが既にポート80/443を専有しており、devex-api自身の`nginx`サービスが起動できなかった(`sudo ss -tlnp`で`docker-proxy`が0.0.0.0:80を掴んでいることを確認)。ユーザーは今後もこのVPSに複数プロジェクトを同居させる予定であり、標準的な構成を採りたいとのことだったため、devex-api固有の`nginx`+`certbot`を廃止し、VPS共有の**Traefik**リバースプロキシへ移行する。
 
-納期モード([`Phase-5-introduction.md`](./Phase-5-introduction.md)参照)。ただしTraefik採用の判断根拠(#17: 実在する消費者=複数プロジェクトの同居)は明記する。
+自動実装モード: off([introduction](./Phase-5-introduction.md) 参照)。旧ルールの納期モード(旧 #21)で書いた章。ただしTraefik採用の判断根拠(#17: 実在する消費者=複数プロジェクトの同居)は明記する。
 
 ## この章で作成・更新したファイル
 
 - [`devex-api/docker-compose.prod.yml`](../../devex-api/docker-compose.prod.yml) ── `nginx`・`certbot`サービスと関連ボリューム(`certbot_webroot`・`certbot_conf`)を削除。`backend`に外部ネットワーク`edge`への参加とTraefikルーティング用labelを追加
-- [`devex-api/nginx/nginx.prod.conf`](../../devex-api/nginx/nginx.prod.conf) ── 削除(本番専用ファイルのため。開発用`nginx/nginx.conf`は維持)
+- `devex-api/nginx/nginx.prod.conf` ── 削除(本番専用ファイルのため。開発用`nginx/nginx.conf`は維持)
 - [`devex-api/OPERATIONS.md`](../../devex-api/OPERATIONS.md) ── 全体構成図・「1. VPS初期セットアップ」(Traefik導入手順)・「3. 初回デプロイ手順」・「4. 新規プロジェクトをTraefik配下に追加する手順」(新設、旧「TLS証明書の取得・更新」を置き換え)・「7. 監視の最低限」を更新
 - [`devex-api/README.md`](../../devex-api/README.md) ── ディレクトリ構造・「本番環境」節を更新
 

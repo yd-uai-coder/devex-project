@@ -8,7 +8,7 @@
 - スクリプトが無効でも、全件を並べて表示し、アンカーで飛べる。
 - 図は SVG を中に入れる。
 
-学習モード([introduction](./Phase-22-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-22-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

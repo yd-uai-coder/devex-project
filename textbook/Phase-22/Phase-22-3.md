@@ -4,7 +4,7 @@
 
 `DocumentSource` と 22-2 の導出から、詳細設計書の Markdown(01〜06章)を書き出す。md は差分を取る・AI に読ませるための形で、章の間のリンクと生の HTML を持たず、ID を本文に書く。
 
-学習モード([introduction](./Phase-22-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-22-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

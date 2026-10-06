@@ -42,7 +42,7 @@
 
 1. Phase 0
 2. ユーザーから初期ヒアリング入力の構成案(基本ヒアリング4項目+環境設定4項目をまとめてPOST、その後チャット)が提示され、よりアクセシブルな構成への改善提案を依頼された。重視点: 初期入力段階で明確な設計・構想を求めすぎないこと、要件・設計はAIが判断しユーザー承認を経てドキュメント化すること。
-3. devex-ui/devex-apiを調査(TokenInput非制御・aria-labelなし、InputSuggestは静的フィルタのみ、動的コンボボックス前例なし、aria-invalid等未配線、chat_service.pyに構造化入力の前例なし)した上で、「大幅に簡略化」案をユーザーが選択。初期フォームを3自由記述項目+折りたたみ環境設定(静的チェックボックスグルーピング)に縮小し、機能提案・箇条書き化はチャット側に移す設計をREADME.mdに反映した。詳細は[`decision-digest.md`](../decision-digest.md)、[`Phase-0/Phase-0-3.md`](./Phase-0/Phase-0-3.md)参照。
+3. devex-ui/devex-apiを調査(TokenInput非制御・aria-labelなし、InputSuggestは静的フィルタのみ、動的コンボボックス前例なし、aria-invalid等未配線、chat_service.pyに構造化入力の前例なし)した上で、「大幅に簡略化」案をユーザーが選択。初期フォームを3自由記述項目+折りたたみ環境設定(静的チェックボックスグルーピング)に縮小し、機能提案・箇条書き化はチャット側に移す設計をREADME.mdに反映した。詳細は[`decision-digest.md`](./decision-digest.md)、[`Phase-0/Phase-0-3.md`](./Phase-0/Phase-0-3.md)参照。
 
 1. Phase 0
 2. ユーザー指摘: 「claudeは現在Phase1であると認識している?私はPhase0である認識である。何故なら、Phase1は既に実装段階であり、要件のすり合わせはPhase0であるから。また、まだPhase1を開始する旨は明示していない。」
@@ -54,7 +54,7 @@
 
 1. Phase 0
 2. ユーザー指示: 「本実装の開始前に現在の要件定義〜実装計画の内容について診断してもらいたい。システム開発において不足や不明瞭な部分はないか、意見が欲しい。」に対し、12項目の診断結果を提示。ユーザーから全項目の決定を得た(うち2. ストリーミング方式、4. ヒアリング完了判定基準、9. アクセシビリティ、10. JWT仕様の4項目はClaudeへの提案依頼)。10.については、将来別プロジェクトでも同仕様を再利用する想定のため、Devex完了後にテンプレートリポジトリ(devex-api/devex-ui)へ反映する申し送りの指示もあった。
-3. `docs/`配下4ファイルに12項目すべてを反映した。詳細は[`decision-digest.md`](../decision-digest.md)、[`Phase-0/Phase-0-5.md`](./Phase-0/Phase-0-5.md)参照。JWT仕様のテンプレートリポジトリへの反映は、今回は申し送りの記録のみとし、devex-api/devex-ui自体は変更していない。
+3. `docs/`配下4ファイルに12項目すべてを反映した。詳細は[`decision-digest.md`](./decision-digest.md)、[`Phase-0/Phase-0-5.md`](./Phase-0/Phase-0-5.md)参照。JWT仕様のテンプレートリポジトリへの反映は、今回は申し送りの記録のみとし、devex-api/devex-ui自体は変更していない。
 
 1. Phase 0
 2. ユーザー指示: 「共通ルールとしてPhase0内で今回と同じ検討を行う事をルールとする。」
@@ -91,9 +91,9 @@
 5. ユーザー選択: 「最小限のCRUD APIを今追加」(推奨)。`/projects/{id}/uml/data-items`系として実装。
 6. ユーザー確認: DFD検証規則「上位図と下位図の境界フローが一致する」(診断8)は`uml_diagrams`に階層列が無いため今のままでは検証できない。列を先に追加するか、規則をPhase 10へ申し送るか。
 7. ユーザーから、列追加の有無でPhase 10の設計判断がどう変わるか(見立て)を求められた。Claudeは診断8本文の「APIエンドポイント/バッチごとに1枚」という記述が示すフラットな複数図構成の可能性、列だけ追加してもノード単位の対応情報が別途必要になり手戻りになりうる点を提示した。
-8. ユーザー選択: 「案A: 列追加を見送り、規則をPhase 10へ申し送り」。ただし「Phase10開始時の設計判断は診断8本文どおりフラットな複数図に留める構成を前提に行う」という前提を明示的に付記するよう指示があった。この前提は[`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)・[`decision-digest.md`](../decision-digest.md)双方に反映済み。
+8. ユーザー選択: 「案A: 列追加を見送り、規則をPhase 10へ申し送り」。ただし「Phase10開始時の設計判断は診断8本文どおりフラットな複数図に留める構成を前提に行う」という前提を明示的に付記するよう指示があった。この前提は[`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)・[`decision-digest.md`](./decision-digest.md)双方に反映済み。
 9. ユーザー指示: 「Phase7-4にPhase9への申し送り事項の記載がある。Phase9開始時に申し送りを見落とさないようにしておいて欲しい」。
-10. 対応: [`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)「次のフェーズ」に明記し、[`decision-digest.md`](../decision-digest.md)のPhase 8完了エントリにも参照を残した。
+10. 対応: [`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)「次のフェーズ」に明記し、[`decision-digest.md`](./decision-digest.md)のPhase 8完了エントリにも参照を残した。
 
 ## Phase 8完了後(ルーター層の設計統一)
 
@@ -622,3 +622,73 @@
      - [`Phase-3`](./Phase-3/Phase-3-introduction.md)・[`Phase-10`](./Phase-10/Phase-10-introduction.md)〜[`Phase-14`](./Phase-14/Phase-14-introduction.md) の introduction の「後続 Phase での改訂」
      - `docs/*.md`(撤回の blockquote)
      - samples のタグは `Phase-24`、ヘッダは `更新：…,24(完了後の調整)`
+
+### ステージ4完了後 ── 振り返り: 進行上の課題の整理と進行ルールの改訂
+
+1. ステージ4のデプロイ完了後(2026-10-06)。振り返りを行うセッション。新しい Phase は作らない(#18)。
+2. 質問・相談内容:
+   - ユーザーの依頼: これまでの開発を振り返る。アンケートより先に、本プロジェクトの進行で挙がった課題を整理したい。
+   - 前提: 次のステージで、Devex に「実装計画から実装手順書まで作る機能」を足す構想がある。その前に開発ルールを整理・改善し、進行で生まれる教材を実装手順書のサンプルにしたい。
+   - Claude が記録から拾った進行上の課題40件を、T1〜T9 にまとめて示した。ユーザーの回答は次のとおり。
+     - T1・T3: 直接実装に切り替えた理由は、手で実装しても設計の理解を思ったほど実感できなかったこと。いったん自動実装で進め、完成品から仕様を追う方針を重視した。今後は学習モード / 納期モードではなく、自動実装モードの on/off にしたい。納期モードでは工程をあまり省けず、テスト観点が省かれるが、テストは設計理解の肝なので省きたくない。振り返りと digest を後回しにしたのは、CL 開発の方針としてまとめて吟味したかったから。
+     - T2: 回答保留。
+     - T4: 今後は、コミットとプッシュをユーザーが手で行う。
+     - T5: E2E は毎 Phase ではなく、必要な Phase で過去の分も含めて流せばよい。
+     - T6・T8: 問題と思わない。AI のコードは提案で、最終決定はユーザーが行う。
+     - T7: 実装漏れは手で実装すれば起こり得るもので、そのためにテストを回している。申し送りは、introduction に未消化の申し送りを溜める節を置くことをルール化する。
+     - T9: このまま続ける。
+   - Claude からの確認への回答:
+     - このセッションの範囲: 課題の記録とルールの改訂(推奨どおり)。
+     - #19: 廃止する。
+     - モードの単位: Phase(推奨どおり)。
+     - 過去の教材: 新しい表記に書き換える。
+3. 回答と対応方針:
+   - [`CLAUDE.md`](../CLAUDE.md) を改訂した。
+     - #21: 自動実装モードに改定。
+     - #19: 廃止。
+     - #10・#24: ステージ完了時にまとめてよい、という運用注記を足した。
+     - #6: 構成要素に「未消化の申し送り」を足した。
+     - 新設: #35〜#38。
+     - ゴール2: 文言を改めた。
+   - Phase 1〜24 の教材のモード宣言を書き換えた。
+     - 章の冒頭: `自動実装モード: off|on`。旧・納期モードの章には、SUT/ドライバ/スタブの言語化を省いている旨を残した。
+     - introduction の「モード宣言」節: 新しい宣言と、旧ルールでの宣言の要約。
+     - 章一覧の列名: 「旧モード」。
+   - 記録:
+     - [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) を新設した。
+     - [`decision-digest.md`](./decision-digest.md) に「ステージ4完了後 ── 進行ルールの改訂」を追記した。
+   - 別のセッションに回すもの: T2、ステージ別の振り返り4本、digest の Phase 13〜24、Phase-24-4 の本番の記録、所感の採否と handoff v2、ゴール3。
+
+
+### T2(ステージ4完了後)── 本体・samples・教材の三重管理
+
+1. ステージ4完了後の振り返りで保留にした T2 を扱うセッション(2026-10-06)。新しい Phase は作らない(#18)。
+2. 質問・相談内容:
+   - ユーザーの依頼: 「T2 を開始する」。計画(実測 → 案の比較 → 決定 → 記録)に沿って進める。
+   - Claude が実測を示した。samples 426 ファイルのうち、コードが一致 367、並び順だけの差 6、コードの差 37、samples のみ 13。教材のリンク切れは 82 件。本体のコメントの Phase の経緯は 0 件。また、devex-api の作業ツリーが `stage2-phase6` ブランチのままになっていた。
+   - 案: (a) 現状維持(手で同期)、(b) 本体の差分から samples を生成、(c) on では samples を作らない。
+   - ユーザーの選択:
+     - (c) を選んだ。
+     - 既存の samples は本体に合わせ続ける。on の Phase でも、既存の samples にあるファイルを本体で変えたら毎回 samples も更新する。
+     - 削除した samples へのリンクは外すだけにする。
+     - フォルダ再整理は見送りを確定する。
+   - 同期の途中で、samples の側が先で本体に無いもの(off の Phase 2〜6 の写経漏れ)が見つかった。ユーザーは「本体に足す」を選んだ。
+3. 回答と対応方針:
+   - 道具を [`tools/`](./tools/README.md) に置いた(`samples_check.py`・`link_check.py`・`tagmerge.py`)。
+   - 既存の samples を本体に合わせた。
+     - lint 対応・調整を #29 のタグつきで反映した。
+     - テスト名の Phase 番号を外した。
+     - 本体で削除済みの 9 ファイルを削除した。
+     - `package.json` を置き換えた。
+     - キャッシュを削除した。
+   - 教材のリンク切れを 0 件にした(80 件はリンクを外し、`q_a.md` の相対パス 4 件を直した)。
+   - 本体に足した(ユーザーが devex-api を `stage4` に切り替えた後):
+     - `invoke_with_retry` に messages を渡す(`chat_service.py`・`doc_generator_service.py`)。
+     - `get_gemini_llm` の戻り値を `Any` にした。
+     - `UnsupportedFileTypeError` に code `UNSUPPORTED_FILE_TYPE` を足した。
+     - `test_gemini.py` にテスト2件、`test_llm_retry.py` にメッセージの assert を足した。
+     - devex-ui の `documentsApi.test.ts` の import 行の結合を直した。
+     - 追加で見つかった分(戻り値の型・code・import 行)もユーザーが承認した。
+   - 検査は `samples_check.py` が不一致 0 件(例外 5・並び順のみ差 8)、`link_check.py` がリンク切れ 0 件。
+   - CLAUDE.md の #21・#29 を改訂し、#3・#9・#12 に運用注記を足した。
+   - 記録: [`decision-digest.md`](./decision-digest.md)「T2(ステージ4完了後)」、[`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) の T2 欄。

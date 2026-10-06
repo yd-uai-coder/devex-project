@@ -4,7 +4,7 @@
 
 未決事項8(05「主要処理の手順」が複数あるときの見せ方)と9(06「処理ロジックの詳細」が05のどの手順に紐づくかと、その見せ方)について、Claude の提案を devex-ui のデモページ `/detailed-design-demo` で動かし、ユーザーが操作して確定した。あわせて、詳細設計書をファイルへ出力する形式を決めた。
 
-学習モード(詳細は [introduction](./Phase-14-introduction.md) 参照)。
+自動実装モード: on([introduction](./Phase-14-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 

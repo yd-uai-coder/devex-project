@@ -4,7 +4,7 @@
 
 AI 生成のために3つの列を `uml_diagrams` に追加する。図を識別するキー(`subject`)、AI に渡した対象の選択(`scope`)、生成の状態(`generation_status`/`generation_error`)である。あわせて、生成リクエストの履歴テーブル `uml_generation_runs` を新設する。さらに、DFD をフラット構成(処理ごとに1枚)に確定したことを受けて、Phase 8 の DFD 検証を改訂する(#12)。境界フロー一致規則は撤回し、未参照データ項目の判定は全 DFD を横断するようにする。
 
-学習モード([introduction](./Phase-10-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-10-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
@@ -16,14 +16,14 @@ AI 生成のために3つの列を `uml_diagrams` に追加する。図を識別
 | [`app/models/__init__.py`](../samples/backend/app/models/__init__.py) | 更新 | 定型 | `UmlGenerationRun` を re-export する(alembic 用) |
 | [`alembic/versions/b7c8d9e0f1a2_add_uml_generation.py`](../samples/backend/alembic/versions/b7c8d9e0f1a2_add_uml_generation.py) | 新規 | 定型 | 列の追加、Phase 8〜9 の重複行の削除、一意制約、履歴テーブルの作成 |
 | [`app/repositories/uml_diagram.py`](../samples/backend/app/repositories/uml_diagram.py) | 更新 | 定型 | `create` に subject/scope/generation_status を追加。`list_by_notation`・`get_by_subject`・`has_generating` を追加 |
-| [`app/repositories/uml_generation_run.py`](../samples/backend/app/repositories/uml_generation_run.py) | 新規 | 定型 | `create`・`get_by_id`(project スコープ)・`list_recent` |
+| `app/repositories/uml_generation_run.py` | 新規 | 定型 | `create`・`get_by_id`(project スコープ)・`list_recent` |
 | [`app/uml/validation/dfd_rules.py`](../samples/backend/app/uml/validation/dfd_rules.py) | 更新 | **コア** | `referenced_elsewhere` 引数で未参照判定を横断化する。境界フロー規則は撤回の blockquote で記録する |
 | [`app/uml/validation/__init__.py`](../samples/backend/app/uml/validation/__init__.py) | 更新 | 定型 | `validate_diagram` に `referenced_elsewhere` を通す |
 | [`pyproject.toml`](../samples/backend/pyproject.toml) | 更新 | 定型 | pyright の ignore に `uml_generation_run.py` を追加する(project スコープの `get_by_id` override。既存リポジトリと同じ割り切り) |
 | ── ここからテスト ── | | | |
 | [`tests/fixtures/uml.py`](../samples/backend/tests/fixtures/uml.py) | 更新 | 定型 | 本章の担当分として、`create_project`・`create_project_with_internal_design`・`create_empty_diagram` を追加する |
 | [`tests/unit/test_uml_diagram_repository.py`](../samples/backend/tests/unit/test_uml_diagram_repository.py) | 更新 | 定型 | `get_by_subject`・`has_generating`・`list_by_notation` |
-| [`tests/unit/test_uml_generation_run_repository.py`](../samples/backend/tests/unit/test_uml_generation_run_repository.py) | 新規 | 定型 | 'running' での作成、project スコープ、件数の制限 |
+| `tests/unit/test_uml_generation_run_repository.py` | 新規 | 定型 | 'running' での作成、project スコープ、件数の制限 |
 | [`tests/unit/test_uml_validation.py`](../samples/backend/tests/unit/test_uml_validation.py) | 更新 | **コア** | 他の DFD が参照している項目は警告しないこと |
 
 ## 要点の抜粋

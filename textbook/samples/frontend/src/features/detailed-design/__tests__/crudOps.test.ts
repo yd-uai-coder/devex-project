@@ -69,7 +69,7 @@ describe("crudOps", () => {
   });
 
   // Phase-18-8:追記(画面確認後の修正)
-  it("ER に同じ名前のテーブルが2つあっても、列は1つにする(Phase 18)", () => {
+  it("ER に同じ名前のテーブルが2つあっても、列は1つにする", () => {
     expect(crudTables(["new_table", "users", "New_Table "], { cells: [] })).toEqual([
       "new_table",
       "users",

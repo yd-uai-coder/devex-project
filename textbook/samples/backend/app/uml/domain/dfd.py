@@ -1,4 +1,4 @@
-# 作成：Phase-8-1
+# 作成：Phase-8-1｜更新：24(T2同期)
 # 写経レベル: コア ── M2b(自由記述ラベル禁止・DataItem参照必須)を型で強制する設計判断そのもの。
 import uuid
 from typing import Annotated, Literal
@@ -33,7 +33,12 @@ class DfdDataStore(UmlElement):
     element_type: Literal["data_store"] = "data_store"
 
 
-DfdElement = Annotated[
+# Phase-24(T2同期)：更新(ruff の UP040 に合わせ、型の別名を type 文にした)
+# DfdElement = Annotated[
+#     DfdProcess | DfdExternalEntity | DfdDataStore, Field(discriminator="element_type")
+# ]
+# ↓↓
+type DfdElement = Annotated[
     DfdProcess | DfdExternalEntity | DfdDataStore, Field(discriminator="element_type")
 ]
 

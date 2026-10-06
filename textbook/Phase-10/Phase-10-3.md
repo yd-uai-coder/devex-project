@@ -4,7 +4,7 @@
 
 10-2 の出力スキーマを、Phase 8 のドメインの意味モデル(`ComponentSemanticModel`/`ErSemanticModel`/`DfdSemanticModel`)へ変換する純粋関数を作る。DFD だけは、データ項目の名前から UUID への対応表を外から受け取る。
 
-学習モード([introduction](./Phase-10-introduction.md)参照)。
+自動実装モード: on([introduction](./Phase-10-introduction.md) 参照)。
 
 ## この章で作成・更新したファイル
 
