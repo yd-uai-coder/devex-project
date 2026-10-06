@@ -120,7 +120,7 @@ cd ../devex-api && docker compose up -d backend                                 
   - `test_fake_llm_detailed_design.py`(24-1)は、以前の Phase のモジュールだけを import する: `E2eFakeLLM`(Phase 4〜23)、`has_errors`・`validate_stage`(Phase 16)、`DesignStageGenerationService`(Phase 16)、`DesignStageService`(Phase 15)、`DetailedDesignExportService`(Phase 22)、`UmlDiagramService`(Phase 8〜12)、fixture の `create_detailed_project`(Phase 16)。
   - `helpers.ts`(24-2)は `@playwright/test` だけを import する。`devex-flow.spec.ts`(24-2)は `helpers`(24-2)を、`detailed-design-flow.spec.ts`(24-3)は `helpers`(24-2)と `node:fs/promises` を import する。
   - 各章のテストが、その章で作った全ファイルを import するかも突き合わせた。24-2 の `helpers.ts` は `devex-flow.spec.ts` が、24-3 の spec は自分自身が確かめる。
-- **本番での確認**: ユーザーに依頼中([`Phase-24-4.md`](./Phase-24-4.md)「本番での確認の記録」に書く)。
+- **本番での確認**: ユーザーが確かめ、すべて問題なしだった([`Phase-24-4.md`](./Phase-24-4.md)「本番での確認の記録」)。
 
 ## 後続 Phase への申し送り
 

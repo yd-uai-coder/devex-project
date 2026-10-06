@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整)
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整)
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -95,6 +95,12 @@ class GenerationFailedError(BadGatewayError):
     code: ClassVar[str | None] = "LLM_API_ERROR"
 
 
+
+# Phase-24:追記
+class InvalidProjectNameError(BadRequestError):
+    """プロジェクト名が空、または上限(40文字)を超えている場合に送出する。"""
+
+    code: ClassVar[str | None] = "INVALID_PROJECT_NAME"
 # Phase-8-2:追記 ── ステージ3(UML設計図パイプライン)
 class UmlDiagramNotFoundError(NotFoundError):
     """指定したUML図IDが存在しない、または他プロジェクトのものである場合に送出する。"""

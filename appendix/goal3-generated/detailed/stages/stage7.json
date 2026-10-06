@@ -1,0 +1,316 @@
+{
+  "stage": 7,
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "risks": [
+      {
+        "risk": "Gemini Flash-Lite APIの無料枠上限超えやレートリミットによる設計書生成・チャットの失敗",
+        "mitigation": "リトライ処理や適切な例外ハンドリングを実装する。スケジュールが逼迫した場合は、4種の設計書のうち一部の自己診断機能を縮小・後回しにし、手動再試行機能で代替する。"
+      },
+      {
+        "risk": "LangGraphによる対話制御の複雑化によるスケジュール遅延",
+        "mitigation": "対話の必須観点を固定テンプレート化し、複雑な動的分岐を削ることで実装工数を削減する。"
+      },
+      {
+        "risk": "バックグラウンドでの4種設計書逐次生成におけるタイムアウトやパフォーマンス悪化",
+        "mitigation": "非同期処理キューまたはバックグラウンドタスクを安全に切り離し、進捗状態をDBで管理してフロントエンドからポーリングまたは確認できる仕組みに変更する。"
+      },
+      {
+        "risk": "PDF参考資料のテキスト抽出精度やフォーマット起因のパースエラー",
+        "mitigation": "テキスト抽出の許容上限を設け、PDFが読めない場合はテキスト(txt/md)でのアップロードを推奨する案内をUIに追加して回避する。"
+      }
+    ],
+    "milestones": [
+      {
+        "goal": "開発環境が構築され、JWT認証およびエラーハンドリング・Redis連携を含む横断事項が機能するようになる。",
+        "name": "マイルストーン1: 環境構築と認証・横断事項の実装",
+        "tasks": [
+          {
+            "area": "準備",
+            "title": "Docker Composeおよびプロジェクトのディレクトリ構成と設定ファイルを作成する",
+            "modules": [
+              "docker-compose.yml",
+              "Dockerfile",
+              "frontend/package.json"
+            ],
+            "function_ids": []
+          },
+          {
+            "area": "バックエンド",
+            "title": "JWT認証およびパスワードハッシュ化・Redisによるトークン失効管理を実装する",
+            "modules": [
+              "api/routes/auth.py",
+              "services/auth_service.py",
+              "repositories/user_repository.py",
+              "cache/redis_client.py"
+            ],
+            "function_ids": [
+              "F-01",
+              "F-02",
+              "F-03"
+            ]
+          },
+          {
+            "area": "フロントエンド",
+            "title": "Next.jsとTamaguiを用いてサインアップ・ログイン画面を実装する",
+            "modules": [
+              "frontend"
+            ],
+            "function_ids": [
+              "F-01",
+              "F-02"
+            ]
+          },
+          {
+            "area": "テスト",
+            "title": "認証系APIの単体テストおよび横断事項のエラーハンドリングのテストを実装する",
+            "modules": [],
+            "function_ids": [
+              "F-01",
+              "F-02",
+              "F-03"
+            ]
+          },
+          {
+            "area": "デプロイ",
+            "title": "GitHub Actionsによる自動デプロイ設定を行う",
+            "modules": [
+              ".github/workflows/deploy.yml"
+            ],
+            "function_ids": []
+          }
+        ],
+        "priority": "Must",
+        "function_ids": [
+          "F-01",
+          "F-02",
+          "F-03"
+        ]
+      },
+      {
+        "goal": "プロジェクトの作成および参考資料（txt/md/pdf）のアップロード・テキスト抽出ができるようになる。",
+        "name": "マイルストーン2: プロジェクト管理と参考資料アップロード機能の実装",
+        "tasks": [
+          {
+            "area": "バックエンド",
+            "title": "プロジェクト一覧取得・作成・詳細取得およびGeminiを利用した参考資料のテキスト抽出処理を実装する",
+            "modules": [
+              "api/routes/projects.py",
+              "services/project_service.py",
+              "repositories/project_repository.py",
+              "external/gemini_client.py"
+            ],
+            "function_ids": [
+              "F-04",
+              "F-05",
+              "F-06"
+            ]
+          },
+          {
+            "area": "フロントエンド",
+            "title": "プロジェクト一覧画面およびプロジェクト作成・参考資料アップロード画面を実装する",
+            "modules": [
+              "frontend"
+            ],
+            "function_ids": [
+              "F-04",
+              "F-05",
+              "F-06"
+            ]
+          },
+          {
+            "area": "テスト",
+            "title": "プロジェクト管理およびファイル抽出処理の結合テストを実装する",
+            "modules": [],
+            "function_ids": [
+              "F-04",
+              "F-05",
+              "F-06"
+            ]
+          },
+          {
+            "area": "デプロイ",
+            "title": "プロジェクト管理機能を含めてステージング環境へデプロイする",
+            "modules": [],
+            "function_ids": []
+          }
+        ],
+        "priority": "Must",
+        "function_ids": [
+          "F-04",
+          "F-05",
+          "F-06"
+        ]
+      },
+      {
+        "goal": "LangGraph制御による対話型ヒアリングとSSEストリーミングによるリアルタイム応答が可能になる。",
+        "name": "マイルストーン3: AI対話ヒアリングとSSEストリーミングの実装",
+        "tasks": [
+          {
+            "area": "バックエンド",
+            "title": "LangGraphによる対話制御ロジックとSSEストリーミング応答のエンドポイントを実装する",
+            "modules": [
+              "api/routes/projects.py",
+              "services/ai_service.py",
+              "external/gemini_client.py"
+            ],
+            "function_ids": [
+              "F-07"
+            ]
+          },
+          {
+            "area": "フロントエンド",
+            "title": "SSEストリーミングを受信してリアルタイム表示するチャット画面を実装する",
+            "modules": [
+              "frontend"
+            ],
+            "function_ids": [
+              "F-07"
+            ]
+          },
+          {
+            "area": "テスト",
+            "title": "チャット送信およびSSEストリーミングのモックテストを実装する",
+            "modules": [],
+            "function_ids": [
+              "F-07"
+            ]
+          },
+          {
+            "area": "デプロイ",
+            "title": "チャット機能を含めてサーバーへデプロイする",
+            "modules": [],
+            "function_ids": []
+          }
+        ],
+        "priority": "Must",
+        "function_ids": [
+          "F-07"
+        ]
+      },
+      {
+        "goal": "ヒアリング結果の承認から非同期による4種の設計書生成、および自己診断とバージョン管理付き閲覧・プレビューができるようになる。",
+        "name": "マイルストーン4: 4種設計書の自動生成と自己診断・閲覧機能の実装",
+        "tasks": [
+          {
+            "area": "バックエンド",
+            "title": "ヒアリング承認処理、4種設計書の非同期逐次生成処理、自己診断実行処理およびドキュメント永続化を実装する",
+            "modules": [
+              "api/routes/projects.py",
+              "api/routes/documents.py",
+              "services/ai_service.py",
+              "repositories/document_repository.py",
+              "external/gemini_client.py"
+            ],
+            "function_ids": [
+              "F-08",
+              "F-09",
+              "F-10",
+              "F-11"
+            ]
+          },
+          {
+            "area": "フロントエンド",
+            "title": "承認ボタン、設計書のプレビュー・コピー・ダウンロード画面、および自己診断結果表示画面を実装する",
+            "modules": [
+              "frontend"
+            ],
+            "function_ids": [
+              "F-08",
+              "F-09",
+              "F-10",
+              "F-11"
+            ]
+          },
+          {
+            "area": "テスト",
+            "title": "設計書生成のバックグラウンド処理および自己診断機能の結合テストを実装する",
+            "modules": [],
+            "function_ids": [
+              "F-08",
+              "F-09",
+              "F-10",
+              "F-11"
+            ]
+          },
+          {
+            "area": "デプロイ",
+            "title": "MVPの全機能を含む本番環境への自動デプロイを実施する",
+            "modules": [
+              ".github/workflows/deploy.yml"
+            ],
+            "function_ids": []
+          }
+        ],
+        "priority": "Must",
+        "function_ids": [
+          "F-08",
+          "F-09",
+          "F-10",
+          "F-11"
+        ]
+      }
+    ],
+    "environment": "開発環境としてPython 3.13、FastAPI、Next.js (App Router) + Tamagui、PostgreSQL、Redisを使用する。コンテナ化にはDocker Composeを用い、環境差異を排除する。CI/CDパイプラインにはGitHub Actionsを利用し、mainブランチへのpushをトリガーとしてVPS環境への自動デプロイを行う。自動テストはpytestおよびフロントエンドのテストフレームワークを用いて結合・単体テストを担保する。",
+    "crosscutting": [
+      {
+        "topic": "例外と HTTP",
+        "policy": "システム内で発生した例外は、APIの各エンドポイントにて一括してハンドリングし、適切なHTTPステータスコードに変換する。入力値の検証エラーは400 Bad Request、認証エラーは401 Unauthorized、リソースが見つからない場合は404 Not Found、予期せぬ内部エラーは500 Internal Server Errorを返却する。",
+        "modules": [
+          "api/routes/auth.py",
+          "api/routes/projects.py",
+          "api/routes/documents.py"
+        ]
+      },
+      {
+        "topic": "認証",
+        "policy": "認証にはJWTを使用し、アクセストークンの有効期限は30分、リフレッシュトークンの有効期限は14日とする。リフレッシュトークンはHttpOnly Cookieに格納して安全に送信し、アクセストークンはAuthorizationヘッダーを通じて検証する。ログアウト時にはRedisを用いてトークンをブラックリストに追加し失効させる。",
+        "modules": [
+          "services/auth_service.py",
+          "cache/redis_client.py"
+        ]
+      },
+      {
+        "topic": "トランザクション",
+        "policy": "データベースへの書き込みおよび更新処理は、永続化層の各リポジトリでトランザクション管理を行う。サービス層におけるビジネスロジックの処理が正常に完了した段階で明示的に commit を実行し、例外発生時には確実に rollback を行うこと。",
+        "modules": [
+          "repositories/user_repository.py",
+          "repositories/project_repository.py",
+          "repositories/document_repository.py"
+        ]
+      },
+      {
+        "topic": "ログ",
+        "policy": "すべてのAPIリクエストおよびエラー発生時には、処理ID、タイムスタンプ、ユーザーID、エラーメッセージなどの詳細情報を構造化ログとして出力する。セキュリティ上の理由から、パスワードやJWTアクセストークンなどの機密情報はログに出力しないこと。",
+        "modules": [
+          "api/routes/auth.py",
+          "api/routes/projects.py",
+          "api/routes/documents.py"
+        ]
+      },
+      {
+        "topic": "レート制限",
+        "policy": "APIの乱用を防ぐため、Redisを活用してリクエストのレート制限（Rate Limiting）を実装する。一定時間内に許容される最大リクエスト数を超過したアクセスに対しては、429 Too Many Requestsを返却する。",
+        "modules": [
+          "cache/redis_client.py"
+        ]
+      },
+      {
+        "topic": "外部サービスの呼び出し",
+        "policy": "Gemini Flash-Lite APIなどの外部サービスとの通信では、ネットワークタイムアウトやレートリミット超過などの一時的な障害を考慮し、適切な例外処理およびリトライの方針を適用する。",
+        "modules": [
+          "external/gemini_client.py"
+        ]
+      }
+    ]
+  },
+  "updated_at": "2026-10-06T05:45:25.550981Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": []
+}

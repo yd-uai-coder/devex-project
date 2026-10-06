@@ -1,0 +1,159 @@
+{
+  "stage": 1,
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "groups": [
+      "auth",
+      "projects",
+      "chat",
+      "approve",
+      "documents"
+    ],
+    "functions": [
+      {
+        "id": "F-01",
+        "kind": "API",
+        "name": "新規ユーザー登録を行う",
+        "group": "auth",
+        "screens": [
+          "SCR-002"
+        ],
+        "summary": "新規ユーザーアカウントを作成する。",
+        "trigger": "POST /api/v1/auth/signup",
+        "group_initial": "auth"
+      },
+      {
+        "id": "F-02",
+        "kind": "API",
+        "name": "ログインを行う",
+        "group": "auth",
+        "screens": [
+          "SCR-001"
+        ],
+        "summary": "JWTアクセストークン発行およびリフレッシュトークンCookie設定を行う。",
+        "trigger": "POST /api/v1/auth/login",
+        "group_initial": "auth"
+      },
+      {
+        "id": "F-03",
+        "kind": "API",
+        "name": "ログアウトを行う",
+        "group": "auth",
+        "screens": [
+          "SCR-003"
+        ],
+        "summary": "トークンを無効化する。",
+        "trigger": "POST /api/v1/auth/logout",
+        "group_initial": "auth"
+      },
+      {
+        "id": "F-04",
+        "kind": "API",
+        "name": "プロジェクト一覧を取得する",
+        "group": "projects",
+        "screens": [
+          "SCR-003"
+        ],
+        "summary": "プロジェクト一覧を取得する。",
+        "trigger": "GET /api/v1/projects",
+        "group_initial": "projects"
+      },
+      {
+        "id": "F-05",
+        "kind": "API",
+        "name": "プロジェクトを作成し参考資料をアップロードする",
+        "group": "projects",
+        "screens": [
+          "SCR-004"
+        ],
+        "summary": "プロジェクトを作成し、参考資料をアップロードする。",
+        "trigger": "POST /api/v1/projects",
+        "group_initial": "projects"
+      },
+      {
+        "id": "F-06",
+        "kind": "API",
+        "name": "プロジェクト詳細を取得する",
+        "group": "projects",
+        "screens": [
+          "SCR-005",
+          "SCR-006"
+        ],
+        "summary": "プロジェクトの詳細情報を取得する。",
+        "trigger": "GET /api/v1/projects/{id}",
+        "group_initial": "projects"
+      },
+      {
+        "id": "F-07",
+        "kind": "API",
+        "name": "チャットメッセージを送信する",
+        "group": "chat",
+        "screens": [
+          "SCR-005"
+        ],
+        "summary": "チャットメッセージを送信し、SSEストリーミング応答を返す。",
+        "trigger": "POST /api/v1/projects/{id}/chat",
+        "group_initial": "chat"
+      },
+      {
+        "id": "F-08",
+        "kind": "API+バッチ",
+        "name": "ヒアリング結果を承認し設計書生成をトリガーする",
+        "group": "approve",
+        "screens": [
+          "SCR-005"
+        ],
+        "summary": "ヒアリング結果の承認を受け付け、裏で設計書生成の非同期処理をトリガーする。",
+        "trigger": "POST /api/v1/projects/{id}/approve",
+        "group_initial": "approve"
+      },
+      {
+        "id": "F-09",
+        "kind": "API",
+        "name": "生成された設計書一覧を取得する",
+        "group": "documents",
+        "screens": [
+          "SCR-006",
+          "SCR-007"
+        ],
+        "summary": "生成された4種の設計書一覧やバージョン一覧を取得する。",
+        "trigger": "GET /api/v1/projects/{id}/documents",
+        "group_initial": "documents"
+      },
+      {
+        "id": "F-10",
+        "kind": "API",
+        "name": "特定の設計書内容と自己診断結果を取得する",
+        "group": "documents",
+        "screens": [
+          "SCR-006"
+        ],
+        "summary": "特定の設計書内容および自己診断結果を取得する。",
+        "trigger": "GET /api/v1/projects/{id}/documents/{doc_id}",
+        "group_initial": "documents"
+      },
+      {
+        "id": "F-11",
+        "kind": "API",
+        "name": "設計書の自己診断を実行する",
+        "group": "documents",
+        "screens": [
+          "SCR-006"
+        ],
+        "summary": "設計書の自己診断を実行する。",
+        "trigger": "POST /api/v1/projects/{id}/documents/{doc_id}/diagnose",
+        "group_initial": "documents"
+      }
+    ],
+    "next_number": 12
+  },
+  "updated_at": "2026-10-06T05:41:55.412775Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": []
+}

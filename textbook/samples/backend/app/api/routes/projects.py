@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期)
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整)
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -63,6 +63,8 @@ def _sse_error_event(exc: Exception) -> str:
 async def create_project(
     session: SessionDep,
     current_user: CurrentUserDep,
+    # Phase-24:追記
+    name: Annotated[str, Form()],
     system_overview: Annotated[str, Form()],
     goals_raw: Annotated[str, Form()],
     notes_raw: Annotated[str | None, Form()] = None,
@@ -94,6 +96,8 @@ async def create_project(
         # user_id=current_user.id, intake=intake, files=file_inputs, template_id=template_id
         # ↓↓
         user_id=current_user.id,
+        # Phase-24:追記
+        name=name,
         intake=intake,
         files=file_inputs,
         template_id=template_id,
@@ -192,10 +196,13 @@ async def get_hearing_history(
 async def get_hearing_completion(
     session: SessionDep, current_project: CurrentProjectDep
 ) -> HearingCompletionCheck:
-    """これまでの対話履歴から、ヒアリングが完了条件(5条件)を満たしたかどうかを判定する。
-    is_sufficient=Trueでも生成へは自動で進まない(呼び出し側が構造化サマリを提示し、
-    ユーザーの明示的な承認を得てから/generateを呼ぶ想定)。"""
-    return await ChatService(session).check_completion(current_project)
+    """直近の発言で行ったヒアリング完了判定(5条件)の結果を返す(判定はチャットの送信時に行い、
+    ここではLLMを呼ばない)。is_sufficient=Trueでも生成へは自動で進まない(チャットにまとめを
+    出し、ユーザーの明示的な承認を得てから/generateを呼ぶ想定)。"""
+    # Phase-24：更新(判定は送信時に行い、ここでは保存した結果を返す)
+    # return await ChatService(session).check_completion(current_project)
+    # ↓↓
+    return ChatService(session).stored_completion(current_project)
 
 
 # Phase-15-3：更新(気づき#4: 受け付け時に409・generatingにし、受け付け前の状態を渡す。Phase-2-4でuser_idを足した経緯はPhase-2-4.md参照)

@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-4-2,15-8
+// 作成：Phase-3-5｜更新：Phase-4-2,15-8,24(ゴール3後の調整)
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -111,7 +111,10 @@ describe("ChatPanel", () => {
 
     renderPanel();
 
-    expect(screen.getByText("要約です")).toBeInTheDocument();
+    // Phase-24：更新
+    // expect(screen.getByText("要約です")).toBeInTheDocument();
+    // ↓↓
+    expect(screen.getByRole("button", { name: "この内容で設計書を生成する" })).toBeInTheDocument();
   });
 
   // Phase-4-2:追記 ── approveAndGenerate失敗時にボタンが固まったまま

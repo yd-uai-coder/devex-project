@@ -1,0 +1,163 @@
+{
+  "stage": 5,
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "procedures": [
+      {
+        "note": "",
+        "steps": [
+          {
+            "db": "—",
+            "call": "post_chat",
+            "data": "プロジェクトID(id), チャットメッセージ",
+            "action": "チャットメッセージ送信リクエストを受け付ける",
+            "branch": "3a へ",
+            "callee": "api/routes/projects.py",
+            "caller": "frontend",
+            "result": "SSEストリーミングレスポンス",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "",
+            "action": "リクエストパラメータまたは認証の検証に失敗した場合",
+            "branch": "",
+            "callee": "",
+            "caller": "",
+            "result": "ValidationError → 400",
+            "is_branch": true
+          },
+          {
+            "db": "—",
+            "call": "AIservice.stream_chat",
+            "data": "プロジェクトID(id), チャットメッセージ",
+            "action": "LangGraphによるチャットメッセージ処理とストリーミングの実行を依頼する",
+            "branch": "",
+            "callee": "services/ai_service.py",
+            "caller": "api/routes/projects.py",
+            "result": "ストリーミングジェネレーター",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "GeminiClient.invoke_lang_graph",
+            "data": "チャットメッセージ, 過去の対話履歴",
+            "action": "LangGraph制御に基づくGemini Flash-Lite APIとの対話処理を実行する",
+            "branch": "",
+            "callee": "external/gemini_client.py",
+            "caller": "services/ai_service.py",
+            "result": "対話ストリーミングデータ",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "SSEストリーミングデータ",
+            "action": "生成されたチャット応答をSSE形式でフロントエンドに返却する",
+            "branch": "",
+            "callee": "frontend",
+            "caller": "services/ai_service.py",
+            "result": "SSEストリーミング応答",
+            "is_branch": false
+          }
+        ],
+        "reason": "チャットメッセージを受信しLangGraphによるエージェント対話制御とSSEストリーミングによる逐次応答を行うため。",
+        "function_id": "F-07"
+      },
+      {
+        "note": "",
+        "steps": [
+          {
+            "db": "—",
+            "call": "",
+            "data": "プロジェクトID(id), 承認要求",
+            "action": "ヒアリング結果の承認ボタンを押下する",
+            "branch": "",
+            "callee": "frontend",
+            "caller": "利用者",
+            "result": "承認APIリクエストの送信",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "approve_project",
+            "data": "プロジェクトID(id), 承認要求",
+            "action": "承認エンドポイントへPOSTリクエストを送信する",
+            "branch": "1a へ",
+            "callee": "api/routes/projects.py",
+            "caller": "frontend",
+            "result": "承認受付レスポンス",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "エラー情報",
+            "action": "バリデーションエラーまたはプロジェクトが存在しない場合",
+            "branch": "エラー応答を返却",
+            "callee": "",
+            "caller": "",
+            "result": "400 Bad Request または 404 Not Found",
+            "is_branch": true
+          },
+          {
+            "db": "projects U",
+            "call": "approve_project",
+            "data": "プロジェクトID(id)",
+            "action": "プロジェクトの承認処理とステータス更新を呼び出す",
+            "branch": "",
+            "callee": "services/project_service.py",
+            "caller": "api/routes/projects.py",
+            "result": "更新済みプロジェクト情報",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "generate_documents_async",
+            "data": "プロジェクトID(id)",
+            "action": "4種の設計書を逐次生成する非同期処理をトリガーする",
+            "branch": "",
+            "callee": "services/ai_service.py",
+            "caller": "services/project_service.py",
+            "result": "トリガー完了",
+            "is_branch": false
+          },
+          {
+            "db": "documents C",
+            "call": "generate_documents",
+            "data": "プロジェクトID(id)",
+            "action": "Gemini Flash-Lite APIを使用して4種の設計書を逐次生成する",
+            "branch": "",
+            "callee": "external/gemini_client.py",
+            "caller": "services/ai_service.py",
+            "result": "生成された設計書データ",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "設計書生成トリガー受付完了メッセージ",
+            "action": "設計書生成トリガー受付完了メッセージを返却する",
+            "branch": "",
+            "callee": "利用者",
+            "caller": "api/routes/projects.py",
+            "result": "受付完了レスポンス",
+            "is_branch": false
+          }
+        ],
+        "reason": "ヒアリング結果の承認を受け付け、裏で非同期の設計書生成プロセスを安全にトリガーするため。",
+        "function_id": "F-08"
+      }
+    ]
+  },
+  "updated_at": "2026-10-06T05:44:19.584905Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": []
+}

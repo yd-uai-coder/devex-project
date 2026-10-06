@@ -1,4 +1,4 @@
-# 作成：Phase-15-1
+# 作成：Phase-15-1｜更新：24(ゴール3後の調整)
 # 写経レベル: コア ── ルートが template_id・mode を渡すこと(気づき#1)と、モードごとの文書の組が生成の順序を守ることを確かめる。
 import uuid
 
@@ -57,6 +57,8 @@ async def test_create_project_route_passes_template_id_and_mode(
     result = await create_project(
         db_session,
         user,
+        # Phase-24:追記
+        name="備品予約",
         system_overview="備品予約",
         goals_raw="重複を防ぐ",
         template_id=template.id,
@@ -75,6 +77,8 @@ async def test_service_create_defaults_mode_to_simple(db_session: AsyncSession) 
     user = await _create_user(db_session)
 
     project = await ProjectService(db_session).create(
+        # Phase-24:追記
+        name="備品予約",
         user_id=user.id, intake={"system_overview": "s"}, files=[]
     )
 

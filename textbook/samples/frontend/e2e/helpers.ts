@@ -1,4 +1,4 @@
-// 作成：Phase-24-2
+// 作成：Phase-24-2｜更新：24(ゴール3後の調整)
 // 写経レベル: 定型 ── 画面の操作の並び(ラベルで探して押す)。
 // E2E の spec が共有する操作(登録とログイン、モードを選んだプロジェクトの作成、ヒアリングから
 // 設計書の生成まで)。簡易ドキュメントモード(devex-flow.spec.ts)と詳細設計モード
@@ -42,11 +42,16 @@ export async function registerAndLogin(page: Page, prefix: string, name = "E2E T
 export async function createProject(
   page: Page,
   mode: ProjectMode,
-  intake: { overview: string; goal: string },
+  // Phase-24：更新
+  // intake: { overview: string; goal: string },
+  // ↓↓
+  intake: { name: string; overview: string; goal: string },
 ) {
   await page.getByRole("button", { name: "新規プロジェクトを作成" }).click();
   await page.getByRole("button", { name: `${MODE_TITLES[mode]}で作成する` }).click();
   await expect(page).toHaveURL(new RegExp(`/projects/new\\?mode=${mode}`));
+  // Phase-24:追記
+  await page.getByLabel("プロジェクト名").fill(intake.name);
   await page.getByLabel("システム概要").fill(intake.overview);
   await page.getByLabel("実現したいこと").fill(intake.goal);
   await page.getByRole("button", { name: "ヒアリングを始める" }).click();

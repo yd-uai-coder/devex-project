@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-8
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(ゴール3後の調整)
 // Phase-6-6:追記 ── @/features/hearing/hearing-store.useHearingStore
 // Phase-15-8:追記 ── useState(react), ConfirmDialog
 import { useState } from "react";
@@ -13,8 +13,9 @@ type HearingCompletionBannerProps = {
   approving: boolean;
 };
 
-// is_sufficient=trueでも即座に生成へは進まない。構造化サマリを提示しユーザーの明示的な
-// 承認を得てから/generateを呼ぶ(docs/external_design.md 2.3節)。
+// is_sufficient=trueでも即座に生成へは進まない。ユーザーの明示的な承認を得てから/generateを
+// 呼ぶ(docs/external_design.md 2.3節)。まとめ(summary)は、同じ判定から作ったAIの返信として
+// チャットに出るので、ここでは繰り返さない。
 export function HearingCompletionBanner({ completion, onApprove, approving }: HearingCompletionBannerProps) {
   // Phase-6-6:追記 ── 生成済み(completed)のプロジェクトでは、同じ完了判定のまま二重に生成を
   // 承認させない。projectStatusはsendMessage(completed→revising)・approveAndGenerate
@@ -36,7 +37,10 @@ export function HearingCompletionBanner({ completion, onApprove, approving }: He
       backgroundColor="$color2"
     >
       <Text fontWeight="600">ヒアリング内容の確認</Text>
-      <Text>{completion.summary}</Text>
+      {/* Phase-24：更新(まとめはチャットに出るので繰り返さない) */}
+      {/* <Text>{completion.summary}</Text> */}
+      {/* ↓↓ */}
+      <Text>チャットのまとめの内容で、設計書を生成できます。</Text>
       {/* Phase-6-6：更新
       <Button theme="green" disabled={approving} onPress={onApprove}>
         {approving ? "生成を開始しています..." : "この内容で設計書を生成する"}

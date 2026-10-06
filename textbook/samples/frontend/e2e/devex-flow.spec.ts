@@ -1,4 +1,4 @@
-// 作成：Phase-4-4｜更新：Phase-6-6,24-2
+// 作成：Phase-4-4｜更新：Phase-6-6,24-2,24(ゴール3後の調整)
 // 写経レベル: コア ── docs/implementation_plan.md 4.2節が定義するE2Eフロー
 // 「ログイン→プロジェクト作成→チャットヒアリング→設計書生成→ダウンロード」を
 // ブラウザ経由でそのまま再現する、Phase 4の中心的な成果物。
@@ -93,6 +93,8 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
   // ↓↓
   await registerAndLogin(page, "e2e-flow");
   await createProject(page, "simple", {
+    // Phase-24:追記
+    name: "在庫管理",
     overview: "在庫管理システムを作りたい",
     goal: "在庫数をリアルタイムに可視化したい",
   });
@@ -163,6 +165,8 @@ test("ドキュメントプレビュー画面から再生成すると、再度�
   // ↓↓
   await registerAndLogin(page, "e2e-regenerate", "E2E Regenerator");
   await createProject(page, "simple", {
+    // Phase-24:追記
+    name: "勤怠管理",
     overview: "勤怠管理システムを作りたい",
     goal: "打刻を簡略化したい",
   });

@@ -1,7 +1,8 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,24(ゴール3後の調整)
 # Phase-6-3:追記 ── uuid, app.models.prompt_template.PromptTemplate,
 #   app.services.errors.PromptTemplateNotFoundError
 # Phase-6-5:追記 ── structlog.testing
+# Phase-24:追記 ── app.services.errors.InvalidProjectNameError, app.services.project.PROJECT_NAME_MAX_LENGTH
 import uuid
 
 import pytest
@@ -14,12 +15,14 @@ from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.intake_file import IntakeFileRepository
 from app.services.errors import (
     FileTooLargeError,
+    InvalidProjectNameError,
     PromptTemplateNotFoundError,
     TooManyFilesError,
     UnsupportedFileTypeError,
 )
 from app.services.project import (
     MAX_FILE_SIZE_BYTES,
+    PROJECT_NAME_MAX_LENGTH,
     ProjectService,
     UploadedFileInput,
     _format_intake_summary,
@@ -38,6 +41,8 @@ async def test_create_persists_intake_as_chat_history(db_session: AsyncSession) 
     service = ProjectService(db_session)
 
     project = await service.create(
+        # Phase-24:追記
+        name="備品予約",
         user_id=user.id,
         intake={"system_overview": "備品予約を一元管理したい", "goals_raw": "重複を防ぎたい"},
         files=[],
@@ -81,15 +86,46 @@ def test_format_intake_summary_includes_filenames_when_present() -> None:
     assert text == "システム概要：s\n実現したい事：g\n添付ファイル：a.pdf、b.txt"
 
 
-async def test_create_uses_system_overview_as_title(db_session: AsyncSession) -> None:
+# Phase-24：更新
+# async def test_create_uses_system_overview_as_title(db_session: AsyncSession) -> None:
+# ↓↓
+async def test_create_uses_stripped_name_as_title(db_session: AsyncSession) -> None:
     user = await _create_user(db_session)
     service = ProjectService(db_session)
 
     project = await service.create(
-        user_id=user.id, intake={"system_overview": "備品予約システム"}, files=[]
+        # Phase-24：更新
+        # user_id=user.id, intake={"system_overview": "備品予約システム"}, files=[]
+        # ↓↓
+        name="  備品予約  ",
+        user_id=user.id, intake={"system_overview": "備品予約を一元管理するシステム"}, files=[]
     )
 
-    assert project.title == "備品予約システム"
+    # Phase-24：更新
+    # assert project.title == "備品予約システム"
+    # ↓↓
+    assert project.title == "備品予約"
+
+
+async def test_create_accepts_name_of_max_length(db_session: AsyncSession) -> None:
+    user = await _create_user(db_session)
+    name = "あ" * PROJECT_NAME_MAX_LENGTH
+
+    project = await ProjectService(db_session).create(
+        name=name, user_id=user.id, intake={"system_overview": "s"}, files=[]
+    )
+
+    assert project.title == name
+
+
+@pytest.mark.parametrize("name", ["", "   ", "あ" * (PROJECT_NAME_MAX_LENGTH + 1)])
+async def test_create_rejects_empty_or_too_long_name(db_session: AsyncSession, name: str) -> None:
+    user = await _create_user(db_session)
+
+    with pytest.raises(InvalidProjectNameError):
+        await ProjectService(db_session).create(
+            name=name, user_id=user.id, intake={"system_overview": "s"}, files=[]
+        )
 
 
 async def test_create_ingests_txt_file_and_appends_chat_history(db_session: AsyncSession) -> None:
@@ -97,7 +133,12 @@ async def test_create_ingests_txt_file_and_appends_chat_history(db_session: Asyn
     service = ProjectService(db_session)
     file = UploadedFileInput(filename="memo.txt", data="既存Excel管理からの移行".encode())
 
-    project = await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+    # Phase-24：更新
+    # project = await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+    # ↓↓
+    project = await service.create(
+        name="備品予約", user_id=user.id, intake={"system_overview": "s"}, files=[file]
+    )
 
     intake_files = await IntakeFileRepository(db_session).list_for_project(project.id)
     assert len(intake_files) == 1
@@ -118,7 +159,12 @@ async def test_create_rejects_more_than_three_files(db_session: AsyncSession) ->
     files = [UploadedFileInput(filename=f"f{i}.txt", data=b"x") for i in range(4)]
 
     with pytest.raises(TooManyFilesError):
-        await service.create(user_id=user.id, intake={"system_overview": "s"}, files=files)
+        # Phase-24：更新
+        # await service.create(user_id=user.id, intake={"system_overview": "s"}, files=files)
+        # ↓↓
+        await service.create(
+            name="備品予約", user_id=user.id, intake={"system_overview": "s"}, files=files
+        )
 
 
 async def test_create_rejects_unsupported_file_type(db_session: AsyncSession) -> None:
@@ -127,7 +173,12 @@ async def test_create_rejects_unsupported_file_type(db_session: AsyncSession) ->
     file = UploadedFileInput(filename="spec.docx", data=b"x")
 
     with pytest.raises(UnsupportedFileTypeError):
-        await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+        # Phase-24：更新
+        # await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+        # ↓↓
+        await service.create(
+            name="備品予約", user_id=user.id, intake={"system_overview": "s"}, files=[file]
+        )
 
 
 async def test_create_rejects_oversized_file(db_session: AsyncSession) -> None:
@@ -136,7 +187,12 @@ async def test_create_rejects_oversized_file(db_session: AsyncSession) -> None:
     file = UploadedFileInput(filename="big.txt", data=b"x" * (MAX_FILE_SIZE_BYTES + 1))
 
     with pytest.raises(FileTooLargeError):
-        await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+        # Phase-24：更新
+        # await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+        # ↓↓
+        await service.create(
+            name="備品予約", user_id=user.id, intake={"system_overview": "s"}, files=[file]
+        )
 
 
 async def test_create_records_failed_status_without_raising(db_session: AsyncSession) -> None:
@@ -145,7 +201,12 @@ async def test_create_records_failed_status_without_raising(db_session: AsyncSes
     service = ProjectService(db_session)
     file = UploadedFileInput(filename="broken.txt", data=b"\xff\xfe\x00\x01")
 
-    project = await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+    # Phase-24：更新
+    # project = await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+    # ↓↓
+    project = await service.create(
+        name="備品予約", user_id=user.id, intake={"system_overview": "s"}, files=[file]
+    )
 
     intake_files = await IntakeFileRepository(db_session).list_for_project(project.id)
     assert intake_files[0].status == "failed"
@@ -161,6 +222,8 @@ async def test_create_persists_valid_template_id(db_session: AsyncSession) -> No
     service = ProjectService(db_session)
 
     project = await service.create(
+        # Phase-24:追記
+        name="備品予約",
         user_id=user.id, intake={"system_overview": "s"}, files=[], template_id=template.id
     )
 
@@ -173,6 +236,8 @@ async def test_create_rejects_unknown_template_id(db_session: AsyncSession) -> N
 
     with pytest.raises(PromptTemplateNotFoundError):
         await service.create(
+            # Phase-24:追記
+            name="備品予約",
             user_id=user.id, intake={"system_overview": "s"}, files=[], template_id=uuid.uuid4()
         )
 
@@ -184,20 +249,34 @@ async def test_list_for_user_returns_only_that_users_projects(db_session: AsyncS
     db_session.add(other_user)
     await db_session.flush()
     service = ProjectService(db_session)
-    await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[])
-    await service.create(user_id=other_user.id, intake={"system_overview": "other"}, files=[])
+    # Phase-24：更新
+    # await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[])
+    # await service.create(user_id=other_user.id, intake={"system_overview": "other"}, files=[])
+    # ↓↓
+    await service.create(name="自分", user_id=user.id, intake={"system_overview": "s"}, files=[])
+    await service.create(
+        name="他人", user_id=other_user.id, intake={"system_overview": "other"}, files=[]
+    )
 
     result = await service.list_for_user(user.id)
 
     assert len(result) == 1
-    assert result[0].title == "s"
+    # Phase-24：更新
+    # assert result[0].title == "s"
+    # ↓↓
+    assert result[0].title == "自分"
 
 
 async def test_get_detail_includes_intake_files(db_session: AsyncSession) -> None:
     user = await _create_user(db_session)
     service = ProjectService(db_session)
     file = UploadedFileInput(filename="memo.txt", data="既存Excel管理からの移行".encode())
-    project = await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+    # Phase-24：更新
+    # project = await service.create(user_id=user.id, intake={"system_overview": "s"}, files=[file])
+    # ↓↓
+    project = await service.create(
+        name="備品予約", user_id=user.id, intake={"system_overview": "s"}, files=[file]
+    )
 
     detail = await service.get_detail(project)
 
@@ -215,6 +294,8 @@ async def test_create_logs_info_with_project_id_only(db_session: AsyncSession) -
 
     with structlog.testing.capture_logs() as logs:
         project = await service.create(
+            # Phase-24:追記
+            name="備品予約",
             user_id=user.id, intake={"system_overview": "秘密の新規事業案"}, files=[]
         )
 

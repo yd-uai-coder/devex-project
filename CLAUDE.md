@@ -56,13 +56,13 @@ When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the tar
 
 **#3.** 教材で提示するコードは、長いコードブロックを Markdown に直書きせず「要点の抜粋 + 共有サンプルフォルダ(`textbook/samples/`)のファイル参照」とする。samples は 1 フォルダを全 Phase で共有し(直近 Phase の end 状態)、ユーザーが実プロジェクトのコードへ写経・改変して実装する(#21 の自動実装モードが on の Phase では、AI が本体へ反映する)。これで「教材 Markdown / samples / 実コード」の三重管理を避ける。反映の順序は「相談で決定 → samples に反映(#9)→ 教材の抜粋が追従」── samples が基準、教材 Markdown はその抜粋。教材の構成・体裁・番号の変更(章のリネーム、節の再編等)はマーカーを付けず内容で上書きする。
 
-> **運用注記(#3・#9・#12 ── T2 で決定)**: 「samples が基準」は自動実装モード off の Phase の運用である。on の Phase では本体が基準で、新規ファイルは samples に作らず、既存の samples にあるファイルだけを本体に追従させる(#21)。samples から削除したファイルへの教材のリンクは外し、ファイル名をコード表記で地の文に残す。経緯は [`textbook/decision-digest.md`](./textbook/decision-digest.md)「T2(ステージ4完了後)」。
+> **運用注記(#3・#9・#12 ── T2 で決定、ステージ4完了後に改訂)**: samples は自動実装モード(#21)によらず同じ内容で作成・追記する。on の Phase では、AI が本体と samples の両方を書き、どちらかを後追いにしない(新規ファイルも samples に作る)。samples から削除したファイルへの教材のリンクは外し、ファイル名をコード表記で地の文に残す。経緯は [`textbook/decision-digest.md`](./textbook/decision-digest.md)「T2(ステージ4完了後)」と「samples の作成を自動実装モードで変えない」。
 
 **#7.** 教材でコードを提案するときは、配置先のファイルパスを各コードブロックの先頭にコメントで明記する(例: `# app/service/foo.py`)。分割するモジュールはパッケージ(`__init__.py` 付き)として示し、`__init__.py` の re-export 形とファイル間の依存方向も示す。既存教材の修正時・以降の Phase でも同様。
 
 **#9.** 検討・相談の中で提示するコード(クラス名・シグネチャ・型など)に変更が生じたら、対応する samples のサンプルコードにも同じ変更を反映する。反映後は実プロジェクトの環境で実行確認し、可能なら型チェックも通す。
 
-> **運用注記(#9)**: on の Phase では、変更は本体に反映し、samples は既存のファイルだけを追従させる(#21。#3 の運用注記と同じ)。
+> **運用注記(#9)**: on の Phase では、変更を本体と samples の両方に反映する(#21。#3 の運用注記と同じ)。
 
 ### D. 章ごとの解説とテスト設計
 
@@ -110,11 +110,10 @@ When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the tar
 
 - **教材の中身は on/off で変えない**。#14 の SUT / ドライバ / スタブとテスト観点は、どちらのモードでも省略しない(テストは設計理解の肝であるため)。
 - **off**: AI は教材と `textbook/samples/` だけを作り、ユーザーが手で本体へ実装する。本体(`devex-api`/`devex-ui`)には、ユーザーが明示して指示したときだけ反映する。
-- **on**: AI が本体へ実装する。#29 のタグや Phase の経緯は本体のソースに書かない(本体のコメントは機能と意図だけ)。samples の扱いは次のとおり(T2 で決定。経緯は [`textbook/decision-digest.md`](./textbook/decision-digest.md)「T2(ステージ4完了後)」)。
-  - **新規ファイルは samples に作らない**。教材の抜粋・「作成・更新したファイル」表は本体のパスをコード表記で示す(サブリポジトリは外側のリポジトリで追跡しないため、Markdown リンクにしない)。
-  - **既存の samples にあるファイル**を本体で変更・削除したときは、samples の同じファイルも #29 の形式で更新・削除する。Phase 完了後の調整も同じ。
+- **on**: AI が本体へ実装する。#29 のタグや Phase の経緯は本体のソースに書かない(本体のコメントは機能と意図だけ)。samples の扱いは次のとおり(T2 で決定し、ステージ4完了後に改訂。経緯は [`textbook/decision-digest.md`](./textbook/decision-digest.md)「samples の作成を自動実装モードで変えない」)。
+  - **samples は off と同じ内容で作成・追記する**。新規ファイルも samples に作り、本体の変更・削除は samples にも #29 の形式で反映する。Phase 完了後の調整も同じ。教材の抜粋・「作成・更新したファイル」表は、off と同じく samples へのリンクで示す。
   - Phase の版は本体の git タグ `phase-<N>` で示す(ユーザーがコミット時に付ける。AI は #35 のコミット案にタグ名も含める)。変更履歴は本体のコミットで追う。
-  - Phase 完了時に [`textbook/tools/`](./textbook/tools/README.md) の `samples_check.py`(既存 samples と本体の一致)と `link_check.py`(リンク切れ)を流し、どちらも 0 件にする。
+  - Phase 完了時に [`textbook/tools/`](./textbook/tools/README.md) の `samples_check.py`(samples と本体の一致、samples への作り忘れ)と `link_check.py`(リンク切れ)を流し、どちらも 0 件にする。
 - **共通**: リポジトリ直下のインフラ・設定ファイル(compose・CI・デプロイ設定など)は samples にミラーせず、AI が直接書く(Phase 1・5 からの前例を明文化)。
 - **経緯**: 旧ルールでは納期モードでも工程をあまり省けず、一方でテスト観点が教材から省かれた。また、手で実装しても設計理解は思ったほど実感できなかったため、Phase 7(ステージ3)から自動実装で先に完成させ、完成品から仕様を追う方針に切り替えた。旧モードとの対応: Phase 1〜6 = off、Phase 7〜24 = on(Phase 0 は設計フェーズで対象外)。詳細は [`textbook/appendix/overall-retrospective.md`](./textbook/appendix/overall-retrospective.md)。
 
@@ -142,7 +141,7 @@ When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the tar
   - 同一箇所が複数Phaseにまたがって変更された場合は、直近の実質的な変更点のみを「旧→新」として示せば足り、すべての中間状態を逐一積み上げる必要はない(#12「章タグは次の明示的なタグが現れるまで引き継がれる」の趣旨に合わせる)。
 - **import文への追記タグの特則**: 個々のimport行の直前にタグを挟むと、リンター(ruffのisort機能等)が「import文の並び順が崩れている」と誤検知し、機械的な`--fix`で意図せずタグ配置が破壊されるおそれがある。そのため、import文に対する`:追記`タグはブロック内の該当行の直前に置かず、**importブロック全体の直前に1箇所へまとめ**、対象のモジュール/シンボル名を`──`以降に列挙する(例: `# Phase-<N>-<n>:追記 ── app.models.project, app.services.errors.ProjectNotFoundError`)。複数Phaseが同一ブロックに追記した場合はPhaseごとに1行ずつ積む。
 - この表記により、各サンプルファイルの`git blame`相当の変遷を、実際のgit履歴を作らずに教材内だけで追跡できる(devex-apiへの写経はユーザーが手で行うため、samples側のgit historyがそのまま実装コードの変更履歴にはならない、という#3の前提を補う)。
-- **自動実装モード on の Phase での扱い**(T2 で決定): on では本体のコミットが変更履歴そのものになるため、この表記は samples に存在するファイルにだけ使う(新規ファイルは samples に作らない。#21)。本体の差分をこの形式で当てる補助として [`textbook/tools/tagmerge.py`](./textbook/tools/README.md) を使える。整形だけの変更(並び順・import の順・引用符・末尾のセミコロン・テスト名から Phase 番号を外すこと)は、タグを付けずに上書きしてよい。
+- **自動実装モード on の Phase での扱い**(T2 で決定、ステージ4完了後に改訂): on でも off と同じく、新規ファイルを含むすべての samples にこの表記を使う(#21)。本体の差分をこの形式で当てる補助として [`textbook/tools/tagmerge.py`](./textbook/tools/README.md) を使える。整形だけの変更(並び順・import の順・引用符・末尾のセミコロン・テスト名から Phase 番号を外すこと)は、タグを付けずに上書きしてよい。
 
 **#30. 「作成・更新したファイル」表の依存順ソート**(Phase 2で確立)。各章の「この章で作成・更新したファイル」表は、上から順に写経しても`ImportError`が起きないよう、実際の`import`文(`if TYPE_CHECKING:`でガードされたimportは実行時エラーを起こさないため対象外)に基づく依存順(依存されるファイルを、依存するファイルより上に置く)に並べる。
 
@@ -170,4 +169,4 @@ When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the tar
 
 1. **プロダクト目標**: `docs/implementation_plan.md` ステージ1(MVP)が定義する Must 要件(チャットヒアリング → 要件定義 / 外部設計 / 内部設計 / 実装計画の4種 Markdown 自動生成)を満たし、ステージ1のマイルストーン1・2の受け入れ基準を満たす。
 2. **手法目標**: `appendix/cl-development-handoff.md` の #1〜17 を土台に #18〜28(本節)を実プロジェクトで運用し、自動実装モード(#21)の off・on をそれぞれ少なくとも1 Phase で実施した上で(実績: off = Phase 1〜6、on = Phase 7〜24)、所感5.1 / 5.2 / 5.5 / 5.6 各提案の採否とその根拠を振り返り(`textbook/appendix/*-retrospective.md`)に記録する。プロジェクト完了時、次プロジェクトに引き継げる改訂版 handoff ドキュメント相当を作成可能な状態にする。
-3. **再帰検証目標**: Devex が生成すべき4文書の「質の良さ」の基準を、本プロジェクト自身が書く CL 教材(introduction / チェックリスト / 振り返り)の質を通じて具体化し、逆に Devex の生成物の構造を CL 教材テンプレートに転用できるかを #25 の振り返りで検証する。最低1回、Devex の実際の生成文書と `Phase-<N>-introduction.md` を突き合わせ、共通化できるテンプレート要素を最低1つ具体的に特定する。
+3. **再帰検証目標**: Devex が生成すべき4文書の「質の良さ」の基準を、本プロジェクト自身が書く CL 教材(introduction / チェックリスト / 振り返り)の質を通じて具体化し、逆に Devex の生成物の構造を CL 教材テンプレートに転用できるかを #25 の振り返りで検証する。最低1回、Devex の実際の生成文書と `Phase-<N>-introduction.md` を突き合わせ、共通化できるテンプレート要素を最低1つ具体的に特定する(実績: [`textbook/appendix/goal3-comparison.md`](./textbook/appendix/goal3-comparison.md)。共通要素 = 作業単位の表)。

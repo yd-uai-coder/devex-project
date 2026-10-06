@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>詳細設計書: Devex: AI との対話型チャットでユーザーのアイデアや要望をヒアリングし、「要件定義」「外部設計」「内部設計」「実装計画」の4種の Markdown 設計書を自動生成する Web アプリ。システム開発の初期フェーズで、ドキュメント作成の工数と属人化を減らしたい。</title><style>
+:root { --paper:#f5f6f8; --sheet:#fff; --ink:#1d2433; --muted:#5b6475; --rule:#d6dbe4;
+  --head:#eef1f6;
+  --accent:#1f5fae; --accent-soft:#e4edf9; --warn:#9a5b00; --warn-soft:#fbf1e0;
+  --branch:#f6f1e7; --hl:#fdf3c4;
+  color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper:#151a23;
+  --sheet:#1c2230;
+  --ink:#e3e7ee; --muted:#9aa3b4; --rule:#2e3647; --head:#242c3c; --accent:#7fb0f0;
+  --accent-soft:#1f3150;
+  --warn:#f0b45c; --warn-soft:#3a2c14; --branch:#2a2618; --hl:#4a4215; color-scheme: dark; } }
+:root[data-theme="dark"] { --paper:#151a23; --sheet:#1c2230; --ink:#e3e7ee; --muted:#9aa3b4;
+  --rule:#2e3647;
+  --head:#242c3c; --accent:#7fb0f0; --accent-soft:#1f3150; --warn:#f0b45c; --warn-soft:#3a2c14;
+  --branch:#2a2618;
+  --hl:#4a4215; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin:0; padding-block:28px 72px; padding-inline:16px; background:var(--paper);
+  color:var(--ink);
+  font:14.5px/1.75 "BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif; }
+.wrap { max-width:1120px; margin:0 auto; display:grid; gap:40px; }
+h1 { font-size:1.7rem; margin:0; line-height:1.35; } h2 { font-size:1.3rem; margin:0; }
+h3 { font-size:1.02rem; margin:10px 0 0; } h4 { font-size:0.95rem; margin:6px 0 0; }
+p { margin:0; max-width:78ch; } .muted { color:var(--muted); font-size:0.88em; }
+.mono { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:0.88em; }
+.status { justify-self:start; padding:6px 12px; border-radius:4px; color:var(--warn);
+  background:var(--warn-soft); }
+nav.toc { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:0.9em; }
+nav.toc a { color:var(--accent); text-decoration:none; }
+section.chapter { display:grid; grid-template-columns:84px minmax(0,1fr); gap:22px;
+  scroll-margin-top:12px; }
+.rail { border-right:2px solid var(--rule); padding-right:14px; text-align:right; }
+.rail .no { font-family:ui-monospace,Consolas,monospace; font-size:1.55rem; color:var(--accent);
+  line-height:1; }
+.rail .step { font-size:0.74rem; color:var(--muted); margin-top:6px; }
+.body { display:grid; gap:14px; min-width:0; }
+.scroll { overflow-x:auto; border:1px solid var(--rule); background:var(--sheet); }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+th, td { border-bottom:1px solid var(--rule); padding:5px 9px; text-align:left;
+  vertical-align:top; }
+th { background:var(--head); white-space:nowrap; }
+td.c { text-align:center; white-space:nowrap; }
+tr.branch td { background:var(--branch); } tr.branch td:first-child { font-weight:700; }
+.hl, tr.hl td { background:var(--hl) !important; }
+.figure { background:#fff; border:1px solid var(--rule); padding:10px; overflow-x:auto; }
+.figure svg { display:block; max-width:none; height:auto; }
+a.badge { display:inline-block; padding:0 7px; border-radius:4px; background:var(--accent-soft);
+  color:var(--accent);
+  text-decoration:none; font-family:ui-monospace,Consolas,monospace; font-size:12px;
+  margin:2px 2px 0 0; white-space:nowrap; }
+a.badge:hover { text-decoration:underline; }
+.op-dfd { color:var(--accent); font-weight:700; }
+.op-dfd_write { color:var(--warn); font-weight:700; text-decoration:underline;
+  text-decoration-color:var(--accent); }
+.op-human { color:var(--warn); font-weight:700; }
+.legend { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:0.84em; color:var(--muted); }
+.tabs { display:flex; flex-wrap:wrap; gap:6px; }
+.tabs a { padding:3px 10px; border:1px solid var(--rule); border-radius:4px;
+  background:var(--sheet); color:var(--ink);
+  text-decoration:none; font-size:13px; }
+.tabs a[aria-selected="true"] { background:var(--accent); border-color:var(--accent);
+  color:#fff; }
+.panel { display:grid; gap:8px; padding:12px; border:1px solid var(--rule);
+  background:var(--sheet);
+  scroll-margin-top:12px; min-width:0; }
+.js .panel:not(.active) { display:none; }
+ol { margin:0; padding-left:22px; } ol ul { margin:0; padding-left:18px; }
+@media (max-width:640px) { section.chapter { grid-template-columns:1fr; gap:8px; }
+  .rail { border-right:none; border-bottom:2px solid var(--rule); text-align:left; display:flex;
+  gap:12px;
+    align-items:baseline; padding:0 0 6px; } }
+</style></head><body><div class="wrap"><header style="display:grid;gap:12px"><div class="muted">Devex ／ 詳細設計書</div><h1>Devex: AI との対話型チャットでユーザーのアイデアや要望をヒアリングし、「要件定義」「外部設計」「内部設計」「実装計画」の4種の Markdown 設計書を自動生成する Web アプリ。システム開発の初期フェーズで、ドキュメント作成の工数と属人化を減らしたい。</h1><p class="muted">承認済みの段階から組み立てた詳細設計書です。青い ID を押すと、該当する処理・手順・関数へ移ります。</p><nav class="toc"><a href="#ch01">01 機能(処理)一覧</a><a href="#ch02">02 データフロー</a><a href="#ch03">03 データモデル</a><a href="#ch04">04 ソフトウェア構造</a><a href="#ch05">05 主要処理の手順</a><a href="#ch06">06 処理ロジックの詳細</a><a href="#ch07">07 横断事項</a></nav></header><section class="chapter" id="ch01"><div class="rail"><div class="no">01</div><div class="step">段階1</div></div><div class="body"><h2>機能(処理)一覧</h2><p class="muted">青い処理ID は、05 に手順がある処理。</p><div class="scroll"><table aria-label="機能一覧"><thead><tr><th>処理ID</th><th>名称</th><th>種別</th><th>トリガー</th><th>関連画面</th><th>機能グループ</th><th>概要</th></tr></thead><tbody><tr><td>F-01</td><td>新規ユーザー登録を行う</td><td>API</td><td><span class="mono">POST /api/v1/auth/signup</span></td><td>SCR-002</td><td>auth</td><td>新規ユーザーアカウントを作成する。</td></tr><tr><td>F-02</td><td>ログインを行う</td><td>API</td><td><span class="mono">POST /api/v1/auth/login</span></td><td>SCR-001</td><td>auth</td><td>JWTアクセストークン発行およびリフレッシュトークンCookie設定を行う。</td></tr><tr><td>F-03</td><td>ログアウトを行う</td><td>API</td><td><span class="mono">POST /api/v1/auth/logout</span></td><td>SCR-003</td><td>auth</td><td>トークンを無効化する。</td></tr><tr><td>F-04</td><td>プロジェクト一覧を取得する</td><td>API</td><td><span class="mono">GET /api/v1/projects</span></td><td>SCR-003</td><td>projects</td><td>プロジェクト一覧を取得する。</td></tr><tr><td>F-05</td><td>プロジェクトを作成し参考資料をアップロードする</td><td>API</td><td><span class="mono">POST /api/v1/projects</span></td><td>SCR-004</td><td>projects</td><td>プロジェクトを作成し、参考資料をアップロードする。</td></tr><tr><td>F-06</td><td>プロジェクト詳細を取得する</td><td>API</td><td><span class="mono">GET /api/v1/projects/{id}</span></td><td>SCR-005, SCR-006</td><td>projects</td><td>プロジェクトの詳細情報を取得する。</td></tr><tr><td><a class="badge" href="#f-07">F-07</a></td><td>チャットメッセージを送信する</td><td>API</td><td><span class="mono">POST /api/v1/projects/{id}/chat</span></td><td>SCR-005</td><td>chat</td><td>チャットメッセージを送信し、SSEストリーミング応答を返す。</td></tr><tr><td><a class="badge" href="#f-08">F-08</a></td><td>ヒアリング結果を承認し設計書生成をトリガーする</td><td>API+バッチ</td><td><span class="mono">POST /api/v1/projects/{id}/approve</span></td><td>SCR-005</td><td>approve</td><td>ヒアリング結果の承認を受け付け、裏で設計書生成の非同期処理をトリガーする。</td></tr><tr><td>F-09</td><td>生成された設計書一覧を取得する</td><td>API</td><td><span class="mono">GET /api/v1/projects/{id}/documents</span></td><td>SCR-006, SCR-007</td><td>documents</td><td>生成された4種の設計書一覧やバージョン一覧を取得する。</td></tr><tr><td>F-10</td><td>特定の設計書内容と自己診断結果を取得する</td><td>API</td><td><span class="mono">GET /api/v1/projects/{id}/documents/{doc_id}</span></td><td>SCR-006</td><td>documents</td><td>特定の設計書内容および自己診断結果を取得する。</td></tr><tr><td>F-11</td><td>設計書の自己診断を実行する</td><td>API</td><td><span class="mono">POST /api/v1/projects/{id}/documents/{doc_id}/diagnose</span></td><td>SCR-006</td><td>documents</td><td>設計書の自己診断を実行する。</td></tr></tbody></table></div></div></section><section class="chapter" id="ch02"><div class="rail"><div class="no">02</div><div class="step">段階2</div></div><div class="body"><h2>データフロー</h2><h3>データ辞書</h3><div class="scroll"><table aria-label="データ辞書"><thead><tr><th>データ項目</th><th>フィールド</th><th>使う処理</th></tr></thead><tbody></tbody></table></div><h3>処理概要表(入力 / 処理 / 出力)</h3><div class="scroll"><table aria-label="処理概要表"><thead><tr><th>処理ID</th><th>名称</th><th>入力</th><th>処理内容</th><th>出力</th></tr></thead><tbody><tr><td>F-01</td><td>新規ユーザー登録を行う</td><td>ユーザー登録情報(メールアドレス、パスワード)</td><td>パスワードをハッシュ化し、新規ユーザーアカウントを作成してPostgreSQLに保存する。</td><td>登録完了メッセージ</td></tr><tr><td>F-02</td><td>ログインを行う</td><td>ログイン資格情報(メールアドレス、パスワード)</td><td>認証情報を検証し、JWTアクセストークンを発行するとともにリフレッシュトークンをHttpOnly Cookieに設定する。</td><td>JWTアクセストークンおよびリフレッシュトークンCookie</td></tr><tr><td>F-03</td><td>ログアウトを行う</td><td>ログアウト要求</td><td>Redisを用いてトークンを無効化する。</td><td>ログアウト完了メッセージ</td></tr><tr><td>F-04</td><td>プロジェクト一覧を取得する</td><td>JWTアクセストークン</td><td>認証状態を検証し、PostgreSQLからプロジェクトの一覧データを取得する。</td><td>プロジェクト一覧</td></tr><tr><td>F-05</td><td>プロジェクトを作成し参考資料をアップロードする</td><td>プロジェクト情報、参考資料(txt/md/pdf、最大3件)</td><td>参考資料を読み込んでテキストを抽出し、プロジェクトを作成してPostgreSQLに保存する。</td><td>作成されたプロジェクト情報</td></tr><tr><td>F-06</td><td>プロジェクト詳細を取得する</td><td>プロジェクトID(id)</td><td>プロジェクトIDをもとにPostgreSQLからプロジェクトの詳細情報を取得する。</td><td>プロジェクト詳細情報</td></tr><tr><td>F-07</td><td>チャットメッセージを送信する</td><td>プロジェクトID(id)、チャットメッセージ</td><td>LangGraph制御のチャットメッセージ処理を実行し、SSEストリーミング応答を返す。</td><td>SSEストリーミングによるチャット応答</td></tr><tr><td>F-08</td><td>ヒアリング結果を承認し設計書生成をトリガーする</td><td>プロジェクトID(id)、承認要求</td><td>ヒアリング結果の承認を受け付け、裏で4種の設計書を逐次生成する非同期処理をトリガーする。</td><td>設計書生成トリガー受付完了メッセージ</td></tr><tr><td>F-09</td><td>生成された設計書一覧を取得する</td><td>プロジェクトID(id)</td><td>PostgreSQLから生成された4種の設計書一覧やバージョン一覧を取得する。</td><td>設計書一覧およびバージョン一覧</td></tr><tr><td>F-10</td><td>特定の設計書内容と自己診断結果を取得する</td><td>プロジェクトID(id)、設計書ID(doc_id)</td><td>指定された設計書内容およびAIによる自己診断結果を取得する。</td><td>設計書内容および自己診断結果</td></tr><tr><td>F-11</td><td>設計書の自己診断を実行する</td><td>プロジェクトID(id)、設計書ID(doc_id)</td><td>AIを使用して設計書の自己診断を実行し、不足点を3段階で判定して結果を保存する。</td><td>自己診断結果</td></tr></tbody></table></div></div></section><section class="chapter" id="ch03"><div class="rail"><div class="no">03</div><div class="step">段階3</div></div><div class="body"><h2>データモデル</h2><div class="figure" role="img" aria-label="ER図(全体)"><svg xmlns="http://www.w3.org/2000/svg" width="340" height="94" viewBox="0 0 340 94" font-family='"Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","Hiragino Kaku Gothic ProN",sans-serif' font-size="14">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker></defs>
+<rect width="340" height="94" fill="#ffffff"/>
+</svg></div><h3>テーブル定義</h3><h3>CRUD 図(処理 × テーブル)</h3><div class="scroll"><table aria-label="CRUD 図"><thead><tr><th>処理ID</th><th>名称</th></tr></thead><tbody></tbody></table></div><div class="legend"><span><span class="op-dfd">R</span> DFD の線(ストア → 処理)から決まる</span><span><span class="op-dfd_write">C U D</span> 書き込みは DFD の線(処理 → ストア)から決まり、C/U/D の区別は人が確定</span><span><span class="op-human">R C U D</span> DFD に描いていない分で、人が確定</span></div></div></section><section class="chapter" id="ch04"><div class="rail"><div class="no">04</div><div class="step">段階4</div></div><div class="body"><h2>ソフトウェア構造</h2><div class="figure" role="img" aria-label="コンポーネント図(全体)"><svg xmlns="http://www.w3.org/2000/svg" width="960" height="1000" viewBox="0 0 960 1000" font-family='"Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","Hiragino Kaku Gothic ProN",sans-serif' font-size="14">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker></defs>
+<rect width="960" height="1000" fill="#ffffff"/>
+<path d="M62.0,351.0 L17.2,351.0 L17.2,113.0 L31.2,113.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M127.5,322.0 L127.5,266.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M127.5,380.0 L127.5,436.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M223.8,113.0 L362.5,113.0 L362.5,312.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M222.3,217.0 L253.7,217.0 L253.7,475.0 L267.6,475.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M222.3,237.0 L251.3,237.0 L251.3,589.0 L265.3,589.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M218.2,475.0 L232.2,475.0 L232.2,609.0 L265.3,609.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M435.9,361.0 L492.5,361.0 L492.5,475.0 L506.5,475.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M435.9,341.0 L709.0,341.0 L709.0,475.0 L723.0,475.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M457.4,465.0 L488.1,465.0 L488.1,733.0 L502.1,733.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M457.4,485.0 L471.4,485.0 L471.4,824.0 L730.3,824.0 L730.3,743.0 L744.3,743.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M459.7,599.0 L473.7,599.0 L473.7,753.0 L502.1,753.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M372.5,638.0 L372.5,897.0 L502.6,897.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M352.5,638.0 L352.5,968.0 L832.5,968.0 L832.5,782.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="62.0" y="322.0" width="130.9" height="58.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="127.5" y="346.0" text-anchor="middle" fill="#1a1a1a">フロントエンド</text>
+<text x="127.5" y="366.0" text-anchor="middle" fill="#1a1a1a">(frontend)</text>
+<rect x="31.2" y="84.0" width="192.6" height="58.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="127.5" y="108.0" text-anchor="middle" fill="#1a1a1a">認証ルーター</text>
+<text x="127.5" y="128.0" text-anchor="middle" fill="#1a1a1a">(api/routes/auth.py)</text>
+<rect x="32.6" y="188.0" width="189.7" height="78.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="127.5" y="212.0" text-anchor="middle" fill="#1a1a1a">プロジェクト・チャット</text>
+<text x="127.5" y="232.0" text-anchor="middle" fill="#1a1a1a">ルーター(api/routes/</text>
+<text x="127.5" y="252.0" text-anchor="middle" fill="#1a1a1a">projects.py)</text>
+<rect x="36.8" y="436.0" width="181.5" height="78.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="127.5" y="460.0" text-anchor="middle" fill="#1a1a1a">ドキュメントルーター(</text>
+<text x="127.5" y="480.0" text-anchor="middle" fill="#1a1a1a">api/routes/</text>
+<text x="127.5" y="500.0" text-anchor="middle" fill="#1a1a1a">documents.py)</text>
+<rect x="289.1" y="312.0" width="146.8" height="78.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="362.5" y="336.0" text-anchor="middle" fill="#1a1a1a">認証サービス(</text>
+<text x="362.5" y="356.0" text-anchor="middle" fill="#1a1a1a">services/auth_</text>
+<text x="362.5" y="376.0" text-anchor="middle" fill="#1a1a1a">service.py)</text>
+<rect x="267.6" y="436.0" width="189.7" height="78.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="362.5" y="460.0" text-anchor="middle" fill="#1a1a1a">プロジェクト・チャット</text>
+<text x="362.5" y="480.0" text-anchor="middle" fill="#1a1a1a">サービス(services/</text>
+<text x="362.5" y="500.0" text-anchor="middle" fill="#1a1a1a">project_service.py)</text>
+<rect x="265.3" y="560.0" width="194.4" height="78.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="362.5" y="584.0" text-anchor="middle" fill="#1a1a1a">AIエージェントサービス</text>
+<text x="362.5" y="604.0" text-anchor="middle" fill="#1a1a1a">(services/ai_</text>
+<text x="362.5" y="624.0" text-anchor="middle" fill="#1a1a1a">service.py)</text>
+<rect x="506.5" y="436.0" width="182.1" height="78.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="597.5" y="460.0" text-anchor="middle" fill="#1a1a1a">ユーザーリポジトリ(</text>
+<text x="597.5" y="480.0" text-anchor="middle" fill="#1a1a1a">repositories/user_</text>
+<text x="597.5" y="500.0" text-anchor="middle" fill="#1a1a1a">repository.py)</text>
+<rect x="502.1" y="684.0" width="190.9" height="118.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="597.5" y="708.0" text-anchor="middle" fill="#1a1a1a">プロジェクト・チャット</text>
+<text x="597.5" y="728.0" text-anchor="middle" fill="#1a1a1a">リポジトリ(</text>
+<text x="597.5" y="748.0" text-anchor="middle" fill="#1a1a1a">repositories/</text>
+<text x="597.5" y="768.0" text-anchor="middle" fill="#1a1a1a">project_repository.</text>
+<text x="597.5" y="788.0" text-anchor="middle" fill="#1a1a1a">py)</text>
+<rect x="502.6" y="848.0" width="189.7" height="98.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="597.5" y="872.0" text-anchor="middle" fill="#1a1a1a">ドキュメントリポジトリ</text>
+<text x="597.5" y="892.0" text-anchor="middle" fill="#1a1a1a">(repositories/</text>
+<text x="597.5" y="912.0" text-anchor="middle" fill="#1a1a1a">document_</text>
+<text x="597.5" y="932.0" text-anchor="middle" fill="#1a1a1a">repository.py)</text>
+<rect x="723.0" y="446.0" width="219.1" height="58.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="832.5" y="470.0" text-anchor="middle" fill="#1a1a1a">キャッシュ・制限管理</text>
+<text x="832.5" y="490.0" text-anchor="middle" fill="#1a1a1a">(cache/redis_client.py)</text>
+<rect x="744.3" y="704.0" width="176.5" height="78.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="832.5" y="728.0" text-anchor="middle" fill="#1a1a1a">Geminiクライアント(</text>
+<text x="832.5" y="748.0" text-anchor="middle" fill="#1a1a1a">external/gemini_</text>
+<text x="832.5" y="768.0" text-anchor="middle" fill="#1a1a1a">client.py)</text>
+</svg></div><h3>モジュール一覧</h3><div class="scroll"><table aria-label="モジュール一覧"><thead><tr><th>パス</th><th>層</th><th>責務</th><th>主な依存先</th><th>関わる処理</th></tr></thead><tbody><tr><td><span class="mono">frontend</span></td><td>入口</td><td>Next.jsとTamaguiによる画面描画、プレビュー、操作インターフェースを提供する。</td><td><span class="mono">api/routes/auth.py, api/routes/projects.py, api/routes/documents.py</span></td><td>F-01, F-02, F-03, F-04, F-05, F-06, F-07, F-08, F-09, F-10, F-11</td></tr><tr><td><span class="mono">api/routes/auth.py</span></td><td>入口</td><td>サインアップ、ログイン、ログアウトのエンドポイント制御を行う。</td><td><span class="mono">services/auth_service.py</span></td><td>F-01, F-02, F-03</td></tr><tr><td><span class="mono">api/routes/projects.py</span></td><td>入口</td><td>プロジェクト管理、参考資料アップロード、チャット、承認のエンドポイント制御を行う。</td><td><span class="mono">services/project_service.py, services/ai_service.py</span></td><td>F-04, F-05, F-06, F-07, F-08</td></tr><tr><td><span class="mono">api/routes/documents.py</span></td><td>入口</td><td>設計書の取得、自己診断実行のエンドポイント制御を行う。</td><td><span class="mono">services/ai_service.py</span></td><td>F-09, F-10, F-11</td></tr><tr><td><span class="mono">services/auth_service.py</span></td><td>ユースケース</td><td>JWT発行やパスワードハッシュ化などの認証ビジネスロジックを処理する。</td><td><span class="mono">repositories/user_repository.py, cache/redis_client.py</span></td><td>F-01, F-02, F-03</td></tr><tr><td><span class="mono">services/project_service.py</span></td><td>ユースケース</td><td>参考資料のテキスト抽出、プロジェクト管理のビジネスロジックを実行する。</td><td><span class="mono">repositories/project_repository.py, external/gemini_client.py</span></td><td>F-04, F-05, F-06</td></tr><tr><td><span class="mono">services/ai_service.py</span></td><td>ユースケース</td><td>LangGraphによる対話制御、SSEストリーミング、4種設計書の逐次生成と自己診断の実行を行う。</td><td><span class="mono">repositories/project_repository.py, repositories/document_repository.py, external/gemini_client.py</span></td><td>F-07, F-08, F-09, F-10, F-11</td></tr><tr><td><span class="mono">repositories/user_repository.py</span></td><td>永続化</td><td>PostgreSQL上のユーザー情報の読み書きを行う。</td><td><span class="mono">PostgreSQL</span></td><td>F-01, F-02</td></tr><tr><td><span class="mono">repositories/project_repository.py</span></td><td>永続化</td><td>PostgreSQL上のプロジェクトおよびチャット履歴の読み書きを行う。</td><td><span class="mono">PostgreSQL</span></td><td>F-04, F-05, F-06, F-07, F-08</td></tr><tr><td><span class="mono">repositories/document_repository.py</span></td><td>永続化</td><td>PostgreSQL上の生成文書と自己診断結果（バージョン管理付き）の読み書きを行う。</td><td><span class="mono">PostgreSQL</span></td><td>F-08, F-09, F-10, F-11</td></tr><tr><td><span class="mono">cache/redis_client.py</span></td><td>外部連携</td><td>Redisによるレート制限およびトークン失効管理を行う。</td><td><span class="mono">Redis</span></td><td>F-03</td></tr><tr><td><span class="mono">external/gemini_client.py</span></td><td>外部連携</td><td>Gemini Flash-Lite APIとの通信およびPDFテキスト抽出を行う。</td><td><span class="mono">Gemini Flash-Lite API</span></td><td>F-05, F-07, F-08, F-11</td></tr></tbody></table></div></div></section><section class="chapter" id="ch05"><div class="rail"><div class="no">05</div><div class="step">段階5</div></div><div class="body"><h2>主要処理の手順</h2><h3>5.0 索引</h3><div class="scroll"><table aria-label="手順の索引"><thead><tr><th>処理ID</th><th>名称</th><th>トリガー</th><th>選定理由</th><th>手順数</th><th>詳細(06)</th></tr></thead><tbody><tr><td><a class="badge" href="#f-07">F-07</a></td><td>チャットメッセージを送信する</td><td><span class="mono">POST /api/v1/projects/{id}/chat</span></td><td>チャットメッセージを受信しLangGraphによるエージェント対話制御とSSEストリーミングによる逐次応答を行うため。</td><td>4</td><td><a class="badge" href="#l-01">L-01</a></td></tr><tr><td><a class="badge" href="#f-08">F-08</a></td><td>ヒアリング結果を承認し設計書生成をトリガーする</td><td><span class="mono">POST /api/v1/projects/{id}/approve</span></td><td>ヒアリング結果の承認を受け付け、裏で非同期の設計書生成プロセスを安全にトリガーするため。</td><td>6</td><td>—</td></tr></tbody></table></div><h3>5.0.1 処理 × モジュール(セルは手順番号)</h3><div class="scroll"><table aria-label="関与表"><thead><tr><th>処理ID</th><th class="mono">api/routes/projects.py</th><th class="mono">services/project_service.py</th><th class="mono">services/ai_service.py</th><th class="mono">external/gemini_client.py</th></tr></thead><tbody><tr><td><a class="badge" href="#f-07">F-07</a></td><td class="c"><a class="badge" href="#f-07-1">1</a></td><td class="c">—</td><td class="c"><a class="badge" href="#f-07-2">2</a></td><td class="c"><a class="badge" href="#f-07-3">3</a></td></tr><tr><td><a class="badge" href="#f-08">F-08</a></td><td class="c"><a class="badge" href="#f-08-2">2</a></td><td class="c"><a class="badge" href="#f-08-3">3</a></td><td class="c"><a class="badge" href="#f-08-4">4</a></td><td class="c"><a class="badge" href="#f-08-5">5</a></td></tr></tbody></table></div><nav class="tabs" data-group="proc"><a href="#f-07">F-07</a><a href="#f-08">F-08</a></nav><section class="panel" data-group="proc" id="f-07"><h3>5.1 F-07 チャットメッセージを送信する</h3><p class="muted">トリガー: <span class="mono">POST /api/v1/projects/{id}/chat</span></p><p class="muted">選定理由: チャットメッセージを受信しLangGraphによるエージェント対話制御とSSEストリーミングによる逐次応答を行うため。</p><div class="scroll"><table aria-label="F-07 の手順"><thead><tr><th>No</th><th>呼び出し元 → 呼び出し先</th><th>関数</th><th>渡すデータ</th><th>処理内容</th><th>結果</th><th>DB 操作</th><th>分岐・例外</th></tr></thead><tbody><tr id="f-07-1"><td>1</td><td>frontend → <span class="mono">api/routes/projects.py</span></td><td><span class="mono">post_chat</span></td><td>プロジェクトID(id), チャットメッセージ</td><td>チャットメッセージ送信リクエストを受け付ける</td><td>SSEストリーミングレスポンス</td><td>—</td><td>3a へ</td></tr><tr id="f-07-1a" class="branch"><td>1a</td><td></td><td></td><td></td><td>リクエストパラメータまたは認証の検証に失敗した場合</td><td>ValidationError → 400</td><td>—</td><td></td></tr><tr id="f-07-2"><td>2</td><td>api/routes/projects.py → <span class="mono">services/ai_service.py</span></td><td><span class="mono">AIservice.stream_chat</span> <a class="badge" href="#l-01">詳細 L-01 ↓</a></td><td>プロジェクトID(id), チャットメッセージ</td><td>LangGraphによるチャットメッセージ処理とストリーミングの実行を依頼する</td><td>ストリーミングジェネレーター</td><td>—</td><td></td></tr><tr id="f-07-3"><td>3</td><td>services/ai_service.py → <span class="mono">external/gemini_client.py</span></td><td><span class="mono">GeminiClient.invoke_lang_graph</span></td><td>チャットメッセージ, 過去の対話履歴</td><td>LangGraph制御に基づくGemini Flash-Lite APIとの対話処理を実行する</td><td>対話ストリーミングデータ</td><td>—</td><td></td></tr><tr id="f-07-4"><td>4</td><td>services/ai_service.py → <span class="mono">frontend</span></td><td></td><td>SSEストリーミングデータ</td><td>生成されたチャット応答をSSE形式でフロントエンドに返却する</td><td>SSEストリーミング応答</td><td>—</td><td></td></tr></tbody></table></div></section><section class="panel" data-group="proc" id="f-08"><h3>5.2 F-08 ヒアリング結果を承認し設計書生成をトリガーする</h3><p class="muted">トリガー: <span class="mono">POST /api/v1/projects/{id}/approve</span></p><p class="muted">選定理由: ヒアリング結果の承認を受け付け、裏で非同期の設計書生成プロセスを安全にトリガーするため。</p><div class="scroll"><table aria-label="F-08 の手順"><thead><tr><th>No</th><th>呼び出し元 → 呼び出し先</th><th>関数</th><th>渡すデータ</th><th>処理内容</th><th>結果</th><th>DB 操作</th><th>分岐・例外</th></tr></thead><tbody><tr id="f-08-1"><td>1</td><td>利用者 → <span class="mono">frontend</span></td><td></td><td>プロジェクトID(id), 承認要求</td><td>ヒアリング結果の承認ボタンを押下する</td><td>承認APIリクエストの送信</td><td>—</td><td></td></tr><tr id="f-08-2"><td>2</td><td>frontend → <span class="mono">api/routes/projects.py</span></td><td><span class="mono">approve_project</span></td><td>プロジェクトID(id), 承認要求</td><td>承認エンドポイントへPOSTリクエストを送信する</td><td>承認受付レスポンス</td><td>—</td><td>1a へ</td></tr><tr id="f-08-2a" class="branch"><td>2a</td><td></td><td></td><td>エラー情報</td><td>バリデーションエラーまたはプロジェクトが存在しない場合</td><td>400 Bad Request または 404 Not Found</td><td>—</td><td>エラー応答を返却</td></tr><tr id="f-08-3"><td>3</td><td>api/routes/projects.py → <span class="mono">services/project_service.py</span></td><td><span class="mono">approve_project</span></td><td>プロジェクトID(id)</td><td>プロジェクトの承認処理とステータス更新を呼び出す</td><td>更新済みプロジェクト情報</td><td>projects U</td><td></td></tr><tr id="f-08-4"><td>4</td><td>services/project_service.py → <span class="mono">services/ai_service.py</span></td><td><span class="mono">generate_documents_async</span></td><td>プロジェクトID(id)</td><td>4種の設計書を逐次生成する非同期処理をトリガーする</td><td>トリガー完了</td><td>—</td><td></td></tr><tr id="f-08-5"><td>5</td><td>services/ai_service.py → <span class="mono">external/gemini_client.py</span></td><td><span class="mono">generate_documents</span></td><td>プロジェクトID(id)</td><td>Gemini Flash-Lite APIを使用して4種の設計書を逐次生成する</td><td>生成された設計書データ</td><td>documents C</td><td></td></tr><tr id="f-08-6"><td>6</td><td>api/routes/projects.py → <span class="mono">利用者</span></td><td></td><td>設計書生成トリガー受付完了メッセージ</td><td>設計書生成トリガー受付完了メッセージを返却する</td><td>受付完了レスポンス</td><td>—</td><td></td></tr></tbody></table></div></section></div></section><section class="chapter" id="ch06"><div class="rail"><div class="no">06</div><div class="step">段階6</div></div><div class="body"><h2>処理ロジックの詳細</h2><h3>6.0 逆引き(関数 × 手順)</h3><div class="scroll"><table aria-label="逆引き"><thead><tr><th>L-ID</th><th>関数</th><th>モジュール</th><th>呼ばれる手順</th></tr></thead><tbody><tr><td><a class="badge" href="#l-01">L-01</a></td><td><span class="mono">AIservice.stream_chat</span></td><td><span class="mono">services/ai_service.py</span></td><td><a class="badge" href="#f-07-2">F-07#2</a></td></tr></tbody></table></div><nav class="tabs" data-group="logic"><a href="#l-01">L-01 AIservice.stream_chat</a></nav><section class="panel" data-group="logic" id="l-01"><h3>6.1 L-01 AIservice.stream_chat</h3><p class="muted">呼ばれる手順: <a class="badge" href="#f-07-2">↑ F-07#2</a></p><p class="muted">モジュール: <span class="mono">services/ai_service.py</span></p><div class="scroll"><table aria-label="L-01 の仕様"><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody><tr><td>シグネチャ</td><td><span class="mono">async def stream_chat(self, id: str, message: str) -&gt; AsyncGenerator[str, None]</span></td></tr><tr><td>引数</td><td>id: プロジェクトID / message: チャットメッセージ</td></tr><tr><td>戻り値</td><td>SSEフォーマットに則ったストリーミングジェネレーター</td></tr><tr><td>例外</td><td>ValueError: プロジェクトが存在しない場合 / Exception: 外部サービスでのエラー時</td></tr><tr><td>事前条件</td><td>プロジェクトIDが有効であり、かつ該当プロジェクトが存在すること</td></tr><tr><td>事後条件</td><td>LangGraphを通じた対話制御とSSEストリーミングが実行されること</td></tr></tbody></table></div><h4>擬似フロー</h4><ol><li>プロジェクトの存在確認を行う<ul><li>project_repositoryを使用してプロジェクトIDを検証する</li><li>存在しない場合はエラーを送出する</li></ul></li><li>LangGraphによる対話制御のグラフを初期化する<ul><li>document_repositoryから関連するドキュメントを取得する</li><li>グラフの状態を設定する</li></ul></li><li>gemini_clientを呼び出してストリーミング処理の準備をする<ul><li>チャットメッセージをクライアントに入力として渡す</li></ul></li><li>SSEフォーマットに変換しながらレスポンスを順次生成する<ul><li>自己診断の結果や4種設計書の逐次生成データをストリームに含める</li></ul></li></ol></section></div></section><section class="chapter" id="ch07"><div class="rail"><div class="no">07</div><div class="step">段階7</div></div><div class="body"><h2>横断事項</h2><div class="scroll"><table aria-label="横断事項"><thead><tr><th>項目</th><th>方針</th><th>関わるファイル(例)</th></tr></thead><tbody><tr><td>例外と HTTP</td><td>システム内で発生した例外は、APIの各エンドポイントにて一括してハンドリングし、適切なHTTPステータスコードに変換する。入力値の検証エラーは400 Bad Request、認証エラーは401 Unauthorized、リソースが見つからない場合は404 Not Found、予期せぬ内部エラーは500 Internal Server Errorを返却する。</td><td><span class="mono">api/routes/auth.py</span><br><span class="mono">api/routes/projects.py</span><br><span class="mono">api/routes/documents.py</span></td></tr><tr><td>認証</td><td>認証にはJWTを使用し、アクセストークンの有効期限は30分、リフレッシュトークンの有効期限は14日とする。リフレッシュトークンはHttpOnly Cookieに格納して安全に送信し、アクセストークンはAuthorizationヘッダーを通じて検証する。ログアウト時にはRedisを用いてトークンをブラックリストに追加し失効させる。</td><td><span class="mono">services/auth_service.py</span><br><span class="mono">cache/redis_client.py</span></td></tr><tr><td>トランザクション</td><td>データベースへの書き込みおよび更新処理は、永続化層の各リポジトリでトランザクション管理を行う。サービス層におけるビジネスロジックの処理が正常に完了した段階で明示的に commit を実行し、例外発生時には確実に rollback を行うこと。</td><td><span class="mono">repositories/user_repository.py</span><br><span class="mono">repositories/project_repository.py</span><br><span class="mono">repositories/document_repository.py</span></td></tr><tr><td>ログ</td><td>すべてのAPIリクエストおよびエラー発生時には、処理ID、タイムスタンプ、ユーザーID、エラーメッセージなどの詳細情報を構造化ログとして出力する。セキュリティ上の理由から、パスワードやJWTアクセストークンなどの機密情報はログに出力しないこと。</td><td><span class="mono">api/routes/auth.py</span><br><span class="mono">api/routes/projects.py</span><br><span class="mono">api/routes/documents.py</span></td></tr><tr><td>レート制限</td><td>APIの乱用を防ぐため、Redisを活用してリクエストのレート制限（Rate Limiting）を実装する。一定時間内に許容される最大リクエスト数を超過したアクセスに対しては、429 Too Many Requestsを返却する。</td><td><span class="mono">cache/redis_client.py</span></td></tr><tr><td>外部サービスの呼び出し</td><td>Gemini Flash-Lite APIなどの外部サービスとの通信では、ネットワークタイムアウトやレートリミット超過などの一時的な障害を考慮し、適切な例外処理およびリトライの方針を適用する。</td><td><span class="mono">external/gemini_client.py</span></td></tr></tbody></table></div></div></section></div><script>
+(function () {
+  document.documentElement.classList.add("js");
+  function show(group, id) {
+    document.querySelectorAll('.panel[data-group="' + group + '"]').forEach(function (p) {
+      p.classList.toggle("active", p.id === id);
+    });
+    document.querySelectorAll('.tabs[data-group="' + group + '"] a').forEach(function (a) {
+      a.setAttribute("aria-selected", a.getAttribute("href") === "#" + id ? "true" : "false");
+    });
+  }
+  function go() {
+    var id = decodeURIComponent(location.hash.slice(1));
+    var el = id && document.getElementById(id);
+    if (!el) return;
+    var panel = el.closest(".panel");
+    if (panel) show(panel.dataset.group, panel.id);
+    document.querySelectorAll(".hl").forEach(function (x) { x.classList.remove("hl"); });
+    var whole = el === panel || el.matches("section");
+    if (!whole) el.classList.add("hl");
+    el.scrollIntoView({ block: whole ? "start" : "center" });
+  }
+  document.querySelectorAll(".tabs[data-group]").forEach(function (t) {
+    var first = document.querySelector('.panel[data-group="' + t.dataset.group + '"]');
+    if (first) show(t.dataset.group, first.id);
+  });
+  document.addEventListener("click", function (ev) {
+    var a = ev.target.closest && ev.target.closest('a[href^="#"]');
+    if (a && a.getAttribute("href") === location.hash) { ev.preventDefault(); go(); }
+  });
+  window.addEventListener("hashchange", go);
+  go();
+})();
+</script></body></html>

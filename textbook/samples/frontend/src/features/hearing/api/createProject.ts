@@ -1,10 +1,12 @@
-// 作成：Phase-3-4｜更新：Phase-6-4,15-6
+// 作成：Phase-3-4｜更新：Phase-6-4,15-6,24(ゴール3後の調整)
 // Phase-15-6:追記 ── ProjectMode(@/features/dashboard/api/projects)
 import { apiFetch } from "@/lib/api/client";
 import type { ProjectMode, ProjectRead } from "@/features/dashboard/api/projects";
 import type { EnvironmentValues } from "@/features/hearing/schemas";
 
 export type CreateProjectInput = {
+  // Phase-24:追記
+  projectName: string;
   systemOverview: string;
   goalsRaw: string;
   notesRaw: string;
@@ -22,6 +24,8 @@ export type CreateProjectInput = {
 // 送信する(devex-api app/api/routes/projects.py の_parse_environment参照)。
 export function createProject(input: CreateProjectInput): Promise<ProjectRead> {
   const formData = new FormData();
+  // Phase-24:追記
+  formData.set("name", input.projectName);
   formData.set("system_overview", input.systemOverview);
   formData.set("goals_raw", input.goalsRaw);
   if (input.notesRaw) {

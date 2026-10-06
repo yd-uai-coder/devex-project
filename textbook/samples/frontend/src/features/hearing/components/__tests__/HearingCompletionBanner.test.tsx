@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-8
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(ゴール3後の調整)
 // Phase-6-6:追記 ── vitest.beforeEach, @/features/hearing/hearing-store.useHearingStore
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
@@ -40,10 +40,17 @@ describe("HearingCompletionBanner", () => {
     expect(screen.queryByText("ヒアリング内容の確認")).not.toBeInTheDocument();
   });
 
-  it("is_sufficient=trueなら要約とボタンを表示する", () => {
+  // Phase-24：更新
+  // it("is_sufficient=trueなら要約とボタンを表示する", () => {
+  // ↓↓
+  it("is_sufficient=trueならボタンを表示し、要約は繰り返さない(チャットのまとめに出るため)", () => {
     renderBanner();
 
-    expect(screen.getByText("要約テキスト")).toBeInTheDocument();
+    // Phase-24：更新
+    // expect(screen.getByText("要約テキスト")).toBeInTheDocument();
+    // ↓↓
+    expect(screen.queryByText("要約テキスト")).not.toBeInTheDocument();
+    expect(screen.getByText("チャットのまとめの内容で、設計書を生成できます。")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "この内容で設計書を生成する" })).toBeInTheDocument();
   });
 

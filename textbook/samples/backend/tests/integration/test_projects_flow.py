@@ -1,4 +1,4 @@
-# 作成：Phase-4-1｜更新：Phase-6-6
+# 作成：Phase-4-1｜更新：Phase-6-6,24(ゴール3後の調整)
 # 写経レベル: 定型 ── 個々のロジックはPhase 2の各サービス単体テストで既に検証済み。
 # ここでの狙いは「ルーティング・スキーマ変換・DIの配線」自体の統合的な確認(過去に
 # get_hearing_completionルートの配線漏れが見つかった教訓の横展開、decision-digest.md参照)。
@@ -40,8 +40,14 @@ def _install_fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
     fake = FakeLLM(
         content="[Fake] 次に、想定している主なユーザー層を教えてください。",
         stream_chunks=["[Fake] 次に、", "想定している主なユーザー層を教えてください。"],
+        # Phase-24：更新(完了判定はチャットの送信ごとに1回呼ばれる。下のテストは最大3往復)
+        # structured_sequence=[
+        #     HearingCompletionCheck(is_sufficient=True, summary="[Fake] 要約です", missing_points=[])
+        # ],
+        # ↓↓
         structured_sequence=[
             HearingCompletionCheck(is_sufficient=True, summary="[Fake] 要約です", missing_points=[])
+            for _ in range(3)
         ],
     )
     monkeypatch.setattr(chat_service_module, "get_gemini_llm", lambda: fake)
@@ -63,7 +69,14 @@ async def test_full_projects_flow_create_chat_generate_download(
     create_response = await client.post(
         "/api/v1/projects",
         headers=headers,
-        data={"system_overview": "在庫管理システム", "goals_raw": "在庫をリアルタイムに可視化したい"},
+        # Phase-24：更新(プロジェクト名は必須)
+        # data={"system_overview": "在庫管理システム", "goals_raw": "在庫をリアルタイムに可視化したい"},
+        # ↓↓
+        data={
+            "name": "在庫管理",
+            "system_overview": "在庫管理システム",
+            "goals_raw": "在庫をリアルタイムに可視化したい",
+        },
         files=[],  # multipart/form-dataを強制する(filesパラメータ自体はFastAPI側のFile()に必須)
     )
     assert create_response.status_code == 201
@@ -77,10 +90,28 @@ async def test_full_projects_flow_create_chat_generate_download(
     #     json={"message": "利用者は倉庫の担当者を想定しています"},
     # )
     # ↓↓
-    for message in (
-        "利用者は倉庫の担当者を想定しています",
-        "MVPでは在庫の入出庫記録と一覧表示のみ作ります",
-        "技術的な制約は特にありません",
+    # Phase-24：更新(判定は送信のたびに返信の前に行われ、GETはその結果を返す。2往復目までは足りない)
+    # for message in (
+    #     "利用者は倉庫の担当者を想定しています",
+    #     "MVPでは在庫の入出庫記録と一覧表示のみ作ります",
+    #     "技術的な制約は特にありません",
+    # ):
+    #     chat_response = await client.post(
+    #         f"/api/v1/projects/{project_id}/chat",
+    #         headers=headers,
+    #         json={"message": message},
+    #     )
+    #     assert chat_response.status_code == 200
+    # assert "text/event-stream" in chat_response.headers["content-type"]
+    # ↓↓
+    chat_responses = []
+    for index, message in enumerate(
+        (
+            "利用者は倉庫の担当者を想定しています",
+            "MVPでは在庫の入出庫記録と一覧表示のみ作ります",
+            "技術的な制約は特にありません",
+        ),
+        start=1,
     ):
         chat_response = await client.post(
             f"/api/v1/projects/{project_id}/chat",
@@ -88,7 +119,15 @@ async def test_full_projects_flow_create_chat_generate_download(
             json={"message": message},
         )
         assert chat_response.status_code == 200
-    assert "text/event-stream" in chat_response.headers["content-type"]
+        chat_responses.append(chat_response)
+        if index < 3:
+            pending = await client.get(
+                f"/api/v1/projects/{project_id}/hearing-completion", headers=headers
+            )
+            assert pending.json()["is_sufficient"] is False
+    assert "text/event-stream" in chat_responses[-1].headers["content-type"]
+    # 十分になった送信の返信は、判定のまとめ(LLMの返信ではない)
+    assert "[Fake] 要約です" in chat_responses[-1].text
 
     history_response = await client.get(f"/api/v1/projects/{project_id}/chat", headers=headers)
     assert history_response.status_code == 200
@@ -143,7 +182,14 @@ async def test_revising_status_after_message_on_completed_project(
     create_response = await client.post(
         "/api/v1/projects",
         headers=headers,
-        data={"system_overview": "勤怠管理システム", "goals_raw": "打刻を簡略化したい"},
+        # Phase-24：更新(プロジェクト名は必須)
+        # data={"system_overview": "勤怠管理システム", "goals_raw": "打刻を簡略化したい"},
+        # ↓↓
+        data={
+            "name": "勤怠管理",
+            "system_overview": "勤怠管理システム",
+            "goals_raw": "打刻を簡略化したい",
+        },
         files=[],
     )
     project_id = create_response.json()["id"]
@@ -157,3 +203,24 @@ async def test_revising_status_after_message_on_completed_project(
     )
     project_response = await client.get(f"/api/v1/projects/{project_id}", headers=headers)
     assert project_response.json()["status"] == "revising"
+
+
+# Phase-24:追記
+@pytest.mark.parametrize("name", ["   ", "あ" * 41])
+async def test_create_project_rejects_blank_or_too_long_name(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch, name: str
+) -> None:
+    """プロジェクト名は前後の空白を除いて1〜40文字(空白だけ・41文字は400。
+    欄そのものが空なら、FastAPIのフォームの必須チェックで422になる)。"""
+    _install_fake_llm(monkeypatch)
+    token = await _register_and_login(client)
+
+    response = await client.post(
+        "/api/v1/projects",
+        headers={"Authorization": f"Bearer {token}"},
+        data={"name": name, "system_overview": "在庫管理システム", "goals_raw": "可視化したい"},
+        files=[],
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "INVALID_PROJECT_NAME"

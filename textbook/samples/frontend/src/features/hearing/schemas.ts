@@ -1,8 +1,11 @@
-// 作成：Phase-3-4｜更新：Phase-6-4
+// 作成：Phase-3-4｜更新：Phase-6-4,24(ゴール3後の調整)
 import { z } from "zod";
 import { applyRules, maxLength, requiredText } from "@/lib/schemas/validation-rules";
 
 // docs/external_design.md 2.5節3項の文字数上限(Phase-0-5仕様診断3番)。
+// Phase-24:追記
+// 画面の見出しや設計書の表題に使うため短くする(バックエンドの上限と同じ)
+export const PROJECT_NAME_MAX_LENGTH = 40;
 const SYSTEM_OVERVIEW_MAX_LENGTH = 200;
 const GOALS_MAX_LENGTH = 80;
 const NOTES_MAX_LENGTH = 400;
@@ -17,8 +20,15 @@ export const environmentSchema = z.object({
 export type EnvironmentValues = z.infer<typeof environmentSchema>;
 
 // バックエンドのバリデーション(pydantic、Formフィールドはstr、下限のみFastAPI側で必須制御)は
-// システム概要・実現したいことの必須チェックのみを持つ。文字数上限はUXのための早期フィードバック。
+// システム概要・実現したいことの必須チェックと、プロジェクト名の1〜40文字のみを持つ。
+// それ以外の文字数上限はUXのための早期フィードバック。
 export const intakeSchema = z.object({
+  // Phase-24:追記
+  projectName: applyRules(
+    z.string().trim(),
+    requiredText("プロジェクト名"),
+    maxLength("プロジェクト名", PROJECT_NAME_MAX_LENGTH),
+  ),
   systemOverview: applyRules(
     z.string().trim(),
     requiredText("システム概要"),

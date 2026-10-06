@@ -1,10 +1,12 @@
-// 作成：Phase-3-4｜更新：Phase-6-4,15-7
+// 作成：Phase-3-4｜更新：Phase-6-4,15-7,24(ゴール3後の調整)
+// Phase-24:追記 ── @/features/hearing/schemas.PROJECT_NAME_MAX_LENGTH
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { IntakeForm } from "../IntakeForm";
+import { PROJECT_NAME_MAX_LENGTH } from "@/features/hearing/schemas";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
 const push = vi.fn();
@@ -46,6 +48,8 @@ describe("IntakeForm", () => {
 
     await user.click(screen.getByRole("button", { name: "ヒアリングを始める" }));
 
+    // Phase-24:追記
+    expect(await screen.findByText("プロジェクト名を入力してください")).toBeInTheDocument();
     expect(await screen.findByText("システム概要を入力してください")).toBeInTheDocument();
     // テンプレート一覧取得の1件のみ(プロジェクト作成は呼ばれない)
     expect(stub.requests).toHaveLength(1);
@@ -68,6 +72,8 @@ describe("IntakeForm", () => {
     const user = userEvent.setup();
     renderForm();
 
+    // Phase-24:追記
+    await user.type(screen.getByLabelText("プロジェクト名"), "備品予約");
     await user.type(screen.getByLabelText("システム概要"), "備品予約を一元管理したい");
     await user.type(screen.getByLabelText("実現したいこと"), "重複予約を防ぎたい");
 
@@ -83,6 +89,8 @@ describe("IntakeForm", () => {
 
     await vi.waitFor(() => expect(stub.requests).toHaveLength(2));
     const body = stub.requests[1].init?.body as FormData;
+    // Phase-24:追記
+    expect(body.get("name")).toBe("備品予約");
     expect(body.get("system_overview")).toBe("備品予約を一元管理したい");
     expect(body.get("goals_raw")).toBe("重複予約を防ぎたい");
     expect(JSON.parse(body.get("environment") as string)).toEqual({
@@ -100,12 +108,29 @@ describe("IntakeForm", () => {
   // Phase-15-7:追記
   }, 15000);
 
+  // Phase-24:追記
+  it("プロジェクト名が40文字を超えるとバリデーションエラーを表示し、APIを呼ばない", async () => {
+    stub.queue({ status: 200, body: [] }); // テンプレート一覧(マウント時に取得)
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("プロジェクト名"), "あ".repeat(PROJECT_NAME_MAX_LENGTH + 1));
+    await user.type(screen.getByLabelText("システム概要"), "備品予約");
+    await user.type(screen.getByLabelText("実現したいこと"), "重複を防ぐ");
+    await user.click(screen.getByRole("button", { name: "ヒアリングを始める" }));
+
+    expect(await screen.findByText(/プロジェクト名は40文字/)).toBeInTheDocument();
+    expect(stub.requests).toHaveLength(1);
+  }, 15000);
+
   it("mode=detailedを渡すと、詳細設計モードでプロジェクトを作成する", async () => {
     stub.queue({ status: 200, body: [] }); // テンプレート一覧(マウント時に取得)
     stub.queue({ status: 201, body: { id: "p2", title: "t", status: "interviewing", mode: "detailed" } });
     const user = userEvent.setup();
     renderForm("detailed");
 
+    // Phase-24:追記
+    await user.type(screen.getByLabelText("プロジェクト名"), "備品予約");
     await user.type(screen.getByLabelText("システム概要"), "備品予約");
     await user.type(screen.getByLabelText("実現したいこと"), "重複を防ぐ");
     await user.click(screen.getByRole("button", { name: "ヒアリングを始める" }));
@@ -147,6 +172,8 @@ describe("IntakeForm", () => {
     const user = userEvent.setup();
     renderForm();
 
+    // Phase-24:追記
+    await user.type(screen.getByLabelText("プロジェクト名"), "備品予約");
     await user.type(screen.getByLabelText("システム概要"), "備品予約を一元管理したい");
     await user.type(screen.getByLabelText("実現したいこと"), "重複予約を防ぎたい");
     await user.click(await screen.findByRole("radio", { name: /Webアプリケーション標準/ }));

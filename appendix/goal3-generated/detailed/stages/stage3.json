@@ -1,0 +1,16 @@
+{
+  "stage": 3,
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "cells": []
+  },
+  "updated_at": "2026-10-06T05:42:53.021214Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": []
+}

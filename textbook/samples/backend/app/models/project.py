@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2
+# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整)
 # 写経レベル: 定型 ── 既存User/Conversationと同型のORMモデル定義。
 import uuid
 from datetime import datetime
@@ -45,6 +45,10 @@ class Project(Base):
     )
     # intake: 初期ヒアリング入力(system_overview/goals_raw/notes_raw/environment)をそのまま保持する
     intake: Mapped[dict | None] = mapped_column(PortableJSON, nullable=True)
+    # Phase-24:追記
+    # hearing_check: 直近のヒアリング完了判定の結果(is_sufficient/summary/missing_points)。
+    # 発言のたびに判定し直して保存し、完了判定の取得はこれを返す(画面を開き直しても変わらない)
+    hearing_check: Mapped[dict | None] = mapped_column(PortableJSON, nullable=True)
     # Phase-6-3:追記 ── SCR-003で選択したテンプレート(prompt_templates.id)。intake JSONには含めず
     # 専用カラムとして永続化する(ヒアリング再開・再生成時も含めプロジェクトのライフサイクル
     # 全体を通じて参照するため)。

@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-6-1,6-5,6-6,8-5,10-1
+# 作成：Phase-2-4｜更新：Phase-6-1,6-5,6-6,8-5,10-1,24(ゴール3後の調整)
 # Phase-6-5:追記 ── structlog.testing
 import uuid
 from typing import Any
@@ -385,3 +385,15 @@ def test_internal_design_prompt_asks_for_fixed_format_headings_for_uml_generatio
     assert "### 処理別データフロー" in prompt
     assert "#### DF-<連番>: <HTTPメソッド> <パス>" in prompt
     assert "元/データ/変換/先" in prompt
+
+
+# Phase-24:追記
+def test_implementation_plan_prompt_asks_for_unnumbered_checkbox_tasks() -> None:
+    """実装計画書プロンプトが、WBSのタスクを番号なしのチェックボックスで書くよう指示していること
+    (LLMが自分で振った番号は、区分をまたいで重複しやすいため)。"""
+    from app.services.doc_generator_service import _DOC_TYPE_PROMPTS
+
+    prompt = _DOC_TYPE_PROMPTS["implementation_plan"]
+
+    assert "`- [ ] タスク内容`" in prompt
+    assert "タスクに番号を付けない" in prompt

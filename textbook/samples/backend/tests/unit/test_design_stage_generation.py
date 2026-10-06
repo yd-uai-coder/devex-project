@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,24(ゴール3後の調整)
 # 写経レベル: コア ── 生成の受け付け → 実行 → 失敗・回収をサービス越しに確かめる。段階2は DFD・データ項目まで1トランザクションで書くこと。
 """段階の下書きの生成(受け付け・実行・回収)と、生成・検証に関わる段階のAPIのテスト。
 
@@ -527,7 +527,11 @@ async def test_stage2_without_dfd_groups_writes_only_summaries(db_session: Async
     assert llm.structured_output_calls == [ProcessSummaryGenerationOutput]
     assert stage2.model is not None
     assert stage2.model == data_flow_model() | {"summaries": stage2.model["summaries"]}
-    assert stage2.issues == []
+    # Phase-24：更新
+    # assert stage2.issues == []
+    # ↓↓
+    # DFD を描くグループを選んでいないので、その警告だけが出る
+    assert [issue.code for issue in stage2.issues] == ["NO_DFD_GROUPS"]
 
 
 async def test_resolve_by_name_reuses_existing_and_creates_missing(

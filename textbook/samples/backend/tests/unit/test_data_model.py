@@ -1,4 +1,4 @@
-# 作成：Phase-18-1
+# 作成：Phase-18-1｜更新：24(ゴール3後の調整)
 # 写経レベル: コア ── DFD・ER を要約で渡し、CRUD 図の組み立てと検証を純粋関数のまま確かめる。
 """段階3 データモデルの組み立て(CRUD 図)と検証のテスト。
 
@@ -205,6 +205,17 @@ def test_validate_requires_approved_er() -> None:
 
 
 # Phase-18-1:追記(画面確認後の修正)
+# Phase-24:追記
+def test_validate_rejects_er_without_tables() -> None:
+    """段階2で DFD を描かないと ER の下書きが空になる。テーブルの無い ER では承認できない。"""
+    empty = ErDiagramSummary("approved", "completed", ())
+    sources = StageSources(stages={1: function_list_model()}, er_diagram=empty)
+
+    issues = validate_data_model({"cells": []}, sources)
+
+    assert [i.code for i in issues if i.severity == "error"] == ["ER_EMPTY"]
+
+
 def test_validate_rejects_duplicate_table_names() -> None:
     """テーブル名は CRUD 図のセルを引く鍵なので、ER で名前が重なると承認できない(Phase 18)。"""
     er = _approved_er("reservations", "new_table", " New_Table")

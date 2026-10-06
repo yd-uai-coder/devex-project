@@ -1,0 +1,55 @@
+{
+  "stage": 6,
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 3,
+  "approved_version": 3,
+  "model": {
+    "logics": [
+      {
+        "pre": "プロジェクトIDが有効であり、かつ該当プロジェクトが存在すること",
+        "args": "id: プロジェクトID / message: チャットメッセージ",
+        "post": "LangGraphを通じた対話制御とSSEストリーミングが実行されること",
+        "module": "services/ai_service.py",
+        "pseudo": [
+          {
+            "sub": [
+              "project_repositoryを使用してプロジェクトIDを検証する",
+              "存在しない場合はエラーを送出する"
+            ],
+            "text": "プロジェクトの存在確認を行う"
+          },
+          {
+            "sub": [
+              "document_repositoryから関連するドキュメントを取得する",
+              "グラフの状態を設定する"
+            ],
+            "text": "LangGraphによる対話制御のグラフを初期化する"
+          },
+          {
+            "sub": [
+              "チャットメッセージをクライアントに入力として渡す"
+            ],
+            "text": "gemini_clientを呼び出してストリーミング処理の準備をする"
+          },
+          {
+            "sub": [
+              "自己診断の結果や4種設計書の逐次生成データをストリームに含める"
+            ],
+            "text": "SSEフォーマットに変換しながらレスポンスを順次生成する"
+          }
+        ],
+        "raises": "ValueError: プロジェクトが存在しない場合 / Exception: 外部サービスでのエラー時",
+        "returns": "SSEフォーマットに則ったストリーミングジェネレーター",
+        "function": "AIservice.stream_chat",
+        "signature": "async def stream_chat(self, id: str, message: str) -> AsyncGenerator[str, None]"
+      }
+    ]
+  },
+  "updated_at": "2026-10-06T05:44:59.528967Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": []
+}

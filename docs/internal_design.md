@@ -57,11 +57,12 @@
 | :--- | :--- | :--- | :--- |
 | id | UUID | PK, DEFAULT gen_random_uuid() | プロジェクトID |
 | user_id | UUID | FK (`users.id`), NOT NULL | 所有ユーザーID |
-| title | VARCHAR(255) | NOT NULL | プロジェクト名 / アイデア概要 |
+| title | VARCHAR(255) | NOT NULL | プロジェクト名。作成時に入力する(必須・前後の空白を除いて1〜40文字。ゴール3後の調整)。以前のプロジェクトは、システム概要の全文が入っている |
 | status | VARCHAR(50) | NOT NULL, DEFAULT 'interviewing' | 状態 (interviewing: ヒアリング中, generating: 生成中, completed: 完了, revising: 修正中。completed後に新規チャットメッセージを送るとrevisingへ遷移する) |
 | mode | VARCHAR(20) | NOT NULL, DEFAULT 'simple'（※ステージ4、Phase 15）  | 作成時に選んだモード。`simple`(簡易ドキュメントモード: 4文書の一括生成)/`detailed`(詳細設計モード: 要件定義・外部設計の後に段階1〜7)。作成後は変えない。既存の行は`simple`にする([外部設計書](external_design.md) 2.7節) |
 | template_id | UUID | FK (`prompt_templates.id`), NULL可（※ステージ2対応） | SCR-003で選択したテンプレート。クライアント側のプリフィルのみで終わらせず、プロジェクトのライフサイクル全体(ヒアリング再開・再生成時)を通じて選択したテンプレートを保持するためサーバー側に永続化する(⑤`prompt_templates`テーブル参照) |
 | intake | JSONB | NULL可 | 初期ヒアリング入力([外部設計書](external_design.md) 2.5節3項)をそのまま保持。`system_overview`/`goals_raw`/`notes_raw`/`environment` を含む |
+| hearing_check | JSONB | NULL可(ゴール3後の調整) | 直近のヒアリング完了判定の結果(`is_sufficient`/`summary`/`missing_points`)。ユーザーの発言のたびに判定し直して保存し、`GET /hearing-completion`はこれを返す。まだ判定していない、または直近の判定に失敗したら NULL(「十分でない」として扱う) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
 
@@ -233,6 +234,7 @@ backend/
   * プロジェクト作成時、`intake`(初期ヒアリング入力)を`sender='intake'`の`chat_histories`行として永続化する。添付ファイルがある場合は`intake_files`のテキスト化(後述)も行い、その`extracted_text`も`sender='intake'`の`chat_histories`行(ファイルごと、またはintake本体行への追記)として併せて永続化する。ユーザーからの入力とこれまでの `chat_histories`(intake行・添付ファイル由来の行を含む)をLangChainのメモリ（Memory）にロードし、LLMへ送信することで、チャット開始直後のAIの最初の発話に反映する。
   * **添付ファイルのテキスト化**: `txt`/`md`はファイル内容をUTF-8テキストとしてそのまま読み込む。`pdf`は既存の`app/ai/llm/gemini.py`のGeminiクライアントを流用し、ファイルをそのまま渡してLLMのネイティブなファイル理解でテキスト化する(新規のPDF解析ライブラリは追加しない)。結果は`intake_files`テーブルに保存する(3.2節参照)。
   * ヒアリングが十分な状態に達したか（あるいはユーザーが生成を要求したか）を判定するロジックを保持。判定基準([外部設計書](external_design.md) 2.3節SCR-004参照): (1)目的・課題の明確化、(2)コア機能が最低1つ以上「誰が・何を・なぜ」のレベルで具体化、(3)想定ユーザー像の把握、(4)MVPスコープの認識合わせ、(5)環境設定未入力時は技術的制約の確認、をすべて満たしたら「十分」と判定する。十分と判断した場合は、即座に生成へ進まず、構造化した要件サマリをユーザーに提示して明示的な承認を得てから次のステップ（`doc_generator_service.py` の呼び出し）に進む。
+  * **判定してから返信する(ゴール3後の調整)**: `stream_reply`は、ユーザーの発言を保存したら先に`check_completion`を呼び、結果を`projects.hearing_check`に保存する。十分なら LLM で返信を作らず、判定の`summary`から決まった形の返信(サマリ+「この内容で設計書を生成する」を押す案内)を流す。足りなければ、`missing_points`(発話の回数が足りないことを示す点は除く)をシステムプロンプトに「まだ確認できていない観点」として足して返信を作る。判定に失敗(`GenerationFailedError`)したら、`hearing_check`を NULL にして通常の返信を作る(チャットは止めない)。`GET /hearing-completion`は`stored_completion`で保存値を返すだけで、LLM を呼ばない。`_HEARING_SYSTEM_PROMPT`には、確定の確認・サマリ・設計書の本文をチャットに書かないよう指示する。以前は判定(画面が返信の後に GET で別に呼ぶ)と返信が互いを知らずに動き、AIがまだ質問しているのにボタンが出たり、AIがチャットで確定を求めたり要件定義書を書き始めたりした。
   * **`completed → revising`遷移**: `project.status == "completed"`の状態でユーザーが新規チャットメッセージを送信すると、そのメッセージを永続化する前に`project.status`を`revising`(修正中)へ変更する。「チャットに戻る」操作は必ずしも修正指示を意味しないため、この遷移は実際にメッセージを送信した時点で初めて発生させ、チャット画面を開いただけでは発生させない。
 * **`doc_generator_service.py`**:
   * ヒアリング完了時、「要件定義」「外部設計」「内部設計」「実装計画」のそれぞれに特化したプロンプトを、この順に**連鎖的に**実行する。要件定義のみチャット全履歴をコンテキストとしてインプットし、以降の3文書は生の対話履歴を再解釈せず、前段で確定した文書だけを入力にする(外部設計は要件定義を、内部設計は要件定義+外部設計を、実装計画は要件定義+内部設計を入力にする)。こうすることで4文書間の記述の一貫性を確保する。
@@ -241,6 +243,7 @@ backend/
   * **生成の受け付け・失敗・固着(Phase 15)**: 生成の要求(`POST /generate`)の時点で`generating`にし、生成中なら409(`DOC_GENERATION_IN_PROGRESS`)にする。失敗したときは rollback で途中の版と古い版の削除を取り消してから、状態を戻し、失敗の通知(生の例外の文字列は含めない)だけを commit する。15分を超えて`generating`のままのプロジェクトは、プロジェクトの取得時と生成の要求時に、文書があれば`revising`、無ければ`interviewing`へ戻す(中断の通知をチャットに残す)。
   * **モードごとの生成(ステージ4、Phase 15)**: `projects.mode='simple'`は今と同じく4文書を連鎖生成する。`'detailed'`は要件定義・外部設計の2文書だけを生成し(自己診断つき)、内部設計・実装計画は詳細設計モードの段階(3.3節「4.」)へ引き継ぐ。
   * **外部設計書のAPI一覧(Phase 16)**: 外部設計書プロンプトに「2.6 API一覧」(メソッド/パス/概要/関連画面の表)を求める指示を足す。両方のモードで同じ。詳細設計モードの段階1が、機能グループの初期値をAPIのパスから決め、下書きに漏れたAPIを照合する材料にする。内部設計書プロンプトの3.3節のAPI表は、2.6と同じメソッド・パスを使い、内部の担当の観点で概要を書かせる([`textbook/Phase-16/Phase-16-1.md`](../textbook/Phase-16/Phase-16-1.md))。
+  * **実装計画書の WBS(ゴール3後の調整)**: 4.2のタスクは番号を付けないチェックボックス(`- [ ] タスク内容`)で書かせる。LLM が自分で振った番号は、区分をまたいで重複した(実際の生成で、フロントエンドの先頭が「2.2」になった)。
   * **モジュール一覧の表(ステージ4、Phase 15)**: 簡易ドキュメントモードの内部設計書プロンプトの3.3節に、ファイル単位の「モジュール一覧」(パス/層/責務/主な依存先)の表を求める指示を足す。詳細設計モードの段階4と同じ列で、簡易ドキュメントモードでもファイル単位の責務が分かるようにする(Phase 14の決定#6)。
   * **自己診断ステップ**: 4文書の生成完了後、生成した文書自体を入力として追加のLLM呼び出しを行い、不足・不明瞭な点を「最重要/中程度/軽微」の3段階に分類して抽出する([要件定義書](requirements.md) 1.4節「ドキュメント自己診断機能」)。抽出結果は`sender='others'`の`chat_histories`行として保存し、ユーザーへの提示は`chat_service.py`側のチャット表示ロジックが担う。
 
@@ -340,14 +343,14 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 * **段階2 データフロー(Phase 17)**:
   * `design_stages.model`(段階2)は`{dfd_groups, summaries}`(DFD を描く機能グループ・全処理の処理概要表`{function_id, input, process, output}`)だけ。DFD は`uml_diagrams`(notation=dfd、subject=機能グループ名)、データ辞書は`data_items`が正本で、model に複製しない(`app/detailed_design/data_flow.py`)。
   * 下書きは、処理概要表(LLM 1回)→ 選んだグループごとの DFD(1グループ LLM 1回、5グループまで)を順に呼び、段階・DFD・データ項目を1トランザクションで書く(失敗したらまとめて取り消す)。DFD の処理の箱は処理IDで、AIには`function_id`だけを書かせ、ステージ3の出力スキーマ`DfdGenerationOutput`に組み替えて写像(`app/uml/generation/mapper.py`)を再利用する(`app/detailed_design/data_flow_drafting.py`)。再生成では`dfd_groups`を引き継ぎ、選んだグループの DFD は同じ行を上書きする(承認はやり直し)。
-  * 検証(`STAGE_VALIDATORS[2]`)は、承認済みの段階1の内容と DFD の要約を`StageSources`で受け取る。エラー: 処理概要表の過不足・重複、グループの上限・重複・不明、選んだグループの DFD が無い・生成中・未承認。警告: 処理概要表の空欄、DFD の処理とグループの過不足。
+  * 検証(`STAGE_VALIDATORS[2]`)は、承認済みの段階1の内容と DFD の要約を`StageSources`で受け取る。エラー: 処理概要表の過不足・重複、グループの上限・重複・不明、選んだグループの DFD が無い・生成中・未承認。警告: DFD を描くグループが1つも無い(`NO_DFD_GROUPS`。段階3の ER は DFD のデータストアとデータ辞書から下書きするので、テーブルが作られない。DFD を描く分を人が選ぶ原則は変えないので、エラーにはしない。ゴール3後の調整)、処理概要表の空欄、DFD の処理とグループの過不足。
   * 段階の外の正本の編集: 詳細設計モードで DFD を保存・自動レイアウトする、またはデータ項目を作成・更新・削除すると、承認済みの段階2を`reviewing`・version+1 に戻す(`DesignStageService.mark_edited`)。段階3が段階2の承認した版で陳腐化を判定するため。
 * **CRUD図**: 段階2のDFDの線の向きから、R(ストア → 処理)とW(処理 → ストア)を決定的に作る。Wの C/U/D の区別と、DFDに描いていない処理の分は、AIが処理概要表から下書きし、人が確定する。
 * **段階3 データモデル(Phase 18)**:
   * `design_stages.model`(段階3)は`{cells: [{function_id, table, ops, draft}]}`(CRUD 図のセル)だけ。`ops`は C・R・U・D をこの順に並べた文字列、`draft`は AI の下書きのまま人が確定していない印。ER は`uml_diagrams`(notation=er、subject=`''`の1枚)、テーブル定義は ER の列の`constraints`・`description`とテーブルの`description`が正本で、model に複製しない(`app/detailed_design/data_model.py`)。
   * R/W の導出: 段階2で DFD を描くと選んだグループの DFD について、データストア → 処理 を R、処理 → データストア を W とする。データストアと ER のテーブルは名前で突き合わせる(前後の空白を除いて小文字)。`merge_crud`は、読みの線のセルに R を足し、書き込みの線のセルは C/U/D が無くても空で残す(検証のエラーで人に決めさせる)。
   * 下書き: ER(LLM 1回。入力は DFD のデータストア名・データ辞書・処理概要表。出力スキーマは段階3専用で制約・説明つき)→ CRUD 図(LLM 1回。DFD の R/W を「決まったもの」として渡す)を順に呼び、ER と段階を1トランザクションで書く。再生成は置き換え(前の版の人の確定は引き継がない)。ER は同じ行を上書きし承認はやり直し(`app/detailed_design/data_model_drafting.py`、`_save_diagram`)。
-  * 検証(`STAGE_VALIDATORS[3]`)は、ER の要約(`ErDiagramSummary`)と DFD の R/W(`DfdDiagramSummary.accesses`)を`StageSources`で受け取る。エラー: ER が無い・生成中・未承認、ER のテーブル名の重複(CRUD 図のセルを引く鍵のため)、セルの処理ID・テーブルが不明・重複、操作の形が不正、DFD の読みに R が無い・書き込みに C/U/D が無い。警告: 下書きのセルが残っている、DFD のデータストアが ER に無い、どの処理も触れないテーブル、主キーの無いテーブル。
+  * 検証(`STAGE_VALIDATORS[3]`)は、ER の要約(`ErDiagramSummary`)と DFD の R/W(`DfdDiagramSummary.accesses`)を`StageSources`で受け取る。エラー: ER が無い・生成中・未承認、ER にテーブルが無い(`ER_EMPTY`。段階4・5の入力にならないため。実際の生成で、DFD を描かずに進めると ER が空のまま承認できた。ゴール3後の調整)、ER のテーブル名の重複(CRUD 図のセルを引く鍵のため)、セルの処理ID・テーブルが不明・重複、操作の形が不正、DFD の読みに R が無い・書き込みに C/U/D が無い。警告: 下書きのセルが残っている、DFD のデータストアが ER に無い、どの処理も触れないテーブル、主キーの無いテーブル。
   * 承認で`draft`をすべて外す(承認 = 人の一括確定。version は増やさない)。段階の一覧(`DesignStageRead`)の段階3は、DFD から決まる R/W を`dfd_accesses`で返す(画面で導き直さないため)。
   * 段階の外の正本の編集: 詳細設計モードで ER を保存・自動レイアウトすると、承認済みの段階3を`reviewing`・version+1 に戻す(`UmlDiagramService._reopen_stage`。記法 → 段階の対応表で DFD と共通)。
 * **段階4 ソフトウェア構造(Phase 19)**:
@@ -407,6 +410,7 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 * `LLM_QUOTA_EXCEEDED`: Gemini Flash-Lite無料枠のトークン上限超過。ユーザーには「本日の利用上限に達しました」等の分かりやすいメッセージを表示する（`LLMQuotaExceededError`。[実装計画書](implementation_plan.md) 4.4リスク3参照）
 * `TOO_MANY_FILES`: 初期ヒアリングの添付ファイルが上限(3件)を超えている(`TooManyFilesError`)
 * `UNSUPPORTED_FILE_TYPE`: 添付ファイルがtxt/Markdown/PDF以外の形式である(`UnsupportedFileTypeError`)
+* `INVALID_PROJECT_NAME`: プロジェクト名が空白だけ、または40文字を超えている(`InvalidProjectNameError`。ゴール3後の調整)
 * `FILE_TOO_LARGE`: 添付ファイルが1ファイルあたりの上限(5MB)を超えている(`FileTooLargeError`)
 * `UML_SOURCE_DOCUMENT_MISSING` / `UML_GENERATION_IN_PROGRESS`(409)、`UML_SUBJECT_NOT_FOUND` / `ER_SCOPE_REQUIRED` / `TOO_MANY_SUBJECTS`(400): UML図のAI生成の受け付け時の検証(ステージ3、Phase 10)
 * `LLM_TOKEN_LIMIT` / `LLM_INVALID_OUTPUT`: UML図のAI生成で、トークン上限超過/構造化出力の解釈失敗(バックグラウンド実行中に発生するため、HTTPレスポンスではなく生成履歴`uml_generation_runs`の`reason_code`として記録する。Phase 10)

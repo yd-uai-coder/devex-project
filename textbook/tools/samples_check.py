@@ -10,7 +10,9 @@
   Python は AST(docstring を除く)、TS/TSX はコメントを除いた行、toml・css はコメントと空行を除いた行、その他は空行を除いた行で比べる。
 - 例外は samples_check_allow.txt に書く(1 行 = `samples のパス<TAB>本体のパス または -<TAB>理由`)。
 - 行の集まりが同じで並び順だけが違うものは「並び順のみ差」として数え、失敗にしない。
-- 不一致か samples のみが1件でもあれば終了コード 1。
+- `--api-since REF` / `--ui-since REF` を渡すと、REF 以降に本体で追加・変更したソース(backend/app・backend/tests・
+  backend/alembic・src・e2e)のうち、samples に無いものを「本体のみ」として数える(samples への作り忘れの検出。#21)。
+- 不一致・samples のみ・本体のみが1件でもあれば終了コード 1。
 """
 
 import argparse
@@ -117,10 +119,26 @@ def load_allow() -> dict[str, tuple[str | None, str]]:
     return allow
 
 
+# 作り忘れを調べる本体のソースの範囲。インフラ・設定ファイルは samples に写さない(#21)
+API_SOURCES = ("backend/app/", "backend/tests/", "backend/alembic/versions/")
+UI_SOURCES = ("src/", "e2e/")
+
+
+def changed_since(body: Body, since: str) -> list[str]:
+    """since から本体(ref または作業ツリー)までに追加・変更されたファイルのパス。"""
+    target = [body.ref] if body.ref else []
+    names = git("diff", "--name-only", "--diff-filter=AMR", since, *target, cwd=body.repo).splitlines()
+    if not body.ref:
+        names += git("ls-files", "--others", "--exclude-standard", cwd=body.repo).splitlines()
+    return sorted(set(names))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--api-ref", help="devex-api の ref(省略時は作業ツリー)")
     parser.add_argument("--ui-ref", help="devex-ui の ref(省略時は作業ツリー)")
+    parser.add_argument("--api-since", help="この ref 以降に devex-api で変わったファイルの作り忘れを調べる")
+    parser.add_argument("--ui-since", help="この ref 以降に devex-ui で変わったファイルの作り忘れを調べる")
     parser.add_argument("-v", "--verbose", action="store_true", help="不一致の差分を表示する")
     args = parser.parse_args()
 
@@ -159,6 +177,19 @@ def main() -> int:
             result["不一致"] += 1
             diff = [d for d in difflib.unified_diff(a, b, "samples", "本体", lineterm="", n=1)]
             problems.append(("不一致", sample, diff))
+
+    samples_api = {p.removeprefix("textbook/samples/") for p in tracked if p.startswith("textbook/samples/backend/")}
+    samples_ui = {ungroup(p.removeprefix("textbook/samples/frontend/")) for p in tracked if p.startswith("textbook/samples/frontend/")}
+    for since, body, prefixes, has_sample in (
+        (args.api_since, api, API_SOURCES, lambda p: p in samples_api),
+        (args.ui_since, ui, UI_SOURCES, lambda p: ungroup(p) in samples_ui),
+    ):
+        if not since:
+            continue
+        for path in changed_since(body, since):
+            if path.startswith(prefixes) and path in body.paths and not has_sample(path):
+                result["本体のみ"] += 1
+                problems.append(("本体のみ", f"{body.repo.name}/{path}", []))
 
     for kind, sample, diff in problems:
         print(f"{kind}: {sample}")

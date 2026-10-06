@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5,15-3
+# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5,15-3,24(ゴール3後の調整)
 # 写経レベル: コア ── MVPコアループ(ヒアリングフロー)そのもの。LangGraphを使わない設計判断も含む。
 # Phase-2-5:追記 ── app.services.llm_retry.invoke_with_retry
 # Phase-6-3:追記 ── app.models.prompt_template.PromptTemplate,
@@ -6,10 +6,11 @@
 # Phase-6-5:追記 ── time, structlog, app.services.llm_retry.prompt_char_count
 # Phase-15-3:追記 ── app.services.llm_retry.as_llm_error
 # Phase-8-5:追記 ── uuid
+# Phase-24:追記 ── collections.abc.Sequence, app.services.errors.GenerationFailedError
 import json
 import time
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 
 import structlog
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
@@ -22,6 +23,7 @@ from app.models.prompt_template import PromptTemplate
 from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.prompt_template import PromptTemplateRepository
 from app.schemas.generation import HearingCompletionCheck
+from app.services.errors import GenerationFailedError
 from app.services.llm_retry import as_llm_error, invoke_with_retry, prompt_char_count
 
 logger = structlog.get_logger(__name__)
@@ -36,6 +38,10 @@ _HEARING_SYSTEM_PROMPT = (
     "要約・反復しないでください。要件を確定するために今何が不足しているかを吟味した上で、"
     "その不足点を埋めるための問いかけに絞って簡潔に返信してください"
     "(シンプルな質問、選択肢の提示など)。"
+    # Phase-24:追記
+    "要件の確定の確認、ヒアリング内容のまとめ(サマリ)、設計書(要件定義書など)の本文は"
+    "チャットに書かないでください。要件がそろったかどうかの判定とまとめの提示はシステムが行い、"
+    "設計書は画面のボタンから生成します。"
 )
 
 # Phase-6-6：更新(ヒアリング完了バナーが、まだ確認事項が残っている段階で早期に表示される不具合が
@@ -77,6 +83,19 @@ _COMPLETION_CHECK_PROMPT = (
 # 完了とみなさない。プロンプトだけに頼らず、コード側で下限を保証する。
 _MIN_USER_TURNS_FOR_COMPLETION = 3
 
+# Phase-24:追記
+# ユーザー発話の回数が足りないときに完了判定へ足す不足点。対話の観点ではないので、
+# 返信の生成に渡す「まだ確認できていない観点」には含めない
+_TOO_FEW_TURNS_POINT = "対話がまだ十分に進んでいません"
+
+# 完了判定が十分になったときの返信。LLMで書かせず、判定のsummaryをそのまま見せることで、
+# チャットのまとめと画面の生成ボタンが同じ判定から同時に出るようにする
+_SUMMARY_REPLY_TEMPLATE = (
+    "ヒアリングの内容をまとめました。\n\n{summary}\n\n"
+    "この内容でよければ「この内容で設計書を生成する」を押してください。"
+    "直したい点があれば、チャットで伝えてください。"
+)
+
 _OPENING_TURN_PROMPT = (
     "これはこのプロジェクトのヒアリング対話における、あなたの最初の返信です。"
     "ユーザーから提示された内容をそのまま繰り返さず、次の形式で日本語で回答してください。\n"
@@ -108,11 +127,19 @@ class ChatService:
         """プロジェクトのチャット履歴を送信日時の昇順(発生順)で取得する。"""
         return await self._chat_histories.list_for_project(project_id)
 
+    # Phase-24：更新(docstring: 先に完了判定を行い、その結果で返信を決める)
     async def stream_reply(
         self, project: Project, *, user_message: str, llm=None
     ) -> AsyncIterator[str]:
-        """ユーザーメッセージを永続化し、これまでの対話履歴を踏まえたAI応答をストリーミングで生成する。
-        応答本文の断片を順次yieldし、ストリーム完了後にAI応答全体をchat_historiesへ保存する。
+        """ユーザーメッセージを永続化し、先にヒアリング完了判定を行ってから、その結果に応じたAI応答を
+        ストリーミングで返す。応答本文の断片を順次yieldし、完了後にAI応答全体をchat_historiesへ、
+        判定の結果をprojects.hearing_checkへ保存する。
+
+        - 十分なら、LLMで返信を作らず、判定のsummaryを決まった形で返す(まとめと生成ボタンを
+          同じ判定から同時に出すため)。
+        - 足りなければ、判定のmissing_pointsを渡して通常の返信を作る(AIがそこを聞くように)。
+        - 判定に失敗したら「足りない」として通常の返信を作り、保存済みの判定は消す(古い判定で
+          生成ボタンが残らないように)。チャット自体は止めない。
 
         completed(生成済み)のプロジェクトへ新規メッセージが送られた場合はrevising(修正中)へ
         遷移させる(ユーザーがヒアリング内容を修正し、再生成する意思を示したものとみなす)。
@@ -120,12 +147,33 @@ class ChatService:
         if project.status == "completed":
             project.status = "revising"
         await self._chat_histories.add(project_id=project.id, sender="user", message=user_message)
-        history = await self._chat_histories.list_for_project(project.id)
-        # Phase-6-3:追記
-        template = await self._load_template(project)
-        messages = _build_messages(history, project, template)
+        # Phase-24：削除
+        # history = await self._chat_histories.list_for_project(project.id)
+        # template = await self._load_template(project)
+        # messages = _build_messages(history, project, template)
 
         llm = llm or get_gemini_llm()
+        # Phase-24:追記
+        try:
+            check: HearingCompletionCheck | None = await self.check_completion(project, llm=llm)
+        except GenerationFailedError:
+            logger.warning("hearing_check_failed")
+            check = None
+        project.hearing_check = check.model_dump() if check is not None else None
+
+        if check is not None and check.is_sufficient:
+            reply = _SUMMARY_REPLY_TEMPLATE.format(summary=check.summary.strip())
+            yield reply
+            await self._chat_histories.add(project_id=project.id, sender="ai", message=reply)
+            await self._session.commit()
+            return
+
+        history = await self._chat_histories.list_for_project(project.id)
+        template = await self._load_template(project)
+        points = check.missing_points if check is not None else []
+        missing_points = [point for point in points if point != _TOO_FEW_TURNS_POINT]
+        messages = _build_messages(history, project, template, missing_points=missing_points)
+
         # Phase-6-5:追記 ── ストリーミングはinvoke_with_retryを経由しない([`stream_reply`]の
         # docstring参照)ため、DEBUGログ(レイテンシ・プロンプト文字数)はここで個別に記録する。
         started = time.monotonic()
@@ -205,9 +253,20 @@ class ChatService:
             return HearingCompletionCheck(
                 is_sufficient=False,
                 summary=result.summary,
-                missing_points=[*result.missing_points, "対話がまだ十分に進んでいません"],
+                # Phase-24：更新
+                # missing_points=[*result.missing_points, "対話がまだ十分に進んでいません"],
+                # ↓↓
+                missing_points=[*result.missing_points, _TOO_FEW_TURNS_POINT],
             )
         return result
+
+    # Phase-24:追記
+    def stored_completion(self, project: Project) -> HearingCompletionCheck:
+        """直近の発言で行ったヒアリング完了判定の結果を返す(LLMは呼ばない)。まだ判定していない、
+        または直近の判定に失敗したプロジェクトは「十分でない」とする。"""
+        if project.hearing_check is None:
+            return HearingCompletionCheck(is_sufficient=False, summary="", missing_points=[])
+        return HearingCompletionCheck.model_validate(project.hearing_check)
 
     async def generate_opening_reply(self, project: Project, *, llm=None) -> str:
         """ヒアリング開始直後、ユーザー発話を待たずにAIの最初の発話を生成し永続化する
@@ -245,11 +304,15 @@ class ChatService:
         return await self._prompt_templates.get_by_id(project.template_id)
 
 
+# Phase-24：更新(docstring: missing_points の説明を追記)
 def _build_messages(
     history: list[ChatHistory],
     project: Project,
     # Phase-6-3:追記 ── SCR-003で選択したテンプレート(未選択ならNone)
     template: PromptTemplate | None = None,
+    # Phase-24:追記 ── 直前の完了判定で足りなかった観点(返信の生成のときだけ渡す)
+    *,
+    missing_points: Sequence[str] = (),
 ) -> list[BaseMessage]:
     """chat_historiesの行(sender+message)を、LangChainのメッセージ列に変換する。
 
@@ -264,10 +327,17 @@ def _build_messages(
 
     templateが指定されている場合、その`system_prompt`を基本のヒアリングシステムプロンプトに
     合流させる(内部設計書3.2節⑤: 合流先は4文書生成ではなくヒアリングチャット側)。
+
+    missing_points(直前の完了判定で足りなかった観点)は、返信の生成のときだけシステムプロンプトに
+    足す。AIが次に何を聞くべきかを、完了判定と同じ基準にそろえるため。
     """
     system_prompt = _HEARING_SYSTEM_PROMPT
     if template is not None:
         system_prompt += f"\n\n[選択されたテンプレート: {template.name}]\n{template.system_prompt}"
+    # Phase-24:追記
+    if missing_points:
+        lines = "\n".join(f"- {point}" for point in missing_points)
+        system_prompt += f"\n\n[まだ確認できていない観点]\n{lines}"
     messages: list[BaseMessage] = [SystemMessage(content=system_prompt)]
     environment = (project.intake or {}).get("environment")
     if environment:

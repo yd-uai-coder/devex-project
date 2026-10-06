@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3,24(ゴール3後の調整)
 # 写経レベル: コア ── 添付ファイルのバリデーション順序・失敗時の非ブロッキング方針など、ドメイン判断を体現する箇所。
 # Phase-6-3:追記 ── app.repositories.prompt_template.PromptTemplateRepository,
 #   app.services.errors.PromptTemplateNotFoundError
@@ -6,6 +6,7 @@
 # Phase-8-5:追記 ── app.schemas.project.IntakeFileRead, app.schemas.project.ProjectDetail
 # Phase-15-1:追記 ── app.schemas.project.ProjectMode
 # Phase-15-3:追記 ── app.services.doc_generator_service.DocGeneratorService
+# Phase-24:追記 ── app.services.errors.InvalidProjectNameError
 import uuid
 from dataclasses import dataclass
 
@@ -21,6 +22,7 @@ from app.schemas.project import IntakeFileRead, ProjectDetail, ProjectMode
 from app.services.doc_generator_service import DocGeneratorService
 from app.services.errors import (
     FileTooLargeError,
+    InvalidProjectNameError,
     PromptTemplateNotFoundError,
     TooManyFilesError,
     UnsupportedFileTypeError,
@@ -33,6 +35,9 @@ logger = structlog.get_logger(__name__)
 MAX_FILES_PER_PROJECT = 3
 # 1ファイルあたりのサイズ上限(バイト)
 MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024
+# Phase-24:追記
+# プロジェクト名の文字数の上限(画面の見出しや設計書の表題に使うため短くする)
+PROJECT_NAME_MAX_LENGTH = 40
 
 
 @dataclass
@@ -60,6 +65,8 @@ class ProjectService:
         self,
         *,
         user_id: uuid.UUID,
+        # Phase-24:追記
+        name: str,
         intake: dict,
         files: list[UploadedFileInput],
         # Phase-6-3:追記 ── SCR-003で選択したテンプレートのID(任意)
@@ -68,6 +75,12 @@ class ProjectService:
         mode: ProjectMode = "simple",
     ) -> Project:
         """プロジェクトを作成し、初期ヒアリング入力と添付ファイルの内容をchat_historiesへ記録する。"""
+        # Phase-24:追記
+        title = name.strip()
+        if not title or len(title) > PROJECT_NAME_MAX_LENGTH:
+            raise InvalidProjectNameError(
+                f"プロジェクト名は1〜{PROJECT_NAME_MAX_LENGTH}文字で入力してください"
+            )
         if len(files) > MAX_FILES_PER_PROJECT:
             raise TooManyFilesError(f"添付ファイルは最大{MAX_FILES_PER_PROJECT}件までです")
         for file in files:
@@ -77,7 +90,8 @@ class ProjectService:
         if template_id is not None and await self._prompt_templates.get_by_id(template_id) is None:
             raise PromptTemplateNotFoundError(f"Prompt template {template_id} not found")
 
-        title = (intake.get("system_overview") or "").strip()[:255] or "無題のプロジェクト"
+        # Phase-24：削除
+        # title = (intake.get("system_overview") or "").strip()[:255] or "無題のプロジェクト"
         project = await self._projects.create(
             # Phase-15-1：更新
             # user_id=user_id, title=title, intake=intake, template_id=template_id

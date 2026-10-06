@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>実装計画書: Devex: AI との対話型チャットでユーザーのアイデアや要望をヒアリングし、「要件定義」「外部設計」「内部設計」「実装計画」の4種の Markdown 設計書を自動生成する Web アプリ。システム開発の初期フェーズで、ドキュメント作成の工数と属人化を減らしたい。</title><style>
+:root { --paper:#f5f6f8; --sheet:#fff; --ink:#1d2433; --muted:#5b6475; --rule:#d6dbe4;
+  --head:#eef1f6;
+  --accent:#1f5fae; --accent-soft:#e4edf9; --warn:#9a5b00; --warn-soft:#fbf1e0;
+  --branch:#f6f1e7; --hl:#fdf3c4;
+  color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper:#151a23;
+  --sheet:#1c2230;
+  --ink:#e3e7ee; --muted:#9aa3b4; --rule:#2e3647; --head:#242c3c; --accent:#7fb0f0;
+  --accent-soft:#1f3150;
+  --warn:#f0b45c; --warn-soft:#3a2c14; --branch:#2a2618; --hl:#4a4215; color-scheme: dark; } }
+:root[data-theme="dark"] { --paper:#151a23; --sheet:#1c2230; --ink:#e3e7ee; --muted:#9aa3b4;
+  --rule:#2e3647;
+  --head:#242c3c; --accent:#7fb0f0; --accent-soft:#1f3150; --warn:#f0b45c; --warn-soft:#3a2c14;
+  --branch:#2a2618;
+  --hl:#4a4215; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin:0; padding-block:28px 72px; padding-inline:16px; background:var(--paper);
+  color:var(--ink);
+  font:14.5px/1.75 "BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif; }
+.wrap { max-width:1120px; margin:0 auto; display:grid; gap:40px; }
+h1 { font-size:1.7rem; margin:0; line-height:1.35; } h2 { font-size:1.3rem; margin:0; }
+h3 { font-size:1.02rem; margin:10px 0 0; } h4 { font-size:0.95rem; margin:6px 0 0; }
+p { margin:0; max-width:78ch; } .muted { color:var(--muted); font-size:0.88em; }
+.mono { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:0.88em; }
+.status { justify-self:start; padding:6px 12px; border-radius:4px; color:var(--warn);
+  background:var(--warn-soft); }
+nav.toc { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:0.9em; }
+nav.toc a { color:var(--accent); text-decoration:none; }
+section.chapter { display:grid; grid-template-columns:84px minmax(0,1fr); gap:22px;
+  scroll-margin-top:12px; }
+.rail { border-right:2px solid var(--rule); padding-right:14px; text-align:right; }
+.rail .no { font-family:ui-monospace,Consolas,monospace; font-size:1.55rem; color:var(--accent);
+  line-height:1; }
+.rail .step { font-size:0.74rem; color:var(--muted); margin-top:6px; }
+.body { display:grid; gap:14px; min-width:0; }
+.scroll { overflow-x:auto; border:1px solid var(--rule); background:var(--sheet); }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+th, td { border-bottom:1px solid var(--rule); padding:5px 9px; text-align:left;
+  vertical-align:top; }
+th { background:var(--head); white-space:nowrap; }
+td.c { text-align:center; white-space:nowrap; }
+tr.branch td { background:var(--branch); } tr.branch td:first-child { font-weight:700; }
+.hl, tr.hl td { background:var(--hl) !important; }
+.figure { background:#fff; border:1px solid var(--rule); padding:10px; overflow-x:auto; }
+.figure svg { display:block; max-width:none; height:auto; }
+a.badge { display:inline-block; padding:0 7px; border-radius:4px; background:var(--accent-soft);
+  color:var(--accent);
+  text-decoration:none; font-family:ui-monospace,Consolas,monospace; font-size:12px;
+  margin:2px 2px 0 0; white-space:nowrap; }
+a.badge:hover { text-decoration:underline; }
+.op-dfd { color:var(--accent); font-weight:700; }
+.op-dfd_write { color:var(--warn); font-weight:700; text-decoration:underline;
+  text-decoration-color:var(--accent); }
+.op-human { color:var(--warn); font-weight:700; }
+.legend { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:0.84em; color:var(--muted); }
+.tabs { display:flex; flex-wrap:wrap; gap:6px; }
+.tabs a { padding:3px 10px; border:1px solid var(--rule); border-radius:4px;
+  background:var(--sheet); color:var(--ink);
+  text-decoration:none; font-size:13px; }
+.tabs a[aria-selected="true"] { background:var(--accent); border-color:var(--accent);
+  color:#fff; }
+.panel { display:grid; gap:8px; padding:12px; border:1px solid var(--rule);
+  background:var(--sheet);
+  scroll-margin-top:12px; min-width:0; }
+.js .panel:not(.active) { display:none; }
+ol { margin:0; padding-left:22px; } ol ul { margin:0; padding-left:18px; }
+@media (max-width:640px) { section.chapter { grid-template-columns:1fr; gap:8px; }
+  .rail { border-right:none; border-bottom:2px solid var(--rule); text-align:left; display:flex;
+  gap:12px;
+    align-items:baseline; padding:0 0 6px; } }
+</style></head><body><div class="wrap"><header style="display:grid;gap:12px"><div class="muted">Devex ／ 実装計画書</div><h1>Devex: AI との対話型チャットでユーザーのアイデアや要望をヒアリングし、「要件定義」「外部設計」「内部設計」「実装計画」の4種の Markdown 設計書を自動生成する Web アプリ。システム開発の初期フェーズで、ドキュメント作成の工数と属人化を減らしたい。</h1><p class="muted">承認済みの段階7から組み立てた実装計画です。横断事項は詳細設計書の07章にあります。</p></header><section class="chapter" id="plan1"><div class="rail"><div class="no">1</div></div><div class="body"><h2>マイルストーン</h2><div class="scroll"><table aria-label="マイルストーン一覧"><thead><tr><th>M-ID</th><th>名前</th><th>優先度</th><th>ゴール</th><th>処理</th></tr></thead><tbody><tr><td><a class="badge" href="#m-01">M-01</a></td><td>マイルストーン1: 環境構築と認証・横断事項の実装</td><td>Must</td><td>開発環境が構築され、JWT認証およびエラーハンドリング・Redis連携を含む横断事項が機能するようになる。</td><td>F-01, F-02, F-03</td></tr><tr><td><a class="badge" href="#m-02">M-02</a></td><td>マイルストーン2: プロジェクト管理と参考資料アップロード機能の実装</td><td>Must</td><td>プロジェクトの作成および参考資料（txt/md/pdf）のアップロード・テキスト抽出ができるようになる。</td><td>F-04, F-05, F-06</td></tr><tr><td><a class="badge" href="#m-03">M-03</a></td><td>マイルストーン3: AI対話ヒアリングとSSEストリーミングの実装</td><td>Must</td><td>LangGraph制御による対話型ヒアリングとSSEストリーミングによるリアルタイム応答が可能になる。</td><td>F-07</td></tr><tr><td><a class="badge" href="#m-04">M-04</a></td><td>マイルストーン4: 4種設計書の自動生成と自己診断・閲覧機能の実装</td><td>Must</td><td>ヒアリング結果の承認から非同期による4種の設計書生成、および自己診断とバージョン管理付き閲覧・プレビューができるようになる。</td><td>F-08, F-09, F-10, F-11</td></tr></tbody></table></div><h3 id="m-01">M-01 マイルストーン1: 環境構築と認証・横断事項の実装(Must)</h3><p>ゴール: 開発環境が構築され、JWT認証およびエラーハンドリング・Redis連携を含む横断事項が機能するようになる。</p><div class="scroll"><table aria-label="M-01 のタスク"><thead><tr><th>区分</th><th>タスク</th><th>作成・変更するファイル(例)</th><th>処理</th></tr></thead><tbody><tr><td>準備</td><td>Docker Composeおよびプロジェクトのディレクトリ構成と設定ファイルを作成する</td><td><span class="mono">docker-compose.yml</span><br><span class="mono">Dockerfile</span><br><span class="mono">frontend/package.json</span></td><td></td></tr><tr><td>バックエンド</td><td>JWT認証およびパスワードハッシュ化・Redisによるトークン失効管理を実装する</td><td><span class="mono">api/routes/auth.py</span><br><span class="mono">services/auth_service.py</span><br><span class="mono">repositories/user_repository.py</span><br><span class="mono">cache/redis_client.py</span></td><td>F-01, F-02, F-03</td></tr><tr><td>フロントエンド</td><td>Next.jsとTamaguiを用いてサインアップ・ログイン画面を実装する</td><td><span class="mono">frontend</span></td><td>F-01, F-02</td></tr><tr><td>テスト</td><td>認証系APIの単体テストおよび横断事項のエラーハンドリングのテストを実装する</td><td></td><td>F-01, F-02, F-03</td></tr><tr><td>デプロイ</td><td>GitHub Actionsによる自動デプロイ設定を行う</td><td><span class="mono">.github/workflows/deploy.yml</span></td><td></td></tr></tbody></table></div><h3 id="m-02">M-02 マイルストーン2: プロジェクト管理と参考資料アップロード機能の実装(Must)</h3><p>ゴール: プロジェクトの作成および参考資料（txt/md/pdf）のアップロード・テキスト抽出ができるようになる。</p><div class="scroll"><table aria-label="M-02 のタスク"><thead><tr><th>区分</th><th>タスク</th><th>作成・変更するファイル(例)</th><th>処理</th></tr></thead><tbody><tr><td>バックエンド</td><td>プロジェクト一覧取得・作成・詳細取得およびGeminiを利用した参考資料のテキスト抽出処理を実装する</td><td><span class="mono">api/routes/projects.py</span><br><span class="mono">services/project_service.py</span><br><span class="mono">repositories/project_repository.py</span><br><span class="mono">external/gemini_client.py</span></td><td>F-04, F-05, F-06</td></tr><tr><td>フロントエンド</td><td>プロジェクト一覧画面およびプロジェクト作成・参考資料アップロード画面を実装する</td><td><span class="mono">frontend</span></td><td>F-04, F-05, F-06</td></tr><tr><td>テスト</td><td>プロジェクト管理およびファイル抽出処理の結合テストを実装する</td><td></td><td>F-04, F-05, F-06</td></tr><tr><td>デプロイ</td><td>プロジェクト管理機能を含めてステージング環境へデプロイする</td><td></td><td></td></tr></tbody></table></div><h3 id="m-03">M-03 マイルストーン3: AI対話ヒアリングとSSEストリーミングの実装(Must)</h3><p>ゴール: LangGraph制御による対話型ヒアリングとSSEストリーミングによるリアルタイム応答が可能になる。</p><div class="scroll"><table aria-label="M-03 のタスク"><thead><tr><th>区分</th><th>タスク</th><th>作成・変更するファイル(例)</th><th>処理</th></tr></thead><tbody><tr><td>バックエンド</td><td>LangGraphによる対話制御ロジックとSSEストリーミング応答のエンドポイントを実装する</td><td><span class="mono">api/routes/projects.py</span><br><span class="mono">services/ai_service.py</span><br><span class="mono">external/gemini_client.py</span></td><td>F-07</td></tr><tr><td>フロントエンド</td><td>SSEストリーミングを受信してリアルタイム表示するチャット画面を実装する</td><td><span class="mono">frontend</span></td><td>F-07</td></tr><tr><td>テスト</td><td>チャット送信およびSSEストリーミングのモックテストを実装する</td><td></td><td>F-07</td></tr><tr><td>デプロイ</td><td>チャット機能を含めてサーバーへデプロイする</td><td></td><td></td></tr></tbody></table></div><h3 id="m-04">M-04 マイルストーン4: 4種設計書の自動生成と自己診断・閲覧機能の実装(Must)</h3><p>ゴール: ヒアリング結果の承認から非同期による4種の設計書生成、および自己診断とバージョン管理付き閲覧・プレビューができるようになる。</p><div class="scroll"><table aria-label="M-04 のタスク"><thead><tr><th>区分</th><th>タスク</th><th>作成・変更するファイル(例)</th><th>処理</th></tr></thead><tbody><tr><td>バックエンド</td><td>ヒアリング承認処理、4種設計書の非同期逐次生成処理、自己診断実行処理およびドキュメント永続化を実装する</td><td><span class="mono">api/routes/projects.py</span><br><span class="mono">api/routes/documents.py</span><br><span class="mono">services/ai_service.py</span><br><span class="mono">repositories/document_repository.py</span><br><span class="mono">external/gemini_client.py</span></td><td>F-08, F-09, F-10, F-11</td></tr><tr><td>フロントエンド</td><td>承認ボタン、設計書のプレビュー・コピー・ダウンロード画面、および自己診断結果表示画面を実装する</td><td><span class="mono">frontend</span></td><td>F-08, F-09, F-10, F-11</td></tr><tr><td>テスト</td><td>設計書生成のバックグラウンド処理および自己診断機能の結合テストを実装する</td><td></td><td>F-08, F-09, F-10, F-11</td></tr><tr><td>デプロイ</td><td>MVPの全機能を含む本番環境への自動デプロイを実施する</td><td><span class="mono">.github/workflows/deploy.yml</span></td><td></td></tr></tbody></table></div></div></section><section class="chapter" id="plan2"><div class="rail"><div class="no">2</div></div><div class="body"><h2>処理の割り当て</h2><div class="scroll"><table aria-label="処理の割り当て"><thead><tr><th>処理ID</th><th>名称</th><th>マイルストーン</th></tr></thead><tbody><tr><td>F-01</td><td>新規ユーザー登録を行う</td><td><a class="badge" href="#m-01">M-01</a></td></tr><tr><td>F-02</td><td>ログインを行う</td><td><a class="badge" href="#m-01">M-01</a></td></tr><tr><td>F-03</td><td>ログアウトを行う</td><td><a class="badge" href="#m-01">M-01</a></td></tr><tr><td>F-04</td><td>プロジェクト一覧を取得する</td><td><a class="badge" href="#m-02">M-02</a></td></tr><tr><td>F-05</td><td>プロジェクトを作成し参考資料をアップロードする</td><td><a class="badge" href="#m-02">M-02</a></td></tr><tr><td>F-06</td><td>プロジェクト詳細を取得する</td><td><a class="badge" href="#m-02">M-02</a></td></tr><tr><td>F-07</td><td>チャットメッセージを送信する</td><td><a class="badge" href="#m-03">M-03</a></td></tr><tr><td>F-08</td><td>ヒアリング結果を承認し設計書生成をトリガーする</td><td><a class="badge" href="#m-04">M-04</a></td></tr><tr><td>F-09</td><td>生成された設計書一覧を取得する</td><td><a class="badge" href="#m-04">M-04</a></td></tr><tr><td>F-10</td><td>特定の設計書内容と自己診断結果を取得する</td><td><a class="badge" href="#m-04">M-04</a></td></tr><tr><td>F-11</td><td>設計書の自己診断を実行する</td><td><a class="badge" href="#m-04">M-04</a></td></tr></tbody></table></div></div></section><section class="chapter" id="plan3"><div class="rail"><div class="no">3</div></div><div class="body"><h2>開発環境・事前準備</h2><p style="white-space:pre-wrap">開発環境としてPython 3.13、FastAPI、Next.js (App Router) + Tamagui、PostgreSQL、Redisを使用する。コンテナ化にはDocker Composeを用い、環境差異を排除する。CI/CDパイプラインにはGitHub Actionsを利用し、mainブランチへのpushをトリガーとしてVPS環境への自動デプロイを行う。自動テストはpytestおよびフロントエンドのテストフレームワークを用いて結合・単体テストを担保する。</p></div></section><section class="chapter" id="plan4"><div class="rail"><div class="no">4</div></div><div class="body"><h2>想定リスクと対策</h2><div class="scroll"><table aria-label="想定リスク"><thead><tr><th>リスク</th><th>対策</th></tr></thead><tbody><tr><td>Gemini Flash-Lite APIの無料枠上限超えやレートリミットによる設計書生成・チャットの失敗</td><td>リトライ処理や適切な例外ハンドリングを実装する。スケジュールが逼迫した場合は、4種の設計書のうち一部の自己診断機能を縮小・後回しにし、手動再試行機能で代替する。</td></tr><tr><td>LangGraphによる対話制御の複雑化によるスケジュール遅延</td><td>対話の必須観点を固定テンプレート化し、複雑な動的分岐を削ることで実装工数を削減する。</td></tr><tr><td>バックグラウンドでの4種設計書逐次生成におけるタイムアウトやパフォーマンス悪化</td><td>非同期処理キューまたはバックグラウンドタスクを安全に切り離し、進捗状態をDBで管理してフロントエンドからポーリングまたは確認できる仕組みに変更する。</td></tr><tr><td>PDF参考資料のテキスト抽出精度やフォーマット起因のパースエラー</td><td>テキスト抽出の許容上限を設け、PDFが読めない場合はテキスト(txt/md)でのアップロードを推奨する案内をUIに追加して回避する。</td></tr></tbody></table></div></div></section></div><script>
+(function () {
+  document.documentElement.classList.add("js");
+  function show(group, id) {
+    document.querySelectorAll('.panel[data-group="' + group + '"]').forEach(function (p) {
+      p.classList.toggle("active", p.id === id);
+    });
+    document.querySelectorAll('.tabs[data-group="' + group + '"] a').forEach(function (a) {
+      a.setAttribute("aria-selected", a.getAttribute("href") === "#" + id ? "true" : "false");
+    });
+  }
+  function go() {
+    var id = decodeURIComponent(location.hash.slice(1));
+    var el = id && document.getElementById(id);
+    if (!el) return;
+    var panel = el.closest(".panel");
+    if (panel) show(panel.dataset.group, panel.id);
+    document.querySelectorAll(".hl").forEach(function (x) { x.classList.remove("hl"); });
+    var whole = el === panel || el.matches("section");
+    if (!whole) el.classList.add("hl");
+    el.scrollIntoView({ block: whole ? "start" : "center" });
+  }
+  document.querySelectorAll(".tabs[data-group]").forEach(function (t) {
+    var first = document.querySelector('.panel[data-group="' + t.dataset.group + '"]');
+    if (first) show(t.dataset.group, first.id);
+  });
+  document.addEventListener("click", function (ev) {
+    var a = ev.target.closest && ev.target.closest('a[href^="#"]');
+    if (a && a.getAttribute("href") === location.hash) { ev.preventDefault(); go(); }
+  });
+  window.addEventListener("hashchange", go);
+  go();
+})();
+</script></body></html>

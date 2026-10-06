@@ -1,0 +1,205 @@
+{
+  "stage": 4,
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "modules": [
+      {
+        "path": "frontend",
+        "layer": "入口",
+        "functions": [
+          "F-01",
+          "F-02",
+          "F-03",
+          "F-04",
+          "F-05",
+          "F-06",
+          "F-07",
+          "F-08",
+          "F-09",
+          "F-10",
+          "F-11"
+        ],
+        "depends_on": [
+          "api/routes/auth.py",
+          "api/routes/projects.py",
+          "api/routes/documents.py"
+        ],
+        "all_functions": false,
+        "responsibility": "Next.jsとTamaguiによる画面描画、プレビュー、操作インターフェースを提供する。"
+      },
+      {
+        "path": "api/routes/auth.py",
+        "layer": "入口",
+        "functions": [
+          "F-01",
+          "F-02",
+          "F-03"
+        ],
+        "depends_on": [
+          "services/auth_service.py"
+        ],
+        "all_functions": false,
+        "responsibility": "サインアップ、ログイン、ログアウトのエンドポイント制御を行う。"
+      },
+      {
+        "path": "api/routes/projects.py",
+        "layer": "入口",
+        "functions": [
+          "F-04",
+          "F-05",
+          "F-06",
+          "F-07",
+          "F-08"
+        ],
+        "depends_on": [
+          "services/project_service.py",
+          "services/ai_service.py"
+        ],
+        "all_functions": false,
+        "responsibility": "プロジェクト管理、参考資料アップロード、チャット、承認のエンドポイント制御を行う。"
+      },
+      {
+        "path": "api/routes/documents.py",
+        "layer": "入口",
+        "functions": [
+          "F-09",
+          "F-10",
+          "F-11"
+        ],
+        "depends_on": [
+          "services/ai_service.py"
+        ],
+        "all_functions": false,
+        "responsibility": "設計書の取得、自己診断実行のエンドポイント制御を行う。"
+      },
+      {
+        "path": "services/auth_service.py",
+        "layer": "ユースケース",
+        "functions": [
+          "F-01",
+          "F-02",
+          "F-03"
+        ],
+        "depends_on": [
+          "repositories/user_repository.py",
+          "cache/redis_client.py"
+        ],
+        "all_functions": false,
+        "responsibility": "JWT発行やパスワードハッシュ化などの認証ビジネスロジックを処理する。"
+      },
+      {
+        "path": "services/project_service.py",
+        "layer": "ユースケース",
+        "functions": [
+          "F-04",
+          "F-05",
+          "F-06"
+        ],
+        "depends_on": [
+          "repositories/project_repository.py",
+          "external/gemini_client.py"
+        ],
+        "all_functions": false,
+        "responsibility": "参考資料のテキスト抽出、プロジェクト管理のビジネスロジックを実行する。"
+      },
+      {
+        "path": "services/ai_service.py",
+        "layer": "ユースケース",
+        "functions": [
+          "F-07",
+          "F-08",
+          "F-09",
+          "F-10",
+          "F-11"
+        ],
+        "depends_on": [
+          "repositories/project_repository.py",
+          "repositories/document_repository.py",
+          "external/gemini_client.py"
+        ],
+        "all_functions": false,
+        "responsibility": "LangGraphによる対話制御、SSEストリーミング、4種設計書の逐次生成と自己診断の実行を行う。"
+      },
+      {
+        "path": "repositories/user_repository.py",
+        "layer": "永続化",
+        "functions": [
+          "F-01",
+          "F-02"
+        ],
+        "depends_on": [
+          "PostgreSQL"
+        ],
+        "all_functions": false,
+        "responsibility": "PostgreSQL上のユーザー情報の読み書きを行う。"
+      },
+      {
+        "path": "repositories/project_repository.py",
+        "layer": "永続化",
+        "functions": [
+          "F-04",
+          "F-05",
+          "F-06",
+          "F-07",
+          "F-08"
+        ],
+        "depends_on": [
+          "PostgreSQL"
+        ],
+        "all_functions": false,
+        "responsibility": "PostgreSQL上のプロジェクトおよびチャット履歴の読み書きを行う。"
+      },
+      {
+        "path": "repositories/document_repository.py",
+        "layer": "永続化",
+        "functions": [
+          "F-08",
+          "F-09",
+          "F-10",
+          "F-11"
+        ],
+        "depends_on": [
+          "PostgreSQL"
+        ],
+        "all_functions": false,
+        "responsibility": "PostgreSQL上の生成文書と自己診断結果（バージョン管理付き）の読み書きを行う。"
+      },
+      {
+        "path": "cache/redis_client.py",
+        "layer": "外部連携",
+        "functions": [
+          "F-03"
+        ],
+        "depends_on": [
+          "Redis"
+        ],
+        "all_functions": false,
+        "responsibility": "Redisによるレート制限およびトークン失効管理を行う。"
+      },
+      {
+        "path": "external/gemini_client.py",
+        "layer": "外部連携",
+        "functions": [
+          "F-05",
+          "F-07",
+          "F-08",
+          "F-11"
+        ],
+        "depends_on": [
+          "Gemini Flash-Lite API"
+        ],
+        "all_functions": false,
+        "responsibility": "Gemini Flash-Lite APIとの通信およびPDFテキスト抽出を行う。"
+      }
+    ]
+  },
+  "updated_at": "2026-10-06T05:43:25.224959Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": []
+}

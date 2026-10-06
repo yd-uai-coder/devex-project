@@ -1,22 +1,26 @@
-# 作成：Phase-15-3
+# 作成：Phase-15-3｜更新：24(ゴール3後の調整)
 # 写経レベル: コア ── 200を返した後の失敗がSSEのイベントで届くことを確かめる。
 """ヒアリングチャットのSSEで、途中の失敗を`event: error`で伝えること(気づき#2)のテスト。
 
 SUT: send_hearing_message(ルート)と llm_retry.as_llm_error
 ドライバ: 各テスト関数(StreamingResponseの本体を最後まで読む)
 スタブ: _FailingStreamLLM ── 1断片を返した後に例外を出すLLM(途中で切れるストリームを模す)。
+返信の前の完了判定には「足りない」を返す(返信のストリームまで進めるため)。
 """
 
+# Phase-24:追記 ── tests.fixtures.fake_llm.FakeLLM, app.schemas.generation.HearingCompletionCheck
 import json
 from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
+from tests.fixtures.fake_llm import FakeLLM
 from tests.fixtures.uml import create_project
 
 from app.api.routes.projects import send_hearing_message
 from app.repositories.chat_history import ChatHistoryRepository
+from app.schemas.generation import HearingCompletionCheck
 from app.schemas.hearing import HearingMessageRequest
 from app.services import chat_service
 from app.services.errors import GenerationFailedError, LLMQuotaExceededError
@@ -32,6 +36,11 @@ class _FailingStreamLLM:
     async def astream(self, _messages: Any) -> AsyncIterator[_Chunk]:
         yield _Chunk("途中まで")
         raise RuntimeError("connection reset")
+
+    # Phase-24:追記
+    def with_structured_output(self, schema: Any) -> Any:
+        insufficient = HearingCompletionCheck(is_sufficient=False, summary="", missing_points=[])
+        return FakeLLM(structured=insufficient).with_structured_output(schema)
 
 
 async def _read_body(response: Any) -> str:

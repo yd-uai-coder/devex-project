@@ -1,0 +1,84 @@
+{
+  "stage": 2,
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "summaries": [
+      {
+        "input": "ユーザー登録情報(メールアドレス、パスワード)",
+        "output": "登録完了メッセージ",
+        "process": "パスワードをハッシュ化し、新規ユーザーアカウントを作成してPostgreSQLに保存する。",
+        "function_id": "F-01"
+      },
+      {
+        "input": "ログイン資格情報(メールアドレス、パスワード)",
+        "output": "JWTアクセストークンおよびリフレッシュトークンCookie",
+        "process": "認証情報を検証し、JWTアクセストークンを発行するとともにリフレッシュトークンをHttpOnly Cookieに設定する。",
+        "function_id": "F-02"
+      },
+      {
+        "input": "ログアウト要求",
+        "output": "ログアウト完了メッセージ",
+        "process": "Redisを用いてトークンを無効化する。",
+        "function_id": "F-03"
+      },
+      {
+        "input": "JWTアクセストークン",
+        "output": "プロジェクト一覧",
+        "process": "認証状態を検証し、PostgreSQLからプロジェクトの一覧データを取得する。",
+        "function_id": "F-04"
+      },
+      {
+        "input": "プロジェクト情報、参考資料(txt/md/pdf、最大3件)",
+        "output": "作成されたプロジェクト情報",
+        "process": "参考資料を読み込んでテキストを抽出し、プロジェクトを作成してPostgreSQLに保存する。",
+        "function_id": "F-05"
+      },
+      {
+        "input": "プロジェクトID(id)",
+        "output": "プロジェクト詳細情報",
+        "process": "プロジェクトIDをもとにPostgreSQLからプロジェクトの詳細情報を取得する。",
+        "function_id": "F-06"
+      },
+      {
+        "input": "プロジェクトID(id)、チャットメッセージ",
+        "output": "SSEストリーミングによるチャット応答",
+        "process": "LangGraph制御のチャットメッセージ処理を実行し、SSEストリーミング応答を返す。",
+        "function_id": "F-07"
+      },
+      {
+        "input": "プロジェクトID(id)、承認要求",
+        "output": "設計書生成トリガー受付完了メッセージ",
+        "process": "ヒアリング結果の承認を受け付け、裏で4種の設計書を逐次生成する非同期処理をトリガーする。",
+        "function_id": "F-08"
+      },
+      {
+        "input": "プロジェクトID(id)",
+        "output": "設計書一覧およびバージョン一覧",
+        "process": "PostgreSQLから生成された4種の設計書一覧やバージョン一覧を取得する。",
+        "function_id": "F-09"
+      },
+      {
+        "input": "プロジェクトID(id)、設計書ID(doc_id)",
+        "output": "設計書内容および自己診断結果",
+        "process": "指定された設計書内容およびAIによる自己診断結果を取得する。",
+        "function_id": "F-10"
+      },
+      {
+        "input": "プロジェクトID(id)、設計書ID(doc_id)",
+        "output": "自己診断結果",
+        "process": "AIを使用して設計書の自己診断を実行し、不足点を3段階で判定して結果を保存する。",
+        "function_id": "F-11"
+      }
+    ],
+    "dfd_groups": []
+  },
+  "updated_at": "2026-10-06T05:42:06.876340Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": []
+}

@@ -1,4 +1,4 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整)
 # 写経レベル: コア ── 段階ごとの検証の登録(STAGE_VALIDATORS)と、エラーと警告の分け方。
 # Phase-23-1：更新(docstring: 段階7の検証を登録したことと、その入力を書いた)
 """段階ごとの内容の検証(純粋関数)。
@@ -216,14 +216,15 @@ def validate_function_list(model: Mapping[str, Any], sources: StageSources) -> l
 
 
 # Phase-17-1:追記
+# Phase-24：更新(docstring: DFD を描くグループが無いときの警告)
 def validate_data_flow(model: Mapping[str, Any], sources: StageSources) -> list[StageIssue]:
     """段階2(データフロー)の検証。
 
     エラー: 形が不正 / DFD を描くグループが上限を超える・重複・機能一覧に無い /
     処理概要表の処理IDが機能一覧に無い・重複 / 処理概要表に無い処理 /
     選んだグループの DFD が無い・生成中・未承認。
-    警告: 処理概要表の入力・処理内容・出力が空 / DFD にそのグループでない処理がある /
-    DFD に描かれていないグループの処理がある。
+    警告: DFD を描く機能グループが1つも無い / 処理概要表の入力・処理内容・出力が空 /
+    DFD にそのグループでない処理がある / DFD に描かれていないグループの処理がある。
     """
     try:
         parsed = DataFlowModel.model_validate(model)
@@ -233,6 +234,14 @@ def validate_data_flow(model: Mapping[str, Any], sources: StageSources) -> list[
     function_ids = {row.id for row in function_list.functions}
 
     issues: list[StageIssue] = []
+    # Phase-24:追記
+    if not parsed.dfd_groups:
+        # 段階3の ER は DFD のデータストアとデータ辞書から下書きするので、DFD が無いと空になる
+        message = (
+            "DFD を描く機能グループが選ばれていません。段階3の ER は DFD のデータストアと"
+            "データ辞書から下書きするため、テーブルが作られません。"
+        )
+        issues.append(_warning("NO_DFD_GROUPS", message))
     if len(set(parsed.dfd_groups)) > MAX_DFD_GROUPS:
         message = f"DFD を描く機能グループは {MAX_DFD_GROUPS} つまでです。"
         issues.append(_error("TOO_MANY_DFD_GROUPS", message))
@@ -307,10 +316,11 @@ def selected_dfd_accesses(sources: StageSources) -> list[DfdAccess]:
     return sorted(accesses)
 
 
+# Phase-24：更新(docstring: テーブルの無い ER のエラー)
 def validate_data_model(model: Mapping[str, Any], sources: StageSources) -> list[StageIssue]:
     """段階3(データモデル)の検証。
 
-    エラー: 形が不正 / ER が無い・生成中・未承認 / ER のテーブル名の重複 /
+    エラー: 形が不正 / ER が無い・生成中・未承認 / ER にテーブルが無い / ER のテーブル名の重複 /
     セルの処理IDが機能一覧に無い / セルのテーブルが ER に無い / セルの重複 /
     操作が空・C,R,U,D の順の形でない /
     DFD に読みの線があるのに R が無い / DFD に書き込みの線があるのに C/U/D が無い。
@@ -335,6 +345,14 @@ def validate_data_model(model: Mapping[str, Any], sources: StageSources) -> list
     # Phase-18-1：更新(画面確認後の修正。ER のテーブル名の重複をエラーにする)
     # tables = {table_key(name): name for name in (er.tables if er is not None else ())}
     # ↓↓
+    # Phase-24:追記
+    if er is not None and er.generation_status != "generating" and not er.tables:
+        # テーブルの無い ER は、段階4の構成図・モジュール一覧と段階5の手順の入力にならない
+        message = (
+            "ER にテーブルがありません。段階2で DFD を描く機能グループを選んでから、"
+            "作り直してください。"
+        )
+        issues.append(_error("ER_EMPTY", message))
     tables: dict[str, str] = {}
     for name in er.tables if er is not None else ():
         key = table_key(name)
