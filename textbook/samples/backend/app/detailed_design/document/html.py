@@ -1,4 +1,4 @@
-# 作成：Phase-22-4｜更新：Phase-23-2
+# 作成：Phase-22-4｜更新：Phase-23-2,26-3
 # 写経レベル: 定型 ── CSS とスクリプトと表の書き出しが大半。SVG だけエスケープしない判断と、アンカーの規則がコア。
 # Phase-23-2：更新(docstring: 実装計画の HTML を別にすること)
 """詳細設計書の HTML を組み立てる(純粋関数)。
@@ -19,6 +19,7 @@ docs/external_design.md 2.7節「詳細設計書の出力」。HTML は読むた
 """
 
 # Phase-23-2:追記 ── app.detailed_design.document.views.function_plans, app.detailed_design.plan(PLAN_STAGE, Milestone, milestone_id)
+# Phase-26-3:追記 ── app.detailed_design.document.views(UNIT_HEADERS, UNIT_KIND_LABELS), app.detailed_design.plan(milestone_functions, task_id)
 from collections.abc import Sequence
 from html import escape
 
@@ -29,6 +30,8 @@ from app.detailed_design.document.source import (
     RenderedDiagram,
 )
 from app.detailed_design.document.views import (
+    UNIT_HEADERS,
+    UNIT_KIND_LABELS,
     CrudMark,
     anchor,
     crud_matrix,
@@ -42,7 +45,13 @@ from app.detailed_design.document.views import (
     main_step_count,
     procedure_steps,
 )
-from app.detailed_design.plan import PLAN_STAGE, Milestone, milestone_id
+from app.detailed_design.plan import (
+    PLAN_STAGE,
+    Milestone,
+    milestone_functions,
+    milestone_id,
+    task_id,
+)
 from app.detailed_design.procedure import step_id
 
 UNAPPROVED_TEXT = (
@@ -596,23 +605,116 @@ _BODIES = {
 
 
 # Phase-23-2:追記
+# Phase-26-3：更新
+# def _milestone(index: int, milestone: Milestone) -> str:
+#     """マイルストーン1つの見出し(M-ID のアンカー)とタスクの表。"""
+#     mid = milestone_id(index)
+#     heading = f"{mid} {milestone.name}({milestone.priority})"
+#     goal = f"<p>ゴール: {e(milestone.goal)}</p>" if milestone.goal else ""
+#     rows = [
+#         [e(t.area), e(t.title), _modules(t.modules), e(", ".join(t.function_ids))]
+#         for t in milestone.tasks
+#     ]
+#     return f'<h3 id="{e(anchor(mid))}">{e(heading)}</h3>{goal}' + table(
+#         ["区分", "タスク", "作成・変更するファイル(例)", "処理"], rows, label=f"{mid} のタスク"
+#     )
+# ↓↓
 def _milestone(index: int, milestone: Milestone) -> str:
-    """マイルストーン1つの見出し(M-ID のアンカー)とタスクの表。"""
+    """マイルストーン1つの見出し(M-ID のアンカー)と単位の表(行ごとに単位の ID のアンカー)。
+    依存先は単位の ID のバッジで、その単位の行へ移る。"""
     mid = milestone_id(index)
     heading = f"{mid} {milestone.name}({milestone.priority})"
     goal = f"<p>ゴール: {e(milestone.goal)}</p>" if milestone.goal else ""
+    ids = [task_id(index, t_index) for t_index in range(len(milestone.tasks))]
     rows = [
-        [e(t.area), e(t.title), _modules(t.modules), e(", ".join(t.function_ids))]
-        for t in milestone.tasks
+        [
+            mono(uid),
+            e(UNIT_KIND_LABELS[t.kind]),
+            e(t.title),
+            e(", ".join(t.function_ids)),
+            "".join(badge(d.strip()) for d in t.depends_on if d.strip()),
+            _modules(t.modules),
+            _modules(t.config_files),
+        ]
+        for uid, t in zip(ids, milestone.tasks, strict=True)
     ]
+    row_attrs = [f' id="{e(anchor(uid))}"' for uid in ids]
     return f'<h3 id="{e(anchor(mid))}">{e(heading)}</h3>{goal}' + table(
-        ["区分", "タスク", "作成・変更するファイル(例)", "処理"], rows, label=f"{mid} のタスク"
+        UNIT_HEADERS, rows, label=f"{mid} の単位", row_attrs=row_attrs
     )
 
 
+# Phase-26-3：更新
+# def to_plan_html(source: DocumentSource) -> str:
+#     """実装計画の HTML の全文(段階7。未承認なら「未承認」とだけ書く)。M-ID はアンカーを持ち、
+#     マイルストーン一覧と処理の割り当ての M-ID からマイルストーンのタスクへ移れる。"""
+#     plan = source.plan
+#     header = (
+#         '<header style="display:grid;gap:12px"><div class="muted">Devex ／ 実装計画書</div>'
+#         f"<h1>{e(source.title)}</h1>"
+#         '<p class="muted">承認済みの段階7から組み立てた実装計画です。横断事項は詳細設計書の'
+#         "07章にあります。</p></header>"
+#     )
+#     title = f"実装計画書: {source.title}"
+#     if source.status(PLAN_STAGE) != "approved" or plan is None:
+#         return _page(title, header + f'<p class="status">{e(PLAN_UNAPPROVED_TEXT)}</p>')
+#
+#     def section(number: str, heading: str, body: str) -> str:
+#         return (
+#             f'<section class="chapter" id="plan{number}"><div class="rail">'
+#             f'<div class="no">{e(number)}</div></div>'
+#             f'<div class="body"><h2>{e(heading)}</h2>{body}</div></section>'
+#         )
+#
+#     overview = table(
+#         ["M-ID", "名前", "優先度", "ゴール", "処理"],
+#         [
+#             [
+#                 badge(milestone_id(i)),
+#                 e(m.name),
+#                 e(m.priority),
+#                 e(m.goal),
+#                 e(", ".join(m.function_ids)),
+#             ]
+#             for i, m in enumerate(plan.milestones)
+#         ],
+#         label="マイルストーン一覧",
+#     )
+#     details = "".join(_milestone(i, m) for i, m in enumerate(plan.milestones))
+#     assignment = table(
+#         ["処理ID", "名称", "マイルストーン"],
+#         [
+#             [
+#                 e(row.function_id),
+#                 e(row.name),
+#                 "".join(badge(m) for m in row.milestones) or '<span class="status">未計画</span>',
+#             ]
+#             for row in function_plans(plan, source.function_list)
+#         ],
+#         label="処理の割り当て",
+#     )
+#     # 開発環境は複数行の文章なので、改行をそのまま見せる
+#     environment = (
+#         f'<p style="white-space:pre-wrap">{e(plan.environment)}</p>'
+#         if plan.environment
+#         else '<p class="muted">—</p>'
+#     )
+#     risks = table(
+#         ["リスク", "対策"], [[e(r.risk), e(r.mitigation)] for r in plan.risks], label="想定リスク"
+#     )
+#     return _page(
+#         title,
+#         header
+#         + section("1", "マイルストーン", overview + details)
+#         + section("2", "処理の割り当て", assignment)
+#         + section("3", "開発環境・事前準備", environment)
+#         + section("4", "想定リスクと対策", risks),
+#     )
+# ↓↓
 def to_plan_html(source: DocumentSource) -> str:
-    """実装計画の HTML の全文(段階7。未承認なら「未承認」とだけ書く)。M-ID はアンカーを持ち、
-    マイルストーン一覧と処理の割り当ての M-ID からマイルストーンのタスクへ移れる。"""
+    """実装計画の HTML の全文(段階7。未承認なら「未承認」とだけ書く)。M-ID と単位の ID は
+    アンカーを持ち、マイルストーン一覧の M-ID からマイルストーンへ、処理の割り当て・依存の
+    単位の ID から単位の行へ移れる。"""
     plan = source.plan
     header = (
         '<header style="display:grid;gap:12px"><div class="muted">Devex ／ 実装計画書</div>'
@@ -639,7 +741,7 @@ def to_plan_html(source: DocumentSource) -> str:
                 e(m.name),
                 e(m.priority),
                 e(m.goal),
-                e(", ".join(m.function_ids)),
+                e(", ".join(milestone_functions(m))),
             ]
             for i, m in enumerate(plan.milestones)
         ],
@@ -647,12 +749,12 @@ def to_plan_html(source: DocumentSource) -> str:
     )
     details = "".join(_milestone(i, m) for i, m in enumerate(plan.milestones))
     assignment = table(
-        ["処理ID", "名称", "マイルストーン"],
+        ["処理ID", "名称", "単位"],
         [
             [
                 e(row.function_id),
                 e(row.name),
-                "".join(badge(m) for m in row.milestones) or '<span class="status">未計画</span>',
+                "".join(badge(u) for u in row.units) or '<span class="status">未計画</span>',
             ]
             for row in function_plans(plan, source.function_list)
         ],

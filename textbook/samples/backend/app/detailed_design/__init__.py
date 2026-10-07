@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -11,6 +11,7 @@
 # Phase-20-3:追記 ── app.detailed_design.procedure.generation_targets
 # Phase-23-1:追記 ── app.detailed_design.plan.CROSSCUTTING_TOPICS, PLAN_STAGE, PRIORITIES, TASK_AREAS, CrossCuttingRow, Milestone, PlanModel, PlanTask, Risk, milestone_id, missing_topics, normalize_plan, planned_function_ids, unplanned_functions
 # Phase-21-1:追記 ── app.detailed_design.logic.LOGIC_STAGE, MAX_LOGIC_TARGETS, LogicCandidate, LogicDraft, LogicModel, LogicRow, PseudoStep, calling_steps, is_drafted, logic_candidates, logic_id, logic_key, merge_logic, pending_logic_keys
+# Phase-26-1:追記 ── app.detailed_design.plan.MAX_UNIT_FUNCTIONS, UNIT_KINDS, UnitKind, is_file_path, milestone_functions, task_id, unit_ids(TASK_AREAS は削除)
 from app.detailed_design.api_list import (
     ApiEndpoint,
     endpoint_key,
@@ -69,18 +70,24 @@ from app.detailed_design.logic import (
 )
 from app.detailed_design.plan import (
     CROSSCUTTING_TOPICS,
+    MAX_UNIT_FUNCTIONS,
     PLAN_STAGE,
     PRIORITIES,
-    TASK_AREAS,
+    UNIT_KINDS,
     CrossCuttingRow,
     Milestone,
     PlanModel,
     PlanTask,
     Risk,
+    UnitKind,
+    is_file_path,
+    milestone_functions,
     milestone_id,
     missing_topics,
     normalize_plan,
     planned_function_ids,
+    task_id,
+    unit_ids,
     unplanned_functions,
 )
 from app.detailed_design.procedure import (
@@ -156,6 +163,8 @@ __all__ = [
     "MAX_LOGIC_TARGETS",
     # Phase-20-1:追記
     "MAX_PROCEDURE_TARGETS",
+    # Phase-26-1:追記
+    "MAX_UNIT_FUNCTIONS",
     # Phase-23-1:追記
     "PLAN_STAGE",
     "PRIORITIES",
@@ -167,7 +176,10 @@ __all__ = [
     "STRUCTURE_STAGE",
     "STRUCTURE_SUBJECT",
     # Phase-23-1:追記
-    "TASK_AREAS",
+    # Phase-26-1：更新
+    # "TASK_AREAS",
+    # ↓↓
+    "UNIT_KINDS",
     "ApiEndpoint",
     # Phase-19-1:追記
     "ComponentDiagramSummary",
@@ -226,6 +238,8 @@ __all__ = [
     "StageState",
     "StageView",
     "StoredStatus",
+    # Phase-26-1:追記
+    "UnitKind",
     # Phase-21-1:追記
     "calling_steps",
     # ── ここから Phase-15-2 の作成分 ──
@@ -255,6 +269,8 @@ __all__ = [
     "is_drafted",
     # Phase-20-1:追記
     "is_external_actor",
+    # Phase-26-1:追記
+    "is_file_path",
     # Phase-21-1:追記
     "logic_candidates",
     "logic_id",
@@ -268,6 +284,8 @@ __all__ = [
     "merge_modules",
     # Phase-20-1:追記
     "merge_procedure",
+    # Phase-26-1:追記
+    "milestone_functions",
     # Phase-23-1:追記
     "milestone_id",
     "missing_topics",
@@ -301,7 +319,11 @@ __all__ = [
     "table_key",
     # Phase-18-1:追記
     "tables_without_primary_key",
+    # Phase-26-1:追記
+    "task_id",
     "trigger_key",
+    # Phase-26-1:追記
+    "unit_ids",
     # Phase-23-1:追記
     "unplanned_functions",
     "validate_stage",

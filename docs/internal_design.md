@@ -186,7 +186,7 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | :--- | :--- | :--- | :--- |
 | id | UUID | PK | 段階ID |
 | project_id | UUID | FK (`projects.id`, ondelete CASCADE), NOT NULL | プロジェクトID |
-| stage | SMALLINT | NOT NULL, CHECK 1〜7 | 段階番号(1〜7。段階7 実装計画も同じ承認の流れに乗せる) |
+| stage | SMALLINT | NOT NULL, CHECK 1〜7 | 段階番号(1〜7。段階7 実装計画も同じ承認の流れに乗せる。ステージ5で段階8 実装手順書を足し、1〜8 にする予定(3.3節「5. 実装手順書」)) |
 | status | VARCHAR(20) | NOT NULL | `draft`(AIの下書き)/`regenerated`(内容のある段階をAIが作り直した・未承認。画面は「再生成済(未承認)」。Phase 16)/`reviewing`(人が保存した)/`approved`。画面の「未着手」(行が無い)と「古い」(入力が承認時から変わった)は保存せず、`app/detailed_design/stages.py`の`derive_states`が導く |
 | model | JSONB | NULL可 | 段階の意味モデル(機能一覧・処理概要表・CRUD図・モジュール一覧・手順・処理ロジック等の表)。図(DFD・ER・構成図)は既存の`uml_diagrams`・`data_items`を使う |
 | version | INT | NOT NULL | 楽観ロック用バージョン。保存で+1、承認では増やさない(承認済みを保存すると`reviewing`に戻る) |
@@ -375,10 +375,13 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * 段階6を飛ばす: 専用のAPIは持たず、`{logics: []}`を保存して承認する(画面の「段階6を飛ばす」)。段階7の入力(`STAGE_INPUTS[7]`)に段階6の承認が要るため。段階5を承認し直すと、他の段階と同じく段階6は「古い」になり、「このまま承認し直す」で済む。組み立て(Phase 22)は、0件で承認済みの段階6を「06 省略」として出す。
   * 逆引き・05の詳細バッジ・段階をまたぐ移動は画面(`devex-ui`の`logicOps.ts`・`LogicPanel`・`ProcedurePanel`)が導く。移動先(段階と手順IDまたは関数の鍵)はストアの`focus`に置き、移動先のパネルが一度だけ読んで消す。
 * **段階7 横断事項と実装計画(Phase 23)**:
-  * `design_stages.model`(段階7)は`{crosscutting: [{topic, policy, modules}], milestones: [{name, goal, priority, function_ids, tasks: [{area, title, modules, function_ids}]}], environment, risks: [{risk, mitigation}]}`(`app/detailed_design/plan.py`)。タスクはマイルストーンの中に入れ子で持つ(名前で参照すると改名で切れるため)。マイルストーンの番号(`M-01`…)は保存せず、並び順から`milestone_id`で導く。優先度は Must / Should / Could、区分は 準備 / バックエンド / フロントエンド / テスト / デプロイ。処理IDは段階1の機能一覧の ID で書く。`modules`(横断事項・タスク)は「作成・変更するファイルの例」で、段階4のモジュール一覧のパスのほか環境・設定のファイル(`Dockerfile`・`docker-compose.yml` など)も書ける。検証はしない(Phase 23 の画面確認後に確定。環境のファイルはモジュール一覧に入らないため)。
-  * 検証(`STAGE_VALIDATORS[7]`)は、段階1の内容を`StageSources.stages`から読む。エラー: 形が不正、マイルストーンが0件、マイルストーン名が空・重複、タスク名が空、横断事項の項目が空、機能一覧に無い処理ID(`UNKNOWN_FUNCTION`)。警告: どのマイルストーン・タスクにも無い処理(`UNPLANNED_FUNCTION`。次のリリースに回す処理もあるため承認は止めない)、タスクの無いマイルストーン、既定の横断事項(例外と HTTP・認証・トランザクション・ログ)の欠け・方針が空、リスクが0件。
-  * 下書き: 入力の詳細設計書は、出力と同じ組み立てで作った md の01〜06章(`DetailedDesignExportService.collect(project, render=False)`→`to_markdown(source, chapters)`。図は描かず、`exported`にもしない)。LLM を2回呼ぶ。① 要件定義・外部設計・詳細設計書 md → 横断事項、② 要件定義・詳細設計書 md・①の横断事項・処理IDの一覧 → マイルストーン・タスク・開発環境・リスク(`app/detailed_design/plan_drafting.py`、`generate_plan`。`NAMING_RULES`を足す)。ファイルは`normalize_plan`が段階5の呼び出し先と同じ規則(`resolve_callee`)で、当たるものだけモジュール一覧のパスにそろえる。作り直しは全体を置き換える(段階4と同じ)。簡易ドキュメントモードの実装計画書が「要件定義+内部設計書」を入力にするのに当たる。
-  * 出力: 07 横断事項は詳細設計書の07章、実装計画は別のファイル(`implementation_plan.md`・`.html`。マイルストーン一覧 → マイルストーンごとのタスク → 処理の割り当て(処理ごとの M-ID、無ければ「未計画」)→ 開発環境 → リスク)。段階7が未承認なら、どちらも「未承認」とだけ書く。
+  * `design_stages.model`(段階7)は`{crosscutting: [{topic, policy, modules}], milestones: [{name, goal, priority, tasks: [{kind, title, function_ids, depends_on, modules, config_files}]}], environment, risks: [{risk, mitigation}]}`(`app/detailed_design/plan.py`。Phase 26 で改修)。タスクはマイルストーンの中に入れ子で持つ(名前で参照すると改名で切れるため)。タスクは実装手順書の作業単位で、`kind`は`feature`(機能。処理を持つ縦割りの単位)か`base`(基盤。処理の無い準備・デプロイ)。マイルストーンの番号(`M-01`…)と単位の ID(`M-01-T01`…)は保存せず、並び順から`milestone_id`・`task_id`で導く。`depends_on`は単位の ID で書き、前の単位だけを指せる。並べ替え・削除での付け替えは画面(`devex-ui`の`planOps.ts`の`relinkDependencies`)が行う。マイルストーンの処理は保存せず、タスクの処理から`milestone_functions`で導く(Phase 23 の`Milestone.function_ids`は二重管理になるので削除)。優先度は Must / Should / Could。処理IDは段階1の機能一覧の ID で書く。タスクの`modules`は段階4のモジュール一覧のパスで、検証する。`config_files`は環境・設定のファイル(`Dockerfile`・`docker-compose.yml` など)の例で、検証しない。横断事項の`modules`は関わるファイルの例で、検証しない(Phase 23 では、タスクの`modules`も検証しない例だった。環境のファイルがモジュール一覧に入らずエラーになったため。Phase 26 で欄を分けた)。
+    > **[Phase 25 で確定 ── 〈段階7のタスクを層の横割り(区分)のままにしない・ファイルを例のままにしない〉]** 当初〈タスクは区分(準備/バックエンド/フロントエンド/テスト/デプロイ)ごとの行で、`modules`は検証しない例〉→ 改訂(実装は Phase 26)。理由〈ステージ5の実装手順書は、段階7のタスクを作業単位としてそのまま使う。単位の区切り・順序・依存は実装計画の役割で、手順書の生成時に作り直すと、人が承認した区切りを上書きして二重管理になる。そこで、処理を持つタスクは機能ごとの縦割り(機能)、処理の無い準備・デプロイは基盤とし、ID(`M-01-T01`、並び順から導く)と単位の間の依存を持たせる。ファイルは、段階4のパスで検証する「モジュール」と、検証しない「環境・設定のファイル(例)」に分ける(環境のファイルがエラーになった Phase 23 の問題は、欄を分けて避ける)。経緯は[`textbook/Phase-25/Phase-25-1.md`](../textbook/Phase-25/Phase-25-1.md)、改修後の見本は[`appendix/implementation-procedure-sample/stage7-recut.md`](../appendix/implementation-procedure-sample/stage7-recut.md)〉。
+  * 検証(`STAGE_VALIDATORS[7]`)は、段階1・4の内容を`StageSources.stages`から読む(段階4は Phase 26 から)。エラー: 形が不正、マイルストーンが0件、マイルストーン名が空・重複、タスク名が空、横断事項の項目が空、機能一覧に無い処理ID(`UNKNOWN_FUNCTION`)、単位の一覧に無い依存先(`UNKNOWN_DEPENDENCY`)、自分か後ろの単位への依存(`FORWARD_DEPENDENCY`。依存の順と計画の並び順が一致し、循環も起きない)、モジュール一覧に無いモジュール(`UNKNOWN_MODULE`。手順書が参照する設計の鍵のため)。警告: どの単位にも無い処理(`UNPLANNED_FUNCTION`。次のリリースに回す処理もあるため承認は止めない)、複数の単位にある処理(`DUPLICATE_FUNCTION`)、種別と処理の食い違い(`KIND_MISMATCH`)、処理が`MAX_UNIT_FUNCTIONS`(3)を超える単位(`MANY_FUNCTIONS`。原則1処理)、モジュールの無い機能の単位(`NO_MODULES`)、ディレクトリのモジュール(`MODULE_NOT_FILE`。最後の区切りに拡張子が無い)、タスクの無いマイルストーン、既定の横断事項(例外と HTTP・認証・トランザクション・ログ)の欠け・方針が空、リスクが0件。単位の指摘の`target`は単位の ID。
+  * 下書き: 入力の詳細設計書は、出力と同じ組み立てで作った md の01〜06章(`DetailedDesignExportService.collect(project, render=False)`→`to_markdown(source, chapters)`。図は描かず、`exported`にもしない)。LLM を2回呼ぶ。① 要件定義・外部設計・詳細設計書 md → 横断事項、② 要件定義・詳細設計書 md・①の横断事項・処理IDの一覧・モジュールのパスの一覧(Phase 26)→ マイルストーン・タスク・開発環境・リスク。依存先は、出力の並び順から導く ID で書かせる(`app/detailed_design/plan_drafting.py`、`generate_plan`。`NAMING_RULES`を足す)。ファイルは`normalize_plan`が段階5の呼び出し先と同じ規則(`resolve_callee`)で、当たるものだけモジュール一覧のパスにそろえる。作り直しは全体を置き換える(段階4と同じ)。簡易ドキュメントモードの実装計画書が「要件定義+内部設計書」を入力にするのに当たる。
+  * 既存データの移行(Phase 26、Alembic `b8c9d0e1f2a3`): 区分の横割りの形の段階7を、行ごとに作業単位の形へ変える。処理のあるタスクは`feature`、無いタスクは`base`。`modules`は同じプロジェクトの段階4のパスに一致するものを`modules`、残りを`config_files`へ。`depends_on`は空、`Milestone.function_ids`は捨てる。承認済みの段階7は`reviewing`に戻し、どの行も`version`を1つ上げる(開いている画面の保存を版の不一致で止める)。変換は移行ファイルの中の純粋関数で、`app`のコードを import しない(後の改修で移行の結果が変わらないようにするため)。downgrade は形だけを戻し、承認は戻さない。
+  * 段階7の入力の大きさ(Phase 26 で計測。ゴール3の生成物、11処理・12モジュール): 横断事項の入力 約1.7万字、実装計画の入力 約1.5万字。モデルの入力の上限に対して小さく、絞り込みは要らない。段階8の手順書の生成は、単位が参照する箇所だけを渡す(Phase 25-1 決定10)。
+  * 出力: 07 横断事項は詳細設計書の07章、実装計画は別のファイル(`implementation_plan.md`・`.html`。マイルストーン一覧 → マイルストーンごとの単位の表(ID・種別・タスク・処理・依存・モジュール・環境・設定のファイル(例))→ 処理の割り当て(処理ごとの単位の ID、無ければ「未計画」)→ 開発環境 → リスク。Phase 26 で、区分の表と M-ID の割り当てから改めた。HTML は単位の行に ID のアンカーを持ち、依存と割り当ての ID から移れる)。段階7が未承認なら、どちらも「未承認」とだけ書く。
 * **下書きの表記の規則(Phase 19 の画面確認後)**: 詳細設計モードの全段階の下書きの system プロンプトの末尾に、共通の規則`NAMING_RULES`(`app/detailed_design/prompt_rules.py`)を足す。簡易ドキュメントモードのプロンプトには入れない。
   * 名称・説明・責務・層の名前・注釈は日本語で書く。英語の識別子を説明の代わりに使わない(必要なら「日本語の名称(識別子)」と併記。構成図の箱は「サービス(services)」の形)。
   * ファイル・ディレクトリのパス、テーブル名・列名、クラス名・関数名・変数名などの識別子は、技術スタックの命名規則に従って英語で書く(ユーザーの規則「新規のディレクトリ名・ファイル名は日本語を基本とし、互換性に問題がある場合は英語」の互換性の条件が、Python・TypeScript などのパスでは常に当てはまるとみなした)。
@@ -386,6 +389,21 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * 入力にある名前(処理ID・テーブル名・パス・層の名前・データ項目の名前)は変えない(後の段階が名前で突き合わせるため)。
 * **簡易ドキュメントモードとの関係**: 簡易ドキュメントモードの内部設計書にも、段階4と同じ列のモジュール一覧の表を足す(3.3節1.の`doc_generator_service.py`参照)。それ以外の簡易ドキュメントモードの挙動は変えない。
   > **[Phase 16 で確定 ── 〈外部設計書の構成は簡易ドキュメントモードでも変える〉]** 当初〈モジュール一覧の表のほかは、簡易ドキュメントモードの挙動を変えない〉→ 外部設計書の「2.6 API一覧」は両方のモードで出す。理由〈ユーザーの選択。API仕様は実務でも外部設計(基本設計)に置くことが多く、プロンプトをモードで分けずに済む。重なる内部設計書3.3節のAPI表は、2.6と同じメソッド・パスを使わせてそろえる〉。
+
+### 5. 実装手順書(ステージ5)
+
+[外部設計書](external_design.md) 2.8節の実装手順書の内部の方針(Phase 25で確定)。方針は[`appendix/devex_implementation_procedure_guideline.md`](../appendix/devex_implementation_procedure_guideline.md)、経緯は[`textbook/Phase-25/Phase-25-1.md`](../textbook/Phase-25/Phase-25-1.md)・[`Phase-25-5.md`](../textbook/Phase-25/Phase-25-5.md)。意味モデル・API・マイグレーションの詳細は各実装 Phase で確定する。
+
+* **段階8として持つ**: `design_stages`に段階8(入力は段階1〜7。`STAGE_INPUTS[8]`)を足し、承認・陳腐化(`input_fingerprint`)・生成の状態・段階ごとの検証(`STAGE_VALIDATORS[8]`)・部分生成(`StageGenerationContext.targets`)の仕組みをそのまま使う。`stage`の CHECK は 1〜8 にする。
+* **正本と参照**: 作業単位の正本は段階7(単位の ID は並び順から導く)。段階8の model は単位ごとの手順書の中身(目的・作成・変更するファイル(テスト・環境のファイルを含む)・実装の要点・テスト観点・確認方法・AI の指摘)だけを持ち、設計の中身を複製しない。参照する設計は単位の処理ID・モジュールから導き、表示・AI 向けの出力・生成の入力のときにだけ展開する(参照の展開は決定的な純粋関数で、この3か所で共有する)。
+* **実装可能性チェックの2層**:
+  * **検証(決定的)**: `STAGE_VALIDATORS[8]`と、段階7の検証の拡張。例: 単位の処理に段階5の手順が無い、手順書のファイルが段階4に無い、段階6に関数の詳細が無い、処理が CRUD 図に無い、単位の依存の循環・一覧に無い依存先、手順の`call`と段階6の`function`が一致しない(未解決の参照の警告。書き方の揺れは吸収しない)、シーケンス図にするときの手順の不備。
+  * **AI の指摘**: 手順書を生成する AI に、設計に無いことを推測で埋めず「未定義」(重要度・対象・内容)として挙げさせ、model に保存する。
+  * 決めるときは対象の段階を直す。直した段階は差し戻され(既存の`mark_edited`・承認し直し)、段階8は陳腐化する。手順書に決定を書き込まない。
+* **生成**: 人が選んだ単位だけ、1単位につき LLM を1回、1回に5件まで(段階5・6と同じ形)。入力は、その単位が参照する設計の該当箇所だけ(01〜07章の全文は渡さない)と、実装ルール(段階4・07章)。`NAMING_RULES`を足す。概要・前提・一覧・完了条件は決定的に組み立てる。
+* **シーケンス図**: 段階5の手順から決定的に導く読み取り専用のビュー(正本は手順の表)。入れ子は呼び出し中の参加者の積み上げで推測し、表に無い戻りは推測で足す。段階5の行に種別(同期の呼び出し/非同期の呼び出し/戻り)を足す(既存のデータは同期の呼び出しとして読む)。SVG はバックエンドで作り(`app/uml/export/svg.py`の書式を流用。レイアウトエンジンは使わない)、md と AI 向けの版は Mermaid のテキストにする。導出の見本は devex-ui のデモ(`src/features/implementation-procedure/demo/sequenceModel.ts`)。
+* **出力**: 詳細設計書・実装計画の zip(`DetailedDesignExportService`)に`implementation_procedure/`(`index.md`・単位ごとの md・AI 向けの版・HTML 1枚)を加える。AI 向けの版と画面の「AI 向けにコピー」は同じ組み立てを使う。
+* **簡易ドキュメントモード(ステージ5の後半)**: 実装計画書のプロンプトを変え、WBS を段階7と同じ縦割り・ID 付きにする。簡易モードのプロジェクトには、入力を4文書にした段階8だけを開く(段階1〜7の行は持たない)。参照先は内部設計書の処理別データフロー・API 一覧・モジュール一覧・3.4節。
 
 ---
 

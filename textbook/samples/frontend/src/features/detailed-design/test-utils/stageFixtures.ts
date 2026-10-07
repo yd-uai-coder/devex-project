@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
@@ -130,7 +130,8 @@ export function makeLogics(): LogicModel {
 // ── ここから Phase-15-7 の作成分 ──
 // Phase-23-5:追記
 // makeFunctionList の F-01 と makeModuleList のパスを参照する、段階7の横断事項と実装計画(既定の
-// 横断事項4項目・マイルストーン1つ・リスク1件。段階7の検証を通る。テスト専用)。
+// 横断事項4項目・マイルストーン1つ・リスク1件。段階7の検証を通る。テスト専用)。マイルストーンには、
+// 基盤の単位 M-01-T01 と、それに依存する機能の単位 M-01-T02(F-01)を置く。
 export function makePlan(): PlanModel {
   const route = "app/api/routes/reservations.py";
   return {
@@ -145,9 +146,28 @@ export function makePlan(): PlanModel {
         name: "予約の登録",
         goal: "予約を登録できる",
         priority: "Must",
-        function_ids: ["F-01"],
+        // Phase-26-5：削除
+        // function_ids: ["F-01"],
         tasks: [
-          { area: "バックエンド", title: "予約の API を作る", modules: [route], function_ids: ["F-01"] },
+          // Phase-26-5：更新
+          // { area: "バックエンド", title: "予約の API を作る", modules: [route], function_ids: ["F-01"] },
+          // ↓↓
+          {
+            kind: "base",
+            title: "開発環境を用意する",
+            function_ids: [],
+            depends_on: [],
+            modules: [],
+            config_files: ["Dockerfile"],
+          },
+          {
+            kind: "feature",
+            title: "予約を登録する",
+            function_ids: ["F-01"],
+            depends_on: ["M-01-T01"],
+            modules: [route],
+            config_files: [],
+          },
         ],
       },
     ],

@@ -1,4 +1,4 @@
-# 作成：Phase-23-3
+# 作成：Phase-23-3｜更新：Phase-26-3
 # 写経レベル: コア ── collect(render=False) が図を描かず exported にもしないこと。
 """組み立ての入力の切り出し(`collect`)と、zip の実装計画のテスト。
 
@@ -26,6 +26,19 @@ from app.services.detailed_design_export_service import (
 )
 
 
+# Phase-26-3：更新
+# async def test_smoke_bundle_contains_implementation_plan(db_session: AsyncSession) -> None:
+#     project = await create_document_project(db_session)
+#
+#     response = await download_detailed_design(db_session, project)
+#
+#     archive = zipfile.ZipFile(io.BytesIO(bytes(response.body)))
+#     plan = archive.read(PLAN_MARKDOWN_NAME).decode()
+#     assert plan.startswith("# 実装計画書: p\n")
+#     assert "| F-01 | 予約を登録する | M-01 |" in plan
+#     assert "<h1>p</h1>" in archive.read(PLAN_HTML_NAME).decode()
+#     assert "## 07 横断事項" in archive.read("detailed_design.md").decode()
+# ↓↓
 async def test_smoke_bundle_contains_implementation_plan(db_session: AsyncSession) -> None:
     project = await create_document_project(db_session)
 
@@ -34,7 +47,7 @@ async def test_smoke_bundle_contains_implementation_plan(db_session: AsyncSessio
     archive = zipfile.ZipFile(io.BytesIO(bytes(response.body)))
     plan = archive.read(PLAN_MARKDOWN_NAME).decode()
     assert plan.startswith("# 実装計画書: p\n")
-    assert "| F-01 | 予約を登録する | M-01 |" in plan
+    assert "| F-01 | 予約を登録する | M-01-T02 |" in plan
     assert "<h1>p</h1>" in archive.read(PLAN_HTML_NAME).decode()
     assert "## 07 横断事項" in archive.read("detailed_design.md").decode()
 

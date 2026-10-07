@@ -1,4 +1,4 @@
-# 作成：Phase-22-3｜更新：Phase-23-2
+# 作成：Phase-22-3｜更新：Phase-23-2,26-3
 # 写経レベル: 定型 ── 表の書き出しが大半。ID を本文に書き、リンクと生の HTML を持たない点だけがコア。
 # Phase-23-2：更新(docstring: 実装計画の md を別にすること)
 """詳細設計書の Markdown を組み立てる(純粋関数)。
@@ -16,6 +16,7 @@ docs/external_design.md 2.7節「詳細設計書の出力」。md は差分を�
 """
 
 # Phase-23-2:追記 ── app.detailed_design.document.views.function_plans, app.detailed_design.plan(PLAN_STAGE, milestone_id)
+# Phase-26-3:追記 ── app.detailed_design.document.views(UNIT_HEADERS, UNIT_KIND_LABELS), app.detailed_design.plan(milestone_functions, task_id)
 from collections.abc import Sequence
 
 from app.detailed_design.document.source import (
@@ -25,6 +26,8 @@ from app.detailed_design.document.source import (
     RenderedDiagram,
 )
 from app.detailed_design.document.views import (
+    UNIT_HEADERS,
+    UNIT_KIND_LABELS,
     CrudMark,
     crud_matrix,
     data_item_usage,
@@ -37,7 +40,7 @@ from app.detailed_design.document.views import (
     main_step_count,
     procedure_steps,
 )
-from app.detailed_design.plan import PLAN_STAGE, milestone_id
+from app.detailed_design.plan import PLAN_STAGE, milestone_functions, milestone_id, task_id
 
 UNAPPROVED_TEXT = "未承認(段階{stage}が承認されていません。承認すると、この章が組み立てられます)"
 SKIPPED_TEXT = "省略(段階6を飛ばしました)"
@@ -339,11 +342,55 @@ _BODIES = {
 
 
 # Phase-23-2:追記
+# Phase-26-3：更新
+# def to_plan_markdown(source: DocumentSource) -> str:
+#     """実装計画の md の全文(段階7。未承認なら「未承認」とだけ書く)。
+#
+#     マイルストーン一覧 → マイルストーンごとのタスク → 処理の割り当て → 開発環境 → リスクの順。
+#     横断事項は詳細設計書の07章に書くので、ここには書かない。"""
+#     lines = [f"# 実装計画書: {source.title}", ""]
+#     plan = source.plan
+#     if source.status(PLAN_STAGE) != "approved" or plan is None:
+#         lines.append(PLAN_UNAPPROVED_TEXT)
+#         return "\n".join(lines) + "\n"
+#     lines += ["## 1 マイルストーン", ""]
+#     lines += md_table(
+#         ["M-ID", "名前", "優先度", "ゴール", "処理"],
+#         [
+#             [milestone_id(i), m.name, m.priority, m.goal, ", ".join(m.function_ids)]
+#             for i, m in enumerate(plan.milestones)
+#         ],
+#     )
+#     for index, milestone in enumerate(plan.milestones):
+#         lines += ["", f"### {milestone_id(index)} {milestone.name}({milestone.priority})", ""]
+#         if milestone.goal:
+#             lines += [f"ゴール: {milestone.goal}", ""]
+#         lines += md_table(
+#             ["区分", "タスク", "作成・変更するファイル(例)", "処理"],
+#             [
+#                 [t.area, t.title, ", ".join(t.modules), ", ".join(t.function_ids)]
+#                 for t in milestone.tasks
+#             ],
+#         )
+#     lines += ["", "## 2 処理の割り当て", ""]
+#     lines += md_table(
+#         ["処理ID", "名称", "マイルストーン"],
+#         [
+#             [row.function_id, row.name, ", ".join(row.milestones) or "未計画"]
+#             for row in function_plans(plan, source.function_list)
+#         ],
+#     )
+#     lines += ["", "## 3 開発環境・事前準備", "", plan.environment or "—", ""]
+#     lines += ["## 4 想定リスクと対策", ""]
+#     lines += md_table(["リスク", "対策"], [[r.risk, r.mitigation] for r in plan.risks])
+#     return "\n".join(lines).rstrip() + "\n"
+# ↓↓
 def to_plan_markdown(source: DocumentSource) -> str:
     """実装計画の md の全文(段階7。未承認なら「未承認」とだけ書く)。
 
-    マイルストーン一覧 → マイルストーンごとのタスク → 処理の割り当て → 開発環境 → リスクの順。
-    横断事項は詳細設計書の07章に書くので、ここには書かない。"""
+    マイルストーン一覧 → マイルストーンごとの単位(タスク) → 処理の割り当て → 開発環境 → リスクの順。
+    マイルストーンの処理は単位の処理から導く。横断事項は詳細設計書の07章に書くので、ここには
+    書かない。"""
     lines = [f"# 実装計画書: {source.title}", ""]
     plan = source.plan
     if source.status(PLAN_STAGE) != "approved" or plan is None:
@@ -353,7 +400,7 @@ def to_plan_markdown(source: DocumentSource) -> str:
     lines += md_table(
         ["M-ID", "名前", "優先度", "ゴール", "処理"],
         [
-            [milestone_id(i), m.name, m.priority, m.goal, ", ".join(m.function_ids)]
+            [milestone_id(i), m.name, m.priority, m.goal, ", ".join(milestone_functions(m))]
             for i, m in enumerate(plan.milestones)
         ],
     )
@@ -362,17 +409,25 @@ def to_plan_markdown(source: DocumentSource) -> str:
         if milestone.goal:
             lines += [f"ゴール: {milestone.goal}", ""]
         lines += md_table(
-            ["区分", "タスク", "作成・変更するファイル(例)", "処理"],
+            UNIT_HEADERS,
             [
-                [t.area, t.title, ", ".join(t.modules), ", ".join(t.function_ids)]
-                for t in milestone.tasks
+                [
+                    task_id(index, t_index),
+                    UNIT_KIND_LABELS[t.kind],
+                    t.title,
+                    ", ".join(t.function_ids),
+                    ", ".join(t.depends_on),
+                    ", ".join(t.modules),
+                    ", ".join(t.config_files),
+                ]
+                for t_index, t in enumerate(milestone.tasks)
             ],
         )
     lines += ["", "## 2 処理の割り当て", ""]
     lines += md_table(
-        ["処理ID", "名称", "マイルストーン"],
+        ["処理ID", "名称", "単位"],
         [
-            [row.function_id, row.name, ", ".join(row.milestones) or "未計画"]
+            [row.function_id, row.name, ", ".join(row.units) or "未計画"]
             for row in function_plans(plan, source.function_list)
         ],
     )

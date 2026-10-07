@@ -1,4 +1,4 @@
-# 作成：Phase-23-4
+# 作成：Phase-23-4｜更新：Phase-26-2
 # 写経レベル: コア ── 入力が 01〜06章の md であること・図を exported にしないことを確かめる。
 """段階7(横断事項と実装計画)の下書きの生成のテスト。
 
@@ -59,6 +59,29 @@ def _crosscutting_output() -> CrossCuttingGenerationOutput:
     )
 
 
+# Phase-26-2：更新
+# def _plan_output() -> PlanGenerationOutput:
+#     return PlanGenerationOutput(
+#         milestones=[
+#             GeneratedMilestone(
+#                 name=" 予約の登録 ",
+#                 goal="予約を登録できる",
+#                 priority="Must",
+#                 function_ids=["F-01", "F-01"],
+#                 tasks=[
+#                     GeneratedTask(
+#                         area="バックエンド",
+#                         title="予約の API",
+#                         modules=[ROUTE],
+#                         function_ids=["F-01"],
+#                     )
+#                 ],
+#             )
+#         ],
+#         environment="uv と PostgreSQL",
+#         risks=[GeneratedRisk(risk="重複", mitigation="一意制約")],
+#     )
+# ↓↓
 def _plan_output() -> PlanGenerationOutput:
     return PlanGenerationOutput(
         milestones=[
@@ -66,13 +89,14 @@ def _plan_output() -> PlanGenerationOutput:
                 name=" 予約の登録 ",
                 goal="予約を登録できる",
                 priority="Must",
-                function_ids=["F-01", "F-01"],
                 tasks=[
                     GeneratedTask(
-                        area="バックエンド",
+                        kind="feature",
                         title="予約の API",
-                        modules=[ROUTE],
-                        function_ids=["F-01"],
+                        function_ids=["F-01", "F-01"],
+                        depends_on=[],
+                        modules=["routes/reservations"],
+                        config_files=[],
                     )
                 ],
             )
@@ -82,6 +106,52 @@ def _plan_output() -> PlanGenerationOutput:
     )
 
 
+# Phase-26-2：更新
+# async def test_smoke_stage7_generates_plan_from_design_markdown_and_can_be_approved(
+#     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+# ) -> None:
+#     """統合スモーク(段階7): 受け付け → 横断事項 → 実装計画の順に下書き → そのまま承認できる。
+#     入力の詳細設計書は 01〜06章の md で、図は描かない(exported にしない)。"""
+#     prompts: list[str] = []
+#
+#     def spy(*args, **kwargs):
+#         messages = plan_drafting.build_crosscutting_messages(*args, **kwargs)
+#         prompts.append(str(messages[1].content))
+#         return messages
+#
+#     monkeypatch.setattr(generation_service, "build_crosscutting_messages", spy)
+#     project = await create_stage7_project(db_session)
+#     project_id = project.id
+#     llm = FakeLLM(structured_sequence=[_crosscutting_output(), _plan_output()])
+#
+#     accepted = await generate_design_stage(7, db_session, project, BackgroundTasks())
+#     await DesignStageGenerationService(db_session).execute(
+#         project_id=project_id, user_id=project.user_id, stage=7, llm=llm
+#     )
+#     service = DesignStageService(db_session)
+#     stage7 = await service.read(project_id, 7)
+#
+#     assert accepted.generation_status == "generating"
+#     assert STAGE_GENERATORS[7] is generate_plan
+#     assert llm.structured_output_calls == [CrossCuttingGenerationOutput, PlanGenerationOutput]
+#     [prompt] = prompts
+#     assert "## 要件定義書\n# requirements" in prompt
+#     assert "## 外部設計書\n# external_design" in prompt
+#     assert "## 06 処理ロジックの詳細" in prompt
+#     assert "07 横断事項" not in prompt
+#     assert "![" not in prompt  # 図は描かない
+#     assert stage7.state == "draft"
+#     model = stage7.model
+#     assert model is not None
+#     assert model["crosscutting"][0]["modules"] == [ROUTE]
+#     milestone = model["milestones"][0]
+#     assert (milestone["name"], milestone["function_ids"]) == ("予約の登録", ["F-01"])
+#     assert stage7.issues == []
+#     diagrams = await UmlDiagramRepository(db_session).list_for_project(project_id)
+#     assert {d.status for d in diagrams} == {"approved"}
+#     approved = await service.approve(project, stage=7, expected_version=stage7.version or 0)
+#     assert approved.state == "approved"
+# ↓↓
 async def test_smoke_stage7_generates_plan_from_design_markdown_and_can_be_approved(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -94,7 +164,15 @@ async def test_smoke_stage7_generates_plan_from_design_markdown_and_can_be_appro
         prompts.append(str(messages[1].content))
         return messages
 
+    plan_prompts: list[str] = []
+
+    def plan_spy(*args, **kwargs):
+        messages = plan_drafting.build_plan_messages(*args, **kwargs)
+        plan_prompts.append(str(messages[1].content))
+        return messages
+
     monkeypatch.setattr(generation_service, "build_crosscutting_messages", spy)
+    monkeypatch.setattr(generation_service, "build_plan_messages", plan_spy)
     project = await create_stage7_project(db_session)
     project_id = project.id
     llm = FakeLLM(structured_sequence=[_crosscutting_output(), _plan_output()])
@@ -115,12 +193,17 @@ async def test_smoke_stage7_generates_plan_from_design_markdown_and_can_be_appro
     assert "## 06 処理ロジックの詳細" in prompt
     assert "07 横断事項" not in prompt
     assert "![" not in prompt  # 図は描かない
+    [plan_prompt] = plan_prompts
+    assert f"## モジュールのパスの一覧\n- {ROUTE}" in plan_prompt
     assert stage7.state == "draft"
     model = stage7.model
     assert model is not None
     assert model["crosscutting"][0]["modules"] == [ROUTE]
     milestone = model["milestones"][0]
-    assert (milestone["name"], milestone["function_ids"]) == ("予約の登録", ["F-01"])
+    assert milestone["name"] == "予約の登録"
+    # 処理の重複を除き、モジュールの短い書き方をパスにそろえる
+    [task] = milestone["tasks"]
+    assert (task["function_ids"], task["modules"]) == (["F-01"], [ROUTE])
     assert stage7.issues == []
     diagrams = await UmlDiagramRepository(db_session).list_for_project(project_id)
     assert {d.status for d in diagrams} == {"approved"}

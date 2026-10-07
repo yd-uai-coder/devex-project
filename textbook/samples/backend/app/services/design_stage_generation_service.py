@@ -459,6 +459,8 @@ async def generate_plan(context: StageGenerationContext) -> dict:
     external_design = context.sources.documents.get("external_design", "")
     function_list = FunctionListModel.model_validate(context.sources.stages.get(1) or {})
     modules = ModuleListModel.model_validate(context.sources.stages.get(4) or {}).modules
+    # Phase-26-2:追記
+    paths = [row.path for row in modules]
 
     crosscutting_output = await _invoke_structured(
         context.llm,
@@ -469,9 +471,15 @@ async def generate_plan(context: StageGenerationContext) -> dict:
     plan_output = await _invoke_structured(
         context.llm,
         PlanGenerationOutput,
-        build_plan_messages(requirements, design, crosscutting, function_list.functions),
+        # Phase-26-2：更新
+        # build_plan_messages(requirements, design, crosscutting, function_list.functions),
+        # ↓↓
+        build_plan_messages(requirements, design, crosscutting, function_list.functions, paths),
     )
-    model = normalize_plan(to_plan_model(crosscutting, plan_output), [row.path for row in modules])
+    # Phase-26-2：更新
+    # model = normalize_plan(to_plan_model(crosscutting, plan_output), [row.path for row in modules])
+    # ↓↓
+    model = normalize_plan(to_plan_model(crosscutting, plan_output), paths)
     return model.model_dump(mode="json")
 
 

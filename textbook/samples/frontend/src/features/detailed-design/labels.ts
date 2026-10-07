@@ -1,10 +1,12 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5
 // 写経レベル: コア ── 状態の言葉と、承認できる条件(古い段階は承認し直せる)。
 // Phase-18-9:追記 ── @/features/detailed-design/api/types.StageIssue
+// Phase-26-5:追記 ── UnitKind
 import type {
   DesignStageRead,
   StageIssue,
   StageState,
+  UnitKind,
 } from "@/features/detailed-design/api/types";
 
 // 段階と詳細設計書の章は1対1(docs/external_design.md 2.7節の段階表)。
@@ -30,6 +32,10 @@ export const STATE_LABELS: Record<StageState, string> = {
   approved: "承認済み",
   outdated: "古い",
 };
+
+// Phase-26-5:追記
+// 段階7の単位の種別(devex-api の詳細設計書・実装計画の表示と同じ)
+export const UNIT_KIND_LABELS: Record<UnitKind, string> = { feature: "機能", base: "基盤" };
 
 const DOC_LABELS: Record<string, string> = {
   requirements: "要件定義書",

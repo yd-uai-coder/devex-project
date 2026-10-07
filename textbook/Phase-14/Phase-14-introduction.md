@@ -89,6 +89,7 @@ Phase 13 の完了後、コンポーネント図の粒度が粗い(`api-service-
 - [`Phase-15-2.md`](../Phase-15/Phase-15-2.md): `design_stages.stage`の範囲を、docs ⑩ の「1〜6」から1〜7に改めた(段階7 実装計画も同じ承認の流れに乗せるため)。保存する状態は`draft`/`reviewing`/`approved`の3つで、「未着手」「古い」は導く値にした。
 - [`Phase-16-introduction.md`](../Phase-16/Phase-16-introduction.md): Phase 16 を段階1だけにし、段階2以降の Phase の番号を1つずつ送った(ステージ4は Phase 14〜21)。[`Phase-14-4.md`](./Phase-14-4.md) の Phase 表を更新した。あわせて、決定#6「簡易ドキュメントモードはモジュール一覧以外を変えない」を改め、外部設計書の「2.6 API一覧」を両方のモードで出すことにした([`Phase-16-1.md`](../Phase-16/Phase-16-1.md))。
 - Phase 24 完了後の調整([`q_a.md`](../q_a.md)「Phase 24 完了後 ── 文書プレビューの不具合・簡易モードの設計図の削除・モード表示」): 05・06章の見せ方のデモ(`/detailed-design-demo`・`features/detailed-design/demo/`)を削除した(ユーザーがページを削除し、中身も不要になったため)。
+- [`Phase-25-5.md`](../Phase-25/Phase-25-5.md): 「シーケンス図は当面作らず、ステージ4の運用の後に判断する」への判断として、段階5の手順から決定的に導く読み取り専用のシーケンス図を作ることにした(05章と実装手順書に載せる。実装は Phase 29)。コミュニケーション図は後回し。
 
 ## Phase 完了チェック(#22)
 

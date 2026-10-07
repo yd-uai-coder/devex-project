@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -205,9 +205,14 @@ export const MAX_LOGIC_TARGETS = 5;
 // Phase-23-5:追記
 // 段階7 横断事項と実装計画の意味モデル(devex-api app/detailed_design/plan.py。Phase 23)。07 横断事項と
 // 実装計画を1つの model に持つ。タスクはマイルストーンの中に入れ子にする(改名で参照が切れないため)。
-// マイルストーンの番号(M-01…)は保存せず並び順から導く(planOps の milestoneId)。
+// タスクは実装手順書の作業単位で、機能ごとの縦割り(feature)か、処理の無い準備・デプロイ(base)。
+// マイルストーンの番号(M-01…)と単位の ID(M-01-T01…)は保存せず並び順から導く(planOps の
+// milestoneId・taskId)。依存は単位の ID で書き、並べ替えたときは planOps が付け替える。
 export type Priority = "Must" | "Should" | "Could";
-export type TaskArea = "準備" | "バックエンド" | "フロントエンド" | "テスト" | "デプロイ";
+// Phase-26-5：更新
+// export type TaskArea = "準備" | "バックエンド" | "フロントエンド" | "テスト" | "デプロイ";
+// ↓↓
+export type UnitKind = "feature" | "base";
 
 export type CrossCuttingRow = {
   topic: string; // 項目(例外と HTTP など)
@@ -216,17 +221,29 @@ export type CrossCuttingRow = {
 };
 
 export type PlanTask = {
-  area: TaskArea;
+  // Phase-26-5：更新
+  // area: TaskArea;
+  // ↓↓
+  kind: UnitKind;
   title: string;
-  modules: string[];
-  function_ids: string[];
+  // Phase-26-5：更新
+  // modules: string[];
+  // function_ids: string[];
+  // ↓↓
+  function_ids: string[]; // この単位で動くようにする処理(原則1つ)
+  depends_on: string[]; // 先に終わっている必要がある単位の ID(前の単位だけ)
+  modules: string[]; // 段階4のモジュール一覧のパス(検証する)
+  config_files: string[]; // 環境・設定のファイルの例(検証しない)
 };
 
+// Phase-26-5:追記
+// 動くようにする処理は保存せず、タスクの処理から導く(planOps の milestoneFunctions)
 export type Milestone = {
   name: string;
   goal: string;
   priority: Priority;
-  function_ids: string[]; // このマイルストーンで動くようにする処理
+  // Phase-26-5：削除
+  // function_ids: string[]; // このマイルストーンで動くようにする処理
   tasks: PlanTask[];
 };
 
@@ -239,7 +256,11 @@ export type PlanModel = {
   risks: Risk[];
 };
 
-// devex-api の PRIORITIES・TASK_AREAS・CROSSCUTTING_TOPICS と同じ値
+// devex-api の PRIORITIES・UNIT_KINDS・MAX_UNIT_FUNCTIONS・CROSSCUTTING_TOPICS と同じ値
 export const PRIORITIES: Priority[] = ["Must", "Should", "Could"];
-export const TASK_AREAS: TaskArea[] = ["準備", "バックエンド", "フロントエンド", "テスト", "デプロイ"];
+// Phase-26-5：更新
+// export const TASK_AREAS: TaskArea[] = ["準備", "バックエンド", "フロントエンド", "テスト", "デプロイ"];
+// ↓↓
+export const UNIT_KINDS: UnitKind[] = ["feature", "base"];
+export const MAX_UNIT_FUNCTIONS = 3;
 export const CROSSCUTTING_TOPICS = ["例外と HTTP", "認証", "トランザクション", "ログ"];
