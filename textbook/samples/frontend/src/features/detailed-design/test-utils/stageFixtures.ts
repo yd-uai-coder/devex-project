@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
@@ -7,6 +7,7 @@
 // Phase-20-4:追記 ── @/features/detailed-design/api/types.ProcedureModel, ProcedureStep
 // Phase-21-4:追記 ── @/features/detailed-design/api/types.LogicModel, LogicRow
 // Phase-23-5:追記 ── @/features/detailed-design/api/types.PlanModel
+// Phase-27-3:追記 ── @/features/detailed-design/api/types.ProcedureDocModel
 import type {
   CrudModel,
   DataFlowModel,
@@ -16,6 +17,7 @@ import type {
   LogicRow,
   ModuleListModel,
   PlanModel,
+  ProcedureDocModel,
   ProcedureModel,
   ProcedureStep,
 } from "@/features/detailed-design/api/types";
@@ -176,11 +178,47 @@ export function makePlan(): PlanModel {
   };
 }
 
-// 段階1〜7の一覧の雛形。overrides で段階ごとに上書きする(テスト専用)。
+// Phase-27-3:追記
+// makePlan の機能の単位 M-01-T02 の手順書(段階8。テスト専用)。AI の指摘を1件持つ。
+export function makeProcedureDoc(): ProcedureDocModel {
+  return {
+    units: [
+      {
+        unit_id: "M-01-T02",
+        title: "予約を登録する",
+        purpose: "予約を登録できるようにする",
+        files: [
+          {
+            path: "app/api/routes/reservations.py",
+            kind: "module",
+            responsibility: "予約の API",
+            basis: "段階4",
+          },
+        ],
+        notes: [],
+        tests: [{ viewpoint: "予約を登録できる", sut: "create_reservation", driver: "API", stub: "不要" }],
+        gwt: [],
+        verify: ["テストが通る"],
+        findings: [
+          { level: "critical", target: "07章 例外と HTTP", message: "重複時の応答が無い", fix_stage: 7 },
+        ],
+      },
+    ],
+  };
+}
+
+// Phase-27-3：更新
+// // 段階1〜7の一覧の雛形。overrides で段階ごとに上書きする(テスト専用)。
+// export function makeStages(
+//   overrides: Partial<Record<number, Partial<DesignStageRead>>> = {},
+// ) {
+//   return [1, 2, 3, 4, 5, 6, 7].map((stage): DesignStageRead => ({
+// ↓↓
+// 段階1〜8の一覧の雛形。overrides で段階ごとに上書きする(テスト専用)。
 export function makeStages(
   overrides: Partial<Record<number, Partial<DesignStageRead>>> = {},
 ) {
-  return [1, 2, 3, 4, 5, 6, 7].map((stage): DesignStageRead => ({
+  return [1, 2, 3, 4, 5, 6, 7, 8].map((stage): DesignStageRead => ({
     stage,
     state: "not_started",
     is_open: stage === 1,

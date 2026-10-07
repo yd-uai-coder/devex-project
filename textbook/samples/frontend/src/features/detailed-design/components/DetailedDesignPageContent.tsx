@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -14,7 +14,8 @@ import { StageWorkArea } from "@/features/detailed-design/components/StageWorkAr
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { STAGE_TITLES } from "@/features/detailed-design/labels";
 
-// 詳細設計画面(SCR-008)。左に段階1〜7のステッパー、右に選んだ段階の作業領域を置く
+// Phase-27-3：更新(段階1〜7 → 段階1〜8)
+// 詳細設計画面(SCR-008)。左に段階1〜8のステッパー、右に選んだ段階の作業領域を置く
 // (docs/external_design.md 2.7節「段階の進め方」)。
 export function DetailedDesignPageContent({
   projectId,

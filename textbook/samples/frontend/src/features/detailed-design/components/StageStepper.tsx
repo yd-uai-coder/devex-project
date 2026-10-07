@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,24(完了後の UI 調整)
+// 作成：Phase-15-7｜更新：Phase-16-6,24(完了後の UI 調整),27-3
 // 写経レベル: 定型 ── 7段階の並びと状態の色。
 "use client";
 
@@ -21,7 +21,8 @@ const STATE_COLORS: Record<StageState, string> = {
   outdated: "$red10",
 };
 
-// 段階1〜7の縦のステッパー。各段階の状態を色とラベルで示し、押すとその段階を選ぶ。
+// Phase-27-3：更新(段階1〜7 → 段階1〜8)
+// 段階1〜8の縦のステッパー。各段階の状態を色とラベルで示し、押すとその段階を選ぶ。
 export function StageStepper({
   stages,
   selectedStage,

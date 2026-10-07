@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正)
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3
 // 写経レベル: コア ── 承認の後に全段階を取り直す(後ろの段階が開く・古いが消える)。
 // Phase-16-6:追記 ── @/features/detailed-design/api/designStagesApi.generateDesignStage, @/features/detailed-design/api/designStagesApi.saveDesignStage
 // Phase-18-9:追記 ── @/features/detailed-design/labels.approvalBlockers
@@ -76,9 +76,13 @@ type DetailedDesignStore = {
   setTab: (key: string, value: string | null) => void;
 };
 
-// 最初に開く段階: まだ承認されていない最初の段階(すべて承認済みなら段階7)。
+// Phase-27-3：更新(段階1〜7 → 段階1〜8)
+// 最初に開く段階: まだ承認されていない最初の段階(すべて承認済みなら段階8)。
 export function firstPendingStage(stages: DesignStageRead[]): number {
-  return stages.find((s) => s.state !== "approved")?.stage ?? 7;
+  // Phase-27-3：更新
+  // return stages.find((s) => s.state !== "approved")?.stage ?? 7;
+  // ↓↓
+  return stages.find((s) => s.state !== "approved")?.stage ?? 8;
 }
 
 // Phase-16-6:追記

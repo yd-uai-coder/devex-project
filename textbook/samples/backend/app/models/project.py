@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整)
+# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1
 # 写経レベル: 定型 ── 既存User/Conversationと同型のORMモデル定義。
 import uuid
 from datetime import datetime
@@ -38,7 +38,8 @@ class Project(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="interviewing")
     # Phase-15-1:追記
     # mode: 作成時に選んだモード。'simple'(簡易ドキュメントモード: 4文書の一括生成) /
-    # 'detailed'(詳細設計モード: 要件定義・外部設計の後に段階1〜7)。作成後は変えない
+    # Phase-27-1：更新(段階1〜7 → 段階1〜8)
+    # 'detailed'(詳細設計モード: 要件定義・外部設計の後に段階1〜8)。作成後は変えない
     # (モードで生成する文書の組と段階のデータの有無が変わり、途中で変えると両方に当てはまらない状態ができる)
     mode: Mapped[str] = mapped_column(
         String(20), nullable=False, default="simple", server_default="simple"

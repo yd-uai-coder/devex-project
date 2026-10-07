@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -12,6 +12,8 @@
 # Phase-23-1:追記 ── app.detailed_design.plan.CROSSCUTTING_TOPICS, PLAN_STAGE, PRIORITIES, TASK_AREAS, CrossCuttingRow, Milestone, PlanModel, PlanTask, Risk, milestone_id, missing_topics, normalize_plan, planned_function_ids, unplanned_functions
 # Phase-21-1:追記 ── app.detailed_design.logic.LOGIC_STAGE, MAX_LOGIC_TARGETS, LogicCandidate, LogicDraft, LogicModel, LogicRow, PseudoStep, calling_steps, is_drafted, logic_candidates, logic_id, logic_key, merge_logic, pending_logic_keys
 # Phase-26-1:追記 ── app.detailed_design.plan.MAX_UNIT_FUNCTIONS, UNIT_KINDS, UnitKind, is_file_path, milestone_functions, task_id, unit_ids(TASK_AREAS は削除)
+# Phase-27-1:追記 ── app.detailed_design.procedure_doc(FINDING_LEVELS, PROCEDURE_DOC_STAGE, AiFinding, FindingLevel, PlanUnit, ProcedureDocModel, TestPoint, UnitFile, UnitProcedure, plan_units)
+# Phase-27-2:追記 ── app.detailed_design.procedure_doc(DesignIndex, DesignRef, design_index, unit_refs)
 from app.detailed_design.api_list import (
     ApiEndpoint,
     endpoint_key,
@@ -104,6 +106,22 @@ from app.detailed_design.procedure import (
     pending_function_ids,
     resolve_callee,
     step_id,
+)
+from app.detailed_design.procedure_doc import (
+    FINDING_LEVELS,
+    PROCEDURE_DOC_STAGE,
+    AiFinding,
+    DesignIndex,
+    DesignRef,
+    FindingLevel,
+    PlanUnit,
+    ProcedureDocModel,
+    TestPoint,
+    UnitFile,
+    UnitProcedure,
+    design_index,
+    plan_units,
+    unit_refs,
 )
 from app.detailed_design.stages import (
     STAGE_INPUTS,
@@ -327,4 +345,20 @@ __all__ = [
     # Phase-23-1:追記
     "unplanned_functions",
     "validate_stage",
+    # Phase-27-1:追記
+    "FINDING_LEVELS",
+    "PROCEDURE_DOC_STAGE",
+    "AiFinding",
+    "FindingLevel",
+    "PlanUnit",
+    "ProcedureDocModel",
+    "TestPoint",
+    "UnitFile",
+    "UnitProcedure",
+    "plan_units",
+    # Phase-27-2:追記
+    "DesignIndex",
+    "DesignRef",
+    "design_index",
+    "unit_refs",
 ]

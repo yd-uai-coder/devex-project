@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3,22-1,22-3,22-5,23-1,23-2
+# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3,22-1,22-3,22-5,23-1,23-2,27-1
 # 写経レベル: 定型 ── テスト用のプロジェクトの組み立て。
 """詳細設計モードのテストで使うプロジェクトの組み立て(段階のサービス・ルートのテストで共有する)。"""
 
@@ -437,3 +437,47 @@ async def create_document_project(session: AsyncSession) -> Project:
     await stages.save(project, stage=7, expected_version=None, model=plan_model())
     await stages.approve(project, stage=7, expected_version=1)
     return project
+
+
+# Phase-27-1:追記
+def procedure_doc_model(
+    *,
+    unit_id: str = "M-01-T02",
+    title: str = "予約を登録する",
+    module: str = "app/api/routes/reservations.py",
+) -> dict:
+    """`plan_model()`の機能の単位 M-01-T02 の手順書(段階8。検証を通る)。ファイルはモジュール
+    `module`とテスト1本。`unit_id`・`title`を段階7と違うものにすると検証のエラー(UNIT_MISMATCH)、
+    `module`をモジュール一覧に無いパスにすると警告(UNKNOWN_FILE)になる。"""
+    return {
+        "units": [
+            {
+                "unit_id": unit_id,
+                "title": title,
+                "purpose": "予約を登録できるようにする",
+                "files": [
+                    {"path": module, "kind": "module", "responsibility": "予約の API"},
+                    {"path": "tests/test_reservations.py", "kind": "test"},
+                ],
+                "notes": [],
+                "tests": [
+                    {
+                        "viewpoint": "予約を登録できる",
+                        "sut": "create_reservation",
+                        "driver": "API を呼ぶテスト",
+                        "stub": "スタブ不要",
+                    }
+                ],
+                "gwt": [],
+                "verify": ["テストが通る"],
+                "findings": [
+                    {
+                        "level": "critical",
+                        "target": "07章 例外と HTTP",
+                        "message": "重複したときの応答が無い",
+                        "fix_stage": 7,
+                    }
+                ],
+            }
+        ]
+    }

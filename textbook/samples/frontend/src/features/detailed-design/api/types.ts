@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -20,15 +20,26 @@ export type StageState =
   | "approved"
   | "outdated";
 
+// Phase-27-3:追記
+// 実装可能性チェックの指摘の重要度。critical = 最重要、major = 中程度、minor = 軽微
+export type FindingLevel = "critical" | "major" | "minor";
+
 // Phase-16-5:追記
 // 段階ごとの検証の指摘(Phase 16)。error があると承認できない。warning は承認を止めない。
+// 段階8(実装可能性チェック)の指摘だけが、重要度 level・直す先の段階 fix_stage・指摘の出た
+// 作業単位の ID unit を持つ(他の段階は null か省略。Phase 27)。
 export type StageIssue = {
   severity: "error" | "warning";
   code: string;
   message: string;
   target: string | null;
+  // Phase-27-3:追記
+  level?: FindingLevel | null;
+  fix_stage?: number | null;
+  unit?: string | null;
 };
 
+// Phase-16-5:追記
 // AIの下書きの生成の状態。null はまだ生成していない。
 export type StageGenerationStatus = "generating" | "completed" | "failed";
 
@@ -264,3 +275,44 @@ export const PRIORITIES: Priority[] = ["Must", "Should", "Could"];
 export const UNIT_KINDS: UnitKind[] = ["feature", "base"];
 export const MAX_UNIT_FUNCTIONS = 3;
 export const CROSSCUTTING_TOPICS = ["例外と HTTP", "認証", "トランザクション", "ログ"];
+
+// Phase-27-3:追記
+// 段階8 実装手順書の意味モデル(devex-api app/detailed_design/procedure_doc.py)。作業単位の正本は
+// 段階7で、手順書は単位の ID と作ったときのタスク名を持つ(段階7と合わなくなった手順書は検証の
+// エラー)。設計は書き写さず、参照する設計は単位の処理ID・モジュールから導く。
+// units は手順書のある単位だけ(無い単位は、まだ手順書を生成していない)。
+export type UnitFileKind = "module" | "test" | "config";
+
+export type UnitFile = {
+  path: string;
+  kind: UnitFileKind; // module は段階4のモジュール(検証する)、test はテスト、config は環境・設定
+  responsibility: string;
+  basis: string; // 根拠(段階4・段階7の環境・設定のファイルなど)
+};
+
+export type TestPoint = { viewpoint: string; sut: string; driver: string; stub: string };
+
+// 手順書を作った AI の指摘(設計に無いため決められないこと)。fix_stage は直す先の段階
+export type AiFinding = {
+  level: FindingLevel;
+  target: string;
+  message: string;
+  fix_stage: number;
+};
+
+export type UnitProcedure = {
+  unit_id: string;
+  title: string;
+  purpose: string;
+  files: UnitFile[];
+  notes: string[];
+  tests: TestPoint[];
+  gwt: string[];
+  verify: string[];
+  findings: AiFinding[];
+};
+
+export type ProcedureDocModel = { units: UnitProcedure[] };
+
+// devex-api の FINDING_LEVELS と同じ値(重要度の高い順)
+export const FINDING_LEVELS: FindingLevel[] = ["critical", "major", "minor"];

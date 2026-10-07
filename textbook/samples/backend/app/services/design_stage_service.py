@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
 # Phase-16-4:追記 ── app.detailed_design.Fingerprint
@@ -77,7 +77,10 @@ class DesignStageService:
         self._diagrams = UmlDiagramRepository(session)
 
     async def list_stages(self, project: Project) -> list[DesignStageRead]:
-        """段階1〜7の状態を返す(未着手の段階も含む)。"""
+        # Phase-27-1：更新
+        # """段階1〜7の状態を返す(未着手の段階も含む)。"""
+        # ↓↓
+        """段階1〜8の状態を返す(未着手の段階も含む)。"""
         _ensure_detailed(project)
         rows, views, documents = await self._load(project.id)
         # Phase-17-3：更新
@@ -419,7 +422,16 @@ def _approved_versions(
 # def _to_read(view: StageView, row: DesignStage | None) -> DesignStageRead:
 # ↓↓
 def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) -> DesignStageRead:
-    issues = validate_stage(view.stage, row.model, sources) if row is not None else []
+    # Phase-27-2：更新
+    # issues = validate_stage(view.stage, row.model, sources) if row is not None else []
+    # ↓↓
+    if row is not None:
+        issues = validate_stage(view.stage, row.model, sources)
+    elif view.is_open:
+        # 内容の無い段階でも検証する段階がある(段階8は、手順書の無い単位にも指摘が出る)
+        issues = validate_stage(view.stage, None, sources)
+    else:
+        issues = []
     return DesignStageRead(
         stage=view.stage,
         state=view.state,

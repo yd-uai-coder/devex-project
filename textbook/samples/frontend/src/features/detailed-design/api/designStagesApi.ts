@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6
+// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-21-4:追記 ── ./types.LogicTarget
 // Phase-22-6:追記 ── @/lib/api/download(fetchAttachment, parseFilename)
@@ -9,7 +9,8 @@ import type { DesignStageRead, LogicTarget } from "./types";
 const base = (projectId: string) =>
   `/api/v1/projects/${projectId}/design-stages`;
 
-// 段階1〜7の状態(未着手の段階も含む)。詳細設計モードでないプロジェクトは409
+// Phase-27-3：更新(段階1〜7 → 段階1〜8)
+// 段階1〜8の状態(未着手の段階も含む)。詳細設計モードでないプロジェクトは409
 // (DESIGN_STAGES_NOT_AVAILABLE)。
 export function listDesignStages(
   projectId: string,

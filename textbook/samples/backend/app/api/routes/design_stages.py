@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4
+# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1
 # 写経レベル: 定型 ── サービスを呼ぶだけの薄いルート。
 # Phase-16-4:追記 ── fastapi.BackgroundTasks, fastapi.status, app.services.design_stage_generation_service.DesignStageGenerationService, app.services.design_stage_generation_service.run_design_stage_generation
 # Phase-20-3:追記 ── app.schemas.design_stage.DesignStageGenerate
@@ -27,7 +27,10 @@ from app.services.detailed_design_export_service import DetailedDesignExportServ
 # UMLと同じく、プロジェクト配下の独立したサブツリーとしてprefixにproject_idを含める
 router = APIRouter(prefix="/projects/{project_id}/design-stages", tags=["design-stages"])
 
-StageNumber = Annotated[int, Path(ge=1, le=7, description="段階番号(1〜7)")]
+# Phase-27-1：更新
+# StageNumber = Annotated[int, Path(ge=1, le=7, description="段階番号(1〜7)")]
+# ↓↓
+StageNumber = Annotated[int, Path(ge=1, le=8, description="段階番号(1〜8)")]
 
 
 @router.get("", response_model=list[DesignStageRead])
@@ -37,7 +40,8 @@ async def list_design_stages(
     # Phase-16-4：更新
     # """詳細設計モードの段階1〜7の状態を取得する(未着手の段階も含む)。"""
     # ↓↓
-    """詳細設計モードの段階1〜7の状態を取得する(未着手の段階も含む)。画面は下書きの生成の完了を
+    # Phase-27-1：更新(docstring: 段階1〜7 → 段階1〜8)
+    """詳細設計モードの段階1〜8の状態を取得する(未着手の段階も含む)。画面は下書きの生成の完了を
     この一覧のポーリングで待つため、止まった生成(15分超)はここで回収してから返す。"""
     await DesignStageGenerationService(session).recover_stale(current_project.id)
     return await DesignStageService(session).list_stages(current_project)

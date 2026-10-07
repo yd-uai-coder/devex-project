@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -118,13 +118,22 @@ describe("DetailedDesignPageContent", () => {
     expect(screen.queryByText(/を承認しました。/)).not.toBeInTheDocument();
   });
 
-  it("段階7の承認では次の段階が無いので、「閉じる」だけを出す", async () => {
+  // Phase-27-3：更新
+  // it("段階7の承認では次の段階が無いので、「閉じる」だけを出す", async () => {
+  // ↓↓
+  it("段階8の承認では次の段階が無いので、「閉じる」だけを出す", async () => {
     const user = userEvent.setup();
     useDetailedDesignStore.setState({
       stages: makeStages({
-        7: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: { x: 1 } },
+        // Phase-27-3：更新
+        // 7: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: { x: 1 } },
+        // ↓↓
+        8: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: { units: [] } },
       }),
-      selectedStage: 7,
+      // Phase-27-3：更新
+      // selectedStage: 7,
+      // ↓↓
+      selectedStage: 8,
       approve: vi.fn().mockResolvedValue(true),
     });
     renderContent();
@@ -134,7 +143,10 @@ describe("DetailedDesignPageContent", () => {
     // Phase-23-6：更新
     // expect(await screen.findByText("段階7-実装計画を承認しました。")).toBeInTheDocument();
     // ↓↓
-    expect(await screen.findByText("段階7-横断事項と実装計画を承認しました。")).toBeInTheDocument();
+    // Phase-27-3：更新
+    // expect(await screen.findByText("段階7-横断事項と実装計画を承認しました。")).toBeInTheDocument();
+    // ↓↓
+    expect(await screen.findByText("段階8-実装手順書を承認しました。")).toBeInTheDocument();
     expect(screen.queryByLabelText("次の段階へ進む")).not.toBeInTheDocument();
     await user.click(screen.getByLabelText("閉じる"));
     expect(useDetailedDesignStore.getState().selectStage).not.toHaveBeenCalled();

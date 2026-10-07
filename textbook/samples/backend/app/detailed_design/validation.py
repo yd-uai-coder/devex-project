@@ -1,7 +1,8 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2
 # 写経レベル: コア ── 段階ごとの検証の登録(STAGE_VALIDATORS)と、エラーと警告の分け方。
 # Phase-23-1：更新(docstring: 段階7の検証を登録したことと、その入力を書いた)
 # Phase-26-1：更新(docstring: 段階7が段階4のモジュール一覧も使うことを書いた)
+# Phase-27-2：更新(docstring: 段階8の検証を登録したことと、その入力・内容が無くても検証することを書いた)
 """段階ごとの内容の検証(純粋関数)。
 
 承認の条件は、全段階に共通の3つ(段階が開いている・版が一致する・承認できる状態で内容が空でない。
@@ -9,8 +10,8 @@ app/services/design_stage_service.py)に加えて、段階ごとの検証で「�
 止めない(UML図の検証と同じ考え方。app/uml/validation/)。保存は検証の結果によらず通す(編集の
 途中の状態も保存できるようにするため)。
 
-段階ごとの検証は`STAGE_VALIDATORS`に登録する。段階1〜7のすべてを登録している(段階7は
-Phase 23。登録の無い段階は検証なし)。
+段階ごとの検証は`STAGE_VALIDATORS`に登録する。段階1〜8のすべてを登録している(段階7は
+Phase 23、段階8は Phase 27。登録の無い段階は検証なし)。
 検証には段階の内容のほかに入力の文書の本文が要ることがあるので、
 `StageSources`で渡す(段階1は外部設計書のAPI一覧と照らして、下書きの漏れを警告する)。
 段階2は、入力の段階1の内容と、機能グループの DFD(`uml_diagrams`)の要約も使う(Phase 17)。
@@ -21,6 +22,9 @@ Phase 23。登録の無い段階は検証なし)。
 段階7は、段階1の処理ID(計画の漏れ)と、段階4のモジュール一覧(単位のモジュールの欄)を使う
 (Phase 23、Phase 26 で段階4を追加)。環境・設定のファイルの欄と、横断事項のファイルの欄は例なので
 検証しない。
+段階8は、段階7の作業単位と、単位が参照する段階3〜6の設計を使う(実装可能性チェック。Phase 27)。
+設計の不足は、重要度(`level`)と直す先の段階(`fix_stage`)を持つ警告にする。段階8の指摘は
+手順書がまだ無くても出る(段階7の単位と設計から決まるため)。
 """
 
 # Phase-17-1:追記 ── app.detailed_design.data_flow.APPROVED_DIAGRAM_STATUSES, app.detailed_design.data_flow.MAX_DFD_GROUPS, app.detailed_design.data_flow.DataFlowModel, app.detailed_design.data_flow.dfd_subject, app.detailed_design.data_flow.group_functions
@@ -30,6 +34,7 @@ Phase 23。登録の無い段階は検証なし)。
 # Phase-21-1:追記 ── app.detailed_design.logic(LogicModel, is_drafted, logic_candidates, logic_id, logic_key)
 # Phase-23-1:追記 ── app.detailed_design.plan(PlanModel, milestone_id, missing_topics, unplanned_functions)
 # Phase-26-1:追記 ── app.detailed_design.plan(MAX_UNIT_FUNCTIONS, is_file_path, task_id, unit_ids)
+# Phase-27-2:追記 ── app.detailed_design.plan.PLAN_STAGE, app.detailed_design.procedure_doc(PROCEDURE_DOC_STAGE, DesignIndex, FindingLevel, PlanUnit, ProcedureDocModel, design_index, plan_units, spelling_match, unit_refs)
 from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -61,6 +66,7 @@ from app.detailed_design.logic import (
 )
 from app.detailed_design.plan import (
     MAX_UNIT_FUNCTIONS,
+    PLAN_STAGE,
     PlanModel,
     is_file_path,
     milestone_id,
@@ -75,6 +81,17 @@ from app.detailed_design.procedure import (
     number_steps,
     step_id,
 )
+from app.detailed_design.procedure_doc import (
+    PROCEDURE_DOC_STAGE,
+    DesignIndex,
+    FindingLevel,
+    PlanUnit,
+    ProcedureDocModel,
+    design_index,
+    plan_units,
+    spelling_match,
+    unit_refs,
+)
 from app.detailed_design.structure import ModuleListModel, module_ref_matches
 
 Severity = Literal["error", "warning"]
@@ -82,12 +99,22 @@ Severity = Literal["error", "warning"]
 
 @dataclass(frozen=True)
 class StageIssue:
-    """検証の指摘1件。`target`は指摘の対象(処理ID・機能グループ名など。無ければNone)。"""
+    # Phase-27-2：更新
+    # """検証の指摘1件。`target`は指摘の対象(処理ID・機能グループ名など。無ければNone)。"""
+    # ↓↓
+    """検証の指摘1件。`target`は指摘の対象(処理ID・機能グループ名など。無ければNone)。
+
+    段階8(実装可能性チェック)の指摘だけが、重要度`level`・直す先の段階`fix_stage`・
+    指摘の出た作業単位`unit`(単位によらなければNone)を持つ。"""
 
     severity: Severity
     code: str
     message: str
     target: str | None = None
+    # Phase-27-2:追記
+    level: FindingLevel | None = None
+    fix_stage: int | None = None
+    unit: str | None = None
 
 
 # Phase-17-1:追記
@@ -784,6 +811,120 @@ def _module_issues(uid: str, modules: list[str], paths: set[str]) -> list[StageI
     return issues
 
 
+# Phase-27-2:追記
+def validate_procedure_doc(
+    model: Mapping[str, Any], sources: StageSources
+) -> list[StageIssue]:
+    """段階8(実装手順書)の検証 = 決定的な実装可能性チェック。
+
+    エラー(承認を止める): 形が不正 / 同じ単位の手順書が2つある / 手順書の単位が段階7に無い・
+    タスク名が違う(段階7を並べ替え・改名した。作り直させる)。
+    警告(重要度・直す先の段階を持つ。承認は止めない):
+    - 中程度・段階5: 機能の単位の処理に、段階5の手順が無い(`NO_PROCEDURE`)
+    - 中程度・段階3: 手順に DB 操作があるのに、CRUD 図にその処理の操作が無い(`NOT_IN_CRUD`)
+    - 中程度・段階4: 単位のモジュールがディレクトリ(`MODULE_NOT_FILE`)、手順書のモジュールの
+      ファイルがモジュール一覧に無い(`UNKNOWN_FILE`)
+    - 軽微・段階5: 手順の呼ぶ関数が段階6に無く、同じモジュールの段階6の関数と書き方だけが違う
+      (`UNRESOLVED_CALL`。揺れは吸収せず、手順の関数名を段階6にそろえさせる。段階6で選ばなかった
+      別の関数は、段階6が任意なので指摘しない)
+    指摘の`target`は、処理ID・手順ID・パス・単位の ID。`unit`は指摘の出た単位の ID。
+    """
+    try:
+        parsed = ProcedureDocModel.model_validate(model)
+    except ValidationError as exc:
+        return [_error("INVALID_MODEL", f"実装手順書の形が正しくありません: {exc}")]
+    units = plan_units(PlanModel.model_validate(sources.stages.get(PLAN_STAGE) or {}))
+    by_id = {unit.unit_id: unit for unit in units}
+    index = design_index(sources.stages)
+
+    issues: list[StageIssue] = []
+    counts = Counter(doc.unit_id.strip() for doc in parsed.units)
+    reported: set[str] = set()
+    for doc in parsed.units:
+        uid = doc.unit_id.strip()
+        if counts[uid] > 1:
+            if uid not in reported:
+                reported.add(uid)
+                message = f"{uid} の手順書が{counts[uid]}つあります。"
+                issues.append(_unit_error("DUPLICATE_UNIT", message, uid))
+            continue
+        unit = by_id.get(uid)
+        if unit is None:
+            message = f"手順書の単位 {uid} が、段階7にありません(手順書を作り直してください)。"
+            issues.append(_unit_error("UNIT_MISMATCH", message, uid))
+            continue
+        if unit.task.title.strip() != doc.title.strip():
+            message = (
+                f"{uid} の手順書は「{doc.title.strip()}」のものですが、段階7の {uid} は"
+                f"「{unit.task.title.strip()}」です(段階7を並べ替えたか改名しました。"
+                "手順書を作り直してください)。"
+            )
+            issues.append(_unit_error("UNIT_MISMATCH", message, uid))
+            continue
+        for file in doc.files:
+            path = file.path.strip()
+            if file.kind == "module" and path and path not in index.module_paths:
+                message = f"{uid} の手順書のファイル「{path}」が、モジュール一覧にありません。"
+                issues.append(_finding("UNKNOWN_FILE", message, path, "major", 4, uid))
+    for unit in units:
+        issues += _unit_design_issues(unit, index)
+    return issues
+
+
+def _unit_design_issues(unit: PlanUnit, index: DesignIndex) -> list[StageIssue]:
+    """単位1つの、参照する設計の不足(警告)。基盤の単位は処理を持たないので、モジュールだけを見る。"""
+    uid = unit.unit_id
+    issues: list[StageIssue] = []
+    for ref in unit_refs(unit.task, index):
+        if ref.kind == "procedure":
+            if not ref.resolved:
+                message = f"{uid} の処理 {ref.key} に、段階5の手順がありません。"
+                issues.append(_finding("NO_PROCEDURE", message, ref.key, "major", 5, uid))
+            elif _has_db_step(index, ref.key) and ref.key not in index.crud_functions:
+                message = (
+                    f"{uid} の処理 {ref.key} の手順に DB 操作がありますが、"
+                    "CRUD 図にこの処理の操作がありません。"
+                )
+                issues.append(_finding("NOT_IN_CRUD", message, ref.key, "major", 3, uid))
+        elif ref.kind == "logic":
+            module, function = ref.key.split("::", 1)
+            name = None if ref.resolved else spelling_match(index, module, function)
+            if name is not None:
+                message = (
+                    f"{uid} の手順 {ref.via} の関数「{function}」は、段階6の「{name}」と"
+                    f"書き方だけが違います。段階5の手順の関数名を「{name}」にそろえます。"
+                )
+                issues.append(_finding("UNRESOLVED_CALL", message, ref.via, "minor", 5, uid))
+        elif ref.resolved and not is_file_path(ref.key):
+            message = (
+                f"{uid} のモジュール「{ref.key}」はディレクトリで、作るファイルが決まりません。"
+            )
+            issues.append(_finding("MODULE_NOT_FILE", message, ref.key, "major", 4, uid))
+    return issues
+
+
+def _has_db_step(index: DesignIndex, function_id: str) -> bool:
+    procedure = index.procedures.get(function_id)
+    return procedure is not None and any(step.db.strip() for step in procedure.steps)
+
+
+def _unit_error(code: str, message: str, uid: str) -> StageIssue:
+    """段階8の手順書そのもののエラー(手順書を作り直すので、直す先は段階8)。"""
+    return StageIssue("error", code, message, uid, fix_stage=PROCEDURE_DOC_STAGE, unit=uid)
+
+
+def _finding(
+    code: str,
+    message: str,
+    target: str | None,
+    level: FindingLevel,
+    fix_stage: int,
+    unit: str | None,
+) -> StageIssue:
+    """段階8の実装可能性チェックの警告(重要度と直す先の段階を持つ)。"""
+    return StageIssue("warning", code, message, target, level, fix_stage, unit)
+
+
 # ── ここから Phase-16-2 の作成分 ──
 def _error(code: str, message: str, target: str | None = None) -> StageIssue:
     return StageIssue("error", code, message, target)
@@ -808,14 +949,32 @@ STAGE_VALIDATORS: dict[int, StageValidator] = {
     6: validate_logics,
     # Phase-23-1:追記
     7: validate_plan,
+    # Phase-27-2:追記
+    8: validate_procedure_doc,
 }
+
+# Phase-27-2:追記
+# 内容が無くても検証する段階。段階8の指摘は、手順書の無い単位にも段階7と設計から出るため
+VALIDATED_WITHOUT_MODEL: frozenset[int] = frozenset({PROCEDURE_DOC_STAGE})
 
 
 def validate_stage(
     stage: int, model: Mapping[str, Any] | None, sources: StageSources
 ) -> list[StageIssue]:
-    """段階の内容を検証する。内容が無い(未着手・生成中の初回)ときは指摘なし。"""
+    # Phase-27-2：更新
+    # """段階の内容を検証する。内容が無い(未着手・生成中の初回)ときは指摘なし。"""
+    # ↓↓
+    """段階の内容を検証する。内容が無い(未着手・生成中の初回)ときは指摘なし。
+    ただし`VALIDATED_WITHOUT_MODEL`の段階は、空の内容として検証する。"""
     validator = STAGE_VALIDATORS.get(stage)
-    if validator is None or not model:
+    # Phase-27-2：更新
+    # if validator is None or not model:
+    # ↓↓
+    if validator is None:
         return []
+    # Phase-27-2:追記
+    if not model:
+        if stage not in VALIDATED_WITHOUT_MODEL:
+            return []
+        model = {}
     return validator(model, sources)

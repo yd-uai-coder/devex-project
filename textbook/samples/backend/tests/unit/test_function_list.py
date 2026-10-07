@@ -1,4 +1,4 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,27-2
 # 写経レベル: コア ── 再生成で処理IDと機能グループが引き継がれることを確かめる。
 """段階1 機能一覧の組み立て(処理IDの採番と引き継ぎ・機能グループの初期値)と検証のテスト。
 
@@ -170,17 +170,14 @@ def test_validate_warns_duplicate_trigger_and_missing_api() -> None:
 
 
 def test_stages_without_validator_have_no_issues() -> None:
-    # Phase-21-1：更新(段階6にも検証を登録したので、登録の無い例を段階7にした)
-    # assert set(STAGE_VALIDATORS) == {1, 2, 3, 4, 5}
-    # assert validate_stage(6, {"anything": 1}, StageSources()) == []
+    # Phase-27-2：更新
+    # # 段階1〜7のすべてに検証がある。登録の無い番号は指摘なし
+    # assert set(STAGE_VALIDATORS) == {1, 2, 3, 4, 5, 6, 7}
+    # assert validate_stage(8, {"anything": 1}, StageSources()) == []
     # ↓↓
-    # Phase-23-1：更新
-    # assert set(STAGE_VALIDATORS) == {1, 2, 3, 4, 5, 6}
-    # assert validate_stage(7, {"anything": 1}, StageSources()) == []
-    # ↓↓
-    # Phase 23 で段階1〜7のすべてに検証がある。登録の無い番号は指摘なし
-    assert set(STAGE_VALIDATORS) == {1, 2, 3, 4, 5, 6, 7}
-    assert validate_stage(8, {"anything": 1}, StageSources()) == []
+    # 段階1〜8のすべてに検証がある。登録の無い番号は指摘なし
+    assert set(STAGE_VALIDATORS) == {1, 2, 3, 4, 5, 6, 7, 8}
+    assert validate_stage(9, {"anything": 1}, StageSources()) == []
     # ── ここから Phase-16-2 の作成分 ──
     assert validate_stage(1, None, StageSources()) == []
     assert has_errors([StageIssue("warning", "W", "w")]) is False

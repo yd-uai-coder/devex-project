@@ -1,9 +1,11 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3
 // 写経レベル: コア ── 状態の言葉と、承認できる条件(古い段階は承認し直せる)。
 // Phase-18-9:追記 ── @/features/detailed-design/api/types.StageIssue
 // Phase-26-5:追記 ── UnitKind
+// Phase-27-3:追記 ── FindingLevel
 import type {
   DesignStageRead,
+  FindingLevel,
   StageIssue,
   StageState,
   UnitKind,
@@ -21,8 +23,11 @@ export const STAGE_TITLES: Record<number, string> = {
   // 7: "実装計画",
   // ↓↓
   7: "横断事項と実装計画",
+  // Phase-27-3:追記
+  8: "実装手順書",
 };
 
+// ── ここから Phase-15-7 の作成分 ──
 export const STATE_LABELS: Record<StageState, string> = {
   not_started: "未着手",
   draft: "下書き",
@@ -36,6 +41,15 @@ export const STATE_LABELS: Record<StageState, string> = {
 // Phase-26-5:追記
 // 段階7の単位の種別(devex-api の詳細設計書・実装計画の表示と同じ)
 export const UNIT_KIND_LABELS: Record<UnitKind, string> = { feature: "機能", base: "基盤" };
+
+// Phase-27-3:追記
+// 段階8の実装可能性チェックの重要度と、指摘の出どころ(検証 = 決定的なチェック、AI = 手順書を作った AI)
+export const FINDING_LEVEL_LABELS: Record<FindingLevel, string> = {
+  critical: "最重要",
+  major: "中程度",
+  minor: "軽微",
+};
+export const FINDING_SOURCE_LABELS: Record<"check" | "ai", string> = { check: "検証", ai: "AI" };
 
 const DOC_LABELS: Record<string, string> = {
   requirements: "要件定義書",

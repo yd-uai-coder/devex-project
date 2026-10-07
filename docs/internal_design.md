@@ -186,7 +186,7 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | :--- | :--- | :--- | :--- |
 | id | UUID | PK | 段階ID |
 | project_id | UUID | FK (`projects.id`, ondelete CASCADE), NOT NULL | プロジェクトID |
-| stage | SMALLINT | NOT NULL, CHECK 1〜7 | 段階番号(1〜7。段階7 実装計画も同じ承認の流れに乗せる。ステージ5で段階8 実装手順書を足し、1〜8 にする予定(3.3節「5. 実装手順書」)) |
+| stage | SMALLINT | NOT NULL, CHECK 1〜8 | 段階番号(1〜8。段階7 実装計画・段階8 実装手順書も同じ承認の流れに乗せる。段階8は Phase 27 で足した(Alembic `c9d0e1f2a3b4`)。3.3節「5. 実装手順書」) |
 | status | VARCHAR(20) | NOT NULL | `draft`(AIの下書き)/`regenerated`(内容のある段階をAIが作り直した・未承認。画面は「再生成済(未承認)」。Phase 16)/`reviewing`(人が保存した)/`approved`。画面の「未着手」(行が無い)と「古い」(入力が承認時から変わった)は保存せず、`app/detailed_design/stages.py`の`derive_states`が導く |
 | model | JSONB | NULL可 | 段階の意味モデル(機能一覧・処理概要表・CRUD図・モジュール一覧・手順・処理ロジック等の表)。図(DFD・ER・構成図)は既存の`uml_diagrams`・`data_items`を使う |
 | version | INT | NOT NULL | 楽観ロック用バージョン。保存で+1、承認では増やさない(承認済みを保存すると`reviewing`に戻る) |
@@ -394,10 +394,14 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 
 [外部設計書](external_design.md) 2.8節の実装手順書の内部の方針(Phase 25で確定)。方針は[`appendix/devex_implementation_procedure_guideline.md`](../appendix/devex_implementation_procedure_guideline.md)、経緯は[`textbook/Phase-25/Phase-25-1.md`](../textbook/Phase-25/Phase-25-1.md)・[`Phase-25-5.md`](../textbook/Phase-25/Phase-25-5.md)。意味モデル・API・マイグレーションの詳細は各実装 Phase で確定する。
 
-* **段階8として持つ**: `design_stages`に段階8(入力は段階1〜7。`STAGE_INPUTS[8]`)を足し、承認・陳腐化(`input_fingerprint`)・生成の状態・段階ごとの検証(`STAGE_VALIDATORS[8]`)・部分生成(`StageGenerationContext.targets`)の仕組みをそのまま使う。`stage`の CHECK は 1〜8 にする。
+* **段階8として持つ**: `design_stages`に段階8(入力は段階1〜7と要件定義。`STAGE_INPUTS[8]`。要件定義は手順書の対象外(Should / Could / Won't)を書くために読む)を足し、承認・陳腐化(`input_fingerprint`)・生成の状態・段階ごとの検証(`STAGE_VALIDATORS[8]`)・部分生成(`StageGenerationContext.targets`)の仕組みをそのまま使う。`stage`の CHECK は 1〜8(Phase 27)。生成器は Phase 28 で登録する(それまでは`DESIGN_STAGE_GENERATION_NOT_SUPPORTED`)。
+* **意味モデル(Phase 27)**: `design_stages.model`(段階8)は`{units: [{unit_id, title, purpose, files: [{path, kind, responsibility, basis}], notes, tests: [{viewpoint, sut, driver, stub}], gwt, verify, findings: [{level, target, message, fix_stage}]}]}`(`app/detailed_design/procedure_doc.py`)。`units`は手順書のある単位だけ。`unit_id`と`title`は手順書を作ったときの段階7の単位の ID とタスク名で、段階7の並べ替え・改名で合わなくなった手順書は検証のエラー(`UNIT_MISMATCH`)にして作り直させる(自動で付け替えない。段階7を承認し直すと、段階8は既存の陳腐化で「古い」になる)。ファイルの`kind`は`module`(段階4のパス。検証する)・`test`・`config`。`findings`は AI の指摘で、重要度`level`(`critical`=最重要・`major`=中程度・`minor`=軽微)と直す先の段階`fix_stage`を持つ。単位の一覧は段階7の並び順(`plan_units`。依存は前の単位だけを指すので、これが依存順)。
 * **正本と参照**: 作業単位の正本は段階7(単位の ID は並び順から導く)。段階8の model は単位ごとの手順書の中身(目的・作成・変更するファイル(テスト・環境のファイルを含む)・実装の要点・テスト観点・確認方法・AI の指摘)だけを持ち、設計の中身を複製しない。参照する設計は単位の処理ID・モジュールから導き、表示・AI 向けの出力・生成の入力のときにだけ展開する(参照の展開は決定的な純粋関数で、この3か所で共有する)。
 * **実装可能性チェックの2層**:
-  * **検証(決定的)**: `STAGE_VALIDATORS[8]`と、段階7の検証の拡張。例: 単位の処理に段階5の手順が無い、手順書のファイルが段階4に無い、段階6に関数の詳細が無い、処理が CRUD 図に無い、単位の依存の循環・一覧に無い依存先、手順の`call`と段階6の`function`が一致しない(未解決の参照の警告。書き方の揺れは吸収しない)、シーケンス図にするときの手順の不備。
+  * **検証(決定的。Phase 27)**: `STAGE_VALIDATORS[8]`(`validate_procedure_doc`)。参照する設計は`unit_refs`が単位の処理ID・モジュールから導く(段階5の手順 → 手順が呼ぶ段階6の関数(`logic_key`)→ 段階4のモジュール)。段階8の指摘は手順書がまだ無くても出す(`validate_stage`は段階8だけ内容が空でも検証し、画面の一覧は開いている段階8に行が無くても指摘を返す)。指摘の`StageIssue`に、段階8だけが持つ欄`level`・`fix_stage`・`unit`(指摘の出た単位の ID)を足した。
+    * エラー(承認を止める。手順書そのものの不正だけ): 形が不正、同じ単位の手順書が2つ(`DUPLICATE_UNIT`)、段階7と合わない手順書(`UNIT_MISMATCH`)。
+    * 警告(重要度と直す先の段階を持つ。承認は止めない): 機能の単位の処理に段階5の手順が無い(`NO_PROCEDURE`。中程度・段階5。段階5は主要処理だけを選ぶので最重要にしない)、手順に DB 操作があるのに CRUD 図にその処理の操作が無い(`NOT_IN_CRUD`。中程度・段階3)、単位のモジュールがディレクトリ(`MODULE_NOT_FILE`。中程度・段階4)、手順書のモジュールのファイルが段階4に無い(`UNKNOWN_FILE`。中程度・段階4)、手順の`call`が段階6に無く、同じモジュールの段階6の`function`と書き方だけが違う(`UNRESOLVED_CALL`。軽微・段階5。小文字にし`_`・`-`を除くと等しいもの。揺れは吸収せず、文言で「段階5の手順の関数名を段階6の名前にそろえる」と示す。段階6で選ばなかった別の関数の呼び出しは、段階6が任意のため指摘しない。Phase 27 の画面確認後に、直す先の段階と文言が食い違う・選ばなかった関数まで指摘する問題を直した)。
+    * 単位の依存の循環・一覧に無い依存先は、段階7の検証のエラー(Phase 26)で止まるので段階8では見ない。シーケンス図にするときの手順の不備は Phase 29。
   * **AI の指摘**: 手順書を生成する AI に、設計に無いことを推測で埋めず「未定義」(重要度・対象・内容)として挙げさせ、model に保存する。
   * 決めるときは対象の段階を直す。直した段階は差し戻され(既存の`mark_edited`・承認し直し)、段階8は陳腐化する。手順書に決定を書き込まない。
 * **生成**: 人が選んだ単位だけ、1単位につき LLM を1回、1回に5件まで(段階5・6と同じ形)。入力は、その単位が参照する設計の該当箇所だけ(01〜07章の全文は渡さない)と、実装ルール(段階4・07章)。`NAMING_RULES`を足す。概要・前提・一覧・完了条件は決定的に組み立てる。

@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7,20-7,21-7,23-6
+// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7,20-7,21-7,23-6,27-3
 // 写経レベル: コア ── 足りない入力・古い表示・承認を、全段階に共通の部分として持つ。
 "use client";
 
@@ -9,6 +9,7 @@
 // Phase-20-7:追記 ── @/features/detailed-design/components/ProcedurePanel.ProcedurePanel
 // Phase-21-7:追記 ── @/features/detailed-design/components/LogicPanel.LogicPanel
 // Phase-23-6:追記 ── @/features/detailed-design/components/PlanPanel.PlanPanel
+// Phase-27-3:追記 ── @/features/detailed-design/components/ProcedureDocPanel.ProcedureDocPanel
 import { useState, type ComponentType } from "react";
 import { H3, Paragraph, Text, XStack, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
@@ -18,6 +19,7 @@ import { DataModelPanel } from "@/features/detailed-design/components/DataModelP
 import { FunctionListPanel } from "@/features/detailed-design/components/FunctionListPanel";
 import { LogicPanel } from "@/features/detailed-design/components/LogicPanel";
 import { PlanPanel } from "@/features/detailed-design/components/PlanPanel";
+import { ProcedureDocPanel } from "@/features/detailed-design/components/ProcedureDocPanel";
 import { ProcedurePanel } from "@/features/detailed-design/components/ProcedurePanel";
 import { StructurePanel } from "@/features/detailed-design/components/StructurePanel";
 import {
@@ -56,6 +58,8 @@ const STAGE_PANELS: Partial<Record<number, ComponentType<StagePanelProps>>> = {
   6: LogicPanel,
   // Phase-23-6:追記
   7: PlanPanel,
+  // Phase-27-3:追記
+  8: ProcedureDocPanel,
 };
 
 // Phase-17-6：更新

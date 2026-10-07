@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3
+# 作成：Phase-15-2｜更新：Phase-16-3,27-1
 # 写経レベル: コア ── 承認の条件と陳腐化をサービス越しに確かめる。
 # Phase-16-3:追記 ── tests.fixtures.detailed_design.function_list_model, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
 import pytest
@@ -48,7 +48,10 @@ async def test_routes_save_approve_and_list_stage1(db_session: AsyncSession) -> 
     assert saved.state == "reviewing"
     assert approved.state == "approved"
     assert approved.approved_version == 1
-    assert [s.stage for s in stages] == [1, 2, 3, 4, 5, 6, 7]
+    # Phase-27-1：更新
+    # assert [s.stage for s in stages] == [1, 2, 3, 4, 5, 6, 7]
+    # ↓↓
+    assert [s.stage for s in stages] == [1, 2, 3, 4, 5, 6, 7, 8]
     assert stages[1].is_open is True
 
 

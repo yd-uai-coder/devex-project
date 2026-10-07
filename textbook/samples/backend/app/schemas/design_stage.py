@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3
+# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2
 # 写経レベル: 定型 ── Pydantic スキーマ。
 # Phase-16-3:追記 ── typing.Literal, pydantic.Field
 from datetime import datetime
@@ -10,14 +10,22 @@ from app.detailed_design import StageState
 
 
 # Phase-16-3:追記
+# Phase-27-2：更新(docstring: 段階8の指摘だけが持つ欄を書いた)
 class StageIssueRead(BaseModel):
     """段階ごとの検証の指摘1件(app/detailed_design/validation.py の StageIssue)。
-    `error`があると承認できない。`warning`は承認を止めない。"""
+    `error`があると承認できない。`warning`は承認を止めない。
+
+    段階8(実装可能性チェック)の指摘だけが、重要度`level`(critical=最重要・major=中程度・
+    minor=軽微)・直す先の段階`fix_stage`・指摘の出た作業単位の ID`unit`を持つ。"""
 
     severity: Literal["error", "warning"]
     code: str
     message: str
     target: str | None = None
+    # Phase-27-2:追記
+    level: Literal["critical", "major", "minor"] | None = None
+    fix_stage: int | None = None
+    unit: str | None = None
 
 
 # Phase-18-3:追記
@@ -30,8 +38,9 @@ class DfdAccessRead(BaseModel):
     kind: Literal["read", "write"]
 
 
+# Phase-27-1：更新(docstring: 段階1〜7 → 段階1〜8)
 class DesignStageRead(BaseModel):
-    """段階1つ分の状態。未着手の段階も含めて、段階1〜7を常に返す(行が無ければversion等はNone)。
+    """段階1つ分の状態。未着手の段階も含めて、段階1〜8を常に返す(行が無ければversion等はNone)。
 
     `missing_inputs`は、まだそろっていない入力(`stage:<n>`=承認されていない前の段階、
     `doc:<doc_type>`=まだ無い文書)。空なら段階は開いていて、保存・承認できる。

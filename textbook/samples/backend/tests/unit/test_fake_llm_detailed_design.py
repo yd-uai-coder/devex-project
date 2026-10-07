@@ -1,4 +1,4 @@
-# 作成：Phase-24-1
+# 作成：Phase-24-1｜更新：Phase-27-1
 # 写経レベル: コア ── 偽LLM の出力を本物の検証・承認・出力の経路に通す契約テスト。
 """E2E用の偽LLM(`E2eFakeLLM`)の、詳細設計モードの段階1〜7の出力の契約テスト。
 
@@ -144,7 +144,13 @@ async def test_e2e_fake_outputs_pass_stages_1_to_7_and_bundle(db_session: AsyncS
     await _generate(db_session, project, 7, llm)
     await _approve_stage(db_session, project, 7)
 
-    assert [s.state for s in await stages.list_stages(project)] == ["approved"] * 7
+    # Phase-27-1：更新
+    # assert [s.state for s in await stages.list_stages(project)] == ["approved"] * 7
+    # ↓↓
+    # 段階8(実装手順書)は開いているが、まだ生成も保存もしていない
+    assert [s.state for s in await stages.list_stages(project)] == ["approved"] * 7 + [
+        "not_started"
+    ]
     bundle = await DetailedDesignExportService(db_session).bundle(project)
     names = zipfile.ZipFile(io.BytesIO(bundle.content)).namelist()
     assert {

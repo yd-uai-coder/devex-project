@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正)
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3
 // 写経レベル: コア ── 版の競合と、承認後の取り直し。
 // Phase-16-6:追記 ── ../test-utils/stageFixtures.makeFunctionList
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -46,11 +46,17 @@ describe("useDetailedDesignStore", () => {
       firstPendingStage(
         makeStages(
           Object.fromEntries(
-            [1, 2, 3, 4, 5, 6, 7].map((n) => [n, { state: "approved" }]),
+            // Phase-27-3：更新
+            // [1, 2, 3, 4, 5, 6, 7].map((n) => [n, { state: "approved" }]),
+            // ↓↓
+            [1, 2, 3, 4, 5, 6, 7, 8].map((n) => [n, { state: "approved" }]),
           ),
         ),
       ),
-    ).toBe(7);
+    // Phase-27-3：更新
+    // ).toBe(7);
+    // ↓↓
+    ).toBe(8);
   });
 
   it("fetchStagesは一覧を保持し、初回は承認されていない最初の段階を選ぶ", async () => {
@@ -63,7 +69,10 @@ describe("useDetailedDesignStore", () => {
 
     const state = useDetailedDesignStore.getState();
     expect(state.status).toBe("success");
-    expect(state.stages).toHaveLength(7);
+    // Phase-27-3：更新
+    // expect(state.stages).toHaveLength(7);
+    // ↓↓
+    expect(state.stages).toHaveLength(8);
     expect(state.selectedStage).toBe(2);
   });
 

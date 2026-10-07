@@ -52,7 +52,7 @@ def build_plan_messages(requirements, design_markdown, crosscutting, functions, 
 | 並び順から導く ID の規則をプロンプトで教え、その ID で書かせる | **採用** | 保存の形と同じ ID で受け取れる。間違えれば検証(`UNKNOWN_DEPENDENCY`・`FORWARD_DEPENDENCY`)で見える |
 | タスクの名前で書かせ、`normalize_plan` で ID に解決する | 不採用 | 名前の揺れで解決できないことがある。解決の規則が1つ増える |
 
-規則には例(`M-01-T02`)を添え、「後ろのタスクに依存するときは並び順を入れ替える」と書いた。実際の LLM が並び順どおりに書けるかは、画面確認で確かめる([introduction](./Phase-26-introduction.md)「この Phase で生まれたもの」)。
+規則には例(`M-01-T02`)を添え、「後ろのタスクに依存するときは並び順を入れ替える」と書いた。実際の LLM での再生成は、ユーザーの画面確認で OK だった([introduction](./Phase-26-introduction.md)「未消化の申し送り」)。
 
 ### モジュールのパスの一覧を別に渡す
 

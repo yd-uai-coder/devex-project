@@ -1,6 +1,7 @@
-# 作成：Phase-15-2｜更新：Phase-16-4
+# 作成：Phase-15-2｜更新：Phase-16-4,27-1
 # 写経レベル: コア ── 保存する状態を3つに絞り、「未着手」「古い」を導く規則と、古さが後ろへ伝わる仕組みがこの Phase の中心。
-"""詳細設計モードの段階(1〜7)の状態と陳腐化を決める純粋関数(docs/external_design.md 2.7節)。
+# Phase-27-1：更新(docstring: 段階を1〜7から1〜8にした)
+"""詳細設計モードの段階(1〜8)の状態と陳腐化を決める純粋関数(docs/external_design.md 2.7節)。
 
 DBに保存する状態は`draft`/`regenerated`/`reviewing`/`approved`の4つだけで、画面に出す6つの
 状態のうち「未着手」(行が無い)と「古い」(入力が承認時・生成時から変わった)は、ここで導く。
@@ -20,7 +21,10 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Literal
 
-STAGES: tuple[int, ...] = (1, 2, 3, 4, 5, 6, 7)
+# Phase-27-1：更新
+# STAGES: tuple[int, ...] = (1, 2, 3, 4, 5, 6, 7)
+# ↓↓
+STAGES: tuple[int, ...] = (1, 2, 3, 4, 5, 6, 7, 8)
 
 # Phase-16-4：更新
 # StoredStatus = Literal["draft", "reviewing", "approved"]
@@ -41,6 +45,8 @@ class StageInputs:
 
 # docs/external_design.md 2.7節の段階表の「入力」列。段階4の「技術スタック」は要件定義
 # (1.6 制約条件・前提条件)から読むため、要件定義を入力に含める。
+# Phase-27-1:追記
+# 段階8(実装手順書)の要件定義は、手順書の対象外(Should / Could / Won't)を書くために読む。
 STAGE_INPUTS: dict[int, StageInputs] = {
     1: StageInputs(stages=(), documents=("external_design",)),
     2: StageInputs(stages=(1,), documents=("requirements",)),
@@ -49,6 +55,8 @@ STAGE_INPUTS: dict[int, StageInputs] = {
     5: StageInputs(stages=(2, 4), documents=()),
     6: StageInputs(stages=(5,), documents=()),
     7: StageInputs(stages=(1, 2, 3, 4, 5, 6), documents=("requirements", "external_design")),
+    # Phase-27-1:追記
+    8: StageInputs(stages=(1, 2, 3, 4, 5, 6, 7), documents=("requirements",)),
 }
 
 
