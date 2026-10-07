@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3,28-4
 // 写経レベル: コア ── 状態の言葉と、承認できる条件(古い段階は承認し直せる)。
 // Phase-18-9:追記 ── @/features/detailed-design/api/types.StageIssue
 // Phase-26-5:追記 ── UnitKind
@@ -8,6 +8,8 @@ import type {
   FindingLevel,
   StageIssue,
   StageState,
+  // Phase-28-4:追記
+  UnitFileKind,
   UnitKind,
 } from "@/features/detailed-design/api/types";
 
@@ -50,6 +52,14 @@ export const FINDING_LEVEL_LABELS: Record<FindingLevel, string> = {
   minor: "軽微",
 };
 export const FINDING_SOURCE_LABELS: Record<"check" | "ai", string> = { check: "検証", ai: "AI" };
+
+// Phase-28-4:追記
+// 段階8の手順書のファイルの種類
+export const UNIT_FILE_KIND_LABELS: Record<UnitFileKind, string> = {
+  module: "モジュール",
+  test: "テスト",
+  config: "環境・設定",
+};
 
 const DOC_LABELS: Record<string, string> = {
   requirements: "要件定義書",

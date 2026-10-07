@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6,28-3,28-4
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-16-5:追記 ── ../designStagesApi.generateDesignStage
 // Phase-17-5:追記 ── ../types.MAX_DFD_GROUPS, @/features/detailed-design/test-utils/stageFixtures.makeDataFlow
@@ -9,6 +9,8 @@ import {
   approveDesignStage,
   downloadDetailedDesign,
   generateDesignStage,
+  // Phase-28-4:追記
+  getUnitContext,
   listDesignStages,
   saveDesignStage,
 } from "../designStagesApi";
@@ -137,6 +139,29 @@ describe("designStagesApi", () => {
   });
 
   // Phase-18-5:追記
+  // Phase-28-3:追記
+  it("段階8は手順書を作る単位を本文の unit_ids で渡す", async () => {
+    stub.queue({ status: 202, body: { ...STAGE1, stage: 8, generation_status: "generating" } });
+
+    await generateDesignStage("p1", 8, undefined, undefined, ["M-01-T02"]);
+
+    expect(stub.requests[0].url).toContain("/api/v1/projects/p1/design-stages/8/generate");
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ unit_ids: ["M-01-T02"] });
+  });
+
+  // Phase-28-4:追記
+  it("getUnitContextはGET /design-stages/units/{unit_id}/contextを呼ぶ", async () => {
+    const context = { unit_id: "M-01-T02", refs: [], crosscutting: "", environment: "" };
+    stub.queue({ status: 200, body: context });
+
+    const read = await getUnitContext("p1", "M-01-T02");
+
+    expect(read).toEqual(context);
+    expect(stub.requests[0].url).toContain(
+      "/api/v1/projects/p1/design-stages/units/M-01-T02/context",
+    );
+  });
+
   it("段階3は CRUD 図を保存し、DFD から決まる R/W を受け取る", async () => {
     const accesses = [{ function_id: "F-01", table: "reservations", kind: "write" as const }];
     stub.queue({

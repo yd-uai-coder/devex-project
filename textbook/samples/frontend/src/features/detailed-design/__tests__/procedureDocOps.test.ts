@@ -1,18 +1,33 @@
-// 作成：Phase-27-3
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4
 import { describe, expect, it } from "vitest";
 import { FINDING_LEVELS, type StageIssue } from "@/features/detailed-design/api/types";
 import { FINDING_LEVEL_LABELS, FINDING_SOURCE_LABELS, STAGE_TITLES } from "@/features/detailed-design/labels";
 import {
+  // Phase-28-4:追記
+  addUnitRow,
   collectFindings,
   countByLevel,
+  // Phase-28-3:追記
+  criticalCount,
   filterFindings,
   findingsOfUnit,
   procedureUnits,
+  // Phase-28-4:追記
+  removeUnit,
+  removeUnitRow,
   sortFindings,
+  // Phase-28-3:追記
+  toggleUnit,
   toProcedureDoc,
+  // Phase-28-4:追記
+  updateUnit,
+  updateUnitRow,
   type Finding,
 } from "@/features/detailed-design/procedureDocOps";
-import { makePlan, makeProcedureDoc } from "../test-utils/stageFixtures";
+// Phase-28-3：更新
+// import { makePlan, makeProcedureDoc } from "../test-utils/stageFixtures";
+// ↓↓
+import { makePlan, makeProcedureDoc, makeStages } from "../test-utils/stageFixtures";
 
 // SUT: procedureDocOps の純粋関数 / ドライバ: このテスト。
 // スタブ不要 ── 対象は引数の model と指摘だけから決まり、ストアや API を呼ばないため。
@@ -82,5 +97,47 @@ describe("procedureDocOps", () => {
     expect(filterFindings(findings, "all")).toHaveLength(3);
     expect(findingsOfUnit(findings, null)).toHaveLength(1);
     expect(findingsOfUnit(findings, "M-01-T02")).toHaveLength(2);
+  });
+
+  // Phase-28-3:追記
+  it("criticalCount は保存済みの内容の、検証と AI の最重要を数える", () => {
+    const stage = makeStages({
+      8: { model: makeProcedureDoc(), issues: [check({ level: "critical" }), check({})] },
+    })[7];
+
+    expect(criticalCount(stage)).toBe(2);
+    expect(criticalCount(makeStages()[7])).toBe(0);
+  });
+
+  it("toggleUnit は上限まで足し、外すのはいつでもできる", () => {
+    expect(toggleUnit([], "M-01-T01", 2)).toEqual(["M-01-T01"]);
+    expect(toggleUnit(["A", "B"], "C", 2)).toEqual(["A", "B"]);
+    expect(toggleUnit(["A", "B"], "A", 2)).toEqual(["B"]);
+  });
+
+  // Phase-28-4:追記
+  it("単位の欄と行を編集し、他の単位はそのまま残す", () => {
+    const doc = makeProcedureDoc();
+    doc.units.push({ ...doc.units[0], unit_id: "M-01-T01", title: "開発環境を用意する" });
+
+    const edited = updateUnit(doc, "M-01-T02", { purpose: "直した", notes: ["要点"] });
+    const added = addUnitRow(edited, "M-01-T02", "findings");
+    const updated = updateUnitRow(added, "M-01-T02", "findings", 1, { level: "minor", fix_stage: 3 });
+    const removed = removeUnitRow(updated, "M-01-T02", "files", 0);
+
+    const [unit, other] = removed.units;
+    expect([unit.purpose, unit.notes, unit.files]).toEqual(["直した", ["要点"], []]);
+    expect(unit.findings[1]).toEqual({ level: "minor", target: "", message: "", fix_stage: 3 });
+    expect(other).toEqual(doc.units[1]);
+    expect(addUnitRow(doc, "M-01-T02", "tests").units[0].tests[1]).toEqual({
+      viewpoint: "",
+      sut: "",
+      driver: "",
+      stub: "",
+    });
+  });
+
+  it("removeUnit は単位の手順書を消す", () => {
+    expect(removeUnit(makeProcedureDoc(), "M-01-T02").units).toEqual([]);
   });
 });

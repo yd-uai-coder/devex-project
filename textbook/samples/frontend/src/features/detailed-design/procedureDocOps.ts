@@ -1,12 +1,21 @@
-// 作成：Phase-27-3
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4
 import {
   FINDING_LEVELS,
+  // Phase-28-4:追記
+  type AiFinding,
+  // Phase-28-3:追記
+  type DesignStageRead,
   type FindingLevel,
   type PlanModel,
   type ProcedureDocModel,
   type StageIssue,
+  // Phase-28-4:追記
+  type TestPoint,
+  type UnitFile,
   type UnitFileKind,
   type UnitKind,
+  // Phase-28-4:追記
+  type UnitProcedure,
 } from "@/features/detailed-design/api/types";
 import { milestoneId, taskId } from "@/features/detailed-design/planOps";
 
@@ -17,7 +26,10 @@ const strings = (value: unknown) => (Array.isArray(value) ? value.map(String) : 
 const list = (value: unknown) => (Array.isArray(value) ? (value as Record<string, unknown>[]) : []);
 const pick = <T extends string>(value: unknown, choices: T[], fallback: T): T =>
   choices.includes(value as T) ? (value as T) : fallback;
-const FILE_KINDS: UnitFileKind[] = ["module", "test", "config"];
+// Phase-28-4：更新
+// const FILE_KINDS: UnitFileKind[] = ["module", "test", "config"];
+// ↓↓
+export const FILE_KINDS: UnitFileKind[] = ["module", "test", "config"];
 
 // 保存されている model(形の保証の無い JSON)を、表示できる形にそろえる。
 export function toProcedureDoc(model: Record<string, unknown> | null): ProcedureDocModel {
@@ -143,4 +155,86 @@ export function filterFindings(findings: Finding[], level: FindingLevel | "all")
 // 単位の指摘だけ(unit が null なら単位によらない指摘)。
 export function findingsOfUnit(findings: Finding[], unit: string | null): Finding[] {
   return findings.filter((finding) => finding.unit === unit);
+}
+
+// Phase-28-3:追記
+// 段階の保存済みの内容に残っている最重要の指摘の数(承認の前に確かめる)。検証の指摘と AI の指摘の両方を数える。
+export function criticalCount(stage: DesignStageRead): number {
+  return countByLevel(collectFindings(stage.issues, toProcedureDoc(stage.model))).critical;
+}
+
+// 生成する単位の選択を切り替える。上限に達していれば足さない(外すのはいつでもできる)。
+export function toggleUnit(selected: string[], id: string, max: number): string[] {
+  if (selected.includes(id)) return selected.filter((item) => item !== id);
+  return selected.length >= max ? selected : [...selected, id];
+}
+
+// Phase-28-4:追記
+// ── 単位の手順書の編集 ──
+// 編集は手順書のある単位だけ(無い単位は生成してから直す)。行は位置で扱う(行に固有の鍵が無い)。
+
+type RowKey = "files" | "tests" | "findings";
+type RowOf = { files: UnitFile; tests: TestPoint; findings: AiFinding };
+
+const EMPTY_ROWS: { [K in RowKey]: () => RowOf[K] } = {
+  files: () => ({ path: "", kind: "module", responsibility: "", basis: "" }),
+  tests: () => ({ viewpoint: "", sut: "", driver: "", stub: "" }),
+  findings: () => ({ level: "major", target: "", message: "", fix_stage: 8 }),
+};
+
+export function updateUnit(
+  doc: ProcedureDocModel,
+  unitId: string,
+  patch: Partial<Omit<UnitProcedure, "unit_id" | "title">>,
+): ProcedureDocModel {
+  return {
+    units: doc.units.map((unit) => (unit.unit_id === unitId ? { ...unit, ...patch } : unit)),
+  };
+}
+
+// 単位の手順書を消す(段階7と合わない手順書を片付ける・作り直す前に空にする)。
+export function removeUnit(doc: ProcedureDocModel, unitId: string): ProcedureDocModel {
+  return { units: doc.units.filter((unit) => unit.unit_id !== unitId) };
+}
+
+function mapRows<K extends RowKey>(
+  doc: ProcedureDocModel,
+  unitId: string,
+  key: K,
+  change: (rows: RowOf[K][]) => RowOf[K][],
+): ProcedureDocModel {
+  return {
+    units: doc.units.map((unit) =>
+      unit.unit_id === unitId ? { ...unit, [key]: change(unit[key] as RowOf[K][]) } : unit,
+    ),
+  };
+}
+
+export function addUnitRow<K extends RowKey>(
+  doc: ProcedureDocModel,
+  unitId: string,
+  key: K,
+): ProcedureDocModel {
+  return mapRows(doc, unitId, key, (rows) => [...rows, EMPTY_ROWS[key]()]);
+}
+
+export function updateUnitRow<K extends RowKey>(
+  doc: ProcedureDocModel,
+  unitId: string,
+  key: K,
+  index: number,
+  patch: Partial<RowOf[K]>,
+): ProcedureDocModel {
+  return mapRows(doc, unitId, key, (rows) =>
+    rows.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+  );
+}
+
+export function removeUnitRow<K extends RowKey>(
+  doc: ProcedureDocModel,
+  unitId: string,
+  key: K,
+  index: number,
+): ProcedureDocModel {
+  return mapRows(doc, unitId, key, (rows) => rows.filter((_, i) => i !== index));
 }

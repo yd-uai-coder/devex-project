@@ -1,9 +1,10 @@
-# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1
+# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2
 # 写経レベル: 定型 ── サービスを呼ぶだけの薄いルート。
 # Phase-16-4:追記 ── fastapi.BackgroundTasks, fastapi.status, app.services.design_stage_generation_service.DesignStageGenerationService, app.services.design_stage_generation_service.run_design_stage_generation
 # Phase-20-3:追記 ── app.schemas.design_stage.DesignStageGenerate
 # Phase-22-5:追記 ── fastapi.responses.Response, app.api.responses.content_disposition,
 #   app.services.detailed_design_export_service.DetailedDesignExportService
+# Phase-28-1:追記 ── app.schemas.design_stage.UnitContextRead
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Path, status
@@ -16,6 +17,7 @@ from app.schemas.design_stage import (
     DesignStageGenerate,
     DesignStageRead,
     DesignStageSave,
+    UnitContextRead,
 )
 from app.services.design_stage_generation_service import (
     DesignStageGenerationService,
@@ -66,6 +68,16 @@ async def download_detailed_design(
     )
 
 
+# Phase-28-1:追記
+@router.get("/units/{unit_id}/context", response_model=UnitContextRead)
+async def get_unit_context(
+    unit_id: str, session: SessionDep, current_project: CurrentProjectDep
+) -> UnitContextRead:
+    """段階8の作業単位1つが参照する設計(段階5の手順・段階6の関数・段階4のモジュール)を展開して
+    返す。段階7の 07 横断事項と開発環境も添える。段階8が開いていなければ409。"""
+    return await DesignStageService(session).unit_context(current_project, unit_id)
+
+
 @router.post(
     "/{stage}/generate", response_model=DesignStageRead, status_code=status.HTTP_202_ACCEPTED
 )
@@ -81,7 +93,8 @@ async def generate_design_stage(
     """段階のAIの下書きの生成を受け付け、バックグラウンドで実行する(Phase 23 で段階1〜7のすべて)。
     段階は「生成中」になり、終わると`completed`/`failed`になる。background taskには値だけを渡す
     (doc生成・UML図の生成と同じ理由)。段階5は、本文の`function_ids`で下書きを作る処理を選べる。
-    段階6は、本文の`logics`で下書きを作る関数を選べる。"""
+    段階6は、本文の`logics`で下書きを作る関数を選べる。段階8は、本文の`unit_ids`で手順書を作る
+    作業単位を選べる。"""
     # Phase-20-3：更新
     # accepted = await DesignStageGenerationService(session).request_generation(
     #     current_project, stage=stage
@@ -103,13 +116,18 @@ async def generate_design_stage(
     #     function_ids,
     # )
     # ↓↓
+    # Phase-28-2:追記
+    unit_ids = payload.unit_ids if payload is not None else None
     logics = (
         [(t.module, t.function) for t in payload.logics]
         if payload is not None and payload.logics is not None
         else None
     )
     accepted = await DesignStageGenerationService(session).request_generation(
-        current_project, stage=stage, function_ids=function_ids, logics=logics
+        # Phase-28-2：更新
+        # current_project, stage=stage, function_ids=function_ids, logics=logics
+        # ↓↓
+        current_project, stage=stage, function_ids=function_ids, logics=logics, unit_ids=unit_ids
     )
     background_tasks.add_task(
         run_design_stage_generation,
@@ -118,6 +136,8 @@ async def generate_design_stage(
         stage,
         function_ids,
         logics,
+        # Phase-28-2:追記
+        unit_ids,
     )
     # ── ここから Phase-16-4 の作成分 ──
     return accepted

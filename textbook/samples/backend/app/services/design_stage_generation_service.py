@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
 """詳細設計モードの段階のAIの下書きの生成(docs/external_design.md 2.7節「各段階の共通サイクル」)。
@@ -15,7 +15,8 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 - 15分を超えて生成中のまま止まった段階は、受け付け時と一覧の取得時に失敗へ戻す
   (app/services/generation_staleness.py)。
 - 生成できる段階は`STAGE_GENERATORS`に登録したものだけ(Phase 16 は段階1、Phase 17 で段階2、
-  Phase 18 で段階3、Phase 19 で段階4、Phase 20 で段階5、Phase 21 で段階6、Phase 23 で段階7)。
+  Phase 18 で段階3、Phase 19 で段階4、Phase 20 で段階5、Phase 21 で段階6、Phase 23 で段階7、
+  Phase 28 で段階8)。
 - 段階2は、段階の内容のほかに機能グループの DFD(`uml_diagrams`)とデータ項目(`data_items`)も
   書く。段階の保存と同じトランザクションで書き、失敗したらまとめて取り消す。そのため生成の関数には
   `StageGenerationContext`でセッションとプロジェクトを渡す(Phase 17)。
@@ -30,6 +31,9 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
   (`logic_key`)で受け渡す(Phase 21)。
 - 段階7は、横断事項と実装計画を順に下書きする(LLM 2回)。入力の詳細設計書は、出力と同じ組み立て
   (`DetailedDesignExportService.collect`・`to_markdown`)で 01〜06章の md にする(Phase 23)。
+- 段階8は、段階7の作業単位ごとに手順書を下書きする(1単位 LLM 1回)。対象は単位の ID で受け渡し、
+  段階7の単位から決める(指定が無ければ、手順書の無い単位)。入力は単位が参照する設計の展開
+  (`unit_context`)だけで、設計の全文は渡さない。
 """
 
 # Phase-17-3:追記 ── dataclasses.dataclass, langchain_core.messages.BaseMessage, pydantic.BaseModel, app.detailed_design.data_flow(MAX_DFD_GROUPS, DataFlowModel, dfd_subject, group_functions, merge_summaries), app.detailed_design.data_flow_drafting(GroupDfdGenerationOutput, ProcessSummaryGenerationOutput, build_group_dfd_messages, build_summary_messages, to_dfd_output, to_summary_drafts), app.detailed_design.stages.Fingerprint, app.repositories.uml_diagram.UmlDiagramRepository, app.services.data_item_service.DataItemService, app.services.errors.DesignStageInvalidError, app.uml.domain(NOTATION_TO_VIEW, DfdSemanticModel), app.uml.generation.mapper(required_data_items, to_dfd), app.uml.generation.prompts.ExistingDataItem
@@ -39,6 +43,7 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 # Phase-21-3:追記 ── app.detailed_design.logic(LOGIC_STAGE, MAX_LOGIC_TARGETS, LogicModel, is_drafted, logic_key, merge_logic, generation_targets as logic_generation_targets), app.detailed_design.logic_drafting(LogicGenerationOutput, build_logic_messages, calling_step_rows, to_logic_draft)
 # Phase-23-4:追記 ── app.detailed_design.document(CHAPTERS, to_markdown), app.detailed_design.plan(PLAN_STAGE, normalize_plan), app.detailed_design.plan_drafting(CrossCuttingGenerationOutput, PlanGenerationOutput, build_crosscutting_messages, build_plan_messages, to_crosscutting, to_plan_model), app.services.detailed_design_export_service.DetailedDesignExportService
 # Phase-18-3：更新(app.uml.domain の DfdSemanticModel → NotationType。_save_group_dfd を _save_diagram に共通化したため)
+# Phase-28-2:追記 ── app.detailed_design.plan.PlanModel, app.detailed_design.procedure_doc(MAX_PROCEDURE_DOC_TARGETS, PROCEDURE_DOC_STAGE, ProcedureDocModel, find_unit, merge_unit_procedure, plan_units, generation_targets), app.detailed_design.procedure_doc_drafting, app.detailed_design.procedure_doc_refs.unit_context
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
@@ -99,7 +104,7 @@ from app.detailed_design.logic_drafting import (
     calling_step_rows,
     to_logic_draft,
 )
-from app.detailed_design.plan import PLAN_STAGE, normalize_plan
+from app.detailed_design.plan import PLAN_STAGE, PlanModel, normalize_plan
 from app.detailed_design.plan_drafting import (
     CrossCuttingGenerationOutput,
     PlanGenerationOutput,
@@ -115,6 +120,21 @@ from app.detailed_design.procedure import (
     generation_targets,
     merge_procedure,
 )
+from app.detailed_design.procedure_doc import (
+    MAX_PROCEDURE_DOC_TARGETS,
+    PROCEDURE_DOC_STAGE,
+    ProcedureDocModel,
+    find_unit,
+    merge_unit_procedure,
+    plan_units,
+)
+from app.detailed_design.procedure_doc import generation_targets as unit_generation_targets
+from app.detailed_design.procedure_doc_drafting import (
+    ProcedureDocGenerationOutput,
+    build_procedure_doc_messages,
+    to_unit_procedure,
+)
+from app.detailed_design.procedure_doc_refs import unit_context
 from app.detailed_design.procedure_drafting import (
     ProcedureGenerationOutput,
     build_procedure_messages,
@@ -180,8 +200,8 @@ class StageGenerationContext:
     - `fingerprint`: 生成した時点の入力の版(段階2は DFD の`source_doc_versions`にも記録する)。
     - `session`・`project_id`: 段階のほかに DB へ書く生成(段階2の DFD・データ項目)が使う。
       commitは呼び出し元(execute)が段階の保存と一緒に1回だけ行う。
-    - `targets`: 段階5で下書きを作る処理の処理ID、段階6で下書きを作る関数の鍵(`logic_key`)。
-      受け付けで決めた順。他の段階は空。
+    - `targets`: 段階5で下書きを作る処理の処理ID、段階6で下書きを作る関数の鍵(`logic_key`)、
+      段階8で手順書を作る単位の ID。受け付けで決めた順。他の段階は空。
     """
 
     llm: Any
@@ -483,6 +503,27 @@ async def generate_plan(context: StageGenerationContext) -> dict:
     return model.model_dump(mode="json")
 
 
+# Phase-28-2:追記
+async def generate_procedure_docs(context: StageGenerationContext) -> dict:
+    """段階8: 対象の単位ごとに、手順書を下書きする(1単位 LLM 1回)。
+
+    対象の単位の手順書だけを置き換え、他の単位(人が手直しした手順書)はそのまま残す。入力は、
+    単位が参照する設計を承認済みの段階1〜7から展開したもの。"""
+    plan = PlanModel.model_validate(context.sources.stages.get(PLAN_STAGE) or {})
+    model = ProcedureDocModel.model_validate(context.previous or {})
+    for unit_id in context.targets:
+        unit = find_unit(plan, unit_id)
+        if unit is None:
+            continue
+        output = await _invoke_structured(
+            context.llm,
+            ProcedureDocGenerationOutput,
+            build_procedure_doc_messages(unit_context(unit, context.sources.stages)),
+        )
+        model = merge_unit_procedure(model, plan, to_unit_procedure(unit, output))
+    return model.model_dump(mode="json")
+
+
 async def _save_diagram(
     context: StageGenerationContext, notation: NotationType, subject: str, model: BaseModel
 ) -> None:
@@ -526,6 +567,8 @@ STAGE_GENERATORS: dict[int, StageGenerator] = {
     6: generate_logics,
     # Phase-23-4:追記
     7: generate_plan,
+    # Phase-28-2:追記
+    8: generate_procedure_docs,
 }
 
 
@@ -538,7 +581,8 @@ def _has_draft(
     """作り直し(`regenerated`)か初回(`draft`)かの判定に使う、「下書きの内容がある」か。
     段階2は、人がグループの選択だけを保存してから初めて生成するので、処理概要表の行で判定する。
     段階5は、対象の処理にもともと手順があったか(他の処理の手順は置き換えないので数えない)。
-    段階6も同じく、対象の関数にもともと詳細があったか。"""
+    段階6も同じく、対象の関数にもともと詳細があったか。段階8は、対象の単位にもともと手順書が
+    あったか。"""
     if not model:
         return False
     if stage == 2:
@@ -551,6 +595,10 @@ def _has_draft(
         logics = LogicModel.model_validate(model).logics
         return any(is_drafted(r) for r in logics if logic_key(r.module, r.function) in targets)
     # ── ここから Phase-16-4 の作成分 ──
+    # Phase-28-2:追記
+    if stage == PROCEDURE_DOC_STAGE:
+        units = ProcedureDocModel.model_validate(model).units
+        return any(u.unit_id in targets for u in units)
     return True
 
 
@@ -572,13 +620,28 @@ def _targets(
     model: Mapping[str, Any] | None,
     function_ids: list[str] | None,
     logics: LogicTargets | None = None,
+    # Phase-28-2:追記
+    unit_ids: list[str] | None = None,
+    sources: StageSources | None = None,
 ) -> tuple[str, ...]:
-    """段階5で下書きを作る処理・段階6で下書きを作る関数の鍵(他の段階は空)。"""
+    """段階5で下書きを作る処理・段階6で下書きを作る関数の鍵・段階8で手順書を作る単位の ID
+    (他の段階は空)。段階8の単位は、入力`sources`の承認済みの段階7から決める。"""
     if stage == PROCEDURE_STAGE:
         return tuple(generation_targets(ProcedureModel.model_validate(model or {}), function_ids))
     if stage == LOGIC_STAGE:
         return tuple(logic_generation_targets(LogicModel.model_validate(model or {}), logics))
+    # Phase-28-2:追記
+    if stage == PROCEDURE_DOC_STAGE:
+        plan = _plan(sources)
+        doc = ProcedureDocModel.model_validate(model or {})
+        return tuple(unit_generation_targets(plan, doc, unit_ids))
     return ()
+
+
+# Phase-28-2:追記
+def _plan(sources: StageSources | None) -> PlanModel:
+    stages = sources.stages if sources is not None else {}
+    return PlanModel.model_validate(stages.get(PLAN_STAGE) or {})
 
 
 # Phase-21-3：更新(関数の指定を受け取り、段階6の対象を確かめる)
@@ -591,17 +654,39 @@ def _check_request(
     model: Mapping[str, Any] | None,
     function_ids: list[str] | None,
     logics: LogicTargets | None = None,
+    # Phase-28-2:追記
+    unit_ids: list[str] | None = None,
+    sources: StageSources | None = None,
 ) -> None:
     """段階ごとの、生成を受け付ける前の確認。段階2は DFD を描くグループの数(上限を超えたまま
     生成すると、15分の回収のしきい値を超えるおそれがあるため)。段階5は下書きを作る処理(空・
     選ばれていない処理・上限を超える数を断る)。段階6は下書きを作る関数(段階5と同じ規則)。
-    処理の指定は段階5だけ、関数の指定は段階6だけが受け付ける。"""
+    段階8は手順書を作る単位(空・段階7に無い単位・上限を超える数を断る)。処理の指定は段階5だけ、
+    関数の指定は段階6だけ、単位の指定は段階8だけが受け付ける。"""
     # ── ここから Phase-20-3 の作成分 ──
     if function_ids is not None and stage != PROCEDURE_STAGE:
         raise DesignStageInvalidError("処理を指定して生成できるのは段階5だけです。")
     # Phase-21-3:追記
     if logics is not None and stage != LOGIC_STAGE:
         raise DesignStageInvalidError("関数を指定して生成できるのは段階6だけです。")
+    # Phase-28-2:追記
+    if unit_ids is not None and stage != PROCEDURE_DOC_STAGE:
+        raise DesignStageInvalidError("単位を指定して生成できるのは段階8だけです。")
+    if stage == PROCEDURE_DOC_STAGE:
+        targets = _targets(stage, model, None, None, unit_ids, sources)
+        planned = {u.unit_id for u in plan_units(_plan(sources))}
+        if not targets:
+            raise DesignStageInvalidError(
+                "手順書を作る単位がありません(作り直す単位を選んでください)。"
+            )
+        unknown = [t for t in targets if t not in planned]
+        if unknown:
+            raise DesignStageInvalidError(f"段階7に無い単位です: {', '.join(unknown)}")
+        if len(targets) > MAX_PROCEDURE_DOC_TARGETS:
+            raise DesignStageInvalidError(
+                f"1回に手順書を作れる単位は {MAX_PROCEDURE_DOC_TARGETS} つまでです"
+                f"(今は {len(targets)} つ)。単位を選んで生成してください。"
+            )
     if stage == LOGIC_STAGE:
         targets = _targets(stage, model, None, logics)
         selected = {
@@ -660,6 +745,8 @@ async def run_design_stage_generation(
     function_ids: list[str] | None = None,
     # Phase-21-3:追記
     logics: LogicTargets | None = None,
+    # Phase-28-2:追記
+    unit_ids: list[str] | None = None,
     *,
     llm=None,
 ) -> None:
@@ -673,6 +760,8 @@ async def run_design_stage_generation(
             function_ids=function_ids,
             # Phase-21-3:追記
             logics=logics,
+            # Phase-28-2:追記
+            unit_ids=unit_ids,
             llm=llm,
         )
 
@@ -702,15 +791,20 @@ class DesignStageGenerationService:
         stage: int,
         function_ids: list[str] | None = None,
         logics: LogicTargets | None = None,
+        # Phase-28-2:追記
+        unit_ids: list[str] | None = None,
     ) -> DesignStageRead:
         """生成を受け付け、段階を「生成中」にする。生成自体は呼び出し元がバックグラウンドで
         `execute`する。未着手の段階は、ここで行を作る(内容は空、`draft`)。
 
         断る条件(この順): 詳細設計モードでない / 生成に対応していない段階 / 段階が開いていない /
         その段階を生成中 / 段階ごとの確認(段階2の DFD を描くグループの数、段階5の対象の処理、
-        段階6の対象の関数)。"""
+        段階6の対象の関数、段階8の対象の単位)。"""
         await self.recover_stale(project.id)
-        row, view, _ = await self._stages.stage_view(project, stage)
+        # Phase-28-2：更新
+        # row, view, _ = await self._stages.stage_view(project, stage)
+        # ↓↓
+        row, view, sources = await self._stages.stage_view(project, stage)
         if stage not in STAGE_GENERATORS:
             raise DesignStageGenerationNotSupportedError(
                 f"Stage {stage} does not support AI drafts yet"
@@ -729,7 +823,12 @@ class DesignStageGenerationService:
         # Phase-21-3：更新
         # _check_request(stage, row.model if row is not None else None, function_ids)
         # ↓↓
-        _check_request(stage, row.model if row is not None else None, function_ids, logics)
+        # Phase-28-2：更新
+        # _check_request(stage, row.model if row is not None else None, function_ids, logics)
+        # ↓↓
+        _check_request(
+            stage, row.model if row is not None else None, function_ids, logics, unit_ids, sources
+        )
         # ── ここから Phase-16-4 の作成分 ──
         if row is None:
             row = await self._rows.create(project_id=project.id, stage=stage, model=None)
@@ -754,6 +853,8 @@ class DesignStageGenerationService:
         function_ids: list[str] | None = None,
         # Phase-21-3:追記
         logics: LogicTargets | None = None,
+        # Phase-28-2:追記
+        unit_ids: list[str] | None = None,
         llm=None,
     ) -> None:
         # ── ここから Phase-16-4 の作成分 ──
@@ -773,7 +874,10 @@ class DesignStageGenerationService:
         # Phase-21-3：更新
         # targets = _targets(stage, row.model, function_ids)
         # ↓↓
-        targets = _targets(stage, row.model, function_ids, logics)
+        # Phase-28-2：更新
+        # targets = _targets(stage, row.model, function_ids, logics)
+        # ↓↓
+        targets = _targets(stage, row.model, function_ids, logics, unit_ids, sources)
         # ── ここから Phase-20-3 の作成分 ──
         regenerating = _has_draft(stage, row.model, targets)
         # ── ここから Phase-16-4 の作成分 ──

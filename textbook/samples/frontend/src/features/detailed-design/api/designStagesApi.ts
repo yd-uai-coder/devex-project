@@ -1,10 +1,13 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3
+// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3,28-3,28-4
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-21-4:追記 ── ./types.LogicTarget
 // Phase-22-6:追記 ── @/lib/api/download(fetchAttachment, parseFilename)
 import { apiFetch } from "@/lib/api/client";
 import { fetchAttachment, parseFilename } from "@/lib/api/download";
-import type { DesignStageRead, LogicTarget } from "./types";
+// Phase-28-4：更新
+// import type { DesignStageRead, LogicTarget } from "./types";
+// ↓↓
+import type { DesignStageRead, LogicTarget, UnitContextRead } from "./types";
 
 const base = (projectId: string) =>
   `/api/v1/projects/${projectId}/design-stages`;
@@ -60,20 +63,36 @@ export function approveDesignStage(
 //   });
 // }
 // ↓↓
+// 段階8は unitIds で手順書を作る単位を選べる(省略すると、段階7の単位のうち手順書の無いもの。Phase 28)。
 export function generateDesignStage(
   projectId: string,
   stage: number,
   functionIds?: string[],
   logics?: LogicTarget[],
+  // Phase-28-3:追記
+  unitIds?: string[],
 ): Promise<DesignStageRead> {
   const body = {
     ...(functionIds ? { function_ids: functionIds } : {}),
     ...(logics ? { logics } : {}),
+    // Phase-28-3:追記
+    ...(unitIds ? { unit_ids: unitIds } : {}),
   };
   return apiFetch<DesignStageRead>(`${base(projectId)}/${stage}/generate`, {
     method: "POST",
-    ...(functionIds || logics ? { body: JSON.stringify(body) } : {}),
+    // Phase-28-3：更新
+    // ...(functionIds || logics ? { body: JSON.stringify(body) } : {}),
+    // ↓↓
+    ...(functionIds || logics || unitIds ? { body: JSON.stringify(body) } : {}),
   });
+}
+
+// Phase-28-4:追記
+// 段階8の単位1つが参照する設計の展開(承認済みの段階1〜7から毎回導く)。段階8が開いていなければ409。
+export function getUnitContext(projectId: string, unitId: string): Promise<UnitContextRead> {
+  return apiFetch<UnitContextRead>(
+    `${base(projectId)}/units/${encodeURIComponent(unitId)}/context`,
+  );
 }
 
 // Phase-22-6:追記

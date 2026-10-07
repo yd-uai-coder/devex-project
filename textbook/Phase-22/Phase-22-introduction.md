@@ -141,6 +141,7 @@ GET /design-stages/document                                                     
 ## 後続 Phase での改訂
 
 - Phase 23: `CHAPTERS` に07章(横断事項。段階7)を足し、`to_markdown`・`to_html` に章を絞る `chapters` 引数を足した。出力サービスの入力の集め方を `collect(project, render=...)` に切り出し(段階7の生成が使う)、zip に `implementation_plan.{html,md}` を足した。fixture の `create_document_project` は段階1〜7の承認に改め、段階1〜6は `create_stage7_project` に分けた([Phase-23-introduction](../Phase-23/Phase-23-introduction.md))。
+- Phase 28: `document/markdown.py` の 05 の手順の表と 06 の仕様・擬似フローを `procedure_table`・`logic_spec` に切り出した(段階8の参照の展開と共有。詳細設計書の md の中身は変えていない)([Phase-28-1](../Phase-28/Phase-28-1.md))。
 
 ## Phase 完了チェック(#22)
 

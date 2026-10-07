@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3,22-1,22-3,22-5,23-1,23-2,27-1
+# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3,22-1,22-3,22-5,23-1,23-2,27-1,28-2
 # 写経レベル: 定型 ── テスト用のプロジェクトの組み立て。
 """詳細設計モードのテストで使うプロジェクトの組み立て(段階のサービス・ルートのテストで共有する)。"""
 
@@ -6,6 +6,7 @@
 # Phase-22-1:追記 ── app.detailed_design.stages.StageState
 # Phase-22-3:追記 ── app.detailed_design.document(DataItemEntry, DocumentSource, RenderedDiagram, document_source), app.uml.domain.er.ErSemanticModel
 # Phase-22-5:追記 ── app.uml.domain.SemanticModelAdapter, app.uml.layout(compute_layout, edge_labels)
+# Phase-28-2:追記 ── app.detailed_design.procedure_doc_drafting(GeneratedFinding, GeneratedTestPoint, GeneratedUnitFile, ProcedureDocGenerationOutput)
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,12 @@ from app.detailed_design.document import (
     DocumentSource,
     RenderedDiagram,
     document_source,
+)
+from app.detailed_design.procedure_doc_drafting import (
+    GeneratedFinding,
+    GeneratedTestPoint,
+    GeneratedUnitFile,
+    ProcedureDocGenerationOutput,
 )
 from app.detailed_design.stages import StageState
 from app.models.project import Project
@@ -481,3 +488,30 @@ def procedure_doc_model(
             }
         ]
     }
+
+
+# Phase-28-2:追記
+def procedure_doc_output(**overrides) -> ProcedureDocGenerationOutput:
+    """段階8の手順書1つ分の構造化出力(FakeLLM が返す)。`plan_model()`の M-01-T02 のモジュールを
+    書き、最重要の指摘を1件持つ。`overrides`で欄を差し替える。"""
+    values = {
+        "purpose": "予約を登録できる",
+        "files": [
+            GeneratedUnitFile(
+                path="app/api/routes/reservations.py",
+                kind="module",
+                responsibility="予約の API",
+                basis="段階4",
+            )
+        ],
+        "notes": ["マイグレーションを1本足す"],
+        "tests": [
+            GeneratedTestPoint(viewpoint="登録できる", sut="POST", driver="結合", stub="スタブ不要")
+        ],
+        "gwt": ["Given 未登録 / When 登録 / Then 1件増える"],
+        "verify": ["テストが通る"],
+        "findings": [
+            GeneratedFinding(level="critical", target="段階3", message="項目が無い", fix_stage=3)
+        ],
+    }
+    return ProcedureDocGenerationOutput(**(values | overrides))

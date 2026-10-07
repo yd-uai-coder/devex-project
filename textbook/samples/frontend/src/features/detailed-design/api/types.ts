@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -316,3 +316,28 @@ export type ProcedureDocModel = { units: UnitProcedure[] };
 
 // devex-api の FINDING_LEVELS と同じ値(重要度の高い順)
 export const FINDING_LEVELS: FindingLevel[] = ["critical", "major", "minor"];
+
+// Phase-28-3:追記
+// 1回の生成で手順書を作れる単位の数の上限(devex-api の MAX_PROCEDURE_DOC_TARGETS と同じ)
+export const MAX_PROCEDURE_DOC_TARGETS = 5;
+
+// Phase-28-4:追記
+// 段階8の単位が参照する設計1つ(devex-api app/schemas/design_stage.py の DesignRefRead)。
+// procedure = 段階5の手順、logic = 段階6の関数、module = 段階4のモジュール。markdown は設計の
+// 該当箇所を展開した md(設計に無い参照は null)。
+export type DesignRefRead = {
+  kind: "procedure" | "logic" | "module";
+  key: string;
+  resolved: boolean;
+  via: string | null;
+  label: string;
+  markdown: string | null;
+};
+
+// 段階8の単位1つの、手順書を読むための材料(参照の展開と、段階7の 07章・開発環境の md)。
+export type UnitContextRead = {
+  unit_id: string;
+  refs: DesignRefRead[];
+  crosscutting: string;
+  environment: string;
+};

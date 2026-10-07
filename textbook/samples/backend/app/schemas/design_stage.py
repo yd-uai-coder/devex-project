@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2
+# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2
 # 写経レベル: 定型 ── Pydantic スキーマ。
 # Phase-16-3:追記 ── typing.Literal, pydantic.Field
 from datetime import datetime
@@ -91,8 +91,35 @@ class LogicTarget(BaseModel):
 class DesignStageGenerate(BaseModel):
     """段階の下書きの生成リクエスト(本文は省略できる)。`function_ids`は段階5だけが使う、下書きを
     作る処理の処理ID(省略すると、選んだ処理のうちまだ手順の無いもの。Phase 20)。`logics`は段階6
-    だけが使う、下書きを作る関数(省略すると、選んだ関数のうちまだ詳細の無いもの。Phase 21)。"""
+    だけが使う、下書きを作る関数(省略すると、選んだ関数のうちまだ詳細の無いもの。Phase 21)。
+    `unit_ids`は段階8だけが使う、手順書を作る作業単位の ID(省略すると、段階7の単位のうち手順書の
+    無いもの。Phase 28)。"""
 
     function_ids: list[str] | None = None
     # Phase-21-3:追記
     logics: list[LogicTarget] | None = None
+    # Phase-28-2:追記
+    unit_ids: list[str] | None = None
+
+
+# Phase-28-1:追記
+class DesignRefRead(BaseModel):
+    """段階8の単位が参照する設計1つ(app/detailed_design/procedure_doc_refs.py の ExpandedRef)。
+    `markdown`は設計の該当箇所を展開した md(設計に無い参照は None)。"""
+
+    kind: Literal["procedure", "logic", "module"]
+    key: str
+    resolved: bool
+    via: str | None = None
+    label: str
+    markdown: str | None = None
+
+
+class UnitContextRead(BaseModel):
+    """段階8の単位1つの、手順書を読むための材料(参照する設計の展開と、段階7の共通の節)。
+    `crosscutting`・`environment`は 07章 横断事項と開発環境の md(書かれていなければ空)。"""
+
+    unit_id: str
+    refs: list[DesignRefRead]
+    crosscutting: str
+    environment: str

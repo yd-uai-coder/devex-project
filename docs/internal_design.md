@@ -286,7 +286,8 @@ backend/
 | **PUT** | `/api/v1/projects/{id}/design-stages/{stage}` | （※ステージ4、Phase 15）段階の内容の保存(`{version, model}`。未着手は`version: null`で作る。楽観ロック。承認済みは`reviewing`に戻る。開いていない段階は409 `DESIGN_STAGE_LOCKED`) | 必要 |
 | **POST** | `/api/v1/projects/{id}/design-stages/{stage}/approve` | （※ステージ4、Phase 15）段階の承認(`{version}`。下書き・レビュー中・古いが対象。承認時に`input_fingerprint`を記録する。versionは増やさない。承認済みで古くない・内容が空は409 `DESIGN_STAGE_NOT_APPROVABLE`。段階ごとの検証にエラーがあれば409 `DESIGN_STAGE_INVALID`(Phase 16)) | 必要 |
 | **GET** | `/api/v1/projects/{id}/design-stages/document` | （※ステージ4、Phase 22）詳細設計書の zip(`detailed_design.html`・`detailed_design.md`・`diagrams/*.svg|.drawio`)。いつでもダウンロードでき、承認していない段階の章は「未承認」、0件で承認した段階6は「省略」。zip に入れた図は`exported`になる。詳細設計モードでなければ409 `DESIGN_STAGES_NOT_AVAILABLE` | 必要 |
-| **POST** | `/api/v1/projects/{id}/design-stages/{stage}/generate` | （※ステージ4、Phase 16）段階のAIの下書きの生成を受け付ける(202。段階は`generating`になり、裏で生成して`draft`・version+1で保存する。画面は一覧をポーリングする)。生成に対応していない段階は409 `DESIGN_STAGE_GENERATION_NOT_SUPPORTED`(Phase 16は段階1だけ)、生成中は409 `DESIGN_STAGE_GENERATION_IN_PROGRESS`、開いていない段階は409 `DESIGN_STAGE_LOCKED` | 必要 |
+| **POST** | `/api/v1/projects/{id}/design-stages/{stage}/generate` | （※ステージ4、Phase 16）段階のAIの下書きの生成を受け付ける(202。段階は`generating`になり、裏で生成して`draft`・version+1で保存する。画面は一覧をポーリングする)。生成に対応していない段階は409 `DESIGN_STAGE_GENERATION_NOT_SUPPORTED`(Phase 16は段階1だけ。Phase 28 で段階1〜8すべて)、生成中は409 `DESIGN_STAGE_GENERATION_IN_PROGRESS`、開いていない段階は409 `DESIGN_STAGE_LOCKED`。本文で対象を選べる: 段階5`function_ids`・段階6`logics`・段階8`unit_ids`(Phase 28) | 必要 |
+| **GET** | `/api/v1/projects/{id}/design-stages/units/{unit_id}/context` | （※ステージ5、Phase 28）段階8の作業単位1つが参照する設計の展開(`{unit_id, refs: [{kind, key, resolved, via, label, markdown}], crosscutting, environment}`)。承認済みの段階1〜7から毎回導き、保存しない。段階8が開いていなければ409 `DESIGN_STAGE_LOCKED`、段階7に無い単位は404 | 必要 |
 
 > **[Phase 24 で確定 ── 〈簡易モードの設計図の API を削除〉]** 当初〈上の表の`POST /uml/diagrams`(生成)・`/uml/candidates`・`/uml/generation-runs`・`/uml/reflect`・`/uml/embeds`・`/uml/bundle`を提供する〉→ 撤回。理由〈簡易ドキュメントモードの設計図(SCR-007)を削除した([外部設計書](external_design.md) 2.6節の撤回を参照)。残りの`/uml/...`(図の取得・一覧・更新・検証・自動レイアウト・承認・出力、データ辞書)は、詳細設計モードの段階2〜4が使う〉。
 
@@ -394,7 +395,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 
 [外部設計書](external_design.md) 2.8節の実装手順書の内部の方針(Phase 25で確定)。方針は[`appendix/devex_implementation_procedure_guideline.md`](../appendix/devex_implementation_procedure_guideline.md)、経緯は[`textbook/Phase-25/Phase-25-1.md`](../textbook/Phase-25/Phase-25-1.md)・[`Phase-25-5.md`](../textbook/Phase-25/Phase-25-5.md)。意味モデル・API・マイグレーションの詳細は各実装 Phase で確定する。
 
-* **段階8として持つ**: `design_stages`に段階8(入力は段階1〜7と要件定義。`STAGE_INPUTS[8]`。要件定義は手順書の対象外(Should / Could / Won't)を書くために読む)を足し、承認・陳腐化(`input_fingerprint`)・生成の状態・段階ごとの検証(`STAGE_VALIDATORS[8]`)・部分生成(`StageGenerationContext.targets`)の仕組みをそのまま使う。`stage`の CHECK は 1〜8(Phase 27)。生成器は Phase 28 で登録する(それまでは`DESIGN_STAGE_GENERATION_NOT_SUPPORTED`)。
+* **段階8として持つ**: `design_stages`に段階8(入力は段階1〜7と要件定義。`STAGE_INPUTS[8]`。要件定義は手順書の対象外(Should / Could / Won't)を書くために読む)を足し、承認・陳腐化(`input_fingerprint`)・生成の状態・段階ごとの検証(`STAGE_VALIDATORS[8]`)・部分生成(`StageGenerationContext.targets`)の仕組みをそのまま使う。`stage`の CHECK は 1〜8(Phase 27)。生成器は Phase 28 で登録した(`STAGE_GENERATORS[8] = generate_procedure_docs`)。
 * **意味モデル(Phase 27)**: `design_stages.model`(段階8)は`{units: [{unit_id, title, purpose, files: [{path, kind, responsibility, basis}], notes, tests: [{viewpoint, sut, driver, stub}], gwt, verify, findings: [{level, target, message, fix_stage}]}]}`(`app/detailed_design/procedure_doc.py`)。`units`は手順書のある単位だけ。`unit_id`と`title`は手順書を作ったときの段階7の単位の ID とタスク名で、段階7の並べ替え・改名で合わなくなった手順書は検証のエラー(`UNIT_MISMATCH`)にして作り直させる(自動で付け替えない。段階7を承認し直すと、段階8は既存の陳腐化で「古い」になる)。ファイルの`kind`は`module`(段階4のパス。検証する)・`test`・`config`。`findings`は AI の指摘で、重要度`level`(`critical`=最重要・`major`=中程度・`minor`=軽微)と直す先の段階`fix_stage`を持つ。単位の一覧は段階7の並び順(`plan_units`。依存は前の単位だけを指すので、これが依存順)。
 * **正本と参照**: 作業単位の正本は段階7(単位の ID は並び順から導く)。段階8の model は単位ごとの手順書の中身(目的・作成・変更するファイル(テスト・環境のファイルを含む)・実装の要点・テスト観点・確認方法・AI の指摘)だけを持ち、設計の中身を複製しない。参照する設計は単位の処理ID・モジュールから導き、表示・AI 向けの出力・生成の入力のときにだけ展開する(参照の展開は決定的な純粋関数で、この3か所で共有する)。
 * **実装可能性チェックの2層**:
@@ -404,7 +405,12 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
     * 単位の依存の循環・一覧に無い依存先は、段階7の検証のエラー(Phase 26)で止まるので段階8では見ない。シーケンス図にするときの手順の不備は Phase 29。
   * **AI の指摘**: 手順書を生成する AI に、設計に無いことを推測で埋めず「未定義」(重要度・対象・内容)として挙げさせ、model に保存する。
   * 決めるときは対象の段階を直す。直した段階は差し戻され(既存の`mark_edited`・承認し直し)、段階8は陳腐化する。手順書に決定を書き込まない。
+* **参照の展開(Phase 28)**: `app/detailed_design/procedure_doc_refs.py`(純粋関数)。`unit_context(unit, stages)`が`unit_refs`の参照を、詳細設計書の 05・06 と同じ表(`document/markdown.py`の`procedure_table`・`logic_spec`。05・06 の組み立てと共有)で md に展開し(`expand_ref`。設計に無い参照は None)、段階7の 07章 横断事項と開発環境の md を添える。生成の入力と画面の単位の詳細(`GET /design-stages/units/{unit_id}/context`)が同じ関数を使い、Phase 30 の AI 向けの出力も使う(バックエンドだけに置き、画面へは API で渡す)。
 * **生成**: 人が選んだ単位だけ、1単位につき LLM を1回、1回に5件まで(段階5・6と同じ形)。入力は、その単位が参照する設計の該当箇所だけ(01〜07章の全文は渡さない)と、実装ルール(段階4・07章)。`NAMING_RULES`を足す。概要・前提・一覧・完了条件は決定的に組み立てる。
+  * 実装(Phase 28): `generate_procedure_docs`。対象は本文`{unit_ids?}`(省略すると、段階7の単位のうち手順書の無いもの。手順書の有無は単位の ID とタスク名の両方が合うかで決める。`documented_unit_ids`・`generation_targets`)。対象は保存した model でなく承認済みの段階7から決める。受け付けで、対象が空・段階7に無い単位・5件超(`MAX_PROCEDURE_DOC_TARGETS`)を409`DESIGN_STAGE_INVALID`で断る。段階8以外への指定も断る。状態は、対象の単位にもともと手順書があれば`regenerated`。
+  * 入出力: `app/detailed_design/procedure_doc_drafting.py`。プロンプトは、設計を書き写さない・推測で埋めず`findings`に挙げる・実装の要点は自明な作業と順序の理由だけ・テストは観点まで(Phase 25-1 決定5・7)。単位の ID とタスク名は書かせず段階7から写す。`fix_stage`は 1〜7 から選ばせ、範囲の外は 8(「段階Nで直す」を出さない)にする。
+  * merge(`merge_unit_procedure`): 対象の単位だけを置き換え、段階7の並び順に並べる。段階7に無くなった単位の手順書は消さずに後ろへ置く(`UNIT_MISMATCH`で知らせる)。
+  * 承認: バックエンドは最重要の指摘があっても承認を止めない。画面が承認の前に、最重要(検証と AI の両方)の件数を示して確かめる。
 * **シーケンス図**: 段階5の手順から決定的に導く読み取り専用のビュー(正本は手順の表)。入れ子は呼び出し中の参加者の積み上げで推測し、表に無い戻りは推測で足す。段階5の行に種別(同期の呼び出し/非同期の呼び出し/戻り)を足す(既存のデータは同期の呼び出しとして読む)。SVG はバックエンドで作り(`app/uml/export/svg.py`の書式を流用。レイアウトエンジンは使わない)、md と AI 向けの版は Mermaid のテキストにする。導出の見本は devex-ui のデモ(`src/features/implementation-procedure/demo/sequenceModel.ts`)。
 * **出力**: 詳細設計書・実装計画の zip(`DetailedDesignExportService`)に`implementation_procedure/`(`index.md`・単位ごとの md・AI 向けの版・HTML 1枚)を加える。AI 向けの版と画面の「AI 向けにコピー」は同じ組み立てを使う。
 * **簡易ドキュメントモード(ステージ5の後半)**: 実装計画書のプロンプトを変え、WBS を段階7と同じ縦割り・ID 付きにする。簡易モードのプロジェクトには、入力を4文書にした段階8だけを開く(段階1〜7の行は持たない)。参照先は内部設計書の処理別データフロー・API 一覧・モジュール一覧・3.4節。

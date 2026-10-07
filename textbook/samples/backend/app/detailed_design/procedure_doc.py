@@ -1,4 +1,4 @@
-# 作成：Phase-27-1,27-2
+# 作成：Phase-27-1,27-2｜更新：Phase-28-1,28-2
 """段階8 実装手順書の意味モデルと、単位が参照する設計の導出(純粋関数)。
 
 docs/internal_design.md 3.3節「5. 実装手順書」。
@@ -17,7 +17,8 @@ docs/internal_design.md 3.3節「5. 実装手順書」。
 """
 
 # Phase-27-2:追記 ── dataclasses.field, app.detailed_design.data_model(DATA_MODEL_STAGE, CrudModel), app.detailed_design.logic(LOGIC_STAGE, LogicModel, is_drafted, logic_key), app.detailed_design.procedure(PROCEDURE_STAGE, Procedure, ProcedureModel, is_external_actor, number_steps, step_id), app.detailed_design.structure(STRUCTURE_STAGE, ModuleListModel)
-from collections.abc import Mapping
+# Phase-28-2:追記 ── collections.abc.Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -38,6 +39,11 @@ from app.detailed_design.structure import STRUCTURE_STAGE, ModuleListModel
 
 # 実装手順書の段階の番号
 PROCEDURE_DOC_STAGE = 8
+
+# Phase-28-2:追記
+# 1回の生成で手順書を作る単位の数の上限(1単位 LLM 1回。15分の回収のしきい値に収めるため。
+# 段階5・6の上限と同じ値)
+MAX_PROCEDURE_DOC_TARGETS = 5
 
 # 実装可能性チェックの指摘の重要度。critical = 最重要、major = 中程度、minor = 軽微
 FindingLevel = Literal["critical", "major", "minor"]
@@ -111,6 +117,44 @@ def plan_units(plan: PlanModel) -> list[PlanUnit]:
         for m, milestone in enumerate(plan.milestones)
         for t, task in enumerate(milestone.tasks)
     ]
+
+
+# Phase-28-1:追記
+def find_unit(plan: PlanModel, unit_id: str) -> PlanUnit | None:
+    """段階7の作業単位を ID で引く(無ければ None)。"""
+    return next((unit for unit in plan_units(plan) if unit.unit_id == unit_id.strip()), None)
+
+
+# Phase-28-2:追記
+def documented_unit_ids(plan: PlanModel, model: ProcedureDocModel) -> set[str]:
+    """手順書のある単位の ID。単位の ID とタスク名の両方が段階7と合うものだけを数える
+    (合わない手順書は検証の UNIT_MISMATCH で、作り直しの対象)。"""
+    titles = {(u.unit_id, u.title.strip()) for u in model.units}
+    return {u.unit_id for u in plan_units(plan) if (u.unit_id, u.task.title.strip()) in titles}
+
+
+def generation_targets(
+    plan: PlanModel, model: ProcedureDocModel, requested: Sequence[str] | None
+) -> list[str]:
+    """手順書を作る単位の ID。指定が無ければ、段階7の単位のうち手順書の無いもの(計画の並び順)。
+    指定があれば、前後の空白と重複を除いてその順に使う(選んだ単位の生成・作り直し)。"""
+    if requested is None:
+        documented = documented_unit_ids(plan, model)
+        return [u.unit_id for u in plan_units(plan) if u.unit_id not in documented]
+    return list(dict.fromkeys(r.strip() for r in requested if r.strip()))
+
+
+def merge_unit_procedure(
+    model: ProcedureDocModel, plan: PlanModel, procedure: UnitProcedure
+) -> ProcedureDocModel:
+    """単位1つの手順書を置き換える(他の単位の手順書・手直しはそのまま残す)。
+
+    単位は段階7の並び順に並べ直す。段階7に無くなった単位の手順書は消さずに後ろへ置く
+    (検証の UNIT_MISMATCH で人に知らせる。自動で付け替えたり消したりしない)。"""
+    units = [u for u in model.units if u.unit_id != procedure.unit_id] + [procedure]
+    order = {u.unit_id: i for i, u in enumerate(plan_units(plan))}
+    planned = sorted((u for u in units if u.unit_id in order), key=lambda u: order[u.unit_id])
+    return ProcedureDocModel(units=planned + [u for u in units if u.unit_id not in order])
 
 
 # Phase-27-2:追記

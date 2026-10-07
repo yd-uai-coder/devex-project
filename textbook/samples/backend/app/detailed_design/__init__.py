@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -14,6 +14,8 @@
 # Phase-26-1:追記 ── app.detailed_design.plan.MAX_UNIT_FUNCTIONS, UNIT_KINDS, UnitKind, is_file_path, milestone_functions, task_id, unit_ids(TASK_AREAS は削除)
 # Phase-27-1:追記 ── app.detailed_design.procedure_doc(FINDING_LEVELS, PROCEDURE_DOC_STAGE, AiFinding, FindingLevel, PlanUnit, ProcedureDocModel, TestPoint, UnitFile, UnitProcedure, plan_units)
 # Phase-27-2:追記 ── app.detailed_design.procedure_doc(DesignIndex, DesignRef, design_index, unit_refs)
+# Phase-28-1:追記 ── app.detailed_design.procedure_doc.find_unit
+# Phase-28-2:追記 ── app.detailed_design.procedure_doc(MAX_PROCEDURE_DOC_TARGETS, documented_unit_ids, merge_unit_procedure)
 from app.detailed_design.api_list import (
     ApiEndpoint,
     endpoint_key,
@@ -109,6 +111,7 @@ from app.detailed_design.procedure import (
 )
 from app.detailed_design.procedure_doc import (
     FINDING_LEVELS,
+    MAX_PROCEDURE_DOC_TARGETS,
     PROCEDURE_DOC_STAGE,
     AiFinding,
     DesignIndex,
@@ -120,6 +123,9 @@ from app.detailed_design.procedure_doc import (
     UnitFile,
     UnitProcedure,
     design_index,
+    documented_unit_ids,
+    find_unit,
+    merge_unit_procedure,
     plan_units,
     unit_refs,
 )
@@ -180,6 +186,8 @@ __all__ = [
     # Phase-21-1:追記
     "MAX_LOGIC_TARGETS",
     # Phase-20-1:追記
+    # Phase-28-2:追記
+    "MAX_PROCEDURE_DOC_TARGETS",
     "MAX_PROCEDURE_TARGETS",
     # Phase-26-1:追記
     "MAX_UNIT_FUNCTIONS",
@@ -269,6 +277,8 @@ __all__ = [
     "current_inputs",
     "derive_states",
     # Phase-18-1:追記
+    # Phase-28-2:追記
+    "documented_unit_ids",
     "dfd_accesses",
     # Phase-17-1:追記
     "dfd_subject",
@@ -302,6 +312,8 @@ __all__ = [
     "merge_modules",
     # Phase-20-1:追記
     "merge_procedure",
+    # Phase-28-2:追記
+    "merge_unit_procedure",
     # Phase-26-1:追記
     "milestone_functions",
     # Phase-23-1:追記
@@ -324,6 +336,8 @@ __all__ = [
     "pending_function_ids",
     # Phase-21-1:追記
     "pending_logic_keys",
+    # Phase-28-1:追記
+    "find_unit",
     # Phase-23-1:追記
     "planned_function_ids",
     # Phase-20-1:追記

@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -13,6 +13,8 @@ import { StageStepper } from "@/features/detailed-design/components/StageStepper
 import { StageWorkArea } from "@/features/detailed-design/components/StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { STAGE_TITLES } from "@/features/detailed-design/labels";
+// Phase-28-3:追記
+import { criticalCount } from "@/features/detailed-design/procedureDocOps";
 
 // Phase-27-3：更新(段階1〜7 → 段階1〜8)
 // 詳細設計画面(SCR-008)。左に段階1〜8のステッパー、右に選んだ段階の作業領域を置く
@@ -34,6 +36,9 @@ export function DetailedDesignPageContent({
   // Phase-18-9:追記
   // 承認を終えた段階(完了のダイアログを出している間だけ値を持つ。Phase 18)
   const [approvedStage, setApprovedStage] = useState<number | null>(null);
+  // Phase-28-3:追記
+  // 最重要の指摘が残ったまま承認しようとしている段階8の、最重要の数(確認を出している間だけ値を持つ)
+  const [criticalLeft, setCriticalLeft] = useState<number | null>(null);
 
   useEffect(() => {
     void fetchStages(projectId);
@@ -46,8 +51,19 @@ export function DetailedDesignPageContent({
       ? approvedStage + 1
       : null;
 
-  const startApproval = async (stage: number) => {
+  // Phase-28-3：更新
+  // const startApproval = async (stage: number) => {
+  //   if (await approve(projectId, stage)) setApprovedStage(stage);
+  // };
+  // ↓↓
+  const approveStage = async (stage: number) => {
     if (await approve(projectId, stage)) setApprovedStage(stage);
+  };
+  // 段階8は、最重要の指摘(未定義・要決定)が残っていれば確かめてから承認する(承認は止めない)
+  const startApproval = (stage: number) => {
+    const critical = current && stage === 8 ? criticalCount(current) : 0;
+    if (critical > 0) setCriticalLeft(critical);
+    else void approveStage(stage);
   };
 
   return (
@@ -89,11 +105,27 @@ export function DetailedDesignPageContent({
               // Phase-18-9：更新
               // onApprove={() => void approve(projectId, current.stage)}
               // ↓↓
-              onApprove={() => void startApproval(current.stage)}
+              // Phase-28-3：更新
+              // onApprove={() => void startApproval(current.stage)}
+              // ↓↓
+              onApprove={() => startApproval(current.stage)}
             />
           ) : null}
         </XStack>
       ) : null}
+
+      {/* Phase-28-3:追記 */}
+      <ConfirmDialog
+        open={criticalLeft !== null}
+        title="最重要の指摘が残っています"
+        description={`最重要の未定義・要決定が ${criticalLeft ?? 0} 件残っています。このまま承認しますか?(手順書で決めず、対象の段階で直すのが原則です)`}
+        confirmLabel="このまま承認する"
+        onConfirm={() => {
+          setCriticalLeft(null);
+          void approveStage(8);
+        }}
+        onCancel={() => setCriticalLeft(null)}
+      />
 
       {/* Phase-18-9:追記 */}
       {/* 段階を承認したら知らせ、次の段階へ進めるようにする(最後の段階は閉じるだけ。Phase 18) */}

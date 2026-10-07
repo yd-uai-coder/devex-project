@@ -136,7 +136,7 @@ Phase 26 から引き継いだもの:
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- Phase 28: `procedure_doc.py` に `find_unit`(28-1)と、生成の対象・merge(`MAX_PROCEDURE_DOC_TARGETS`・`documented_unit_ids`・`generation_targets`・`merge_unit_procedure`。28-2)を足した。段階8に生成器を登録したので、`test_design_stage_procedure_doc.py` の「生成は未対応」のテストを消した。`ProcedureDocPanel` の props に `projectId`・`onDirtyChange` を足し、生成・単位の詳細・保存を持たせた([Phase-28-introduction](../Phase-28/Phase-28-introduction.md))。
 
 ## Phase 完了チェック(#22)
 

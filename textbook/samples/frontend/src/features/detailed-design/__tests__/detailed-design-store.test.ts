@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3
 // 写経レベル: コア ── 版の競合と、承認後の取り直し。
 // Phase-16-6:追記 ── ../test-utils/stageFixtures.makeFunctionList
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -224,6 +224,18 @@ describe("useDetailedDesignStore", () => {
 
     expect(stub.requests[0].url).toContain("/design-stages/6/generate");
     expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ logics });
+  });
+
+  // Phase-28-3:追記
+  it("generateは段階8の対象の単位を本文の unit_ids で渡す", async () => {
+    useDetailedDesignStore.setState({ projectId: "p1", stages: makeStages() });
+    stub.queue({ status: 202, body: makeStages()[7] });
+    stub.queue({ status: 200, body: makeStages() });
+
+    await useDetailedDesignStore.getState().generate("p1", 8, undefined, undefined, ["M-01-T01"]);
+
+    expect(stub.requests[0].url).toContain("/design-stages/8/generate");
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ unit_ids: ["M-01-T01"] });
   });
 
   it("jumpToは段階を選んで移動先を覚え、clearFocus・selectStageで消える", () => {
