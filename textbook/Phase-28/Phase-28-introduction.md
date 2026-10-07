@@ -137,7 +137,7 @@ Phase 27 から引き継いだもの:
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- [Phase 29](../Phase-29/Phase-29-5.md): 参照の展開で、段階5の手順の md の後に 05 と同じ Mermaid のシーケンス図を添え、画面向けに SVG(`ExpandedRef.svg`)も返すようにした。`unit_refs` の「関数を呼ぶ行」の判定を `calls_function` にした(戻りの行を除く)。
 
 ## Phase 完了チェック(#22)
 

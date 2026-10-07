@@ -1,8 +1,10 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5
 # 写経レベル: コア ── 段階ごとの検証の登録(STAGE_VALIDATORS)と、エラーと警告の分け方。
 # Phase-23-1：更新(docstring: 段階7の検証を登録したことと、その入力を書いた)
 # Phase-26-1：更新(docstring: 段階7が段階4のモジュール一覧も使うことを書いた)
 # Phase-27-2：更新(docstring: 段階8の検証を登録したことと、その入力・内容が無くても検証することを書いた)
+# Phase-29-2：更新(docstring: validate_procedures の警告にシーケンス図の指摘を足した)
+# Phase-29-5：更新(docstring: validate_procedure_doc の警告に STUB_OUTSIDE_SEQUENCE を足した)
 """段階ごとの内容の検証(純粋関数)。
 
 承認の条件は、全段階に共通の3つ(段階が開いている・版が一致する・承認できる状態で内容が空でない。
@@ -35,6 +37,8 @@ Phase 23、段階8は Phase 27。登録の無い段階は検証なし)。
 # Phase-23-1:追記 ── app.detailed_design.plan(PlanModel, milestone_id, missing_topics, unplanned_functions)
 # Phase-26-1:追記 ── app.detailed_design.plan(MAX_UNIT_FUNCTIONS, is_file_path, task_id, unit_ids)
 # Phase-27-2:追記 ── app.detailed_design.plan.PLAN_STAGE, app.detailed_design.procedure_doc(PROCEDURE_DOC_STAGE, DesignIndex, FindingLevel, PlanUnit, ProcedureDocModel, design_index, plan_units, spelling_match, unit_refs)
+# Phase-29-2:追記 ── app.detailed_design.sequence(module_dependencies, to_sequence)
+# Phase-29-5:追記 ── app.detailed_design.procedure_doc.UnitProcedure, app.detailed_design.sequence(reachable_callees, stubs_outside_sequence, sut_participant)
 from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -87,10 +91,18 @@ from app.detailed_design.procedure_doc import (
     FindingLevel,
     PlanUnit,
     ProcedureDocModel,
+    UnitProcedure,
     design_index,
     plan_units,
     spelling_match,
     unit_refs,
+)
+from app.detailed_design.sequence import (
+    module_dependencies,
+    reachable_callees,
+    stubs_outside_sequence,
+    sut_participant,
+    to_sequence,
 )
 from app.detailed_design.structure import ModuleListModel, module_ref_matches
 
@@ -544,7 +556,9 @@ def validate_procedures(model: Mapping[str, Any], sources: StageSources) -> list
     エラー: 形が不正 / 処理が0件 / 処理IDが機能一覧に無い・重複 / 手順が0件 /
     先頭の行が分岐 / 手順の呼び出し先が空 / パスの形(`/`を含む)の呼び出し先が、モジュール一覧の
     パスと完全一致しない(関与表の列の鍵のため)。
-    警告: 選定理由が空 / モジュールを呼ぶ手順の関数が空(段階6で関数を選べないため)。
+    警告: 選定理由が空 / モジュールを呼ぶ手順の関数が空(段階6で関数を選べないため)/
+    シーケンス図にするときの指摘(`to_sequence`。戻りを呼び出しとして書いている・入れ子を推測
+    できない・存在しない分岐先・依存先(段階4)に無い呼び出し・呼び出し元が空)。
     """
     try:
         parsed = ProcedureModel.model_validate(model)
@@ -554,6 +568,8 @@ def validate_procedures(model: Mapping[str, Any], sources: StageSources) -> list
     function_ids = {row.id for row in function_list.functions}
     modules = ModuleListModel.model_validate(sources.stages.get(4) or {})
     paths = {row.path.strip() for row in modules.modules}
+    # Phase-29-2:追記
+    dependencies = module_dependencies(modules)
 
     issues: list[StageIssue] = []
     if not parsed.procedures:
@@ -592,9 +608,15 @@ def validate_procedures(model: Mapping[str, Any], sources: StageSources) -> list
                     f"手順 {target} の呼び出し先「{callee}」が、モジュール一覧のパスにありません。"
                 )
                 issues.append(_error("UNKNOWN_CALLEE", message, target))
-            elif not is_external_actor(callee) and not step.call.strip():
+            # Phase-29-1：更新
+            # elif not is_external_actor(callee) and not step.call.strip():
+            # ↓↓
+            elif not is_external_actor(callee) and step.kind != "return" and not step.call.strip():
                 message = f"手順 {target} の呼ぶ関数が空です(段階6で関数を選べません)。"
                 issues.append(_warning("EMPTY_CALL", message, target))
+        # Phase-29-2:追記
+        for found in to_sequence(procedure, dependencies).issues:
+            issues.append(_warning(found.code, found.message, found.step_id))
     return issues
 
 
@@ -827,6 +849,8 @@ def validate_procedure_doc(
     - 軽微・段階5: 手順の呼ぶ関数が段階6に無く、同じモジュールの段階6の関数と書き方だけが違う
       (`UNRESOLVED_CALL`。揺れは吸収せず、手順の関数名を段階6にそろえさせる。段階6で選ばなかった
       別の関数は、段階6が任意なので指摘しない)
+    - 軽微・段階5: 手順書のテスト観点のスタブが、手順のシーケンス図で SUT から呼ばれないモジュールを
+      挙げている(`STUB_OUTSIDE_SEQUENCE`。手順に無い依存。手順か観点のどちらかが足りない)
     指摘の`target`は、処理ID・手順ID・パス・単位の ID。`unit`は指摘の出た単位の ID。
     """
     try:
@@ -836,6 +860,9 @@ def validate_procedure_doc(
     units = plan_units(PlanModel.model_validate(sources.stages.get(PLAN_STAGE) or {}))
     by_id = {unit.unit_id: unit for unit in units}
     index = design_index(sources.stages)
+    # Phase-29-5:追記
+    function_list = FunctionListModel.model_validate(sources.stages.get(1) or {})
+    triggers = {row.id: row.trigger for row in function_list.functions}
 
     issues: list[StageIssue] = []
     counts = Counter(doc.unit_id.strip() for doc in parsed.units)
@@ -866,6 +893,8 @@ def validate_procedure_doc(
             if file.kind == "module" and path and path not in index.module_paths:
                 message = f"{uid} の手順書のファイル「{path}」が、モジュール一覧にありません。"
                 issues.append(_finding("UNKNOWN_FILE", message, path, "major", 4, uid))
+        # Phase-29-5:追記
+        issues += _stub_issues(doc, unit, index, triggers)
     for unit in units:
         issues += _unit_design_issues(unit, index)
     return issues
@@ -900,6 +929,41 @@ def _unit_design_issues(unit: PlanUnit, index: DesignIndex) -> list[StageIssue]:
                 f"{uid} のモジュール「{ref.key}」はディレクトリで、作るファイルが決まりません。"
             )
             issues.append(_finding("MODULE_NOT_FILE", message, ref.key, "major", 4, uid))
+    return issues
+
+
+# Phase-29-5:追記
+def _stub_issues(
+    doc: UnitProcedure, unit: PlanUnit, index: DesignIndex, triggers: Mapping[str, str]
+) -> list[StageIssue]:
+    """テスト観点のスタブの欄が、手順のシーケンス図で SUT から呼ばれないモジュールを挙げていないか。
+    SUT は、単位の処理の図のうち最初に対応した図で見る(対応しなければ判断しない)。SUT 自身の
+    モジュールは候補に含める(スタブの文に名前が出てもよい)。"""
+    uid = unit.unit_id
+    diagrams = [
+        (fid, to_sequence(index.procedures[fid]))
+        for fid in (f.strip() for f in unit.task.function_ids)
+        if fid in index.procedures
+    ]
+    paths = sorted(index.module_paths)
+    issues: list[StageIssue] = []
+    for number, test in enumerate(doc.tests, start=1):
+        if not test.stub.strip():
+            continue
+        for fid, diagram in diagrams:
+            sut = sut_participant(diagram, test.sut, triggers.get(fid, ""))
+            if sut is None:
+                continue
+            allowed = [sut, *reachable_callees(diagram, sut)]
+            outside = stubs_outside_sequence(test.stub, allowed, paths)
+            if outside:
+                message = (
+                    f"{uid} のテスト観点{number}のスタブ({', '.join(outside)})は、{fid} の手順で"
+                    f" SUT({sut})から呼ばれていません(手順に無い依存です。手順に足すか、"
+                    "観点のスタブを直します)。"
+                )
+                issues.append(_finding("STUB_OUTSIDE_SEQUENCE", message, fid, "minor", 5, uid))
+            break
     return issues
 
 

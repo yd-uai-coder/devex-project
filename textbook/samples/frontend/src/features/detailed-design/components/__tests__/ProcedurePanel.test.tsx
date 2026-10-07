@@ -1,12 +1,14 @@
-// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正)
+// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正),29-4
 // 写経レベル: コア ── 生成の対象・作り直しの確認・関与表の反映を確かめる。
 // Phase-21-8:追記 ── ../../test-utils/stageFixtures.makeLogics
+// Phase-29-4:追記 ── @/features/detailed-design/api/designStagesApi.getProcedureSequence
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { ProcedurePanel } from "../ProcedurePanel";
+import { getProcedureSequence } from "@/features/detailed-design/api/designStagesApi";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import type { DesignStageRead, FunctionListModel } from "@/features/detailed-design/api/types";
 import {
@@ -18,9 +20,18 @@ import {
   makeStep,
 } from "../../test-utils/stageFixtures";
 
-// SUT: ProcedurePanel / ドライバ: render と操作 / スタブ: 段階のストアの save・generate・fetchStages。
+// Phase-29-4：更新
+// // SUT: ProcedurePanel / ドライバ: render と操作 / スタブ: 段階のストアの save・generate・fetchStages。
+// ↓↓
+// SUT: ProcedurePanel / ドライバ: render と操作 / スタブ: 段階のストアの save・generate・fetchStages と、
+// シーケンス図の API(getProcedureSequence。保存した手順から devex-api が導く)。
 // 手順の表(ProcedureStepTable)と編集操作(procedureOps)は本物を使い、選択・生成の対象・索引・関与表・
 // タブが、保存した内容と編集中の内容のどちらから作られるかを見る。
+
+// Phase-29-4:追記
+vi.mock("@/features/detailed-design/api/designStagesApi", () => ({
+  getProcedureSequence: vi.fn(),
+}));
 
 const ROUTE = "app/api/routes/reservations.py";
 
@@ -71,6 +82,33 @@ describe("ProcedurePanel", () => {
       // Phase-21-7:追記(画面確認後の修正。タブの保持)
       tabs: {},
     });
+    // Phase-29-4:追記
+    vi.mocked(getProcedureSequence).mockReset();
+    vi.mocked(getProcedureSequence).mockResolvedValue({
+      function_id: "F-01",
+      svg: '<svg data-testid="sequence"></svg>',
+      issues: [],
+    });
+  });
+
+  it("手順のある処理のタブでは、表の下に保存した手順のシーケンス図を出す", async () => {
+    renderPanel(setup({ state: "reviewing", version: 4, model: makeProcedures() }));
+
+    expect(await screen.findByRole("img", { name: "F-01 のシーケンス図" })).toBeInTheDocument();
+    expect(getProcedureSequence).toHaveBeenCalledWith("p1", "F-01");
+  });
+
+  it("手順の無い処理(保存前・未生成)には、シーケンス図を出さない", () => {
+    renderPanel(
+      setup({
+        state: "reviewing",
+        version: 1,
+        model: { procedures: [{ function_id: "F-02", reason: "", note: "", steps: [] }] },
+      }),
+    );
+
+    expect(screen.queryByText("シーケンス図")).not.toBeInTheDocument();
+    expect(getProcedureSequence).not.toHaveBeenCalled();
   });
 
   it("処理を選ぶと保存でき、保存するまで生成できない", async () => {

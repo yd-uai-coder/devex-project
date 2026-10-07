@@ -1,6 +1,7 @@
-# 作成：Phase-22-3｜更新：Phase-23-2,26-3,28-1
+# 作成：Phase-22-3｜更新：Phase-23-2,26-3,28-1,29-1,29-3
 # 写経レベル: 定型 ── 表の書き出しが大半。ID を本文に書き、リンクと生の HTML を持たない点だけがコア。
 # Phase-23-2：更新(docstring: 実装計画の md を別にすること)
+# Phase-29-3：更新(docstring: 05 のシーケンス図を Mermaid のコードブロックで載せること)
 """詳細設計書の Markdown を組み立てる(純粋関数)。
 
 docs/external_design.md 2.7節「詳細設計書の出力」。md は差分を取る・AI に読ませるための形で、
@@ -9,6 +10,8 @@ docs/external_design.md 2.7節「詳細設計書の出力」。md は差分を�
 
 図は、zip の中の SVG を相対パスの画像で載せる(`![題](diagrams/x.svg)`)。ステージ3の zip
 (内部設計書の md)と同じ形で、md のビューアで開くと図が見える。画像は章の間のリンクではない。
+05 のシーケンス図は手順の表から導く別の見え方なので、ファイルにせず Mermaid のコードブロックで
+載せる(AI が読める形のまま)。
 
 段階7の実装計画は、詳細設計書とは別の md(`to_plan_markdown`)にする(Phase 23。簡易モードで
 実装計画書が別の文書なのとそろえる)。段階7の下書きの入力には、詳細設計書の md(`to_markdown`の
@@ -18,6 +21,8 @@ docs/external_design.md 2.7節「詳細設計書の出力」。md は差分を�
 # Phase-23-2:追記 ── app.detailed_design.document.views.function_plans, app.detailed_design.plan(PLAN_STAGE, milestone_id)
 # Phase-26-3:追記 ── app.detailed_design.document.views(UNIT_HEADERS, UNIT_KIND_LABELS), app.detailed_design.plan(milestone_functions, task_id)
 # Phase-28-1:追記 ── collections.abc.Mapping, app.detailed_design.logic.LogicRow, app.detailed_design.procedure.Procedure
+# Phase-29-1:追記 ── app.detailed_design.document.views.step_kind_label
+# Phase-29-3:追記 ── app.detailed_design.document.views.procedure_sequence, app.detailed_design.sequence(SequenceDiagram, to_mermaid)
 from collections.abc import Mapping, Sequence
 
 from app.detailed_design.document.source import (
@@ -39,11 +44,14 @@ from app.detailed_design.document.views import (
     logic_ids,
     logic_views,
     main_step_count,
+    procedure_sequence,
     procedure_steps,
+    step_kind_label,
 )
 from app.detailed_design.logic import LogicRow
 from app.detailed_design.plan import PLAN_STAGE, milestone_functions, milestone_id, task_id
 from app.detailed_design.procedure import Procedure
+from app.detailed_design.sequence import SequenceDiagram, to_mermaid
 
 UNAPPROVED_TEXT = "未承認(段階{stage}が承認されていません。承認すると、この章が組み立てられます)"
 SKIPPED_TEXT = "省略(段階6を飛ばしました)"
@@ -226,6 +234,8 @@ def procedure_table(procedure: Procedure, ids: Mapping[str, str]) -> list[str]:
         [
             "No",
             "呼び出し元 → 呼び出し先",
+            # Phase-29-1:追記
+            "種別",
             "関数",
             "渡すデータ",
             "処理内容",
@@ -237,6 +247,8 @@ def procedure_table(procedure: Procedure, ids: Mapping[str, str]) -> list[str]:
             [
                 s.number,
                 "" if s.step.is_branch else f"{s.step.caller} → {s.step.callee}",
+                # Phase-29-1:追記
+                step_kind_label(s.step),
                 s.step.call + (f" → 詳細: {s.logic_id}" if s.logic_id else ""),
                 s.step.data,
                 s.step.action,
@@ -247,6 +259,21 @@ def procedure_table(procedure: Procedure, ids: Mapping[str, str]) -> list[str]:
             for s in procedure_steps(procedure, ids)
         ],
     )
+
+
+# Phase-29-3:追記
+def sequence_block(diagram: SequenceDiagram) -> list[str]:
+    """シーケンス図の Mermaid のコードブロック(05 の本文。段階8の参照の展開も同じ形を使う)。
+    参加者が無ければ空。"""
+    if not diagram.participants:
+        return []
+    return [
+        "シーケンス図(手順の表から導いた図。直すのは表):",
+        "",
+        "```mermaid",
+        to_mermaid(diagram),
+        "```",
+    ]
 
 
 def logic_spec(row: LogicRow) -> list[str]:
@@ -339,6 +366,10 @@ def _procedures(source: DocumentSource) -> list[str]:
         lines += procedure_table(p, ids)
         if p.note.strip():
             lines += ["", f"注記: {p.note.strip()}"]
+        # Phase-29-3:追記
+        block = sequence_block(procedure_sequence(p, source.modules))
+        if block:
+            lines += ["", *block]
     return lines
 
 

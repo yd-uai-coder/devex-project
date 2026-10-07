@@ -1,14 +1,17 @@
-# 作成：Phase-22-2
+# 作成：Phase-22-2｜更新：Phase-29-1
+# Phase-29-1：更新(docstring: SUT に step_kind_label)
 # 写経レベル: コア ── 手順ID・L-ID・05↔06・関与表・データ辞書・CRUD の記号の導き方を確かめる。
 """詳細設計書の表の導出のテスト。
 
 SUT: anchor / functions_by_id / logic_ids / procedure_steps / linked_logic_ids / main_step_count /
+     step_kind_label /
      logic_views / involvement / data_item_usage / crud_matrix
      (app/detailed_design/document/views.py)
 ドライバ: 各テスト関数
 スタブ不要 ── どれも純粋関数(副作用なし)で、外部依存を呼ばないため。
 """
 
+# Phase-29-1:追記 ── app.detailed_design(Procedure, ProcedureStep), app.detailed_design.document.views.step_kind_label
 import uuid
 
 from tests.fixtures.detailed_design import document_stage_models, er_model, group_dfd_model
@@ -18,7 +21,9 @@ from app.detailed_design import (
     FunctionListModel,
     LogicModel,
     ModuleListModel,
+    Procedure,
     ProcedureModel,
+    ProcedureStep,
 )
 from app.detailed_design.document import (
     CrudMark,
@@ -31,7 +36,7 @@ from app.detailed_design.document import (
     logic_views,
     procedure_steps,
 )
-from app.detailed_design.document.views import functions_by_id, main_step_count
+from app.detailed_design.document.views import functions_by_id, main_step_count, step_kind_label
 from app.uml.domain.er import ErSemanticModel
 
 MODELS = document_stage_models()
@@ -70,6 +75,28 @@ def test_procedure_steps_have_no_logic_when_stage6_is_not_approved() -> None:
     steps = procedure_steps(procedure, logic_ids(None))
 
     assert all(s.logic_id is None for s in steps)
+
+
+# Phase-29-1:追記
+def test_step_kind_label_is_empty_for_branch_rows() -> None:
+    assert step_kind_label(ProcedureStep(kind="async")) == "非同期"
+    assert step_kind_label(ProcedureStep(kind="return")) == "戻り"
+    assert step_kind_label(ProcedureStep(is_branch=True)) == ""
+
+
+def test_involvement_skips_return_rows() -> None:
+    model = ProcedureModel(
+        procedures=[
+            Procedure(
+                function_id="F-01",
+                steps=[
+                    ProcedureStep(caller="利用者", callee="app/a.py", call="f"),
+                    ProcedureStep(caller="app/b.py", callee="app/a.py", kind="return"),
+                ],
+            )
+        ]
+    )
+    assert involvement(model, None).cells == {"F-01": {"app/a.py": ["1"]}}
 
 
 def test_logic_views_derive_calling_steps() -> None:

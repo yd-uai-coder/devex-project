@@ -1,4 +1,4 @@
-# 作成：Phase-22-4
+# 作成：Phase-22-4｜更新：Phase-29-1,29-3
 # 写経レベル: 定型 ── 自己完結・リンク先の存在・05↔06 の双方向・エスケープを確かめる。
 """詳細設計書の HTML の組み立てのテスト。
 
@@ -57,6 +57,10 @@ def test_html_links_05_and_06_both_ways() -> None:
     assert 'href="#l-01">詳細 L-01 ↓</a>' in html  # 05 → 06
     assert 'href="#f-01-1">↑ F-01#1</a>' in html  # 06 → 05
     assert '<tr id="f-01-1a" class="branch">' in html
+    # Phase-29-1:追記
+    assert "<th>種別</th>" in html and "<td>同期</td>" in html
+    # Phase-29-3:追記
+    assert 'aria-label="F-01 のシーケンス図"><svg ' in html  # 05 の処理のシーケンス図
 
 
 def test_html_escapes_text_but_embeds_svg_as_is() -> None:

@@ -1,5 +1,6 @@
-# 作成：Phase-21-1
+# 作成：Phase-21-1｜更新：Phase-29-1
 # 写経レベル: コア ── L-ID を保存せず並び順から導き、05↔06 を (モジュール, 関数) の一致で導く。0件の承認が「飛ばす」。
+# Phase-29-1：更新(docstring: 候補は calls_function の行。戻りの行を除く)
 """段階6 処理ロジックの詳細の意味モデルと、05(手順)との紐づけ(純粋関数)。
 
 docs/internal_design.md 3.3節「4. 詳細設計モード」。
@@ -17,6 +18,7 @@ docs/internal_design.md 3.3節「4. 詳細設計モード」。
 - 0件で承認する = 段階6を飛ばす(06章は「省略」になる。Phase 21 の決定)。
 """
 
+# Phase-29-1:追記 ── app.detailed_design.procedure.calls_function(is_external_actor は削除)
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
@@ -24,7 +26,7 @@ from pydantic import BaseModel, Field
 
 from app.detailed_design.procedure import (
     ProcedureModel,
-    is_external_actor,
+    calls_function,
     number_steps,
     step_id,
 )
@@ -104,14 +106,19 @@ def is_drafted(row: LogicRow) -> bool:
 def logic_candidates(procedures: ProcedureModel) -> list[LogicCandidate]:
     """段階5の手順から、段階6で選べる関数を集める(最初に現れた順)。
 
-    対象は、分岐でなく、呼び出し先がモジュール(「/」を含むパス)で、呼ぶ関数が空でない行。"""
+    対象は、モジュールの関数を呼ぶ行(`calls_function`。分岐・戻り・外部の役者は除く)。"""
     found: dict[str, tuple[str, str, list[str]]] = {}
     for procedure in procedures.procedures:
         numbers = number_steps(procedure.steps)
         for step, number in zip(procedure.steps, numbers, strict=True):
-            callee, call = step.callee.strip(), step.call.strip()
-            if step.is_branch or not callee or not call or is_external_actor(callee):
+            # Phase-29-1：更新
+            # callee, call = step.callee.strip(), step.call.strip()
+            # if step.is_branch or not callee or not call or is_external_actor(callee):
+            #     continue
+            # ↓↓
+            if not calls_function(step):
                 continue
+            callee, call = step.callee.strip(), step.call.strip()
             key = logic_key(callee, call)
             entry = found.setdefault(key, (callee, call, []))
             entry[2].append(step_id(procedure.function_id, number))

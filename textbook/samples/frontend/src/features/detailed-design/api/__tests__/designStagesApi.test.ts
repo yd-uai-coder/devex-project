@@ -1,15 +1,17 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6,28-3,28-4
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6,28-3,28-4,29-4
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-16-5:追記 ── ../designStagesApi.generateDesignStage
 // Phase-17-5:追記 ── ../types.MAX_DFD_GROUPS, @/features/detailed-design/test-utils/stageFixtures.makeDataFlow
 // Phase-18-5:追記 ── ../types.ER_SUBJECT, @/features/detailed-design/test-utils/stageFixtures.makeCrud
 // Phase-22-6:追記 ── vitest.vi, ../designStagesApi.downloadDetailedDesign
+// Phase-29-4:追記 ── ../designStagesApi.getProcedureSequence
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   approveDesignStage,
   downloadDetailedDesign,
   generateDesignStage,
   // Phase-28-4:追記
+  getProcedureSequence,
   getUnitContext,
   listDesignStages,
   saveDesignStage,
@@ -159,6 +161,19 @@ describe("designStagesApi", () => {
     expect(read).toEqual(context);
     expect(stub.requests[0].url).toContain(
       "/api/v1/projects/p1/design-stages/units/M-01-T02/context",
+    );
+  });
+
+  // Phase-29-4:追記
+  it("getProcedureSequenceはGET /design-stages/procedures/{function_id}/sequenceを呼ぶ", async () => {
+    const sequence = { function_id: "F-01", svg: "<svg/>", issues: [] };
+    stub.queue({ status: 200, body: sequence });
+
+    const read = await getProcedureSequence("p1", "F-01");
+
+    expect(read).toEqual(sequence);
+    expect(stub.requests[0].url).toContain(
+      "/api/v1/projects/p1/design-stages/procedures/F-01/sequence",
     );
   });
 

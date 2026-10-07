@@ -93,6 +93,7 @@ Phase 24 から引き継いだもの:
 ## 後続 Phase での改訂
 
 - [Phase 27](../Phase-27/Phase-27-introduction.md): [25-4](./Phase-25-4.md) で Phase 27 に入れていた「参照の展開」を Phase 28 へ移した(Phase 27 に使う側が無いため。#17)。Phase 27 は参照の導出と解決・決定的な検証・単位の一覧と未定義の一覧まで。
+- [Phase 29](../Phase-29/Phase-29-introduction.md): [25-5](./Phase-25-5.md) の見本にあった、単位の図でファイル・SUT・スタブの候補を色で示すことはやめた(図の導出と SVG をバックエンドだけに置いたため)。スタブの候補の突き合わせは段階8の検証の軽微な指摘(`STUB_OUTSIDE_SEQUENCE`)にした([29-5](../Phase-29/Phase-29-5.md))。
 
 ## Phase 完了チェック(#22)
 

@@ -160,7 +160,7 @@ Claude の判断で決めたこと(計画の承認で確定):
 
 ## 後続 Phase での改訂
 
-(なし)
+- [Phase 29](../Phase-29/Phase-29-1.md): 段階6の候補(`logic_candidates`)を「関数を呼ぶ行」(`calls_function`)で判定し、段階5の戻りの行を除いた。
 
 ## Phase 完了チェック(#22)
 

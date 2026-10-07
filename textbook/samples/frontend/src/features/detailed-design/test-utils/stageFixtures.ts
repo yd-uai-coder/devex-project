@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
@@ -90,6 +90,8 @@ export function makeStep(patch: Partial<ProcedureStep> = {}): ProcedureStep {
     db: "reservations C",
     branch: "1a へ",
     is_branch: false,
+    // Phase-29-1:追記
+    kind: "call",
     ...patch,
   };
 }

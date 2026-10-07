@@ -1,10 +1,11 @@
-# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2
+# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4
 # 写経レベル: 定型 ── サービスを呼ぶだけの薄いルート。
 # Phase-16-4:追記 ── fastapi.BackgroundTasks, fastapi.status, app.services.design_stage_generation_service.DesignStageGenerationService, app.services.design_stage_generation_service.run_design_stage_generation
 # Phase-20-3:追記 ── app.schemas.design_stage.DesignStageGenerate
 # Phase-22-5:追記 ── fastapi.responses.Response, app.api.responses.content_disposition,
 #   app.services.detailed_design_export_service.DetailedDesignExportService
 # Phase-28-1:追記 ── app.schemas.design_stage.UnitContextRead
+# Phase-29-4:追記 ── app.schemas.design_stage.SequenceRead
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Path, status
@@ -17,6 +18,7 @@ from app.schemas.design_stage import (
     DesignStageGenerate,
     DesignStageRead,
     DesignStageSave,
+    SequenceRead,
     UnitContextRead,
 )
 from app.services.design_stage_generation_service import (
@@ -66,6 +68,16 @@ async def download_detailed_design(
         media_type=bundle.media_type,
         headers={"Content-Disposition": content_disposition(bundle.filename)},
     )
+
+
+# Phase-29-4:追記
+@router.get("/procedures/{function_id}/sequence", response_model=SequenceRead)
+async def get_procedure_sequence(
+    function_id: str, session: SessionDep, current_project: CurrentProjectDep
+) -> SequenceRead:
+    """段階5の処理1つのシーケンス図(保存した手順から導いた SVG と、図にするときの指摘)を返す。
+    段階5が開いていなければ409、段階5で選んでいない処理は404。"""
+    return await DesignStageService(session).procedure_sequence(current_project, function_id)
 
 
 # Phase-28-1:追記

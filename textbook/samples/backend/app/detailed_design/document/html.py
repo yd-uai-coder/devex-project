@@ -1,6 +1,7 @@
-# 作成：Phase-22-4｜更新：Phase-23-2,26-3
+# 作成：Phase-22-4｜更新：Phase-23-2,26-3,29-1,29-3
 # 写経レベル: 定型 ── CSS とスクリプトと表の書き出しが大半。SVG だけエスケープしない判断と、アンカーの規則がコア。
 # Phase-23-2：更新(docstring: 実装計画の HTML を別にすること)
+# Phase-29-3：更新(docstring: 05 のシーケンス図の SVG もそのまま埋め込むこと)
 """詳細設計書の HTML を組み立てる(純粋関数)。
 
 docs/external_design.md 2.7節「詳細設計書の出力」。HTML は読むための形で、次の性質を持つ:
@@ -12,14 +13,17 @@ docs/external_design.md 2.7節「詳細設計書の出力」。HTML は読むた
   `js`のクラスを付けたときだけ)。
 
 文字はすべて`html.escape`で書く。例外は図の SVG だけで、これはそのまま埋め込む。SVG は自前の
-出力エンジン(app/uml/export/svg.py)が書いたもので、要素の名前などの文字はエンジンの中で
-エスケープ済みのため(ここでもう一度エスケープすると、図ではなく SVG の文字列が表示される)。
+出力エンジン(app/uml/export/svg.py、05 のシーケンス図は app/detailed_design/sequence_svg.py)が
+書いたもので、要素の名前などの文字はエンジンの中でエスケープ済みのため(ここでもう一度エスケープ
+すると、図ではなく SVG の文字列が表示される)。
 
 段階7の実装計画は、別の HTML(`to_plan_html`)にする(Phase 23)。CSS は詳細設計書と同じものを使う。
 """
 
 # Phase-23-2:追記 ── app.detailed_design.document.views.function_plans, app.detailed_design.plan(PLAN_STAGE, Milestone, milestone_id)
 # Phase-26-3:追記 ── app.detailed_design.document.views(UNIT_HEADERS, UNIT_KIND_LABELS), app.detailed_design.plan(milestone_functions, task_id)
+# Phase-29-1:追記 ── app.detailed_design.document.views.step_kind_label
+# Phase-29-3:追記 ── app.detailed_design.document.views.procedure_sequence, app.detailed_design.sequence.SequenceDiagram, app.detailed_design.sequence_svg.to_sequence_svg
 from collections.abc import Sequence
 from html import escape
 
@@ -43,7 +47,9 @@ from app.detailed_design.document.views import (
     logic_ids,
     logic_views,
     main_step_count,
+    procedure_sequence,
     procedure_steps,
+    step_kind_label,
 )
 from app.detailed_design.plan import (
     PLAN_STAGE,
@@ -53,6 +59,8 @@ from app.detailed_design.plan import (
     task_id,
 )
 from app.detailed_design.procedure import step_id
+from app.detailed_design.sequence import SequenceDiagram
+from app.detailed_design.sequence_svg import to_sequence_svg
 
 UNAPPROVED_TEXT = (
     "未承認 ── 段階{stage}が承認されていません。承認すると、この章が組み立てられます。"
@@ -484,6 +492,8 @@ def _procedures(source: DocumentSource) -> str:
             [
                 e(s.number),
                 "" if s.step.is_branch else f"{e(s.step.caller)} → {mono(s.step.callee)}",
+                # Phase-29-1:追記
+                e(step_kind_label(s.step)),
                 mono(s.step.call)
                 + (f" {badge(s.logic_id, f'詳細 {s.logic_id} ↓')}" if s.logic_id else ""),
                 e(s.step.data),
@@ -508,6 +518,8 @@ def _procedures(source: DocumentSource) -> str:
                     [
                         "No",
                         "呼び出し元 → 呼び出し先",
+                        # Phase-29-1:追記
+                        "種別",
                         "関数",
                         "渡すデータ",
                         "処理内容",
@@ -519,10 +531,26 @@ def _procedures(source: DocumentSource) -> str:
                     label=f"{p.function_id} の手順",
                     row_attrs=attrs,
                 )
-                + note,
+                # Phase-29-3：更新
+                # + note,
+                # ↓↓
+                + note
+                + _sequence_figure(p.function_id, procedure_sequence(p, source.modules)),
             )
         )
     return "".join(parts)
+
+
+# Phase-29-3:追記
+def _sequence_figure(function_id: str, diagram: SequenceDiagram) -> str:
+    """05 の処理のシーケンス図(手順の表から導いた SVG。参加者が無ければ出さない)。"""
+    if not diagram.participants:
+        return ""
+    return (
+        '<p class="muted">シーケンス図(手順の表から導いた図。直すのは表)</p>'
+        f'<div class="figure" role="img" aria-label="{e(function_id)} のシーケンス図">'
+        f"{to_sequence_svg(diagram)}</div>"
+    )
 
 
 def _logics(source: DocumentSource) -> str:

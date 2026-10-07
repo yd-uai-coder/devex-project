@@ -1,14 +1,16 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3,28-4
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3,28-4,29-1
 // 写経レベル: コア ── 状態の言葉と、承認できる条件(古い段階は承認し直せる)。
 // Phase-18-9:追記 ── @/features/detailed-design/api/types.StageIssue
 // Phase-26-5:追記 ── UnitKind
 // Phase-27-3:追記 ── FindingLevel
+// Phase-29-1:追記 ── StepKind
 import type {
   DesignStageRead,
   FindingLevel,
   StageIssue,
   StageState,
   // Phase-28-4:追記
+  StepKind,
   UnitFileKind,
   UnitKind,
 } from "@/features/detailed-design/api/types";
@@ -38,6 +40,14 @@ export const STATE_LABELS: Record<StageState, string> = {
   reviewing: "レビュー中",
   approved: "承認済み",
   outdated: "古い",
+};
+
+// Phase-29-1:追記
+// 段階5の手順の行の種別(devex-api の詳細設計書の 05 の表と同じ)
+export const STEP_KIND_LABELS: Record<StepKind, string> = {
+  call: "同期",
+  async: "非同期",
+  return: "戻り",
 };
 
 // Phase-26-5:追記

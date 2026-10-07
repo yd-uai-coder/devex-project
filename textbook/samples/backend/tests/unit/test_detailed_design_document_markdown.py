@@ -1,21 +1,24 @@
-# 作成：Phase-22-3｜更新：Phase-23-2
+# 作成：Phase-22-3｜更新：Phase-23-2,29-1,29-3
+# Phase-29-3：更新(docstring: SUT に sequence_block)
 # 写経レベル: 定型 ── 章の並び・画像の参照・リンクを持たないこと・未承認と省略の書き方を確かめる。
 """詳細設計書の md の組み立てのテスト。
 
-SUT: to_markdown / md_cell / md_table(app/detailed_design/document/markdown.py)
+SUT: to_markdown / md_cell / md_table / sequence_block(app/detailed_design/document/markdown.py)
 ドライバ: 各テスト関数
 スタブ不要 ── 純粋関数(副作用なし)で、外部依存を呼ばないため。図は描画済みの値
 (`RenderedDiagram`)を fixture の`sample_document_source`で渡す(描画はサービス層の責務)。
 """
 
+# Phase-29-3:追記 ── app.detailed_design(Procedure, to_sequence), app.detailed_design.document.markdown.sequence_block
 from tests.fixtures.detailed_design import (
     ALL_APPROVED,
     document_stage_models,
     sample_document_source,
 )
 
+from app.detailed_design import Procedure, to_sequence
 from app.detailed_design.document import to_markdown
-from app.detailed_design.document.markdown import md_cell, md_table
+from app.detailed_design.document.markdown import md_cell, md_table, sequence_block
 
 
 def test_md_cell_keeps_table_shape() -> None:
@@ -49,10 +52,22 @@ def test_markdown_embeds_diagrams_as_relative_images() -> None:
     assert "![コンポーネント図(全体)](diagrams/component.svg)" in text
 
 
+# Phase-29-3:追記
+def test_markdown_puts_mermaid_sequence_after_each_procedure_table() -> None:
+    text = to_markdown(sample_document_source())
+
+    assert "```mermaid\nsequenceDiagram\n  participant P1 as 利用者" in text
+    assert "  P1->>P2: 1: create_reservation(予約リクエスト)" in text
+    assert text.index("```mermaid") < text.index("## 06 ")
+    assert sequence_block(to_sequence(Procedure(function_id="F-01"))) == []
+
+
 def test_markdown_writes_ids_in_text_without_links_or_html() -> None:
     text = to_markdown(sample_document_source())
 
     assert "create_reservation → 詳細: L-01" in text
+    # Phase-29-1:追記
+    assert "| 1 | 利用者 → app/api/routes/reservations.py | 同期 |" in text  # 種別の列
     assert "呼ばれる手順: F-01#1" in text
     assert "| 予約 | id, starts_at | F-01 |" in text  # データ辞書の使う処理
     assert "C+" in text  # DFD の書き込みの線から決まる C

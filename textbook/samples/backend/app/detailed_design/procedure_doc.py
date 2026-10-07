@@ -1,4 +1,4 @@
-# 作成：Phase-27-1,27-2｜更新：Phase-28-1,28-2
+# 作成：Phase-27-1,27-2｜更新：Phase-28-1,28-2,29-1
 """段階8 実装手順書の意味モデルと、単位が参照する設計の導出(純粋関数)。
 
 docs/internal_design.md 3.3節「5. 実装手順書」。
@@ -18,6 +18,7 @@ docs/internal_design.md 3.3節「5. 実装手順書」。
 
 # Phase-27-2:追記 ── dataclasses.field, app.detailed_design.data_model(DATA_MODEL_STAGE, CrudModel), app.detailed_design.logic(LOGIC_STAGE, LogicModel, is_drafted, logic_key), app.detailed_design.procedure(PROCEDURE_STAGE, Procedure, ProcedureModel, is_external_actor, number_steps, step_id), app.detailed_design.structure(STRUCTURE_STAGE, ModuleListModel)
 # Phase-28-2:追記 ── collections.abc.Sequence
+# Phase-29-1:追記 ── app.detailed_design.procedure.calls_function(is_external_actor は削除。unit_refs の docstring も更新)
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
@@ -31,7 +32,7 @@ from app.detailed_design.procedure import (
     PROCEDURE_STAGE,
     Procedure,
     ProcedureModel,
-    is_external_actor,
+    calls_function,
     number_steps,
     step_id,
 )
@@ -212,8 +213,8 @@ def design_index(stages: Mapping[int, Mapping[str, Any]]) -> DesignIndex:
 def unit_refs(task: PlanTask, index: DesignIndex) -> list[DesignRef]:
     """単位が参照する設計を導く(段階5の手順 → 手順が呼ぶ段階6の関数 → 段階4のモジュールの順)。
 
-    段階6の関数は、単位の処理の手順のうち、分岐でなく、呼び出し先がモジュールで、呼ぶ関数が空でない
-    行から導く(段階6の候補と同じ規則)。同じ関数は1つにまとめる。"""
+    段階6の関数は、単位の処理の手順のうち、モジュールの関数を呼ぶ行(`calls_function`)から導く
+    (段階6の候補と同じ規則)。同じ関数は1つにまとめる。"""
     refs: list[DesignRef] = []
     logics: dict[str, DesignRef] = {}
     for function_id in _clean(task.function_ids):
@@ -223,10 +224,15 @@ def unit_refs(task: PlanTask, index: DesignIndex) -> list[DesignRef]:
             continue
         numbers = number_steps(procedure.steps)
         for step, number in zip(procedure.steps, numbers, strict=True):
-            callee, call = step.callee.strip(), step.call.strip()
-            if step.is_branch or not callee or not call or is_external_actor(callee):
+            # Phase-29-1：更新
+            # callee, call = step.callee.strip(), step.call.strip()
+            # if step.is_branch or not callee or not call or is_external_actor(callee):
+            #     continue
+            # key = logic_key(callee, call)
+            # ↓↓
+            if not calls_function(step):
                 continue
-            key = logic_key(callee, call)
+            key = logic_key(step.callee.strip(), step.call.strip())
             if key not in logics:
                 via = step_id(function_id, number)
                 logics[key] = DesignRef("logic", key, key in index.logic_keys, via)

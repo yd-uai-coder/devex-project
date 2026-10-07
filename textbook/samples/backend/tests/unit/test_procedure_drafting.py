@@ -1,4 +1,4 @@
-# 作成：Phase-20-2
+# 作成：Phase-20-2｜更新：Phase-29-1
 # 写経レベル: 定型 ── プロンプトに渡す範囲と、E2E 用の固定の出力が検証を通ることを確かめる。
 """段階5の下書きの入出力(プロンプト・出力スキーマ・手順への変換)のテスト。
 
@@ -125,3 +125,25 @@ def test_e2e_fake_output_passes_stage5_validation_with_fake_module_list():
     modules = {"modules": [m.model_dump() for m in fake_modules.modules]}
     sources = StageSources(stages={1: function_list_model(), 4: modules})
     assert validate_stage(5, model.model_dump(), sources) == []
+
+
+# Phase-29-1:追記
+def test_kind_is_passed_to_draft_and_defaults_to_call():
+    back = GeneratedStep(
+        caller="routes/reservations",
+        callee="利用者",
+        call="",
+        data="予約",
+        action="返す",
+        result="",
+        db="—",
+        branch="—",
+        is_branch=False,
+        kind="return",
+    )
+    plain = back.model_copy(update={"kind": "call"})
+    output = ProcedureGenerationOutput(reason="r", note="", steps=[back, plain])
+
+    assert [s.kind for s in to_procedure_draft(output).steps] == ["return", "call"]
+    assert "kind は呼び出しなら call" in PROCEDURE_SYSTEM_PROMPT
+    assert GeneratedStep.model_fields["kind"].default == "call"

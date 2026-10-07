@@ -1,9 +1,10 @@
-// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正。保存バー・タブの保持)
+// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正。保存バー・タブの保持),29-4
 // 写経レベル: コア ── 生成は保存した選択から、まとめて(手順の無い処理)とタブごと(1処理)の2通り。
 "use client";
 
 // Phase-21-7:追記(画面確認後の修正) ── @/features/detailed-design/components/StageSaveBar.StageSaveBar
 // Phase-21-8:追記 ── @/features/detailed-design/logicOps(logicIdsByKey, toLogics)
+// Phase-29-4:追記 ── @/features/detailed-design/components/ProcedureSequenceView.ProcedureSequenceView
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -13,6 +14,7 @@ import {
   type DesignStageRead,
   type ProcedureModel,
 } from "@/features/detailed-design/api/types";
+import { ProcedureSequenceView } from "@/features/detailed-design/components/ProcedureSequenceView";
 import { ProcedureStepTable } from "@/features/detailed-design/components/ProcedureStepTable";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
@@ -44,6 +46,8 @@ const UNSELECT_CONFIRM = "この処理の手順は、保存すると失われま
 // 編集中の内容はこのコンポーネントの中だけに持ち、保存して初めてサーバーへ送る(段階2の DataFlowPanel
 // と同じ形)。生成は保存した内容を使うので、保存していない編集がある間は押せない(Phase 20)。
 // Phase-21-8:追記
+// Phase-29-4:追記
+// 処理のタブの表の下には、保存した手順から導いたシーケンス図(ProcedureSequenceView)を出す。
 // 段階6に詳細がある手順には「詳細 L-02」のバッジを出し、押すと段階6のその関数へ移る(保存していない
 // 編集があれば確かめる)。段階6の「呼ばれる手順」から移ってきたときは、その処理のタブを開いて手順の行を
 // 強調する(Phase 21)。
@@ -356,6 +360,15 @@ export function ProcedurePanel({
             onDetailPress={goToDetail}
             highlightedStep={highlighted}
           />
+          {/* Phase-29-4:追記 */}
+          {savedCurrent && savedCurrent.steps.length > 0 ? (
+            <ProcedureSequenceView
+              projectId={projectId}
+              functionId={savedCurrent.function_id}
+              version={stage.version}
+              dirty={dirty}
+            />
+          ) : null}
         </YStack>
       ) : (
         <Text color="$color11">手順を書く処理はまだ選ばれていません。</Text>

@@ -1,4 +1,4 @@
-# 作成：Phase-22-2｜更新：Phase-23-2,26-3
+# 作成：Phase-22-2｜更新：Phase-23-2,26-3,29-1,29-3
 # 写経レベル: コア ── 05↔06・関与表・CRUD の記号を、保存せず画面と同じ規則で導く。
 # Phase-23-2：更新(docstring: 実装計画の処理の割り当て)
 # Phase-26-3：更新(docstring: 処理の割り当てを単位の ID にした)
@@ -20,6 +20,8 @@ md と HTML は同じ表を出すので、表の中身はここで1回だけ導�
 
 # Phase-23-2:追記 ── app.detailed_design.plan(PlanModel, milestone_id)
 # Phase-26-3:追記 ── app.detailed_design.plan(task_id。milestone_id は使わなくなった)
+# Phase-29-1:追記 ── app.detailed_design.procedure.calls_function
+# Phase-29-3:追記 ── app.detailed_design.sequence(SequenceDiagram, module_dependencies, to_sequence)
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -32,10 +34,12 @@ from app.detailed_design.procedure import (
     Procedure,
     ProcedureModel,
     ProcedureStep,
+    calls_function,
     is_external_actor,
     number_steps,
     step_id,
 )
+from app.detailed_design.sequence import SequenceDiagram, module_dependencies, to_sequence
 from app.detailed_design.structure import ModuleListModel
 from app.uml.domain.er import ErSemanticModel
 
@@ -84,16 +88,38 @@ def logic_ids(logics: LogicModel | None) -> dict[str, str]:
     return {logic_key(row.module, row.function): logic_id(i) for i, row in enumerate(logics.logics)}
 
 
+# Phase-29-1:追記
+# 手順の行の種別の表示名(05 の表の「種別」の列)
+STEP_KIND_LABELS: dict[str, str] = {"call": "同期", "async": "非同期", "return": "戻り"}
+
+
+def step_kind_label(step: ProcedureStep) -> str:
+    """05 の表の「種別」の列の値(分岐の行は呼び出しでないので空)。"""
+    return "" if step.is_branch else STEP_KIND_LABELS[step.kind]
+
+
 def procedure_steps(procedure: Procedure, ids: Mapping[str, str]) -> list[StepView]:
-    """1つの処理の手順の表の行(番号・手順ID・06 の L-ID つき)。分岐の行は関数を呼ばない。"""
+    # Phase-29-1：更新
+    # """1つの処理の手順の表の行(番号・手順ID・06 の L-ID つき)。分岐の行は関数を呼ばない。"""
+    # ↓↓
+    """1つの処理の手順の表の行(番号・手順ID・06 の L-ID つき)。分岐・戻りの行は関数を呼ばない。"""
     numbers = number_steps(procedure.steps)
     rows: list[StepView] = []
     for step, number in zip(procedure.steps, numbers, strict=True):
         linked = None
-        if not step.is_branch and step.call.strip():
+        # Phase-29-1：更新
+        # if not step.is_branch and step.call.strip():
+        # ↓↓
+        if calls_function(step):
             linked = ids.get(logic_key(step.callee, step.call))
         rows.append(StepView(number, step_id(procedure.function_id, number), step, linked))
     return rows
+
+
+# Phase-29-3:追記
+def procedure_sequence(procedure: Procedure, modules: ModuleListModel | None) -> SequenceDiagram:
+    """05 に載せる、1つの処理のシーケンス図のモデル(依存先は承認済みの段階4から)。"""
+    return to_sequence(procedure, module_dependencies(modules))
 
 
 def linked_logic_ids(steps: Iterable[StepView]) -> list[str]:
@@ -130,7 +156,10 @@ class Involvement:
 
 
 def involvement(procedures: ProcedureModel, modules: ModuleListModel | None) -> Involvement:
-    """関与表を導く。列はモジュール一覧の並び(呼ばれたものだけ)。外部の役者と分岐の行は除く。"""
+    # Phase-29-1：更新
+    # """関与表を導く。列はモジュール一覧の並び(呼ばれたものだけ)。外部の役者と分岐の行は除く。"""
+    # ↓↓
+    """関与表を導く。列はモジュール一覧の並び(呼ばれたものだけ)。外部の役者と分岐・戻りの行は除く。"""
     cells: dict[str, dict[str, list[str]]] = {}
     called: list[str] = []
     for procedure in procedures.procedures:
@@ -138,7 +167,10 @@ def involvement(procedures: ProcedureModel, modules: ModuleListModel | None) -> 
         numbers = number_steps(procedure.steps)
         for step, number in zip(procedure.steps, numbers, strict=True):
             callee = step.callee.strip()
-            if step.is_branch or not callee or is_external_actor(callee):
+            # Phase-29-1：更新
+            # if step.is_branch or not callee or is_external_actor(callee):
+            # ↓↓
+            if step.is_branch or step.kind == "return" or not callee or is_external_actor(callee):
                 continue
             row.setdefault(callee, []).append(number)
             if callee not in called:

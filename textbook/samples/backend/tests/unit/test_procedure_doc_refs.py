@@ -1,4 +1,4 @@
-# 作成：Phase-28-1
+# 作成：Phase-28-1｜更新：Phase-29-5
 """段階8 単位が参照する設計の展開(純粋関数)のテスト。
 
 SUT は`app/detailed_design/procedure_doc_refs.py`の純粋関数(と`procedure_doc.find_unit`)、
@@ -6,10 +6,11 @@ SUT は`app/detailed_design/procedure_doc_refs.py`の純粋関数(と`procedure_
 スタブ不要 ── 対象は入力の段階の内容(辞書)だけから決まり、DB や LLM を呼ばないため。
 """
 
+# Phase-29-5:追記 ── app.detailed_design.to_sequence, app.detailed_design.document.markdown.sequence_block
 from tests.fixtures.detailed_design import document_stage_models
 
-from app.detailed_design import PlanModel, ProcedureModel, find_unit
-from app.detailed_design.document.markdown import logic_spec, procedure_table
+from app.detailed_design import PlanModel, ProcedureModel, find_unit, to_sequence
+from app.detailed_design.document.markdown import logic_spec, procedure_table, sequence_block
 from app.detailed_design.logic import LogicModel
 from app.detailed_design.procedure_doc_refs import (
     crosscutting_section,
@@ -64,6 +65,22 @@ def test_procedure_and_logic_use_document_tables() -> None:
     assert "呼ばれる手順: F-01#1" in logic_md
     assert logic_md.endswith("\n".join(logic_spec(logic)))
     assert module_md == "- 段階4 `app/api/routes/reservations.py`(api): 予約の API / 依存先: なし"
+
+
+# Phase-29-5:追記
+def test_procedure_ref_has_sequence_as_mermaid_and_svg() -> None:
+    """手順の参照には、05 と同じシーケンス図(md は Mermaid、画面には SVG)を添える。"""
+    stages = document_stage_models()
+    procedure = ProcedureModel.model_validate(stages[5]).procedures[0]
+
+    procedure_ref, logic_ref, module_ref = unit_context(_unit(stages), stages).refs
+
+    assert procedure_ref.markdown is not None
+    assert procedure_ref.markdown.endswith(
+        "\n".join(["", *sequence_block(to_sequence(procedure))])
+    )
+    assert procedure_ref.svg is not None and procedure_ref.svg.startswith("<svg ")
+    assert (logic_ref.svg, module_ref.svg) == (None, None)
 
 
 def test_unresolved_refs_are_not_expanded() -> None:

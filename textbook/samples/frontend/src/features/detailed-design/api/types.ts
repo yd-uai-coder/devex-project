@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -153,6 +153,10 @@ export type ModuleListModel = {
 export const STRUCTURE_SUBJECT = "";
 
 // Phase-20-4:追記
+// Phase-29-1:追記
+// 手順の行の種別。call = 同期の呼び出し、async = 非同期の呼び出し(戻りを待たない)、return = 戻り
+export type StepKind = "call" | "async" | "return";
+
 // 段階5 主要処理の手順の意味モデル(devex-api app/detailed_design/procedure.py)。人が選んだ処理ごとに
 // 手順の表を持つ(Phase 20)。手順番号は保存せず、並び順と is_branch から導く(procedureOps の
 // numberSteps)。06(段階6)との紐づけは持たず、(callee, call) と段階6の (モジュール, 関数) の一致から導く。
@@ -166,6 +170,8 @@ export type ProcedureStep = {
   db: string; // DB 操作(「reservations C」など)
   branch: string; // 分岐・例外。分岐の行はその結果
   is_branch: boolean; // 分岐の行(元の手順の直後に置く)
+  // Phase-29-1:追記
+  kind: StepKind; // 行の種別(シーケンス図の矢印)。種別の無い既存の行は call として読む。分岐の行は使わない
 };
 
 export type Procedure = {
@@ -322,9 +328,24 @@ export const FINDING_LEVELS: FindingLevel[] = ["critical", "major", "minor"];
 export const MAX_PROCEDURE_DOC_TARGETS = 5;
 
 // Phase-28-4:追記
+// Phase-29-4:追記
+// シーケンス図にするときの指摘1つ(devex-api app/detailed_design/sequence.py の SequenceIssue)。
+// 段階5の検証の警告と同じ(RETURN_AS_CALL・NESTING_UNKNOWN・MISSING_BRANCH_TARGET など)。
+export type SequenceIssueRead = { step_id: string; code: string; message: string };
+
+// 段階5の処理1つのシーケンス図(保存した手順から devex-api が導いた SVG と、図にするときの指摘)。
+export type SequenceRead = {
+  function_id: string;
+  svg: string;
+  issues: SequenceIssueRead[];
+};
+
 // 段階8の単位が参照する設計1つ(devex-api app/schemas/design_stage.py の DesignRefRead)。
 // procedure = 段階5の手順、logic = 段階6の関数、module = 段階4のモジュール。markdown は設計の
-// 該当箇所を展開した md(設計に無い参照は null)。
+// Phase-29-5：更新
+// // 該当箇所を展開した md(設計に無い参照は null)。
+// ↓↓
+// 該当箇所を展開した md(設計に無い参照は null)。svg は段階5の手順のシーケンス図(手順の参照だけ)。
 export type DesignRefRead = {
   kind: "procedure" | "logic" | "module";
   key: string;
@@ -332,6 +353,8 @@ export type DesignRefRead = {
   via: string | null;
   label: string;
   markdown: string | null;
+  // Phase-29-5:追記
+  svg: string | null;
 };
 
 // 段階8の単位1つの、手順書を読むための材料(参照の展開と、段階7の 07章・開発環境の md)。

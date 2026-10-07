@@ -1,4 +1,4 @@
-# 作成：Phase-21-1
+# 作成：Phase-21-1｜更新：Phase-29-1
 # 写経レベル: コア ── 候補・呼ばれる手順・置き換え・段階6の検証(0件を通す)の振る舞いを確かめる。
 """段階6 処理ロジックの詳細の組み立てと検証のテスト。
 
@@ -128,6 +128,20 @@ def test_logic_candidates_skip_branch_external_actor_and_empty_call():
     functions = {c.function for c in logic_candidates(_procedures())}
     assert "respond" not in functions  # 呼び出し先が外部の役者
     assert "" not in functions  # 関数が空
+
+
+# Phase-29-1:追記
+def test_logic_candidates_skip_return_rows():
+    # 戻りの行は関数を呼ばない(関数の欄が書かれていても候補にしない)
+    procedures = ProcedureModel(
+        procedures=[
+            Procedure(
+                function_id="F-01",
+                steps=[ProcedureStep(caller=SERVICE, callee=ROUTE, call="back", kind="return")],
+            )
+        ]
+    )
+    assert logic_candidates(procedures) == []
 
 
 def test_calling_steps_returns_step_ids_or_empty():

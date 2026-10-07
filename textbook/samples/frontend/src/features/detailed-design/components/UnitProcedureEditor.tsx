@@ -1,6 +1,7 @@
-// 作成：Phase-28-4
+// 作成：Phase-28-4｜更新：Phase-29-5
 "use client";
 
+// Phase-29-5:追記 ── @/features/detailed-design/components/ProcedureSequenceView.SequenceSvg
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
@@ -11,6 +12,7 @@ import {
   type ProcedureDocModel,
   type UnitContextRead,
 } from "@/features/detailed-design/api/types";
+import { SequenceSvg } from "@/features/detailed-design/components/ProcedureSequenceView";
 import {
   BADGE,
   CELL,
@@ -75,7 +77,11 @@ function LinesInput({
   );
 }
 
-// 参照する設計のバッジ。押すと展開した md を出す。設計に無い参照は赤で、押せない。
+// Phase-29-5：更新
+// // 参照する設計のバッジ。押すと展開した md を出す。設計に無い参照は赤で、押せない。
+// ↓↓
+// 参照する設計のバッジ。押すと展開した md を出す(段階5の手順は、シーケンス図の SVG を md の上に出す)。
+// 設計に無い参照は赤で、押せない。
 function UnitRefs({ projectId, unitId }: { projectId: string; unitId: string }) {
   const [state, setState] = useState<ContextState>({ status: "loading" });
   const [open, setOpen] = useState<string | null>(null);
@@ -107,9 +113,23 @@ function UnitRefs({ projectId, unitId }: { projectId: string; unitId: string }) 
 
   const { context } = state;
   const sections = [
-    ...context.refs.map((ref) => ({ id: `${ref.kind}:${ref.key}`, label: ref.label, md: ref.markdown })),
-    ...(context.crosscutting ? [{ id: "crosscutting", label: "07章 横断事項", md: context.crosscutting }] : []),
-    ...(context.environment ? [{ id: "environment", label: "段階7 開発環境", md: context.environment }] : []),
+    // Phase-29-5：更新
+    // ...context.refs.map((ref) => ({ id: `${ref.kind}:${ref.key}`, label: ref.label, md: ref.markdown })),
+    // ...(context.crosscutting ? [{ id: "crosscutting", label: "07章 横断事項", md: context.crosscutting }] : []),
+    // ...(context.environment ? [{ id: "environment", label: "段階7 開発環境", md: context.environment }] : []),
+    // ↓↓
+    ...context.refs.map((ref) => ({
+      id: `${ref.kind}:${ref.key}`,
+      label: ref.label,
+      md: ref.markdown,
+      svg: ref.svg,
+    })),
+    ...(context.crosscutting
+      ? [{ id: "crosscutting", label: "07章 横断事項", md: context.crosscutting, svg: null }]
+      : []),
+    ...(context.environment
+      ? [{ id: "environment", label: "段階7 開発環境", md: context.environment, svg: null }]
+      : []),
   ];
   const expanded = sections.find((section) => section.id === open && section.md !== null);
 
@@ -139,6 +159,10 @@ function UnitRefs({ projectId, unitId }: { projectId: string; unitId: string }) 
           ),
         )}
       </XStack>
+      {/* Phase-29-5:追記 */}
+      {expanded?.svg ? (
+        <SequenceSvg svg={expanded.svg} label={`${expanded.label} のシーケンス図`} />
+      ) : null}
       {expanded ? (
         <pre
           aria-label={`${expanded.label} の展開`}

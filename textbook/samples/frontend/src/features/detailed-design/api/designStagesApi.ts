@@ -1,13 +1,14 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3,28-3,28-4
+// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3,28-3,28-4,29-4
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-21-4:追記 ── ./types.LogicTarget
 // Phase-22-6:追記 ── @/lib/api/download(fetchAttachment, parseFilename)
+// Phase-29-4:追記 ── ./types.SequenceRead
 import { apiFetch } from "@/lib/api/client";
 import { fetchAttachment, parseFilename } from "@/lib/api/download";
 // Phase-28-4：更新
 // import type { DesignStageRead, LogicTarget } from "./types";
 // ↓↓
-import type { DesignStageRead, LogicTarget, UnitContextRead } from "./types";
+import type { DesignStageRead, LogicTarget, SequenceRead, UnitContextRead } from "./types";
 
 const base = (projectId: string) =>
   `/api/v1/projects/${projectId}/design-stages`;
@@ -88,6 +89,15 @@ export function generateDesignStage(
 }
 
 // Phase-28-4:追記
+// Phase-29-4:追記
+// 段階5の処理1つのシーケンス図(保存した手順から導く。図は保存しない)。段階5が開いていなければ409、
+// 段階5で選んでいない処理は404。
+export function getProcedureSequence(projectId: string, functionId: string): Promise<SequenceRead> {
+  return apiFetch<SequenceRead>(
+    `${base(projectId)}/procedures/${encodeURIComponent(functionId)}/sequence`,
+  );
+}
+
 // 段階8の単位1つが参照する設計の展開(承認済みの段階1〜7から毎回導く)。段階8が開いていなければ409。
 export function getUnitContext(projectId: string, unitId: string): Promise<UnitContextRead> {
   return apiFetch<UnitContextRead>(

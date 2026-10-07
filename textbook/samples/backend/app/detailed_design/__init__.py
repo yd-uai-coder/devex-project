@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2,29-1,29-2
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -16,6 +16,8 @@
 # Phase-27-2:追記 ── app.detailed_design.procedure_doc(DesignIndex, DesignRef, design_index, unit_refs)
 # Phase-28-1:追記 ── app.detailed_design.procedure_doc.find_unit
 # Phase-28-2:追記 ── app.detailed_design.procedure_doc(MAX_PROCEDURE_DOC_TARGETS, documented_unit_ids, merge_unit_procedure)
+# Phase-29-1:追記 ── app.detailed_design.procedure.StepKind, app.detailed_design.procedure.calls_function
+# Phase-29-2:追記 ── app.detailed_design.sequence(Participant, SequenceDiagram, SequenceIssue, SequenceMessage, SequenceNote, module_dependencies, reachable_callees, stubs_outside_sequence, sut_participant, to_mermaid, to_sequence)
 from app.detailed_design.api_list import (
     ApiEndpoint,
     endpoint_key,
@@ -101,6 +103,8 @@ from app.detailed_design.procedure import (
     ProcedureDraft,
     ProcedureModel,
     ProcedureStep,
+    StepKind,
+    calls_function,
     generation_targets,
     is_external_actor,
     merge_procedure,
@@ -128,6 +132,19 @@ from app.detailed_design.procedure_doc import (
     merge_unit_procedure,
     plan_units,
     unit_refs,
+)
+from app.detailed_design.sequence import (
+    Participant,
+    SequenceDiagram,
+    SequenceIssue,
+    SequenceMessage,
+    SequenceNote,
+    module_dependencies,
+    reachable_callees,
+    stubs_outside_sequence,
+    sut_participant,
+    to_mermaid,
+    to_sequence,
 )
 from app.detailed_design.stages import (
     STAGE_INPUTS,
@@ -375,4 +392,19 @@ __all__ = [
     "DesignRef",
     "design_index",
     "unit_refs",
+    # Phase-29-1:追記
+    "StepKind",
+    "calls_function",
+    # Phase-29-2:追記
+    "Participant",
+    "SequenceDiagram",
+    "SequenceIssue",
+    "SequenceMessage",
+    "SequenceNote",
+    "module_dependencies",
+    "reachable_callees",
+    "stubs_outside_sequence",
+    "sut_participant",
+    "to_mermaid",
+    "to_sequence",
 ]

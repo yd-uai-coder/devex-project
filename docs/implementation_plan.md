@@ -86,7 +86,7 @@
   * Phase 26: 段階7の改修(縦割りの単位・ID・依存・ファイルの欄の分離と検証・プロンプト・作業領域・実装計画の出力・既存データの扱い・段階7の入力の大きさの計測) ── **完了**([`textbook/Phase-26/Phase-26-introduction.md`](../textbook/Phase-26/Phase-26-introduction.md))
   * Phase 27: 段階8の土台と決定的な実装可能性チェック(段階8・参照の導出と解決・検証・SCR-008 の単位の一覧と未定義の一覧) ── **完了**([`textbook/Phase-27/Phase-27-introduction.md`](../textbook/Phase-27/Phase-27-introduction.md))
   * Phase 28: 手順書の生成(参照の展開・単位ごとの AI の下書き・AI の指摘・単位の詳細の表示と編集・最重要が残るときの承認前の確認) ── **完了**([`textbook/Phase-28/Phase-28-introduction.md`](../textbook/Phase-28/Phase-28-introduction.md))
-  * Phase 29: シーケンス図(段階5の行の種別・導出・05章と手順書への表示・スタブの候補の突き合わせ)
+  * Phase 29: シーケンス図(段階5の行の種別・導出・05章と手順書への表示・スタブの候補の突き合わせ) ── **完了**([`textbook/Phase-29/Phase-29-introduction.md`](../textbook/Phase-29/Phase-29-introduction.md))
   * Phase 30: 手順書の出力(zip の`implementation_procedure/`・AI 向けの版・画面のコピー)
   * Phase 31: 簡易ドキュメントモードの手順書(実装計画書の WBS の縦割り・簡易モードの段階8)
   * Phase 32: 統合/E2E・デプロイでの確認(偽LLMの段階8・全 E2E・マイグレーション・本番反映の手順)

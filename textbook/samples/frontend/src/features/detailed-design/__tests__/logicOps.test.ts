@@ -1,4 +1,4 @@
-// 作成：Phase-21-5｜更新：Phase-21-5(画面確認後の修正)
+// 作成：Phase-21-5｜更新：Phase-21-5(画面確認後の修正),29-1
 // 写経レベル: コア ── 候補のまとめ方・逆引き・L-ID の引き当てが純粋関数で確かめられること。
 // Phase-21-5:追記(画面確認後の修正) ── ../logicOps(candidatesByProcedure, isCalledFrom, logicStatus, pendingInTab, selectAll)
 import { describe, expect, it } from "vitest";
@@ -121,6 +121,16 @@ describe("logicOps", () => {
       "F-02#2",
     ]);
     expect(callingSteps(procedures(), SERVICE, "missing")).toEqual([]);
+  });
+
+  // Phase-29-1:追記
+  it("logicCandidatesは戻りの行を除く", () => {
+    const procedures: ProcedureModel = {
+      procedures: [
+        { function_id: "F-01", reason: "", note: "", steps: [makeStep({ kind: "return" })] },
+      ],
+    };
+    expect(logicCandidates(procedures)).toEqual([]);
   });
 
   it("logicIdsByKeyは並び順の L-ID を引く", () => {
