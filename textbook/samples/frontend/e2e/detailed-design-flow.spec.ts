@@ -1,7 +1,11 @@
-// 作成：Phase-24-3｜更新：24(ゴール3後の調整),30-4,30-7
+// 作成：Phase-24-3｜更新：24(ゴール3後の調整),30-4,30-7,32-2
 // 写経レベル: コア ── 非同期の生成の待ち方・図の承認(自動レイアウト)・段階の承認の順序。
 // 詳細設計モードの通しの E2E(Phase 24)。詳細設計モードでプロジェクトを作り、ヒアリング後に
-// 段階1〜7を生成・承認して、詳細設計書と実装計画の zip をダウンロードする。
+// Phase-32-2：更新
+// // 段階1〜7を生成・承認して、詳細設計書と実装計画の zip をダウンロードする。
+// ↓↓
+// 段階1〜7を生成・承認して、詳細設計書と実装計画の zip をダウンロードし、段階8の手順書を生成する
+// (段階8の承認と実装手順書の zip は、devex-api の契約テストが通す)。
 //
 // devex-api 側は E2E_FAKE_LLM=true で起動し、E2eFakeLLM が段階ごとの下書きを返す。その出力が
 // 段階の検証と図の検証を通ることは、devex-api の tests/unit/test_fake_llm_detailed_design.py が
@@ -13,7 +17,10 @@ import { readFile } from "node:fs/promises";
 
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
-import { completeHearing, createProject, registerAndLogin } from "./helpers";
+// Phase-32-2：更新
+// import { completeHearing, createProject, registerAndLogin } from "./helpers";
+// ↓↓
+import { completeHearing, createProject, generateProcedureDocs, registerAndLogin } from "./helpers";
 
 const GENERATION_TIMEOUT = 30 * 1000;
 
@@ -53,19 +60,25 @@ async function approveDiagram(page: Page) {
   await expect(approve).toBeHidden({ timeout: GENERATION_TIMEOUT });
 }
 
-// 段階を承認し、完了ダイアログで次の段階へ進む(段階7は「閉じる」だけ)。
+// Phase-32-2：更新
+// // 段階を承認し、完了ダイアログで次の段階へ進む(段階7は「閉じる」だけ)。
+// ↓↓
+// 段階を承認し、完了ダイアログで次の段階へ進む(段階7の次は段階8 実装手順書)。
 async function approveStage(page: Page, stage: number, title: string) {
   const approve = stageApproveButton(page);
   await expect(approve).toBeEnabled({ timeout: GENERATION_TIMEOUT });
   await approve.click();
   await expect(page.getByText(`段階${stage}-${title}を承認しました。`)).toBeVisible();
-  const next = page.getByRole("button", { name: "次の段階へ進む" });
-  if (stage < 7) {
-    await next.click();
-  } else {
-    await expect(next).toHaveCount(0);
-    await page.getByRole("button", { name: "閉じる" }).click();
-  }
+  // Phase-32-2：更新
+  // const next = page.getByRole("button", { name: "次の段階へ進む" });
+  // if (stage < 7) {
+  //   await next.click();
+  // } else {
+  //   await expect(next).toHaveCount(0);
+  //   await page.getByRole("button", { name: "閉じる" }).click();
+  // }
+  // ↓↓
+  await page.getByRole("button", { name: "次の段階へ進む" }).click();
 }
 
 // 段階の「保存する」(パネルの上下に同じバーがあるので、上を押す)。
@@ -79,7 +92,10 @@ function zipEntriesInclude(content: Buffer, name: string): boolean {
   return content.includes(Buffer.from(name, "utf-8"));
 }
 
-test("詳細設計モードで段階1〜7を承認し、詳細設計書と実装計画の zip をダウンロードする", async ({
+// Phase-32-2：更新
+// test("詳細設計モードで段階1〜7を承認し、詳細設計書と実装計画の zip をダウンロードする", async ({
+// ↓↓
+test("詳細設計モードで段階1〜7を承認して詳細設計書と実装計画の zip をダウンロードし、段階8の手順書を生成する", async ({
   page,
 }) => {
   test.setTimeout(5 * 60 * 1000);
@@ -176,4 +192,13 @@ test("詳細設計モードで段階1〜7を承認し、詳細設計書と実装
   for (const name of BUNDLE_FILES) {
     expect(zipEntriesInclude(content, name), name).toBe(true);
   }
+
+  // Phase-32-2:追記
+  // 段階8 実装手順書: 段階7の全単位の手順書を生成する。承認するまで実装手順書の zip は押せない
+  await expect(page.getByRole("heading", { name: "段階8 実装手順書" })).toBeVisible();
+  await generateProcedureDocs(page, ["M-01-T01", "M-01-T02", "M-01-T03"]);
+  await expect(page.getByRole("button", { name: "実装手順書をダウンロード(.zip)" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
 });

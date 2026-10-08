@@ -1,4 +1,4 @@
-// 作成：Phase-4-4｜更新：Phase-6-6,24-2,24(ゴール3後の調整),31-5
+// 作成：Phase-4-4｜更新：Phase-6-6,24-2,24(ゴール3後の調整),31-5,32-2
 // 写経レベル: コア ── docs/implementation_plan.md 4.2節が定義するE2Eフロー
 // 「ログイン→プロジェクト作成→チャットヒアリング→設計書生成→ダウンロード」を
 // ブラウザ経由でそのまま再現する、Phase 4の中心的な成果物。
@@ -12,7 +12,10 @@
 // Phase-24-2:追記 ── ./helpers(completeHearing, createProject, registerAndLogin)
 import { expect, test } from "@playwright/test";
 
-import { completeHearing, createProject, registerAndLogin } from "./helpers";
+// Phase-32-2：更新
+// import { completeHearing, createProject, registerAndLogin } from "./helpers";
+// ↓↓
+import { completeHearing, createProject, generateProcedureDocs, registerAndLogin } from "./helpers";
 
 // Phase-24-2：削除(helpers.ts へ移動)
 // function uniqueEmail(prefix: string): string {
@@ -119,10 +122,18 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
   // Phase-31-5:追記
   // 簡易モードは、同じ詳細設計画面を段階8(実装手順書)だけで開く。作業単位は実装計画書の WBS から読む
   await page.getByRole("link", { name: "実装手順書へ進む →" }).click();
-  await expect(page.getByRole("heading", { name: "実装手順書" })).toBeVisible();
+  // Phase-32-2：更新
+  // await expect(page.getByRole("heading", { name: "実装手順書" })).toBeVisible();
+  // ↓↓
+  // 見出しは画面の「実装手順書」と、作業領域の「段階8 実装手順書」の2つ
+  await expect(page.getByRole("heading", { name: "実装手順書", exact: true })).toBeVisible();
   const units = page.getByRole("table", { name: "単位の一覧" });
   await expect(units).toContainText("M-01-T01");
   await expect(units).toContainText("M-01-T02");
+
+  // Phase-32-2:追記
+  // 全単位の手順書を生成する(承認と zip は devex-api の test_fake_llm_simple_procedure.py が通す)
+  await generateProcedureDocs(page, ["M-01-T01", "M-01-T02"]);
 });
 
 test("ドキュメントプレビュー画面から再生成すると、再度生成完了まで待って表示を更新する", async ({

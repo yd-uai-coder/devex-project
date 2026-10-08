@@ -1,8 +1,12 @@
-// 作成：Phase-24-2｜更新：24(ゴール3後の調整)
+// 作成：Phase-24-2｜更新：24(ゴール3後の調整),32-2
 // 写経レベル: 定型 ── 画面の操作の並び(ラベルで探して押す)。
 // E2E の spec が共有する操作(登録とログイン、モードを選んだプロジェクトの作成、ヒアリングから
-// 設計書の生成まで)。簡易ドキュメントモード(devex-flow.spec.ts)と詳細設計モード
-// (detailed-design-flow.spec.ts)の両方が、この順で始まる。
+// Phase-32-2：更新
+// // 設計書の生成まで)。簡易ドキュメントモード(devex-flow.spec.ts)と詳細設計モード
+// // (detailed-design-flow.spec.ts)の両方が、この順で始まる。
+// ↓↓
+// 設計書の生成まで、段階8の手順書の生成)。簡易ドキュメントモード(devex-flow.spec.ts)と
+// 詳細設計モード(detailed-design-flow.spec.ts)の両方が、この順で始まり、段階8で終わる。
 import { expect, type Page } from "@playwright/test";
 
 export type ProjectMode = "simple" | "detailed";
@@ -78,4 +82,22 @@ export async function completeHearing(page: Page, messages: string[]) {
   // 生成完了をポーリングで検知し、ドキュメントプレビュー画面へ自動遷移する
   // (useGenerationPolling、既定5秒間隔。E2eFakeLLMは実APIを呼ばないため数秒で完了する)。
   await expect(page).toHaveURL(/\/projects\/[^/]+\/documents/, { timeout: 30 * 1000 });
+}
+
+// Phase-32-2:追記
+// 段階8(実装手順書)で単位を選んで手順書を生成し、選んだ単位がすべて「生成済」になるまで待つ。
+// 生成はバックグラウンドで走り、画面は5秒ごとに段階の一覧を取り直す(useStageGenerationPolling)。
+export async function generateProcedureDocs(page: Page, unitIds: string[]) {
+  const units = page.getByRole("table", { name: "単位の一覧" });
+  for (const id of unitIds) {
+    await units.getByRole("checkbox", { name: `${id} を生成する` }).check();
+  }
+  await page.getByRole("button", { name: /^選んだ単位の手順書を生成する/ }).click();
+  // 行は単位の列のボタンで探す(依存の列に、ほかの単位の ID が出るため)
+  for (const id of unitIds) {
+    const row = units
+      .getByRole("row")
+      .filter({ has: page.getByRole("button", { name: `${id} の詳細を開く` }) });
+    await expect(row).toContainText("生成済", { timeout: 30 * 1000 });
+  }
 }

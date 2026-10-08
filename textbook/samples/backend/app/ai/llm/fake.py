@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -29,6 +29,7 @@ from pydantic import BaseModel
 # Phase-20-2:追記 ── app.detailed_design.procedure_drafting.GeneratedStep, ProcedureGenerationOutput
 # Phase-21-2:追記 ── app.detailed_design.logic_drafting.GeneratedPseudoStep, LogicGenerationOutput
 # Phase-23-4:追記 ── app.detailed_design.plan_drafting(CrossCuttingGenerationOutput, GeneratedCrossCutting, GeneratedMilestone, GeneratedRisk, GeneratedTask, PlanGenerationOutput)
+# Phase-32-1:追記 ── app.detailed_design.procedure_doc_drafting(GeneratedFinding, GeneratedSimpleFinding, GeneratedTestPoint, GeneratedUnitFile, ProcedureDocGenerationOutput, SimpleProcedureDocGenerationOutput)
 from app.detailed_design.data_flow_drafting import (
     GeneratedGroupProcess,
     GeneratedSummary,
@@ -51,6 +52,14 @@ from app.detailed_design.plan_drafting import (
     GeneratedRisk,
     GeneratedTask,
     PlanGenerationOutput,
+)
+from app.detailed_design.procedure_doc_drafting import (
+    GeneratedFinding,
+    GeneratedSimpleFinding,
+    GeneratedTestPoint,
+    GeneratedUnitFile,
+    ProcedureDocGenerationOutput,
+    SimpleProcedureDocGenerationOutput,
 )
 from app.detailed_design.procedure_drafting import GeneratedStep, ProcedureGenerationOutput
 from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleListGenerationOutput
@@ -491,6 +500,77 @@ _UML_OUTPUTS[PlanGenerationOutput] = PlanGenerationOutput(
     ],
     environment="[E2E Fake] Python 3.13・PostgreSQL・GitHub Actions",
     risks=[GeneratedRisk(risk="[E2E Fake] 予約の重複", mitigation="一意制約で防ぐ")],
+)
+
+# Phase-32-1:追記
+# 段階8(実装手順書)の手順書。どの単位にも同じ手順書を返す。ファイルは段階4のモジュール一覧
+# (詳細設計モード)・内部設計書のモジュール一覧(簡易モード)のパスにそろえる。指摘は軽微な1件だけに
+# する(最重要があると、画面で承認の前に確認が挟まるため)。
+_PROCEDURE_DOC_TESTS = [
+    GeneratedTestPoint(
+        viewpoint="[E2E Fake] 予約を登録すると一覧に出る",
+        sut="POST /api/v1/reservations",
+        driver="結合テスト(HTTP クライアントで呼ぶ)",
+        stub="スタブ不要 ── テスト用の DB を使う",
+    )
+]
+_UML_OUTPUTS[ProcedureDocGenerationOutput] = ProcedureDocGenerationOutput(
+    purpose="[E2E Fake] 予約を登録して一覧で確かめられる",
+    files=[
+        GeneratedUnitFile(
+            path="app/services/reservation.py",
+            kind="module",
+            responsibility="[E2E Fake] 予約の登録と一覧",
+            basis="段階4",
+        ),
+        GeneratedUnitFile(
+            path="app/api/routes/reservations.py",
+            kind="module",
+            responsibility="[E2E Fake] 予約の API",
+            basis="段階4",
+        ),
+    ],
+    notes=["[E2E Fake] サービスを先に書き、ルートから呼ぶ"],
+    tests=_PROCEDURE_DOC_TESTS,
+    gwt=["[E2E Fake] Given 予約が無い / When 登録する / Then 一覧に1件出る"],
+    verify=["[E2E Fake] テストが通る"],
+    findings=[
+        GeneratedFinding(
+            level="minor",
+            target="07章 ログ",
+            message="[E2E Fake] 登録のログの項目が決まっていない",
+            fix_stage=7,
+        )
+    ],
+)
+_UML_OUTPUTS[SimpleProcedureDocGenerationOutput] = SimpleProcedureDocGenerationOutput(
+    purpose="[E2E Fake] 予約を登録できる",
+    files=[
+        GeneratedUnitFile(
+            path="app/services/reservation.py",
+            kind="module",
+            responsibility="[E2E Fake] 予約の検証と保存",
+            basis="内部設計書 3.3",
+        ),
+        GeneratedUnitFile(
+            path="app/api/reservations.py",
+            kind="module",
+            responsibility="[E2E Fake] 予約のルート",
+            basis="内部設計書 3.3",
+        ),
+    ],
+    notes=["[E2E Fake] サービスを先に書き、ルートから呼ぶ"],
+    tests=_PROCEDURE_DOC_TESTS,
+    gwt=["[E2E Fake] Given 予約が無い / When 登録する / Then 1件保存される"],
+    verify=["[E2E Fake] テストが通る"],
+    findings=[
+        GeneratedSimpleFinding(
+            level="minor",
+            target="3.4",
+            message="[E2E Fake] 登録のログの項目が決まっていない",
+            fix_document="internal_design",
+        )
+    ],
 )
 
 _HEARING_REPLY = "[E2E Fake] 承知しました。次に、想定している主なユーザー層を教えてください。"
