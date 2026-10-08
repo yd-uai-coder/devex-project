@@ -163,6 +163,8 @@ When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the tar
 
 **#37. 未消化の申し送り節**(ステージ4完了後の振り返りで確立)。各 `Phase-<N>-introduction.md` に「未消化の申し送り」節を置く。前の Phase の同じ節から未解決の項目をそのまま引き継ぎ、この Phase で生まれた分を足す。この Phase で解決した項目は消し、どこで解決したか(章・リンク)を1行で書く。後続 Phase の着手時はこの節から読む。
 
+> **運用注記(#37 ── ステージ5完了後)**: 画面確認は Phase ごとに済ませず、この節に積んで、統合/E2E・本番確認の Phase でまとめて行ってよい(ステージ5では Phase 27〜31 の分を本番で一度に確かめた)。#18 の見直しの材料として、セッションの区切り(1 Phase を何セッションで行ったか)もこの節に記録し続ける。経緯は [`textbook/appendix/overall-retrospective.md`](./textbook/appendix/overall-retrospective.md) 9節。
+
 **#38. AI の提案と最終決定**(ステージ4完了後の振り返りで確立)。AI が書くコード・設計・計画は提案であり、採用するか変更するかはユーザーが最終的に決める。画面確認の後の修正や、Phase の分割・撤回・番号の付け直しは、問題ではなく通常の工程として扱う。経緯は q_a(#8)と、introduction の「後続 Phase での改訂」(#12)に残す。
 
 ### プロジェクトのゴール
