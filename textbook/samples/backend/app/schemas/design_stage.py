@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5
+# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5
 # 写経レベル: 定型 ── Pydantic スキーマ。
 # Phase-16-3:追記 ── typing.Literal, pydantic.Field
 from datetime import datetime
@@ -144,3 +144,16 @@ class UnitContextRead(BaseModel):
     refs: list[DesignRefRead]
     crosscutting: str
     environment: str
+
+
+# Phase-30-5:追記
+class UnitAiMarkdownRead(BaseModel):
+    """段階8の単位1つの AI 向けの版(画面の「AI 向けにコピー」。zip の`ai/<単位ID>.md`と同じ
+    組み立て)。保存済みの手順書から作る。`state`は段階8の状態、`finding_total`・`critical`は
+    その単位に残る未定義の件数と、そのうち最重要の件数(画面の警告に使う)。"""
+
+    unit_id: str
+    markdown: str
+    state: StageState
+    finding_total: int
+    critical: int

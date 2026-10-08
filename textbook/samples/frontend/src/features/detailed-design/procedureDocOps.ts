@@ -1,4 +1,4 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5
 import {
   FINDING_LEVELS,
   // Phase-28-4:追記
@@ -11,6 +11,8 @@ import {
   type StageIssue,
   // Phase-28-4:追記
   type TestPoint,
+  // Phase-30-5:追記
+  type UnitAiMarkdownRead,
   type UnitFile,
   type UnitFileKind,
   type UnitKind,
@@ -161,6 +163,24 @@ export function findingsOfUnit(findings: Finding[], unit: string | null): Findin
 // 段階の保存済みの内容に残っている最重要の指摘の数(承認の前に確かめる)。検証の指摘と AI の指摘の両方を数える。
 export function criticalCount(stage: DesignStageRead): number {
   return countByLevel(collectFindings(stage.issues, toProcedureDoc(stage.model))).critical;
+}
+
+// Phase-30-5:追記
+// 「AI 向けにコピー」で写した md について、渡す前に知らせること(段階8が承認済みでない・未定義が残る)。
+// 渡すのは止めない。無ければ空。
+export function aiCopyNotices(result: UnitAiMarkdownRead): string[] {
+  const notices: string[] = [];
+  if (result.state === "outdated") {
+    notices.push("段階8は古くなっています(手順書を作った後に設計が変わりました)。作り直してから渡すことを勧めます。");
+  } else if (result.state !== "approved") {
+    notices.push("段階8は未承認です(人が確定していない下書きです)。");
+  }
+  if (result.finding_total > 0) {
+    notices.push(
+      `この単位には未定義・要決定が ${result.finding_total} 件残っています(最重要 ${result.critical} 件)。決めてから渡すことを勧めます。`,
+    );
+  }
+  return notices;
 }
 
 // 生成する単位の選択を切り替える。上限に達していれば足さない(外すのはいつでもできる)。

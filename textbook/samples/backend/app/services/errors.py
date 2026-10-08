@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -274,6 +274,22 @@ class DesignUnitNotFoundError(NotFoundError):
     """段階7の作業単位に無い単位 ID の手順書の材料(参照の展開)を求めた場合に送出する。"""
 
     code: ClassVar[str | None] = "RESOURCE_NOT_FOUND"
+
+
+# Phase-30-5:追記
+class DesignUnitProcedureNotFoundError(NotFoundError):
+    """手順書の無い単位(まだ生成していない・段階7と合わない)の AI 向けの版を求めた場合に
+    送出する。"""
+
+    code: ClassVar[str | None] = "RESOURCE_NOT_FOUND"
+
+
+# Phase-30-7:追記
+class DesignDocumentNotReadyError(ConflictError):
+    """文書の元になる段階が承認されていないのに、zip(詳細設計書・実装計画 / 実装手順書)を
+    求めた場合に送出する。"""
+
+    code: ClassVar[str | None] = "DESIGN_DOCUMENT_NOT_READY"
 
 
 class DesignStageVersionConflictError(ConflictError):

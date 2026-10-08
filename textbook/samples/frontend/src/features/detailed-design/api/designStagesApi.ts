@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3,28-3,28-4,29-4
+// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3,28-3,28-4,29-4,30-5,30-7
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-21-4:追記 ── ./types.LogicTarget
 // Phase-22-6:追記 ── @/lib/api/download(fetchAttachment, parseFilename)
@@ -8,7 +8,16 @@ import { fetchAttachment, parseFilename } from "@/lib/api/download";
 // Phase-28-4：更新
 // import type { DesignStageRead, LogicTarget } from "./types";
 // ↓↓
-import type { DesignStageRead, LogicTarget, SequenceRead, UnitContextRead } from "./types";
+// Phase-30-5：更新
+// import type { DesignStageRead, LogicTarget, SequenceRead, UnitContextRead } from "./types";
+// ↓↓
+import type {
+  DesignStageRead,
+  LogicTarget,
+  SequenceRead,
+  UnitAiMarkdownRead,
+  UnitContextRead,
+} from "./types";
 
 const base = (projectId: string) =>
   `/api/v1/projects/${projectId}/design-stages`;
@@ -105,15 +114,48 @@ export function getUnitContext(projectId: string, unitId: string): Promise<UnitC
   );
 }
 
+// Phase-30-5:追記
+// 段階8の単位1つの AI 向けの版(保存済みの手順書と承認済みの段階1〜7から組み立てる)。段階8が開いて
+// いなければ409、段階7に無い単位・手順書の無い単位は404。
+export function getUnitAiMarkdown(projectId: string, unitId: string): Promise<UnitAiMarkdownRead> {
+  return apiFetch<UnitAiMarkdownRead>(
+    `${base(projectId)}/units/${encodeURIComponent(unitId)}/ai-markdown`,
+  );
+}
+
 // Phase-22-6:追記
 export type DownloadedDocument = { filename: string; content: Blob };
 
-// 詳細設計書(HTML・md)と載せた図(SVG・draw.io)の zip(Phase 22)。いつでもダウンロードでき、
-// 承認していない段階の章は「未承認」になる。zip に入れた図は exported になる。
+// Phase-30-5：更新
+// // 詳細設計書(HTML・md)と載せた図(SVG・draw.io)の zip。いつでもダウンロードでき、
+// // 承認していない段階の章は「未承認」になる。zip に入れた図は exported になる。
+// ↓↓
+// Phase-30-7：削除
+// // 詳細設計書(HTML・md)と載せた図(SVG・draw.io)、実装計画、実装手順書の zip。いつでもダウンロードでき、
+// // 承認していない段階の章(段階8は手順書)は「未承認」になる。zip に入れた図は exported になる。
 // zip はバイナリなので text() ではなく blob() で受け取る。
-export async function downloadDetailedDesign(projectId: string): Promise<DownloadedDocument> {
-  const res = await fetchAttachment(`${base(projectId)}/document`);
+// Phase-30-7：更新
+// export async function downloadDetailedDesign(projectId: string): Promise<DownloadedDocument> {
+//   const res = await fetchAttachment(`${base(projectId)}/document`);
+// ↓↓
+async function downloadZip(url: string, fallback: string): Promise<DownloadedDocument> {
+  const res = await fetchAttachment(url);
   const content = await res.blob();
-  const filename = parseFilename(res.headers.get("Content-Disposition")) ?? "detailed_design.zip";
+  // Phase-30-7：更新
+  // const filename = parseFilename(res.headers.get("Content-Disposition")) ?? "detailed_design.zip";
+  // ↓↓
+  const filename = parseFilename(res.headers.get("Content-Disposition")) ?? fallback;
   return { filename, content };
+}
+
+// Phase-30-7:追記
+// 詳細設計書(HTML・md)と載せた図(SVG・draw.io)、実装計画の zip。段階1〜7がすべて承認済みでなければ
+// 409(DESIGN_DOCUMENT_NOT_READY)。zip に入れた図は exported になる。
+export function downloadDetailedDesign(projectId: string): Promise<DownloadedDocument> {
+  return downloadZip(`${base(projectId)}/document`, "detailed_design.zip");
+}
+
+// 実装手順書(index.md・単位ごとの md・AI 向けの版・HTML 1枚)の zip。段階8が承認済みでなければ 409。
+export function downloadImplementationProcedure(projectId: string): Promise<DownloadedDocument> {
+  return downloadZip(`${base(projectId)}/procedure-document`, "implementation_procedure.zip");
 }

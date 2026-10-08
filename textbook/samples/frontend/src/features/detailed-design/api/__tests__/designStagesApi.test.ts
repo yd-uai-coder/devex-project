@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6,28-3,28-4,29-4
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6,28-3,28-4,29-4,30-5,30-7
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-16-5:追記 ── ../designStagesApi.generateDesignStage
 // Phase-17-5:追記 ── ../types.MAX_DFD_GROUPS, @/features/detailed-design/test-utils/stageFixtures.makeDataFlow
@@ -9,9 +9,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   approveDesignStage,
   downloadDetailedDesign,
+  // Phase-30-7:追記
+  downloadImplementationProcedure,
   generateDesignStage,
   // Phase-28-4:追記
   getProcedureSequence,
+  // Phase-30-5:追記
+  getUnitAiMarkdown,
   getUnitContext,
   listDesignStages,
   saveDesignStage,
@@ -164,6 +168,19 @@ describe("designStagesApi", () => {
     );
   });
 
+  // Phase-30-5:追記
+  it("getUnitAiMarkdownはGET /design-stages/units/{unit_id}/ai-markdownを呼ぶ", async () => {
+    const result = { unit_id: "M-01-T02", markdown: "# x", state: "approved", finding_total: 0, critical: 0 };
+    stub.queue({ status: 200, body: result });
+
+    const read = await getUnitAiMarkdown("p1", "M-01-T02");
+
+    expect(read).toEqual(result);
+    expect(stub.requests[0].url).toContain(
+      "/api/v1/projects/p1/design-stages/units/M-01-T02/ai-markdown",
+    );
+  });
+
   // Phase-29-4:追記
   it("getProcedureSequenceはGET /design-stages/procedures/{function_id}/sequenceを呼ぶ", async () => {
     const sequence = { function_id: "F-01", svg: "<svg/>", issues: [] };
@@ -221,5 +238,24 @@ describe("downloadDetailedDesign", () => {
     expect(result.filename).toBe("detailed_design.zip");
     expect(result.content).toBeInstanceOf(Blob);
     expect(result.content.size).toBe(4);
+  });
+
+  // Phase-30-7:追記
+  it("downloadImplementationProcedure は GET .../design-stages/procedure-document の zip を受け取る", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(new Uint8Array([0x50, 0x4b]), {
+        status: 200,
+        headers: { "Content-Disposition": 'attachment; filename="implementation_procedure.zip"' },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await downloadImplementationProcedure("p1");
+
+    expect(String(fetchMock.mock.calls[0][0])).toMatch(
+      /\/api\/v1\/projects\/p1\/design-stages\/procedure-document$/,
+    );
+    expect(result.filename).toBe("implementation_procedure.zip");
+    expect(result.content).toBeInstanceOf(Blob);
   });
 });

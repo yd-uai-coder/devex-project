@@ -1,4 +1,4 @@
-// 作成：Phase-24-3｜更新：24(ゴール3後の調整)
+// 作成：Phase-24-3｜更新：24(ゴール3後の調整),30-4,30-7
 // 写経レベル: コア ── 非同期の生成の待ち方・図の承認(自動レイアウト)・段階の承認の順序。
 // 詳細設計モードの通しの E2E(Phase 24)。詳細設計モードでプロジェクトを作り、ヒアリング後に
 // 段階1〜7を生成・承認して、詳細設計書と実装計画の zip をダウンロードする。
@@ -23,6 +23,10 @@ const BUNDLE_FILES = [
   "detailed_design.md",
   "implementation_plan.html",
   "implementation_plan.md",
+  // Phase-30-4:追記
+  // Phase-30-7：削除
+  // "implementation_procedure/index.md",
+  // "implementation_procedure/implementation_procedure.html",
   "diagrams/",
 ];
 
@@ -146,10 +150,25 @@ test("詳細設計モードで段階1〜7を承認し、詳細設計書と実装
   await generateDraft(page);
   await approveStage(page, 7, "横断事項と実装計画");
 
-  // 詳細設計書と実装計画の zip
-  await expect(page.getByText("段階1〜7はすべて承認済みです。")).toBeVisible();
+  // Phase-30-7：更新
+  // // 詳細設計書と実装計画の zip
+  // // 段階8(実装手順書)は承認していないので、未承認は1件(zip の手順書は「未承認」になる)
+  // await expect(page.getByText(/段階1〜8のうち 1 件が未承認です。/)).toBeVisible();
+  // ↓↓
+  // 詳細設計書と実装計画の zip(段階1〜7の承認で押せる)。実装手順書は段階8を承認するまで押せない
+  await expect(page.getByRole("button", { name: "実装手順書をダウンロード(.zip)" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  await expect(page.getByText("段階8が未承認です。承認するとダウンロードできます。")).toBeVisible();
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "詳細設計書と実装計画をダウンロード(.zip)" }).click();
+  // Phase-30-4：更新
+  // await page.getByRole("button", { name: "詳細設計書と実装計画をダウンロード(.zip)" }).click();
+  // ↓↓
+  // Phase-30-7：更新
+  // await page.getByRole("button", { name: "詳細設計書・実装計画・実装手順書をダウンロード(.zip)" }).click();
+  // ↓↓
+  await page.getByRole("button", { name: "詳細設計書・実装計画をダウンロード(.zip)" }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe("detailed_design.zip");
   const path = await download.path();

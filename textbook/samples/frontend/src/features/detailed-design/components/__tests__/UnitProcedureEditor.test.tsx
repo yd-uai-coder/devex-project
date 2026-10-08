@@ -1,19 +1,29 @@
-// 作成：Phase-28-4｜更新：Phase-29-5
+// 作成：Phase-28-4｜更新：Phase-29-5,30-5
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { UnitProcedureEditor } from "../UnitProcedureEditor";
-import { getUnitContext } from "@/features/detailed-design/api/designStagesApi";
+// Phase-30-5：更新
+// import { getUnitContext } from "@/features/detailed-design/api/designStagesApi";
+// ↓↓
+import { getUnitAiMarkdown, getUnitContext } from "@/features/detailed-design/api/designStagesApi";
 import type { ProcedureDocModel, UnitContextRead } from "@/features/detailed-design/api/types";
 import { procedureUnits } from "@/features/detailed-design/procedureDocOps";
 import { makePlan, makeProcedureDoc } from "../../test-utils/stageFixtures";
 
 // SUT: UnitProcedureEditor / ドライバ: render と操作 /
-// スタブ: 参照の API(getUnitContext。サーバーが展開した設計を返す)と、onChange・onFix。
+// Phase-30-5：更新
+// // スタブ: 参照の API(getUnitContext。サーバーが展開した設計を返す)と、onChange・onFix。
+// ↓↓
+// スタブ: 参照の API(getUnitContext。サーバーが展開した設計を返す)、AI 向けの版の API
+// (getUnitAiMarkdown。サーバーが組み立てた md を返す)、クリップボード(navigator.clipboard.writeText)、
+// onChange・onFix。
 
 vi.mock("@/features/detailed-design/api/designStagesApi", () => ({
+  // Phase-30-5:追記
+  getUnitAiMarkdown: vi.fn(),
   getUnitContext: vi.fn(),
 }));
 
@@ -45,7 +55,10 @@ const CONTEXT: UnitContextRead = {
   environment: "",
 };
 
-function renderEditor(doc: ProcedureDocModel, unitId = "M-01-T02") {
+// Phase-30-5：更新
+// function renderEditor(doc: ProcedureDocModel, unitId = "M-01-T02") {
+// ↓↓
+function renderEditor(doc: ProcedureDocModel, unitId = "M-01-T02", unsaved = false) {
   const onChange = vi.fn();
   const onFix = vi.fn();
   const unit = procedureUnits(makePlan(), doc).find((u) => u.id === unitId)!;
@@ -56,6 +69,8 @@ function renderEditor(doc: ProcedureDocModel, unitId = "M-01-T02") {
         unit={unit}
         doc={doc}
         disabled={false}
+        // Phase-30-5:追記
+        unsaved={unsaved}
         onChange={onChange}
         onFix={onFix}
       />
@@ -142,5 +157,48 @@ describe("UnitProcedureEditor", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("作ったときのタスク名「旧い名前」");
     await screen.findByRole("button", { name: "段階5 F-01 予約を登録する" });
+  });
+
+  // Phase-30-5:追記
+  it("AI 向けにコピーすると、サーバーの md を写し、未承認と未定義の残りを警告する", async () => {
+    const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+    vi.mocked(getUnitAiMarkdown).mockReset().mockResolvedValue({
+      unit_id: "M-01-T02",
+      markdown: "あなたは実装担当者です。",
+      state: "reviewing",
+      finding_total: 2,
+      critical: 1,
+    });
+    renderEditor(makeProcedureDoc());
+
+    await user.click(screen.getByRole("button", { name: "AI 向けにコピー" }));
+
+    const status = await screen.findByText("コピーしました。");
+    expect(getUnitAiMarkdown).toHaveBeenCalledWith("p1", "M-01-T02");
+    expect(writeText).toHaveBeenCalledWith("あなたは実装担当者です。");
+    expect(status.closest('[role="status"]')).toHaveTextContent("段階8は未承認です");
+    expect(status.closest('[role="status"]')).toHaveTextContent("2 件残っています(最重要 1 件)");
+  });
+
+  it("コピーに失敗したら理由を出す", async () => {
+    const user = userEvent.setup();
+    vi.mocked(getUnitAiMarkdown).mockReset().mockRejectedValue(new Error("手順書がありません"));
+    renderEditor(makeProcedureDoc());
+
+    await user.click(screen.getByRole("button", { name: "AI 向けにコピー" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("手順書がありません");
+  });
+
+  it("保存していない編集があるときは、コピーできない", () => {
+    renderEditor(makeProcedureDoc(), "M-01-T02", true);
+    expect(screen.getByRole("button", { name: "AI 向けにコピー" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText(/保存してからコピーしてください/)).toBeInTheDocument();
+  });
+
+  it("手順書の無い単位には、コピーのボタンを出さない", () => {
+    renderEditor(makeProcedureDoc(), "M-01-T01");
+    expect(screen.queryByRole("button", { name: "AI 向けにコピー" })).not.toBeInTheDocument();
   });
 });

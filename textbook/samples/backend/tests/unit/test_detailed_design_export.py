@@ -1,9 +1,12 @@
-# 作成：Phase-22-5｜更新：Phase-23-3,24(完了後の調整)
+# 作成：Phase-22-5｜更新：Phase-23-3,24(完了後の調整),30-4,30-7
 # 写経レベル: 定型 ── zip の構成・未承認の章・図の exported・ルート・共通化した描画を確かめる。
+# Phase-30-4：更新(docstring: SUT に procedure_files)
+# Phase-30-7：更新(docstring: SUT に bundle_procedure・missing_approvals・download_implementation_procedure)
 """詳細設計書の zip の出力のテスト(サービス・ルート・図の描画の共通化)。
 
-SUT: DetailedDesignExportService.bundle(app/services/detailed_design_export_service.py)、
-     download_detailed_design(app/api/routes/design_stages.py)、
+SUT: DetailedDesignExportService.bundle・bundle_procedure と missing_approvals
+     (app/services/detailed_design_export_service.py)、
+     download_detailed_design・download_implementation_procedure(app/api/routes/design_stages.py)、
      DesignStageService.overview(app/services/design_stage_service.py)、
      render_diagram / unique_base(app/uml/export/files.py)
 ドライバ: 各テスト関数
@@ -13,6 +16,8 @@ SUT: DetailedDesignExportService.bundle(app/services/detailed_design_export_serv
 """
 
 # Phase-24：削除 ── app.api.routes.uml.download_bundle
+# Phase-30-4:追記 ── tests.fixtures.detailed_design.procedure_doc_model, app.services.detailed_design_export_service.PROCEDURE_INDEX_NAME
+# Phase-30-7:追記 ── app.api.routes.design_stages.download_implementation_procedure, app.services.detailed_design_export_service(PROCEDURE_FILENAME, missing_approvals), app.services.errors.DesignDocumentNotReadyError
 import io
 import zipfile
 
@@ -22,18 +27,25 @@ from tests.fixtures.detailed_design import (
     create_detailed_project,
     create_document_project,
     create_stage3_project,
+    procedure_doc_model,
 )
 from tests.fixtures.uml import create_approved_diagram, create_project_with_internal_design
 
 from app.api.responses import content_disposition
-from app.api.routes.design_stages import download_detailed_design
+from app.api.routes.design_stages import (
+    download_detailed_design,
+    download_implementation_procedure,
+)
 from app.repositories.uml_diagram import UmlDiagramRepository
 from app.services.design_stage_service import DesignStageService
 from app.services.detailed_design_export_service import (
     DOCUMENT_FILENAME,
+    PROCEDURE_FILENAME,
+    PROCEDURE_INDEX_NAME,
     DetailedDesignExportService,
+    missing_approvals,
 )
-from app.services.errors import DesignStagesNotAvailableError
+from app.services.errors import DesignDocumentNotReadyError, DesignStagesNotAvailableError
 from app.uml.domain import SemanticModelAdapter
 from app.uml.export import render_diagram, unique_base
 
@@ -76,6 +88,10 @@ async def test_bundle_contains_html_md_and_diagrams(db_session: AsyncSession) ->
         # Phase-23-3:追記
         "implementation_plan.html",
         "implementation_plan.md",
+        # Phase-30-4:追記
+        # Phase-30-7：削除
+        # "implementation_procedure/implementation_procedure.html",
+        # "implementation_procedure/index.md",
     ]
     markdown = archive.read("detailed_design.md").decode()
     assert "未承認" not in markdown
@@ -83,6 +99,90 @@ async def test_bundle_contains_html_md_and_diagrams(db_session: AsyncSession) ->
     assert "呼ばれる手順: F-01#1" in markdown
     html = archive.read("detailed_design.html").decode()
     assert "<svg" in html
+
+
+# Phase-30-4:追記
+# Phase-30-7：削除(手順書は別の zip に。下の追記で置き換え)
+# async def test_bundle_adds_procedure_when_stage8_is_approved(db_session: AsyncSession) -> None:
+#     """段階8が承認済みなら、手順書のある単位の md と AI 向けの版を入れる。"""
+#     project = await create_document_project(db_session)
+#     stages = DesignStageService(db_session)
+#     await stages.save(project, stage=8, expected_version=None, model=procedure_doc_model())
+#     await stages.approve(project, stage=8, expected_version=1)
+#
+#     bundle = await DetailedDesignExportService(db_session).bundle(project)
+#
+#     archive = _open(bundle.content)
+#     assert sorted(n for n in archive.namelist() if n.startswith("implementation_procedure/")) == [
+#         "implementation_procedure/M-01-T02_予約を登録する.md",
+#         "implementation_procedure/ai/M-01-T02.md",
+#         "implementation_procedure/implementation_procedure.html",
+#         "implementation_procedure/index.md",
+#     ]
+#     index = archive.read(PROCEDURE_INDEX_NAME).decode()
+#     assert "## 3. 単位の一覧(依存順)" in index
+#     ai = archive.read("implementation_procedure/ai/M-01-T02.md").decode()
+#     assert "未承認" not in ai
+#     assert "### 段階5 F-01 予約を登録する" in ai
+#
+#
+# async def test_bundle_writes_unapproved_procedure(db_session: AsyncSession) -> None:
+#     """段階8が承認済みでなければ、保存済みの手順書があっても index と HTML に「未承認」とだけ
+#     書く。"""
+#     project = await create_document_project(db_session)
+#     await DesignStageService(db_session).save(
+#         project, stage=8, expected_version=None, model=procedure_doc_model()
+#     )
+#
+#     archive = _open((await DetailedDesignExportService(db_session).bundle(project)).content)
+#
+#     assert "未承認(段階8が承認されていません" in archive.read(PROCEDURE_INDEX_NAME).decode()
+#     assert "implementation_procedure/ai/M-01-T02.md" not in archive.namelist()
+
+
+# Phase-30-7:追記
+def test_missing_approvals() -> None:
+    states = {1: "approved", 2: "outdated", 3: "reviewing", 7: "approved"}
+
+    assert missing_approvals(states, (1, 2, 3, 4, 7)) == [2, 3, 4]  # type: ignore[arg-type]
+    assert missing_approvals({8: "approved"}, (8,)) == []
+
+
+async def test_procedure_zip_when_stage8_is_approved(db_session: AsyncSession) -> None:
+    """段階8が承認済みなら、手順書の zip に index・HTML・単位の md・AI 向けの版を入れる(直下)。"""
+    project = await create_document_project(db_session)
+    stages = DesignStageService(db_session)
+    await stages.save(project, stage=8, expected_version=None, model=procedure_doc_model())
+    await stages.approve(project, stage=8, expected_version=1)
+
+    response = await download_implementation_procedure(db_session, project)
+
+    assert response.headers["content-disposition"] == content_disposition(PROCEDURE_FILENAME)
+    archive = _open(bytes(response.body))
+    assert sorted(archive.namelist()) == [
+        "M-01-T02_予約を登録する.md",
+        "ai/M-01-T02.md",
+        "implementation_procedure.html",
+        "index.md",
+    ]
+    assert "## 3. 単位の一覧(依存順)" in archive.read(PROCEDURE_INDEX_NAME).decode()
+    ai = archive.read("ai/M-01-T02.md").decode()
+    assert "未承認" not in ai
+    assert "### 段階5 F-01 予約を登録する" in ai
+
+
+async def test_procedure_zip_requires_approved_stage8(db_session: AsyncSession) -> None:
+    """段階8が承認済みでなければ(保存済みの手順書があっても)断る。"""
+    project = await create_document_project(db_session)
+    service = DetailedDesignExportService(db_session)
+    with pytest.raises(DesignDocumentNotReadyError, match="段階8"):
+        await service.bundle_procedure(project)
+
+    await DesignStageService(db_session).save(
+        project, stage=8, expected_version=None, model=procedure_doc_model()
+    )
+    with pytest.raises(DesignDocumentNotReadyError):
+        await service.bundle_procedure(project)
 
 
 async def test_bundle_marks_included_diagrams_exported(db_session: AsyncSession) -> None:
@@ -97,18 +197,30 @@ async def test_bundle_marks_included_diagrams_exported(db_session: AsyncSession)
     assert all(views[stage].state == "approved" for stage in range(1, 7))
 
 
-async def test_bundle_marks_unapproved_chapters_and_omits_their_diagrams(
-    db_session: AsyncSession,
-) -> None:
+# Phase-30-7：更新
+# async def test_bundle_marks_unapproved_chapters_and_omits_their_diagrams(
+#     db_session: AsyncSession,
+# ) -> None:
+# ↓↓
+async def test_bundle_requires_stages_1_to_7_and_exports_nothing(db_session: AsyncSession) -> None:
+    """段階1〜7のどれかが承認済みでなければ断り、図も`exported`にしない。"""
     project = await create_stage3_project(db_session)
 
-    bundle = await DetailedDesignExportService(db_session).bundle(project)
+    # Phase-30-7：更新
+    # bundle = await DetailedDesignExportService(db_session).bundle(project)
+    # ↓↓
+    with pytest.raises(DesignDocumentNotReadyError, match="段階3・4・5・6・7"):
+        await DetailedDesignExportService(db_session).bundle(project)
 
-    archive = _open(bundle.content)
-    assert not any(name.startswith("diagrams/er") for name in archive.namelist())
-    markdown = archive.read("detailed_design.md").decode()
-    assert "未承認(段階3が承認されていません" in markdown
-    assert "未承認(段階2" not in markdown
+    # Phase-30-7：更新
+    # archive = _open(bundle.content)
+    # assert not any(name.startswith("diagrams/er") for name in archive.namelist())
+    # markdown = archive.read("detailed_design.md").decode()
+    # assert "未承認(段階3が承認されていません" in markdown
+    # assert "未承認(段階2" not in markdown
+    # ↓↓
+    diagrams = await UmlDiagramRepository(db_session).list_for_project(project.id)
+    assert "exported" not in {d.status for d in diagrams}
 
 
 async def test_bundle_rejects_simple_mode_project(db_session: AsyncSession) -> None:

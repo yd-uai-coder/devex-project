@@ -1,4 +1,4 @@
-# 作成：Phase-23-3｜更新：Phase-26-3
+# 作成：Phase-23-3｜更新：Phase-26-3,30-7
 # 写経レベル: コア ── collect(render=False) が図を描かず exported にもしないこと。
 """組み立ての入力の切り出し(`collect`)と、zip の実装計画のテスト。
 
@@ -10,9 +10,11 @@ SUT: DetailedDesignExportService.collect / bundle(app/services/detailed_design_e
 純粋関数のテストで確かめたので、ここでは集めた入力・zip の構成・図の状態だけを見る。
 """
 
+# Phase-30-7:追記 ── pytest, app.services.errors.DesignDocumentNotReadyError
 import io
 import zipfile
 
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from tests.fixtures.detailed_design import create_document_project, create_stage7_project
 
@@ -24,6 +26,7 @@ from app.services.detailed_design_export_service import (
     CollectedDocument,
     DetailedDesignExportService,
 )
+from app.services.errors import DesignDocumentNotReadyError
 
 
 # Phase-26-3：更新
@@ -52,17 +55,25 @@ async def test_smoke_bundle_contains_implementation_plan(db_session: AsyncSessio
     assert "## 07 横断事項" in archive.read("detailed_design.md").decode()
 
 
-async def test_bundle_writes_unapproved_plan_until_stage7_is_approved(
-    db_session: AsyncSession,
-) -> None:
+# Phase-30-7：更新
+# async def test_bundle_writes_unapproved_plan_until_stage7_is_approved(
+#     db_session: AsyncSession,
+# ) -> None:
+# ↓↓
+async def test_bundle_is_refused_until_stage7_is_approved(db_session: AsyncSession) -> None:
+    """実装計画(段階7)が承認されるまで、詳細設計書・実装計画の zip は出さない。"""
     project = await create_stage7_project(db_session)
 
-    bundle = await DetailedDesignExportService(db_session).bundle(project)
-
-    archive = zipfile.ZipFile(io.BytesIO(bundle.content))
-    assert "未承認(段階7が承認されていません" in archive.read(PLAN_MARKDOWN_NAME).decode()
-    markdown = archive.read("detailed_design.md").decode()
-    assert "未承認(段階7が承認されていません。承認すると、この章" in markdown
+    # Phase-30-7：更新
+    # bundle = await DetailedDesignExportService(db_session).bundle(project)
+    #
+    # archive = zipfile.ZipFile(io.BytesIO(bundle.content))
+    # assert "未承認(段階7が承認されていません" in archive.read(PLAN_MARKDOWN_NAME).decode()
+    # markdown = archive.read("detailed_design.md").decode()
+    # assert "未承認(段階7が承認されていません。承認すると、この章" in markdown
+    # ↓↓
+    with pytest.raises(DesignDocumentNotReadyError, match="段階7"):
+        await DetailedDesignExportService(db_session).bundle(project)
 
 
 async def test_collect_without_render_reads_models_but_draws_nothing(

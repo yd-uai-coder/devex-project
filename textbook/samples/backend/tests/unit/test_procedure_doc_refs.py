@@ -1,4 +1,4 @@
-# 作成：Phase-28-1｜更新：Phase-29-5
+# 作成：Phase-28-1｜更新：Phase-29-5,30-2
 """段階8 単位が参照する設計の展開(純粋関数)のテスト。
 
 SUT は`app/detailed_design/procedure_doc_refs.py`の純粋関数(と`procedure_doc.find_unit`)、
@@ -7,9 +7,10 @@ SUT は`app/detailed_design/procedure_doc_refs.py`の純粋関数(と`procedure_
 """
 
 # Phase-29-5:追記 ── app.detailed_design.to_sequence, app.detailed_design.document.markdown.sequence_block
+# Phase-30-2:追記 ── app.detailed_design.to_mermaid
 from tests.fixtures.detailed_design import document_stage_models
 
-from app.detailed_design import PlanModel, ProcedureModel, find_unit, to_sequence
+from app.detailed_design import PlanModel, ProcedureModel, find_unit, to_mermaid, to_sequence
 from app.detailed_design.document.markdown import logic_spec, procedure_table, sequence_block
 from app.detailed_design.logic import LogicModel
 from app.detailed_design.procedure_doc_refs import (
@@ -81,6 +82,10 @@ def test_procedure_ref_has_sequence_as_mermaid_and_svg() -> None:
     )
     assert procedure_ref.svg is not None and procedure_ref.svg.startswith("<svg ")
     assert (logic_ref.svg, module_ref.svg) == (None, None)
+    # Phase-30-2:追記
+    # 手順書の md(参照を ID だけで書く)に図だけを載せるための Mermaid の本文
+    assert procedure_ref.mermaid == to_mermaid(to_sequence(procedure))
+    assert (logic_ref.mermaid, module_ref.mermaid) == (None, None)
 
 
 def test_unresolved_refs_are_not_expanded() -> None:

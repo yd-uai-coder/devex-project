@@ -87,7 +87,7 @@
   * Phase 27: 段階8の土台と決定的な実装可能性チェック(段階8・参照の導出と解決・検証・SCR-008 の単位の一覧と未定義の一覧) ── **完了**([`textbook/Phase-27/Phase-27-introduction.md`](../textbook/Phase-27/Phase-27-introduction.md))
   * Phase 28: 手順書の生成(参照の展開・単位ごとの AI の下書き・AI の指摘・単位の詳細の表示と編集・最重要が残るときの承認前の確認) ── **完了**([`textbook/Phase-28/Phase-28-introduction.md`](../textbook/Phase-28/Phase-28-introduction.md))
   * Phase 29: シーケンス図(段階5の行の種別・導出・05章と手順書への表示・スタブの候補の突き合わせ) ── **完了**([`textbook/Phase-29/Phase-29-introduction.md`](../textbook/Phase-29/Phase-29-introduction.md))
-  * Phase 30: 手順書の出力(zip の`implementation_procedure/`・AI 向けの版・画面のコピー)
+  * Phase 30: 手順書の出力(zip の`implementation_procedure/`・AI 向けの版・画面のコピー) ── **完了**([`textbook/Phase-30/Phase-30-introduction.md`](../textbook/Phase-30/Phase-30-introduction.md))
   * Phase 31: 簡易ドキュメントモードの手順書(実装計画書の WBS の縦割り・簡易モードの段階8)
   * Phase 32: 統合/E2E・デプロイでの確認(偽LLMの段階8・全 E2E・マイグレーション・本番反映の手順)
 * **マイルストーン6**: 詳細設計モードで、段階8の実装手順書を単位ごとに生成し、未定義を設計の側で直して、手順書を zip と AI 向けの版で出力できる。簡易ドキュメントモードでも同じ形の手順書を作れる。

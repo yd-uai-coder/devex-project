@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -363,4 +363,15 @@ export type UnitContextRead = {
   refs: DesignRefRead[];
   crosscutting: string;
   environment: string;
+};
+
+// Phase-30-5:追記
+// 段階8の単位1つの AI 向けの版(「AI 向けにコピー」。zip の ai/<単位ID>.md と同じ組み立て)。保存済みの
+// 手順書から作る。state は段階8の状態、finding_total・critical はその単位に残る未定義の件数と最重要の件数。
+export type UnitAiMarkdownRead = {
+  unit_id: string;
+  markdown: string;
+  state: StageState;
+  finding_total: number;
+  critical: number;
 };

@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -70,12 +70,25 @@ describe("DetailedDesignPageContent", () => {
       // Phase-23-6：更新
       // screen.getByRole("button", { name: "詳細設計書をダウンロード(.zip)" }),
       // ↓↓
-      screen.getByRole("button", { name: "詳細設計書と実装計画をダウンロード(.zip)" }),
+      // Phase-30-4：更新
+      // screen.getByRole("button", { name: "詳細設計書と実装計画をダウンロード(.zip)" }),
+      // ↓↓
+      // Phase-30-7：更新
+      // screen.getByRole("button", { name: "詳細設計書・実装計画・実装手順書をダウンロード(.zip)" }),
+      // ↓↓
+      screen.getByRole("button", { name: "詳細設計書・実装計画をダウンロード(.zip)" }),
     ).toBeInTheDocument();
     // Phase-23-6：更新
     // expect(screen.getByRole("status")).toHaveTextContent("6 件が未承認");
     // ↓↓
-    expect(screen.getByRole("status")).toHaveTextContent("7 件が未承認");
+    // Phase-30-4：更新
+    // expect(screen.getByRole("status")).toHaveTextContent("7 件が未承認");
+    // ↓↓
+    // Phase-30-7：更新
+    // expect(screen.getByRole("status")).toHaveTextContent("8 件が未承認");
+    // ↓↓
+    expect(screen.getByRole("button", { name: "実装手順書をダウンロード(.zip)" })).toBeInTheDocument();
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent("段階1・2・3・4・5・6・7が未承認です。");
   });
 
   it("承認ボタンでapprove(projectId, 段階)を呼ぶ", async () => {

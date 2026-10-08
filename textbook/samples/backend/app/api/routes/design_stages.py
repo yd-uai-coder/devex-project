@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4
+# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4,30-5,30-7
 # 写経レベル: 定型 ── サービスを呼ぶだけの薄いルート。
 # Phase-16-4:追記 ── fastapi.BackgroundTasks, fastapi.status, app.services.design_stage_generation_service.DesignStageGenerationService, app.services.design_stage_generation_service.run_design_stage_generation
 # Phase-20-3:追記 ── app.schemas.design_stage.DesignStageGenerate
@@ -6,6 +6,8 @@
 #   app.services.detailed_design_export_service.DetailedDesignExportService
 # Phase-28-1:追記 ── app.schemas.design_stage.UnitContextRead
 # Phase-29-4:追記 ── app.schemas.design_stage.SequenceRead
+# Phase-30-5:追記 ── app.schemas.design_stage.UnitAiMarkdownRead
+# Phase-30-7:追記 ── app.services.detailed_design_export_service.BundleFile
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Path, status
@@ -19,6 +21,7 @@ from app.schemas.design_stage import (
     DesignStageRead,
     DesignStageSave,
     SequenceRead,
+    UnitAiMarkdownRead,
     UnitContextRead,
 )
 from app.services.design_stage_generation_service import (
@@ -26,7 +29,7 @@ from app.services.design_stage_generation_service import (
     run_design_stage_generation,
 )
 from app.services.design_stage_service import DesignStageService
-from app.services.detailed_design_export_service import DetailedDesignExportService
+from app.services.detailed_design_export_service import BundleFile, DetailedDesignExportService
 
 # UMLと同じく、プロジェクト配下の独立したサブツリーとしてprefixにproject_idを含める
 router = APIRouter(prefix="/projects/{project_id}/design-stages", tags=["design-stages"])
@@ -58,11 +61,34 @@ async def download_detailed_design(
     session: SessionDep, current_project: CurrentProjectDep
 ) -> Response:
     # Phase-23-3：更新(docstring: zip に実装計画が入る)
-    """詳細設計書(HTML・md)と載せた図(SVG・draw.io)、実装計画(HTML・md。Phase 23)を zip で
-    ダウンロードする(Phase 22)。
-    いつでもダウンロードでき、承認していない段階の章は「未承認」になる。zip に入れた図は
-    `exported`になる。簡易ドキュメントモードのプロジェクトは409。"""
-    bundle = await DetailedDesignExportService(session).bundle(current_project)
+    # Phase-30-7：更新(docstring: いつでも → 段階1〜7がすべて承認済みでなければ409)
+    """詳細設計書(HTML・md)と載せた図(SVG・draw.io)、実装計画(HTML・md)を zip で
+    ダウンロードする。段階1〜7がすべて承認済みでなければ409。zip に入れた図は`exported`になる。
+    簡易ドキュメントモードのプロジェクトは409。"""
+    # Phase-30-7：更新
+    # bundle = await DetailedDesignExportService(session).bundle(current_project)
+    # return Response(
+    #     content=bundle.content,
+    #     media_type=bundle.media_type,
+    #     headers={"Content-Disposition": content_disposition(bundle.filename)},
+    # )
+    # ↓↓
+    return _zip_response(await DetailedDesignExportService(session).bundle(current_project))
+
+
+# Phase-30-7:追記
+@router.get("/procedure-document")
+async def download_implementation_procedure(
+    session: SessionDep, current_project: CurrentProjectDep
+) -> Response:
+    """実装手順書(`index.md`・単位ごとの md・AI 向けの版・HTML 1枚)を zip でダウンロードする。
+    段階8が承認済みでなければ409。簡易ドキュメントモードのプロジェクトは409。"""
+    return _zip_response(
+        await DetailedDesignExportService(session).bundle_procedure(current_project)
+    )
+
+
+def _zip_response(bundle: BundleFile) -> Response:
     return Response(
         content=bundle.content,
         media_type=bundle.media_type,
@@ -88,6 +114,17 @@ async def get_unit_context(
     """段階8の作業単位1つが参照する設計(段階5の手順・段階6の関数・段階4のモジュール)を展開して
     返す。段階7の 07 横断事項と開発環境も添える。段階8が開いていなければ409。"""
     return await DesignStageService(session).unit_context(current_project, unit_id)
+
+
+# Phase-30-5:追記
+@router.get("/units/{unit_id}/ai-markdown", response_model=UnitAiMarkdownRead)
+async def get_unit_ai_markdown(
+    unit_id: str, session: SessionDep, current_project: CurrentProjectDep
+) -> UnitAiMarkdownRead:
+    """段階8の作業単位1つの AI 向けの版(参照する設計を展開した md)を返す。保存済みの手順書から
+    作り、段階8が承認済みでない・未定義が残るときは先頭で警告する。段階8が開いていなければ409、
+    段階7に無い単位・手順書の無い単位は404。"""
+    return await DesignStageService(session).unit_ai_markdown(current_project, unit_id)
 
 
 @router.post(

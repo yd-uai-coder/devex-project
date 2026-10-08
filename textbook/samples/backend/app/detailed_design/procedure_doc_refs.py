@@ -1,4 +1,4 @@
-# 作成：Phase-28-1｜更新：Phase-29-5
+# 作成：Phase-28-1｜更新：Phase-29-5,30-2
 # Phase-29-5：更新(docstring: 手順の参照にシーケンス図を添えること。ExpandedRef の docstring も)
 """段階8 単位が参照する設計の展開(純粋関数)。
 
@@ -15,6 +15,7 @@ AI 向けの出力も同じ関数を使い、どこでも同じ中身にする(�
 """
 
 # Phase-29-5:追記 ── app.detailed_design.document.markdown.sequence_block, app.detailed_design.sequence(SequenceDiagram, to_sequence), app.detailed_design.sequence_svg.to_sequence_svg
+# Phase-30-2:追記 ── app.detailed_design.sequence.to_mermaid
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -37,7 +38,7 @@ from app.detailed_design.procedure_doc import (
     design_index,
     unit_refs,
 )
-from app.detailed_design.sequence import SequenceDiagram, to_sequence
+from app.detailed_design.sequence import SequenceDiagram, to_mermaid, to_sequence
 from app.detailed_design.sequence_svg import to_sequence_svg
 from app.detailed_design.structure import STRUCTURE_STAGE, ModuleListModel, ModuleRow
 
@@ -77,10 +78,12 @@ def design_book(stages: Mapping[int, Mapping[str, Any]]) -> DesignBook:
     )
 
 
+# Phase-30-2：更新(docstring: Mermaid の本文の欄`mermaid`)
 @dataclass(frozen=True)
 class ExpandedRef:
-    """展開した参照1つ。`markdown`は該当箇所の md(解決できない参照は None)。`svg`は段階5の
-    手順のシーケンス図(手順の参照だけ。図にする参加者が無ければ None)。"""
+    """展開した参照1つ。`markdown`は該当箇所の md(解決できない参照は None)。`svg`と`mermaid`は
+    段階5の手順のシーケンス図の SVG と Mermaid の本文(手順の参照だけ。図にする参加者が無ければ
+    None)。`mermaid`は、参照を ID だけで書く手順書の md に図だけを載せるために使う。"""
 
     kind: DesignRefKind
     key: str
@@ -90,6 +93,8 @@ class ExpandedRef:
     markdown: str | None
     # Phase-29-5:追記
     svg: str | None = None
+    # Phase-30-2:追記
+    mermaid: str | None = None
 
 
 @dataclass(frozen=True)
@@ -167,9 +172,30 @@ def expand_ref(ref: DesignRef, book: DesignBook) -> str | None:
 
 
 # Phase-29-5:追記
-def _ref_svg(ref: DesignRef, book: DesignBook) -> str | None:
+# Phase-30-2：更新
+# def _ref_svg(ref: DesignRef, book: DesignBook) -> str | None:
+# ↓↓
+def _drawable(ref: DesignRef, book: DesignBook) -> SequenceDiagram | None:
     diagram = ref_sequence(ref, book)
-    return to_sequence_svg(diagram) if diagram is not None and diagram.participants else None
+    # Phase-30-2：更新
+    # return to_sequence_svg(diagram) if diagram is not None and diagram.participants else None
+    # ↓↓
+    return diagram if diagram is not None and diagram.participants else None
+
+
+# Phase-30-2:追記
+def _expanded(ref: DesignRef, book: DesignBook) -> ExpandedRef:
+    diagram = _drawable(ref, book)
+    return ExpandedRef(
+        kind=ref.kind,
+        key=ref.key,
+        resolved=ref.resolved,
+        via=ref.via,
+        label=ref_label(ref, book),
+        markdown=expand_ref(ref, book),
+        svg=to_sequence_svg(diagram) if diagram is not None else None,
+        mermaid=to_mermaid(diagram) if diagram is not None else None,
+    )
 
 
 def crosscutting_section(plan: PlanModel) -> str:
@@ -193,17 +219,19 @@ def unit_context(unit: PlanUnit, stages: Mapping[int, Mapping[str, Any]]) -> Uni
     """単位の参照を導いて展開し、共通の節と合わせる。"""
     book = design_book(stages)
     refs = tuple(
-        ExpandedRef(
-            kind=ref.kind,
-            key=ref.key,
-            resolved=ref.resolved,
-            via=ref.via,
-            label=ref_label(ref, book),
-            markdown=expand_ref(ref, book),
-            # Phase-29-5:追記
-            svg=_ref_svg(ref, book),
-        )
-        for ref in unit_refs(unit.task, design_index(stages))
+        # Phase-30-2：更新
+        # ExpandedRef(
+        #     kind=ref.kind,
+        #     key=ref.key,
+        #     resolved=ref.resolved,
+        #     via=ref.via,
+        #     label=ref_label(ref, book),
+        #     markdown=expand_ref(ref, book),
+        #     svg=_ref_svg(ref, book),
+        # )
+        # for ref in unit_refs(unit.task, design_index(stages))
+        # ↓↓
+        _expanded(ref, book) for ref in unit_refs(unit.task, design_index(stages))
     )
     return UnitContext(
         unit=unit,

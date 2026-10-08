@@ -1,4 +1,4 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5
 // 注: Phase 28 で大きく書き直したため、旧コードのコメントアウトは要所だけにした(27-3 の版は Phase-27-3 の教材を参照)。
 "use client";
 
@@ -317,6 +317,8 @@ export function ProcedureDocPanel({
             unit={openedUnit}
             doc={doc}
             disabled={generating || !stage.is_open}
+            // Phase-30-5:追記
+            unsaved={dirty}
             onChange={setDoc}
             onFix={jumpTo}
           />
