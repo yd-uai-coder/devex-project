@@ -1,5 +1,6 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
+# Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
 # Phase-16-4:追記 ── app.detailed_design.Fingerprint
 # Phase-17-3:追記 ── app.detailed_design.validation.DfdDiagramSummary, app.models.uml_diagram.UmlDiagram, app.repositories.uml_diagram.UmlDiagramRepository
@@ -8,7 +9,11 @@
 # Phase-28-1:追記 ── app.detailed_design(PLAN_STAGE, PROCEDURE_DOC_STAGE, PlanModel, find_unit), app.detailed_design.procedure_doc_refs.unit_context, app.schemas.design_stage(DesignRefRead, UnitContextRead), app.services.errors.DesignUnitNotFoundError
 # Phase-29-4:追記 ── pydantic.ValidationError, app.detailed_design(PROCEDURE_STAGE, STRUCTURE_STAGE, ModuleListModel, ProcedureModel, module_dependencies), app.detailed_design.sequence.to_sequence, app.detailed_design.sequence_svg.to_sequence_svg, app.schemas.design_stage(SequenceIssueRead, SequenceRead), app.services.errors.DesignProcedureNotFoundError
 # Phase-30-5:追記 ── app.detailed_design.procedure_output(count_by_level, procedure_output_source, to_ai_markdown, unit_findings), app.schemas.design_stage.UnitAiMarkdownRead, app.services.errors.DesignUnitProcedureNotFoundError
+# Phase-31-3:追記 ── app.detailed_design.procedure_basis.procedure_basis
+# Phase-31-4:追記 ── collections.abc.Mapping, app.detailed_design.procedure_basis.ProcedureBasis, app.detailed_design.stages(StageInputs, stage_inputs)
+# Phase-31-4：削除 ── app.detailed_design(PLAN_STAGE, STAGE_INPUTS, PlanModel), app.detailed_design.procedure_doc_refs.unit_context
 import uuid
+from collections.abc import Mapping
 
 import structlog
 from pydantic import ValidationError
@@ -17,15 +22,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.detailed_design import (
     DATA_MODEL_STAGE,
     ER_SUBJECT,
-    PLAN_STAGE,
     PROCEDURE_DOC_STAGE,
     PROCEDURE_STAGE,
-    STAGE_INPUTS,
     STRUCTURE_STAGE,
     STRUCTURE_SUBJECT,
     Fingerprint,
     ModuleListModel,
-    PlanModel,
     ProcedureModel,
     StageRecord,
     StageView,
@@ -41,7 +43,7 @@ from app.detailed_design import (
     table_key,
     tables_without_primary_key,
 )
-from app.detailed_design.procedure_doc_refs import unit_context
+from app.detailed_design.procedure_basis import ProcedureBasis, procedure_basis
 from app.detailed_design.procedure_output import (
     count_by_level,
     procedure_output_source,
@@ -50,6 +52,7 @@ from app.detailed_design.procedure_output import (
 )
 from app.detailed_design.sequence import to_sequence
 from app.detailed_design.sequence_svg import to_sequence_svg
+from app.detailed_design.stages import StageInputs, stage_inputs
 from app.detailed_design.validation import (
     ComponentDiagramSummary,
     DfdDiagramSummary,
@@ -101,7 +104,10 @@ class DesignStageService:
     承認の条件は、全段階に共通の3つ(段階が開いている(入力がそろっている)、versionが一致する、
     承認できる状態で内容が空でない)と、段階ごとの検証(app/detailed_design/validation.py)で
     エラーが無いこと(Phase 16)。AIの下書きの生成はdesign_stage_generation_service.pyが担い、
-    生成中の段階はここで保存・承認を断る。"""
+    生成中の段階はここで保存・承認を断る。
+
+    簡易ドキュメントモードのプロジェクトは段階8(実装手順書)だけを持ち、入力は4文書
+    (`stage_inputs`)。他の段階を求められたら断る(`_ensure_stage`)。"""
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -114,61 +120,84 @@ class DesignStageService:
         # Phase-27-1：更新
         # """段階1〜7の状態を返す(未着手の段階も含む)。"""
         # ↓↓
-        """段階1〜8の状態を返す(未着手の段階も含む)。"""
-        _ensure_detailed(project)
-        rows, views, documents = await self._load(project.id)
-        # Phase-17-3：更新
-        # sources = _sources(documents)
+        # Phase-31-4：更新
+        # """段階1〜8の状態を返す(未着手の段階も含む)。"""
+        # _ensure_detailed(project)
+        # rows, views, documents = await self._load(project.id)
+        # sources = await self._sources(project.id, rows, views, documents)
+        # return [_to_read(views[stage], rows.get(stage), sources) for stage in STAGE_INPUTS]
         # ↓↓
-        sources = await self._sources(project.id, rows, views, documents)
-        return [_to_read(views[stage], rows.get(stage), sources) for stage in STAGE_INPUTS]
+        """モードの全段階の状態を返す(未着手の段階も含む。詳細設計モードは段階1〜8、
+        簡易モードは段階8だけ)。"""
+        rows, views, documents = await self._load(project)
+        sources = await self._sources(project, rows, views, documents)
+        return [_to_read(views[stage], rows.get(stage), sources) for stage in views]
 
     async def stage_view(
         self, project: Project, stage: int
     ) -> tuple[DesignStage | None, StageView, StageSources]:
         """段階1つ分の行(未着手ならNone)・状態・入力(文書の本文・承認済みの段階の内容・DFD の
         要約)を返す(下書きの生成が使う)。"""
-        _ensure_detailed(project)
-        rows, views, documents = await self._load(project.id)
-        # Phase-17-3：更新
-        # return rows.get(stage), views[stage], _sources(documents)
+        # Phase-31-4：更新
+        # _ensure_detailed(project)
+        # rows, views, documents = await self._load(project.id)
+        # sources = await self._sources(project.id, rows, views, documents)
         # ↓↓
-        sources = await self._sources(project.id, rows, views, documents)
+        _ensure_stage(project, stage)
+        rows, views, documents = await self._load(project)
+        sources = await self._sources(project, rows, views, documents)
         return rows.get(stage), views[stage], sources
 
     # Phase-22-5:追記
     async def overview(self, project: Project) -> tuple[dict[int, StageView], StageSources]:
-        """全段階の状態と、承認済みの段階の内容(`StageSources.stages`)を返す(詳細設計書の
-        組み立てが使う。Phase 22)。"""
-        _ensure_detailed(project)
-        rows, views, documents = await self._load(project.id)
-        sources = await self._sources(project.id, rows, views, documents)
+        """モードの全段階の状態と、承認済みの段階の内容(`StageSources.stages`)を返す(詳細設計書・
+        実装手順書の組み立てが使う)。"""
+        # Phase-31-4：更新
+        # _ensure_detailed(project)
+        # rows, views, documents = await self._load(project.id)
+        # sources = await self._sources(project.id, rows, views, documents)
+        # ↓↓
+        rows, views, documents = await self._load(project)
+        sources = await self._sources(project, rows, views, documents)
         return views, sources
 
     # Phase-16-4:追記
     async def current_fingerprint(self, project: Project, stage: int) -> Fingerprint:
         """段階が今入力にしているものの版(下書きの生成時に記録する。承認時と同じ規則)。"""
-        rows, views, documents = await self._load(project.id)
+        # Phase-31-4：更新
+        # rows, views, documents = await self._load(project.id)
+        # ↓↓
+        rows, views, documents = await self._load(project)
         return current_inputs(
             stage,
             approved_stage_versions=_approved_versions(rows, views),
             doc_versions=_doc_versions(documents),
+            # Phase-31-4:追記
+            inputs=stage_inputs(project.mode),
         )
 
     async def read(self, project_id: uuid.UUID, stage: int) -> DesignStageRead:
-        """段階1つ分の今の状態を返す。"""
-        return await self._read_one(project_id, stage)
+        # Phase-31-4：更新
+        # """段階1つ分の今の状態を返す。"""
+        # return await self._read_one(project_id, stage)
+        # ↓↓
+        """段階1つ分の今の状態を返す(モードを読むため、プロジェクトを読み直す)。"""
+        project = await self._session.get(Project, project_id)
+        if project is None:
+            raise DesignStageNotFoundError(f"Project {project_id} does not exist")
+        return await self._read_one(project, stage)
 
     async def save(
         self, project: Project, *, stage: int, expected_version: int | None, model: dict
     ) -> DesignStageRead:
         """段階の内容を人の編集として保存する。承認済みの段階を保存すると承認をやり直す
         (`reviewing`へ戻し、versionを増やす)。未着手の段階は、初めての保存で行を作る。"""
-        _ensure_detailed(project)
-        # Phase-16-3：更新
-        # rows, views = await self._load(project.id)
+        # Phase-31-4：更新
+        # _ensure_detailed(project)
+        # rows, views, _ = await self._load(project.id)
         # ↓↓
-        rows, views, _ = await self._load(project.id)
+        _ensure_stage(project, stage)
+        rows, views, _ = await self._load(project)
         _ensure_open(views[stage])
         row = rows.get(stage)
         # Phase-16-3:追記
@@ -187,7 +216,10 @@ class DesignStageService:
             row.version += 1
         await self._session.commit()
         await self._session.refresh(row)
-        return await self._read_one(project.id, stage)
+        # Phase-31-4：更新
+        # return await self._read_one(project.id, stage)
+        # ↓↓
+        return await self._read_one(project, stage)
 
     # Phase-17-4:追記
     async def mark_edited(self, project_id: uuid.UUID, stage: int) -> bool:
@@ -216,11 +248,12 @@ class DesignStageService:
         条件(この順に確かめる): 行がある / versionが一致する / 段階が開いている /
         承認できる状態(下書き・レビュー中・古い) / 内容が空でない / 段階ごとの検証でエラーが無い。
         生成中の段階は承認しない(生成の結果で内容が変わるため)。"""
-        _ensure_detailed(project)
-        # Phase-16-3：更新
-        # rows, views = await self._load(project.id)
+        # Phase-31-4：更新
+        # _ensure_detailed(project)
+        # rows, views, documents = await self._load(project.id)
         # ↓↓
-        rows, views, documents = await self._load(project.id)
+        _ensure_stage(project, stage)
+        rows, views, documents = await self._load(project)
         row = rows.get(stage)
         if row is None:
             raise DesignStageNotFoundError(f"Stage {stage} has not been started")
@@ -236,7 +269,10 @@ class DesignStageService:
         # Phase-17-3：更新
         # if has_errors(validate_stage(stage, row.model, _sources(documents))):
         # ↓↓
-        sources = await self._sources(project.id, rows, views, documents)
+        # Phase-31-4：更新
+        # sources = await self._sources(project.id, rows, views, documents)
+        # ↓↓
+        sources = await self._sources(project, rows, views, documents)
         if has_errors(validate_stage(stage, row.model, sources)):
             raise DesignStageInvalidError(f"Stage {stage} has validation errors")
 
@@ -253,25 +289,43 @@ class DesignStageService:
             # doc_versions=await self._doc_versions(project.id),
             # ↓↓
             doc_versions=_doc_versions(documents),
+            # Phase-31-4:追記
+            inputs=stage_inputs(project.mode),
         )
         await self._session.commit()
         await self._session.refresh(row)
         logger.info("design_stage_approved", project_id=str(project.id), stage=stage)
-        return await self._read_one(project.id, stage)
+        # Phase-31-4：更新
+        # return await self._read_one(project.id, stage)
+        # ↓↓
+        return await self._read_one(project, stage)
 
     # Phase-28-1:追記
     async def unit_context(self, project: Project, unit_id: str) -> UnitContextRead:
         """段階8の単位1つが参照する設計を展開して返す(画面の単位の詳細が使う)。中身は承認済みの
-        段階1〜7から毎回導き、保存しない。段階8が開いていなければ断る。"""
-        _ensure_detailed(project)
-        rows, views, documents = await self._load(project.id)
+        段階1〜7(簡易モードは4文書)から毎回導き、保存しない。段階8が開いていなければ断る。"""
+        # Phase-31-4：更新
+        # _ensure_detailed(project)
+        # rows, views, documents = await self._load(project.id)
+        # ↓↓
+        _ensure_stage(project, PROCEDURE_DOC_STAGE)
+        rows, views, documents = await self._load(project)
         _ensure_open(views[PROCEDURE_DOC_STAGE])
-        sources = await self._sources(project.id, rows, views, documents)
-        plan = PlanModel.model_validate(sources.stages.get(PLAN_STAGE) or {})
-        unit = find_unit(plan, unit_id)
+        # Phase-31-4：更新
+        # sources = await self._sources(project.id, rows, views, documents)
+        # plan = PlanModel.model_validate(sources.stages.get(PLAN_STAGE) or {})
+        # unit = find_unit(plan, unit_id)
+        # ↓↓
+        sources = await self._sources(project, rows, views, documents)
+        basis = _basis(sources)
+        unit = find_unit(basis.plan, unit_id)
         if unit is None:
-            raise DesignUnitNotFoundError(f"Unit {unit_id} is not in stage {PLAN_STAGE}")
-        context = unit_context(unit, sources.stages)
+            # Phase-31-4：更新
+            # raise DesignUnitNotFoundError(f"Unit {unit_id} is not in stage {PLAN_STAGE}")
+            # context = unit_context(unit, sources.stages)
+            # ↓↓
+            raise DesignUnitNotFoundError(f"Unit {unit_id} is not in the plan")
+        context = basis.context(unit)
         return UnitContextRead(
             unit_id=unit.unit_id,
             refs=[DesignRefRead.model_validate(ref, from_attributes=True) for ref in context.refs],
@@ -282,24 +336,37 @@ class DesignStageService:
     # Phase-30-5:追記
     async def unit_ai_markdown(self, project: Project, unit_id: str) -> UnitAiMarkdownRead:
         """段階8の単位1つの AI 向けの版を、保存済みの手順書(下書き・レビュー中・古いものを含む)と
-        承認済みの段階1〜7から組み立てて返す(画面の「AI 向けにコピー」が使う)。段階8が承認済みで
-        なければ、md の先頭で警告する。段階8が開いていなければ断り、段階7に無い単位・手順書の無い
-        単位は見つからないとする。"""
-        _ensure_detailed(project)
-        rows, views, documents = await self._load(project.id)
+        承認済みの段階1〜7(簡易モードは4文書)から組み立てて返す(画面の「AI 向けにコピー」が
+        使う)。段階8が承認済みでなければ、md の先頭で警告する。段階8が開いていなければ断り、
+        作業単位に無い単位・手順書の無い単位は見つからないとする。"""
+        # Phase-31-4：更新
+        # _ensure_detailed(project)
+        # rows, views, documents = await self._load(project.id)
+        # ↓↓
+        _ensure_stage(project, PROCEDURE_DOC_STAGE)
+        rows, views, documents = await self._load(project)
         view = views[PROCEDURE_DOC_STAGE]
         _ensure_open(view)
-        sources = await self._sources(project.id, rows, views, documents)
-        plan = PlanModel.model_validate(sources.stages.get(PLAN_STAGE) or {})
-        if find_unit(plan, unit_id) is None:
-            raise DesignUnitNotFoundError(f"Unit {unit_id} is not in stage {PLAN_STAGE}")
+        # Phase-31-4：更新
+        # sources = await self._sources(project.id, rows, views, documents)
+        # plan = PlanModel.model_validate(sources.stages.get(PLAN_STAGE) or {})
+        # if find_unit(plan, unit_id) is None:
+        #     raise DesignUnitNotFoundError(f"Unit {unit_id} is not in stage {PLAN_STAGE}")
+        # ↓↓
+        sources = await self._sources(project, rows, views, documents)
+        basis = _basis(sources)
+        if find_unit(basis.plan, unit_id) is None:
+            raise DesignUnitNotFoundError(f"Unit {unit_id} is not in the plan")
         row = rows.get(PROCEDURE_DOC_STAGE)
         model = row.model if row is not None else None
         try:
             source = procedure_output_source(
                 project.title,
                 view.state,
-                sources.stages,
+                # Phase-31-4：更新
+                # sources.stages,
+                # ↓↓
+                basis,
                 model,
                 validate_stage(PROCEDURE_DOC_STAGE, model, sources),
                 sources.documents.get("requirements", ""),
@@ -325,8 +392,12 @@ class DesignStageService:
         """段階5の処理1つのシーケンス図を、保存した手順(下書き・レビュー中を含む)から導いて返す
         (画面の段階5のタブが使う)。図は保存しない。依存先の指摘は承認済みの段階4を使う。
         段階5が開いていなければ断り、段階5で選んでいない処理は見つからないとする。"""
-        _ensure_detailed(project)
-        rows, views, _ = await self._load(project.id)
+        # Phase-31-4：更新
+        # _ensure_detailed(project)
+        # rows, views, _ = await self._load(project.id)
+        # ↓↓
+        _ensure_stage(project, PROCEDURE_STAGE)
+        rows, views, _ = await self._load(project)
         _ensure_open(views[PROCEDURE_STAGE])
         row = rows.get(PROCEDURE_STAGE)
         try:
@@ -357,35 +428,56 @@ class DesignStageService:
         )
 
     async def _load(
-        self, project_id: uuid.UUID
+        # Phase-31-4：更新
+        # self, project_id: uuid.UUID
+        # ↓↓
+        self, project: Project
     # Phase-16-3：更新
     # ) -> tuple[dict[int, DesignStage], dict[int, StageView]]:
     # ↓↓
     ) -> tuple[
         dict[int, DesignStage], dict[int, StageView], dict[str, GeneratedDocument | None]
     ]:
-        rows = {row.stage: row for row in await self._stages.list_for_project(project_id)}
+        # Phase-31-4：更新
+        # rows = {row.stage: row for row in await self._stages.list_for_project(project_id)}
+        # ↓↓
+        """モードの段階の行・状態と、入力の文書。モードに無い段階の行は読まない。"""
+        inputs = stage_inputs(project.mode)
+        rows = {
+            row.stage: row
+            for row in await self._stages.list_for_project(project.id)
+            if row.stage in inputs
+        }
         records = {stage: _to_record(row) for stage, row in rows.items()}
         # Phase-16-3：更新
         # views = derive_states(records, await self._doc_versions(project_id))
         # return rows, views
         # ↓↓
-        documents = await self._current_documents(project_id)
-        views = derive_states(records, _doc_versions(documents))
+        # Phase-31-4：更新
+        # documents = await self._current_documents(project_id)
+        # views = derive_states(records, _doc_versions(documents))
+        # ↓↓
+        documents = await self._current_documents(project.id, inputs)
+        views = derive_states(records, _doc_versions(documents), inputs)
         return rows, views, documents
 
-    async def _read_one(self, project_id: uuid.UUID, stage: int) -> DesignStageRead:
-        rows, views, documents = await self._load(project_id)
-        # Phase-17-3：更新
-        # return _to_read(views[stage], rows.get(stage), _sources(documents))
-        # ↓↓
-        sources = await self._sources(project_id, rows, views, documents)
+    # Phase-31-4：更新
+    # async def _read_one(self, project_id: uuid.UUID, stage: int) -> DesignStageRead:
+    #     rows, views, documents = await self._load(project_id)
+    #     sources = await self._sources(project_id, rows, views, documents)
+    # ↓↓
+    async def _read_one(self, project: Project, stage: int) -> DesignStageRead:
+        rows, views, documents = await self._load(project)
+        sources = await self._sources(project, rows, views, documents)
         return _to_read(views[stage], rows.get(stage), sources)
 
     # Phase-17-3:追記
     async def _sources(
         self,
-        project_id: uuid.UUID,
+        # Phase-31-4：更新
+        # project_id: uuid.UUID,
+        # ↓↓
+        project: Project,
         rows: dict[int, DesignStage],
         views: dict[int, StageView],
         documents: dict[str, GeneratedDocument | None],
@@ -398,7 +490,23 @@ class DesignStageService:
           DFD はすべて段階2のもの。
         - ER: 段階3の ER(全体1枚)の要約。
         - 構成図: 段階4の構成図(全体1枚)の要約。
+
+        簡易モード(段階8だけ)は、文書だけを渡す(図は段階8の入力にならない)。
         """
+        # Phase-31-4:追記
+        texts = {
+            doc_type: document.content
+            for doc_type, document in documents.items()
+            if document is not None
+        }
+        approved = {
+            stage: row.model
+            for stage, row in rows.items()
+            if views[stage].state == "approved" and row.model
+        }
+        if project.mode != "detailed":
+            return StageSources(documents=texts, stages=approved, mode="simple")
+        project_id = project.id
         diagrams = await self._diagrams.list_by_notation(project_id, "dfd")
         # Phase-18-3:追記
         er = await self._diagrams.get_by_subject(
@@ -409,16 +517,20 @@ class DesignStageService:
             project_id=project_id, notation="component", subject=STRUCTURE_SUBJECT
         )
         return StageSources(
-            documents={
-                doc_type: document.content
-                for doc_type, document in documents.items()
-                if document is not None
-            },
-            stages={
-                stage: row.model
-                for stage, row in rows.items()
-                if views[stage].state == "approved" and row.model
-            },
+            # Phase-31-4：更新
+            # documents={
+            #     doc_type: document.content
+            #     for doc_type, document in documents.items()
+            #     if document is not None
+            # },
+            # stages={
+            #     stage: row.model
+            #     for stage, row in rows.items()
+            #     if views[stage].state == "approved" and row.model
+            # },
+            # ↓↓
+            documents=texts,
+            stages=approved,
             dfd_diagrams={diagram.subject: _dfd_summary(diagram) for diagram in diagrams},
             # Phase-18-3:追記
             er_diagram=_er_summary(er) if er is not None else None,
@@ -431,10 +543,16 @@ class DesignStageService:
     #     """段階の入力になる文書の、表示中(is_current)の版。"""
     # ↓↓
     async def _current_documents(
-        self, project_id: uuid.UUID
+        # Phase-31-4：更新
+        # self, project_id: uuid.UUID
+        # ↓↓
+        self, project_id: uuid.UUID, inputs: Mapping[int, StageInputs]
     ) -> dict[str, GeneratedDocument | None]:
         """段階の入力になる文書の、表示中(is_current)の版(まだ無ければNone)。"""
-        doc_types = {d for inputs in STAGE_INPUTS.values() for d in inputs.documents}
+        # Phase-31-4：更新
+        # doc_types = {d for inputs in STAGE_INPUTS.values() for d in inputs.documents}
+        # ↓↓
+        doc_types = {d for stage_input in inputs.values() for d in stage_input.documents}
         # Phase-16-3：更新
         # versions: dict[str, int | None] = {}
         # for doc_type in sorted(doc_types):
@@ -499,11 +617,25 @@ def _component_summary(diagram: UmlDiagram) -> ComponentDiagramSummary:
 
 
 # ── ここから Phase-15-2 の作成分 ──
-def _ensure_detailed(project: Project) -> None:
-    if project.mode != "detailed":
+# Phase-31-4：更新
+# def _ensure_detailed(project: Project) -> None:
+#     if project.mode != "detailed":
+# ↓↓
+def _ensure_stage(project: Project, stage: int) -> None:
+    """プロジェクトのモードに、その段階があるか(簡易モードは段階8だけ)。"""
+    if stage not in stage_inputs(project.mode):
         raise DesignStagesNotAvailableError(
-            f"Project {project.id} is not in detailed design mode (mode={project.mode})"
+            # Phase-31-4：更新
+            # f"Project {project.id} is not in detailed design mode (mode={project.mode})"
+            # ↓↓
+            f"Stage {stage} is not available for project {project.id} (mode={project.mode})"
         )
+
+
+# Phase-31-4:追記
+def _basis(sources: StageSources) -> ProcedureBasis:
+    """段階8の土台(作業単位と参照の出どころ。モードで変わる)。"""
+    return procedure_basis(sources.mode, sources.stages, sources.documents)
 
 
 def _ensure_open(view: StageView) -> None:
@@ -556,6 +688,13 @@ def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) ->
     # Phase-27-2：更新
     # issues = validate_stage(view.stage, row.model, sources) if row is not None else []
     # ↓↓
+    # Phase-31-4:追記
+    # 段階8の作業単位(詳細設計モードは段階7、簡易モードは実装計画書の WBS)。画面の単位の一覧が使う
+    plan = (
+        _basis(sources).plan.model_dump(mode="json")
+        if view.stage == PROCEDURE_DOC_STAGE and view.is_open
+        else None
+    )
     if row is not None:
         issues = validate_stage(view.stage, row.model, sources)
     elif view.is_open:
@@ -565,6 +704,8 @@ def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) ->
         issues = []
     return DesignStageRead(
         stage=view.stage,
+        # Phase-31-4:追記
+        mode=sources.mode,
         state=view.state,
         is_open=view.is_open,
         missing_inputs=list(view.missing_inputs),
@@ -578,6 +719,8 @@ def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) ->
         issues=[StageIssueRead.model_validate(issue, from_attributes=True) for issue in issues],
         # Phase-18-3:追記
         dfd_accesses=_dfd_access_reads(sources) if view.stage == DATA_MODEL_STAGE else [],
+        # Phase-31-4:追記
+        plan=plan,
     )
 
 

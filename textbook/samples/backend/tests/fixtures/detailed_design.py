@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3,22-1,22-3,22-5,23-1,23-2,27-1,28-2,30-1
+# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3,22-1,22-3,22-5,23-1,23-2,27-1,28-2,30-1,31-3
 # 写経レベル: 定型 ── テスト用のプロジェクトの組み立て。
 """詳細設計モードのテストで使うプロジェクトの組み立て(段階のサービス・ルートのテストで共有する)。"""
 
@@ -8,6 +8,7 @@
 # Phase-22-5:追記 ── app.uml.domain.SemanticModelAdapter, app.uml.layout(compute_layout, edge_labels)
 # Phase-28-2:追記 ── app.detailed_design.procedure_doc_drafting(GeneratedFinding, GeneratedTestPoint, GeneratedUnitFile, ProcedureDocGenerationOutput)
 # Phase-30-1:追記 ── app.detailed_design.procedure_output(ProcedureOutputSource, procedure_output_source), app.detailed_design.validation.StageIssue
+# Phase-31-3:追記 ── app.detailed_design.procedure_basis.procedure_basis
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +19,7 @@ from app.detailed_design.document import (
     RenderedDiagram,
     document_source,
 )
+from app.detailed_design.procedure_basis import procedure_basis
 from app.detailed_design.procedure_doc_drafting import (
     GeneratedFinding,
     GeneratedTestPoint,
@@ -541,7 +543,10 @@ def sample_procedure_source(
     return procedure_output_source(
         "予約システム",
         state,
-        document_stage_models(),
+        # Phase-31-3：更新
+        # document_stage_models(),
+        # ↓↓
+        procedure_basis("detailed", document_stage_models(), {}),
         procedure_doc_model() if model is None else model,
         issues,
         REQUIREMENTS_WITH_SCOPE,

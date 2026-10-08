@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6,28-3,28-4,29-4,30-5,30-7
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6,28-3,28-4,29-4,30-5,30-7,31-5
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-16-5:追記 ── ../designStagesApi.generateDesignStage
 // Phase-17-5:追記 ── ../types.MAX_DFD_GROUPS, @/features/detailed-design/test-utils/stageFixtures.makeDataFlow
@@ -26,6 +26,8 @@ import { makeCrud, makeDataFlow } from "@/features/detailed-design/test-utils/st
 
 const STAGE1: DesignStageRead = {
   stage: 1,
+  // Phase-31-5:追記
+  mode: "detailed",
   state: "reviewing",
   is_open: true,
   missing_inputs: [],
@@ -39,6 +41,8 @@ const STAGE1: DesignStageRead = {
   issues: [],
   // Phase-18-5:追記
   dfd_accesses: [],
+  // Phase-31-5:追記
+  plan: null,
 };
 
 describe("designStagesApi", () => {

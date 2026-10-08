@@ -1,4 +1,4 @@
-// 作成：Phase-28-4｜更新：Phase-29-5,30-5
+// 作成：Phase-28-4｜更新：Phase-29-5,30-5,31-5
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -9,7 +9,14 @@ import { UnitProcedureEditor } from "../UnitProcedureEditor";
 // import { getUnitContext } from "@/features/detailed-design/api/designStagesApi";
 // ↓↓
 import { getUnitAiMarkdown, getUnitContext } from "@/features/detailed-design/api/designStagesApi";
-import type { ProcedureDocModel, UnitContextRead } from "@/features/detailed-design/api/types";
+// Phase-31-5：更新
+// import type { ProcedureDocModel, UnitContextRead } from "@/features/detailed-design/api/types";
+// ↓↓
+import type {
+  ProcedureDocModel,
+  ProjectMode,
+  UnitContextRead,
+} from "@/features/detailed-design/api/types";
 import { procedureUnits } from "@/features/detailed-design/procedureDocOps";
 import { makePlan, makeProcedureDoc } from "../../test-utils/stageFixtures";
 
@@ -58,7 +65,15 @@ const CONTEXT: UnitContextRead = {
 // Phase-30-5：更新
 // function renderEditor(doc: ProcedureDocModel, unitId = "M-01-T02") {
 // ↓↓
-function renderEditor(doc: ProcedureDocModel, unitId = "M-01-T02", unsaved = false) {
+// Phase-31-5：更新
+// function renderEditor(doc: ProcedureDocModel, unitId = "M-01-T02", unsaved = false) {
+// ↓↓
+function renderEditor(
+  doc: ProcedureDocModel,
+  unitId = "M-01-T02",
+  unsaved = false,
+  mode: ProjectMode = "detailed",
+) {
   const onChange = vi.fn();
   const onFix = vi.fn();
   const unit = procedureUnits(makePlan(), doc).find((u) => u.id === unitId)!;
@@ -71,6 +86,8 @@ function renderEditor(doc: ProcedureDocModel, unitId = "M-01-T02", unsaved = fal
         disabled={false}
         // Phase-30-5:追記
         unsaved={unsaved}
+        // Phase-31-5:追記
+        mode={mode}
         onChange={onChange}
         onFix={onFix}
       />
@@ -200,5 +217,27 @@ describe("UnitProcedureEditor", () => {
   it("手順書の無い単位には、コピーのボタンを出さない", () => {
     renderEditor(makeProcedureDoc(), "M-01-T01");
     expect(screen.queryByRole("button", { name: "AI 向けにコピー" })).not.toBeInTheDocument();
+  });
+
+  // Phase-31-5:追記
+  it("簡易モードは直す先を文書で選び、文書の画面へのリンクを出す", async () => {
+    const user = userEvent.setup();
+    const doc = makeProcedureDoc();
+    doc.units[0].findings = [
+      { level: "major", target: "DF-1", message: "応答が無い", fix_stage: 8, fix_document: "internal_design" },
+    ];
+    const { onChange } = renderEditor(doc, "M-01-T02", false, "simple");
+
+    expect(screen.getByRole("link", { name: "内部設計書を直す(再生成)" })).toHaveAttribute(
+      "href",
+      "/projects/p1/documents",
+    );
+    await user.selectOptions(screen.getByLabelText("指摘 1 の直す先"), "implementation_plan");
+    const changed = onChange.mock.calls.at(-1)?.[0] as ProcedureDocModel;
+    expect(changed.units[0].findings[0]).toMatchObject({
+      fix_stage: 8,
+      fix_document: "implementation_plan",
+    });
+    expect(await screen.findByRole("button", { name: "内部設計書 3.4" })).toBeInTheDocument();
   });
 });

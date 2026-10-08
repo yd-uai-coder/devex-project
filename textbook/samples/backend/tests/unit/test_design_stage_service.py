@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,27-1
+# 作成：Phase-15-2｜更新：Phase-16-3,27-1,31-4
 # 写経レベル: コア ── 承認の条件と陳腐化をサービス越しに確かめる。
 # Phase-16-3:追記 ── tests.fixtures.detailed_design.function_list_model, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
 import pytest
@@ -55,11 +55,25 @@ async def test_routes_save_approve_and_list_stage1(db_session: AsyncSession) -> 
     assert stages[1].is_open is True
 
 
-async def test_simple_mode_project_has_no_stages(db_session: AsyncSession) -> None:
+# Phase-31-4：更新
+# async def test_simple_mode_project_has_no_stages(db_session: AsyncSession) -> None:
+# ↓↓
+async def test_simple_mode_project_has_only_stage8(db_session: AsyncSession) -> None:
+    """簡易モードは段階8だけを持ち(入力は4文書)、他の段階は断る。"""
     project = await create_detailed_project(db_session, mode="simple")
+    # Phase-31-4:追記
+    service = DesignStageService(db_session)
 
+    # Phase-31-4:追記
+    stages = await service.list_stages(project)
+
+    assert [(s.stage, s.mode, s.is_open) for s in stages] == [(8, "simple", False)]
+    assert stages[0].missing_inputs == ["doc:internal_design", "doc:implementation_plan"]
     with pytest.raises(DesignStagesNotAvailableError):
-        await DesignStageService(db_session).list_stages(project)
+        # Phase-31-4：更新
+        # await DesignStageService(db_session).list_stages(project)
+        # ↓↓
+        await service.save(project, stage=1, expected_version=None, model=MODEL)
 
 
 async def test_save_locked_stage_is_rejected(db_session: AsyncSession) -> None:

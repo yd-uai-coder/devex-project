@@ -1,4 +1,4 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,31-5
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -42,7 +42,10 @@ const noProcedure: StageIssue = {
 function stage8(patch: Partial<DesignStageRead>): DesignStageRead {
   const stages = makeStages({
     7: { state: "approved", model: makePlan() },
-    8: { is_open: true, missing_inputs: [], ...patch },
+    // Phase-31-5：更新
+    // 8: { is_open: true, missing_inputs: [], ...patch },
+    // ↓↓
+    8: { is_open: true, missing_inputs: [], plan: makePlan(), ...patch },
   });
   useDetailedDesignStore.setState({ stages });
   return stages[7];
@@ -197,5 +200,42 @@ describe("ProcedureDocPanel", () => {
     renderPanel(stage8({ generation_status: "failed", generation_error: "下書きの生成に失敗しました。" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent("下書きの生成に失敗しました。");
+  });
+
+  // Phase-31-5:追記
+  it("簡易モードは段階8の plan(実装計画書の WBS)の単位を出し、直す先の文書の画面へのリンクを出す", () => {
+    const wbsIssue: StageIssue = {
+      severity: "warning",
+      code: "UNKNOWN_DATAFLOW",
+      message: "M-01-T02 の処理 DF-9 が、内部設計書の処理別データフローにありません。",
+      target: "DF-9",
+      level: "major",
+      fix_stage: 8,
+      unit: "M-01-T02",
+      fix_document: "implementation_plan",
+    };
+    useDetailedDesignStore.setState({ stages: [] });
+    const [simple] = makeStages({
+      8: { mode: "simple", is_open: true, missing_inputs: [], plan: makePlan(), issues: [wbsIssue] },
+    }).slice(7);
+    renderPanel(simple);
+
+    expect(screen.getByText(/実装計画書の WBSの作業単位です/)).toBeInTheDocument();
+    const rows = within(screen.getByRole("table", { name: "単位の一覧" })).getAllByRole("row");
+    expect(rows).toHaveLength(3);
+    expect(screen.getByRole("link", { name: "実装計画書を直す(再生成)" })).toHaveAttribute(
+      "href",
+      "/projects/p1/documents",
+    );
+    expect(screen.queryByRole("button", { name: /段階\dで直す/ })).not.toBeInTheDocument();
+  });
+
+  it("簡易モードで WBS から単位を読めなければ、再生成を促す", () => {
+    const [simple] = makeStages({
+      8: { mode: "simple", is_open: true, missing_inputs: [], plan: { milestones: [] } },
+    }).slice(7);
+    renderPanel(simple);
+
+    expect(screen.getByRole("status")).toHaveTextContent("実装計画書の WBS から作業単位を読めませんでした");
   });
 });

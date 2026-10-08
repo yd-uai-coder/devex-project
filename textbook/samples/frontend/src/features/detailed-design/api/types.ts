@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -24,10 +24,25 @@ export type StageState =
 // 実装可能性チェックの指摘の重要度。critical = 最重要、major = 中程度、minor = 軽微
 export type FindingLevel = "critical" | "major" | "minor";
 
+// Phase-31-5:追記
+// プロジェクトのモード。simple = 簡易ドキュメントモード(段階8だけを持つ)、detailed = 詳細設計モード
+export type ProjectMode = "simple" | "detailed";
+
+// 簡易ドキュメントモードの4文書。簡易モードの段階8の指摘は、直す先を段階でなくこの文書で示す
+export type DesignDocument =
+  | "requirements"
+  | "external_design"
+  | "internal_design"
+  | "implementation_plan";
+
 // Phase-16-5:追記
 // 段階ごとの検証の指摘(Phase 16)。error があると承認できない。warning は承認を止めない。
 // 段階8(実装可能性チェック)の指摘だけが、重要度 level・直す先の段階 fix_stage・指摘の出た
-// 作業単位の ID unit を持つ(他の段階は null か省略。Phase 27)。
+// Phase-31-5：更新
+// // 作業単位の ID unit を持つ(他の段階は null か省略)。
+// ↓↓
+// 作業単位の ID unit を持つ(他の段階は null か省略)。簡易モードの段階8の指摘は、直す先を文書
+// fix_document で示す(fix_stage は直す先の段階が無いことを示す 8)。
 export type StageIssue = {
   severity: "error" | "warning";
   code: string;
@@ -37,6 +52,8 @@ export type StageIssue = {
   level?: FindingLevel | null;
   fix_stage?: number | null;
   unit?: string | null;
+  // Phase-31-5:追記
+  fix_document?: DesignDocument | null;
 };
 
 // Phase-16-5:追記
@@ -52,8 +69,12 @@ export type DfdAccess = {
   kind: "read" | "write";
 };
 
+// Phase-31-5:追記
+// mode はプロジェクトのモード(詳細設計モードは段階1〜8、簡易モードは段階8だけが返る)。
 export type DesignStageRead = {
   stage: number;
+  // Phase-31-5:追記
+  mode: ProjectMode;
   state: StageState;
   is_open: boolean;
   // まだそろっていない入力。"stage:<n>"(承認されていない前の段階)/"doc:<doc_type>"(まだ無い文書)
@@ -70,6 +91,10 @@ export type DesignStageRead = {
   // Phase-18-5:追記
   // 段階3だけが持つ、DFD から決まる R/W(バックエンドが導いた結果。Phase 18)
   dfd_accesses: DfdAccess[];
+  // Phase-31-5:追記
+  // 段階8だけが持つ、作業単位(段階7と同じ形。詳細設計モードは承認済みの段階7、簡易モードは実装計画書の
+  // WBS を読んだもの。段階8が開いていなければ null)
+  plan: Record<string, unknown> | null;
 };
 
 // Phase-16-5:追記
@@ -298,12 +323,18 @@ export type UnitFile = {
 
 export type TestPoint = { viewpoint: string; sut: string; driver: string; stub: string };
 
-// 手順書を作った AI の指摘(設計に無いため決められないこと)。fix_stage は直す先の段階
+// Phase-31-5：更新
+// // 手順書を作った AI の指摘(設計に無いため決められないこと)。fix_stage は直す先の段階
+// ↓↓
+// 手順書を作った AI の指摘(設計に無いため決められないこと)。fix_stage は直す先の段階。
+// 簡易モードは直す先を文書 fix_document で示す(fix_stage は 8)
 export type AiFinding = {
   level: FindingLevel;
   target: string;
   message: string;
   fix_stage: number;
+  // Phase-31-5:追記
+  fix_document?: DesignDocument | null;
 };
 
 export type UnitProcedure = {
@@ -341,13 +372,21 @@ export type SequenceRead = {
 };
 
 // 段階8の単位が参照する設計1つ(devex-api app/schemas/design_stage.py の DesignRefRead)。
-// procedure = 段階5の手順、logic = 段階6の関数、module = 段階4のモジュール。markdown は設計の
+// Phase-31-5,31-7：更新
+// // procedure = 段階5の手順、logic = 段階6の関数、module = 段階4のモジュール。markdown は設計の
+// ↓↓
+// procedure = 段階5の手順、logic = 段階6の関数、module = 段階4のモジュール(簡易モードは内部設計書の
+// モジュール一覧の層)、dataflow = 簡易モードの内部設計書の処理別データフロー、datamodel = 簡易モードの
+// 内部設計書 3.2節のデータモデル全体(DF を持たない単位だけ)。markdown は設計の
 // Phase-29-5：更新
 // // 該当箇所を展開した md(設計に無い参照は null)。
 // ↓↓
 // 該当箇所を展開した md(設計に無い参照は null)。svg は段階5の手順のシーケンス図(手順の参照だけ)。
 export type DesignRefRead = {
-  kind: "procedure" | "logic" | "module";
+  // Phase-31-5,31-7：更新(31-5 で dataflow、31-7 で datamodel を足した)
+  // kind: "procedure" | "logic" | "module";
+  // ↓↓
+  kind: "procedure" | "logic" | "module" | "dataflow" | "datamodel";
   key: string;
   resolved: boolean;
   via: string | null;
@@ -357,7 +396,11 @@ export type DesignRefRead = {
   svg: string | null;
 };
 
-// 段階8の単位1つの、手順書を読むための材料(参照の展開と、段階7の 07章・開発環境の md)。
+// Phase-31-5：更新
+// // 段階8の単位1つの、手順書を読むための材料(参照の展開と、段階7の 07章・開発環境の md)。
+// ↓↓
+// 段階8の単位1つの、手順書を読むための材料(参照の展開と、段階7の 07章・開発環境の md。簡易モードは
+// 内部設計書 3.4節と、実装計画書 4.3節・内部設計書 3.1節の md)。
 export type UnitContextRead = {
   unit_id: string;
   refs: DesignRefRead[];

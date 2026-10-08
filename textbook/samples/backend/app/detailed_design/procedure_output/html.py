@@ -1,4 +1,4 @@
-# 作成：Phase-30-3
+# 作成：Phase-30-3｜更新：Phase-31-3
 """実装手順書の HTML(1枚)を組み立てる(純粋関数)。
 
 docs/external_design.md 2.8節「出力」。`implementation_procedure/implementation_procedure.html`。
@@ -14,6 +14,7 @@ docs/external_design.md 2.8節「出力」。`implementation_procedure/implement
 文字はすべて`e`(`html.escape`)で書く。例外は図の SVG だけ(`document/html.py`の docstring 参照)。
 """
 
+# Phase-31-3：更新 ── app.detailed_design.procedure_output.markdown.MODULE_RULE を削除し、source.fix_stage_text を fix_target_text に
 from collections.abc import Sequence
 
 from app.detailed_design.document.html import badge, e, mono, page, table
@@ -23,7 +24,6 @@ from app.detailed_design.procedure_doc import PlanUnit
 from app.detailed_design.procedure_output.markdown import (
     COMPLETION_CRITERIA,
     DECIDED_CRITERION,
-    MODULE_RULE,
     NOT_GENERATED_TEXT,
     UNIT_LIST_HEADERS,
     file_kind_label,
@@ -34,7 +34,7 @@ from app.detailed_design.procedure_output.source import (
     ProcedureOutputSource,
     UnitFinding,
     count_text,
-    fix_stage_text,
+    fix_target_text,
     unit_findings,
 )
 
@@ -64,8 +64,12 @@ def to_procedure_html(source: ProcedureOutputSource) -> str:
     header = (
         '<header style="display:grid;gap:12px"><div class="muted">Devex ／ 実装手順書</div>'
         f"<h1>{e(source.title)}</h1>"
-        '<p class="muted">承認済みの段階8と段階1〜7から組み立てた実装手順書です。青い単位の ID を'
-        "押すと、その単位の手順書へ移ります。</p>"
+        # Phase-31-3：更新
+        # '<p class="muted">承認済みの段階8と段階1〜7から組み立てた実装手順書です。青い単位の ID を'
+        # "押すと、その単位の手順書へ移ります。</p>"
+        # ↓↓
+        f'<p class="muted">承認済みの段階8と{e(source.labels.sources)}から組み立てた'
+        "実装手順書です。青い単位の ID を押すと、その単位の手順書へ移ります。</p>"
         + (f'<nav class="toc">{toc}</nav>' if source.approved else "")
         + "</header>"
     )
@@ -113,16 +117,26 @@ def _overview(source: ProcedureOutputSource) -> str:
 
 
 def _premises(source: ProcedureOutputSource) -> str:
-    environment = source.plan.environment.strip()
+    # Phase-31-3：更新
+    # environment = source.plan.environment.strip()
+    # ↓↓
+    environment = source.environment.strip()
     stack = (
         f'<p style="white-space:pre-wrap">{e(environment)}</p>'
         if environment
         else '<p class="muted">—</p>'
     )
-    rules = [MODULE_RULE] + [f"07章 {r.topic}: {r.policy}" for r in source.plan.crosscutting]
+    # Phase-31-3：更新
+    # rules = [MODULE_RULE] + [f"07章 {r.topic}: {r.policy}" for r in source.plan.crosscutting]
+    # ↓↓
+    labels = source.labels
     return (
-        f"<h3>技術スタック・開発環境(段階7)</h3>{stack}"
-        f"<h3>実装ルール(段階4・07章より)</h3>{_list(rules)}"
+        # Phase-31-3：更新
+        # f"<h3>技術スタック・開発環境(段階7)</h3>{stack}"
+        # f"<h3>実装ルール(段階4・07章より)</h3>{_list(rules)}"
+        # ↓↓
+        f"<h3>{e(labels.environment)}</h3>{stack}"
+        f"<h3>{e(labels.rules)}</h3>{_list(source.rules)}"
     )
 
 
@@ -166,8 +180,11 @@ def _findings(source: ProcedureOutputSource) -> str:
     per_unit = [f for f in source.findings if f.unit is not None]
     none = '<p class="muted">なし</p>'
     return (
-        "<p>「直す段階」へ戻って設計を直す。直した段階は差し戻され、この手順書は「古い」になる。"
-        "手順書の上では決めない。</p>"
+        # Phase-31-3：更新
+        # "<p>「直す段階」へ戻って設計を直す。直した段階は差し戻され、この手順書は「古い」になる。"
+        # "手順書の上では決めない。</p>"
+        # ↓↓
+        f"<p>{e(source.labels.fix_guide)}手順書の上では決めない。</p>"
         "<h3>全体(単位によらない)</h3>"
         + (_finding_table(source, overall, with_unit=False) if overall else none)
         + "<h3>単位ごと</h3>"
@@ -178,7 +195,11 @@ def _findings(source: ProcedureOutputSource) -> str:
 def _finding_table(
     source: ProcedureOutputSource, findings: Sequence[UnitFinding], *, with_unit: bool
 ) -> str:
-    headers = ["重要度", "出どころ", *(["単位"] if with_unit else []), "対象", "内容", "直す段階"]
+    # Phase-31-3：更新
+    # headers = ["重要度", "出どころ", *(["単位"] if with_unit else []), "対象", "内容", "直す段階"]
+    # ↓↓
+    fix = source.labels.fix_heading
+    headers = ["重要度", "出どころ", *(["単位"] if with_unit else []), "対象", "内容", fix]
     rows = [
         [
             e(LEVEL_LABELS[f.level]),
@@ -186,7 +207,10 @@ def _finding_table(
             *([_unit_ref(source, f.unit or "")] if with_unit else []),
             e(f.target),
             e(f.message),
-            e(fix_stage_text(f.fix_stage)),
+            # Phase-31-3：更新
+            # e(fix_stage_text(f.fix_stage)),
+            # ↓↓
+            e(fix_target_text(f)),
         ]
         for f in findings
     ]

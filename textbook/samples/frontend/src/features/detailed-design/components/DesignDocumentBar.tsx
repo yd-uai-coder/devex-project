@@ -1,4 +1,4 @@
-// 作成：Phase-22-6｜更新：Phase-23-6,30-4,30-7
+// 作成：Phase-22-6｜更新：Phase-23-6,30-4,30-7,31-5
 // 写経レベル: 定型 ── ダウンロードのボタンと未承認の件数の案内(DiagramSyncBar と同じ形)。
 "use client";
 
@@ -60,8 +60,18 @@ export function unapprovedStages(stages: DesignStageRead[], targets: number[]): 
   return targets.filter((target) => stages.find((s) => s.stage === target)?.state !== "approved");
 }
 
+// Phase-31-5:追記
+// プロジェクトが持つ段階で作れる zip だけ(簡易モードは段階8だけなので、実装手順書だけ)。
+export function availableDownloads(stages: DesignStageRead[]): DownloadItem[] {
+  return DOWNLOADS.filter((item) =>
+    item.stages.every((target) => stages.some((s) => s.stage === target)),
+  );
+}
+
 // SCR-008 の上部に置く、2つの zip(詳細設計書・実装計画 / 実装手順書)のダウンロード。
 // 元になる段階が承認されるまでボタンを押せなくし(透過表示)、どの段階が未承認かを横に出す。
+// Phase-31-5:追記
+// 簡易モードのプロジェクトは段階8だけを持つので、実装手順書の zip だけを出す。
 export function DesignDocumentBar({
   projectId,
   stages,
@@ -116,7 +126,10 @@ export function DesignDocumentBar({
             </Text>
           </XStack>
           ↓↓ */}
-      {DOWNLOADS.map((item) => {
+      {/* Phase-31-5：更新
+         {DOWNLOADS.map((item) => {
+         ↓↓ */}
+      {availableDownloads(stages).map((item) => {
         const missing = unapprovedStages(stages, item.stages);
         const ready = missing.length === 0;
         return (

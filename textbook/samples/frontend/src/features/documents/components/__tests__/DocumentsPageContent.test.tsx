@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整)
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -141,5 +141,17 @@ describe("DocumentsPageContent", () => {
     renderContent();
 
     expect(screen.getByText("まだ生成されたドキュメントがありません。")).toBeInTheDocument();
+  });
+
+  // Phase-31-5:追記
+  it("簡易ドキュメントモードでは、実装手順書へ進むリンクを表示する(同じ詳細設計画面を段階8だけで開く)", () => {
+    useDocumentsStore.setState({ projectMode: "simple" });
+
+    renderContent();
+
+    expect(screen.getByRole("link", { name: "実装手順書へ進む →" })).toHaveAttribute(
+      "href",
+      "/projects/p1/detailed-design",
+    );
   });
 });

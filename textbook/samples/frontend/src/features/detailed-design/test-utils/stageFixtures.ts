@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1,31-5
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
@@ -222,6 +222,8 @@ export function makeStages(
 ) {
   return [1, 2, 3, 4, 5, 6, 7, 8].map((stage): DesignStageRead => ({
     stage,
+    // Phase-31-5:追記
+    mode: "detailed",
     state: "not_started",
     is_open: stage === 1,
     missing_inputs: stage === 1 ? [] : [`stage:${stage - 1}`],
@@ -235,6 +237,8 @@ export function makeStages(
     issues: [],
     // Phase-18-5:追記
     dfd_accesses: [],
+    // Phase-31-5:追記
+    plan: null,
     ...overrides[stage],
   }));
 }

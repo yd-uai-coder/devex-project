@@ -1,4 +1,4 @@
-// 作成：Phase-22-6｜更新：Phase-23-6,30-4,30-7
+// 作成：Phase-22-6｜更新：Phase-23-6,30-4,30-7,31-5
 // 写経レベル: 定型
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -8,7 +8,15 @@ import tamaguiConfig from "@/tamagui.config";
 // Phase-30-7：更新
 // import { DesignDocumentBar, DOCUMENT_NOTICE } from "../DesignDocumentBar";
 // ↓↓
-import { DesignDocumentBar, DOCUMENT_NOTICE, unapprovedStages } from "../DesignDocumentBar";
+// Phase-31-5：更新
+// import { DesignDocumentBar, DOCUMENT_NOTICE, unapprovedStages } from "../DesignDocumentBar";
+// ↓↓
+import {
+  availableDownloads,
+  DesignDocumentBar,
+  DOCUMENT_NOTICE,
+  unapprovedStages,
+} from "../DesignDocumentBar";
 import * as download from "@/lib/api/download";
 import { makeStages } from "../../test-utils/stageFixtures";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
@@ -201,5 +209,19 @@ describe("DesignDocumentBar", () => {
     // expect(await screen.findByRole("alert")).toHaveTextContent("使えません");
     // ↓↓
     expect(await screen.findByRole("alert")).toHaveTextContent("段階7が承認されていません");
+  });
+
+  // Phase-31-5:追記
+  it("簡易モード(段階8だけ)は実装手順書の zip だけを出す", () => {
+    const stages = makeStages({ 8: { mode: "simple", state: "approved", version: 1 } }).slice(7);
+
+    renderBar(stages);
+
+    expect(availableDownloads(stages).map((item) => item.label)).toEqual([PROCEDURE_BUTTON]);
+    expect(screen.queryByRole("button", { name: DOCUMENT_BUTTON })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: PROCEDURE_BUTTON })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 });

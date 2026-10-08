@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整)
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5
 "use client";
 
 // Phase-15-8:追記 ── useState(react), ConfirmDialog
@@ -67,6 +67,13 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           {/* Phase-15-8：更新(押したら確認ダイアログを開く)
           <Button size="$3" disabled={regenerating} onPress={() => regenerate(projectId)}>
               ↓↓ */}
+          {/* Phase-31-5:追記 */}
+          {/* 簡易モードは、同じ画面(SCR-008)を段階8(実装手順書)だけで開く(入力は4文書) */}
+          {projectMode === "simple" ? (
+            <Link href={`/projects/${projectId}/detailed-design`}>
+              <Text color="$blue10">実装手順書へ進む →</Text>
+            </Link>
+          ) : null}
           <Button size="$3" disabled={regenerating} onPress={() => setConfirmOpen(true)}>
             {regenerating ? "再生成中..." : "再生成する"}
           </Button>

@@ -1,11 +1,14 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整)
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1
 # 写経レベル: コア ── 実機検証で発見した2件の不具合(ヒアリング完了判定の誤カウント、
 # doc_type判別の誤マッチ)の回帰テスト。当初はPlaywright(Phase 4-4)のみで検証する設計にして
 # いたが、両方ともpytestレベルの単体テストで安価に検知できる性質のバグだったため、事後的に
 # この単体テストを追加した(判断の経緯はPhase-4-3.md「実機検証で発見した2件の不具合」参照)。
+# Phase-31-1:追記 ── app.detailed_design.plan.unit_ids, app.detailed_design.simple_procedure.parse_wbs
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.ai.llm.fake import E2eFakeLLM
+from app.detailed_design.plan import unit_ids
+from app.detailed_design.simple_procedure import parse_wbs
 from app.schemas.generation import HearingCompletionCheck
 from app.services.doc_generator_service import _DOC_TYPE_PROMPTS, _SELF_DIAGNOSIS_SYSTEM_PROMPT
 
@@ -69,6 +72,23 @@ async def test_each_doc_type_prompt_produces_its_own_distinct_reply() -> None:
     assert "外部設計書" in replies["external_design"]
     assert "内部設計書" in replies["internal_design"]
     assert "実装計画書" in replies["implementation_plan"]
+
+
+# Phase-31-1:追記
+async def test_implementation_plan_reply_is_readable_as_wbs() -> None:
+    """偽の実装計画書は、簡易モードの実装手順書が指摘0件で作業単位として読める書式で返る。"""
+    llm = E2eFakeLLM()
+    messages = [
+        SystemMessage(content=_DOC_TYPE_PROMPTS["implementation_plan"]),
+        HumanMessage(content="dummy input"),
+    ]
+
+    result = await llm.ainvoke(messages)
+
+    assert isinstance(result.content, str)
+    parsed = parse_wbs(result.content)
+    assert parsed.issues == ()
+    assert unit_ids(parsed.plan) == ["M-01-T01", "M-01-T02"]
 
 
 async def test_self_diagnosis_prompt_produces_diagnosis_reply() -> None:

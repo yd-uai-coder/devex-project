@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -18,7 +18,11 @@ import { criticalCount } from "@/features/detailed-design/procedureDocOps";
 
 // Phase-27-3：更新(段階1〜7 → 段階1〜8)
 // 詳細設計画面(SCR-008)。左に段階1〜8のステッパー、右に選んだ段階の作業領域を置く
-// (docs/external_design.md 2.7節「段階の進め方」)。
+// Phase-31-5：更新
+// // (docs/external_design.md 2.7節「段階の進め方」)。
+// ↓↓
+// (docs/external_design.md 2.7節「段階の進め方」)。簡易ドキュメントモードのプロジェクトは段階8
+// (実装手順書)だけを持ち、同じ画面を段階8だけのステッパーで開く(見出しは「実装手順書」)。
 export function DetailedDesignPageContent({
   projectId,
 }: {
@@ -46,6 +50,8 @@ export function DetailedDesignPageContent({
 
   const current = stages.find((s) => s.stage === selectedStage);
   // Phase-18-9:追記
+  // Phase-31-5:追記
+  const simple = stages[0]?.mode === "simple";
   const nextStage =
     approvedStage !== null && stages.some((s) => s.stage === approvedStage + 1)
       ? approvedStage + 1
@@ -69,7 +75,10 @@ export function DetailedDesignPageContent({
   return (
     <YStack paddingVertical="$4" gap="$4">
       <XStack justifyContent="space-between" alignItems="center">
-        <H2>詳細設計</H2>
+        {/* Phase-31-5：更新
+           <H2>詳細設計</H2>
+           ↓↓ */}
+        <H2>{simple ? "実装手順書" : "詳細設計"}</H2>
         <Link href={`/projects/${projectId}/documents`}>
           <Text color="$blue10">← ドキュメントに戻る</Text>
         </Link>

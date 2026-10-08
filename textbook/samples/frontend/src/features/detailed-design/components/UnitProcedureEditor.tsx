@@ -1,4 +1,4 @@
-// 作成：Phase-28-4｜更新：Phase-29-5,30-5
+// 作成：Phase-28-4｜更新：Phase-29-5,30-5,31-5
 "use client";
 
 // Phase-29-5:追記 ── @/features/detailed-design/components/ProcedureSequenceView.SequenceSvg
@@ -11,10 +11,16 @@ import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import { getUnitAiMarkdown, getUnitContext } from "@/features/detailed-design/api/designStagesApi";
 import {
   FINDING_LEVELS,
+  // Phase-31-5:追記
+  type DesignDocument,
   type FindingLevel,
   type ProcedureDocModel,
+  // Phase-31-5:追記
+  type ProjectMode,
   type UnitContextRead,
 } from "@/features/detailed-design/api/types";
+// Phase-31-5:追記
+import { FixTargetButton } from "@/features/detailed-design/components/FixTargetButton";
 import { SequenceSvg } from "@/features/detailed-design/components/ProcedureSequenceView";
 import {
   BADGE,
@@ -26,16 +32,22 @@ import {
   TABLE,
 } from "@/features/detailed-design/components/tableStyles";
 import {
+  // Phase-31-5:追記
+  DESIGN_DOCUMENT_LABELS,
   FINDING_LEVEL_LABELS,
   UNIT_FILE_KIND_LABELS,
   UNIT_KIND_LABELS,
 } from "@/features/detailed-design/labels";
 import { subToText, textToSub } from "@/features/detailed-design/logicOps";
 import {
+  // Phase-31-5:追記
+  DESIGN_DOCUMENTS,
   FILE_KINDS,
   addUnitRow,
   // Phase-30-5:追記
   aiCopyNotices,
+  // Phase-31-5:追記
+  fixTarget,
   removeUnit,
   removeUnitRow,
   updateUnit,
@@ -46,7 +58,11 @@ import {
 // 段階8の、1つの作業単位の詳細。参照する設計(サーバーが承認済みの設計から展開したもの)と、
 // 手順書(目的・ファイル・実装の要点・テスト観点・確認方法・AI の指摘)を出す。手順書の編集は
 // onChange で呼び出し元(ProcedureDocPanel)へ返し、保存は呼び出し元が行う。AI の指摘は手順書の上では
-// 決めず、「段階Nで直す」で対象の段階へ移って直す(直したら指摘の行を消せる)。
+// Phase-31-5：更新
+// // 決めず、「段階Nで直す」で対象の段階へ移って直す(直したら指摘の行を消せる)。
+// ↓↓
+// 決めず、「段階Nで直す」で対象の段階へ移って直す(直したら指摘の行を消せる)。簡易モードは直す先が
+// 文書で、文書の画面へ移って再生成する。
 // Phase-30-5:追記
 // 「AI 向けにコピー」は、サーバーが保存済みの手順書から組み立てた md を写す。
 
@@ -87,9 +103,28 @@ function LinesInput({
 // Phase-29-5：更新
 // // 参照する設計のバッジ。押すと展開した md を出す。設計に無い参照は赤で、押せない。
 // ↓↓
+// Phase-31-5:追記
+// 共通の節のバッジの名前(詳細設計モードは段階7の 07章・開発環境、簡易モードは内部設計書 3.4節と、
+// 実装計画書 4.3節・内部設計書 3.1節)
+const COMMON_LABELS: Record<ProjectMode, { crosscutting: string; environment: string }> = {
+  detailed: { crosscutting: "07章 横断事項", environment: "段階7 開発環境" },
+  simple: { crosscutting: "内部設計書 3.4", environment: "開発環境・技術スタック" },
+};
+
 // 参照する設計のバッジ。押すと展開した md を出す(段階5の手順は、シーケンス図の SVG を md の上に出す)。
 // 設計に無い参照は赤で、押せない。
-function UnitRefs({ projectId, unitId }: { projectId: string; unitId: string }) {
+// Phase-31-5：更新
+// function UnitRefs({ projectId, unitId }: { projectId: string; unitId: string }) {
+// ↓↓
+function UnitRefs({
+  projectId,
+  unitId,
+  mode,
+}: {
+  projectId: string;
+  unitId: string;
+  mode: ProjectMode;
+}) {
   const [state, setState] = useState<ContextState>({ status: "loading" });
   const [open, setOpen] = useState<string | null>(null);
 
@@ -132,10 +167,30 @@ function UnitRefs({ projectId, unitId }: { projectId: string; unitId: string }) 
       svg: ref.svg,
     })),
     ...(context.crosscutting
-      ? [{ id: "crosscutting", label: "07章 横断事項", md: context.crosscutting, svg: null }]
+      // Phase-31-5：更新
+      // ? [{ id: "crosscutting", label: "07章 横断事項", md: context.crosscutting, svg: null }]
+      // ↓↓
+      ? [
+          {
+            id: "crosscutting",
+            label: COMMON_LABELS[mode].crosscutting,
+            md: context.crosscutting,
+            svg: null,
+          },
+        ]
       : []),
     ...(context.environment
-      ? [{ id: "environment", label: "段階7 開発環境", md: context.environment, svg: null }]
+      // Phase-31-5：更新
+      // ? [{ id: "environment", label: "段階7 開発環境", md: context.environment, svg: null }]
+      // ↓↓
+      ? [
+          {
+            id: "environment",
+            label: COMMON_LABELS[mode].environment,
+            md: context.environment,
+            svg: null,
+          },
+        ]
       : []),
   ];
   const expanded = sections.find((section) => section.id === open && section.md !== null);
@@ -262,6 +317,8 @@ export function UnitProcedureEditor({
   disabled,
   // Phase-30-5:追記
   unsaved,
+  // Phase-31-5:追記
+  mode = "detailed",
   onChange,
   onFix,
 }: {
@@ -271,9 +328,13 @@ export function UnitProcedureEditor({
   disabled: boolean;
   // Phase-30-5:追記
   unsaved: boolean;
+  // Phase-31-5:追記
+  mode?: ProjectMode;
   onChange: (doc: ProcedureDocModel) => void;
   onFix: (fixStage: number, target: string) => void;
 }) {
+  // Phase-31-5:追記
+  const simple = mode === "simple";
   const procedure = doc.units.find((item) => item.unit_id === unit.id) ?? null;
   const mismatched = procedure !== null && procedure.title.trim() !== unit.title.trim();
   const id = unit.id;
@@ -292,7 +353,10 @@ export function UnitProcedureEditor({
 
       <YStack gap="$1">
         <Text fontWeight="700">参照する設計</Text>
-        <UnitRefs projectId={projectId} unitId={id} />
+        {/* Phase-31-5：更新
+           <UnitRefs projectId={projectId} unitId={id} />
+           ↓↓ */}
+        <UnitRefs projectId={projectId} unitId={id} mode={mode} />
       </YStack>
 
       {procedure === null ? (
@@ -303,7 +367,10 @@ export function UnitProcedureEditor({
         <>
           {mismatched ? (
             <Paragraph role="status" color="$red10">
-              この手順書は、作ったときのタスク名「{procedure.title}」が段階7と合いません。作り直すか、削除してください。
+              {/* Phase-31-5：更新
+                 この手順書は、作ったときのタスク名「{procedure.title}」が段階7と合いません。作り直すか、削除してください。
+                 ↓↓ */}
+              この手順書は、作ったときのタスク名「{procedure.title}」が{simple ? "実装計画書" : "段階7"}と合いません。作り直すか、削除してください。
             </Paragraph>
           // Phase-30-5：更新
           // ) : null}
@@ -485,13 +552,21 @@ export function UnitProcedureEditor({
           <YStack gap="$1">
             <Text fontWeight="700">AI の指摘(未定義・要決定)</Text>
             <Paragraph color="$color11" fontSize="$2">
-              手順書の上では決めず、対象の段階で直してください。直したら、この行を消せます。
+              {/* Phase-31-5：更新
+                 手順書の上では決めず、対象の段階で直してください。直したら、この行を消せます。
+                 ↓↓ */}
+              {simple
+                ? "手順書の上では決めず、直す先の文書を再生成して直してください。直したら、この行を消せます。"
+                : "手順書の上では決めず、対象の段階で直してください。直したら、この行を消せます。"}
             </Paragraph>
             <div style={{ overflowX: "auto" }}>
               <table style={TABLE} aria-label="AI の指摘">
                 <thead>
                   <tr>
-                    {["重要度", "対象", "内容", "直す段階", ""].map((head) => (
+                    {/* Phase-31-5：更新
+                       {["重要度", "対象", "内容", "直す段階", ""].map((head) => (
+                       ↓↓ */}
+                    {["重要度", "対象", "内容", simple ? "直す先" : "直す段階", ""].map((head) => (
                       <th key={head} style={HEAD}>
                         {head}
                       </th>
@@ -543,30 +618,64 @@ export function UnitProcedureEditor({
                         />
                       </td>
                       <td style={CELL}>
-                        <select
-                          style={INPUT}
-                          aria-label={`指摘 ${index + 1} の直す段階`}
-                          value={finding.fix_stage}
-                          disabled={disabled}
-                          onChange={(e) =>
-                            onChange(
-                              updateUnitRow(doc, id, "findings", index, { fix_stage: Number(e.target.value) }),
-                            )
-                          }
-                        >
-                          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                            <option key={n} value={n} style={OPTION}>
-                              {n === 8 ? "手順書" : `段階${n}`}
+                        {/* Phase-31-5：更新(簡易モードは、直す段階の代わりに直す先の文書を選ぶ。詳細設計モードの select は下の : の側にそのまま残した) */}
+                        {simple ? (
+                          <select
+                            style={INPUT}
+                            aria-label={`指摘 ${index + 1} の直す先`}
+                            value={finding.fix_document ?? ""}
+                            disabled={disabled}
+                            onChange={(e) =>
+                              onChange(
+                                updateUnitRow(doc, id, "findings", index, {
+                                  fix_stage: 8,
+                                  fix_document: (e.target.value || null) as DesignDocument | null,
+                                }),
+                              )
+                            }
+                          >
+                            <option value="" style={OPTION}>
+                              手順書
                             </option>
-                          ))}
-                        </select>
+                            {DESIGN_DOCUMENTS.map((document) => (
+                              <option key={document} value={document} style={OPTION}>
+                                {DESIGN_DOCUMENT_LABELS[document]}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <select
+                            style={INPUT}
+                            aria-label={`指摘 ${index + 1} の直す段階`}
+                            value={finding.fix_stage}
+                            disabled={disabled}
+                            onChange={(e) =>
+                              onChange(
+                                updateUnitRow(doc, id, "findings", index, { fix_stage: Number(e.target.value) }),
+                              )
+                            }
+                          >
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                              <option key={n} value={n} style={OPTION}>
+                                {n === 8 ? "手順書" : `段階${n}`}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </td>
                       <td style={{ ...CELL, whiteSpace: "nowrap" }}>
-                        {finding.fix_stage === 8 ? null : (
-                          <button type="button" onClick={() => onFix(finding.fix_stage, finding.target)}>
-                            {`段階${finding.fix_stage}で直す`}
-                          </button>
-                        )}
+                        {/* Phase-31-5：更新
+                           {finding.fix_stage === 8 ? null : (
+                           <button type="button" onClick={() => onFix(finding.fix_stage, finding.target)}>
+                           {`段階${finding.fix_stage}で直す`}
+                           </button>
+                           )}
+                           ↓↓ */}
+                        <FixTargetButton
+                          projectId={projectId}
+                          target={fixTarget(finding.fix_stage, finding.fix_document)}
+                          onStage={(stage) => onFix(stage, finding.target)}
+                        />
                         <button
                           type="button"
                           aria-label={`指摘 ${index + 1} を削除`}

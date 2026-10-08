@@ -1,10 +1,12 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3,28-4,29-1
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3,28-4,29-1,31-5
 // 写経レベル: コア ── 状態の言葉と、承認できる条件(古い段階は承認し直せる)。
 // Phase-18-9:追記 ── @/features/detailed-design/api/types.StageIssue
 // Phase-26-5:追記 ── UnitKind
 // Phase-27-3:追記 ── FindingLevel
 // Phase-29-1:追記 ── StepKind
 import type {
+  // Phase-31-5:追記
+  DesignDocument,
   DesignStageRead,
   FindingLevel,
   StageIssue,
@@ -71,10 +73,19 @@ export const UNIT_FILE_KIND_LABELS: Record<UnitFileKind, string> = {
   config: "環境・設定",
 };
 
-const DOC_LABELS: Record<string, string> = {
+// Phase-31-5：更新
+// const DOC_LABELS: Record<string, string> = {
+// ↓↓
+// 文書の名前(段階の入力の文書と、簡易モードの段階8の指摘の直す先)
+export const DESIGN_DOCUMENT_LABELS: Record<DesignDocument, string> = {
   requirements: "要件定義書",
   external_design: "外部設計書",
+  // Phase-31-5:追記
+  internal_design: "内部設計書",
+  implementation_plan: "実装計画書",
 };
+// Phase-31-5:追記
+const DOC_LABELS: Record<string, string> = DESIGN_DOCUMENT_LABELS;
 
 // バックエンドの missing_inputs("stage:<n>" / "doc:<doc_type>")を、何が足りないかの言葉にする。
 export function describeMissingInput(key: string): string {

@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -210,5 +210,18 @@ describe("DetailedDesignPageContent", () => {
     await user.click(await screen.findByLabelText("キャンセル"));
 
     expect(useDetailedDesignStore.getState().approve).not.toHaveBeenCalled();
+  });
+
+  // Phase-31-5:追記
+  it("簡易モードは見出しを「実装手順書」にし、段階8だけのステッパーで開く", () => {
+    useDetailedDesignStore.setState({
+      stages: makeStages({ 8: { mode: "simple", is_open: true, missing_inputs: [] } }).slice(7),
+      selectedStage: 8,
+    });
+
+    renderContent();
+
+    expect(screen.getByRole("heading", { name: "実装手順書" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "詳細設計書・実装計画をダウンロード(.zip)" })).not.toBeInTheDocument();
   });
 });
