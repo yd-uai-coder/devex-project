@@ -1,0 +1,201 @@
+{
+  "stage": 1,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "groups": [
+      "auth",
+      "projects",
+      "documents",
+      "chats",
+      "summary",
+      "generate",
+      "jobs",
+      "versions",
+      "regenerate",
+      "diagnostics"
+    ],
+    "functions": [
+      {
+        "id": "F-01",
+        "kind": "API",
+        "name": "新規ユーザー登録",
+        "group": "auth",
+        "screens": [
+          "SCR-001"
+        ],
+        "summary": "新規ユーザー登録を行う",
+        "trigger": "POST /api/v1/auth/register",
+        "group_initial": "auth"
+      },
+      {
+        "id": "F-02",
+        "kind": "API",
+        "name": "ログイン認証",
+        "group": "auth",
+        "screens": [
+          "SCR-001"
+        ],
+        "summary": "ログイン認証を行いJWTを発行する",
+        "trigger": "POST /api/v1/auth/login",
+        "group_initial": "auth"
+      },
+      {
+        "id": "F-03",
+        "kind": "API",
+        "name": "プロジェクト一覧取得",
+        "group": "projects",
+        "screens": [
+          "SCR-002"
+        ],
+        "summary": "作成済みプロジェクトの一覧を取得する",
+        "trigger": "GET /api/v1/projects",
+        "group_initial": "projects"
+      },
+      {
+        "id": "F-04",
+        "kind": "API",
+        "name": "プロジェクト新規作成",
+        "group": "projects",
+        "screens": [
+          "SCR-002"
+        ],
+        "summary": "プロジェクトを新規作成する",
+        "trigger": "POST /api/v1/projects",
+        "group_initial": "projects"
+      },
+      {
+        "id": "F-05",
+        "kind": "API",
+        "name": "参考資料アップロード",
+        "group": "documents",
+        "screens": [
+          "SCR-003"
+        ],
+        "summary": "プロジェクトの参考資料をアップロードする",
+        "trigger": "POST /api/v1/projects/{id}/documents",
+        "group_initial": "documents"
+      },
+      {
+        "id": "F-06",
+        "kind": "API",
+        "name": "チャット履歴取得",
+        "group": "chats",
+        "screens": [
+          "SCR-004"
+        ],
+        "summary": "ヒアリングのチャット履歴を取得する",
+        "trigger": "GET /api/v1/projects/{id}/chats",
+        "group_initial": "chats"
+      },
+      {
+        "id": "F-07",
+        "kind": "API",
+        "name": "ヒアリングチャットメッセージ送信",
+        "group": "chats",
+        "screens": [
+          "SCR-004"
+        ],
+        "summary": "ヒアリングチャットのメッセージを送信しAIの応答を取得する",
+        "trigger": "POST /api/v1/projects/{id}/chats",
+        "group_initial": "chats"
+      },
+      {
+        "id": "F-08",
+        "kind": "API",
+        "name": "構造化サマリ取得",
+        "group": "summary",
+        "screens": [
+          "SCR-004"
+        ],
+        "summary": "AIが生成した構造化サマリを取得する",
+        "trigger": "GET /api/v1/projects/{id}/summary",
+        "group_initial": "summary"
+      },
+      {
+        "id": "F-09",
+        "kind": "API+バッチ",
+        "name": "構造化サマリ承認・設計書非同期生成トリガー",
+        "group": "generate",
+        "screens": [
+          "SCR-004",
+          "SCR-005"
+        ],
+        "summary": "構造化サマリを承認して4種設計書の非同期一括生成ジョブをトリガーする",
+        "trigger": "POST /api/v1/projects/{id}/generate",
+        "group_initial": "generate"
+      },
+      {
+        "id": "F-10",
+        "kind": "API",
+        "name": "非同期生成ジョブの進捗ステータス確認",
+        "group": "jobs",
+        "screens": [
+          "SCR-005"
+        ],
+        "summary": "非同期生成ジョブの進捗ステータスを確認する",
+        "trigger": "GET /api/v1/projects/{id}/jobs/{jobId}",
+        "group_initial": "jobs"
+      },
+      {
+        "id": "F-11",
+        "kind": "API",
+        "name": "生成された4種設計書の一覧・最新版取得",
+        "group": "documents",
+        "screens": [
+          "SCR-006"
+        ],
+        "summary": "生成された4種設計書の一覧と最新版を取得する",
+        "trigger": "GET /api/v1/projects/{id}/documents",
+        "group_initial": "documents"
+      },
+      {
+        "id": "F-12",
+        "kind": "API",
+        "name": "指定文書の版一覧取得",
+        "group": "versions",
+        "screens": [
+          "SCR-006"
+        ],
+        "summary": "指定された文書の版の一覧(直近3件)を取得する",
+        "trigger": "GET /api/v1/documents/{id}/versions",
+        "group_initial": "versions"
+      },
+      {
+        "id": "F-13",
+        "kind": "API+バッチ",
+        "name": "追加修正指示による文書再生成",
+        "group": "regenerate",
+        "screens": [
+          "SCR-006"
+        ],
+        "summary": "追加修正指示に基づいて文書を再生成し新版を作成する",
+        "trigger": "POST /api/v1/documents/{id}/regenerate",
+        "group_initial": "regenerate"
+      },
+      {
+        "id": "F-14",
+        "kind": "API",
+        "name": "AIによる自己診断結果取得",
+        "group": "diagnostics",
+        "screens": [
+          "SCR-006"
+        ],
+        "summary": "AIによる設計書の自己診断結果を取得する",
+        "trigger": "GET /api/v1/documents/{id}/diagnostics",
+        "group_initial": "diagnostics"
+      }
+    ],
+    "next_number": 15
+  },
+  "updated_at": "2026-10-08T23:51:33.305989Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [],
+  "plan": null
+}

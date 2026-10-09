@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="342" viewBox="0 0 660 342" font-family='"Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","Hiragino Kaku Gothic ProN",sans-serif' font-size="14">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker></defs>
+<rect width="660" height="342" fill="#ffffff"/>
+<path d="M500.0,168.0 L500.0,91.0 L262.9,91.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M262.9,107.0 L417.3,107.0 L417.3,266.0 L431.3,266.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M431.3,286.0 L276.9,286.0 L276.9,115.0 L262.9,115.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M262.9,99.0 L480.0,99.0 L480.0,168.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="77.1" y="84.0" width="185.9" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="170.0" y="108.0" text-anchor="middle" fill="#1a1a1a">F-08 構造化サマリ取得</text>
+<rect x="442.0" y="168.0" width="96.0" height="38.0" fill="#efefef" stroke="#8c8c8c" stroke-width="1.5"/>
+<text x="490.0" y="192.0" text-anchor="middle" fill="#1a1a1a">ユーザー</text>
+<path d="M431.3,258.0 a58.7,6 0 0 1 117.4,0 v36.0 a58.7,6 0 0 1 -117.4,0 z" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><path d="M431.3,258.0 a58.7,6 0 0 0 117.4,0" fill="none" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="490.0" y="283.0" text-anchor="middle" fill="#1a1a1a">summaries</text>
+<rect x="322.7" y="68.0" width="117.6" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="381.5" y="83.0" text-anchor="middle" font-size="14" fill="#222">プロジェクトID</text>
+<rect x="293.7" y="176.5" width="117.6" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="352.5" y="191.5" text-anchor="middle" font-size="14" fill="#222">プロジェクトID</text>
+<rect x="172.7" y="190.5" width="98.2" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="221.8" y="205.5" text-anchor="middle" font-size="14" fill="#222">構造化サマリ</text>
+<rect x="279.0" y="102.0" width="98.2" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="328.1" y="117.0" text-anchor="middle" font-size="14" fill="#222">構造化サマリ</text>
+</svg>

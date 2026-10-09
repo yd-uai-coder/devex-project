@@ -1,0 +1,983 @@
+{
+  "stage": 8,
+  "mode": "simple",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 4,
+  "approved_version": 4,
+  "model": {
+    "units": [
+      {
+        "gwt": [
+          "Given PostgreSQLコンテナが起動しており環境変数が正しく設定されているとき",
+          "When Prisma Clientを通じてデータベースに接続を試みると",
+          "Then エラーなく接続が確立されクエリを実行できる"
+        ],
+        "files": [
+          {
+            "kind": "config",
+            "path": "docker-compose.yml",
+            "basis": "実装計画書 4.3 開発環境",
+            "responsibility": "PostgreSQLのローカル起動設定を行う"
+          },
+          {
+            "kind": "config",
+            "path": "backend/.env",
+            "basis": "実装計画書 4.3 開発環境",
+            "responsibility": "データベース接続文字列などの環境変数を定義する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/prisma/schema.prisma",
+            "basis": "内部設計書 3.2 データモデル",
+            "responsibility": "データモデル(users, projects, documents, chats, summaries, specifications, diagnostics)のスキーマ定義を行う"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/main.ts",
+            "basis": "内部設計書 3.1 技術スタック・アーキテクチャ",
+            "responsibility": "NestJSアプリケーションのエントリーポイントとしてサーバーを起動する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/app.module.ts",
+            "basis": "内部設計書 3.1 技術スタック・アーキテクチャ",
+            "responsibility": "アプリケーション全体のルートモジュールを定義する"
+          }
+        ],
+        "notes": [
+          "Docker Composeを用いてPostgreSQLコンテナを起動した後にPrismaのマイグレーションを実行する。",
+          "Prismaスキーマの定義では、内部設計書に記載されたすべてのエンティティとリレーションを漏れなく記述する。"
+        ],
+        "tests": [
+          {
+            "sut": "Prisma Client",
+            "stub": "スタブ不要 ── 実DBへの接続確認のため",
+            "driver": "結合テスト・スクリプト",
+            "viewpoint": "データベースへの接続とPrisma Clientの疎通確認"
+          }
+        ],
+        "title": "開発環境とDB接続・Prismaの初期設定を行う",
+        "verify": [
+          "docker-compose up -d でPostgreSQLが正常に起動すること",
+          "npx prisma migrate dev を実行してマイグレーションが成功すること",
+          "npm run start:dev でNestJSサーバーが正常に起動すること"
+        ],
+        "purpose": "PostgreSQLのコンテナ起動とPrismaの初期接続設定、およびNestJSの基本構成を構築する。",
+        "unit_id": "M-01-T01",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given 登録済みのユーザーのメールアドレスとパスワードが存在する",
+          "When POST /api/v1/auth/login に正しい認証情報を送信する",
+          "Then アクセストークンが返却されHttpOnly Cookieが設定される"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/src/modules/auth/strategies/jwt.strategy.ts",
+            "basis": "対象の単位",
+            "responsibility": "JWTの検証を行うPassportストラテジーを実装する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/auth/auth.service.ts",
+            "basis": "対象の単位",
+            "responsibility": "パスワード照合やJWT署名生成などの認証ビジネスロジックを実装する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/auth/auth.controller.ts",
+            "basis": "対象の単位",
+            "responsibility": "ログインリクエストを受け付け、サービスを呼び出してレスポンスとCookieを設定するコントローラーを実装する"
+          },
+          {
+            "kind": "test",
+            "path": "backend/src/modules/auth/auth.service.spec.ts",
+            "basis": "実装計画書 4.3 3. 自動テスト・CI/CD方針",
+            "responsibility": "AuthServiceの単体テストを実装する"
+          }
+        ],
+        "notes": [
+          "依存する単位 M-01-T01 で作成された users テーブルおよび基盤モジュールを利用する",
+          "依存される順に従い、jwt.strategy.ts、auth.service.ts、auth.controller.ts の順に実装する"
+        ],
+        "tests": [
+          {
+            "sut": "AuthService / AuthController",
+            "stub": "users データベースアクセス部分をモック化する",
+            "driver": "Jestを用いた単体テストおよび結合テスト",
+            "viewpoint": "有効な認証情報でログインした場合にアクセストークンが発行されCookieが設定されること"
+          }
+        ],
+        "title": "ユーザー登録・ログイン認証機能を実装する",
+        "verify": [
+          "バックエンドの単体テストが全て成功することを確認する",
+          "POST /api/v1/auth/login に対して適切なリクエストを送信し、期待通りのレスポンスとCookieが返ることを確認する"
+        ],
+        "purpose": "POST /api/v1/auth/login エンドポイントおよび関連する認証モジュールを実装し、ユーザーのログイン認証とアクセストークン発行を行えるようにする。",
+        "unit_id": "M-01-T02",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given 有効なプロジェクト情報があるとき When createメソッドを実行すると Then プロジェクトが正常に作成される",
+          "Given 既存のプロジェクトがあるとき When findAllメソッドを実行すると Then プロジェクトの一覧が返却される"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/src/modules/projects/projects.service.ts",
+            "basis": "モジュール(内部設計書 3.3)",
+            "responsibility": "プロジェクトの作成および一覧取得のビジネスロジックを実装する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/projects/projects.controller.ts",
+            "basis": "モジュール(内部設計書 3.3)",
+            "responsibility": "プロジェクトの作成および一覧取得のエンドポイントを提供する"
+          }
+        ],
+        "notes": [
+          "サービスの単体テストをプロジェクトモジュール内に合わせて追加する",
+          "Prisma等のORMを用いてprojectsテーブルへのアクセス処理を実装する"
+        ],
+        "tests": [
+          {
+            "sut": "ProjectsService.create",
+            "stub": "データベースクライアントのモック",
+            "driver": "Jestによる単体テスト",
+            "viewpoint": "プロジェクトが正しく作成されること"
+          },
+          {
+            "sut": "ProjectsService.findAll",
+            "stub": "データベースクライアントのモック",
+            "driver": "Jestによる単体テスト",
+            "viewpoint": "プロジェクトの一覧が正しく取得できること"
+          }
+        ],
+        "title": "プロジェクトの作成および一覧取得機能を実装する",
+        "verify": [
+          "実装したサービス層のJest単体テストが全て成功することを確認する",
+          "コントローラーのエンドポイントにリクエストを送り、期待通りのJSONレスポンスが返ることを確認する"
+        ],
+        "purpose": "プロジェクトの作成および一覧取得機能に対応するコントローラーとサービスを実装する",
+        "unit_id": "M-02-T01",
+        "findings": [
+          {
+            "level": "critical",
+            "target": "backend/src/modules/projects/projects.controller.ts",
+            "message": "プロジェクト作成・一覧取得APIの具体的なHTTPメソッド、リクエストボディの構造、レスポンス形式のパスや仕様が外部設計書に定義されていないため。",
+            "fix_stage": 8,
+            "fix_document": "external_design"
+          }
+        ]
+      },
+      {
+        "gwt": [
+          "Given 有効なプロジェクトIDと許可された形式のファイルが渡されるとき",
+          "When 参考資料アップロード処理が実行されるとき",
+          "Then ファイルが検証されデータベースに保存されること"
+        ],
+        "files": [
+          {
+            "kind": "config",
+            "path": "backend/src/config/multer.config.ts",
+            "basis": "環境・設定のファイル(例)",
+            "responsibility": "ファイルアップロードのためのMulter設定を行う"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/documents/documents.service.ts",
+            "basis": "モジュール(内部設計書 3.3)",
+            "responsibility": "参考資料のバリデーションおよびデータベースへの保存処理を行う"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/documents/documents.controller.ts",
+            "basis": "モジュール(内部設計書 3.3)",
+            "responsibility": "参考資料アップロードのPOSTリクエストを受け付ける"
+          },
+          {
+            "kind": "test",
+            "path": "backend/src/modules/documents/documents.spec.ts",
+            "basis": "自動テスト・CI/CD方針",
+            "responsibility": "documentsモジュールの単体テストを実施する"
+          }
+        ],
+        "notes": [
+          "Multerの設定ファイルを最初に作成し、その後サービスクラス、コントローラークラスの順に実装する。",
+          "データベースのdocumentsテーブルへの永続化処理をサービス層に含める。"
+        ],
+        "tests": [
+          {
+            "sut": "DocumentsService.create",
+            "stub": "documentsRepositoryはモック化する",
+            "driver": "Jestによる単体テスト",
+            "viewpoint": "許可されたMIMEタイプと拡張子を持つファイルが正常にアップロードされ保存されること"
+          },
+          {
+            "sut": "DocumentsService.create",
+            "stub": "documentsRepositoryはモック化する",
+            "driver": "Jestによる単体テスト",
+            "viewpoint": "最大3件を超えるファイル数、または不正なMIMEタイプ・拡張子の場合にエラーとなること"
+          }
+        ],
+        "title": "参考資料のアップロードおよびMIMEタイプ・拡張子検証を実装する",
+        "verify": [
+          "Jestを用いた単体テストがすべて成功することを確認する。"
+        ],
+        "purpose": "参考資料のアップロードおよびMIMEタイプ・拡張子検証を行うAPIエンドポイントとビジネスロジックを実装する。",
+        "unit_id": "M-02-T02",
+        "findings": [
+          {
+            "level": "critical",
+            "target": "DF-02",
+            "message": "許可するMIMEタイプおよび拡張子の具体的なホワイトリストが内部設計書および外部設計書に定義されていない。",
+            "fix_stage": 8,
+            "fix_document": "external_design"
+          },
+          {
+            "level": "critical",
+            "target": "DF-02",
+            "message": "アップロードされたファイルの実際の保存先ストレージ（ローカルファイルシステム、S3等）と保存パスの生成ルールが定義されていない。",
+            "fix_stage": 8,
+            "fix_document": "internal_design"
+          }
+        ]
+      },
+      {
+        "gwt": [
+          "Given 有効なプロジェクトIDとチャットメッセージが入力されたとき",
+          "When ChatsService.createが呼び出されGemini APIから応答が得られたとき",
+          "Then ユーザーメッセージとAI応答がchatsテーブルに保存され、結果が返却されること"
+        ],
+        "files": [
+          {
+            "kind": "config",
+            "path": "backend/.env",
+            "basis": "環境・設定のファイル(例): backend/.env",
+            "responsibility": "Gemini APIの接続に必要な環境変数を設定する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/chats/gemini.service.ts",
+            "basis": "backend/src/modules/chats/gemini.service.ts",
+            "responsibility": "Gemini APIとの通信およびプロンプト構築を行い、AI応答テキストを取得する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/chats/chats.service.ts",
+            "basis": "backend/src/modules/chats/chats.service.ts",
+            "responsibility": "チャットメッセージのDB保存処理およびGeminiServiceを呼び出すビジネスロジックを実装する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/chats/chats.controller.ts",
+            "basis": "backend/src/modules/chats/chats.controller.ts",
+            "responsibility": "POST /api/v1/projects/{id}/chats のリクエストを受け付け、サービス層を呼び出してレスポンスを返却する"
+          },
+          {
+            "kind": "test",
+            "path": "backend/src/modules/chats/chats.service.spec.ts",
+            "basis": "実装計画書 4.3 自動テスト・CI/CD方針",
+            "responsibility": "chats.serviceの単体テストを実施する"
+          }
+        ],
+        "notes": [
+          "環境変数にGemini API用の設定を追加する。",
+          "GeminiServiceを作成し、次にChatsService、最後にChatsControllerの順に依存関係に合わせて実装する。"
+        ],
+        "tests": [
+          {
+            "sut": "ChatsService.create",
+            "stub": "GeminiServiceはスタブ化し固定のAI応答を返すようにする",
+            "driver": "Jestによる単体テスト",
+            "viewpoint": "チャットメッセージ送信時にAI応答が取得され、DBにユーザーとAIのメッセージが保存されること"
+          }
+        ],
+        "title": "AI対話チャットとGemini API連携機能を実装する",
+        "verify": [
+          "Jestを用いた単体テストがすべて成功することを確認する。",
+          "POST /api/v1/projects/{id}/chats エンドポイントへリクエストを送り、期待されるJSONレスポンスが返ることを確認する。"
+        ],
+        "purpose": "利用者のチャットメッセージを受け取り、Gemini APIとの連携によるAI応答の生成とDBへの履歴保存・クライアント返却を行う機能を実装する。",
+        "unit_id": "M-03-T01",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given プロジェクトにチャット履歴が存在する When サマリ生成APIを呼び出す Then 構造化サマリが生成されて保存される",
+          "Given 生成されたサマリが存在する When 承認APIを呼び出す Then サマリの承認フラグが真に更新される"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/src/modules/summaries/summaries.service.ts",
+            "basis": "対象の単位",
+            "responsibility": "構造化サマリの生成および承認フラグ更新のビジネスロジックを実装する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/summaries/summaries.controller.ts",
+            "basis": "対象の単位",
+            "responsibility": "構造化サマリの生成および承認フローに関するAPIエンドポイントを公開する"
+          },
+          {
+            "kind": "test",
+            "path": "backend/src/modules/summaries/summaries.service.spec.ts",
+            "basis": "実装計画書 4.3 自動テスト・CI/CD方針",
+            "responsibility": "summaries.serviceの単体テストを実装する"
+          }
+        ],
+        "notes": [
+          "NestJSのコントローラー層とサービス層の責務分離に従い、バリデーションとビジネスロジックを適切に配置する。",
+          "Gemini APIを利用した生成処理を行うサービス層を先に作成し、それを呼び出すコントローラーを後に実装する。"
+        ],
+        "tests": [
+          {
+            "sut": "SummariesService.generateSummary",
+            "stub": "Gemini APIクライアントをモック化する理由: 外部API呼び出しを避けるため",
+            "driver": "Jest単体テスト",
+            "viewpoint": "構造化サマリが正しく生成されること"
+          },
+          {
+            "sut": "SummariesService.approveSummary",
+            "stub": "Database Repositoryをモック化する理由: DBへの依存を切り離すため",
+            "driver": "Jest単体テスト",
+            "viewpoint": "サマリの承認状態が正しく更新されること"
+          }
+        ],
+        "title": "構造化サマリの生成と承認フロー機能を実装する",
+        "verify": [
+          "Jestを使用したsummaries.serviceの単体テストが全て成功することを確認する。",
+          "APIエンドポイントに対してリクエストを送り、期待されるレスポンスが返却されることを確認する。"
+        ],
+        "purpose": "チャット履歴や参考資料を基に構造化サマリを生成し、その承認フローを行う機能を実装する。",
+        "unit_id": "M-03-T02",
+        "findings": [
+          {
+            "level": "critical",
+            "target": "summaries",
+            "message": "構造化サマリを生成する際の詳細なプロンプト仕様やAPIのエンドポイントパス、およびHTTPメソッドが外部設計書または内部設計書に定義されていない。",
+            "fix_stage": 8,
+            "fix_document": "external_design"
+          },
+          {
+            "level": "major",
+            "target": "summaries",
+            "message": "サマリ承認フローにおけるリクエストパラメータおよびレスポンスのデータ構造が定義されていない。",
+            "fix_stage": 8,
+            "fix_document": "external_design"
+          }
+        ]
+      },
+      {
+        "gwt": [
+          "Given 有効なプロジェクトIDと生成トリガーが与えられたとき",
+          "When 設計書生成APIが呼び出されGemini APIから4種設計書が返却されたとき",
+          "Then 版管理ロジックが適用されてspecificationsテーブルに設計書データが保存されること"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/src/modules/specifications/specifications.service.ts",
+            "basis": "段階4のモジュール",
+            "responsibility": "チャット履歴・サマリからプロンプトを構築してGemini APIを呼び出し、4種設計書の生成と版管理ロジック(直近3件維持)を処理する。"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/specifications/specifications.controller.ts",
+            "basis": "段階4のモジュール",
+            "responsibility": "POST /api/v1/projects/{id}/specifications/generate エンドポイントへのリクエストを受け付け、サービス層を呼び出して結果を返却する。"
+          }
+        ],
+        "notes": [
+          "specificationsモジュール内のサービスクラスを先に実装し、それを呼び出すコントローラークラスを後に実装する。",
+          "データベースの仕様に基づき、設計書データの保存時に版番号の管理と直近3件の維持を行うロジックをサービス層に組み込む。"
+        ],
+        "tests": [
+          {
+            "sut": "SpecificationsController / SpecificationsService",
+            "stub": "Gemini APIクライアントをモック化し、固定の4種設計書Markdownを返却するようにする",
+            "driver": "NestJSのTestingModuleを用いた単体テスト・結合テスト",
+            "viewpoint": "4種設計書生成APIが正常なリクエストを受け付け、Gemini APIとの連携および版管理を経てデータを保存すること"
+          }
+        ],
+        "title": "4種設計書の並行生成および版管理機能を実装する",
+        "verify": [
+          "バックエンドの単体テストおよび結合テストを実行し、すべてのテストが成功することを確認する。",
+          "PostgreSQLのspecificationsテーブルに想定通りに版管理された設計書データが保存されることを確認する。"
+        ],
+        "purpose": "利用者からのトリガーに応じてGemini API経由で4種設計書を生成し、版管理ロジックを適用してデータベースに保存する機能を実装する。",
+        "unit_id": "M-04-T01",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given 生成済みの設計書データが存在する",
+          "When AI自己診断結果取得APIを呼び出す",
+          "Then 3段階評価の診断データが返却されDBに保存される"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/src/modules/diagnostics/diagnostics.service.ts",
+            "basis": "段階4",
+            "responsibility": "Gemini API呼び出しによる診断データの生成とDBへの永続化、および診断結果の取得処理を行う。"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/diagnostics/diagnostics.controller.ts",
+            "basis": "段階4",
+            "responsibility": "GET /api/v1/projects/{id}/diagnostics のリクエストを受け取り、診断サービスを呼び出してレスポンスを返す。"
+          },
+          {
+            "kind": "test",
+            "path": "backend/src/modules/diagnostics/diagnostics.service.spec.ts",
+            "basis": "段階7",
+            "responsibility": "DiagnosticsServiceの診断生成・取得ロジックの単体テストを行う。"
+          }
+        ],
+        "notes": [
+          "NestJSのモジュール構成方針に従い、診断機能に関するControllerとServiceを実装する。",
+          "依存するサービスや外部APIクライアントはモックを用いて単体テストを実施する。"
+        ],
+        "tests": [
+          {
+            "sut": "DiagnosticsController.getDiagnostics / DiagnosticsService.getDiagnostics",
+            "stub": "Gemini APIクライアントとDatabase Repositoryをスタブ化する。理由は外部APIおよびDBへの実アクセスを避けるため。",
+            "driver": "Jestによる単体テスト・結合テスト",
+            "viewpoint": "AI自己診断結果が正常に取得できること"
+          }
+        ],
+        "title": "AI自己診断（3段階評価）機能を実装する",
+        "verify": [
+          "バックエンドの単体テスト（Jest）が正常にすべてパスすることを確認する。",
+          "GET /api/v1/projects/{id}/diagnostics エンドポイントにリクエストを送り、期待されるJSONレスポンスが返ることを確認する。"
+        ],
+        "purpose": "プロジェクトの生成済み設計書データを基に、Gemini APIを使用して3段階評価のAI自己診断を行い、結果を永続化して取得できるようにする。",
+        "unit_id": "M-04-T02",
+        "findings": [
+          {
+            "level": "critical",
+            "target": "DF-05",
+            "message": "SpecificationsService から生成済み設計書データを取得する際の詳細なデータ構造やインターフェースが内部設計書に定義されていない。",
+            "fix_stage": 8,
+            "fix_document": "internal_design"
+          },
+          {
+            "level": "major",
+            "target": "DF-05",
+            "message": "Gemini APIへのプロンプト構成や3段階評価（Critical/Moderate/Minor）の具体的な出力スキーマが定義されていない。",
+            "fix_stage": 8,
+            "fix_document": "internal_design"
+          }
+        ]
+      },
+      {
+        "gwt": [
+          "Given 不正なリクエストが発生したとき, When 例外フィルターが作動すると, Then 共通エラーレスポンス形式のJSONが返却されること",
+          "Given LLMのレートリミット超過エラーが発生したとき, When 例外フィルターが作動すると, Then 専用のエラーコードと再試行促しメッセージが返却されること",
+          "Given APIリクエストが送信されたとき, When ロギングインターセプターを経由すると, Then 標準出力に構造化ログが出力されること"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/src/common/filters/http-exception.filter.ts",
+            "basis": "対象の単位",
+            "responsibility": "発生した例外をキャッチし、共通エラーレスポンス形式およびLLMレートリミット用エラーに変換して返却する。"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/common/interceptors/logging.interceptor.ts",
+            "basis": "対象の単位",
+            "responsibility": "リクエストとレスポンスをインターセプトし、構造化ログを出力する。"
+          },
+          {
+            "kind": "test",
+            "path": "backend/src/common/filters/http-exception.filter.spec.ts",
+            "basis": "実装計画書 4.3 自動テスト・CI/CD方針",
+            "responsibility": "例外フィルターの動作を検証する単体テストを実施する。"
+          },
+          {
+            "kind": "test",
+            "path": "backend/src/common/interceptors/logging.interceptor.spec.ts",
+            "basis": "実装計画書 4.3 自動テスト・CI/CD方針",
+            "responsibility": "ロギングインターセプターの動作を検証する単体テストを実施する。"
+          }
+        ],
+        "notes": [
+          "NestJSのExceptionFilterインターフェースを実装してHttpExceptionFilterを作成する。",
+          "NestJSのNestInterceptorインターフェースを実装してLoggingInterceptorを作成する。",
+          "依存関係の順序として、共通モジュール群を先に配置した後にテストを作成する。"
+        ],
+        "tests": [
+          {
+            "sut": "HttpExceptionFilter",
+            "stub": "スタブ不要 ── 単体で完結するため",
+            "driver": "Jestを用いた単体テスト",
+            "viewpoint": "HTTP例外発生時に指定された共通エラーレスポンス形式で返却されること"
+          },
+          {
+            "sut": "HttpExceptionFilter",
+            "stub": "スタブ不要 ── 単体で完結するため",
+            "driver": "Jestを用いた単体テスト",
+            "viewpoint": "LLMレートリミットエラー発生時に専用のエラーコードが返却されること"
+          },
+          {
+            "sut": "LoggingInterceptor",
+            "stub": "ExecutionContextおよびCallHandlerのモックを使用する",
+            "driver": "Jestを用いた単体テスト",
+            "viewpoint": "リクエスト処理時に構造化ログが出力されること"
+          }
+        ],
+        "title": "共通エラーレスポンス形式およびLLMレートリミット用例外フィルターを実装する",
+        "verify": [
+          "backend ディレクトリにて npm test を実行し、新規追加した例外フィルターおよびロギングインターセプターのテストが全て成功することを確認する。"
+        ],
+        "purpose": "共通エラーレスポンス形式およびLLMレートリミット用例外フィルター、構造化ログインターセプターを実装する。",
+        "unit_id": "M-05-T01",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given ユーザーが認証を完了してページにアクセスしているとき",
+          "When チャットインターフェースからメッセージを送信すると",
+          "Then チャット履歴が更新され、必要に応じてプレビュー画面に反映されること"
+        ],
+        "files": [
+          {
+            "kind": "config",
+            "path": "frontend/.env.local",
+            "basis": "段階7 環境・設定のファイル",
+            "responsibility": "フロントエンドの環境変数を定義する"
+          },
+          {
+            "kind": "module",
+            "path": "frontend/src/components/chat/ChatInterface.tsx",
+            "basis": "対象の単位のモジュール",
+            "responsibility": "チャットメッセージの表示と入力を行う"
+          },
+          {
+            "kind": "module",
+            "path": "frontend/src/components/preview/MarkdownPreview.tsx",
+            "basis": "対象の単位のモジュール",
+            "responsibility": "生成されたドキュメントやサマリをマークダウン形式でプレビュー表示する"
+          },
+          {
+            "kind": "module",
+            "path": "frontend/src/app/page.tsx",
+            "basis": "対象の単位のモジュール",
+            "responsibility": "認証・チャット・プレビュー画面の各コンポーネントを統合して配置する"
+          }
+        ],
+        "notes": [
+          "環境変数ファイルを作成した後に画面コンポーネントの実装と結合を行う。",
+          "コンポーネント間の状態共有には既存のReact hooksおよび状態管理機構を再利用する。"
+        ],
+        "tests": [
+          {
+            "sut": "frontend/src/app/page.tsx",
+            "stub": "バックエンドAPIのレスポンスをモックする",
+            "driver": "結合テスト（React Testing Library / Playwright）",
+            "viewpoint": "認証後の画面全体が正しく描画され、チャットとプレビューが連動すること"
+          }
+        ],
+        "title": "フロントエンドの認証・チャット・プレビュー画面を結合する",
+        "verify": [
+          "フロントエンドのビルドがエラーなく成功すること",
+          "ブラウザ上で認証からチャット、プレビューまでの導線が意図通りに動作すること"
+        ],
+        "purpose": "フロントエンドの認証・チャット・プレビュー画面を結合し、一連のユーザーインタラクションを構築する。",
+        "unit_id": "M-05-T02",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given 過去のチャット履歴や生成文書が存在するプロジェクトがある When 履歴閲覧APIを呼び出す Then 該当するチャット履歴および生成文書の一覧が返却される",
+          "Given 特定の版の設計書が存在する When 復元APIを呼び出す Then 指定した版の設計書が復元される"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/src/modules/specifications/specifications.service.ts",
+            "basis": "対象の単位",
+            "responsibility": "設計書の版管理データおよびチャット履歴の取得・復元に関するビジネスロジックを実装する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/src/modules/projects/projects.controller.ts",
+            "basis": "対象の単位",
+            "responsibility": "チャット履歴・生成文書の閲覧および復元に関するHTTPリクエストを受け付け、サービス層へ処理を委譲する"
+          }
+        ],
+        "notes": [
+          "依存する単位 M-05-T02 の成果物であるプロジェクトおよびチャット履歴・設計書モデルを利用する",
+          "サービス層を先に実装したのち、コントローラー層でルーティングとリクエスト・レスポンスのマッピングを行う"
+        ],
+        "tests": [
+          {
+            "sut": "ProjectsController / SpecificationsService",
+            "stub": "データベース接続をモック化し、chatsテーブルからのデータ取得をスタブ化する",
+            "driver": "単体テスト (Jest)",
+            "viewpoint": "過去のチャット履歴が正しく取得できること"
+          },
+          {
+            "sut": "ProjectsController / SpecificationsService",
+            "stub": "データベース接続をモック化し、specificationsテーブルからのデータ取得をスタブ化する",
+            "driver": "単体テスト (Jest)",
+            "viewpoint": "過去の生成文書が正しく取得・復元できること"
+          }
+        ],
+        "title": "過去のチャット履歴・生成文書の閲覧および復元APIを実装する",
+        "verify": [
+          "Jestを用いた単体テストがすべて成功することを確認する",
+          "APIエンドポイントに対してHTTPリクエストを送信し、期待されるJSONレスポンスが返却されることを確認する"
+        ],
+        "purpose": "過去のチャット履歴および生成された設計書を取得・閲覧・復元するためのAPIを実装する。",
+        "unit_id": "M-06-T01",
+        "findings": [
+          {
+            "level": "critical",
+            "target": "M-06-T01 API仕様",
+            "message": "過去のチャット履歴・生成文書の閲覧および復元APIの具体的なHTTPメソッド、エンドポイントのパス、リクエストパラメータ、レスポンス形式が外部設計書に定義されていない。",
+            "fix_stage": 8,
+            "fix_document": "external_design"
+          }
+        ]
+      },
+      {
+        "gwt": [
+          "Given 履歴データが存在する状態である",
+          "When 履歴閲覧画面を表示する",
+          "Then 履歴の一覧と比較・復元のためのUI要素が表示される"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "frontend/src/components/history/HistoryView.tsx",
+            "basis": "対象の単位",
+            "responsibility": "履歴の閲覧、版比較、および復元操作を提供するUIコンポーネントを実装する"
+          },
+          {
+            "kind": "module",
+            "path": "frontend/src/app/history/page.tsx",
+            "basis": "対象の単位",
+            "responsibility": "履歴閲覧・比較・復元画面のページコンポーネントを実装する"
+          }
+        ],
+        "notes": [
+          "Next.js App Routerの規約に従い、ページコンポーネントからUIコンポーネントを呼び出す構造にする。",
+          "サーバー状態の取得および同期にはReact Query (TanStack Query)を利用する。"
+        ],
+        "tests": [
+          {
+            "sut": "frontend/src/components/history/HistoryView.tsx",
+            "stub": "スタブ不要 ── 独立したUIコンポーネントとしてモックプロパティを用いて検証する",
+            "driver": "React Testing Libraryを用いたコンポーネントテスト",
+            "viewpoint": "履歴一覧および比較・復元用のUIコンポーネントが正しく描画されること"
+          }
+        ],
+        "title": "履歴閲覧・比較・復元用のフロントエンド画面を実装する",
+        "verify": [
+          "frontend上でnpm run buildまたはテストを実行し、コンパイルエラーやテストエラーが発生しないことを確認する。"
+        ],
+        "purpose": "履歴閲覧・比較・復元を行うためのNext.jsのフロントエンド画面およびコンポーネントを実装する。",
+        "unit_id": "M-06-T02",
+        "findings": [
+          {
+            "level": "critical",
+            "target": "frontend/src/app/history/page.tsx",
+            "message": "履歴閲覧・比較・復元機能に対応するバックエンドAPIのエンドポイント仕様やリクエスト・レスポンスの型定義が外部設計書に明記されていないため、正確なAPI連携の実装ができない。",
+            "fix_stage": 8,
+            "fix_document": "external_design"
+          }
+        ]
+      }
+    ]
+  },
+  "updated_at": "2026-10-08T23:59:53.398323Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "FEATURE_WITHOUT_DATAFLOW",
+      "message": "M-02-T01 は機能の単位ですが、処理(DF)がありません。",
+      "target": "M-02-T01",
+      "level": "major",
+      "fix_stage": 8,
+      "unit": "M-02-T01",
+      "fix_document": "implementation_plan"
+    },
+    {
+      "severity": "warning",
+      "code": "FEATURE_WITHOUT_DATAFLOW",
+      "message": "M-03-T02 は機能の単位ですが、処理(DF)がありません。",
+      "target": "M-03-T02",
+      "level": "major",
+      "fix_stage": 8,
+      "unit": "M-03-T02",
+      "fix_document": "implementation_plan"
+    },
+    {
+      "severity": "warning",
+      "code": "FEATURE_WITHOUT_DATAFLOW",
+      "message": "M-05-T02 は機能の単位ですが、処理(DF)がありません。",
+      "target": "M-05-T02",
+      "level": "major",
+      "fix_stage": 8,
+      "unit": "M-05-T02",
+      "fix_document": "implementation_plan"
+    },
+    {
+      "severity": "warning",
+      "code": "FEATURE_WITHOUT_DATAFLOW",
+      "message": "M-06-T01 は機能の単位ですが、処理(DF)がありません。",
+      "target": "M-06-T01",
+      "level": "major",
+      "fix_stage": 8,
+      "unit": "M-06-T01",
+      "fix_document": "implementation_plan"
+    },
+    {
+      "severity": "warning",
+      "code": "FEATURE_WITHOUT_DATAFLOW",
+      "message": "M-06-T02 は機能の単位ですが、処理(DF)がありません。",
+      "target": "M-06-T02",
+      "level": "major",
+      "fix_stage": 8,
+      "unit": "M-06-T02",
+      "fix_document": "implementation_plan"
+    }
+  ],
+  "dfd_accesses": [],
+  "plan": {
+    "crosscutting": [],
+    "milestones": [
+      {
+        "name": "開発基盤と認証機能",
+        "goal": "バックエンド・フロントエンドの基盤が整い、ユーザー登録・ログインができるようになること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "kind": "base",
+            "title": "開発環境とDB接続・Prismaの初期設定を行う",
+            "function_ids": [],
+            "depends_on": [],
+            "modules": [
+              "backend/src/main.ts",
+              "backend/prisma/schema.prisma"
+            ],
+            "config_files": [
+              "docker-compose.yml",
+              "backend/.env"
+            ]
+          },
+          {
+            "kind": "feature",
+            "title": "ユーザー登録・ログイン認証機能を実装する",
+            "function_ids": [
+              "DF-01"
+            ],
+            "depends_on": [
+              "M-01-T01"
+            ],
+            "modules": [
+              "backend/src/modules/auth/auth.controller.ts",
+              "backend/src/modules/auth/auth.service.ts",
+              "backend/src/modules/auth/strategies/jwt.strategy.ts"
+            ],
+            "config_files": []
+          }
+        ]
+      },
+      {
+        "name": "プロジェクト管理と参考資料アップロード",
+        "goal": "プロジェクトを作成し、参考資料をアップロードできるようになること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "kind": "feature",
+            "title": "プロジェクトの作成および一覧取得機能を実装する",
+            "function_ids": [],
+            "depends_on": [
+              "M-01-T02"
+            ],
+            "modules": [
+              "backend/src/modules/projects/projects.controller.ts",
+              "backend/src/modules/projects/projects.service.ts"
+            ],
+            "config_files": []
+          },
+          {
+            "kind": "feature",
+            "title": "参考資料のアップロードおよびMIMEタイプ・拡張子検証を実装する",
+            "function_ids": [
+              "DF-02"
+            ],
+            "depends_on": [
+              "M-02-T01"
+            ],
+            "modules": [
+              "backend/src/modules/documents/documents.controller.ts",
+              "backend/src/modules/documents/documents.service.ts"
+            ],
+            "config_files": [
+              "backend/src/config/multer.config.ts"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "AI対話チャットと構造化サマリ",
+        "goal": "AIとチャットで対話してヒアリングを進め、構造化サマリを確認・承認できるようになること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "kind": "feature",
+            "title": "AI対話チャットとGemini API連携機能を実装する",
+            "function_ids": [
+              "DF-03"
+            ],
+            "depends_on": [
+              "M-02-T02"
+            ],
+            "modules": [
+              "backend/src/modules/chats/chats.controller.ts",
+              "backend/src/modules/chats/chats.service.ts",
+              "backend/src/modules/chats/gemini.service.ts"
+            ],
+            "config_files": [
+              "backend/.env"
+            ]
+          },
+          {
+            "kind": "feature",
+            "title": "構造化サマリの生成と承認フロー機能を実装する",
+            "function_ids": [],
+            "depends_on": [
+              "M-03-T01"
+            ],
+            "modules": [
+              "backend/src/modules/summaries/summaries.controller.ts",
+              "backend/src/modules/summaries/summaries.service.ts"
+            ],
+            "config_files": []
+          }
+        ]
+      },
+      {
+        "name": "設計書一括生成と版管理・自己診断",
+        "goal": "4種のMarkdown設計書の一括生成（直近3件の版管理）と、AIによる自己診断結果を取得できるようになること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "kind": "feature",
+            "title": "4種設計書の並行生成および版管理機能を実装する",
+            "function_ids": [
+              "DF-04"
+            ],
+            "depends_on": [
+              "M-03-T02"
+            ],
+            "modules": [
+              "backend/src/modules/specifications/specifications.controller.ts",
+              "backend/src/modules/specifications/specifications.service.ts"
+            ],
+            "config_files": []
+          },
+          {
+            "kind": "feature",
+            "title": "AI自己診断（3段階評価）機能を実装する",
+            "function_ids": [
+              "DF-05"
+            ],
+            "depends_on": [
+              "M-04-T01"
+            ],
+            "modules": [
+              "backend/src/modules/diagnostics/diagnostics.controller.ts",
+              "backend/src/modules/diagnostics/diagnostics.service.ts"
+            ],
+            "config_files": []
+          }
+        ]
+      },
+      {
+        "name": "共通エラーハンドリングとフロントエンド統合",
+        "goal": "LLM上限超過エラーなどの例外処理が正しく動作し、フロントエンドから一連の操作が完結すること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "kind": "base",
+            "title": "共通エラーレスポンス形式およびLLMレートリミット用例外フィルターを実装する",
+            "function_ids": [],
+            "depends_on": [
+              "M-04-T02"
+            ],
+            "modules": [
+              "backend/src/common/filters/http-exception.filter.ts",
+              "backend/src/common/interceptors/logging.interceptor.ts"
+            ],
+            "config_files": []
+          },
+          {
+            "kind": "feature",
+            "title": "フロントエンドの認証・チャット・プレビュー画面を結合する",
+            "function_ids": [],
+            "depends_on": [
+              "M-05-T01"
+            ],
+            "modules": [
+              "frontend/src/app/page.tsx",
+              "frontend/src/components/chat/ChatInterface.tsx",
+              "frontend/src/components/preview/MarkdownPreview.tsx"
+            ],
+            "config_files": [
+              "frontend/.env.local"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "履歴閲覧・比較・復元機能",
+        "goal": "過去のチャット履歴や生成文書の閲覧・比較・復元ができるようになること",
+        "priority": "Should",
+        "tasks": [
+          {
+            "kind": "feature",
+            "title": "過去のチャット履歴・生成文書の閲覧および復元APIを実装する",
+            "function_ids": [],
+            "depends_on": [
+              "M-05-T02"
+            ],
+            "modules": [
+              "backend/src/modules/projects/projects.controller.ts",
+              "backend/src/modules/specifications/specifications.service.ts"
+            ],
+            "config_files": []
+          },
+          {
+            "kind": "feature",
+            "title": "履歴閲覧・比較・復元用のフロントエンド画面を実装する",
+            "function_ids": [],
+            "depends_on": [
+              "M-06-T01"
+            ],
+            "modules": [
+              "frontend/src/app/history/page.tsx",
+              "frontend/src/components/history/HistoryView.tsx"
+            ],
+            "config_files": []
+          }
+        ]
+      }
+    ],
+    "environment": "### 1. 開発に必要なツール・技術スタック\n- **言語・ランタイム**: Node.js (LTS), TypeScript\n- **フレームワーク**: NestJS (バックエンド), Next.js App Router (フロントエンド)\n- **データベース**: PostgreSQL (Docker環境でローカル起動)\n- **外部AI**: Gemini Flash-Lite API\n\n### 2. リポジトリ構成\n- モノレポ構成またはバックエンド/フロントエンド分離リポジトリ（ここではモノレポを想定）\n```text\n/\n├── backend/          # NestJSアプリケーション\n├── frontend/         # Next.jsアプリケーション\n├── docker-compose.yml # PostgreSQL等のローカルインフラ\n└── README.md\n```\n\n### 3. 自動テスト・CI/CD方針\n- **テスト方針**: バックエンドはJestを用いたサービス層の単体テストを実施。フロントエンドは主要コンポーネントの表示確認。\n- **CI/CD方針**: GitHub Actionsを利用し、mainブランチへのプルリクエスト時にビルドおよびテストを自動実行する。デプロイはVercel（フロント）およびRender/AWS（バックエンド）へ自動連携する。",
+    "risks": []
+  }
+}

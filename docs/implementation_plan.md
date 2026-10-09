@@ -8,7 +8,7 @@
 
 ## 4.1 開発ステージ分割・マイルストーン
 
-プロジェクトの確実な立ち上げとリスク最小化のため、機能を段階的にリリースする5ステージの開発アプローチを採用する(ステージ6以降の構想は[`appendix/devex_roadmap.md`](../appendix/devex_roadmap.md)。各ステージの着手時にここへ書き写す)。
+プロジェクトの確実な立ち上げとリスク最小化のため、機能を段階的にリリースする6ステージの開発アプローチを採用する(ステージ7以降の構想は[`appendix/devex_roadmap.md`](../appendix/devex_roadmap.md)。各ステージの着手時にここへ書き写す)。
 
 > 用語注記: 本節の「ステージ」はプロダクトのリリース単位を指す。CL(Curriculum Loop)開発における教材単位「Phase」とは別軸の概念であり、混同を避けるためリネームした(詳細は `CLAUDE.md`「進行のルール」#27参照)。
 
@@ -89,9 +89,25 @@
   * Phase 29: シーケンス図(段階5の行の種別・導出・05章と手順書への表示・スタブの候補の突き合わせ) ── **完了**([`textbook/Phase-29/Phase-29-introduction.md`](../textbook/Phase-29/Phase-29-introduction.md))
   * Phase 30: 手順書の出力(zip の`implementation_procedure/`・AI 向けの版・画面のコピー) ── **完了**([`textbook/Phase-30/Phase-30-introduction.md`](../textbook/Phase-30/Phase-30-introduction.md))
   * Phase 31: 簡易ドキュメントモードの手順書(実装計画書の WBS の縦割り・ID 付きの書式と決定的な解析・内部設計書からの参照・簡易モードの段階8・SCR-005 の入口) ── **完了**([`textbook/Phase-31/Phase-31-introduction.md`](../textbook/Phase-31/Phase-31-introduction.md))
-  * Phase 32: 統合/E2E・デプロイでの確認(偽LLMの段階8と両モードの契約テスト・段階8の生成までの E2E と既存を含めた全 E2E・マイグレーションの往復・本番反映の手順) ── **完了**([`textbook/Phase-32/Phase-32-introduction.md`](../textbook/Phase-32/Phase-32-introduction.md))。本番への反映と本番での確認はユーザーの実施待ち
+  * Phase 32: 統合/E2E・デプロイでの確認(偽LLMの段階8と両モードの契約テスト・段階8の生成までの E2E と既存を含めた全 E2E・マイグレーションの往復・本番反映の手順) ── **完了**([`textbook/Phase-32/Phase-32-introduction.md`](../textbook/Phase-32/Phase-32-introduction.md))。本番への反映と本番での確認も完了(2026-10-08、問題なし)
 * **マイルストーン6**: 詳細設計モードで、段階8の実装手順書を単位ごとに生成し、未定義を設計の側で直して、手順書を zip と AI 向けの版で出力できる。簡易ドキュメントモードでも同じ形の手順書を作れる。
 * **達成範囲(Phase 32で終了)**: 段階8(両モード)の生成・検証・承認・zip・AI 向けの版と、段階5のシーケンス図。Phase 32で、偽LLMの段階8の出力が生成 → 承認 → 実装手順書の zip を通ることを両モードの契約テスト(ブラウザ無し)で固定し、E2E(Playwright)は両モードとも段階8の生成まで通した。本番への反映は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.2節の手順による。
+
+### ステージ6：ヒアリング改良 + 上流の構造化 ── 【Could have】
+
+* **目的**: 聞き漏れを減らし、設計後の要件変更を減らす。セキュリティや非機能要件を、AI の推測に任せず、利用者の判断として引き出す。要件定義書・外部設計書を構造化して要件ID を振り、要件 → 処理 → 作業単位の追跡を上流までつなぐ。構想は[`appendix/devex_roadmap.md`](../appendix/devex_roadmap.md)。
+* **出発点(Phase 33 のベースライン)**: 今の Devex を実際の LLM で段階8まで動かしたところ、両モードとも利用者の発言3回でヒアリングが完了し、非機能の観点はほとんど聞かれなかった。技術スタックも聞かれず、簡易モードでは技術スタックを AI が創作した。要件定義書の非機能・制約の記述の6〜7割は、利用者が言っていない内容だった([`appendix/stage6-baseline/`](../appendix/stage6-baseline/README.md)、[`textbook/Phase-33/Phase-33-1.md`](../textbook/Phase-33/Phase-33-1.md))。
+* **方針(Phase 33で確定)**: ヒアリングの5条件を、観点の表(`hearing_points` テーブル。機能面の観点と IPA 非機能要求グレードの6大項目、規模で必須を切り替える)で置き換え、完了は「必須の観点がすべて未決以外」をコードが判定する。AI の問いは場面で聞く選択肢カードにし、選ぶと「AI の提案を採用」として記録する。要件定義書と外部設計書は意味モデルから組み立て、要件に ID(`FR-001`・`NFR-001`・`CON-001`)と出どころ(ユーザー・採用・推測)を持たせる。要件 → 処理は段階1の機能の`req_ids`、簡易モードは WBS の「要件」欄でつなぐ([外部設計書](external_design.md) 2.9節、[内部設計書](internal_design.md) 3.3節「6. ヒアリングと上流の構造化」。決定の経緯は[`textbook/Phase-33/Phase-33-2.md`](../textbook/Phase-33/Phase-33-2.md))。
+* **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-33/Phase-33-5.md`](../textbook/Phase-33/Phase-33-5.md)参照):
+  * Phase 33: 要件定義フェーズ(ベースライン・仕様診断・見本とデモ・docs反映・ステージ6の実装計画) ── **完了**([`textbook/Phase-33/Phase-33-introduction.md`](../textbook/Phase-33/Phase-33-introduction.md))
+  * Phase 34: 観点の表(`hearing_points`・観点の定義と規模の表・観点ごとの判定と決定的な完了判定・チャット画面の観点の表・既存プロジェクトの扱い)
+  * Phase 35: 選択肢カード(場面で問う構造化した問い・カードの表示と選択・「採用」の記録)
+  * Phase 36: 要件定義書のモデル化(要件の行・ID・出どころ・観点・md の組み立て・検証。両モード)
+  * Phase 37: 外部設計書のモデル化(画面・API・外部連携の行と要件ID・本文の節・検証。両モード)
+  * Phase 38: 要件 → 処理・作業単位(段階1の`req_ids`と検証・簡易モードの WBS の「要件」欄・手順書と詳細設計書の追跡表)
+  * Phase 39: 効果測定(ベースラインと同じペルソナ・規則で、実際の LLM で両モードを流して比べる)
+  * Phase 40: 統合/E2E・デプロイでの確認(偽LLMの契約テスト・既存を含めた全 E2E・本番反映の手順)
+* **マイルストーン7**: ヒアリングが観点の表で進み、必須の観点が決まるまで完了しない。要件定義書・外部設計書の要件・画面・API に ID と出どころがあり、要件から作業単位までをたどれる。ベースラインと比べて、聞けた事実が増え、要件の「推測」が減ったことを数字で示せる。
 
 ---
 

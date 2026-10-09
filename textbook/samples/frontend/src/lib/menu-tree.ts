@@ -1,4 +1,4 @@
-// 更新：Phase-3-1,3-2,3-3,3-4,24(完了後の調整),24(T2同期),25-2
+// 更新：Phase-3-1,3-2,3-3,3-4,24(完了後の調整),24(T2同期),25-2,33-3
 export type MenuLeaf = { label: string; href: string };
 export type MenuGroup = { label: string; children: MenuLeaf[] };
 
@@ -48,6 +48,9 @@ export const MENU_TREE: MenuGroup[] = [
     children: [
       // 実装手順書(段階8)の見せ方の提案(仮データ)
       { label: "実装手順書デモ", href: "/implementation-procedure-demo" },
+      // Phase-33-3:追記
+      // ヒアリングの観点の表・選択肢カード・要件の出どころの見せ方の提案(仮データ)
+      { label: "ヒアリングの観点の表デモ", href: "/hearing-points-demo" },
     ],
   },
 ];

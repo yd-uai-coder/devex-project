@@ -1,0 +1,11 @@
+段階8 手順書を作る単位: ['M-01-T01', 'M-01-T02', 'M-02-T01', 'M-02-T02', 'M-03-T01', 'M-03-T02', 'M-04-T01', 'M-04-T02', 'M-05-T01', 'M-05-T02', 'M-06-T01', 'M-06-T02'](全件)
+段階8 生成 {"unit_ids": ["M-01-T01", "M-01-T02", "M-02-T01", "M-02-T02", "M-03-T01"]} → completed(15秒) 
+段階8 生成 {"unit_ids": ["M-03-T02", "M-04-T01", "M-04-T02", "M-05-T01", "M-05-T02"]} → completed(15秒) 
+段階8 生成 {"unit_ids": ["M-06-T01", "M-06-T02"]} → completed(10秒) 
+  検証 warning FEATURE_WITHOUT_DATAFLOW M-02-T01 は機能の単位ですが、処理(DF)がありません。
+  検証 warning FEATURE_WITHOUT_DATAFLOW M-03-T02 は機能の単位ですが、処理(DF)がありません。
+  検証 warning FEATURE_WITHOUT_DATAFLOW M-05-T02 は機能の単位ですが、処理(DF)がありません。
+  検証 warning FEATURE_WITHOUT_DATAFLOW M-06-T01 は機能の単位ですが、処理(DF)がありません。
+  検証 warning FEATURE_WITHOUT_DATAFLOW M-06-T02 は機能の単位ですが、処理(DF)がありません。
+段階8 承認(v4)
+実装手順書の zip: 200 88161 bytes

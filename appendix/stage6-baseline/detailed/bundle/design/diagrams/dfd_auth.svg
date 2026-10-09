@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="426" viewBox="0 0 960 426" font-family='"Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","Hiragino Kaku Gothic ProN",sans-serif' font-size="14">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker></defs>
+<rect width="960" height="426" fill="#ffffff"/>
+<path d="M693.8,183.0 L273.6,183.0 L273.6,112.0 L259.6,112.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M259.6,94.0 L679.8,94.0 L679.8,175.0 L693.8,175.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M166.7,122.0 L166.7,360.0 L745.3,360.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M693.8,191.0 L572.2,191.0 L572.2,259.0 L558.2,259.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M558.2,283.0 L783.3,283.0 L783.3,336.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M803.3,336.0 L803.3,275.0 L558.2,275.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M558.2,267.0 L679.8,267.0 L679.8,199.0 L693.8,199.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="73.7" y="84.0" width="185.9" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="166.7" y="108.0" text-anchor="middle" fill="#1a1a1a">F-01 新規ユーザー登録</text>
+<rect x="401.8" y="252.0" width="156.5" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="480.0" y="276.0" text-anchor="middle" fill="#1a1a1a">F-02 ログイン認証</text>
+<rect x="693.8" y="168.0" width="199.1" height="38.0" fill="#efefef" stroke="#8c8c8c" stroke-width="1.5"/>
+<text x="793.3" y="192.0" text-anchor="middle" fill="#1a1a1a">ユーザー (Web Browser)</text>
+<path d="M745.3,342.0 a48.0,6 0 0 1 96.0,0 v36.0 a48.0,6 0 0 1 -96.0,0 z" fill="#dbe9fb" stroke="#3b6fa8" stroke-width="1.5"/><path d="M745.3,342.0 a48.0,6 0 0 0 96.0,0" fill="none" stroke="#3b6fa8" stroke-width="1.5"/>
+<text x="793.3" y="367.0" text-anchor="middle" fill="#1a1a1a">users</text>
+<rect x="405.2" y="160.0" width="157.0" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="483.7" y="175.0" text-anchor="middle" font-size="14" fill="#222">新規ユーザー登録情報</text>
+<rect x="398.5" y="71.0" width="142.3" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="469.7" y="86.0" text-anchor="middle" font-size="14" fill="#222">登録完了レスポンス</text>
+<rect x="406.9" y="337.0" width="98.2" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="456.0" y="352.0" text-anchor="middle" font-size="14" fill="#222">ユーザー情報</text>
+<rect x="544.9" y="194.0" width="127.6" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="608.7" y="209.0" text-anchor="middle" font-size="14" fill="#222">ログイン認証情報</text>
+<rect x="629.0" y="286.0" width="83.5" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="670.8" y="301.0" text-anchor="middle" font-size="14" fill="#222">認証クエリ</text>
+<rect x="680.7" y="252.0" width="98.2" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="729.8" y="267.0" text-anchor="middle" font-size="14" fill="#222">ユーザー情報</text>
+<rect x="599.5" y="244.0" width="39.1" height="20" fill="#ffffff" fill-opacity="0.92" rx="3"/>
+<text x="619.0" y="259.0" text-anchor="middle" font-size="14" fill="#222">JWT</text>
+</svg>

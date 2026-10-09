@@ -201,6 +201,22 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 
 **段階1の`model`の形(Phase 16で確定)**: `{groups: [機能グループ名], functions: [{id: "F-01", name, kind: "API"|"API+バッチ"|"バッチ"|"画面"|"その他", trigger, screens: [画面ID], group_initial, group, summary}], next_number}`(`app/detailed_design/function_list.py`の`FunctionListModel`)。`kind`の「画面」は、サーバーを呼ばずに画面の中で完結する非自明な演算・描画で、`trigger`は`SCR-005: <操作>`の形。`group_initial`はAPIのパスから決定的に作った初期値(APIでない処理はAIの提案)、`group`は人の確定値。`next_number`は次に振る処理IDの番号で、消えた番号は再利用しない。段階ごとの検証(`app/detailed_design/validation.py`の`STAGE_VALIDATORS`)にエラーがあると承認できない(409 `DESIGN_STAGE_INVALID`)。警告は承認を止めない。検証の結果は保存せず、取得のたびに計算して`issues`で返す([`textbook/Phase-16/Phase-16-2.md`](../textbook/Phase-16/Phase-16-2.md))。
 
+
+#### ⑪ `hearing_points` テーブル(ステージ6、Phase 34で新設予定)
+
+ヒアリングの観点ごとの状態([外部設計書](external_design.md) 2.9節)。方針は Phase 33 で決めた([`textbook/Phase-33/Phase-33-2.md`](../textbook/Phase-33/Phase-33-2.md) 決定1)。カラムの詳細は Phase 34 で確定する。
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | |
+| project_id | UUID | FK (`projects.id`, ondelete CASCADE), NOT NULL | プロジェクトID |
+| point_key | VARCHAR(40) | NOT NULL | 観点のキー(`scale`・`availability` など。観点の定義はコードに持つ) |
+| status | VARCHAR(20) | NOT NULL | `decided`(ユーザーが決定)/`adopted`(AI の提案を採用)/`open`(未決)/`not_applicable`(対象外) |
+| summary | TEXT | NOT NULL | 決めたこと |
+| evidence | JSONB | NULL可 | 根拠(どの発言か。形は Phase 34 で決める) |
+| updated_at | TIMESTAMP | NOT NULL | 更新日時 |
+
+`UNIQUE(project_id, point_key)`。完了は「規模で決まる必須の観点が、すべて`open`以外」をコードが判定する(LLM には判定させない)。`projects.hearing_check`(5条件の判定)は、既存のプロジェクトの表示のために残す。
 ---
 
 ## 3.3 バックエンド処理・モジュール設計
@@ -434,6 +450,17 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
     * **検証**(`validate_procedure_doc`の簡易モードの分岐): エラーは両モード共通(形・`DUPLICATE_UNIT`・`UNIT_MISMATCH`。文言の作業単位の出どころは`labels`)。警告は直す先を文書`fix_document`で持つ(`fix_stage`は 8)── 実装計画書: WBS の指摘・`UNKNOWN_DEPENDENCY`/`FORWARD_DEPENDENCY`・`FEATURE_WITHOUT_DATAFLOW`・`UNKNOWN_DATAFLOW`(中程度)・`UNPLANNED_DATAFLOW`(軽微)。内部設計書: `NO_MODULE_LIST`(最重要)。モジュール・ファイルの指摘(`UNKNOWN_MODULE`・`MODULE_NOT_FILE`・`UNKNOWN_FILE`)は完了後の調整(31-7)で簡易モードから外した(一覧が層ごとのまとめた行のため。詳細設計モードは変えない)。`StageIssue`・`AiFinding`・`UnitFinding`・API の`StageIssueRead`に`fix_document`を足した。
     * **生成**: `generate_procedure_docs`が土台から作業単位と参照を取り、簡易モードは`build_simple_procedure_doc_messages`(参照は内部設計書・関数の契約と手順が無いので決められないことは`findings`に挙げ、手順の要る単位は詳細設計モードを勧める)と`SimpleProcedureDocGenerationOutput`(指摘の直す先`fix_document`)で下書きする。対象の単位は WBS から決める。偽 LLM への登録は Phase 32。
     * **出力**: `procedure_output_source`は土台を受け取り、文言(作業単位の出どころ・実装前提の小見出し・直す先の列)を`labels`から書く(`fix_target_text`)。zip は`bundle_procedure`が`collect`(詳細設計書の組み立て)を通らずに、承認済みの段階8と土台から作る(`procedure_source`)。`bundle`・`collect`は詳細設計モードでなければ409。
+
+### 6. ヒアリングと上流の構造化(ステージ6)
+
+[外部設計書](external_design.md) 2.9節の内部の方針(Phase 33で確定)。経緯は[`textbook/Phase-33/Phase-33-2.md`](../textbook/Phase-33/Phase-33-2.md)。意味モデル・API・マイグレーションの詳細は各実装 Phase で確定する。
+
+* **観点の定義はコードに持つ**: 観点のキー・名前・種類(機能面 / 非機能)・場面で聞く問いの例・規模ごとの必須を、コードの表で持つ(テンプレートや DB には持たない)。完了の判定・次に聞く観点・画面の表示は、この表と`hearing_points`から決定的に導く。
+* **判定の LLM の役割を狭める**: 今の`check_completion`(5条件で`is_sufficient`を返す)を、発言から観点ごとの状態と根拠を返す構造化出力に変える。「十分」はコードが決める。未決の必須の観点は、今の`missing_points`と同じく、返信を作る LLM に渡す。発言の回数の下限(3回)を残すかは Phase 34 で決める。
+* **選択肢カード**: AI の問いを構造化(観点・問い・選択肢・選択肢ごとの結果・おすすめ)して、チャットのストリーミングとは別のイベントで返す。カードは1回の返信で数枚まとめて出す(独立した観点だけ。規模は単独で先に)。選択はコードがその場で`hearing_points`を`adopted`にする(LLM は呼ばない)。まとめた選択は1つの利用者の発言として`chat_histories`に残し、判定と返信はまとめて1回だけ回す(Phase 33 完了後に決定)。
+* **要件定義書・外部設計書の意味モデル**: ステージ4の段階と同じく「構造化出力 → Pydantic の model → md を組み立てる」。要件定義書は要件の行(`FR`/`NFR`/`CON`の ID・優先度または大項目・本文・出どころ`user`/`adopted`/`assumed`・観点のキー)と、1.1〜1.3 の本文。外部設計書は画面・API・外部連携の行(関係する要件ID を持つ)と、本文の節。model の置き場(`generated_documents`の列にするか)と、再生成したときの ID の扱いは Phase 36 で決める。
+* **後続は md を読む**: 段階・自己診断・簡易モードの後続の文書は、model から組み立てた md を今と同じく入力にする。要件ID は md に出るので、段階1の下書き・WBS がそれを参照できる。
+* **要件 → 処理**: 段階1の機能の行に`req_ids`を足す(`FunctionRow`)。段階1の検証に、処理の無い Must の機能要件(中程度)・要件の無い処理(軽微)・要件定義書に無い要件ID(軽微)を足す。要件定義書に model が無いプロジェクトは「要件ID が無い」の軽微な指摘だけにする。簡易モードは`simple_procedure/wbs.parse_wbs`が WBS の「要件」の行を読む。
 
 ---
 
