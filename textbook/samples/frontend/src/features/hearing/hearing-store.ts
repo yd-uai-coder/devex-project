@@ -1,14 +1,20 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整)
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3
 // Phase-15-8:追記 ── StreamChatError(@/features/hearing/api/streamChat)
+// Phase-34-3:追記 ── getHearingPoints, HearingPointsView(@/features/hearing/api/hearingApi)
 import { create } from "zustand";
 import { streamChat, StreamChatError } from "@/features/hearing/api/streamChat";
 import {
   getChatHistory,
   getHearingCompletion,
+  getHearingPoints,
   getProject,
   triggerGeneration,
 } from "@/features/hearing/api/hearingApi";
-import type { ChatHistoryEntry, HearingCompletionCheck } from "@/features/hearing/api/hearingApi";
+import type {
+  ChatHistoryEntry,
+  HearingCompletionCheck,
+  HearingPointsView,
+} from "@/features/hearing/api/hearingApi";
 import type { ProjectStatus } from "@/features/dashboard/api/projects";
 import type { AsyncStatus } from "@/lib/api/types";
 
@@ -30,6 +36,10 @@ type HearingStore = {
   // (connectionLost)と分けて、何が起きたかを利用者に見せる。
   streamError: string | null;
   completion: HearingCompletionCheck | null;
+  // Phase-34-3:追記
+  // 観点の表(チャット画面のパネル)。発言のたびにサーバーが判定し直すので、completionと同じ
+  // タイミングで取り直す。
+  points: HearingPointsView | null;
   // 「今まさに生成が進行中で、完了をポーリングして自動遷移すべき」ことを表す
   // (status==="generating"のときのみtrue)。過去に生成済み(completed/revising)は
   // 含めない ── 含めるとチャット画面を開くたびに/documentsへ強制的に押し戻されてしまうため。
@@ -52,9 +62,26 @@ const PROJECT_INITIAL = {
   connectionLost: false,
   streamError: null,
   completion: null,
+  // Phase-34-3:追記
+  points: null,
   generationTriggered: false,
   projectStatus: null,
 } as const;
+
+// Phase-34-3:追記
+type StoreGet = () => HearingStore;
+type StoreSet = (partial: Partial<HearingStore>) => void;
+
+// 観点の表を取り直す。失敗はチャット自体をブロックしない(完了判定と同じ方針)。
+async function loadPoints(projectId: string, get: StoreGet, set: StoreSet): Promise<void> {
+  try {
+    const points = await getHearingPoints(projectId);
+    // 取得中に別のプロジェクトへ移っていたら、古い結果で上書きしない
+    if (get().projectId === projectId) set({ points });
+  } catch {
+    // 表が出ないだけで、チャットは続けられる
+  }
+}
 
 export const useHearingStore = create<HearingStore>((set, get) => ({
   // Phase-24:追記
@@ -67,6 +94,8 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   // Phase-15-8:追記
   streamError: null,
   completion: null,
+  // Phase-34-3:追記
+  points: null,
   generationTriggered: false,
   projectStatus: null,
 
@@ -98,6 +127,9 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
           // 完了判定の失敗はチャット自体をブロックしない(sendMessage側と同じ方針)
         }
       }
+      // Phase-34-3:追記
+      // 観点の表は生成の後も見られるよう、状態によらず取る
+      await loadPoints(projectId, get, set);
     } catch {
       set({ historyStatus: "error" });
     }
@@ -159,6 +191,8 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       } catch {
         // 完了判定の失敗はチャット自体をブロックしない
       }
+      // Phase-34-3:追記
+      await loadPoints(projectId, get, set);
     // Phase-15-8：更新(気づき#2: event: error で伝えられた失敗を見分ける)
     // } catch {
     //   // 接続切断等。自動再送はせず、ユーザーに再接続を促すバナーを表示するに留める

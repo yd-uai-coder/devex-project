@@ -1,5 +1,6 @@
-# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1
+# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1,34-1
 # 写経レベル: 定型 ── 既存User/Conversationと同型のORMモデル定義。
+# Phase-34-1:追記 ── app.models.hearing_point.HearingPoint(TYPE_CHECKING)
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from app.models.data_item import DataItem
     from app.models.design_stage import DesignStage
     from app.models.generated_document import GeneratedDocument
+    from app.models.hearing_point import HearingPoint
     from app.models.intake_file import IntakeFile
     from app.models.uml_diagram import UmlDiagram
     # Phase-10-4:追記
@@ -50,6 +52,10 @@ class Project(Base):
     # hearing_check: 直近のヒアリング完了判定の結果(is_sufficient/summary/missing_points)。
     # 発言のたびに判定し直して保存し、完了判定の取得はこれを返す(画面を開き直しても変わらない)
     hearing_check: Mapped[dict | None] = mapped_column(PortableJSON, nullable=True)
+    # Phase-34-1:追記
+    # hearing_scale: ヒアリングで決まった規模('personal'/'internal'/'public')。観点の必須を
+    # 切り替える。未決の間はNone(必須は「個人・小規模」の列で数える。app/hearing/points.py)
+    hearing_scale: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # Phase-6-3:追記 ── SCR-003で選択したテンプレート(prompt_templates.id)。intake JSONには含めず
     # 専用カラムとして永続化する(ヒアリング再開・再生成時も含めプロジェクトのライフサイクル
     # 全体を通じて参照するため)。
@@ -83,6 +89,10 @@ class Project(Base):
     )
     # Phase-10-4:追記
     uml_generation_runs: Mapped[list["UmlGenerationRun"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    # Phase-34-1:追記
+    hearing_points: Mapped[list["HearingPoint"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )
     # Phase-15-2:追記

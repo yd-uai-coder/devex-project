@@ -100,7 +100,7 @@
 * **方針(Phase 33で確定)**: ヒアリングの5条件を、観点の表(`hearing_points` テーブル。機能面の観点と IPA 非機能要求グレードの6大項目、規模で必須を切り替える)で置き換え、完了は「必須の観点がすべて未決以外」をコードが判定する。AI の問いは場面で聞く選択肢カードにし、選ぶと「AI の提案を採用」として記録する。要件定義書と外部設計書は意味モデルから組み立て、要件に ID(`FR-001`・`NFR-001`・`CON-001`)と出どころ(ユーザー・採用・推測)を持たせる。要件 → 処理は段階1の機能の`req_ids`、簡易モードは WBS の「要件」欄でつなぐ([外部設計書](external_design.md) 2.9節、[内部設計書](internal_design.md) 3.3節「6. ヒアリングと上流の構造化」。決定の経緯は[`textbook/Phase-33/Phase-33-2.md`](../textbook/Phase-33/Phase-33-2.md))。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-33/Phase-33-5.md`](../textbook/Phase-33/Phase-33-5.md)参照):
   * Phase 33: 要件定義フェーズ(ベースライン・仕様診断・見本とデモ・docs反映・ステージ6の実装計画) ── **完了**([`textbook/Phase-33/Phase-33-introduction.md`](../textbook/Phase-33/Phase-33-introduction.md))
-  * Phase 34: 観点の表(`hearing_points`・観点の定義と規模の表・観点ごとの判定と決定的な完了判定・チャット画面の観点の表・既存プロジェクトの扱い)
+  * Phase 34: 観点の表(`hearing_points`・観点の定義と規模の表・観点ごとの判定と決定的な完了判定・チャット画面の観点の表・既存プロジェクトの扱い) ── **完了**([`textbook/Phase-34/Phase-34-introduction.md`](../textbook/Phase-34/Phase-34-introduction.md))
   * Phase 35: 選択肢カード(場面で問う構造化した問い・カードの表示と選択・「採用」の記録)
   * Phase 36: 要件定義書のモデル化(要件の行・ID・出どころ・観点・md の組み立て・検証。両モード)
   * Phase 37: 外部設計書のモデル化(画面・API・外部連携の行と要件ID・本文の節・検証。両モード)

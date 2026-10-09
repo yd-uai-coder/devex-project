@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整)
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -19,6 +19,7 @@
 # Phase-15-1:追記 ── app.schemas.project.ProjectMode
 # Phase-15-3:追記 ── structlog, app.core.errors.AppError
 # Phase-24(T2同期):追記 ── contextlib(ruff の SIM105 に合わせ、try/except/pass を contextlib.suppress にした)
+# Phase-34-2:追記 ── app.schemas.hearing.HearingPointsRead
 import contextlib
 import json
 import uuid
@@ -33,7 +34,7 @@ from app.api.responses import content_disposition
 from app.core.errors import AppError, BadRequestError
 from app.schemas.document import DocType, GeneratedDocumentRead
 from app.schemas.generation import HearingCompletionCheck
-from app.schemas.hearing import ChatHistoryRead, HearingMessageRequest
+from app.schemas.hearing import ChatHistoryRead, HearingMessageRequest, HearingPointsRead
 from app.schemas.project import ProjectDetail, ProjectMode, ProjectRead
 from app.services.chat_service import ChatService
 from app.services.doc_generator_service import DocGeneratorService, generate_documents
@@ -221,6 +222,15 @@ async def get_hearing_completion(
 #     """
 #     background_tasks.add_task(generate_documents, current_project.id, current_user.id)
 # ↓↓
+# Phase-34-2:追記
+@router.get("/{project_id}/hearing-points", response_model=HearingPointsRead)
+async def get_hearing_points(
+    session: SessionDep, current_project: CurrentProjectDep
+) -> HearingPointsRead:
+    """チャット画面の観点の表を返す(判定はチャットの送信時に行い、ここではLLMを呼ばない)。"""
+    return await ChatService(session).points_view(current_project)
+
+
 @router.post("/{project_id}/generate", status_code=status.HTTP_202_ACCEPTED)
 async def trigger_generation(
     session: SessionDep,

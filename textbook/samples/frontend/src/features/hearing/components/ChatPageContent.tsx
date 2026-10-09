@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-3-6
+// 作成：Phase-3-5｜更新：Phase-3-6,34-3
 "use client";
 
 // Phase-3-6：更新(ドキュメントプレビュー画面の再生成でも同じポーリングロジックが
@@ -47,10 +47,12 @@
 //
 //   return (
 // ↓↓
+// Phase-34-3:追記 ── useMedia(tamagui), HearingPointsPanel
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { H2, Text, XStack, YStack } from "tamagui";
+import { H2, Text, XStack, YStack, useMedia } from "tamagui";
 import { ChatPanel } from "@/features/hearing/components/ChatPanel";
+import { HearingPointsPanel } from "@/features/hearing/components/HearingPointsPanel";
 import { useHearingStore } from "@/features/hearing/hearing-store";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 
@@ -61,6 +63,10 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
   const router = useRouter();
   const generationTriggered = useHearingStore((s) => s.generationTriggered);
   const projectStatus = useHearingStore((s) => s.projectStatus);
+  // Phase-34-3:追記
+  const points = useHearingStore((s) => s.points);
+  // 広い画面(lg 以上)は観点の表をチャットの右に開いて置き、狭い画面はチャットの上に畳んで置く
+  const wide = useMedia().lg;
 
   const { timedOut } = useGenerationPolling(projectId, generationTriggered, () => {
     router.push(`/projects/${projectId}/documents`);
@@ -87,7 +93,20 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
           </Link>
         </XStack>
       ) : null}
+      {/* Phase-34-3：更新(広い画面は観点の表をチャットの右、狭い画面は上に置く)
       <ChatPanel projectId={projectId} />
+          ↓↓ */}
+      <YStack gap="$4" $lg={{ flexDirection: "row-reverse", alignItems: "flex-start" }}>
+        {points ? (
+          <YStack $lg={{ width: 460, flexShrink: 0 }}>
+            {/* 幅が変わって置き場所が変わったら、開閉の初期値を合わせ直す */}
+            <HearingPointsPanel key={wide ? "wide" : "narrow"} view={points} defaultOpen={wide} />
+          </YStack>
+        ) : null}
+        <YStack minWidth={0} $lg={{ flex: 1 }}>
+          <ChatPanel projectId={projectId} />
+        </YStack>
+      </YStack>
     </YStack>
   );
 }

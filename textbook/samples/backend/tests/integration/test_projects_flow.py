@@ -1,11 +1,14 @@
-# 作成：Phase-4-1｜更新：Phase-6-6,24(ゴール3後の調整)
+# 作成：Phase-4-1｜更新：Phase-6-6,24(ゴール3後の調整),34-2
 # 写経レベル: 定型 ── 個々のロジックはPhase 2の各サービス単体テストで既に検証済み。
 # ここでの狙いは「ルーティング・スキーマ変換・DIの配線」自体の統合的な確認(過去に
 # get_hearing_completionルートの配線漏れが見つかった教訓の横展開、decision-digest.md参照)。
+# Phase-34-2:追記 ── app.hearing.POINT_DEFS, app.schemas.hearing(HearingPointsJudgement, JudgedPointOut)
+# Phase-34-2：削除 ── app.schemas.generation.HearingCompletionCheck
 import pytest
 from httpx import AsyncClient
 
-from app.schemas.generation import HearingCompletionCheck
+from app.hearing import POINT_DEFS
+from app.schemas.hearing import HearingPointsJudgement, JudgedPointOut
 from app.services import chat_service as chat_service_module
 from app.services import doc_generator_service as doc_generator_service_module
 from tests.fixtures.fake_llm import FakeLLM
@@ -45,9 +48,33 @@ def _install_fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
         #     HearingCompletionCheck(is_sufficient=True, summary="[Fake] 要約です", missing_points=[])
         # ],
         # ↓↓
+        # Phase-34-2：更新(観点の判定はチャットの送信ごとに1回呼ばれる。下のテストは3往復。
+        # 2往復目までは目的だけ、3往復目で全観点が決まる。発言の番号: 初期入力=1、利用者の発言=2〜4)
+        # structured_sequence=[
+        #     HearingCompletionCheck(is_sufficient=True, summary="[Fake] 要約です", missing_points=[])
+        #     for _ in range(3)
+        # ],
+        # ↓↓
         structured_sequence=[
-            HearingCompletionCheck(is_sufficient=True, summary="[Fake] 要約です", missing_points=[])
-            for _ in range(3)
+            *[
+                HearingPointsJudgement(
+                    points=[
+                        JudgedPointOut(
+                            key="purpose", status="decided", summary="在庫の可視化", evidence=[1]
+                        )
+                    ]
+                )
+                for _ in range(2)
+            ],
+            HearingPointsJudgement(
+                scale="internal",
+                points=[
+                    JudgedPointOut(
+                        key=d.key, status="decided", summary=f"[Fake] {d.label}", evidence=[4]
+                    )
+                    for d in POINT_DEFS
+                ],
+            ),
         ],
     )
     monkeypatch.setattr(chat_service_module, "get_gemini_llm", lambda: fake)
@@ -126,8 +153,20 @@ async def test_full_projects_flow_create_chat_generate_download(
             )
             assert pending.json()["is_sufficient"] is False
     assert "text/event-stream" in chat_responses[-1].headers["content-type"]
-    # 十分になった送信の返信は、判定のまとめ(LLMの返信ではない)
-    assert "[Fake] 要約です" in chat_responses[-1].text
+    # Phase-34-2：更新
+    # # 十分になった送信の返信は、判定のまとめ(LLMの返信ではない)
+    # assert "[Fake] 要約です" in chat_responses[-1].text
+    # ↓↓
+    # 十分になった送信の返信は、観点の表から組み立てたまとめ(LLMの返信ではない)
+    assert "規模: 社内" in chat_responses[-1].text
+    assert "[Fake] 可用性" in chat_responses[-1].text
+
+    points_response = await client.get(
+        f"/api/v1/projects/{project_id}/hearing-points", headers=headers
+    )
+    assert points_response.status_code == 200
+    assert points_response.json()["is_sufficient"] is True
+    assert points_response.json()["points"][0]["evidence"][0]["label"] == "発言3"
 
     history_response = await client.get(f"/api/v1/projects/{project_id}/chat", headers=headers)
     assert history_response.status_code == 200

@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -14,7 +14,11 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 from __future__ import annotations
 
 # Phase-10-5:追記 ── app.uml.generation.schemas(UML生成の出力スキーマ一式)
+# Phase-34-2:追記 ── re, app.hearing.POINT_DEFS,
+#   app.schemas.hearing(HearingPointsJudgement, JudgedPointOut)
+# Phase-34-2：削除 ── app.schemas.generation.HearingCompletionCheck
 
+import re
 from collections.abc import AsyncIterator
 from functools import lru_cache
 from typing import Any
@@ -63,7 +67,8 @@ from app.detailed_design.procedure_doc_drafting import (
 )
 from app.detailed_design.procedure_drafting import GeneratedStep, ProcedureGenerationOutput
 from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleListGenerationOutput
-from app.schemas.generation import HearingCompletionCheck
+from app.hearing import POINT_DEFS
+from app.schemas.hearing import HearingPointsJudgement, JudgedPointOut
 from app.uml.generation.schemas import (
     ComponentGenerationOutput,
     GeneratedDataItem,
@@ -74,8 +79,12 @@ from app.uml.generation.schemas import (
     GeneratedNode,
 )
 
-# ヒアリング完了(is_sufficient=True)と判定するまでに要するHumanMessage数(末尾の判定プロンプト
-# 自身を除く)。「初期ヒアリング入力(intake)1件+実際のチャット発話3件」で4件になる。
+# Phase-34-2：更新(コメントのみ。判定は観点の表に変わったが、件数の意味は同じ)
+# # ヒアリング完了(is_sufficient=True)と判定するまでに要するHumanMessage数(末尾の判定プロンプト
+# # 自身を除く)。「初期ヒアリング入力(intake)1件+実際のチャット発話3件」で4件になる。
+# ↓↓
+# 観点の表の必須をすべて決めたと返すまでに要するHumanMessage数(末尾の判定プロンプト自身を
+# 除く)。「初期ヒアリング入力(intake)1件+実際のチャット発話3件」で4件になる。
 # Phase-6-6：更新(chat_service._MIN_USER_TURNS_FOR_COMPLETION=3の導入に合わせ、
 # 「intake1件+チャット2件=3件」から「intake1件+チャット3件=4件」へ引き上げた。
 # ガードだけが働いてフェイクは楽観的にtrueを返す、という食い違いを避けるため)
@@ -86,6 +95,10 @@ from app.uml.generation.schemas import (
 # _TURNS_UNTIL_SUFFICIENT = 3
 # ↓↓
 _TURNS_UNTIL_SUFFICIENT = 4
+
+# Phase-34-2:追記
+# 判定のLLMに見せる発言の番号([#n])。根拠の番号として返す
+_MESSAGE_NUMBER = re.compile(r"^\[#(\d+)\] ")
 
 # doc_generator_service.pyの各doc_type専用プロンプト(_DOC_TYPE_PROMPTS)は、他doc_typeへの
 # 入力参照を「以下の【要件定義書】および【外部設計書】に基づき...」のような角括弧表記で行うため、
@@ -584,6 +597,39 @@ class _FakeChunk:
         self.content = content
 
 
+# Phase-34-2:追記
+def _judge_points(messages: list[Any]) -> HearingPointsJudgement:
+    """観点の判定の偽物。発話が足りるまでは目的だけ、足りたら全観点を「ユーザーが決定」で返す。
+
+    末尾の1件は常にchat_service.judge_pointsが追記する判定プロンプト自身なので数えない。
+    根拠は、番号の付いた発言のうち最後のもの(番号が無ければ1)。
+    """
+    conversation = [m for m in messages[:-1] if isinstance(m, HumanMessage)]
+    numbers = [
+        int(match.group(1))
+        for m in conversation
+        if (match := _MESSAGE_NUMBER.match(str(m.content))) is not None
+    ]
+    evidence = [max(numbers)] if numbers else [1]
+    if len(conversation) < _TURNS_UNTIL_SUFFICIENT:
+        return HearingPointsJudgement(
+            points=[
+                JudgedPointOut(
+                    key="purpose", status="decided", summary="[E2E Fake] 目的", evidence=evidence
+                )
+            ]
+        )
+    return HearingPointsJudgement(
+        scale="personal",
+        points=[
+            JudgedPointOut(
+                key=d.key, status="decided", summary=f"[E2E Fake] {d.label}", evidence=evidence
+            )
+            for d in POINT_DEFS
+        ],
+    )
+
+
 class _FakeStructuredE2e:
     """`with_structured_output(schema)`が返す構造化出力用サブクライアントのE2E版。"""
 
@@ -609,27 +655,34 @@ class _FakeStructuredE2e:
     def _parsed_for(self, messages: list[Any]) -> BaseModel:
         if self._schema in _UML_OUTPUTS:
             return _UML_OUTPUTS[self._schema]
-        if self._schema is HearingCompletionCheck:
-            # 末尾の1件は常にchat_service.check_completionが追記する
-            # _COMPLETION_CHECK_PROMPT自身のHumanMessageであり、実際の対話ターンではないため
-            # 対象外にする。残りのHumanMessageは「初期ヒアリング入力(intake)1件+実際の
-            # チャット発話N件」なので、_TURNS_UNTIL_SUFFICIENT=4は「intake+チャット3往復」を意味する。
-            conversation_messages = messages[:-1]
-            user_turns = sum(1 for m in conversation_messages if isinstance(m, HumanMessage))
-            sufficient = user_turns >= _TURNS_UNTIL_SUFFICIENT
-            return HearingCompletionCheck(
-                is_sufficient=sufficient,
-                summary=(
-                    "[E2E Fake] ここまでのヒアリング内容を要約しました。この内容で設計書を生成します。"
-                    if sufficient
-                    else "[E2E Fake] まだ確認したい点があります。"
-                ),
-                missing_points=[] if sufficient else ["[E2E Fake] 想定ユーザーの具体化"],
-            )
+        # Phase-34-2：更新
+        # if self._schema is HearingCompletionCheck:
+        #     # 末尾の1件は常にchat_service.check_completionが追記する
+        #     # _COMPLETION_CHECK_PROMPT自身のHumanMessageであり、実際の対話ターンではないため
+        #     # 対象外にする。残りのHumanMessageは「初期ヒアリング入力(intake)1件+実際の
+        #     # チャット発話N件」なので、_TURNS_UNTIL_SUFFICIENT=4は「intake+チャット3往復」を意味する。
+        #     conversation_messages = messages[:-1]
+        #     user_turns = sum(1 for m in conversation_messages if isinstance(m, HumanMessage))
+        #     sufficient = user_turns >= _TURNS_UNTIL_SUFFICIENT
+        #     return HearingCompletionCheck(
+        #         is_sufficient=sufficient,
+        #         summary=(
+        #             "[E2E Fake] ここまでのヒアリング内容を要約しました。この内容で設計書を生成します。"
+        #             if sufficient
+        #             else "[E2E Fake] まだ確認したい点があります。"
+        #         ),
+        #         missing_points=[] if sufficient else ["[E2E Fake] 想定ユーザーの具体化"],
+        #     )
+        # ↓↓
+        if self._schema is HearingPointsJudgement:
+            return _judge_points(messages)
         # Phase-10-5：更新
         # # HearingCompletionCheck以外のスキーマは現時点でこのアプリ内に無く、追加された場合は
         # ↓↓
-        # HearingCompletionCheck・UML生成スキーマ以外のスキーマが追加された場合は
+        # Phase-34-2：更新
+        # # HearingCompletionCheck・UML生成スキーマ以外のスキーマが追加された場合は
+        # ↓↓
+        # HearingPointsJudgement・UML生成スキーマ以外のスキーマが追加された場合は
         # 「対応漏れ」に気づけるよう黙って汎用値を返さず例外にする。
         raise NotImplementedError(f"E2eFakeLLMが未対応のスキーマ: {self._schema}")
 
