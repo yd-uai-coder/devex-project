@@ -1,9 +1,10 @@
-# 作成：Phase-2-5｜更新：Phase-4-1,6-5,10-5,15-3,15-4,24(T2同期),35-2
+# 作成：Phase-2-5｜更新：Phase-4-1,6-5,10-5,15-3,15-4,24(T2同期),35-2,36-2
 # 写経レベル: コア(Phase 2-5) ── docs/implementation_plan.md 4.4節リスク1(リトライ・クォータ処理)の実装箇所。chat_service.py/doc_generator_service.pyが共有する。
 # Phase-6-5:追記 ── time, structlog, langchain_core.messages.BaseMessage
 # Phase-10-5:追記 ── app.services.errors.LLMTokenLimitError
 # Phase-15-3:追記 ── app.core.errors.AppError
 # Phase-35-2：削除 ── app.core.errors.AppError(as_llm_error の削除で使わなくなった)
+# Phase-36-2:追記 ── pydantic.BaseModel, app.uml.generation.failures.unwrap_structured_result
 import asyncio
 import time
 from collections.abc import Awaitable, Callable, Sequence
@@ -11,8 +12,10 @@ from typing import TypeVar
 
 import structlog
 from langchain_core.messages import BaseMessage
+from pydantic import BaseModel
 
 from app.services.errors import GenerationFailedError, LLMQuotaExceededError, LLMTokenLimitError
+from app.uml.generation.failures import unwrap_structured_result
 
 T = TypeVar("T")
 
@@ -193,3 +196,18 @@ def _is_input_token_limit_error(exc: Exception) -> bool:
         and getattr(exc, "code", None) == 400
         and "token" in str(exc).lower()
     )
+
+
+# Phase-36-2:追記
+async def invoke_structured[S: BaseModel](
+    llm, schema: type[S], messages: list[BaseMessage]
+) -> S:
+    """構造化出力を呼ぶ(解釈の失敗・クォータ超過は invoke_with_retry の規則で再試行する)。
+    詳細設計モードの段階の下書きと、要件定義書の生成が使う。"""
+    structured_llm = llm.with_structured_output(schema, include_raw=True)
+
+    async def _call() -> S:
+        result = await structured_llm.ainvoke(messages)
+        return unwrap_structured_result(result, schema)
+
+    return await invoke_with_retry(_call, messages=messages)

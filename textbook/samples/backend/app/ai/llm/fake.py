@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -12,6 +12,7 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 """
 # Phase-24：削除 ── app.uml.generation.schemas.DfdGenerationOutput, app.uml.generation.schemas.ErGenerationOutput, app.uml.generation.schemas.GeneratedColumn, app.uml.generation.schemas.GeneratedProcess, app.uml.generation.schemas.GeneratedTable
 # Phase-35-2:追記 ── app.hearing.is_point_key, app.schemas.hearing(CardOptionOut, CardOut, HearingReplyOut)
+# Phase-36-2:追記 ── app.documents.requirements.drafting(GeneratedRequirement, GeneratedUserScene, RequirementsGenerationOutput)
 from __future__ import annotations
 
 # Phase-10-5:追記 ── app.uml.generation.schemas(UML生成の出力スキーマ一式)
@@ -68,6 +69,11 @@ from app.detailed_design.procedure_doc_drafting import (
 )
 from app.detailed_design.procedure_drafting import GeneratedStep, ProcedureGenerationOutput
 from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleListGenerationOutput
+from app.documents.requirements.drafting import (
+    GeneratedRequirement,
+    GeneratedUserScene,
+    RequirementsGenerationOutput,
+)
 from app.hearing import POINT_DEFS, is_point_key
 from app.schemas.hearing import (
     CardOptionOut,
@@ -118,18 +124,22 @@ _CARD_TARGET = re.compile(r"^- ([a-z_]+): ", re.MULTILINE)
 # requirementsと判定されてしまう(実機検証で発見、(2)の不具合)。各プロンプトが自分自身の
 # 出力フォーマットとして持つ「# N. ラベル」という見出し(cross-reference表記には現れない、
 # doc_type固有の文字列)をマッチ対象にすることでこれを避ける。
+# Phase-36-2:追記
+# 要件定義書は構造化出力(RequirementsGenerationOutput)で作るので、ここには無い。
 _DOC_TYPE_MARKERS: dict[str, str] = {
-    "requirements": "# 1. 要件定義書",
+    # Phase-36-2：削除
+    # "requirements": "# 1. 要件定義書",
     "external_design": "# 2. 外部設計書",
     "internal_design": "# 3. 内部設計書",
     "implementation_plan": "# 4. 実装計画書",
 }
-_DOC_TYPE_LABELS: dict[str, str] = {
-    "requirements": "要件定義書",
-    "external_design": "外部設計書",
-    "internal_design": "内部設計書",
-    "implementation_plan": "実装計画書",
-}
+# Phase-36-2：削除
+# _DOC_TYPE_LABELS: dict[str, str] = {
+#     "requirements": "要件定義書",
+#     "external_design": "外部設計書",
+#     "internal_design": "内部設計書",
+#     "implementation_plan": "実装計画書",
+# }
 
 # Phase-10-1:追記
 # Phase-24：更新
@@ -664,6 +674,53 @@ def _hearing_reply(messages: list[Any]) -> HearingReplyOut:
     return HearingReplyOut(message=_HEARING_REPLY, cards=cards)
 
 
+# Phase-36-2:追記
+# 要件定義書の偽物の要件(種別・優先度・大項目・本文・出どころ・観点)。出どころは
+# doc_generator_service が観点の表で上限をかける。推測の要件を1つ含め、プレビューの
+# 「採用にする」を E2E で試せるようにする。
+_REQUIREMENTS: tuple[tuple[str, str, str, str, str, str], ...] = (
+    ("FR", "Must", "", "[E2E Fake] 備品を予約できる", "user", "core"),
+    ("FR", "Should", "", "[E2E Fake] 予約の履歴を見られる", "user", "future"),
+    ("NFR", "", "可用性", "[E2E Fake] 半日止まってもよい", "adopted", "availability"),
+    ("NFR", "", "セキュリティ", "[E2E Fake] 通信を HTTPS で暗号化する", "assumed", "security"),
+    ("CON", "", "技術スタック", "[E2E Fake] Python と PostgreSQL を使う", "user", "tech"),
+)
+_PREVIOUS_SECTION = "## 前の版の要件\n"
+
+
+def _previous_ids(messages: list[Any]) -> dict[str, str]:
+    """プロンプトの【前の版の要件】(`ID|本文`の行)から、本文 → ID を読む(ID の引き継ぎの契約)。"""
+    human = "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+    if _PREVIOUS_SECTION not in human:
+        return {}
+    section = human.split(_PREVIOUS_SECTION, 1)[1].split("\n\n", 1)[0]
+    pairs = [line.split("|", 1) for line in section.splitlines() if "|" in line]
+    return {text: req_id for req_id, text in pairs}
+
+
+def _requirements_output(messages: list[Any]) -> RequirementsGenerationOutput:
+    """要件定義書の下書きの偽物。前の版に同じ本文の要件があれば、その ID を prev_id に返す。"""
+    previous = _previous_ids(messages)
+    return RequirementsGenerationOutput(
+        purpose="[E2E Fake] 備品の予約を楽にする",
+        users=[GeneratedUserScene(user="[E2E Fake] 社員", scene="備品を借りるとき", source="user")],
+        in_scope=["[E2E Fake] 備品の予約"],
+        out_of_scope=["[E2E Fake] 決済"],
+        requirements=[
+            GeneratedRequirement(
+                kind=kind,  # type: ignore[arg-type]
+                prev_id=previous.get(text, ""),
+                priority=priority,  # type: ignore[arg-type]
+                category=category,
+                text=text,
+                source=source,  # type: ignore[arg-type]
+                points=[point],
+            )
+            for kind, priority, category, text, source, point in _REQUIREMENTS
+        ],
+    )
+
+
 class _FakeStructuredE2e:
     """`with_structured_output(schema)`が返す構造化出力用サブクライアントのE2E版。"""
 
@@ -721,6 +778,9 @@ class _FakeStructuredE2e:
         # ↓↓
         if self._schema is HearingReplyOut:
             return _hearing_reply(messages)
+        # Phase-36-2:追記
+        if self._schema is RequirementsGenerationOutput:
+            return _requirements_output(messages)
         # ヒアリング・UML生成スキーマ以外のスキーマが追加された場合は
         # 「対応漏れ」に気づけるよう黙って汎用値を返さず例外にする。
         raise NotImplementedError(f"E2eFakeLLMが未対応のスキーマ: {self._schema}")
@@ -763,10 +823,13 @@ class E2eFakeLLM:
                 if doc_type == "external_design":
                     return _EXTERNAL_DESIGN_REPLY
                 # Phase-31-1:追記
-                if doc_type == "implementation_plan":
-                    return _IMPLEMENTATION_PLAN_REPLY
-                label = _DOC_TYPE_LABELS[doc_type]
-                return f"# {label}(E2E Fake)\n\nこれはE2Eテスト用に生成されたダミーの{label}です。"
+                # Phase-36-2：更新
+                # if doc_type == "implementation_plan":
+                #     return _IMPLEMENTATION_PLAN_REPLY
+                # label = _DOC_TYPE_LABELS[doc_type]
+                # return f"# {label}(E2E Fake)\n\nこれはE2Eテスト用に生成されたダミーの{label}です。"
+                # ↓↓
+                return _IMPLEMENTATION_PLAN_REPLY
         if "レビュアー" in system_text:
             return _SELF_DIAGNOSIS_REPLY
         # ヒアリング対話(_HEARING_SYSTEM_PROMPT、_OPENING_TURN_PROMPT共通)への応答。

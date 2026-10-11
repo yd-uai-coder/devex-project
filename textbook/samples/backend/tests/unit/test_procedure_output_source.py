@@ -1,4 +1,4 @@
-# 作成：Phase-30-1｜更新：Phase-31-3
+# 作成：Phase-30-1｜更新：Phase-31-3,36-2
 """実装手順書の出力の入力と、未定義・要決定の集約(純粋関数)のテスト。
 
 SUT は`app/detailed_design/procedure_output/source.py`の純粋関数、ドライバはこのテスト。
@@ -102,6 +102,24 @@ def test_out_of_scope_lines_without_section() -> None:
     assert out_of_scope_lines("# 要件定義書\n\n## 1.3 目的\n") == []
     assert out_of_scope_lines("## 1.4 機能要件\n- **Could have**: \n") == []
     assert out_of_scope_lines(REQUIREMENTS_WITH_SCOPE)[0] == "Should have(重要): 予約の履歴"
+
+
+# Phase-36-2:追記
+def test_out_of_scope_lines_reads_requirement_table_rows() -> None:
+    requirements = (
+        "## 1.4 機能要件(MoSCoW 優先度)\n\n"
+        "| ID | 優先度 | 要件 | 出どころ | 観点 |\n|---|---|---|---|---|\n"
+        "| FR-001 | Must | 予約できる | ユーザー | コア機能 |\n"
+        "| FR-002 | Should | 履歴 \\| 比較 | ユーザー | 将来の拡張 |\n"
+        "| FR-003 | Won't | 決済 | **推測** | MVP の範囲 |\n"
+        "\n## 1.5 非機能要件\n"
+        "| NFR-001 | Could | 対象外にしない | ユーザー | 可用性 |\n"
+    )
+
+    assert out_of_scope_lines(requirements) == [
+        "Should(FR-002): 履歴 | 比較",
+        "Won't(FR-003): 決済",
+    ]
 
 
 def test_unit_filename_replaces_unsafe_characters() -> None:

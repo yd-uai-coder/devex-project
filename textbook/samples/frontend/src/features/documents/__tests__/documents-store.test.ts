@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-6,15-7,15-8,24(完了後の調整)
+// 作成：Phase-3-6｜更新：Phase-6-6,15-7,15-8,24(完了後の調整),36-3
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDocumentsStore } from "../documents-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
@@ -16,6 +16,9 @@ function resetStore() {
     regenerateError: null,
     // Phase-15-7:追記
     projectMode: null,
+    // Phase-36-3:追記
+    adoptingId: null,
+    adoptError: null,
   });
 }
 
@@ -123,5 +126,29 @@ describe("useDocumentsStore", () => {
     const state = useDocumentsStore.getState();
     expect(state.regenerating).toBe(false);
     expect(state.regenerateError).toBe("設計書を生成しています。");
+  });
+
+  // Phase-36-3:追記
+  it("adoptRequirement()は返った要件定義書で同じ文書を置き換える(ほかの文書は変えない)", async () => {
+    const external = { ...SAMPLE_DOC, id: "d2", doc_type: "external_design" as const };
+    useDocumentsStore.setState({ projectId: "p1", documents: [SAMPLE_DOC, external] });
+    const adopted = { ...SAMPLE_DOC, content: "# 採用後" };
+    stub.queue({ status: 200, body: adopted });
+
+    await useDocumentsStore.getState().adoptRequirement("p1", "NFR-001");
+
+    expect(useDocumentsStore.getState().documents).toEqual([adopted, external]);
+    expect(useDocumentsStore.getState().adoptingId).toBeNull();
+  });
+
+  it("adoptRequirement()の失敗はadoptErrorに残し、文書は変えない", async () => {
+    useDocumentsStore.setState({ projectId: "p1", documents: [SAMPLE_DOC] });
+    stub.queue({ status: 409, body: { detail: { code: "REQUIREMENT_NOT_ASSUMED", message: "推測ではありません" } } });
+
+    await useDocumentsStore.getState().adoptRequirement("p1", "FR-001");
+
+    expect(useDocumentsStore.getState().documents).toEqual([SAMPLE_DOC]);
+    expect(useDocumentsStore.getState().adoptError).not.toBeNull();
+    expect(useDocumentsStore.getState().adoptingId).toBeNull();
   });
 });

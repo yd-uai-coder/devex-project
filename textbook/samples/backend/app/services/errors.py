@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整)
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -364,3 +364,17 @@ class HearingPointNotOpenError(ConflictError):
     上書きしない。言い直しはチャットで行う)。"""
 
     code: ClassVar[str | None] = "HEARING_POINT_NOT_OPEN"
+
+
+# Phase-36-2:追記
+class RequirementNotFoundError(NotFoundError):
+    """要件定義書の現在の版に、指定した要件ID の要件が無い場合に送出する(model を持たない
+    以前の版も含む)。"""
+
+    code: ClassVar[str | None] = "REQUIREMENT_NOT_FOUND"
+
+
+class RequirementNotAssumedError(ConflictError):
+    """推測でない要件を「採用」にしようとした場合に送出する(画面が古いまま押したときに起きうる)。"""
+
+    code: ClassVar[str | None] = "REQUIREMENT_NOT_ASSUMED"

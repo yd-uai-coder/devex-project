@@ -1,8 +1,9 @@
-// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整)
+// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3
 // Phase-15-7:追記 ── getProject(@/features/hearing/api/hearingApi), ProjectMode(@/features/dashboard/api/projects)
+// Phase-36-3:追記 ── adoptRequirement(@/features/documents/api/documentsApi)
 import { create } from "zustand";
 import { isCacheFresh } from "@/lib/api/cache";
-import { listDocuments } from "@/features/documents/api/documentsApi";
+import { adoptRequirement, listDocuments } from "@/features/documents/api/documentsApi";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
 // triggerGenerationはPhase 3-5(hearingApi.ts)のものをそのまま再利用する
 // (プロジェクトの生成トリガー自体はヒアリング画面の承認・ドキュメント画面の再生成の
@@ -30,6 +31,10 @@ type DocumentsStore = {
   // プロジェクトのモード。詳細設計モードでは、詳細設計(SCR-008)へのリンクを出す。
   // 詳細設計(SCR-008)へ進ませる。取得するまでは null。
   projectMode: ProjectMode | null;
+  // Phase-36-3:追記
+  // 「採用にする」を押している要件ID と、その失敗
+  adoptingId: string | null;
+  adoptError: string | null;
 
   fetchDocuments: (projectId: string, options?: { force?: boolean }) => Promise<void>;
   // Phase-15-7:追記
@@ -38,6 +43,9 @@ type DocumentsStore = {
   // useGenerationPollingのcompletedコールバックから呼ぶ。regeneratingを下ろし、
   // 一覧をforce再取得して新しいバージョンを反映する。
   onRegenerationCompleted: (projectId: string) => void;
+  // Phase-36-3:追記
+  // 推測の要件を「採用」にし、返った要件定義書で一覧の同じ文書を置き換える
+  adoptRequirement: (projectId: string, reqId: string) => Promise<void>;
 };
 
 // Phase-24:追記
@@ -48,6 +56,9 @@ const PROJECT_INITIAL = {
   regenerating: false,
   regenerateError: null,
   projectMode: null,
+  // Phase-36-3:追記
+  adoptingId: null,
+  adoptError: null,
 } as const;
 
 export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
@@ -62,6 +73,9 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   regenerateError: null,
   // Phase-15-7:追記
   projectMode: null,
+  // Phase-36-3:追記
+  adoptingId: null,
+  adoptError: null,
 
   fetchDocuments: async (projectId, { force = false } = {}) => {
     // Phase-24:追記
@@ -120,6 +134,24 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   onRegenerationCompleted: (projectId) => {
     set({ regenerating: false });
     void get().fetchDocuments(projectId, { force: true });
+  },
+
+  // Phase-36-3:追記
+  adoptRequirement: async (projectId, reqId) => {
+    set({ adoptingId: reqId, adoptError: null });
+    try {
+      const updated = await adoptRequirement(projectId, reqId);
+      if (get().projectId !== projectId) return;
+      set({
+        documents: get().documents.map((doc) => (doc.doc_type === updated.doc_type ? updated : doc)),
+        adoptingId: null,
+      });
+    } catch (err) {
+      set({
+        adoptingId: null,
+        adoptError: err instanceof Error ? err.message : "採用にできませんでした",
+      });
+    }
   },
 }));
 

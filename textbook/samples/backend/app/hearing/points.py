@@ -1,4 +1,4 @@
-# 作成：Phase-34-1｜更新：Phase-35(完了後の調整)
+# 作成：Phase-34-1｜更新：Phase-35(完了後の調整),36-1
 """ヒアリングの観点の表(純粋関数)。
 
 docs/internal_design.md 3.3節「観点の定義はコードに持つ」。観点は機能面の観点と、IPA の
@@ -219,6 +219,12 @@ def is_point_key(key: str) -> bool:
 def initial_states() -> dict[str, PointState]:
     """すべて未決の表(まだ判定していないプロジェクト)。"""
     return {d.key: PointState(d.key, "open", "") for d in POINT_DEFS}
+
+
+# Phase-36-1:追記
+def as_scale(value: str | None) -> Scale | None:
+    """`projects.hearing_scale`の値を規模にする(未決・知らない値は None)。"""
+    return value if value in get_args(Scale) else None  # type: ignore[return-value]
 
 
 def effective_scale(scale: Scale | None) -> Scale:

@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5,15-3,24(ゴール3後の調整),34-2,35-2,35(完了後の調整)
+# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5,15-3,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2
 # 写経レベル: コア ── MVPコアループ(ヒアリングフロー)そのもの。LangGraphを使わない設計判断も含む。
 # Phase-2-5:追記 ── app.services.llm_retry.invoke_with_retry
 # Phase-6-3:追記 ── app.models.prompt_template.PromptTemplate,
@@ -26,6 +26,8 @@
 #   (最初の発話も構造化出力にし、聞く観点の形は describe_points で作る)
 # Phase-35-2：削除 ── time, app.services.llm_retry(as_llm_error, prompt_char_count)
 #   (返信をストリーミングせず、invoke_with_retry を通すようにした)
+# Phase-36-2:追記 ── app.hearing.as_scale, app.repositories.hearing_point.states_from_rows
+# Phase-36-2：削除 ── app.hearing(initial_states, to_state), app.models.hearing_point.HearingPoint(states_from_rows とともにリポジトリへ移した)
 import json
 import uuid
 from collections.abc import AsyncIterator, Mapping, Sequence
@@ -47,6 +49,7 @@ from app.hearing import (
     PointState,
     Scale,
     apply_card_answers,
+    as_scale,
     build_summary,
     card_as_text,
     card_targets,
@@ -55,7 +58,6 @@ from app.hearing import (
     carry_over_cards,
     compose_answer_message,
     describe_points,
-    initial_states,
     is_point_key,
     is_required,
     is_sufficient,
@@ -70,14 +72,12 @@ from app.hearing import (
     scale_after,
     scale_card,
     scale_of_answer,
-    to_state,
 )
 from app.models.chat_history import ChatHistory
-from app.models.hearing_point import HearingPoint
 from app.models.project import Project
 from app.models.prompt_template import PromptTemplate
 from app.repositories.chat_history import ChatHistoryRepository
-from app.repositories.hearing_point import HearingPointRepository
+from app.repositories.hearing_point import HearingPointRepository, states_from_rows
 from app.repositories.prompt_template import PromptTemplateRepository
 from app.schemas.generation import HearingCompletionCheck
 from app.schemas.hearing import (
@@ -413,7 +413,10 @@ class ChatService:
             check = _completion_from(states, project.hearing_scale)
             project.hearing_check = check.model_dump()
             if check.is_sufficient:
-                scale = _as_scale(project.hearing_scale)
+                # Phase-36-2：更新
+                # scale = _as_scale(project.hearing_scale)
+                # ↓↓
+                scale = as_scale(project.hearing_scale)
                 optional = open_optional(states, scale)
                 wants_optional = continue_optional or any(
                     not is_required(card.point_key, scale) for card, _ in answered
@@ -429,7 +432,10 @@ class ChatService:
 
         # 次に聞く問いは1つ。前の返信で答えなかったカード(観点がまだ未決)があれば、それを付け直す
         carried = carry_over_cards(previous_cards, answered, states, lambda: str(uuid.uuid4()))[:1]
-        targets = _next_targets(states, _as_scale(project.hearing_scale))
+        # Phase-36-2：更新
+        # targets = _next_targets(states, _as_scale(project.hearing_scale))
+        # ↓↓
+        targets = _next_targets(states, as_scale(project.hearing_scale))
         if carried:
             targets = [point_def(carried[0].point_key)]
         message, cards = await self._compose_reply(
@@ -676,7 +682,10 @@ class ChatService:
         ]
         states = merge_judgement(previous, judged)
         project.hearing_scale = scale_after(
-            states, _as_scale(project.hearing_scale), result.scale
+            # Phase-36-2：更新
+            # states, _as_scale(project.hearing_scale), result.scale
+            # ↓↓
+            states, as_scale(project.hearing_scale), result.scale
         )
         await self._hearing_points.save_states(project.id, states.values())
         return states
@@ -684,8 +693,12 @@ class ChatService:
     async def points_view(self, project: Project) -> HearingPointsRead:
         """チャット画面の観点の表(LLMは呼ばない)。表がまだ無いプロジェクトは、全観点を未決で返す。"""
         rows = await self._hearing_points.list_for_project(project.id)
-        states = _states_from_rows(rows)
-        scale = _as_scale(project.hearing_scale)
+        # Phase-36-2：更新
+        # states = _states_from_rows(rows)
+        # scale = _as_scale(project.hearing_scale)
+        # ↓↓
+        states = states_from_rows(rows)
+        scale = as_scale(project.hearing_scale)
         history = await self._chat_histories.list_for_project(project.id)
         labels = {
             message_id: label
@@ -745,7 +758,10 @@ class ChatService:
         return await self.points_view(project)
 
     async def _load_states(self, project: Project) -> dict[str, PointState]:
-        return _states_from_rows(await self._hearing_points.list_for_project(project.id))
+        # Phase-36-2：更新
+        # return _states_from_rows(await self._hearing_points.list_for_project(project.id))
+        # ↓↓
+        return states_from_rows(await self._hearing_points.list_for_project(project.id))
 
     # Phase-24:追記
     def stored_completion(self, project: Project) -> HearingCompletionCheck:
@@ -805,7 +821,10 @@ class ChatService:
         except (GenerationFailedError, LLMQuotaExceededError):
             logger.warning("opening_hearing_check_failed")
             states = await self._load_states(project)
-        targets = _next_targets(states, _as_scale(project.hearing_scale))
+        # Phase-36-2：更新
+        # targets = _next_targets(states, _as_scale(project.hearing_scale))
+        # ↓↓
+        targets = _next_targets(states, as_scale(project.hearing_scale))
         reply, cards = await self._compose_reply(
             project,
             questions=describe_points(targets),
@@ -968,20 +987,21 @@ class ReplyCards:
 
 
 # Phase-34-2:追記
-def _as_scale(value: str | None) -> Scale | None:
-    return value if value in ("personal", "internal", "public") else None  # type: ignore[return-value]
-
-
-def _states_from_rows(rows: Sequence[HearingPoint]) -> dict[str, PointState]:
-    """hearing_pointsの行を観点の表に直す(行の無い観点・知らないキーの行は除いて、未決で埋める)。"""
-    states = initial_states()
-    for row in rows:
-        state = to_state(row.point_key, row.status, row.summary, row.evidence or ())
-        if state is not None:
-            states[state.key] = state
-    return states
-
-
+# Phase-36-2：削除
+# def _as_scale(value: str | None) -> Scale | None:
+#     return value if value in ("personal", "internal", "public") else None  # type: ignore[return-value]
+#
+#
+# def _states_from_rows(rows: Sequence[HearingPoint]) -> dict[str, PointState]:
+#     """hearing_pointsの行を観点の表に直す(行の無い観点・知らないキーの行は除いて、未決で埋める)。"""
+#     states = initial_states()
+#     for row in rows:
+#         state = to_state(row.point_key, row.status, row.summary, row.evidence or ())
+#         if state is not None:
+#             states[state.key] = state
+#     return states
+#
+#
 def _points_table(states: Mapping[str, PointState]) -> str:
     """判定のプロンプトに埋める観点の表(1行1観点)。"""
     return "\n".join(
@@ -992,9 +1012,16 @@ def _points_table(states: Mapping[str, PointState]) -> str:
 
 def _completion_from(states: Mapping[str, PointState], scale: str | None) -> HearingCompletionCheck:
     """観点の表から完了判定を作る(LLMは呼ばない)。十分ならまとめを付ける。"""
-    sufficient = is_sufficient(states, _as_scale(scale))
+    # Phase-36-2：更新
+    # sufficient = is_sufficient(states, _as_scale(scale))
+    # ↓↓
+    sufficient = is_sufficient(states, as_scale(scale))
     return HearingCompletionCheck(
         is_sufficient=sufficient,
-        summary=build_summary(states, _as_scale(scale)) if sufficient else "",
-        missing_points=missing_labels(states, _as_scale(scale)),
+        # Phase-36-2：更新
+        # summary=build_summary(states, _as_scale(scale)) if sufficient else "",
+        # missing_points=missing_labels(states, _as_scale(scale)),
+        # ↓↓
+        summary=build_summary(states, as_scale(scale)) if sufficient else "",
+        missing_points=missing_labels(states, as_scale(scale)),
     )

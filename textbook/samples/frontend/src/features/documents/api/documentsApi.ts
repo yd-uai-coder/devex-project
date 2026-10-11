@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5
+// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3
 // Phase-12-5:追記 ── @/lib/api/download.parseFilename(UML 図の出力と共有するため移した)
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
@@ -6,6 +6,30 @@ import { API_BASE_URL } from "@/lib/api/base-url";
 import { parseFilename } from "@/lib/api/download";
 
 export type DocType = "requirements" | "external_design" | "internal_design" | "implementation_plan";
+
+// Phase-36-3:追記
+export type RequirementSource = "user" | "adopted" | "assumed";
+
+// devex-api app/schemas/document.py の RequirementIssueRead・AssumedRequirementRead・
+// RequirementsSummaryRead に対応する。
+export type RequirementIssueRead = {
+  level: "critical" | "major" | "minor";
+  code: string;
+  message: string;
+  targets: string[];
+};
+
+export type AssumedRequirementRead = {
+  id: string;
+  kind: "FR" | "NFR" | "CON";
+  text: string;
+};
+
+export type RequirementsSummaryRead = {
+  counts: Record<RequirementSource, number>;
+  assumed: AssumedRequirementRead[];
+  issues: RequirementIssueRead[];
+};
 
 // devex-api app/schemas/document.py の GeneratedDocumentRead に対応する。
 export type GeneratedDocumentRead = {
@@ -16,6 +40,9 @@ export type GeneratedDocumentRead = {
   created_at: string;
   // Phase-6-6:追記 ── 現在表示中のバージョンかどうか(バージョン履歴の「表示中」バッジ用)
   is_current: boolean;
+  // Phase-36-3:追記
+  // 要件定義書で model を持つ版だけ(ほかの文書・以前の版は null)
+  requirements?: RequirementsSummaryRead | null;
 };
 
 export function listDocuments(projectId: string): Promise<GeneratedDocumentRead[]> {
@@ -39,6 +66,15 @@ export function restoreDocumentVersion(
 ): Promise<GeneratedDocumentRead> {
   return apiFetch<GeneratedDocumentRead>(
     `/api/v1/projects/${projectId}/documents/${docType}/versions/${version}/restore`,
+    // Phase-36-3:追記
+    { method: "POST" },
+  );
+}
+
+// 推測の要件を、利用者が確かめた「採用」にする(同じ版の md が書き換わる。版は増えない)。
+export function adoptRequirement(projectId: string, reqId: string): Promise<GeneratedDocumentRead> {
+  return apiFetch<GeneratedDocumentRead>(
+    `/api/v1/projects/${projectId}/documents/requirements/rows/${reqId}/adopt`,
     { method: "POST" },
   );
 }

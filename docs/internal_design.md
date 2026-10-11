@@ -85,6 +85,7 @@
 | project_id | UUID | FK (`projects.id`), NOT NULL | プロジェクトID |
 | doc_type | VARCHAR(50) | NOT NULL | 種別 ('requirements', 'external_design', 'internal_design', 'implementation_plan') |
 | content | TEXT | NOT NULL | 生成されたMarkdownテキスト |
+| model | JSONB | NULL可 | 意味モデル(要件定義書だけ。要件の行・ID・出どころ・観点、生成した時点の観点の状態)。`content`はこれから組み立てたmd。modelを持たない文書・以前の版はNULL(mdのまま使う)(Phase 36) |
 | version | INT | NOT NULL, DEFAULT 1 | バージョン番号 |
 | is_current | BOOLEAN | NOT NULL, DEFAULT false | 現在表示中のバージョンか。同一`project_id`+`doc_type`につきちょうど1行のみ`true`(ステージ2追補) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
@@ -280,6 +281,7 @@ backend/
 | **PUT** | `/api/v1/projects/{id}/hearing-points/{key}` | 観点の表の画面から、未決の観点を「対象外(後で決める)」にする(本文`{status: "not_applicable"}`のみ)。LLM は呼ばず、完了判定をその場で表から作り直し、作り直した観点の表を返す。知らないキーは 404、未決でない観点・生成中は 409(Phase 35 完了後の調整) | 必要 |
 | **POST** | `/api/v1/projects/{id}/generate` | 設計書の自動生成トリガー（非同期。簡易ドキュメントモードは4種、詳細設計モードは要件定義・外部設計の2種。生成中は409 `DOC_GENERATION_IN_PROGRESS`。Phase 15） | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents` | 生成された設計書一覧(doc_typeごとの現在表示中(`is_current`)の版のみ)・内容の取得 | 必要 |
+| **POST** | `/api/v1/projects/{id}/documents/requirements/rows/{req_id}/adopt` | 要件定義書の現在の版の推測の要件を「採用」にする(LLM は呼ばない。同じ版の model と md を書き換え、版は増やさない)。要件が無い・model の無い版は 404 `REQUIREMENT_NOT_FOUND`、推測でない要件・生成中は 409(Phase 36) | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents/{doc_id}/download` | 指定Markdownドキュメントのダウンロード | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents/{doc_type}/versions` | （※ステージ2、SCR-006向け）指定doc_typeの保持済みバージョン一覧(最大3件)を取得 | 必要 |
 | **POST** | `/api/v1/projects/{id}/documents/{doc_type}/versions/{version}/restore` | （※ステージ2、SCR-006向け）指定バージョンを表示中(`is_current`)に切り替える。新バージョンは作らない(3.2節バージョニング方針参照) | 必要 |
@@ -466,6 +468,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * **Phase 35 完了後の調整(2回目)**: `_record_user_turn`は最新の AI の発言のカードと今回の回答を返し、`carry_over_cards`(`app/hearing/cards.py`)が、答えなかったカードのうち観点がまだ未決のものを id を振り直して次の返信に付け直す(付け直す観点は LLM のカードの候補から外す)。返信にカードが無く、本文に問いも無く、聞くべき観点が残っていれば、`_ensure_question`が先頭の観点の問いを本文に足す。必須がそろった後は、`continue_optional`または任意の観点のカードへの回答があり、未決の任意(`open_optional`)が残っているときだけ、未決の任意の先頭3つを候補にして返信を作る(それ以外はまとめ)。完了判定は必須だけで決めるので、任意を続けている間も十分のまま。
   * **Phase 35 完了後の調整(3回目)**: `CARD_LIMIT = 1`(1回の返信の問いは1つ)。`_next_targets`が次に聞く観点を1つ選び(必須が未決なら`card_targets`、そろっていれば未決の任意)、前の返信で答えなかったカードがあればそれを付け直す(`_compose_reply`の`code_card`。LLM にはカードを作らせず、`_CODE_CARD_NOTE`で前置きだけを書かせる)。`sanitize_cards`は既定で1枚まで。`generate_opening_reply`は先に`judge_points`で初期入力・添付資料を判定し(失敗しても続ける)、判定後の表で次の観点の問いを付ける(最初の発話も構造化出力)。`stream_reply`は、送信に文が無く(カードの回答だけ・「任意を続ける」だけ)、判定が済んでいる(`hearing_check`があり、観点の表の行がある)ときは`judge_points`を呼ばず、記録後の表から完了を判定する。
 * **要件定義書・外部設計書の意味モデル**: ステージ4の段階と同じく「構造化出力 → Pydantic の model → md を組み立てる」。要件定義書は要件の行(`FR`/`NFR`/`CON`の ID・優先度または大項目・本文・出どころ`user`/`adopted`/`assumed`・観点のキー)と、1.1〜1.3 の本文。外部設計書は画面・API・外部連携の行(関係する要件ID を持つ)と、本文の節。model の置き場(`generated_documents`の列にするか)と、再生成したときの ID の扱いは Phase 36 で決める。
+  * **Phase 36 で実装した部分(要件定義書)**: `app/documents/requirements`(`model`・`assemble`・`markdown`・`validation`・`drafting`)。model は`generated_documents.model`に版ごとに持つ。生成(`DocGeneratorService._generate_requirements`)は、会話・観点の表(「key|名前|状態|決めたこと」)・前の版の要件(「ID|本文」)を入力に構造化出力(`RequirementsGenerationOutput`)を1回呼び、`build_model`で model にし、`render_requirements`で md を組み立てる。**ID**: AI には書かせず、前の版の同じ要件を`prev_id`で指させる。前の版に在る同じ種別の ID だけを引き継ぎ、それ以外は種別ごとの次の番号(`next_seq`。消えた ID は使い回さない)。**出どころ**: AI が付けた値に、根拠の観点の状態で上限をかける(決定 → user、採用 → adopted、未決・対象外・観点なし → assumed。規模だけでは上げない)。**付録と検証**は model に写した生成時点の観点の状態(`point_statuses`・`scale`)を読む。**検証**は警告だけ(`NO_MUST_REQUIREMENT`・`REQUIRED_POINT_OPEN`(中程度)、`REQUIREMENT_ON_NOT_APPLICABLE_POINT`・`ASSUMED_REQUIREMENTS`(軽微))。文書の応答(`GeneratedDocumentRead.requirements`)に出どころの件数・推測の要件・指摘を付ける(`document_read`)。手順書の対象外(`out_of_scope_lines`)は 1.4 の表の行(優先度が Should / Could / Won't)も読む。構造化出力の呼び出しは`llm_retry.invoke_structured`(段階の生成と共有)、観点の表の読み出しは`HearingPointRepository.load_states`(チャットと共有)。
 * **後続は md を読む**: 段階・自己診断・簡易モードの後続の文書は、model から組み立てた md を今と同じく入力にする。要件ID は md に出るので、段階1の下書き・WBS がそれを参照できる。
 * **要件 → 処理**: 段階1の機能の行に`req_ids`を足す(`FunctionRow`)。段階1の検証に、処理の無い Must の機能要件(中程度)・要件の無い処理(軽微)・要件定義書に無い要件ID(軽微)を足す。要件定義書に model が無いプロジェクトは「要件ID が無い」の軽微な指摘だけにする。簡易モードは`simple_procedure/wbs.parse_wbs`が WBS の「要件」の行を読む。
 

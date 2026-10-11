@@ -1,6 +1,8 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,6-6
+// 作成：Phase-3-6｜更新：Phase-6-2,6-6,36-3
+// Phase-36-3:追記 ── ../documentsApi.adoptRequirement
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  adoptRequirement,
   DownloadError,
   downloadDocument,
   listDocuments,
@@ -71,6 +73,30 @@ describe("restoreDocumentVersion", () => {
 
     expect(stub.requests[0].url).toContain(
       "/api/v1/projects/p1/documents/requirements/versions/1/restore",
+    );
+    expect(stub.requests[0].init?.method).toBe("POST");
+  });
+});
+
+// Phase-36-3:追記
+describe("adoptRequirement", () => {
+  let stub: ReturnType<typeof stubFetch>;
+
+  beforeEach(() => {
+    stub = stubFetch();
+  });
+
+  afterEach(() => {
+    stub.restore();
+  });
+
+  it("POST .../documents/requirements/rows/{id}/adoptを呼ぶ", async () => {
+    stub.queue({ status: 200, body: { id: "d1", doc_type: "requirements", content: "md", version: 1, created_at: "", is_current: true } });
+
+    await adoptRequirement("p1", "NFR-001");
+
+    expect(stub.requests[0].url).toContain(
+      "/api/v1/projects/p1/documents/requirements/rows/NFR-001/adopt",
     );
     expect(stub.requests[0].init?.method).toBe("POST");
   });

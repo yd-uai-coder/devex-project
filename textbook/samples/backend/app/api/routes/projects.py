@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整)
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -22,6 +22,7 @@
 # Phase-34-2:追記 ── app.schemas.hearing.HearingPointsRead
 # Phase-35-2:追記 ── app.services.chat_service.ReplyCards
 # Phase-35(完了後の調整):追記 ── app.schemas.hearing.HearingPointUpdate
+# Phase-36-2:追記 ── app.services.doc_generator_service.document_read
 import contextlib
 import json
 import uuid
@@ -44,7 +45,11 @@ from app.schemas.hearing import (
 )
 from app.schemas.project import ProjectDetail, ProjectMode, ProjectRead
 from app.services.chat_service import ChatService, ReplyCards
-from app.services.doc_generator_service import DocGeneratorService, generate_documents
+from app.services.doc_generator_service import (
+    DocGeneratorService,
+    document_read,
+    generate_documents,
+)
 from app.services.errors import GenerationFailedError, LLMQuotaExceededError
 from app.services.project import ProjectService, UploadedFileInput
 
@@ -314,7 +319,10 @@ async def list_generated_documents(
     # )
     # ↓↓
     documents = await DocGeneratorService(session).list_current_documents(current_project.id)
-    return [GeneratedDocumentRead.model_validate(d) for d in documents]
+    # Phase-36-2：更新
+    # return [GeneratedDocumentRead.model_validate(d) for d in documents]
+    # ↓↓
+    return [document_read(d) for d in documents]
 
 
 # Phase-2-5:追記
@@ -356,7 +364,10 @@ async def list_document_versions(
 ) -> list[GeneratedDocumentRead]:
     """指定doc_typeの保管済み全バージョン(最大3件)を新しい順に取得する。"""
     versions = await DocGeneratorService(session).list_versions(current_project.id, doc_type)
-    return [GeneratedDocumentRead.model_validate(v) for v in versions]
+    # Phase-36-2：更新
+    # return [GeneratedDocumentRead.model_validate(v) for v in versions]
+    # ↓↓
+    return [document_read(v) for v in versions]
 
 
 @router.post(
@@ -370,7 +381,24 @@ async def restore_document_version(
     restored = await DocGeneratorService(session).restore_version(
         current_project.id, doc_type, version
     )
-    return GeneratedDocumentRead.model_validate(restored)
+    # Phase-36-2：更新
+    # return GeneratedDocumentRead.model_validate(restored)
+    # ↓↓
+    return document_read(restored)
+
+
+@router.post(
+    "/{project_id}/documents/requirements/rows/{req_id}/adopt",
+    response_model=GeneratedDocumentRead,
+)
+async def adopt_requirement(
+    req_id: str, session: SessionDep, current_project: CurrentProjectDep
+) -> GeneratedDocumentRead:
+    """要件定義書の推測の要件を、利用者が確かめた「採用」にする(LLMは呼ばない。同じ版の
+    model と md を書き換え、版は増やさない)。"""
+    document = await DocGeneratorService(session).adopt_requirement(current_project, req_id)
+    return document_read(document)
+
 
 
 # Phase-12-4：削除(app/api/responses.py の content_disposition へ移した)

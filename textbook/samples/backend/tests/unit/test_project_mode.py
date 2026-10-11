@@ -1,10 +1,12 @@
-# 作成：Phase-15-1｜更新：24(ゴール3後の調整)
+# 作成：Phase-15-1｜更新：24(ゴール3後の調整),36-2
 # 写経レベル: コア ── ルートが template_id・mode を渡すこと(気づき#1)と、モードごとの文書の組が生成の順序を守ることを確かめる。
+# Phase-36-2:追記 ── tests.fixtures.requirements.requirements_output
 import uuid
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from tests.fixtures.fake_llm import FakeLLM
+from tests.fixtures.requirements import requirements_output
 
 from app.api.routes.projects import create_project
 from app.models.project import Project
@@ -100,8 +102,14 @@ async def test_generate_in_detailed_mode_creates_only_two_documents(
     db_session: AsyncSession,
 ) -> None:
     project = await _create_project(db_session, mode="detailed")
-    # 要件定義・外部設計(2件) + 自己診断(1件) = 計3回の呼び出し
-    fake_llm = FakeLLM(content_sequence=["# 要件", "# 外部", "## 自己診断\n特になし"])
+    # Phase-36-2：更新
+    # # 要件定義・外部設計(2件) + 自己診断(1件) = 計3回の呼び出し
+    # fake_llm = FakeLLM(content_sequence=["# 要件", "# 外部", "## 自己診断\n特になし"])
+    # ↓↓
+    # 要件定義(構造化出力1件)・外部設計(1件) + 自己診断(1件) = 計3回の呼び出し
+    fake_llm = FakeLLM(
+        content_sequence=["# 外部", "## 自己診断\n特になし"], structured=requirements_output()
+    )
 
     await DocGeneratorService(db_session).generate(project.id, project.user_id, llm=fake_llm)
 

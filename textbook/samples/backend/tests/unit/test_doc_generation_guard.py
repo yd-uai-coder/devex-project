@@ -1,4 +1,4 @@
-# 作成：Phase-15-3
+# 作成：Phase-15-3｜更新：Phase-36-2
 # 写経レベル: コア ── 409・rollback・回収の3つを、DBの状態で確かめる。
 """設計書の生成の二重実行防止(気づき#4)・失敗時の rollback(#3)・止まった生成の回収(#5)のテスト。
 
@@ -9,6 +9,7 @@ SUT: DocGeneratorService(request_generation / generate / recover_if_stale)と、
 DBはインメモリSQLite(rollbackで版が残らないことそのものが検証対象のため、スタブにしない)。
 """
 
+# Phase-36-2:追記 ── tests.fixtures.requirements.requirements_output
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -16,6 +17,7 @@ from fastapi import BackgroundTasks
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from tests.fixtures.fake_llm import FakeLLM
+from tests.fixtures.requirements import requirements_output
 from tests.fixtures.uml import create_project
 
 from app.api.routes.projects import trigger_generation
@@ -74,7 +76,10 @@ async def test_failure_midway_rolls_back_partial_versions(db_session: AsyncSessi
         project.id,
         project.user_id,
         status_before_generation=previous,
-        llm=FakeLLM(content_sequence=["# 要件"]),
+        # Phase-36-2：更新
+        # llm=FakeLLM(content_sequence=["# 要件"]),
+        # ↓↓
+        llm=FakeLLM(content_sequence=[], structured=requirements_output()),
     )
 
     documents = await GeneratedDocumentRepository(db_session).list_current_for_project(project.id)

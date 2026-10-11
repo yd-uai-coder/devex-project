@@ -1,10 +1,11 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,12-5,13-6,24(完了後の調整)
+// 作成：Phase-3-6｜更新：Phase-6-2,12-5,13-6,24(完了後の調整),36-3
 // Phase-6-2:追記 ── @/features/documents/components/VersionHistoryPanel
 // Phase-12-5:追記 ── @/lib/api/download.saveFile
 // Phase-13-6:追記 ── @/features/documents/anchors.splitByAnchors,
 //   @/features/documents/components(DiagramEmbed, DiagramSyncBar),
 //   @/features/documents/documents-store.useDocumentsStore,
 //   @/features/documents/hooks/useDiagramEmbeds, @/features/uml/api/types.UmlEmbedRead
+// Phase-36-3:追記 ── @/features/documents/components/RequirementsSummaryPanel
 "use client";
 
 import { useState } from "react";
@@ -14,6 +15,7 @@ import { Button, H1, H2, H3, H4, Paragraph, Text, XStack, YStack } from "tamagui
 import { downloadDocument } from "@/features/documents/api/documentsApi";
 import { saveFile } from "@/lib/api/download";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
+import { RequirementsSummaryPanel } from "@/features/documents/components/RequirementsSummaryPanel";
 import { VersionHistoryPanel } from "@/features/documents/components/VersionHistoryPanel";
 // Phase-24：削除
 // import { splitByAnchors } from "@/features/documents/anchors";
@@ -184,6 +186,8 @@ export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownVi
         </ReactMarkdown>
       </YStack> */}
       {/* ↓↓ */}
+      {/* Phase-36-3:追記 */}
+      <RequirementsSummaryPanel projectId={projectId} document={document} />
       <YStack borderWidth={1} borderColor="$borderColor" borderRadius="$4" padding="$4">
         {/* Phase-24：更新
         {isInternalDesign ? (

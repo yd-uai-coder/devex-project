@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
 # Phase-31-4：更新(docstring: 簡易モードの段階8は、作業単位を WBS、参照を内部設計書から取ること)
@@ -48,6 +48,8 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 # Phase-28-2:追記 ── app.detailed_design.plan.PlanModel, app.detailed_design.procedure_doc(MAX_PROCEDURE_DOC_TARGETS, PROCEDURE_DOC_STAGE, ProcedureDocModel, find_unit, merge_unit_procedure, plan_units, generation_targets), app.detailed_design.procedure_doc_drafting, app.detailed_design.procedure_doc_refs.unit_context
 # Phase-31-4:追記 ── app.detailed_design.procedure_basis.procedure_basis, app.detailed_design.procedure_doc_drafting(SimpleProcedureDocGenerationOutput, build_simple_procedure_doc_messages)
 # Phase-31-4：削除 ── app.detailed_design.procedure_doc_refs.unit_context
+# Phase-36-2:追記 ── app.services.llm_retry.invoke_structured
+# Phase-36-2：削除 ── langchain_core.messages.BaseMessage, app.services.llm_retry.invoke_with_retry, app.uml.generation.failures.unwrap_structured_result(_invoke_structured を llm_retry.invoke_structured へ移した)
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
@@ -55,7 +57,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -170,9 +171,9 @@ from app.services.errors import (
     DesignStageLockedError,
 )
 from app.services.generation_staleness import is_stale
-from app.services.llm_retry import invoke_with_retry
+from app.services.llm_retry import invoke_structured
 from app.uml.domain import NOTATION_TO_VIEW, NotationType
-from app.uml.generation.failures import ReasonCode, classify_failure, unwrap_structured_result
+from app.uml.generation.failures import ReasonCode, classify_failure
 from app.uml.generation.mapper import required_data_items, to_component, to_dfd
 from app.uml.generation.prompts import ExistingDataItem
 from app.uml.generation.schemas import ComponentGenerationOutput
@@ -227,19 +228,20 @@ StageGenerator = Callable[[StageGenerationContext], Awaitable[dict]]
 
 
 # Phase-17-3:追記
-async def _invoke_structured[T: BaseModel](
-    llm, schema: type[T], messages: list[BaseMessage]
-) -> T:
-    """構造化出力を呼ぶ(解釈の失敗・クォータ超過は invoke_with_retry の規則で再試行する)。"""
-    structured_llm = llm.with_structured_output(schema, include_raw=True)
-
-    async def _call() -> T:
-        result = await structured_llm.ainvoke(messages)
-        return unwrap_structured_result(result, schema)
-
-    return await invoke_with_retry(_call, messages=messages)
-
-
+# Phase-36-2：削除
+# async def _invoke_structured[T: BaseModel](
+#     llm, schema: type[T], messages: list[BaseMessage]
+# ) -> T:
+#     """構造化出力を呼ぶ(解釈の失敗・クォータ超過は invoke_with_retry の規則で再試行する)。"""
+#     structured_llm = llm.with_structured_output(schema, include_raw=True)
+#
+#     async def _call() -> T:
+#         result = await structured_llm.ainvoke(messages)
+#         return unwrap_structured_result(result, schema)
+#
+#     return await invoke_with_retry(_call, messages=messages)
+#
+#
 # Phase-17-3：更新
 # async def generate_function_list(
 #     llm, sources: StageSources, previous: Mapping[str, Any] | None
@@ -259,7 +261,10 @@ async def _invoke_structured[T: BaseModel](
 async def generate_function_list(context: StageGenerationContext) -> dict:
     """段階1: 外部設計書から処理を下書きし、前の版と突き合わせて処理IDと機能グループを決める。"""
     messages = build_function_list_messages(context.sources.documents.get("external_design", ""))
-    output = await _invoke_structured(context.llm, FunctionListGenerationOutput, messages)
+    # Phase-36-2：更新
+    # output = await _invoke_structured(context.llm, FunctionListGenerationOutput, messages)
+    # ↓↓
+    output = await invoke_structured(context.llm, FunctionListGenerationOutput, messages)
     previous = context.previous
     previous_model = FunctionListModel.model_validate(previous) if previous else None
     return merge_draft(to_drafts(output), previous_model).model_dump(mode="json")
@@ -275,7 +280,10 @@ async def generate_data_flow(context: StageGenerationContext) -> dict:
     previous = DataFlowModel.model_validate(context.previous) if context.previous else None
     requirements = context.sources.documents.get("requirements", "")
 
-    summary = await _invoke_structured(
+    # Phase-36-2：更新
+    # summary = await _invoke_structured(
+    # ↓↓
+    summary = await invoke_structured(
         context.llm,
         ProcessSummaryGenerationOutput,
         build_summary_messages(function_list.functions, requirements),
@@ -289,7 +297,10 @@ async def generate_data_flow(context: StageGenerationContext) -> dict:
             ExistingDataItem(name=item.name, field_names=[f["name"] for f in item.fields])
             for item in await data_items.list_for_project(context.project_id)
         ]
-        output = await _invoke_structured(
+        # Phase-36-2：更新
+        # output = await _invoke_structured(
+        # ↓↓
+        output = await invoke_structured(
             context.llm,
             GroupDfdGenerationOutput,
             build_group_dfd_messages(group, functions, model.summaries, requirements, existing),
@@ -320,7 +331,10 @@ async def generate_data_model(context: StageGenerationContext) -> dict:
         for item in await DataItemService(context.session).list_for_project(context.project_id)
     ]
 
-    er_output = await _invoke_structured(
+    # Phase-36-2：更新
+    # er_output = await _invoke_structured(
+    # ↓↓
+    er_output = await invoke_structured(
         context.llm,
         DataModelErOutput,
         build_er_messages(data_store_names(accesses), existing, data_flow.summaries),
@@ -329,7 +343,10 @@ async def generate_data_model(context: StageGenerationContext) -> dict:
     await _save_diagram(context, "er", ER_SUBJECT, er)
 
     tables = [element.name for element in er.elements]
-    crud_output = await _invoke_structured(
+    # Phase-36-2：更新
+    # crud_output = await _invoke_structured(
+    # ↓↓
+    crud_output = await invoke_structured(
         context.llm,
         CrudGenerationOutput,
         build_crud_messages(function_list.functions, data_flow.summaries, tables, accesses),
@@ -352,7 +369,10 @@ async def generate_structure(context: StageGenerationContext) -> dict:
     er = context.sources.er_diagram
     tables = list(er.tables) if er is not None else []
 
-    component_output = await _invoke_structured(
+    # Phase-36-2：更新
+    # component_output = await _invoke_structured(
+    # ↓↓
+    component_output = await invoke_structured(
         context.llm,
         ComponentGenerationOutput,
         build_component_messages(
@@ -362,7 +382,10 @@ async def generate_structure(context: StageGenerationContext) -> dict:
     component = to_component(component_output)
     await _save_diagram(context, "component", STRUCTURE_SUBJECT, component)
 
-    module_output = await _invoke_structured(
+    # Phase-36-2：更新
+    # module_output = await _invoke_structured(
+    # ↓↓
+    module_output = await invoke_structured(
         context.llm,
         ModuleListGenerationOutput,
         build_module_messages(
@@ -401,7 +424,10 @@ async def generate_procedures(context: StageGenerationContext) -> dict:
         if function is None:
             # 受け付けの後に段階1が変わった処理(検証の UNKNOWN_FUNCTION で人に知らせる)
             continue
-        output = await _invoke_structured(
+        # Phase-36-2：更新
+        # output = await _invoke_structured(
+        # ↓↓
+        output = await invoke_structured(
             context.llm,
             ProcedureGenerationOutput,
             build_procedure_messages(
@@ -432,7 +458,10 @@ async def generate_logics(context: StageGenerationContext) -> dict:
         row = rows.get(key)
         if row is None:
             continue
-        output = await _invoke_structured(
+        # Phase-36-2：更新
+        # output = await _invoke_structured(
+        # ↓↓
+        output = await invoke_structured(
             context.llm,
             LogicGenerationOutput,
             build_logic_messages(
@@ -488,13 +517,19 @@ async def generate_plan(context: StageGenerationContext) -> dict:
     # Phase-26-2:追記
     paths = [row.path for row in modules]
 
-    crosscutting_output = await _invoke_structured(
+    # Phase-36-2：更新
+    # crosscutting_output = await _invoke_structured(
+    # ↓↓
+    crosscutting_output = await invoke_structured(
         context.llm,
         CrossCuttingGenerationOutput,
         build_crosscutting_messages(requirements, external_design, design),
     )
     crosscutting = to_crosscutting(crosscutting_output)
-    plan_output = await _invoke_structured(
+    # Phase-36-2：更新
+    # plan_output = await _invoke_structured(
+    # ↓↓
+    plan_output = await invoke_structured(
         context.llm,
         PlanGenerationOutput,
         # Phase-26-2：更新
@@ -537,13 +572,19 @@ async def generate_procedure_docs(context: StageGenerationContext) -> dict:
         unit_context = basis.context(unit)
         output: ProcedureDocGenerationOutput | SimpleProcedureDocGenerationOutput
         if basis.mode == "simple":
-            output = await _invoke_structured(
+            # Phase-36-2：更新
+            # output = await _invoke_structured(
+            # ↓↓
+            output = await invoke_structured(
                 context.llm,
                 SimpleProcedureDocGenerationOutput,
                 build_simple_procedure_doc_messages(unit_context),
             )
         else:
-            output = await _invoke_structured(
+            # Phase-36-2：更新
+            # output = await _invoke_structured(
+            # ↓↓
+            output = await invoke_structured(
                 context.llm,
                 ProcedureDocGenerationOutput,
                 build_procedure_doc_messages(unit_context),

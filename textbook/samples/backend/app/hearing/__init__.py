@@ -1,8 +1,9 @@
-# 作成：Phase-34-1｜更新：Phase-35-1,35(完了後の調整)
+# 作成：Phase-34-1｜更新：Phase-35-1,35(完了後の調整),36-1
 """ヒアリングのドメインロジック(純粋関数)。"""
 
 # Phase-35-1:追記 ── app.hearing.cards(選択肢カードの型と純粋関数)
 # Phase-35(完了後の調整):追記 ── carry_over_cards, describe_points, open_optional
+# Phase-36-1:追記 ── app.hearing.points.as_scale
 from app.hearing.cards import (
     CARD_LIMIT,
     SCALE_CARD_OPTIONS,
@@ -36,6 +37,7 @@ from app.hearing.points import (
     PointState,
     PointStatus,
     Scale,
+    as_scale,
     build_summary,
     describe_points,
     effective_scale,
@@ -86,6 +88,8 @@ __all__ = [
     "PointState",
     "PointStatus",
     "Scale",
+    # Phase-36-1:追記
+    "as_scale",
     "build_summary",
     "describe_points",
     "effective_scale",

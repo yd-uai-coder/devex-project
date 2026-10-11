@@ -1,4 +1,4 @@
-# 更新：Phase-2-3,2-4,10-5,35-2
+# 更新：Phase-2-3,2-4,10-5,35-2,36-2
 """LLM クライアントの挙動を模したテスト用スタブ。
 
 `with_structured_output(schema)` の呼び出しごとに `schema` を `structured_output_calls` に
@@ -77,6 +77,9 @@ class FakeLLM:
         self._structured_by_schema = structured_by_schema or {}
         self.structured_output_calls: list[type[BaseModel]] = []
         self.invoke_messages: list[Any] = []
+        # Phase-36-2:追記
+        # 構造化出力の呼び出しに渡された messages(呼び出しの順)
+        self.structured_messages: list[Any] = []
 
     # Phase-2-4：更新
     # def invoke(self, _messages: Any) -> AIMessage:
@@ -115,9 +118,22 @@ class FakeLLM:
         self.structured_output_calls.append(schema)
         # Phase-35-2:追記
         if schema in self._structured_by_schema:
-            return _FakeStructuredLLM(self._structured_by_schema[schema], include_raw=include_raw)
+            # Phase-36-2：更新
+            # return _FakeStructuredLLM(self._structured_by_schema[schema], include_raw=include_raw)
+            # ↓↓
+            return _FakeStructuredLLM(
+                self._structured_by_schema[schema],
+                include_raw=include_raw,
+                log=self.structured_messages,
+            )
         return _FakeStructuredLLM(
-            self._structured, self._structured_sequence, include_raw=include_raw
+            # Phase-36-2：更新
+            # self._structured, self._structured_sequence, include_raw=include_raw
+            # ↓↓
+            self._structured,
+            self._structured_sequence,
+            include_raw=include_raw,
+            log=self.structured_messages,
         )
 
 
@@ -156,16 +172,22 @@ class _FakeStructuredLLM:
         sequence: list[BaseModel | dict[str, Any] | Exception] | None = None,
         *,
         include_raw: bool = False,
+        # Phase-36-2:追記
+        log: list[Any] | None = None,
     ) -> None:
         self._structured = structured
         self._sequence = sequence
         self._include_raw = include_raw
+        # Phase-36-2:追記
+        self._log = log
 
-    def invoke(self, _messages: Any) -> Any:
+    def invoke(self, messages: Any) -> Any:
         """構造化済みレスポンスをそのまま返す。sequence 指定時は先頭から1つずつ消費し、
         値が Exception インスタンスならその回の呼び出しとして送出する。
         include_raw=True のときは、実物と同じ{"raw", "parsed", "parsing_error"}の形で返す
         (dictの値はそのまま返し、BaseModelの値はfinish_reason="STOP"の生応答で包む)。"""
+        if self._log is not None:
+            self._log.append(messages)
         item: BaseModel | dict[str, Any] | None
         if self._sequence is not None:
             next_item = self._sequence.pop(0)

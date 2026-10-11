@@ -1,12 +1,15 @@
-# 作成：Phase-4-1｜更新：Phase-6-6,24(ゴール3後の調整),34-2,35-2,35(完了後の調整)
+# 作成：Phase-4-1｜更新：Phase-6-6,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2
 # 写経レベル: 定型 ── 個々のロジックはPhase 2の各サービス単体テストで既に検証済み。
 # ここでの狙いは「ルーティング・スキーマ変換・DIの配線」自体の統合的な確認(過去に
 # get_hearing_completionルートの配線漏れが見つかった教訓の横展開、decision-digest.md参照)。
 # Phase-34-2:追記 ── app.hearing.POINT_DEFS, app.schemas.hearing(HearingPointsJudgement, JudgedPointOut)
 # Phase-34-2：削除 ── app.schemas.generation.HearingCompletionCheck
+# Phase-36-2:追記 ── tests.fixtures.requirements.requirements_output, app.documents.requirements.drafting.RequirementsGenerationOutput
 import pytest
 from httpx import AsyncClient
+from tests.fixtures.requirements import requirements_output
 
+from app.documents.requirements.drafting import RequirementsGenerationOutput
 from app.hearing import POINT_DEFS
 # Phase-35-2:追記 ── app.schemas.hearing.HearingReplyOut
 from app.schemas.hearing import HearingPointsJudgement, HearingReplyOut, JudgedPointOut
@@ -51,7 +54,12 @@ def _install_fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
         structured_by_schema={
             HearingReplyOut: HearingReplyOut(
                 message="[Fake] 次に、想定している主なユーザー層を教えてください。"
-            )
+            # Phase-36-2：更新
+            # )
+            # ↓↓
+            ),
+            # 要件定義書の下書き(構造化出力 → model → md)
+            RequirementsGenerationOutput: requirements_output(),
         },
         # Phase-24：更新(完了判定はチャットの送信ごとに1回呼ばれる。下のテストは最大3往復)
         # structured_sequence=[
@@ -237,15 +245,27 @@ async def test_full_projects_flow_create_chat_generate_download(
     project_response = await client.get(f"/api/v1/projects/{project_id}", headers=headers)
     assert project_response.json()["status"] == "completed"
 
-    doc_id = documents[0]["id"]
+    # Phase-36-2：更新
+    # doc_id = documents[0]["id"]
+    # ↓↓
+    requirements = next(d for d in documents if d["doc_type"] == "requirements")
+    # 観点はすべて決まっているので、要件の出どころはどちらもユーザー(推測なし)
+    assert requirements["requirements"]["counts"] == {"user": 2, "adopted": 0, "assumed": 0}
     download_response = await client.get(
-        f"/api/v1/projects/{project_id}/documents/{doc_id}/download", headers=headers
+        # Phase-36-2：更新
+        # f"/api/v1/projects/{project_id}/documents/{doc_id}/download", headers=headers
+        # ↓↓
+        f"/api/v1/projects/{project_id}/documents/{requirements['id']}/download", headers=headers
     )
     assert download_response.status_code == 200
     assert download_response.headers["content-type"].startswith("text/markdown")
-    # FakeLLMは固定の応答文字列のみ返すため、生成内容そのものの品質はここでは検証しない
-    # (品質はPhase 2-4のdoc_generator_service単体テスト・プロンプト設計の責務)。
-    assert download_response.text == "[Fake] 次に、想定している主なユーザー層を教えてください。"
+    # Phase-36-2：更新
+    # # FakeLLMは固定の応答文字列のみ返すため、生成内容そのものの品質はここでは検証しない
+    # # (品質はdoc_generator_serviceの単体テスト・プロンプト設計の責務)。
+    # assert download_response.text == "[Fake] 次に、想定している主なユーザー層を教えてください。"
+    # ↓↓
+    # 要件定義書は model から組み立てた md(要件ID と出どころの付いた表)
+    assert "| FR-001 | Must | 備品を予約できる | ユーザー | コア機能 |" in download_response.text
 
 
 async def test_revising_status_after_message_on_completed_project(

@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整)
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1
 # 写経レベル: コア ── バージョニング(直近3件保持・最古削除)はdocs/internal_design.md 3.2節の
 # ドメイン規則をそのままロジック化した箇所であり、慎重な写経・理解が必要。
 # Phase-6-1: list_versions/get_versionはSCR-006向けの定型的な参照系メソッド(写経レベル: 定型)。
@@ -20,9 +20,17 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
     model = GeneratedDocument
 
     async def create_version(
-        self, *, project_id: uuid.UUID, doc_type: str, content: str
+        # Phase-36-1：更新
+        # self, *, project_id: uuid.UUID, doc_type: str, content: str
+        # ↓↓
+        self,
+        *,
+        project_id: uuid.UUID,
+        doc_type: str,
+        content: str,
+        model: dict | None = None,
     ) -> GeneratedDocument:
-        """新バージョンを追加する(既存行は上書きしない)。追加後に保管数がMAX_VERSIONS_PER_DOC_TYPEを
+        """新バージョンを追加する(既存行は上書きしない)。`model`は意味モデルを持つ文書だけ。追加後に保管数がMAX_VERSIONS_PER_DOC_TYPEを
         超える場合は、最も古いバージョンから順に削除して上限を維持する。
 
         Phase-6-6:追記 ── 新バージョンは常にis_current=Trueで作成し、既存行のis_currentは全て外す
@@ -41,6 +49,8 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
             project_id=project_id,
             doc_type=doc_type,
             content=content,
+            # Phase-36-1:追記
+            model=model,
             version=next_version,
             is_current=True,  # Phase-6-6:追記
         )
@@ -54,6 +64,17 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
         if len(existing) > keep_count:
             await self._session.flush()
 
+        return document
+
+    # Phase-36-1:追記
+    async def replace_model(
+        self, document: GeneratedDocument, *, content: str, model: dict
+    ) -> GeneratedDocument:
+        """同じ版の model と md を書き換える(版を増やさない)。推測の要件を利用者が確かめた
+        「採用」にするときだけ使う(中身は変わらないので、後続の段階を古くしない)。"""
+        document.content = content
+        document.model = model
+        await self._session.flush()
         return document
 
     async def get_latest(

@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整)
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.project import Project
@@ -182,6 +182,32 @@ async def test_get_current_is_independent_per_doc_type(db_session: AsyncSession)
 
     assert requirements is not None and requirements.content == "r1"
     assert design is not None and design.content == "d1"  # 他doc_typeのcurrentは影響を受けない
+
+
+# Phase-36-1:追記
+async def test_create_version_keeps_model_per_version(db_session: AsyncSession) -> None:
+    project = await _create_project(db_session)
+    repo = GeneratedDocumentRepository(db_session)
+    first = await repo.create_version(
+        project_id=project.id, doc_type="requirements", content="v1", model={"purpose": "a"}
+    )
+    second = await repo.create_version(project_id=project.id, doc_type="requirements", content="v2")
+
+    assert first.model == {"purpose": "a"}
+    assert second.model is None  # model を持たない版は NULL(md のまま使う)
+
+
+async def test_replace_model_rewrites_same_version(db_session: AsyncSession) -> None:
+    project = await _create_project(db_session)
+    repo = GeneratedDocumentRepository(db_session)
+    doc = await repo.create_version(
+        project_id=project.id, doc_type="requirements", content="v1", model={"purpose": "a"}
+    )
+
+    await repo.replace_model(doc, content="v1b", model={"purpose": "b"})
+
+    versions = await repo.list_versions(project_id=project.id, doc_type="requirements")
+    assert [(v.version, v.content, v.model) for v in versions] == [(1, "v1b", {"purpose": "b"})]
 # Phase-24：削除
 #
 #
