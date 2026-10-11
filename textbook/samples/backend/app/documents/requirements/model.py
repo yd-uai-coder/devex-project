@@ -1,4 +1,4 @@
-# 作成：Phase-36-1
+# 作成：Phase-36-1｜更新：Phase-37-1
 """要件定義書の意味モデル(`generated_documents.model`に JSON で持つ)。
 
 要件は FR(機能)・NFR(非機能)・CON(制約)の行。ID は種別ごとの通し番号(`FR-001`)で、
@@ -6,9 +6,12 @@
 ので、種別ごとに次の番号(`next_seq`)を持つ。
 """
 
+# Phase-37-1:追記 ── app.documents.ids(parse_seq_id, seq_id)
 from typing import Literal, get_args
 
 from pydantic import BaseModel, Field
+
+from app.documents.ids import parse_seq_id, seq_id
 
 RequirementKind = Literal["FR", "NFR", "CON"]
 RequirementSource = Literal["user", "adopted", "assumed"]
@@ -60,12 +63,18 @@ class RequirementsModel(BaseModel):
 
 
 def requirement_id(kind: RequirementKind, seq: int) -> str:
-    return f"{kind}-{seq:03d}"
+    # Phase-37-1：更新
+    # return f"{kind}-{seq:03d}"
+    # ↓↓
+    return seq_id(kind, seq)
 
 
 def parse_requirement_id(value: str) -> tuple[RequirementKind, int] | None:
     """`FR-001`を(種別, 番号)にする。形が違えば None。"""
-    kind, sep, number = value.strip().partition("-")
-    if not sep or kind not in REQUIREMENT_KINDS or not number.isdigit():
-        return None
-    return kind, int(number)  # type: ignore[return-value]
+    # Phase-37-1：更新
+    # kind, sep, number = value.strip().partition("-")
+    # if not sep or kind not in REQUIREMENT_KINDS or not number.isdigit():
+    #     return None
+    # return kind, int(number)  # type: ignore[return-value]
+    # ↓↓
+    return parse_seq_id(value, REQUIREMENT_KINDS)  # type: ignore[return-value]

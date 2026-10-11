@@ -1,4 +1,4 @@
-# 作成：Phase-32-1
+# 作成：Phase-32-1｜更新：Phase-37-2
 """E2E用の偽LLM(`E2eFakeLLM`)の、簡易ドキュメントモードの段階8の出力の契約テスト。
 
 ブラウザの E2E(devex-ui の `e2e/devex-flow.spec.ts`)と同じく、偽LLM の4文書から段階8を開き、
@@ -12,11 +12,13 @@ SUT: E2eFakeLLM の4文書と段階8の構造化出力(app/ai/llm/fake.py)と、
 スタブ: なし ── 偽LLM は検証される側(出力の出どころ)。DB はインメモリ SQLite(`db_session`)。
 """
 
+# Phase-37-2:追記 ── tests.fixtures.external_design.e2e_fake_external_design_md
 import io
 import zipfile
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from sqlalchemy.ext.asyncio import AsyncSession
+from tests.fixtures.external_design import e2e_fake_external_design_md
 from tests.fixtures.simple_procedure import create_simple_procedure_project
 
 from app.ai.llm.fake import E2eFakeLLM
@@ -33,6 +35,9 @@ async def _fake_documents(llm: E2eFakeLLM) -> dict[str, str]:
     for doc_type, prompt in _DOC_TYPE_PROMPTS.items():
         reply = await llm.ainvoke([SystemMessage(content=prompt), HumanMessage(content="dummy")])
         documents[doc_type] = str(reply.content)
+    # Phase-37-2:追記
+    # 外部設計書は構造化出力 → model → md(段階8は 2.6 の API 一覧を読む)
+    documents["external_design"] = await e2e_fake_external_design_md(llm)
     return documents
 
 

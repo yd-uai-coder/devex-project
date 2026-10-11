@@ -150,7 +150,7 @@ Phase 完了後の実画面の確認で出た要望(#38 の通常の工程)。�
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- **Phase 37-1**: 要件ID の採番(`assign_ids` の中身)を `app/documents/ids.py` に、指摘の型(`RequirementIssue`・`IssueLevel`)を `app/documents/issues.py` の `DocumentIssue` に移した(外部設計書の画面ID と検証と共有。挙動は変えない)。応答の型は `DocumentIssueRead`、FE の指摘の一覧は `DocumentIssueList` に([37-1](../Phase-37/Phase-37-1.md)・[37-3](../Phase-37/Phase-37-3.md))。
 
 ## Phase 完了チェック(#22)
 

@@ -103,7 +103,7 @@
   * Phase 34: 観点の表(`hearing_points`・観点の定義と規模の表・観点ごとの判定と決定的な完了判定・チャット画面の観点の表・既存プロジェクトの扱い) ── **完了**([`textbook/Phase-34/Phase-34-introduction.md`](../textbook/Phase-34/Phase-34-introduction.md))
   * Phase 35: 選択肢カード(場面で問う構造化した問い・カードの表示と選択・「採用」の記録) ── **完了**([`textbook/Phase-35/Phase-35-introduction.md`](../textbook/Phase-35/Phase-35-introduction.md))
   * Phase 36: 要件定義書のモデル化(要件の行・ID・出どころ・観点・md の組み立て・検証。両モード) ── **完了**([`textbook/Phase-36/Phase-36-introduction.md`](../textbook/Phase-36/Phase-36-introduction.md))
-  * Phase 37: 外部設計書のモデル化(画面・API・外部連携の行と要件ID・本文の節・検証。両モード)
+  * Phase 37: 外部設計書のモデル化(画面・API・外部連携の行と要件ID・本文の節・検証。両モード) ── **完了**([`textbook/Phase-37/Phase-37-introduction.md`](../textbook/Phase-37/Phase-37-introduction.md))
   * Phase 38: 要件 → 処理・作業単位(段階1の`req_ids`と検証・簡易モードの WBS の「要件」欄・手順書と詳細設計書の追跡表)
   * Phase 39: 効果測定(ベースラインと同じペルソナ・規則で、実際の LLM で両モードを流して比べる)
   * Phase 40: 統合/E2E・デプロイでの確認(偽LLMの契約テスト・既存を含めた全 E2E・本番反映の手順)

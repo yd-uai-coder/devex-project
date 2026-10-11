@@ -1,12 +1,14 @@
-# 作成：Phase-15-1｜更新：24(ゴール3後の調整),36-2
+# 作成：Phase-15-1｜更新：24(ゴール3後の調整),36-2,37-2
 # 写経レベル: コア ── ルートが template_id・mode を渡すこと(気づき#1)と、モードごとの文書の組が生成の順序を守ることを確かめる。
 # Phase-36-2:追記 ── tests.fixtures.requirements.requirements_output
+# Phase-37-2:追記 ── tests.fixtures.external_design.upstream_outputs
+# Phase-37-2：削除 ── tests.fixtures.requirements.requirements_output
 import uuid
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
+from tests.fixtures.external_design import upstream_outputs
 from tests.fixtures.fake_llm import FakeLLM
-from tests.fixtures.requirements import requirements_output
 
 from app.api.routes.projects import create_project
 from app.models.project import Project
@@ -106,9 +108,15 @@ async def test_generate_in_detailed_mode_creates_only_two_documents(
     # # 要件定義・外部設計(2件) + 自己診断(1件) = 計3回の呼び出し
     # fake_llm = FakeLLM(content_sequence=["# 要件", "# 外部", "## 自己診断\n特になし"])
     # ↓↓
-    # 要件定義(構造化出力1件)・外部設計(1件) + 自己診断(1件) = 計3回の呼び出し
+    # Phase-37-2：更新
+    # # 要件定義(構造化出力1件)・外部設計(1件) + 自己診断(1件) = 計3回の呼び出し
+    # ↓↓
+    # 要件定義・外部設計(構造化出力各1件) + 自己診断(1件) = 計3回の呼び出し
     fake_llm = FakeLLM(
-        content_sequence=["# 外部", "## 自己診断\n特になし"], structured=requirements_output()
+        # Phase-37-2：更新
+        # content_sequence=["# 外部", "## 自己診断\n特になし"], structured=requirements_output()
+        # ↓↓
+        content_sequence=["## 自己診断\n特になし"], structured_by_schema=upstream_outputs()
     )
 
     await DocGeneratorService(db_session).generate(project.id, project.user_id, llm=fake_llm)

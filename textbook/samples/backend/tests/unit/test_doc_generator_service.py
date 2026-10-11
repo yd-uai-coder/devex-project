@@ -1,15 +1,19 @@
-# 作成：Phase-2-4｜更新：Phase-6-1,6-5,6-6,8-5,10-1,24(ゴール3後の調整),31-1,36-2
+# 作成：Phase-2-4｜更新：Phase-6-1,6-5,6-6,8-5,10-1,24(ゴール3後の調整),31-1,36-2,37-2
 # Phase-6-5:追記 ── structlog.testing
 # Phase-36-2:追記 ── tests.fixtures.requirements.requirements_output, app.documents.requirements.RequirementsModel, app.documents.requirements.drafting.RequirementsGenerationOutput, app.hearing.PointState, app.repositories.hearing_point.HearingPointRepository, app.services.doc_generator_service.document_read, app.services.errors(DocGenerationInProgressError, RequirementNotAssumedError, RequirementNotFoundError)
+# Phase-37-2:追記 ── tests.fixtures.external_design(external_design_output, upstream_outputs), app.documents.external_design.ExternalDesignModel, app.documents.external_design.drafting.ExternalDesignGenerationOutput
 import uuid
 from typing import Any
 
 import pytest
 import structlog.testing
 from sqlalchemy.ext.asyncio import AsyncSession
+from tests.fixtures.external_design import external_design_output, upstream_outputs
 from tests.fixtures.fake_llm import FakeLLM
 from tests.fixtures.requirements import requirements_output
 
+from app.documents.external_design import ExternalDesignModel
+from app.documents.external_design.drafting import ExternalDesignGenerationOutput
 from app.documents.requirements import RequirementsModel
 from app.documents.requirements.drafting import RequirementsGenerationOutput
 from app.hearing import PointState
@@ -64,17 +68,35 @@ async def _create_project(session: AsyncSession) -> Project:
 #     contents.append("## 自己診断\n最重要: 特になし")
 #     return FakeLLM(content_sequence=contents)
 # ↓↓
+# Phase-37-2:追記
+# 構造化出力で作る文書(要件定義書・外部設計書)。残りは ainvoke で md を返させる
+_STRUCTURED_DOC_TYPES = ("requirements", "external_design")
+
+
 def _fake_llm_for_generation(
     requirements: RequirementsGenerationOutput | None = None,
+    # Phase-37-2:追記
+    external_design: ExternalDesignGenerationOutput | None = None,
 ) -> FakeLLM:
-    # 要件定義書は構造化出力(1回)、残りの3文書の生成 + 自己診断(1件) = 計4回のainvoke呼び出しを
-    # 想定した順序のcontent。
+    # Phase-37-2：更新
+    # # 要件定義書は構造化出力(1回)、残りの3文書の生成 + 自己診断(1件) = 計4回のainvoke呼び出しを
+    # # 想定した順序のcontent。
+    # ↓↓
+    # 要件定義書・外部設計書は構造化出力(各1回)、残りの2文書の生成 + 自己診断(1件) = 計3回の
+    # ainvoke呼び出しを想定した順序のcontent。
     contents: list[str | list[str | dict[Any, Any]]] = [
-        f"# {doc_type}\n内容" for doc_type in DOC_TYPES if doc_type != "requirements"
+        # Phase-37-2：更新
+        # f"# {doc_type}\n内容" for doc_type in DOC_TYPES if doc_type != "requirements"
+        # ↓↓
+        f"# {doc_type}\n内容" for doc_type in DOC_TYPES if doc_type not in _STRUCTURED_DOC_TYPES
     ]
     contents.append("## 自己診断\n最重要: 特になし")
     return FakeLLM(
-        content_sequence=contents, structured=requirements or requirements_output()
+        # Phase-37-2：更新
+        # content_sequence=contents, structured=requirements or requirements_output()
+        # ↓↓
+        content_sequence=contents,
+        structured_by_schema=upstream_outputs(requirements, external_design),
     )
 
 
@@ -218,13 +240,19 @@ async def test_generate_extracts_text_from_thought_signature_content(
         [{"type": "text", "text": f"# {doc_type}\n内容", "extras": {"signature": "sig"}}]
         for doc_type in DOC_TYPES
         # Phase-36-2:追記
-        if doc_type != "requirements"
+        # Phase-37-2：更新
+        # if doc_type != "requirements"
+        # ↓↓
+        if doc_type not in _STRUCTURED_DOC_TYPES
     ]
     contents.append([{"type": "text", "text": "## 自己診断\n最重要: 特になし"}])
     # Phase-36-2：更新
     # fake_llm = FakeLLM(content_sequence=contents)
     # ↓↓
-    fake_llm = FakeLLM(content_sequence=contents, structured=requirements_output())
+    # Phase-37-2：更新
+    # fake_llm = FakeLLM(content_sequence=contents, structured=requirements_output())
+    # ↓↓
+    fake_llm = FakeLLM(content_sequence=contents, structured_by_schema=upstream_outputs())
     service = DocGeneratorService(db_session)
 
     await service.generate(project.id, project.user_id, llm=fake_llm)
@@ -246,22 +274,30 @@ async def test_generate_chains_each_document_from_prior_confirmed_documents(
     入力にする(連鎖構成)ことを、実際にLLMへ渡されたHumanMessageの中身で確認する。
     external_designはrequirementsのみ、internal_designはrequirements+external_design、
     implementation_planはrequirements+internal_design(external_designは含めない)を
-    入力にする、という参照関係を検証する。requirementsは model から組み立てた md が渡る。"""
+    入力にする、という参照関係を検証する。要件定義書・外部設計書は model から組み立てた md が
+    後段に渡る(どちらも構造化出力)。"""
     project = await _create_project(db_session)
-    contents = [
-        # Phase-36-2：削除
-        # "REQUIREMENTS_マーカー",
-        "EXTERNAL_DESIGN_マーカー",
-        "INTERNAL_DESIGN_マーカー",
-        "IMPLEMENTATION_PLAN_マーカー",
-        "自己診断結果",
-    ]
+    # Phase-37-2：更新
+    # contents = [
+    #     "EXTERNAL_DESIGN_マーカー",
+    #     "INTERNAL_DESIGN_マーカー",
+    #     "IMPLEMENTATION_PLAN_マーカー",
+    #     "自己診断結果",
+    # ]
+    # ↓↓
+    contents = ["INTERNAL_DESIGN_マーカー", "IMPLEMENTATION_PLAN_マーカー", "自己診断結果"]
     # Phase-36-2：更新
     # fake_llm = FakeLLM(content_sequence=list(contents))
     # ↓↓
     fake_llm = FakeLLM(
         content_sequence=list(contents),
-        structured=requirements_output(text="REQUIREMENTS_マーカー"),
+        # Phase-37-2：更新
+        # structured=requirements_output(text="REQUIREMENTS_マーカー"),
+        # ↓↓
+        structured_by_schema=upstream_outputs(
+            requirements_output(text="REQUIREMENTS_マーカー"),
+            external_design_output(overview="EXTERNAL_DESIGN_マーカー"),
+        ),
     )
     service = DocGeneratorService(db_session)
 
@@ -269,6 +305,8 @@ async def test_generate_chains_each_document_from_prior_confirmed_documents(
 
     # Phase-36-2:追記
     requirements_input = fake_llm.structured_messages[0][-1].content
+    # Phase-37-2:追記
+    external_input = fake_llm.structured_messages[1][-1].content
     human_contents = [messages[-1].content for messages in fake_llm.invoke_messages]
 
     # requirements: チャット全履歴(transcript)を直接読む
@@ -282,16 +320,24 @@ async def test_generate_chains_each_document_from_prior_confirmed_documents(
     # assert "REQUIREMENTS_マーカー" in human_contents[1]
     # assert "EXTERNAL_DESIGN_マーカー" not in human_contents[1]
     # ↓↓
-    assert "REQUIREMENTS_マーカー" in human_contents[0]
-    assert "EXTERNAL_DESIGN_マーカー" not in human_contents[0]
+    # Phase-37-2：更新
+    # assert "REQUIREMENTS_マーカー" in human_contents[0]
+    # assert "EXTERNAL_DESIGN_マーカー" not in human_contents[0]
+    # ↓↓
+    assert "REQUIREMENTS_マーカー" in external_input
+    assert "備品予約システムを作りたい" not in external_input
 
     # internal_design: requirements + external_designの生成結果
     # Phase-36-2：更新
     # assert "REQUIREMENTS_マーカー" in human_contents[2]
     # assert "EXTERNAL_DESIGN_マーカー" in human_contents[2]
     # ↓↓
-    assert "REQUIREMENTS_マーカー" in human_contents[1]
-    assert "EXTERNAL_DESIGN_マーカー" in human_contents[1]
+    # Phase-37-2：更新
+    # assert "REQUIREMENTS_マーカー" in human_contents[1]
+    # assert "EXTERNAL_DESIGN_マーカー" in human_contents[1]
+    # ↓↓
+    assert "REQUIREMENTS_マーカー" in human_contents[0]
+    assert "EXTERNAL_DESIGN_マーカー" in human_contents[0]
 
     # implementation_plan: requirements + internal_designの生成結果(external_designは含めない)
     # Phase-36-2：更新
@@ -299,9 +345,14 @@ async def test_generate_chains_each_document_from_prior_confirmed_documents(
     # assert "INTERNAL_DESIGN_マーカー" in human_contents[3]
     # assert "EXTERNAL_DESIGN_マーカー" not in human_contents[3]
     # ↓↓
-    assert "REQUIREMENTS_マーカー" in human_contents[2]
-    assert "INTERNAL_DESIGN_マーカー" in human_contents[2]
-    assert "EXTERNAL_DESIGN_マーカー" not in human_contents[2]
+    # Phase-37-2：更新
+    # assert "REQUIREMENTS_マーカー" in human_contents[2]
+    # assert "INTERNAL_DESIGN_マーカー" in human_contents[2]
+    # assert "EXTERNAL_DESIGN_マーカー" not in human_contents[2]
+    # ↓↓
+    assert "REQUIREMENTS_マーカー" in human_contents[1]
+    assert "INTERNAL_DESIGN_マーカー" in human_contents[1]
+    assert "EXTERNAL_DESIGN_マーカー" not in human_contents[1]
 
 
 async def _decide_points(session: AsyncSession, project: Project, **statuses: str) -> None:
@@ -322,7 +373,13 @@ async def test_generate_requirements_builds_model_from_points_table(
 
     await DocGeneratorService(db_session).generate(project.id, project.user_id, llm=fake_llm)
 
-    assert fake_llm.structured_output_calls == [RequirementsGenerationOutput]
+    # Phase-37-2：更新
+    # assert fake_llm.structured_output_calls == [RequirementsGenerationOutput]
+    # ↓↓
+    assert fake_llm.structured_output_calls == [
+        RequirementsGenerationOutput,
+        ExternalDesignGenerationOutput,
+    ]
     prompt = fake_llm.structured_messages[0][-1].content
     assert "core|コア機能|ユーザーが決定|coreの決定" in prompt
     assert "規模: 個人・小規模" in prompt
@@ -358,6 +415,59 @@ async def test_regenerate_requirements_keeps_ids_through_prev_id(
     model = RequirementsModel.model_validate(document.model)
     # FR-001 は引き継ぎ、prev_id の無い NFR は新しい番号(消えた NFR-001 は使い回さない)
     assert [r.id for r in model.rows] == ["FR-001", "NFR-002"]
+
+
+# Phase-37-2:追記
+async def test_generate_external_design_builds_model_linked_to_requirements(
+    db_session: AsyncSession,
+) -> None:
+    """外部設計書は構造化出力 → model → md。入力は要件定義書の md(要件ID 付き)で、生成した
+    要件定義書の要件ID を model に写し、文書の応答に行数と検証の指摘を付ける。"""
+    project = await _create_project(db_session)
+    fake_llm = _fake_llm_for_generation()
+
+    await DocGeneratorService(db_session).generate(project.id, project.user_id, llm=fake_llm)
+
+    prompt = fake_llm.structured_messages[1][-1].content
+    assert "## 前の版の画面\nなし" in prompt
+    assert "| FR-001 |" in prompt  # 要件定義書の md(要件ID 付き)
+    document = await GeneratedDocumentRepository(db_session).get_current(
+        project_id=project.id, doc_type="external_design"
+    )
+    assert document is not None and document.model is not None
+    model = ExternalDesignModel.model_validate(document.model)
+    assert model.known_req_ids == ["FR-001", "NFR-001"]
+    assert model.must_fr_ids == ["FR-001"]
+    assert "## 2.6 API一覧" in document.content
+    assert "| POST | /api/v1/reservations | 予約を登録する | SCR-001 | FR-001 |" in document.content
+    read = document_read(document)
+    assert read.requirements is None
+    assert read.external_design is not None
+    assert read.external_design.counts == {"screens": 1, "apis": 1, "integrations": 0}
+    # 見本の POST は本文が空 → 中程度の指摘
+    assert [i.code for i in read.external_design.issues] == ["API_BODY_MISSING"]
+
+
+async def test_regenerate_external_design_keeps_screen_ids(db_session: AsyncSession) -> None:
+    """再生成では前の版の画面(ID 付き)をプロンプトに渡し、前の版に在る ID だけを引き継ぐ。"""
+    project = await _create_project(db_session)
+    service = DocGeneratorService(db_session)
+    await service.generate(project.id, project.user_id, llm=_fake_llm_for_generation())
+    fake_llm = _fake_llm_for_generation(
+        external_design=external_design_output(screen_id="SCR-007")
+    )
+
+    await service.generate(project.id, project.user_id, llm=fake_llm)
+
+    assert "SCR-001|予約画面" in fake_llm.structured_messages[1][-1].content
+    document = await GeneratedDocumentRepository(db_session).get_current(
+        project_id=project.id, doc_type="external_design"
+    )
+    assert document is not None and document.version == 2
+    model = ExternalDesignModel.model_validate(document.model)
+    # 前の版に無い仮の ID は次の番号に振り直し、API の関連画面も付け替える
+    assert [s.id for s in model.screens] == ["SCR-002"]
+    assert model.apis[0].screens == ["SCR-002"]
 
 
 async def test_adopt_requirement_rewrites_same_version(db_session: AsyncSession) -> None:

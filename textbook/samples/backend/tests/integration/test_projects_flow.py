@@ -1,21 +1,22 @@
-# 作成：Phase-4-1｜更新：Phase-6-6,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2
+# 作成：Phase-4-1｜更新：Phase-6-6,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,37-2
 # 写経レベル: 定型 ── 個々のロジックはPhase 2の各サービス単体テストで既に検証済み。
 # ここでの狙いは「ルーティング・スキーマ変換・DIの配線」自体の統合的な確認(過去に
 # get_hearing_completionルートの配線漏れが見つかった教訓の横展開、decision-digest.md参照)。
 # Phase-34-2:追記 ── app.hearing.POINT_DEFS, app.schemas.hearing(HearingPointsJudgement, JudgedPointOut)
 # Phase-34-2：削除 ── app.schemas.generation.HearingCompletionCheck
 # Phase-36-2:追記 ── tests.fixtures.requirements.requirements_output, app.documents.requirements.drafting.RequirementsGenerationOutput
+# Phase-37-2:追記 ── tests.fixtures.external_design.upstream_outputs
+# Phase-37-2：削除 ── tests.fixtures.requirements.requirements_output, app.documents.requirements.drafting.RequirementsGenerationOutput
 import pytest
 from httpx import AsyncClient
-from tests.fixtures.requirements import requirements_output
+from tests.fixtures.external_design import upstream_outputs
+from tests.fixtures.fake_llm import FakeLLM
 
-from app.documents.requirements.drafting import RequirementsGenerationOutput
 from app.hearing import POINT_DEFS
 # Phase-35-2:追記 ── app.schemas.hearing.HearingReplyOut
 from app.schemas.hearing import HearingPointsJudgement, HearingReplyOut, JudgedPointOut
 from app.services import chat_service as chat_service_module
 from app.services import doc_generator_service as doc_generator_service_module
-from tests.fixtures.fake_llm import FakeLLM
 
 pytestmark = pytest.mark.integration
 
@@ -58,8 +59,12 @@ def _install_fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
             # )
             # ↓↓
             ),
-            # 要件定義書の下書き(構造化出力 → model → md)
-            RequirementsGenerationOutput: requirements_output(),
+            # Phase-37-2：更新
+            # # 要件定義書の下書き(構造化出力 → model → md)
+            # RequirementsGenerationOutput: requirements_output(),
+            # ↓↓
+            # 要件定義書・外部設計書の下書き(構造化出力 → model → md)
+            **upstream_outputs(),
         },
         # Phase-24：更新(完了判定はチャットの送信ごとに1回呼ばれる。下のテストは最大3往復)
         # structured_sequence=[

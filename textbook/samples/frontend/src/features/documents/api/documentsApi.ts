@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3
+// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3,37-3
 // Phase-12-5:追記 ── @/lib/api/download.parseFilename(UML 図の出力と共有するため移した)
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
@@ -10,9 +10,15 @@ export type DocType = "requirements" | "external_design" | "internal_design" | "
 // Phase-36-3:追記
 export type RequirementSource = "user" | "adopted" | "assumed";
 
-// devex-api app/schemas/document.py の RequirementIssueRead・AssumedRequirementRead・
-// RequirementsSummaryRead に対応する。
-export type RequirementIssueRead = {
+// Phase-37-3：更新
+// // devex-api app/schemas/document.py の RequirementIssueRead・AssumedRequirementRead・
+// // RequirementsSummaryRead に対応する。
+// export type RequirementIssueRead = {
+// ↓↓
+// devex-api app/schemas/document.py の DocumentIssueRead・AssumedRequirementRead・
+// RequirementsSummaryRead・ExternalDesignSummaryRead に対応する。
+// 検証の指摘(要件定義書・外部設計書で共通)
+export type DocumentIssueRead = {
   level: "critical" | "major" | "minor";
   code: string;
   message: string;
@@ -28,7 +34,15 @@ export type AssumedRequirementRead = {
 export type RequirementsSummaryRead = {
   counts: Record<RequirementSource, number>;
   assumed: AssumedRequirementRead[];
-  issues: RequirementIssueRead[];
+  // Phase-37-3：更新
+  // issues: RequirementIssueRead[];
+  // ↓↓
+  issues: DocumentIssueRead[];
+};
+
+export type ExternalDesignSummaryRead = {
+  counts: { screens: number; apis: number; integrations: number };
+  issues: DocumentIssueRead[];
 };
 
 // devex-api app/schemas/document.py の GeneratedDocumentRead に対応する。
@@ -43,6 +57,9 @@ export type GeneratedDocumentRead = {
   // Phase-36-3:追記
   // 要件定義書で model を持つ版だけ(ほかの文書・以前の版は null)
   requirements?: RequirementsSummaryRead | null;
+  // Phase-37-3:追記
+  // 外部設計書で model を持つ版だけ(ほかの文書・以前の版は null)
+  external_design?: ExternalDesignSummaryRead | null;
 };
 
 export function listDocuments(projectId: string): Promise<GeneratedDocumentRead[]> {

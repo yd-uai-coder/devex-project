@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-6-6,36-2
+# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 import uuid
 from datetime import datetime
@@ -10,8 +10,12 @@ DocType = Literal["requirements", "external_design", "internal_design", "impleme
 
 
 # Phase-36-2:追記
-class RequirementIssueRead(BaseModel):
-    """要件定義書の検証の指摘(app/documents/requirements/validation.py)。"""
+# Phase-37-2：更新
+# class RequirementIssueRead(BaseModel):
+#     """要件定義書の検証の指摘(app/documents/requirements/validation.py)。"""
+# ↓↓
+class DocumentIssueRead(BaseModel):
+    """要件定義書・外部設計書の検証の指摘(app/documents/issues.py の DocumentIssue)。"""
 
     level: Literal["critical", "major", "minor"]
     code: str
@@ -32,7 +36,17 @@ class RequirementsSummaryRead(BaseModel):
 
     counts: dict[str, int]
     assumed: list[AssumedRequirementRead]
-    issues: list[RequirementIssueRead]
+    # Phase-37-2：更新
+    # issues: list[RequirementIssueRead]
+    # ↓↓
+    issues: list[DocumentIssueRead]
+
+
+class ExternalDesignSummaryRead(BaseModel):
+    """外部設計書の行数(screens / apis / integrations)と検証の指摘。"""
+
+    counts: dict[str, int]
+    issues: list[DocumentIssueRead]
 
 
 class GeneratedDocumentRead(BaseModel):
@@ -50,3 +64,6 @@ class GeneratedDocumentRead(BaseModel):
     # Phase-36-2:追記
     # 要件定義書で model を持つ版だけ(ほかは None)。ルートが requirements_summary で入れる
     requirements: RequirementsSummaryRead | None = None
+    # Phase-37-2:追記
+    # 外部設計書で model を持つ版だけ(ほかは None)。ルートが external_design_summary で入れる
+    external_design: ExternalDesignSummaryRead | None = None

@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-6,15-3,36-1
+# 作成：Phase-2-1｜更新：Phase-6-6,15-3,36-1,37-1
 # Phase-6-6:追記 ── sqlalchemy.Boolean, sqlalchemy.false
 # Phase-15-3:追記 ── sqlalchemy.UniqueConstraint
 # 写経レベル: 定型 ── 既存モデル群と同型のORMモデル定義(バージョニングロジック自体はrepositories/generated_document.pyのコア箇所を参照)。
@@ -57,7 +57,11 @@ class GeneratedDocument(Base):
     doc_type: Mapped[str] = mapped_column(String(50), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     # Phase-36-1:追記
-    # 意味モデル(要件定義書だけ。app/documents/requirements/model.pyのRequirementsModelの形)。
+    # Phase-37-1：更新
+    # # 意味モデル(要件定義書だけ。app/documents/requirements/model.pyのRequirementsModelの形)。
+    # ↓↓
+    # 意味モデル(要件定義書・外部設計書。app/documents/requirements/model.pyのRequirementsModel、
+    # app/documents/external_design/model.pyのExternalDesignModelの形)。
     # contentはこれから組み立てたmd。modelを持たない文書・以前の版はNULL(mdのまま使う)
     model: Mapped[dict | None] = mapped_column(PortableJSON, nullable=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

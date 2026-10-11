@@ -1,25 +1,26 @@
-# 作成：Phase-36-1
+# 作成：Phase-36-1｜更新：Phase-37-1
 """要件定義書の検証(純粋関数)。指摘は警告だけで、生成も保存も止めない。
 
 ID の重複・形の誤りは`assemble`が決定的に振るので起きない。ここでは、利用者に確かめてほしい
 こと(推測の要件・未決の必須の観点・Must の機能要件が無い)を挙げる。
 """
 
-from dataclasses import dataclass
-from typing import Literal
-
+# Phase-37-1:追記 ── app.documents.issues.DocumentIssue
+# Phase-37-1：削除 ── dataclasses.dataclass, typing.Literal(IssueLevel・RequirementIssue は app/documents/issues.py の DocumentIssue へ移した)
+from app.documents.issues import DocumentIssue
 from app.documents.requirements.model import RequirementsModel, RequirementSource
 from app.hearing import POINT_DEFS, as_scale, is_required
-
-IssueLevel = Literal["critical", "major", "minor"]
-
-
-@dataclass(frozen=True)
-class RequirementIssue:
-    level: IssueLevel
-    code: str
-    message: str
-    targets: tuple[str, ...] = ()
+# Phase-37-1：削除
+#
+# IssueLevel = Literal["critical", "major", "minor"]
+#
+#
+# @dataclass(frozen=True)
+# class RequirementIssue:
+#     level: IssueLevel
+#     code: str
+#     message: str
+#     targets: tuple[str, ...] = ()
 
 
 def source_counts(model: RequirementsModel) -> dict[RequirementSource, int]:
@@ -30,14 +31,23 @@ def source_counts(model: RequirementsModel) -> dict[RequirementSource, int]:
     return counts
 
 
-def validate_requirements(model: RequirementsModel) -> list[RequirementIssue]:
+# Phase-37-1：更新
+# def validate_requirements(model: RequirementsModel) -> list[RequirementIssue]:
+# ↓↓
+def validate_requirements(model: RequirementsModel) -> list[DocumentIssue]:
     """生成した時点の観点の表(`model.point_statuses`)に対して検証する。"""
     statuses = model.point_statuses
     scale = as_scale(model.scale)
-    issues: list[RequirementIssue] = []
+    # Phase-37-1：更新
+    # issues: list[RequirementIssue] = []
+    # ↓↓
+    issues: list[DocumentIssue] = []
     if not any(r.kind == "FR" and r.priority == "Must" for r in model.rows):
         issues.append(
-            RequirementIssue("major", "NO_MUST_REQUIREMENT", "Must の機能要件がありません。")
+            # Phase-37-1：更新
+            # RequirementIssue("major", "NO_MUST_REQUIREMENT", "Must の機能要件がありません。")
+            # ↓↓
+            DocumentIssue("major", "NO_MUST_REQUIREMENT", "Must の機能要件がありません。")
         )
     open_required = [
         d
@@ -46,7 +56,10 @@ def validate_requirements(model: RequirementsModel) -> list[RequirementIssue]:
     ]
     if open_required:
         issues.append(
-            RequirementIssue(
+            # Phase-37-1：更新
+            # RequirementIssue(
+            # ↓↓
+            DocumentIssue(
                 "major",
                 "REQUIRED_POINT_OPEN",
                 "必須の観点が未決のまま生成しました: "
@@ -59,7 +72,10 @@ def validate_requirements(model: RequirementsModel) -> list[RequirementIssue]:
     on_not_applicable = [r.id for r in model.rows if r.points and set(r.points) <= not_applicable]
     if on_not_applicable:
         issues.append(
-            RequirementIssue(
+            # Phase-37-1：更新
+            # RequirementIssue(
+            # ↓↓
+            DocumentIssue(
                 "minor",
                 "REQUIREMENT_ON_NOT_APPLICABLE_POINT",
                 "対象外とした観点だけを根拠にした要件があります: " + "・".join(on_not_applicable),
@@ -69,7 +85,10 @@ def validate_requirements(model: RequirementsModel) -> list[RequirementIssue]:
     assumed = [r.id for r in model.rows if r.source == "assumed"]
     if assumed:
         issues.append(
-            RequirementIssue(
+            # Phase-37-1：更新
+            # RequirementIssue(
+            # ↓↓
+            DocumentIssue(
                 "minor",
                 "ASSUMED_REQUIREMENTS",
                 f"推測の要件が{len(assumed)}件あります(利用者に確かめてください)。",

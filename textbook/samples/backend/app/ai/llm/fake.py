@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -13,6 +13,7 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 # Phase-24：削除 ── app.uml.generation.schemas.DfdGenerationOutput, app.uml.generation.schemas.ErGenerationOutput, app.uml.generation.schemas.GeneratedColumn, app.uml.generation.schemas.GeneratedProcess, app.uml.generation.schemas.GeneratedTable
 # Phase-35-2:追記 ── app.hearing.is_point_key, app.schemas.hearing(CardOptionOut, CardOut, HearingReplyOut)
 # Phase-36-2:追記 ── app.documents.requirements.drafting(GeneratedRequirement, GeneratedUserScene, RequirementsGenerationOutput)
+# Phase-37-2:追記 ── app.documents.external_design.drafting(ExternalDesignGenerationOutput, GeneratedApi, GeneratedScreen)
 from __future__ import annotations
 
 # Phase-10-5:追記 ── app.uml.generation.schemas(UML生成の出力スキーマ一式)
@@ -69,6 +70,11 @@ from app.detailed_design.procedure_doc_drafting import (
 )
 from app.detailed_design.procedure_drafting import GeneratedStep, ProcedureGenerationOutput
 from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleListGenerationOutput
+from app.documents.external_design.drafting import (
+    ExternalDesignGenerationOutput,
+    GeneratedApi,
+    GeneratedScreen,
+)
 from app.documents.requirements.drafting import (
     GeneratedRequirement,
     GeneratedUserScene,
@@ -125,11 +131,16 @@ _CARD_TARGET = re.compile(r"^- ([a-z_]+): ", re.MULTILINE)
 # 出力フォーマットとして持つ「# N. ラベル」という見出し(cross-reference表記には現れない、
 # doc_type固有の文字列)をマッチ対象にすることでこれを避ける。
 # Phase-36-2:追記
-# 要件定義書は構造化出力(RequirementsGenerationOutput)で作るので、ここには無い。
+# Phase-37-2：更新
+# # 要件定義書は構造化出力(RequirementsGenerationOutput)で作るので、ここには無い。
+# ↓↓
+# 要件定義書・外部設計書は構造化出力(RequirementsGenerationOutput・
+# ExternalDesignGenerationOutput)で作るので、ここには無い。
 _DOC_TYPE_MARKERS: dict[str, str] = {
     # Phase-36-2：削除
     # "requirements": "# 1. 要件定義書",
-    "external_design": "# 2. 外部設計書",
+    # Phase-37-2：削除
+    # "external_design": "# 2. 外部設計書",
     "internal_design": "# 3. 内部設計書",
     "implementation_plan": "# 4. 実装計画書",
 }
@@ -197,15 +208,55 @@ _IMPLEMENTATION_PLAN_REPLY = (
 )
 
 # Phase-16-1:追記
-# 外部設計書は、詳細設計モードの段階1(機能一覧)がAPI一覧(2.6節)を読むため、外部設計書
-# プロンプトが指示する固定形式の表を含めて返す(Phase 16)。
-_EXTERNAL_DESIGN_REPLY = (
-    "# 外部設計書(E2E Fake)\n\n"
-    "## 2.2 画面一覧・画面遷移フロー（概要）\n| 画面ID | 画面名 | 主要な役割 | 優先度 |\n"
-    "|---|---|---|---|\n| SCR-001 | 予約画面 | 備品を予約する | Must |\n\n"
-    "## 2.6 API一覧\n| メソッド | パス | 概要 | 関連画面 |\n|---|---|---|---|\n"
-    "| POST | /api/v1/reservations | 予約を登録する | SCR-001 |\n"
-    "| GET | /api/v1/reservations | 予約の一覧を返す | SCR-001 |\n"
+# Phase-37-2：更新
+# # 外部設計書は、詳細設計モードの段階1(機能一覧)がAPI一覧(2.6節)を読むため、外部設計書
+# # プロンプトが指示する固定形式の表を含めて返す。
+# _EXTERNAL_DESIGN_REPLY = (
+#     "# 外部設計書(E2E Fake)\n\n"
+#     "## 2.2 画面一覧・画面遷移フロー（概要）\n| 画面ID | 画面名 | 主要な役割 | 優先度 |\n"
+#     "|---|---|---|---|\n| SCR-001 | 予約画面 | 備品を予約する | Must |\n\n"
+#     "## 2.6 API一覧\n| メソッド | パス | 概要 | 関連画面 |\n|---|---|---|---|\n"
+#     "| POST | /api/v1/reservations | 予約を登録する | SCR-001 |\n"
+#     "| GET | /api/v1/reservations | 予約の一覧を返す | SCR-001 |\n"
+# ↓↓
+# 外部設計書の下書き。詳細設計モードの段階1(機能一覧)が 2.6 の API 一覧を読むので、
+# 下の機能一覧の下書きと同じ2つの API にする。要件ID は偽の要件定義書(_REQUIREMENTS)の
+# FR-001(予約)・FR-002(履歴)に合わせる。
+_EXTERNAL_DESIGN_OUTPUT = ExternalDesignGenerationOutput(
+    overview="[E2E Fake] ブラウザ → API → PostgreSQL の構成",
+    screens=[
+        GeneratedScreen(
+            id="SCR-001",
+            name="予約画面",
+            role="備品を予約し、予約の一覧を見る",
+            priority="Must",
+            req_ids=["FR-001", "FR-002"],
+            ui_spec="- 入力: 備品・期間\n- 操作: 予約する",
+        )
+    ],
+    transition="ログイン → SCR-001",
+    integrations=[],
+    data_io="なし",
+    apis=[
+        GeneratedApi(
+            method="POST",
+            path="/api/v1/reservations",
+            summary="予約を登録する",
+            screens=["SCR-001"],
+            req_ids=["FR-001"],
+            body="item_id, start_at",
+            response="201 予約",
+            errors="409 重複",
+        ),
+        GeneratedApi(
+            method="GET",
+            path="/api/v1/reservations",
+            summary="予約の一覧を返す",
+            screens=["SCR-001"],
+            req_ids=["FR-002"],
+            response="200 予約の配列",
+        ),
+    ],
 )
 
 # Phase-10-5:追記
@@ -266,8 +317,10 @@ _UML_OUTPUTS: dict[type[BaseModel], BaseModel] = {
     ),
 }
 
-# Phase-16-4:追記
-# 詳細設計モードの段階1(機能一覧)の下書き(Phase 16)。_EXTERNAL_DESIGN_REPLY の API 一覧と同じAPI
+# Phase-37-2：更新
+# # 詳細設計モードの段階1(機能一覧)の下書き(Phase 16)。_EXTERNAL_DESIGN_REPLY の API 一覧と同じAPI
+# ↓↓
+# 詳細設計モードの段階1(機能一覧)の下書き(Phase 16)。_EXTERNAL_DESIGN_OUTPUT の API 一覧と同じAPI
 _UML_OUTPUTS[FunctionListGenerationOutput] = FunctionListGenerationOutput(
     functions=[
         GeneratedFunction(
@@ -781,6 +834,9 @@ class _FakeStructuredE2e:
         # Phase-36-2:追記
         if self._schema is RequirementsGenerationOutput:
             return _requirements_output(messages)
+        # Phase-37-2:追記
+        if self._schema is ExternalDesignGenerationOutput:
+            return _EXTERNAL_DESIGN_OUTPUT
         # ヒアリング・UML生成スキーマ以外のスキーマが追加された場合は
         # 「対応漏れ」に気づけるよう黙って汎用値を返さず例外にする。
         raise NotImplementedError(f"E2eFakeLLMが未対応のスキーマ: {self._schema}")
@@ -820,8 +876,9 @@ class E2eFakeLLM:
                 if doc_type == "internal_design":
                     return _INTERNAL_DESIGN_REPLY
                 # Phase-16-1:追記
-                if doc_type == "external_design":
-                    return _EXTERNAL_DESIGN_REPLY
+                # Phase-37-2：削除
+                # if doc_type == "external_design":
+                #     return _EXTERNAL_DESIGN_REPLY
                 # Phase-31-1:追記
                 # Phase-36-2：更新
                 # if doc_type == "implementation_plan":

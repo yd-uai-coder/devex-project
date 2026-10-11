@@ -1,12 +1,15 @@
-// 作成：Phase-36-3｜更新：Phase-36(完了後の調整)
+// 作成：Phase-36-3｜更新：Phase-36(完了後の調整),37-3
 "use client";
 
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import type {
   GeneratedDocumentRead,
-  RequirementIssueRead,
+  // Phase-37-3：削除
+  // RequirementIssueRead,
   RequirementSource,
 } from "@/features/documents/api/documentsApi";
+// Phase-37-3:追記
+import { DocumentIssueList } from "@/features/documents/components/DocumentIssueList";
 import { useDocumentsStore } from "@/features/documents/documents-store";
 
 const SOURCE_LABELS: Record<RequirementSource, string> = {
@@ -23,11 +26,12 @@ const SOURCE_NOTES: Record<RequirementSource, string> = {
   assumed: "ドキュメント生成時に AI が推測(未確認)",
 };
 
-const LEVEL_LABELS: Record<RequirementIssueRead["level"], string> = {
-  critical: "最重要",
-  major: "中程度",
-  minor: "軽微",
-};
+// Phase-37-3：削除(DocumentIssueList.tsx へ移した)
+// const LEVEL_LABELS: Record<RequirementIssueRead["level"], string> = {
+//   critical: "最重要",
+//   major: "中程度",
+//   minor: "軽微",
+// };
 
 type RequirementsSummaryPanelProps = {
   projectId: string;
@@ -74,6 +78,7 @@ export function RequirementsSummaryPanel({ projectId, document }: RequirementsSu
           </Paragraph>
         ))}
       </YStack>
+      {/* Phase-37-3：更新
       {summary.issues.length > 0 ? (
         <YStack gap="$1" role="list" aria-label="要件定義書の指摘">
           {summary.issues.map((issue) => (
@@ -87,6 +92,8 @@ export function RequirementsSummaryPanel({ projectId, document }: RequirementsSu
           ))}
         </YStack>
       ) : null}
+      ↓↓ */}
+      <DocumentIssueList issues={summary.issues} label="要件定義書の指摘" />
       {summary.assumed.length > 0 ? (
         <YStack gap="$2">
           <Paragraph size="$2" color="$color10">

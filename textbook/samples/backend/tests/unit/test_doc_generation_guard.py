@@ -1,4 +1,4 @@
-# 作成：Phase-15-3｜更新：Phase-36-2
+# 作成：Phase-15-3｜更新：Phase-36-2,37-2
 # 写経レベル: コア ── 409・rollback・回収の3つを、DBの状態で確かめる。
 """設計書の生成の二重実行防止(気づき#4)・失敗時の rollback(#3)・止まった生成の回収(#5)のテスト。
 
@@ -71,7 +71,11 @@ async def test_failure_midway_rolls_back_partial_versions(db_session: AsyncSessi
     service = DocGeneratorService(db_session)
     previous = await service.request_generation(project)
 
-    # 要件定義だけ生成でき、外部設計で応答が尽きて失敗する
+    # Phase-37-2：更新
+    # # 要件定義だけ生成でき、外部設計で応答が尽きて失敗する
+    # ↓↓
+    # 要件定義だけ生成でき、外部設計で構造化出力を解釈できずに失敗する(偽の LLM は外部設計書の
+    # スキーマにも要件定義書の出力を返す)
     await service.generate(
         project.id,
         project.user_id,

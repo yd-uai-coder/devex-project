@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整),36-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整),36-2,37-2
 # 写経レベル: コア ── 実機検証で発見した2件の不具合(ヒアリング完了判定の誤カウント、
 # doc_type判別の誤マッチ)の回帰テスト。当初はPlaywright(Phase 4-4)のみで検証する設計にして
 # いたが、両方ともpytestレベルの単体テストで安価に検知できる性質のバグだったため、事後的に
@@ -10,7 +10,9 @@
 # Phase-35-2:追記 ── app.hearing.point_def, app.models.project.Project,
 #   app.schemas.hearing.HearingReplyOut, app.services.chat_service._build_messages
 # Phase-36-2:追記 ── app.documents.requirements(build_model, render_requirements), app.documents.requirements.drafting(RequirementsGenerationOutput, build_requirements_messages, to_draft), app.hearing.PointState
+# Phase-37-2:追記 ── tests.fixtures.external_design.e2e_fake_external_design_md
 from langchain_core.messages import HumanMessage, SystemMessage
+from tests.fixtures.external_design import e2e_fake_external_design_md
 
 from app.ai.llm.fake import E2eFakeLLM
 from app.detailed_design.plan import unit_ids
@@ -142,10 +144,15 @@ async def test_each_doc_type_prompt_produces_its_own_distinct_reply() -> None:
     # assert len(set(replies.values())) == 4  # 4種類とも異なる内容であること
     # assert "要件定義書" in replies["requirements"]
     # ↓↓
-    # 要件定義書は構造化出力なので、文の生成のプロンプトは3種類
-    assert set(replies) == {"external_design", "internal_design", "implementation_plan"}
-    assert len(set(replies.values())) == 3  # 3種類とも異なる内容であること
-    assert "外部設計書" in replies["external_design"]
+    # Phase-37-2：更新
+    # # 要件定義書は構造化出力なので、文の生成のプロンプトは3種類
+    # assert set(replies) == {"external_design", "internal_design", "implementation_plan"}
+    # assert len(set(replies.values())) == 3  # 3種類とも異なる内容であること
+    # assert "外部設計書" in replies["external_design"]
+    # ↓↓
+    # 要件定義書・外部設計書は構造化出力なので、文の生成のプロンプトは2種類
+    assert set(replies) == {"internal_design", "implementation_plan"}
+    assert len(set(replies.values())) == 2  # 2種類とも異なる内容であること
     assert "内部設計書" in replies["internal_design"]
     assert "実装計画書" in replies["implementation_plan"]
 
@@ -283,3 +290,14 @@ async def test_requirements_output_keeps_ids_from_real_prompt() -> None:
     assert [r.prev_id for r in second_output.requirements] == [r.id for r in first.rows]
     assert [r.source for r in first.rows].count("assumed") == 1
     assert "E2E Fake" in render_requirements(first)
+
+
+# Phase-37-2:追記
+async def test_external_design_output_renders_with_e2e_marker() -> None:
+    """偽の外部設計書は、組み立てた md に E2E の確かめる文字と、偽の要件定義書の要件ID を持つ。"""
+    md = await e2e_fake_external_design_md(E2eFakeLLM())
+
+    assert "E2E Fake" in md
+    assert "# 2. 外部設計書" in md
+    assert "| SCR-001 | 予約画面 |" in md
+    assert "FR-001" in md and "FR-002" in md
