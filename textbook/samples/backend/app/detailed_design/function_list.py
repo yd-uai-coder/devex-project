@@ -1,4 +1,4 @@
-# 作成：Phase-16-2
+# 作成：Phase-16-2｜更新：Phase-38-1
 # 写経レベル: コア ── 処理IDを前の版とトリガーで突き合わせて引き継ぎ、消えた番号を再利用しないこと。
 """段階1 機能(処理)一覧の意味モデルと、下書きの組み立て(純粋関数)。
 
@@ -16,10 +16,16 @@ IDを書かせず、ここで前の版の行とトリガーで突き合わせて
 
 機能グループの初期値は、APIのパスのリソース名から決定的に作る(`initial_group`)。AIには決め
 させない(同じ入力から毎回同じ初期値になり、人が確定するときの基準がぶれないため)。
+
+処理の要件ID(`req_ids`)は、APIの処理なら外部設計書の 2.6 の同じAPIの行の要件ID を写す
+(`api_req_ids`。外部設計書で決まっている対応をAIに書き直させない)。APIでない処理と、2.6 に
+無いAPIはAIの下書きの値。再生成では前の版を引き継がず、下書きから作り直す(要件の対応は
+外部設計書が変わると変わるため)。
 """
 
+# Phase-38-1:追記 ── collections.abc.Mapping
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
@@ -46,6 +52,8 @@ class FunctionRow(BaseModel):
     group_initial: str = ""
     group: str = ""
     summary: str = ""
+    # Phase-38-1:追記
+    req_ids: list[str] = Field(default_factory=list)
 
 
 class FunctionListModel(BaseModel):
@@ -67,6 +75,8 @@ class FunctionDraft:
     screens: tuple[str, ...]
     summary: str
     group_hint: str = ""
+    # Phase-38-1:追記
+    req_ids: tuple[str, ...] = ()
 
 
 def format_function_id(number: int) -> str:
@@ -100,7 +110,12 @@ def _match_key(trigger: str, name: str) -> str:
 
 
 def merge_draft(
-    drafts: Sequence[FunctionDraft], previous: FunctionListModel | None = None
+    # Phase-38-1：更新
+    # drafts: Sequence[FunctionDraft], previous: FunctionListModel | None = None
+    # ↓↓
+    drafts: Sequence[FunctionDraft],
+    previous: FunctionListModel | None = None,
+    api_req_ids: Mapping[str, Sequence[str]] | None = None,
 ) -> FunctionListModel:
     """AIの下書きを、前の版(あれば)と突き合わせて機能一覧にする。
 
@@ -108,7 +123,10 @@ def merge_draft(
     - 新しい行: `next_number`から番号を振り、機能グループは初期値にする。
     - `groups`: 前の版の並びのうち使われているものを先に、新しいグループを出てきた順に後ろへ。
     - 同じキーの下書きが2行あれば、2行目以降は新しい行として扱う(引き継げるIDは1つだけ)。
+    - 要件ID: `api_req_ids`(外部設計書の 2.6 の`endpoint_key` → 要件ID)に在るAPIはその値、
+      それ以外は下書きの値。
     """
+    api_req_ids = api_req_ids or {}
     previous = previous or FunctionListModel()
     unclaimed: dict[str, FunctionRow] = {}
     for row in previous.functions:
@@ -137,6 +155,8 @@ def merge_draft(
                 group_initial=group_initial,
                 group=group,
                 summary=draft.summary.strip(),
+                # Phase-38-1:追記
+                req_ids=_req_ids(draft, api_req_ids),
             )
         )
 
@@ -144,3 +164,10 @@ def merge_draft(
     groups = [g for g in previous.groups if g in used]
     groups += [g for g in dict.fromkeys(used) if g not in groups]
     return FunctionListModel(groups=groups, functions=functions, next_number=next_number)
+
+
+# Phase-38-1:追記
+def _req_ids(draft: FunctionDraft, api_req_ids: Mapping[str, Sequence[str]]) -> list[str]:
+    key = trigger_key(draft.trigger)
+    values = api_req_ids[key] if key is not None and key in api_req_ids else draft.req_ids
+    return list(dict.fromkeys(v.strip() for v in values if v.strip()))

@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5,31-4,31-7
+# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5,31-4,31-7,38-2
 # 写経レベル: 定型 ── Pydantic スキーマ。
 # Phase-31-4：更新(docstring: 簡易モードの段階8 ── fix_document・mode・plan・dataflow)
 # Phase-16-3:追記 ── typing.Literal, pydantic.Field
@@ -57,7 +57,8 @@ class DesignStageRead(BaseModel):
     検証の結果(Phase 16)。`dfd_accesses`は段階3だけが持つ、DFD から決まる R/W(Phase 18。画面で
     DFD を読み直して導き直さないよう、導いた結果を渡す)。`plan`は段階8だけが持つ、作業単位
     (段階7と同じ形。詳細設計モードは承認済みの段階7、簡易モードは実装計画書の WBS を読んだもの。
-    段階8が開いていなければ None)。"""
+    段階8が開いていなければ None)。`unit_req_ids`は段階8だけが持つ、作業単位ごとの要件ID
+    (詳細設計モードは単位の処理の段階1の要件、簡易モードは WBS の「要件」欄)。"""
 
     stage: int
     # Phase-31-4:追記
@@ -77,6 +78,8 @@ class DesignStageRead(BaseModel):
     dfd_accesses: list[DfdAccessRead] = Field(default_factory=list)
     # Phase-31-4:追記
     plan: dict[str, Any] | None = None
+    # Phase-38-2:追記
+    unit_req_ids: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class DesignStageSave(BaseModel):

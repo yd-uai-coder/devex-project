@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
 # Phase-31-4：更新(docstring: 簡易モードの段階8は、作業単位を WBS、参照を内部設計書から取ること)
@@ -50,6 +50,7 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 # Phase-31-4：削除 ── app.detailed_design.procedure_doc_refs.unit_context
 # Phase-36-2:追記 ── app.services.llm_retry.invoke_structured
 # Phase-36-2：削除 ── langchain_core.messages.BaseMessage, app.services.llm_retry.invoke_with_retry, app.uml.generation.failures.unwrap_structured_result(_invoke_structured を llm_retry.invoke_structured へ移した)
+# Phase-38-2:追記 ── app.detailed_design.requirement_trace.api_req_ids
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
@@ -147,6 +148,7 @@ from app.detailed_design.procedure_drafting import (
     build_procedure_messages,
     to_procedure_draft,
 )
+from app.detailed_design.requirement_trace import api_req_ids
 from app.detailed_design.stages import Fingerprint
 from app.detailed_design.structure import STRUCTURE_SUBJECT, ModuleListModel, merge_modules
 from app.detailed_design.structure_drafting import (
@@ -259,7 +261,11 @@ StageGenerator = Callable[[StageGenerationContext], Awaitable[dict]]
 #     return merge_draft(to_drafts(output), previous_model).model_dump(mode="json")
 # ↓↓
 async def generate_function_list(context: StageGenerationContext) -> dict:
-    """段階1: 外部設計書から処理を下書きし、前の版と突き合わせて処理IDと機能グループを決める。"""
+    # Phase-38-2：更新
+    # """段階1: 外部設計書から処理を下書きし、前の版と突き合わせて処理IDと機能グループを決める。"""
+    # ↓↓
+    """段階1: 外部設計書から処理を下書きし、前の版と突き合わせて処理IDと機能グループを決める。
+    API の処理の要件ID は、外部設計書の model の 2.6 の行から写す。"""
     messages = build_function_list_messages(context.sources.documents.get("external_design", ""))
     # Phase-36-2：更新
     # output = await _invoke_structured(context.llm, FunctionListGenerationOutput, messages)
@@ -267,7 +273,11 @@ async def generate_function_list(context: StageGenerationContext) -> dict:
     output = await invoke_structured(context.llm, FunctionListGenerationOutput, messages)
     previous = context.previous
     previous_model = FunctionListModel.model_validate(previous) if previous else None
-    return merge_draft(to_drafts(output), previous_model).model_dump(mode="json")
+    # Phase-38-2：更新
+    # return merge_draft(to_drafts(output), previous_model).model_dump(mode="json")
+    # ↓↓
+    requirements = api_req_ids(context.sources.document_models.get("external_design"))
+    return merge_draft(to_drafts(output), previous_model, requirements).model_dump(mode="json")
 
 
 # Phase-17-3:追記

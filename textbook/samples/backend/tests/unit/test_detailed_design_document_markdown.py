@@ -1,4 +1,4 @@
-# 作成：Phase-22-3｜更新：Phase-23-2,29-1,29-3
+# 作成：Phase-22-3｜更新：Phase-23-2,29-1,29-3,38-2
 # Phase-29-3：更新(docstring: SUT に sequence_block)
 # 写経レベル: 定型 ── 章の並び・画像の参照・リンクを持たないこと・未承認と省略の書き方を確かめる。
 """詳細設計書の md の組み立てのテスト。
@@ -82,3 +82,12 @@ def test_markdown_marks_unapproved_and_skipped_chapters() -> None:
     assert "省略(段階6を飛ばしました)" in text
     assert "テーブル定義" not in text
     assert "→ 詳細:" not in text  # 省略なら 05 から 06 へ紐づけない
+
+
+# Phase-38-2:追記
+def test_markdown_functions_have_requirement_column() -> None:
+    """01 の機能一覧は、関連画面の後ろに処理の要件ID の列を持つ。"""
+    text = to_markdown(sample_document_source())
+
+    assert "| 処理ID | 名称 | 種別 | トリガー | 関連画面 | 要件 | 機能グループ | 概要 |" in text
+    assert "| SCR-001 | FR-001 | reservations |" in text

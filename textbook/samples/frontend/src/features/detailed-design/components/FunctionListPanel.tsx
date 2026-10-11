@@ -1,15 +1,17 @@
-// 作成：Phase-16-6｜更新：Phase-17-6,21-7(画面確認後の修正)
+// 作成：Phase-16-6｜更新：Phase-17-6,21-7(画面確認後の修正),38-3
 // 写経レベル: コア ── 編集中の内容を手元に持ち、保存して初めて送ること。作り直す前の確認と、生成中の操作の止め方。
 "use client";
 
 // Phase-21-7:追記(画面確認後の修正) ── @/features/detailed-design/components/StageSaveBar.StageSaveBar
 // Phase-17-6:追記 ── @/features/detailed-design/components/StageIssueList.StageIssueList, @/features/detailed-design/components/tableStyles(CELL, HEAD, INPUT, MONO, OPTION, TABLE)
 // Phase-17-6：削除 ── react.CSSProperties(表の見た目を tableStyles.ts へ移した)
+// Phase-38-3：更新 ── @/features/detailed-design/components/ListInput.ListInput を追記、functionListOps の screensToText・textToScreens を削除
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import { StyledInput } from "@/components/ui/primitives/StyledInput";
+import { ListInput } from "@/features/detailed-design/components/ListInput";
 import type {
   DesignStageRead,
   FunctionKind,
@@ -34,8 +36,6 @@ import {
   removeGroup,
   removeRow,
   renameGroup,
-  screensToText,
-  textToScreens,
   toFunctionList,
   updateRow,
 } from "@/features/detailed-design/functionListOps";
@@ -218,6 +218,8 @@ export function FunctionListPanel({
                   <th style={HEAD}>種別</th>
                   <th style={HEAD}>トリガー</th>
                   <th style={HEAD}>関連画面</th>
+                  {/* Phase-38-3:追記 */}
+                  <th style={HEAD}>要件</th>
                   <th style={HEAD}>機能グループ</th>
                   <th style={HEAD}>概要</th>
                   <th style={HEAD} />
@@ -265,6 +267,7 @@ export function FunctionListPanel({
                         }
                       />
                     </td>
+                    {/* Phase-38-3：更新 ── 「/」区切りの input を ListInput に(区切りを打った瞬間に消えて次の画面ID を書けなかったため)
                     <td style={{ ...CELL, minWidth: 100 }}>
                       <input
                         style={INPUT}
@@ -274,6 +277,30 @@ export function FunctionListPanel({
                           setDraft((m) =>
                             updateRow(m, row.id, { screens: textToScreens(e.target.value) }),
                           )
+                        }
+                      />
+                    </td>
+                    ↓↓ */}
+                    <td style={{ ...CELL, minWidth: 100 }}>
+                      <ListInput
+                        label={`${row.id} の関連画面`}
+                        items={row.screens}
+                        disabled={false}
+                        style={INPUT}
+                        onChange={(screens) =>
+                          setDraft((m) => updateRow(m, row.id, { screens }))
+                        }
+                      />
+                    </td>
+                    {/* Phase-38-3:追記 */}
+                    <td style={{ ...CELL, minWidth: 100 }}>
+                      <ListInput
+                        label={`${row.id} の要件`}
+                        items={row.req_ids}
+                        disabled={false}
+                        style={{ ...INPUT, ...MONO }}
+                        onChange={(reqIds) =>
+                          setDraft((m) => updateRow(m, row.id, { req_ids: reqIds }))
                         }
                       />
                     </td>

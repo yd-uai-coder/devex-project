@@ -1,4 +1,5 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38(完了後の調整)
+// Phase-38(完了後の調整):追記 ── @/features/detailed-design/procedureDocOps(reassignTargets, reassignUnit, removeStrayProcedures, removeUnitAt, strayProcedures)
 import { describe, expect, it } from "vitest";
 import { FINDING_LEVELS, type StageIssue } from "@/features/detailed-design/api/types";
 // Phase-31-5：更新
@@ -25,10 +26,15 @@ import {
   fixTarget,
   procedureUnits,
   // Phase-28-4:追記
+  reassignTargets,
+  reassignUnit,
+  removeStrayProcedures,
   removeUnit,
+  removeUnitAt,
   removeUnitRow,
   sortFindings,
   // Phase-28-3:追記
+  strayProcedures,
   toggleUnit,
   toProcedureDoc,
   // Phase-28-4:追記
@@ -203,5 +209,66 @@ describe("procedureDocOps", () => {
     expect(fixTarget(5, null)).toEqual({ kind: "stage", stage: 5 });
     expect(fixTarget(8, null)).toBeNull();
     expect(DESIGN_DOCUMENT_LABELS.implementation_plan).toBe("実装計画書");
+  });
+
+  // Phase-38(完了後の調整):追記
+  describe("計画に無い手順書", () => {
+    // makePlan の単位は M-01-T01(開発環境を用意する)・M-01-T02(予約を登録する)。
+    // M-01-T02 は合う手順書、M-06-T01 は計画から消えた単位、M-01-T01 は ID だけ合ってタスク名が違う
+    const docWithStrays = () => {
+      const base = makeProcedureDoc();
+      const [unit] = base.units;
+      return {
+        units: [
+          unit,
+          { ...unit, unit_id: "M-06-T01", title: "古いタスク" },
+          { ...unit, unit_id: "M-01-T01", title: "別の名前", files: [] },
+        ],
+      };
+    };
+
+    it("strayProceduresは計画に無い ID と、タスク名の違う手順書を位置つきで拾う", () => {
+      expect(strayProcedures(makePlan(), makeProcedureDoc())).toEqual([]);
+      expect(strayProcedures(makePlan(), docWithStrays())).toEqual([
+        { index: 1, unitId: "M-06-T01", title: "古いタスク", fileCount: 1 },
+        { index: 2, unitId: "M-01-T01", title: "別の名前", fileCount: 0 },
+      ]);
+    });
+
+    it("付け替え先は手順書の無い単位だけ(同じ ID のタスク名違いは自分の ID も候補)", () => {
+      const doc = docWithStrays();
+      const [gone, renamed] = strayProcedures(makePlan(), doc);
+      // M-01-T01 はタスク名違いの手順書が使っているので、M-06-T01 の候補にならない
+      expect(reassignTargets(makePlan(), doc, gone)).toEqual([]);
+      expect(reassignTargets(makePlan(), doc, renamed).map((unit) => unit.id)).toEqual(["M-01-T01"]);
+
+      const onlyGone = { units: doc.units.slice(0, 2) };
+      const [stray] = strayProcedures(makePlan(), onlyGone);
+      expect(reassignTargets(makePlan(), onlyGone, stray).map((unit) => unit.id)).toEqual([
+        "M-01-T01",
+      ]);
+    });
+
+    it("reassignUnitは ID とタスク名だけを付け替え、中身はそのまま残す", () => {
+      const doc = docWithStrays();
+      const moved = reassignUnit(doc, 1, { id: "M-01-T01", title: "開発環境を用意する" });
+
+      expect(moved.units[1]).toEqual({
+        ...doc.units[1],
+        unit_id: "M-01-T01",
+        title: "開発環境を用意する",
+      });
+      expect(moved.units[0]).toBe(doc.units[0]);
+    });
+
+    it("位置で1つ消す・計画と合わない手順書をすべて消す(合う手順書は残す)", () => {
+      const doc = docWithStrays();
+
+      expect(removeUnitAt(doc, 2).units.map((unit) => unit.unit_id)).toEqual([
+        "M-01-T02",
+        "M-06-T01",
+      ]);
+      expect(removeStrayProcedures(makePlan(), doc)).toEqual(makeProcedureDoc());
+    });
   });
 });

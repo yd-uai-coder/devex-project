@@ -1,5 +1,6 @@
-// 作成：Phase-16-6
+// 作成：Phase-16-6｜更新：Phase-38-3
 // 写経レベル: コア ── 編集操作の規則を確かめる。
+// Phase-38-3：更新 ── ../functionListOps の screensToText・textToScreens を削除
 import { describe, expect, it } from "vitest";
 import {
   addGroup,
@@ -9,8 +10,6 @@ import {
   removeGroup,
   removeRow,
   renameGroup,
-  screensToText,
-  textToScreens,
   toFunctionList,
   updateRow,
 } from "../functionListOps";
@@ -34,6 +33,8 @@ describe("functionListOps", () => {
       kind: "API",
       screens: [],
       group: "",
+      // Phase-38-3:追記
+      req_ids: [],
     });
   });
 
@@ -76,8 +77,12 @@ describe("functionListOps", () => {
     expect(removeGroup(withEmpty, "空").groups).toEqual(["reservations"]);
   });
 
-  it("関連画面は「/」区切りの文字列と相互に変換する", () => {
-    expect(textToScreens("SCR-001/ SCR-002、,")).toEqual(["SCR-001", "SCR-002"]);
-    expect(screensToText(["SCR-001", "SCR-002"])).toBe("SCR-001/SCR-002");
+  // Phase-38-3：更新
+  // it("関連画面は「/」区切りの文字列と相互に変換する", () => {
+  //   expect(textToScreens("SCR-001/ SCR-002、,")).toEqual(["SCR-001", "SCR-002"]);
+  //   expect(screensToText(["SCR-001", "SCR-002"])).toBe("SCR-001/SCR-002");
+  // ↓↓
+  it("addRowの行は要件ID を持たない", () => {
+    expect(addRow(makeFunctionList()).functions[1].req_ids).toEqual([]);
   });
 });

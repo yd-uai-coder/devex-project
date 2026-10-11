@@ -1,4 +1,4 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38(完了後の調整)
 import {
   FINDING_LEVELS,
   // Phase-28-4:追記
@@ -118,6 +118,58 @@ export function procedureUnits(plan: PlanModel, doc: ProcedureDocModel): Procedu
       };
     }),
   );
+}
+
+// Phase-38(完了後の調整):追記
+// 計画と合わない手順書(単位の ID が計画に無い、または ID は在るがタスク名が違う)。文書の再生成や
+// 段階7の並べ替えで単位が変わると残る。自動では消さず、人が今の単位へ付け替えるか消す。
+// index は doc.units の中の位置(同じ ID の手順書が2つあっても区別できるように)。
+export type StrayProcedure = { index: number; unitId: string; title: string; fileCount: number };
+
+export function strayProcedures(plan: PlanModel, doc: ProcedureDocModel): StrayProcedure[] {
+  const titles = new Map(procedureUnits(plan, doc).map((unit) => [unit.id, unit.title.trim()]));
+  return doc.units.flatMap((unit, index) =>
+    titles.get(unit.unit_id.trim()) === unit.title.trim()
+      ? []
+      : [{ index, unitId: unit.unit_id, title: unit.title, fileCount: unit.files.length }],
+  );
+}
+
+// 付け替え先の候補: 計画の単位のうち、その ID の手順書がまだ無いもの。ID は同じでタスク名だけ違う
+// 手順書なら、自分の ID も候補にする(付け替えてもほかの手順書と ID が重ならない)。
+export function reassignTargets(
+  plan: PlanModel,
+  doc: ProcedureDocModel,
+  stray: StrayProcedure,
+): ProcedureUnit[] {
+  const taken = new Set(
+    doc.units.filter((_, index) => index !== stray.index).map((unit) => unit.unit_id.trim()),
+  );
+  return procedureUnits(plan, doc).filter((unit) => !taken.has(unit.id));
+}
+
+// 手順書の単位の ID とタスク名を、付け替え先の単位のものにする(中身は変えない)。
+export function reassignUnit(
+  doc: ProcedureDocModel,
+  index: number,
+  target: { id: string; title: string },
+): ProcedureDocModel {
+  return {
+    units: doc.units.map((unit, i) =>
+      i === index ? { ...unit, unit_id: target.id, title: target.title } : unit,
+    ),
+  };
+}
+
+// 位置で手順書を1つ消す(計画と合わない手順書は、同じ ID の手順書と区別するため位置で消す)。
+export function removeUnitAt(doc: ProcedureDocModel, index: number): ProcedureDocModel {
+  return { units: doc.units.filter((_, i) => i !== index) };
+}
+
+// 計画と合わない手順書をすべて消す。
+export function removeStrayProcedures(plan: PlanModel, doc: ProcedureDocModel): ProcedureDocModel {
+  const stray = new Set(strayProcedures(plan, doc).map((item) => item.index));
+  return { units: doc.units.filter((_, i) => !stray.has(i)) };
 }
 
 // Phase-31-5：更新

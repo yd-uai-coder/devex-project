@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7,38-3
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -95,6 +95,10 @@ export type DesignStageRead = {
   // 段階8だけが持つ、作業単位(段階7と同じ形。詳細設計モードは承認済みの段階7、簡易モードは実装計画書の
   // WBS を読んだもの。段階8が開いていなければ null)
   plan: Record<string, unknown> | null;
+  // Phase-38-3:追記
+  // 段階8だけが持つ、作業単位 → 要件ID(詳細設計モードは単位の処理の段階1の要件、簡易モードは
+  // WBS の「要件」欄)。古いバックエンドの応答には無い
+  unit_req_ids?: Record<string, string[]>;
 };
 
 // Phase-16-5:追記
@@ -111,6 +115,8 @@ export type FunctionRow = {
   group_initial: string; // API のパスから決めた機能グループの初期値
   group: string; // 人が確定した機能グループ
   summary: string;
+  // Phase-38-3:追記
+  req_ids: string[]; // 要件ID(FR-001…)。API の処理は外部設計書の 2.6 から写した下書き
 };
 
 export type FunctionListModel = {

@@ -1,4 +1,4 @@
-# 作成：Phase-22-3｜更新：Phase-23-2,26-3,28-1,29-1,29-3
+# 作成：Phase-22-3｜更新：Phase-23-2,26-3,28-1,29-1,29-3,38-2
 # 写経レベル: 定型 ── 表の書き出しが大半。ID を本文に書き、リンクと生の HTML を持たない点だけがコア。
 # Phase-23-2：更新(docstring: 実装計画の md を別にすること)
 # Phase-29-3：更新(docstring: 05 のシーケンス図を Mermaid のコードブロックで載せること)
@@ -114,11 +114,26 @@ def _chapter_body(source: DocumentSource, chapter: Chapter) -> list[str]:
 def _functions(source: DocumentSource) -> list[str]:
     assert source.function_list is not None
     rows = [
-        [f.id, f.name, f.kind, f.trigger, ", ".join(f.screens), f.group, f.summary]
+        # Phase-38-2：更新
+        # [f.id, f.name, f.kind, f.trigger, ", ".join(f.screens), f.group, f.summary]
+        # ↓↓
+        [
+            f.id,
+            f.name,
+            f.kind,
+            f.trigger,
+            ", ".join(f.screens),
+            ", ".join(f.req_ids),
+            f.group,
+            f.summary,
+        ]
         for f in source.function_list.functions
     ]
     return md_table(
-        ["処理ID", "名称", "種別", "トリガー", "関連画面", "機能グループ", "概要"], rows
+        # Phase-38-2：更新
+        # ["処理ID", "名称", "種別", "トリガー", "関連画面", "機能グループ", "概要"], rows
+        # ↓↓
+        ["処理ID", "名称", "種別", "トリガー", "関連画面", "要件", "機能グループ", "概要"], rows
     )
 
 

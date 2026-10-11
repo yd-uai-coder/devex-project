@@ -1,4 +1,4 @@
-# 作成：Phase-30-1｜更新：Phase-31-3,36-2
+# 作成：Phase-30-1｜更新：Phase-31-3,36-2,38-2
 # Phase-31-3：更新(docstring: 入力を段階8の土台 ProcedureBasis にし、モードの文言を labels から書くこと)
 """実装手順書の出力の入力と、未定義・要決定の集約(純粋関数)。
 
@@ -15,10 +15,13 @@ docs/internal_design.md 3.3節「5. 実装手順書」の「出力」。
 - モードで変わる文言(作業単位の出どころ・直す先)は、土台の`labels`から書く。
 - 未定義・要決定は、段階8の検証の指摘(重要度のあるもの)と、手順書の AI の指摘を1つにまとめる。
   並びと数え方は画面(devex-ui の`procedureDocOps.collectFindings`)と同じにする。
+- 要件の追跡(単位ごとの要件・「要件との対応」・非機能要件と制約)は、要件定義書の model から
+  作る(`requirement_trace`)。model の無い要件定義書(Phase 36 より前の版)では空。
 """
 
 # Phase-31-3:追記 ── app.detailed_design.procedure_basis(DETAILED_LABELS, ProcedureBasis, ProcedureLabels), app.detailed_design.procedure_doc(DESIGN_DOCUMENT_LABELS, DesignDocument)
 # Phase-31-3：削除 ── app.detailed_design.plan.PLAN_STAGE, app.detailed_design.procedure_doc_refs.unit_context
+# Phase-38-2:追記 ── app.detailed_design.requirement_trace(TraceRow, constraint_rows, index_from_requirements, requirement_trace), app.documents.requirements.model.RequirementRow
 import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -39,8 +42,15 @@ from app.detailed_design.procedure_doc import (
     plan_units,
 )
 from app.detailed_design.procedure_doc_refs import UnitContext
+from app.detailed_design.requirement_trace import (
+    TraceRow,
+    constraint_rows,
+    index_from_requirements,
+    requirement_trace,
+)
 from app.detailed_design.stages import StageState
 from app.detailed_design.validation import StageIssue
+from app.documents.requirements.model import RequirementRow
 from app.uml.generation.sections import extract_section
 
 # 未定義の出どころ。check = 決定的な検証、ai = 手順書を生成した AI の指摘
@@ -58,6 +68,12 @@ _SCOPE_SEPARATOR = re.compile(r"[:：]")
 # 要件の表の行(`| FR-010 | Should | 要件 | 出どころ | 観点 |`)のセルの区切り(`\|`は区切りでない)
 _TABLE_CELL_SEPARATOR = re.compile(r"(?<!\\)\|")
 _ESCAPED_PIPE = "\\|"
+
+# Phase-38-2:追記
+# 要件定義書に要件ID が無い(model の無い版)ときの、要件の節の文言
+REQUIREMENTS_MISSING_TEXT = (
+    "要件定義書に要件ID がありません(要件定義書を再生成すると、要件との対応が載ります)。"
+)
 
 # ファイル名に使えない文字(と空白)。`_`に置き換える
 _UNSAFE_FILENAME = re.compile(r'[\\/:*?"<>|\s]+')
@@ -89,6 +105,9 @@ class ProcedureOutputSource:
     - `out_of_scope`: 要件定義の Should / Could / Won't の行(手順書を作らない機能)。
     - `labels`・`environment`・`rules`: モードで変わる文言と、実装前提の本文・実装ルール
       (`ProcedureBasis`から)。
+    - `requirements_available`: 要件定義書に要件ID があるか(無ければ要件の節は再生成の案内)。
+    - `unit_reqs`: 作業単位 → 要件ID。`trace`: 機能要件ごとの処理と単位(「要件との対応」)。
+      `constraints`: 非機能要件と制約の行(「実装前提・制約」)。`requirement_texts`: 要件ID → 本文。
     """
 
     title: str
@@ -103,6 +122,12 @@ class ProcedureOutputSource:
     labels: ProcedureLabels = DETAILED_LABELS
     environment: str = ""
     rules: tuple[str, ...] = ()
+    # Phase-38-2:追記
+    requirements_available: bool = False
+    unit_reqs: Mapping[str, Sequence[str]] = field(default_factory=dict)
+    trace: tuple[TraceRow, ...] = ()
+    constraints: tuple[RequirementRow, ...] = ()
+    requirement_texts: Mapping[str, str] = field(default_factory=dict)
 
     @property
     def approved(self) -> bool:
@@ -110,6 +135,11 @@ class ProcedureOutputSource:
 
     def unit(self, unit_id: str) -> PlanUnit | None:
         return next((u for u in self.units if u.unit_id == unit_id), None)
+
+    # Phase-38-2:追記
+    def unit_requirements(self, unit_id: str) -> list[str]:
+        """単位の要件ID(無ければ空)。"""
+        return list(self.unit_reqs.get(unit_id, ()))
 
     def milestone_name(self, unit: PlanUnit) -> str:
         """単位のマイルストーンの名前。"""
@@ -126,9 +156,11 @@ def procedure_output_source(
     model: Mapping[str, Any] | None,
     issues: Sequence[StageIssue],
     requirements: str = "",
+    # Phase-38-2:追記
+    requirements_model: Mapping[str, Any] | None = None,
 ) -> ProcedureOutputSource:
-    """段階8の状態・手順書(`model`)・検証の指摘と、段階8の土台(`basis`)・要件定義の本文から
-    `ProcedureOutputSource`を作る。`model`は zip なら承認済みのもの、画面のコピーなら
+    """段階8の状態・手順書(`model`)・検証の指摘と、段階8の土台(`basis`)・要件定義の本文と
+    model から`ProcedureOutputSource`を作る。`model`は zip なら承認済みのもの、画面のコピーなら
     保存済みのもの。"""
     # Phase-31-3：更新
     # plan = PlanModel.model_validate(stages.get(PLAN_STAGE) or {})
@@ -138,6 +170,9 @@ def procedure_output_source(
     units = tuple(plan_units(plan))
     documented = documented_unit_ids(plan, doc)
     procedures = {u.unit_id: u for u in doc.units if u.unit_id in documented}
+    # Phase-38-2:追記
+    index = index_from_requirements(requirements_model)
+    unit_reqs = basis.unit_req_ids()
     return ProcedureOutputSource(
         title=title,
         state=state,
@@ -154,6 +189,12 @@ def procedure_output_source(
         labels=basis.labels,
         environment=basis.environment,
         rules=basis.rules,
+        # Phase-38-2:追記
+        requirements_available=index.available,
+        unit_reqs=unit_reqs,
+        trace=tuple(requirement_trace(index, units, unit_reqs, basis.functions())),
+        constraints=tuple(constraint_rows(index)),
+        requirement_texts={row.id: row.text for row in index.rows},
     )
 
 

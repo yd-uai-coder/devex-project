@@ -1,4 +1,4 @@
-# 作成：Phase-23-1｜更新：Phase-26-1
+# 作成：Phase-23-1｜更新：Phase-26-1,38-1
 # 写経レベル: コア ── タスクをマイルストーンに入れ子にし、M-ID を並び順から導く。処理ID とパスで段階1・4に突き合わせる。
 """段階7 横断事項と実装計画の意味モデル(純粋関数)。
 
@@ -82,6 +82,9 @@ class PlanTask(BaseModel):
     depends_on: list[str] = Field(default_factory=list)
     modules: list[str] = Field(default_factory=list)
     config_files: list[str] = Field(default_factory=list)
+    # Phase-38-1:追記
+    # 要件ID。簡易モードの WBS の「要件」欄だけが埋める(詳細設計モードは段階1の処理から導く)
+    req_ids: list[str] = Field(default_factory=list)
 
 
 class Milestone(BaseModel):
@@ -223,6 +226,8 @@ def normalize_plan(model: PlanModel, module_paths: Sequence[str]) -> PlanModel:
                 depends_on=_clean(task.depends_on),
                 modules=_modules(task.modules, module_paths),
                 config_files=_clean(task.config_files),
+                # Phase-38-1:追記
+                req_ids=_clean(task.req_ids),
             )
             for task in milestone.tasks
             if task.title.strip()

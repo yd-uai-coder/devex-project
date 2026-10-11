@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -191,17 +191,23 @@ _INTERNAL_DESIGN_REPLY = (
 # Phase-31-1:追記
 # 実装計画書は、実装計画書プロンプトが指示する固定形式の WBS(4.2節。縦割り・ID 付き)で返す。
 # 簡易モードの実装手順書が作業単位として読むため、_INTERNAL_DESIGN_REPLY の DF・モジュールに
-# そろえる。
+# そろえる。「要件」は偽の要件定義書(_REQUIREMENTS)の Must の FR-001(Phase 38)。
 _IMPLEMENTATION_PLAN_REPLY = (
     "# 実装計画書(E2E Fake)\n\n"
     "## 4.1 開発フェーズ分割・マイルストーン\n### フェーズ1(M-01) ── 【Must】\n\n"
     "## 4.2 タスク分解（WBS）\n"
     "### M-01: 予約の登録 ── 【Must】\n- ゴール: 備品を予約できる\n"
     "- [ ] M-01-T01 [基盤] 開発環境を用意する\n"
-    "  - 処理: なし\n  - 依存: なし\n  - モジュール: app/main.py\n"
+    # Phase-38-2：更新
+    # "  - 処理: なし\n  - 依存: なし\n  - モジュール: app/main.py\n"
+    # ↓↓
+    "  - 処理: なし\n  - 要件: なし\n  - 依存: なし\n  - モジュール: app/main.py\n"
     "  - 環境・設定: docker-compose.yml\n"
     "- [ ] M-01-T02 [機能] 予約を登録する\n"
-    "  - 処理: DF-1\n  - 依存: M-01-T01\n"
+    # Phase-38-2：更新
+    # "  - 処理: DF-1\n  - 依存: M-01-T01\n"
+    # ↓↓
+    "  - 処理: DF-1\n  - 要件: FR-001\n  - 依存: M-01-T01\n"
     "  - モジュール: app/api/reservations.py, app/services/reservation.py\n"
     "  - 環境・設定: なし\n\n"
     "## 4.3 開発環境・CI/CD・事前準備事項\n- Docker Compose で API と DB を起動する\n"
@@ -320,7 +326,8 @@ _UML_OUTPUTS: dict[type[BaseModel], BaseModel] = {
 # Phase-37-2：更新
 # # 詳細設計モードの段階1(機能一覧)の下書き(Phase 16)。_EXTERNAL_DESIGN_REPLY の API 一覧と同じAPI
 # ↓↓
-# 詳細設計モードの段階1(機能一覧)の下書き(Phase 16)。_EXTERNAL_DESIGN_OUTPUT の API 一覧と同じAPI
+# 詳細設計モードの段階1(機能一覧)の下書き(Phase 16)。_EXTERNAL_DESIGN_OUTPUT の API 一覧と同じAPI。
+# 要件ID は書かない(API の処理は、外部設計書の model の 2.6 の行から写す。Phase 38)
 _UML_OUTPUTS[FunctionListGenerationOutput] = FunctionListGenerationOutput(
     functions=[
         GeneratedFunction(

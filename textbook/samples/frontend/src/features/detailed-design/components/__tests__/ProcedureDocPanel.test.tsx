@@ -1,4 +1,4 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4,31-5
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,31-5,38-3,38(完了後の調整)
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -82,14 +82,28 @@ describe("ProcedureDocPanel", () => {
     });
   });
 
-  it("段階7の単位を依存順に並べ、手順書の有無と未定義の件数を出す", () => {
-    renderPanel(stage8({ issues: [noProcedure], model: makeProcedureDoc(), version: 1 }));
+  // Phase-38-3：更新
+  // it("段階7の単位を依存順に並べ、手順書の有無と未定義の件数を出す", () => {
+  //   renderPanel(stage8({ issues: [noProcedure], model: makeProcedureDoc(), version: 1 }));
+  // ↓↓
+  it("段階7の単位を依存順に並べ、要件・手順書の有無と未定義の件数を出す", () => {
+    renderPanel(
+      stage8({
+        issues: [noProcedure],
+        model: makeProcedureDoc(),
+        version: 1,
+        unit_req_ids: { "M-01-T01": [], "M-01-T02": ["FR-001"] },
+      }),
+    );
 
     const rows = within(screen.getByRole("table", { name: "単位の一覧" })).getAllByRole("row");
     expect(rows).toHaveLength(3);
     expect(rows[1]).toHaveTextContent("M-01-T01基盤開発環境を用意する—");
     expect(rows[1]).toHaveTextContent("未生成なし");
-    expect(rows[2]).toHaveTextContent("M-01-T02機能予約を登録するF-01M-01-T01生成済");
+    // Phase-38-3：更新
+    // expect(rows[2]).toHaveTextContent("M-01-T02機能予約を登録するF-01M-01-T01生成済");
+    // ↓↓
+    expect(rows[2]).toHaveTextContent("M-01-T02機能予約を登録するF-01FR-001M-01-T01生成済");
     expect(rows[2]).toHaveTextContent("最重要 1中程度 1");
   });
 
@@ -196,6 +210,65 @@ describe("ProcedureDocPanel", () => {
   });
 
   // Phase-28-3:追記
+  // Phase-38(完了後の調整):追記
+  // 計画が変わって残った手順書(M-06-T01)。単位の一覧には出ないので、別の表で付け替えるか消す
+  function docWithStray() {
+    const doc = makeProcedureDoc();
+    return { units: [...doc.units, { ...doc.units[0], unit_id: "M-06-T01", title: "古いタスク" }] };
+  }
+
+  it("計画に無い手順書は無ければ出さず、あれば一覧に出す", () => {
+    const { unmount } = render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <ProcedureDocPanel
+          projectId="p1"
+          stage={stage8({ model: makeProcedureDoc(), version: 1 })}
+          onDirtyChange={vi.fn()}
+        />
+      </TamaguiProvider>,
+    );
+    expect(screen.queryByRole("table", { name: "計画に無い手順書の一覧" })).not.toBeInTheDocument();
+    unmount();
+
+    renderPanel(stage8({ model: docWithStray(), version: 1 }));
+    const rows = within(screen.getByRole("table", { name: "計画に無い手順書の一覧" })).getAllByRole("row");
+    expect(rows).toHaveLength(2);
+    expect(rows[1]).toHaveTextContent("M-06-T01古いタスク1 件");
+    // 付け替え先は手順書の無い単位(M-01-T01)だけ
+    const options = within(screen.getByLabelText("M-06-T01 の付け替え先")).getAllByRole("option");
+    expect(options.map((option) => option.textContent)).toEqual(["(選ぶ)", "M-01-T01 開発環境を用意する"]);
+  });
+
+  it("今の単位へ付け替えて保存すると、手順書の ID とタスク名が付け替え先になる", async () => {
+    const user = userEvent.setup();
+    const onDirtyChange = renderPanel(stage8({ model: docWithStray(), version: 1 }));
+
+    await user.selectOptions(screen.getByLabelText("M-06-T01 の付け替え先"), "M-01-T01");
+    await user.click(screen.getByLabelText("M-06-T01 を付け替える"));
+
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+    expect(screen.queryByRole("table", { name: "計画に無い手順書の一覧" })).not.toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+    const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
+    expect((model as { units: { unit_id: string; title: string }[] }).units.map((u) => [u.unit_id, u.title])).toEqual([
+      ["M-01-T02", "予約を登録する"],
+      ["M-01-T01", "開発環境を用意する"],
+    ]);
+  });
+
+  it("計画に無い手順書をすべて消して保存すると、合う手順書だけが残る", async () => {
+    const user = userEvent.setup();
+    renderPanel(stage8({ model: docWithStray(), version: 1 }));
+
+    await user.click(screen.getByRole("button", { name: "段階7に無い手順書をすべて消す" }));
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+
+    const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
+    expect((model as { units: { unit_id: string }[] }).units.map((u) => u.unit_id)).toEqual([
+      "M-01-T02",
+    ]);
+  });
+
   it("生成に失敗したら理由を出す", () => {
     renderPanel(stage8({ generation_status: "failed", generation_error: "下書きの生成に失敗しました。" }));
 

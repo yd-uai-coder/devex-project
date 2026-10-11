@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1,31-5
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1,31-5,38-3
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
@@ -37,6 +37,8 @@ export function makeFunctionList(): FunctionListModel {
         group_initial: "reservations",
         group: "reservations",
         summary: "予約を保存する",
+        // Phase-38-3:追記
+        req_ids: ["FR-001"],
       },
     ],
     next_number: 2,

@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3,22-1,22-3,22-5,23-1,23-2,27-1,28-2,30-1,31-3
+# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3,22-1,22-3,22-5,23-1,23-2,27-1,28-2,30-1,31-3,38-1,38-2
 # 写経レベル: 定型 ── テスト用のプロジェクトの組み立て。
 """詳細設計モードのテストで使うプロジェクトの組み立て(段階のサービス・ルートのテストで共有する)。"""
 
@@ -39,11 +39,41 @@ from app.uml.domain import SemanticModelAdapter
 from app.uml.domain.er import ErSemanticModel
 from app.uml.layout import compute_layout, edge_labels
 
+# Phase-38-2:追記
+# 文書の model(要件の追跡が読む)。外部設計書は要件定義書の要件ID の写しと、
+# `function_list_model()`の API に要件ID を持つ(段階1の要件の追跡が指摘0件になる形)
+REQUIREMENTS_DOC_MODEL: dict = {
+    "purpose": "備品を予約する",
+    "rows": [
+        {"id": "FR-001", "kind": "FR", "priority": "Must", "text": "予約の登録", "source": "user"},
+        {
+            "id": "NFR-001",
+            "kind": "NFR",
+            "category": "セキュリティ",
+            "text": "通信は HTTPS",
+            "source": "user",
+        },
+    ],
+}
+EXTERNAL_DESIGN_DOC_MODEL: dict = {
+    "apis": [{"method": "POST", "path": "/api/v1/reservations", "req_ids": ["FR-001"]}],
+    "known_req_ids": ["FR-001", "NFR-001"],
+    "must_fr_ids": ["FR-001"],
+}
+DOCUMENT_MODELS: dict[str, dict] = {
+    "requirements": REQUIREMENTS_DOC_MODEL,
+    "external_design": EXTERNAL_DESIGN_DOC_MODEL,
+}
+
 
 async def create_detailed_project(
     session: AsyncSession, *, mode: str = "detailed", with_documents: bool = True
 ) -> Project:
-    """詳細設計モードのプロジェクトを作る。`with_documents`なら要件定義・外部設計を1版ずつ持つ。"""
+    # Phase-38-2：更新
+    # """詳細設計モードのプロジェクトを作る。`with_documents`なら要件定義・外部設計を1版ずつ持つ。"""
+    # ↓↓
+    """詳細設計モードのプロジェクトを作る。`with_documents`なら要件定義・外部設計を1版ずつ持つ
+    (model は`DOCUMENT_MODELS`)。"""
     user = User(email=f"owner-{uuid.uuid4()}@example.com", hashed_password="x")
     session.add(user)
     await session.flush()
@@ -54,7 +84,13 @@ async def create_detailed_project(
         documents = GeneratedDocumentRepository(session)
         for doc_type in ("requirements", "external_design"):
             await documents.create_version(
-                project_id=project.id, doc_type=doc_type, content=f"# {doc_type}"
+                # Phase-38-2：更新
+                # project_id=project.id, doc_type=doc_type, content=f"# {doc_type}"
+                # ↓↓
+                project_id=project.id,
+                doc_type=doc_type,
+                content=f"# {doc_type}",
+                model=DOCUMENT_MODELS[doc_type],
             )
     await session.commit()
     return project
@@ -76,6 +112,8 @@ def function_list_model(*, group: str = "reservations") -> dict:
                 "group_initial": "reservations",
                 "group": group,
                 "summary": "予約を保存する",
+                # Phase-38-1:追記
+                "req_ids": ["FR-001"],
             }
         ],
         "next_number": 2,
@@ -539,7 +577,8 @@ def sample_procedure_source(
 ) -> ProcedureOutputSource:
     """手順書の出力の入力(段階1〜7は`document_stage_models()`、段階8は`procedure_doc_model()`)。
     M-01-T01(基盤)は手順書が無く、M-01-T02(機能)は最重要の AI の指摘を1件持つ。md・HTML の
-    組み立てのテストで使う。`issues`で段階8の検証の指摘を足せる。"""
+    組み立てのテストで使う。`issues`で段階8の検証の指摘を足せる。要件定義書の model は
+    `REQUIREMENTS_DOC_MODEL`(段階1の F-01 が FR-001 を持つ)。"""
     return procedure_output_source(
         "予約システム",
         state,
@@ -550,4 +589,6 @@ def sample_procedure_source(
         procedure_doc_model() if model is None else model,
         issues,
         REQUIREMENTS_WITH_SCOPE,
+        # Phase-38-2:追記
+        REQUIREMENTS_DOC_MODEL,
     )

@@ -1,4 +1,4 @@
-// 作成：Phase-16-6｜更新：Phase-21-7(画面確認後の修正)
+// 作成：Phase-16-6｜更新：Phase-21-7(画面確認後の修正),38-3
 // 写経レベル: コア ── 生成・確認・編集・保存の流れを画面越しに確かめる。
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -81,6 +81,20 @@ describe("FunctionListPanel", () => {
     expect(onDirtyChange).toHaveBeenLastCalledWith(true);
     const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(model).toMatchObject({ functions: [{ id: "F-01", name: "予約する" }] });
+  });
+
+  // Phase-38-3:追記
+  it("要件の欄は「,」区切りで編集し、要件ID の配列で保存する", async () => {
+    const user = userEvent.setup();
+    renderPanel(draftStage());
+
+    const requirements = screen.getByRole("textbox", { name: "F-01 の要件" });
+    expect(requirements).toHaveValue("FR-001");
+    await user.type(requirements, ", FR-002");
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+
+    const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
+    expect(model).toMatchObject({ functions: [{ id: "F-01", req_ids: ["FR-001", "FR-002"] }] });
   });
 
   it("機能グループの改名は、行の機能グループも付け替える", async () => {

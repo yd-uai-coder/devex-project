@@ -1,4 +1,4 @@
-# 作成：Phase-22-4｜更新：Phase-23-2,26-3,29-1,29-3,30-3
+# 作成：Phase-22-4｜更新：Phase-23-2,26-3,29-1,29-3,30-3,38-2
 # 写経レベル: 定型 ── CSS とスクリプトと表の書き出しが大半。SVG だけエスケープしない判断と、アンカーの規則がコア。
 # Phase-23-2：更新(docstring: 実装計画の HTML を別にすること)
 # Phase-29-3：更新(docstring: 05 のシーケンス図の SVG もそのまま埋め込むこと)
@@ -313,6 +313,8 @@ def _functions(source: DocumentSource) -> str:
             e(f.kind),
             mono(f.trigger),
             e(", ".join(f.screens)),
+            # Phase-38-2:追記
+            e(", ".join(f.req_ids)),
             e(f.group),
             e(f.summary),
         ]
@@ -320,7 +322,10 @@ def _functions(source: DocumentSource) -> str:
     ]
     note = '<p class="muted">青い処理ID は、05 に手順がある処理。</p>' if with_procedure else ""
     return note + table(
-        ["処理ID", "名称", "種別", "トリガー", "関連画面", "機能グループ", "概要"],
+        # Phase-38-2：更新
+        # ["処理ID", "名称", "種別", "トリガー", "関連画面", "機能グループ", "概要"],
+        # ↓↓
+        ["処理ID", "名称", "種別", "トリガー", "関連画面", "要件", "機能グループ", "概要"],
         rows,
         label="機能一覧",
     )

@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
@@ -370,6 +370,8 @@ class DesignStageService:
                 model,
                 validate_stage(PROCEDURE_DOC_STAGE, model, sources),
                 sources.documents.get("requirements", ""),
+                # Phase-38-2:追記
+                sources.document_models.get("requirements"),
             )
         except ValidationError as exc:
             raise DesignUnitProcedureNotFoundError(
@@ -491,6 +493,8 @@ class DesignStageService:
         - ER: 段階3の ER(全体1枚)の要約。
         - 構成図: 段階4の構成図(全体1枚)の要約。
 
+        - 文書の model: 要件定義書・外部設計書の表示中の版の model(要件の追跡が読む)。
+
         簡易モード(段階8だけ)は、文書だけを渡す(図は段階8の入力にならない)。
         """
         # Phase-31-4:追記
@@ -504,8 +508,19 @@ class DesignStageService:
             for stage, row in rows.items()
             if views[stage].state == "approved" and row.model
         }
+        # Phase-38-2:追記
+        models = {
+            doc_type: document.model
+            for doc_type, document in documents.items()
+            if document is not None and document.model
+        }
         if project.mode != "detailed":
-            return StageSources(documents=texts, stages=approved, mode="simple")
+            # Phase-38-2：更新
+            # return StageSources(documents=texts, stages=approved, mode="simple")
+            # ↓↓
+            return StageSources(
+                documents=texts, stages=approved, mode="simple", document_models=models
+            )
         project_id = project.id
         diagrams = await self._diagrams.list_by_notation(project_id, "dfd")
         # Phase-18-3:追記
@@ -531,6 +546,8 @@ class DesignStageService:
             # ↓↓
             documents=texts,
             stages=approved,
+            # Phase-38-2:追記
+            document_models=models,
             dfd_diagrams={diagram.subject: _dfd_summary(diagram) for diagram in diagrams},
             # Phase-18-3:追記
             er_diagram=_er_summary(er) if er is not None else None,
@@ -690,11 +707,17 @@ def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) ->
     # ↓↓
     # Phase-31-4:追記
     # 段階8の作業単位(詳細設計モードは段階7、簡易モードは実装計画書の WBS)。画面の単位の一覧が使う
-    plan = (
-        _basis(sources).plan.model_dump(mode="json")
-        if view.stage == PROCEDURE_DOC_STAGE and view.is_open
-        else None
+    # Phase-38-2：更新
+    # plan = (
+    #     _basis(sources).plan.model_dump(mode="json")
+    #     if view.stage == PROCEDURE_DOC_STAGE and view.is_open
+    #     else None
+    # ↓↓
+    basis = (
+        _basis(sources) if view.stage == PROCEDURE_DOC_STAGE and view.is_open else None
     )
+    # Phase-38-2:追記
+    plan = basis.plan.model_dump(mode="json") if basis is not None else None
     if row is not None:
         issues = validate_stage(view.stage, row.model, sources)
     elif view.is_open:
@@ -721,6 +744,8 @@ def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) ->
         dfd_accesses=_dfd_access_reads(sources) if view.stage == DATA_MODEL_STAGE else [],
         # Phase-31-4:追記
         plan=plan,
+        # Phase-38-2:追記
+        unit_req_ids=basis.unit_req_ids() if basis is not None else {},
     )
 
 

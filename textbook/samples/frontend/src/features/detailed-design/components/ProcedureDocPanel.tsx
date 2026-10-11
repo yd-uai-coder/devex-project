@@ -1,9 +1,10 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38-3,38(完了後の調整)
 // 注: Phase 28 で大きく書き直したため、旧コードのコメントアウトは要所だけにした(27-3 の版は Phase-27-3 の教材を参照)。
 "use client";
 
 // Phase-28-3:追記 ── react.useEffect, ConfirmDialog, StyledButton, MAX_PROCEDURE_DOC_TARGETS, StageSaveBar, useStageGenerationPolling, toggleUnit
 // Phase-28-4:追記 ── ProcedureDocModel, UnitProcedureEditor
+// Phase-38(完了後の調整):追記 ── @/features/detailed-design/components/StrayProcedureList.StrayProcedureList
 import { useEffect, useState } from "react";
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -19,6 +20,7 @@ import {
 import { FixTargetButton } from "@/features/detailed-design/components/FixTargetButton";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
+import { StrayProcedureList } from "@/features/detailed-design/components/StrayProcedureList";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { UnitProcedureEditor } from "@/features/detailed-design/components/UnitProcedureEditor";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
@@ -204,6 +206,8 @@ export function ProcedureDocPanel({
   const counts = countByLevel(findings);
   // 重要度の無い指摘は、手順書そのもののエラー(形の不正・段階7と合わない手順書)
   const docIssues = stage.issues.filter((issue) => !issue.level);
+  // Phase-38-3:追記
+  const unitReqIds = stage.unit_req_ids ?? {};
 
   // Phase-28-3:追記
   const startGeneration = () => {
@@ -242,7 +246,10 @@ export function ProcedureDocPanel({
           <table style={TABLE} aria-label="単位の一覧">
             <thead>
               <tr>
+                {/* Phase-38-3：更新
                 {["生成", "単位", "種別", "タスク", "処理", "依存", "手順書", "未定義"].map((head) => (
+                ↓↓ */}
+                {["生成", "単位", "種別", "タスク", "処理", "要件", "依存", "手順書", "未定義"].map((head) => (
                   <th key={head} style={HEAD}>
                     {head}
                   </th>
@@ -290,6 +297,8 @@ export function ProcedureDocPanel({
                   <td style={NOWRAP}>{UNIT_KIND_LABELS[unit.kind]}</td>
                   <td style={CELL}>{unit.title}</td>
                   <td style={{ ...CELL, ...MONO }}>{unit.functionIds.join(", ") || "—"}</td>
+                  {/* Phase-38-3:追記 */}
+                  <td style={{ ...CELL, ...MONO }}>{(unitReqIds[unit.id] ?? []).join(", ") || "—"}</td>
                   <td style={{ ...CELL, ...MONO }}>{unit.dependsOn.join(", ") || "—"}</td>
                   <td style={NOWRAP}>{unit.hasProcedure ? "生成済" : "未生成"}</td>
                   <td style={CELL}>
@@ -346,6 +355,15 @@ export function ProcedureDocPanel({
       />
 
       {/* Phase-28-4:追記 */}
+      {/* Phase-38(完了後の調整):追記 */}
+      <StrayProcedureList
+        plan={toPlan(planModel)}
+        doc={doc}
+        planLabel={simple ? "実装計画書" : "段階7"}
+        disabled={generating || !stage.is_open}
+        onChange={setDoc}
+      />
+
       {openedUnit ? (
         <YStack padding="$3" borderWidth={1} borderColor="$borderColor" borderRadius="$4">
           <UnitProcedureEditor

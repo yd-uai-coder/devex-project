@@ -1,4 +1,4 @@
-// 作成：Phase-16-6
+// 作成：Phase-16-6｜更新：Phase-38-3
 // 写経レベル: コア ── 処理IDを next_number から振り、消した番号を再利用しないこと。グループの改名で行も付け替えること。
 import type {
   FunctionKind,
@@ -43,6 +43,8 @@ export function toFunctionList(
           group_initial: String(row.group_initial ?? ""),
           group: String(row.group ?? ""),
           summary: String(row.summary ?? ""),
+          // Phase-38-3:追記
+          req_ids: Array.isArray(row.req_ids) ? row.req_ids.map(String) : [],
         }),
       )
     : [];
@@ -75,6 +77,8 @@ export function addRow(model: FunctionListModel): FunctionListModel {
     group_initial: "",
     group: model.groups[0] ?? "",
     summary: "",
+    // Phase-38-3:追記
+    req_ids: [],
   };
   return {
     ...model,
@@ -133,15 +137,16 @@ export function removeGroup(
   if (isGroupUsed(model, group)) return model;
   return { ...model, groups: model.groups.filter((g) => g !== group) };
 }
-
-// 関連画面の入力欄(「SCR-001/SCR-002」)と配列の相互変換。
-export function screensToText(screens: string[]): string {
-  return screens.join("/");
-}
-
-export function textToScreens(text: string): string[] {
-  return text
-    .split(/[/、,]/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-}
+// Phase-38-3：削除
+//
+// // 関連画面の入力欄(「SCR-001/SCR-002」)と配列の相互変換。
+// export function screensToText(screens: string[]): string {
+//   return screens.join("/");
+// }
+//
+// export function textToScreens(text: string): string[] {
+//   return text
+//     .split(/[/、,]/)
+//     .map((s) => s.trim())
+//     .filter((s) => s.length > 0);
+// }
