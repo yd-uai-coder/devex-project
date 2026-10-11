@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3,22-1,22-3,22-5,23-1,23-2,27-1,28-2,30-1,31-3,38-1,38-2
+# 作成：Phase-15-2｜更新：Phase-16-2,17-1,18-1,18-3,19-1,19-3,20-1,20-3,21-1,21-3,22-1,22-3,22-5,23-1,23-2,27-1,28-2,30-1,31-3,38-1,38-2,42-1
 # 写経レベル: 定型 ── テスト用のプロジェクトの組み立て。
 """詳細設計モードのテストで使うプロジェクトの組み立て(段階のサービス・ルートのテストで共有する)。"""
 
@@ -334,10 +334,10 @@ def plan_model(
 ) -> dict:
     """段階7の検証を通る横断事項と実装計画(既定の横断事項4項目・マイルストーン1つ・リスク1件)。
 
-    マイルストーンには、基盤の単位 M-01-T01(環境・設定のファイル`Dockerfile`)と、それに依存する
-    機能の単位 M-01-T02(F-01、モジュール`module`)を置く。`function_list_model()`の F-01 と
-    `module_list_model()`のパスを参照する。`function_ids`に機能一覧に無い処理IDを、`module`に
-    モジュール一覧に無いパスを渡すと、検証のエラーになる。"""
+    マイルストーンには、基盤の単位 M-01-T01(キー U-001。環境・設定のファイル`Dockerfile`)と、
+    それに依存する機能の単位 M-01-T02(キー U-002。F-01、モジュール`module`)を置く。
+    `function_list_model()`の F-01 と`module_list_model()`のパスを参照する。`function_ids`に
+    機能一覧に無い処理IDを、`module`にモジュール一覧に無いパスを渡すと、検証のエラーになる。"""
     return {
         "crosscutting": [
             {
@@ -371,6 +371,8 @@ def plan_model(
                 # ↓↓
                 "tasks": [
                     {
+                        # Phase-42-1:追記
+                        "key": "U-001",
                         "kind": "base",
                         "title": "開発環境を用意する",
                         "function_ids": [],
@@ -379,6 +381,8 @@ def plan_model(
                         "config_files": ["Dockerfile"],
                     },
                     {
+                        # Phase-42-1:追記
+                        "key": "U-002",
                         "kind": "feature",
                         "title": "予約を登録する",
                         "function_ids": ["F-01"] if function_ids is None else function_ids,
@@ -391,6 +395,8 @@ def plan_model(
         ],
         "environment": "Python 3.13 と PostgreSQL",
         "risks": [{"risk": "予約の重複", "mitigation": "一意制約で防ぐ"}],
+        # Phase-42-1:追記
+        "next_unit_seq": 3,
     }
 
 
@@ -493,16 +499,21 @@ async def create_document_project(session: AsyncSession) -> Project:
 def procedure_doc_model(
     *,
     unit_id: str = "M-01-T02",
+    # Phase-42-1:追記
+    unit_key: str = "U-002",
     title: str = "予約を登録する",
     module: str = "app/api/routes/reservations.py",
 ) -> dict:
     """`plan_model()`の機能の単位 M-01-T02 の手順書(段階8。検証を通る)。ファイルはモジュール
-    `module`とテスト1本。`unit_id`・`title`を段階7と違うものにすると検証のエラー(UNIT_MISMATCH)、
+    `module`とテスト1本。キーは`unit_key`(段階7の U-002)。`unit_key`を空にし`unit_id`・`title`を
+    段階7と違うものにすると検証のエラー(UNIT_MISMATCH)、
     `module`をモジュール一覧に無いパスにすると警告(UNKNOWN_FILE)になる。"""
     return {
         "units": [
             {
                 "unit_id": unit_id,
+                # Phase-42-1:追記
+                "unit_key": unit_key,
                 "title": title,
                 "purpose": "予約を登録できるようにする",
                 "files": [

@@ -14,11 +14,11 @@
 | [`features/implementation-procedure/demo/procedureDocModel.ts`](../samples/frontend/src/features/implementation-procedure/demo/procedureDocModel.ts) | 新規 |
 | [`features/implementation-procedure/demo/demoData.ts`](../samples/frontend/src/features/implementation-procedure/demo/demoData.ts) | 新規 |
 | [`features/implementation-procedure/demo/ImplementationProcedureDemoPageContent.tsx`](../samples/frontend/src/features/implementation-procedure/demo/ImplementationProcedureDemoPageContent.tsx) | 新規 |
-| [`app/implementation-procedure-demo/page.tsx`](../samples/frontend/src/app/implementation-procedure-demo/page.tsx) | 新規 |
+| `app/implementation-procedure-demo/page.tsx`(ステージ6の完了時に削除) | 新規 |
 | [`lib/menu-tree.ts`](../samples/frontend/src/lib/menu-tree.ts) | 更新 |
 | [`features/implementation-procedure/demo/__tests__/procedureDocModel.test.ts`](../samples/frontend/src/features/implementation-procedure/demo/__tests__/procedureDocModel.test.ts) | 新規 |
 | [`features/implementation-procedure/demo/__tests__/ImplementationProcedureDemoPageContent.test.tsx`](../samples/frontend/src/features/implementation-procedure/demo/__tests__/ImplementationProcedureDemoPageContent.test.tsx) | 新規 |
-| [`app/implementation-procedure-demo/__tests__/page.test.tsx`](../samples/frontend/src/app/implementation-procedure-demo/__tests__/page.test.tsx) | 新規 |
+| `app/implementation-procedure-demo/__tests__/page.test.tsx`(ステージ6の完了時に削除) | 新規 |
 
 コードは devex-ui の本体(`src/` 配下。ページは `src/app/(pages)/implementation-procedure-demo/`)と samples の両方に置いた(#21 on)。[Phase 14](../Phase-14/Phase-14-introduction.md) のデモは本体だけに置いたが、ステージ4完了後のルール改訂で、on でも samples を作ることになったため。
 

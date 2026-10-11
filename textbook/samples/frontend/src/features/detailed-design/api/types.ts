@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7,38-3
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7,38-3,42-1,42-2
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -256,6 +256,9 @@ export const MAX_LOGIC_TARGETS = 5;
 // タスクは実装手順書の作業単位で、機能ごとの縦割り(feature)か、処理の無い準備・デプロイ(base)。
 // マイルストーンの番号(M-01…)と単位の ID(M-01-T01…)は保存せず並び順から導く(planOps の
 // milestoneId・taskId)。依存は単位の ID で書き、並べ替えたときは planOps が付け替える。
+// Phase-42-1:追記
+// タスクは並べ替えで変わらない単位のキー(key。U-001…)を持ち、段階8の手順書はキーで単位を指す。
+// 画面で足したタスクのキーは空で、保存時に devex-api が振る。
 export type Priority = "Must" | "Should" | "Could";
 // Phase-26-5：更新
 // export type TaskArea = "準備" | "バックエンド" | "フロントエンド" | "テスト" | "デプロイ";
@@ -266,12 +269,16 @@ export type CrossCuttingRow = {
   topic: string; // 項目(例外と HTTP など)
   policy: string; // 方針
   modules: string[]; // 関わるファイルの例(段階4のパスや設定のファイル。検証しない)
+  // Phase-42-2:追記
+  req_ids: string[]; // 担う要件ID(非機能要件・制約を含む。変更の影響を非機能要件からたどる)
 };
 
 export type PlanTask = {
   // Phase-26-5：更新
   // area: TaskArea;
   // ↓↓
+  // Phase-42-1:追記
+  key: string; // 単位のキー(空なら保存時に devex-api が振る)
   kind: UnitKind;
   title: string;
   // Phase-26-5：更新
@@ -282,6 +289,8 @@ export type PlanTask = {
   depends_on: string[]; // 先に終わっている必要がある単位の ID(前の単位だけ)
   modules: string[]; // 段階4のモジュール一覧のパス(検証する)
   config_files: string[]; // 環境・設定のファイルの例(検証しない)
+  // Phase-42-1:追記
+  req_ids: string[]; // 要件ID(簡易モードの WBS だけが埋める。画面では編集しないが、保存で消さない)
 };
 
 // Phase-26-5:追記
@@ -302,6 +311,8 @@ export type PlanModel = {
   milestones: Milestone[];
   environment: string; // 開発環境・CI/CD・事前準備
   risks: Risk[];
+  // Phase-42-1:追記
+  next_unit_seq: number; // 次に振る単位のキーの番号
 };
 
 // devex-api の PRIORITIES・UNIT_KINDS・MAX_UNIT_FUNCTIONS・CROSSCUTTING_TOPICS と同じ値
@@ -315,8 +326,12 @@ export const CROSSCUTTING_TOPICS = ["例外と HTTP", "認証", "トランザク
 
 // Phase-27-3:追記
 // 段階8 実装手順書の意味モデル(devex-api app/detailed_design/procedure_doc.py)。作業単位の正本は
-// 段階7で、手順書は単位の ID と作ったときのタスク名を持つ(段階7と合わなくなった手順書は検証の
-// エラー)。設計は書き写さず、参照する設計は単位の処理ID・モジュールから導く。
+// Phase-42-1：更新
+// // 段階7で、手順書は単位の ID と作ったときのタスク名を持つ(段階7と合わなくなった手順書は検証の
+// // エラー)。設計は書き写さず、参照する設計は単位の処理ID・モジュールから導く。
+// ↓↓
+// 段階7で、手順書は単位のキー・単位の ID・作ったときのタスク名を持つ(単位の ID は、devex-api が
+// 読むときにキーから今の並び順で付け直す。タスク名が合わなくなった手順書は検証のエラー)。設計は書き写さず、参照する設計は単位の処理ID・モジュールから導く。
 // units は手順書のある単位だけ(無い単位は、まだ手順書を生成していない)。
 export type UnitFileKind = "module" | "test" | "config";
 
@@ -345,6 +360,8 @@ export type AiFinding = {
 
 export type UnitProcedure = {
   unit_id: string;
+  // Phase-42-1:追記
+  unit_key: string; // 段階7の単位のキー(簡易モードは単位の ID)
   title: string;
   purpose: string;
   files: UnitFile[];

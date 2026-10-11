@@ -1,4 +1,4 @@
-// 作成：Phase-23-5｜更新：Phase-26-5
+// 作成：Phase-23-5｜更新：Phase-26-5,42-1,42-2
 // 写経レベル: 定型 ── 行の追加・更新・削除が大半。マイルストーンの番号を保存せず並び順から導く点と、タスクを入れ子で更新する点がコア。
 // Phase-26-5：更新 ── import の TASK_AREAS・TaskArea を UNIT_KINDS・UnitKind に替えた
 import {
@@ -31,6 +31,8 @@ export function toPlan(model: Record<string, unknown> | null): PlanModel {
       topic: String(row.topic ?? ""),
       policy: String(row.policy ?? ""),
       modules: strings(row.modules),
+      // Phase-42-2:追記
+      req_ids: strings(row.req_ids),
     })),
     milestones: list(model?.milestones).map((row) => ({
       name: String(row.name ?? ""),
@@ -46,12 +48,16 @@ export function toPlan(model: Record<string, unknown> | null): PlanModel {
       // })),
       // ↓↓
       tasks: list(row.tasks).map((task) => ({
+        // Phase-42-1:追記
+        key: String(task.key ?? ""),
         kind: pick<UnitKind>(task.kind, UNIT_KINDS, "feature"),
         title: String(task.title ?? ""),
         function_ids: strings(task.function_ids),
         depends_on: strings(task.depends_on),
         modules: strings(task.modules),
         config_files: strings(task.config_files),
+        // Phase-42-1:追記
+        req_ids: strings(task.req_ids),
       })),
     })),
     environment: String(model?.environment ?? ""),
@@ -59,6 +65,8 @@ export function toPlan(model: Record<string, unknown> | null): PlanModel {
       risk: String(row.risk ?? ""),
       mitigation: String(row.mitigation ?? ""),
     })),
+    // Phase-42-1:追記
+    next_unit_seq: Number(model?.next_unit_seq ?? 1),
   };
 }
 
@@ -100,7 +108,10 @@ const removeAt = <T>(items: T[], index: number): T[] => items.filter((_, i) => i
 
 // 項目を足す。topic を渡すと、その項目名で足す(欠けている既定の項目を足すボタン)。
 export function addCrossCutting(model: PlanModel, topic = ""): PlanModel {
-  const row: CrossCuttingRow = { topic, policy: "", modules: [] };
+  // Phase-42-2：更新
+  // const row: CrossCuttingRow = { topic, policy: "", modules: [] };
+  // ↓↓
+  const row: CrossCuttingRow = { topic, policy: "", modules: [], req_ids: [] };
   return { ...model, crosscutting: [...model.crosscutting, row] };
 }
 
@@ -191,13 +202,19 @@ export function addTask(model: PlanModel, milestone: number): PlanModel {
   // Phase-26-5：更新
   // const task: PlanTask = { area: "バックエンド", title: "", modules: [], function_ids: [] };
   // ↓↓
+  // Phase-42-1:追記
+  // キーは空で足し、保存時に devex-api が振る
   const task: PlanTask = {
+    // Phase-42-1:追記
+    key: "",
     kind: "feature",
     title: "",
     function_ids: [],
     depends_on: [],
     modules: [],
     config_files: [],
+    // Phase-42-1:追記
+    req_ids: [],
   };
   const tasks = [...model.milestones[milestone].tasks, task];
   return updateMilestone(model, milestone, { tasks });

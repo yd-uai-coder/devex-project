@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
 # Phase-31-4：更新(docstring: 簡易モードの段階8は、作業単位を WBS、参照を内部設計書から取ること)
@@ -51,6 +51,7 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 # Phase-36-2:追記 ── app.services.llm_retry.invoke_structured
 # Phase-36-2：削除 ── langchain_core.messages.BaseMessage, app.services.llm_retry.invoke_with_retry, app.uml.generation.failures.unwrap_structured_result(_invoke_structured を llm_retry.invoke_structured へ移した)
 # Phase-38-2:追記 ── app.detailed_design.requirement_trace.api_req_ids
+# Phase-42-1:追記 ── app.detailed_design.plan.carry_over_unit_keys, app.detailed_design.procedure_doc.relabel_units
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
@@ -110,7 +111,12 @@ from app.detailed_design.logic_drafting import (
     calling_step_rows,
     to_logic_draft,
 )
-from app.detailed_design.plan import PLAN_STAGE, PlanModel, normalize_plan
+from app.detailed_design.plan import (
+    PLAN_STAGE,
+    PlanModel,
+    carry_over_unit_keys,
+    normalize_plan,
+)
 from app.detailed_design.plan_drafting import (
     CrossCuttingGenerationOutput,
     PlanGenerationOutput,
@@ -134,6 +140,7 @@ from app.detailed_design.procedure_doc import (
     find_unit,
     merge_unit_procedure,
     plan_units,
+    relabel_units,
 )
 from app.detailed_design.procedure_doc import generation_targets as unit_generation_targets
 from app.detailed_design.procedure_doc_drafting import (
@@ -513,7 +520,7 @@ async def generate_plan(context: StageGenerationContext) -> dict:
 
     詳細設計書は 01〜06章だけを md にして渡す(07 横断事項は、この段階自身が作るため)。図は
     描かない(md の画像は入力に要らず、図を`exported`にもしない)。作り直しは全体を置き換える
-    (段階4と同じ)。"""
+    (段階4と同じ)が、タスク名が同じ単位は前のキーを引き継ぐ(段階8の手順書を付けたままにする)。"""
     project = await context.session.get(Project, context.project_id)
     if project is None:
         raise RuntimeError("project not found")
@@ -551,7 +558,11 @@ async def generate_plan(context: StageGenerationContext) -> dict:
     # model = normalize_plan(to_plan_model(crosscutting, plan_output), [row.path for row in modules])
     # ↓↓
     model = normalize_plan(to_plan_model(crosscutting, plan_output), paths)
-    return model.model_dump(mode="json")
+    # Phase-42-1：更新
+    # return model.model_dump(mode="json")
+    # ↓↓
+    previous = PlanModel.model_validate(context.previous or {})
+    return carry_over_unit_keys(model, previous).model_dump(mode="json")
 
 
 # Phase-28-2:追記
@@ -655,13 +666,19 @@ STAGE_GENERATORS: dict[int, StageGenerator] = {
 # def _has_draft(stage: int, model: Mapping[str, Any] | None) -> bool:
 # ↓↓
 def _has_draft(
-    stage: int, model: Mapping[str, Any] | None, targets: tuple[str, ...] = ()
+    # Phase-42-1：更新
+    # stage: int, model: Mapping[str, Any] | None, targets: tuple[str, ...] = ()
+    # ↓↓
+    stage: int,
+    model: Mapping[str, Any] | None,
+    targets: tuple[str, ...] = (),
+    sources: StageSources | None = None,
 ) -> bool:
     """作り直し(`regenerated`)か初回(`draft`)かの判定に使う、「下書きの内容がある」か。
     段階2は、人がグループの選択だけを保存してから初めて生成するので、処理概要表の行で判定する。
     段階5は、対象の処理にもともと手順があったか(他の処理の手順は置き換えないので数えない)。
     段階6も同じく、対象の関数にもともと詳細があったか。段階8は、対象の単位にもともと手順書が
-    あったか。"""
+    あったか(手順書の ID は、入力`sources`の作業単位からキーで付け直して比べる)。"""
     if not model:
         return False
     if stage == 2:
@@ -676,8 +693,12 @@ def _has_draft(
     # ── ここから Phase-16-4 の作成分 ──
     # Phase-28-2:追記
     if stage == PROCEDURE_DOC_STAGE:
-        units = ProcedureDocModel.model_validate(model).units
-        return any(u.unit_id in targets for u in units)
+        # Phase-42-1：更新
+        # units = ProcedureDocModel.model_validate(model).units
+        # return any(u.unit_id in targets for u in units)
+        # ↓↓
+        doc = relabel_units(ProcedureDocModel.model_validate(model), _plan(sources))
+        return any(u.unit_id in targets for u in doc.units)
     return True
 
 
@@ -970,7 +991,10 @@ class DesignStageGenerationService:
         # ↓↓
         targets = _targets(stage, row.model, function_ids, logics, unit_ids, sources)
         # ── ここから Phase-20-3 の作成分 ──
-        regenerating = _has_draft(stage, row.model, targets)
+        # Phase-42-1：更新
+        # regenerating = _has_draft(stage, row.model, targets)
+        # ↓↓
+        regenerating = _has_draft(stage, row.model, targets, sources)
         # ── ここから Phase-16-4 の作成分 ──
         fingerprint = await self._stages.current_fingerprint(project, stage)
         # Phase-17-3:追記

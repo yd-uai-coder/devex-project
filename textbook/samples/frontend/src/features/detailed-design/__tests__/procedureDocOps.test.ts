@@ -1,4 +1,4 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38(完了後の調整)
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38(完了後の調整),42-1
 // Phase-38(完了後の調整):追記 ── @/features/detailed-design/procedureDocOps(reassignTargets, reassignUnit, removeStrayProcedures, removeUnitAt, strayProcedures)
 import { describe, expect, it } from "vitest";
 import { FINDING_LEVELS, type StageIssue } from "@/features/detailed-design/api/types";
@@ -74,6 +74,8 @@ describe("procedureDocOps", () => {
     });
 
     expect(doc.units[0].title).toBe("");
+    // Phase-42-1:追記
+    expect(doc.units[0].unit_key).toBe("");
     expect(doc.units[0].files[0].kind).toBe("module");
     // Phase-31-5：更新
     // expect(doc.units[0].findings[0]).toEqual({ level: "major", target: "", message: "", fix_stage: 8 });
@@ -98,6 +100,12 @@ describe("procedureDocOps", () => {
     const renamed = makeProcedureDoc();
     renamed.units[0].title = "別のタスク";
     expect(procedureUnits(makePlan(), renamed)[1].hasProcedure).toBe(false);
+    // Phase-42-1:追記
+    // 単位のキー(タスクにキーが無ければ単位の ID)
+    expect(units.map((u) => u.key)).toEqual(["U-001", "U-002"]);
+    const unkeyed = makePlan();
+    unkeyed.milestones[0].tasks[0].key = "";
+    expect(procedureUnits(unkeyed, makeProcedureDoc())[0].key).toBe("M-01-T01");
   });
 
   it("collectFindings は重要度のある検証の指摘と AI の指摘をまとめ、重要度の順に並べる", () => {
@@ -249,13 +257,25 @@ describe("procedureDocOps", () => {
       ]);
     });
 
-    it("reassignUnitは ID とタスク名だけを付け替え、中身はそのまま残す", () => {
+    // Phase-42-1：更新
+    // it("reassignUnitは ID とタスク名だけを付け替え、中身はそのまま残す", () => {
+    // ↓↓
+    it("reassignUnitはキー・ID・タスク名だけを付け替え、中身はそのまま残す", () => {
       const doc = docWithStrays();
-      const moved = reassignUnit(doc, 1, { id: "M-01-T01", title: "開発環境を用意する" });
+      // Phase-42-1：更新
+      // const moved = reassignUnit(doc, 1, { id: "M-01-T01", title: "開発環境を用意する" });
+      // ↓↓
+      const moved = reassignUnit(doc, 1, {
+        id: "M-01-T01",
+        key: "U-001",
+        title: "開発環境を用意する",
+      });
 
       expect(moved.units[1]).toEqual({
         ...doc.units[1],
         unit_id: "M-01-T01",
+        // Phase-42-1:追記
+        unit_key: "U-001",
         title: "開発環境を用意する",
       });
       expect(moved.units[0]).toBe(doc.units[0]);

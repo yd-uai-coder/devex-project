@@ -1,4 +1,4 @@
-// 作成：Phase-23-6｜更新：Phase-26-5
+// 作成：Phase-23-6｜更新：Phase-26-5,42-2
 // 写経レベル: 定型 ── 表の入力欄の並びが大半。
 "use client";
 
@@ -51,14 +51,21 @@ type TableProps = {
   onChange: (model: PlanModel) => void;
 };
 
-// 07 横断事項の表(項目 / 方針 / 関わるファイル(例))。既定の項目のうち行の無いものは、ボタンで足せる。
+// Phase-42-2：更新
+// // 07 横断事項の表(項目 / 方針 / 関わるファイル(例))。既定の項目のうち行の無いものは、ボタンで足せる。
+// ↓↓
+// 07 横断事項の表(項目 / 方針 / 関わるファイル(例) / 要件)。既定の項目のうち行の無いものは、ボタンで
+// 足せる。
 export function CrossCuttingTable({ model, disabled, onChange }: TableProps) {
   const missing = missingTopics(model);
   return (
     <YStack gap="$2">
       <Text fontWeight="700">07 横断事項</Text>
       <Paragraph color="$color11" fontSize="$2">
+        {/* Phase-42-2：更新
         全処理に共通する実装の方針です。詳細設計書の07章になります。関わるファイルは例として「,」で区切って書きます(段階4のモジュール一覧のパスや設定のファイル。検証はしません)。
+        ↓↓ */}
+        全処理に共通する実装の方針です。詳細設計書の07章になります。関わるファイルは例として「,」で区切って書きます(段階4のモジュール一覧のパスや設定のファイル。検証はしません)。要件には、その方針が担う要件ID(非機能要件・制約を含む)を「,」で区切って書きます(要件を変えたときの影響をたどるのに使います)。
       </Paragraph>
       {model.crosscutting.length === 0 ? (
         <Text color="$color11">横断事項はまだありません。</Text>
@@ -70,6 +77,8 @@ export function CrossCuttingTable({ model, disabled, onChange }: TableProps) {
                 <th style={HEAD}>項目</th>
                 <th style={HEAD}>方針</th>
                 <th style={HEAD}>関わるファイル(例)</th>
+                {/* Phase-42-2:追記 */}
+                <th style={HEAD}>要件</th>
                 <th style={HEAD} />
               </tr>
             </thead>
@@ -106,6 +115,16 @@ export function CrossCuttingTable({ model, disabled, onChange }: TableProps) {
                         items={row.modules}
                         disabled={disabled}
                         onChange={(modules) => update({ modules })}
+                      />
+                    </td>
+                    {/* Phase-42-2:追記 */}
+                    <td style={{ ...CELL, minWidth: 120 }}>
+                      <ListInput
+                        style={{ ...INPUT, ...MONO }}
+                        label={`${label} の要件`}
+                        items={row.req_ids}
+                        disabled={disabled}
+                        onChange={(reqIds) => update({ req_ids: reqIds })}
                       />
                     </td>
                     <td style={CELL}>

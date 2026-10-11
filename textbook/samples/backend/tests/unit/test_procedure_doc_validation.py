@@ -1,4 +1,4 @@
-# 作成：Phase-27-2｜更新：Phase-29-5,38(完了後の調整)
+# 作成：Phase-27-2｜更新：Phase-29-5,38(完了後の調整),42-1
 """段階8 実装手順書の検証(決定的な実装可能性チェック)のテスト。
 
 SUT は`validate_procedure_doc`(`STAGE_VALIDATORS[8]`)と`validate_stage`、ドライバはこのテスト。
@@ -60,7 +60,11 @@ def test_duplicate_unit_is_error_once() -> None:
 
 
 def test_unit_not_in_plan_is_mismatch() -> None:
-    issues = validate_procedure_doc(procedure_doc_model(unit_id="M-02-T01"), _sources())
+    # Phase-42-1：更新
+    # issues = validate_procedure_doc(procedure_doc_model(unit_id="M-02-T01"), _sources())
+    # ↓↓
+    model = procedure_doc_model(unit_id="M-02-T01", unit_key="")
+    issues = validate_procedure_doc(model, _sources())
 
     assert [(i.code, i.severity, i.fix_stage) for i in issues] == [("UNIT_MISMATCH", "error", 8)]
     # Phase-38(完了後の調整):追記

@@ -1,4 +1,4 @@
-// 作成：Phase-23-5｜更新：Phase-26-5
+// 作成：Phase-23-5｜更新：Phase-26-5,42-1,42-2
 // 写経レベル: 定型 ── 純粋関数の入出力の確認。
 // Phase-26-5:追記 ── UNIT_KINDS, MAX_UNIT_FUNCTIONS, PlanModel(api/types), UNIT_KIND_LABELS(labels), milestoneFunctions, moveTask, relinkDependencies, taskId(planOps)
 import { describe, expect, it } from "vitest";
@@ -82,20 +82,36 @@ describe("planOps", () => {
 
   // Phase-26-5:追記
   it("toPlan は空・形の崩れた値をそろえる(優先度・種別は選択肢に無ければ既定値)", () => {
-    expect(toPlan(null)).toEqual({ crosscutting: [], milestones: [], environment: "", risks: [] });
+    // Phase-42-1：更新
+    // expect(toPlan(null)).toEqual({ crosscutting: [], milestones: [], environment: "", risks: [] });
+    // ↓↓
+    expect(toPlan(null)).toEqual({
+      crosscutting: [],
+      milestones: [],
+      environment: "",
+      risks: [],
+      next_unit_seq: 1,
+    });
     const plan = toPlan({
       crosscutting: [{ topic: "認証" }],
       milestones: [{ name: "a", priority: "Won't", tasks: [{ kind: "運用", title: "t" }] }],
     });
-    expect(plan.crosscutting).toEqual([{ topic: "認証", policy: "", modules: [] }]);
+    // Phase-42-2：更新
+    // expect(plan.crosscutting).toEqual([{ topic: "認証", policy: "", modules: [] }]);
+    // ↓↓
+    expect(plan.crosscutting).toEqual([{ topic: "認証", policy: "", modules: [], req_ids: [] }]);
     expect(plan.milestones[0].priority).toBe("Must");
     expect(plan.milestones[0].tasks[0]).toEqual({
+      // Phase-42-1:追記
+      key: "",
       kind: "feature",
       title: "t",
       function_ids: [],
       depends_on: [],
       modules: [],
       config_files: [],
+      // Phase-42-1:追記
+      req_ids: [],
     });
     expect(hasPlanDraft(toPlan(null))).toBe(false);
   });
@@ -125,8 +141,14 @@ describe("planOps", () => {
   it("横断事項・リスクを足す・直す・消す", () => {
     let plan = toPlan(null);
     plan = addCrossCutting(plan);
-    plan = updateCrossCutting(plan, 0, { topic: "ログ", modules: ["app/main.py"] });
-    expect(plan.crosscutting).toEqual([{ topic: "ログ", policy: "", modules: ["app/main.py"] }]);
+    // Phase-42-2：更新
+    // plan = updateCrossCutting(plan, 0, { topic: "ログ", modules: ["app/main.py"] });
+    // expect(plan.crosscutting).toEqual([{ topic: "ログ", policy: "", modules: ["app/main.py"] }]);
+    // ↓↓
+    plan = updateCrossCutting(plan, 0, { topic: "ログ", modules: ["app/main.py"], req_ids: ["NFR-002"] });
+    expect(plan.crosscutting).toEqual([
+      { topic: "ログ", policy: "", modules: ["app/main.py"], req_ids: ["NFR-002"] },
+    ]);
     expect(removeCrossCutting(plan, 0).crosscutting).toEqual([]);
 
     plan = updateRisk(addRisk(plan), 0, { risk: "遅延" });
@@ -154,14 +176,20 @@ describe("planOps", () => {
     plan = addTask(plan, 0);
     plan = updateTask(plan, 0, 0, { kind: "base", config_files: ["Dockerfile"] });
     expect(plan.milestones[0]).toMatchObject({ name: "M", priority: "Could" });
+    // Phase-42-1:追記
+    // 足したタスクのキーは空(保存時に devex-api が振る)
     expect(plan.milestones[0].tasks).toEqual([
       {
+        // Phase-42-1:追記
+        key: "",
         kind: "base",
         title: "",
         function_ids: [],
         depends_on: [],
         modules: [],
         config_files: ["Dockerfile"],
+        // Phase-42-1:追記
+        req_ids: [],
       },
     ]);
     expect(removeTask(plan, 0, 0).milestones[0].tasks).toEqual([]);
@@ -174,6 +202,20 @@ describe("planOps", () => {
     expect(plan.milestones.map((m) => m.name)).toEqual(["b", "a"]);
     expect(moveMilestone(plan, 0, -1)).toBe(plan);
     expect(moveMilestone(plan, 1, 1)).toBe(plan);
+  });
+
+  // Phase-42-1:追記
+  it("toPlan は単位のキー・要件ID・次の番号を保ち、並べ替えてもキーはタスクに付いたまま", () => {
+    const saved = makePlan();
+    saved.milestones[0].tasks[1].req_ids = ["FR-001"];
+    const plan = toPlan(saved as unknown as Record<string, unknown>);
+    expect(plan.next_unit_seq).toBe(3);
+    expect(plan.milestones[0].tasks[1].req_ids).toEqual(["FR-001"]);
+    const moved = moveTask(plan, 0, 1, -1);
+    expect(moved.milestones[0].tasks.map((t) => [t.key, t.title])).toEqual([
+      ["U-002", "予約を登録する"],
+      ["U-001", "開発環境を用意する"],
+    ]);
   });
   // Phase-26-5:追記
   it("moveTask はマイルストーンの中で入れ替え、依存先の ID を付け替える", () => {

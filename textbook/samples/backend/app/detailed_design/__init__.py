@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2,29-1,29-2
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2,29-1,29-2,42-1
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -18,6 +18,7 @@
 # Phase-28-2:追記 ── app.detailed_design.procedure_doc(MAX_PROCEDURE_DOC_TARGETS, documented_unit_ids, merge_unit_procedure)
 # Phase-29-1:追記 ── app.detailed_design.procedure.StepKind, app.detailed_design.procedure.calls_function
 # Phase-29-2:追記 ── app.detailed_design.sequence(Participant, SequenceDiagram, SequenceIssue, SequenceMessage, SequenceNote, module_dependencies, reachable_callees, stubs_outside_sequence, sut_participant, to_mermaid, to_sequence)
+# Phase-42-1:追記 ── app.detailed_design.plan(assign_unit_keys, carry_over_unit_keys, unit_key), app.detailed_design.procedure_doc.relabel_units
 from app.detailed_design.api_list import (
     ApiEndpoint,
     endpoint_key,
@@ -86,6 +87,8 @@ from app.detailed_design.plan import (
     PlanTask,
     Risk,
     UnitKind,
+    assign_unit_keys,
+    carry_over_unit_keys,
     is_file_path,
     milestone_functions,
     milestone_id,
@@ -94,6 +97,7 @@ from app.detailed_design.plan import (
     planned_function_ids,
     task_id,
     unit_ids,
+    unit_key,
     unplanned_functions,
 )
 from app.detailed_design.procedure import (
@@ -131,6 +135,7 @@ from app.detailed_design.procedure_doc import (
     find_unit,
     merge_unit_procedure,
     plan_units,
+    relabel_units,
     unit_refs,
 )
 from app.detailed_design.sequence import (
@@ -300,6 +305,9 @@ __all__ = [
     # Phase-17-1:追記
     "dfd_subject",
     "doc_key",
+    # Phase-42-1:追記
+    "assign_unit_keys",
+    "carry_over_unit_keys",
     "endpoint_key",
     # Phase-18-1:追記
     "er_table_names",
@@ -356,6 +364,8 @@ __all__ = [
     # Phase-28-1:追記
     "find_unit",
     # Phase-23-1:追記
+    # Phase-42-1:追記
+    "relabel_units",
     "planned_function_ids",
     # Phase-20-1:追記
     "resolve_callee",
@@ -407,4 +417,6 @@ __all__ = [
     "sut_participant",
     "to_mermaid",
     "to_sequence",
+    # Phase-42-1:追記
+    "unit_key",
 ]

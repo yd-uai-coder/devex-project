@@ -1,4 +1,4 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整)
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2
 # 写経レベル: コア ── 段階ごとの検証の登録(STAGE_VALIDATORS)と、エラーと警告の分け方。
 # Phase-23-1：更新(docstring: 段階7の検証を登録したことと、その入力を書いた)
 # Phase-26-1：更新(docstring: 段階7が段階4のモジュール一覧も使うことを書いた)
@@ -48,6 +48,7 @@ Phase 23、段階8は Phase 27。登録の無い段階は検証なし)。
 # Phase-31-3:追記 ── app.detailed_design.procedure_basis(ProcedureBasis, procedure_basis), app.detailed_design.procedure_doc.DesignDocument, app.detailed_design.stages.ProjectMode
 # Phase-31-3：削除 ── app.detailed_design.plan.PLAN_STAGE, app.detailed_design.procedure_doc(design_index, plan_units)
 # Phase-38-1:追記 ── app.detailed_design.requirement_trace(RequirementIndex, index_from_external_design, index_from_requirements, unit_req_ids)
+# Phase-42-1:追記 ── app.detailed_design.procedure_doc.relabel_units
 from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -102,6 +103,7 @@ from app.detailed_design.procedure_doc import (
     PlanUnit,
     ProcedureDocModel,
     UnitProcedure,
+    relabel_units,
     spelling_match,
     unit_refs,
 )
@@ -342,6 +344,28 @@ def _unknown_requirements(
             "UNKNOWN_REQUIREMENT_ID", f"{owner} の要件 {req} が要件定義書にありません。", owner
         )
         for req in req_ids
+        if req not in known
+    ]
+
+
+# Phase-42-2:追記
+def _crosscutting_requirement_issues(
+    parsed: PlanModel, sources: StageSources
+) -> list[StageIssue]:
+    """横断事項の要件ID のうち、要件定義書に無いもの(警告)。照合は段階1と同じく外部設計書の
+    model に写した要件ID の一覧で、一覧が無ければ照合しない。"""
+    index = index_from_external_design(sources.document_models.get("external_design"))
+    if not index.available:
+        return []
+    known = set(index.known_ids)
+    return [
+        _warning(
+            "UNKNOWN_REQUIREMENT_ID",
+            f"横断事項「{row.topic.strip()}」の要件 {req} が要件定義書にありません。",
+            row.topic.strip(),
+        )
+        for row in parsed.crosscutting
+        for req in row.req_ids
         if req not in known
     ]
 
@@ -789,6 +813,8 @@ def validate_plan(model: Mapping[str, Any], sources: StageSources) -> list[Stage
     for topic in missing_topics(parsed):
         message = f"横断事項に「{topic}」がありません。"
         issues.append(_warning("MISSING_TOPIC", message, topic))
+    # Phase-42-2:追記
+    issues += _crosscutting_requirement_issues(parsed, sources)
 
     if not parsed.milestones:
         issues.append(_error("NO_MILESTONE", "マイルストーンが1件もありません。"))
@@ -975,6 +1001,8 @@ def _matched_procedures(
 ) -> tuple[list[StageIssue], list[tuple[UnitProcedure, PlanUnit]]]:
     """手順書を作業単位と突き合わせる(両モード共通)。戻り値は、手順書そのもののエラー
     (同じ単位が2つ・単位が無い・タスク名が違う)と、単位と合った手順書の組。"""
+    # Phase-42-1:追記
+    parsed = relabel_units(parsed, basis.plan)
     by_id = {unit.unit_id: unit for unit in basis.units}
     source = basis.labels.plan
     issues: list[StageIssue] = []
@@ -1011,7 +1039,10 @@ def _matched_procedures(
                 # f"「{unit.task.title.strip()}」です(段階7を並べ替えたか改名しました。"
                 # ↓↓
                 f"{uid} の手順書は「{doc.title.strip()}」のものですが、{source}の {uid} は"
-                f"「{unit.task.title.strip()}」です({source}を並べ替えたか改名しました。"
+                # Phase-42-1：更新
+                # f"「{unit.task.title.strip()}」です({source}を並べ替えたか改名しました。"
+                # ↓↓
+                f"「{unit.task.title.strip()}」です({source}で改名しました。"
                 # Phase-38(完了後の調整)：更新
                 # "手順書を作り直してください)。"
                 # ↓↓

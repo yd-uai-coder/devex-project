@@ -476,6 +476,21 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 * **要件 → 処理**: 段階1の機能の行に`req_ids`を足す(`FunctionRow`)。段階1の検証に、処理の無い Must の機能要件(中程度)・要件の無い処理(軽微)・要件定義書に無い要件ID(軽微)を足す。要件定義書に model が無いプロジェクトは「要件ID が無い」の軽微な指摘だけにする。簡易モードは`simple_procedure/wbs.parse_wbs`が WBS の「要件」の行を読む。
   * **Phase 38 で実装した部分**: 追跡の純粋関数は`app/detailed_design/requirement_trace.py`(`RequirementIndex`・`index_from_requirements`・`index_from_external_design`・`api_req_ids`・`normalize_req_id`・`unit_req_ids`・`requirement_trace`・`constraint_rows`)。段階1の処理を読むので`app/documents`でなく`app/detailed_design`に置いた。`FunctionRow.req_ids`・`FunctionDraft.req_ids`、`merge_draft`の`api_req_ids`(外部設計書の model の API 行を`endpoint_key`で引き、在れば写す。再生成で前の版の`req_ids`は引き継がない)。`StageSources.document_models`(入力の文書の表示中の版の model。`DesignStageService._sources`が詰める)。段階1の検証は外部設計書の model の写し(`known_req_ids`・`must_fr_ids`)と照らすので、段階1の入力(fingerprint)は増えない。`PlanTask.req_ids`は簡易モードの WBS の「要件」欄だけが埋め(`parse_wbs`。「要件ID」も可、`fr-1`は`FR-001`にそろえ、形の違う値は`WBS_FORMAT`の軽微)、`normalize_plan`も引き継ぐ。`ProcedureBasis.functions()`・`unit_req_ids()`(詳細設計モードは単位の処理の段階1の要件から導く)。`ProcedureOutputSource`は要件定義書の model から`requirements_available`・`unit_reqs`・`trace`・`constraints`・`requirement_texts`を持ち、index の md・HTML が「要件との対応」と非機能要件・制約の表を組み立てる。`DesignStageRead.unit_req_ids`(段階8だけ)。検証のコード: 段階1 `MUST_REQUIREMENT_UNPROCESSED`・`UNLINKED_FUNCTION`・`UNKNOWN_REQUIREMENT_ID`・`REQUIREMENT_IDS_MISSING`(すべて警告)、簡易モードの段階8 `MUST_REQUIREMENT_UNPLANNED`(中程度)・`UNLINKED_UNIT`・`UNKNOWN_REQUIREMENT_ID`・`REQUIREMENT_IDS_MISSING`(軽微)。詳細設計モードの段階8には足さない(段階1の検証と段階7の計画の漏れで追える)。
 
+### 7. 変更影響分析・変更管理(ステージ7)
+
+[外部設計書](external_design.md) 2.10節の内部の方針(Phase 41で確定)。経緯は[`textbook/Phase-41/Phase-41-2.md`](../textbook/Phase-41/Phase-41-2.md)。テーブル・API・マイグレーションは Phase 42 以降の着手時に決める(未確定事項は[`textbook/Phase-41/Phase-41-5.md`](../textbook/Phase-41/Phase-41-5.md))。
+
+* **要素と参照は model から導く(純粋関数)**: 要件・画面・API(`endpoint_key`)は文書の model、処理・要約・CRUD・モジュール・手順・処理ロジック・作業単位・横断事項・単位の手順書は段階1〜8 の model から、要素(キー・置き場)と「A が B を参照する」辺(種類つき)を作る。本文の文字列からは辺を作らない。モジュールとテーブルの辺は、段階5の手順の行(呼び出し先と DB 欄が同じ行)から導く。グラフは標準ライブラリで足りる(外部のグラフライブラリは使わない)。
+* **たどり方**: 「処理を軸」の規則(外部設計書 2.10)。改名は直接の参照元だけ。理由は辺の種類から決まる文。LLM は呼ばない。
+* **横断事項の要件ID**: 段階7の横断事項に`req_ids`を足す(Phase 38 の案2。影響分析が使う)。
+* **作業単位の安定キー**: 段階7の`PlanTask`に並べ替えで変わらないキーを持たせ、段階8の`UnitProcedure`(今は位置で決まる`unit_id`をキーにしている)と影響の記録はそのキーで指す。
+* **Phase 42 で実装した部分**(経緯は[`textbook/Phase-42/Phase-42-introduction.md`](../textbook/Phase-42/Phase-42-introduction.md)):
+  * **安定キー**: `PlanTask.key`(`U-001`…)と`PlanModel.next_unit_seq`。`assign_unit_keys`がキーの無い・重複したタスクに次の番号を振る(段階7の保存時と生成時)。作り直しは`carry_over_unit_keys`でタスク名が同じ単位のキーを引き継ぐ。段階8は`UnitProcedure.unit_key`で単位に付き、表示の`unit_id`は`relabel_units`が今の並び順から付け直す(検証・出力・画面の応答・生成の前)。キーの無い単位(簡易モードの WBS)は単位の ID をキーにする(`PlanUnit.key`)。改名(タスク名の不一致)は今までどおり`UNIT_MISMATCH`。既存データは Alembic `d4e5f6a7b8c0`(段階7に並び順でキーを振り、段階8を今の`unit_id`で突き合わせる。状態と版は変えない)。単位の間の`depends_on`は表示の ID のまま。
+  * **横断事項の要件ID**: `CrossCuttingRow.req_ids`。横断事項の生成(構造化出力)が要件定義書の ID を書き(形をそろえ、形の違う値は捨てる)、検証は外部設計書の model の要件ID の一覧と照らして`UNKNOWN_REQUIREMENT_ID`(警告)。画面の横断事項の表に「要件」の列。
+  * **要素と参照・たどり方**: `app/detailed_design/impact/`(`elements`・`trace`。純粋関数)。`DesignModels.from_dicts(stages, documents, er_tables)` → `build_elements` → `impact_of(elements, Change(key, kind))` → `ImpactItem(key, path, reason)`。辺は12種(デモの11種に、手順書が参照する手順・処理ロジックの`implements`を足した。手順書の参照は段階8の`unit_refs`と同じ規則)。モジュールとテーブルの辺は、手順の行の DB 欄(`parse_db_tables`。段階3 の CRUD・ER に在る名前だけ)と同じ行の呼び出し先から作る。API・画面・写しはまだ無い(Phase 43・44)。
+* **差分**: 段階は直前の承認時の model の写し(1件)と今の model を、要素のキーで比べる。文書は`generated_documents.model`の版同士を比べる。今の陳腐化(`app/detailed_design/stages.py`の`derive_states`。段階単位・版数の比較)は変えず、その上に要素の印と「確認済み」を重ねる。
+* **簡易モード**: 内部設計書・実装計画書を意味モデルにする(要件定義書・外部設計書と同じ「構造化出力 → model → md」)。段階8が読む今の解析(`app/simple_procedure/`)は model を読むようにする。
+
 ---
 
 ## 3.4 例外処理・エラーハンドリング・ログ設計

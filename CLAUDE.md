@@ -117,7 +117,7 @@ When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the tar
 - **共通**: リポジトリ直下のインフラ・設定ファイル(compose・CI・デプロイ設定など)は samples にミラーせず、AI が直接書く(Phase 1・5 からの前例を明文化)。
 - **経緯**: 旧ルールでは納期モードでも工程をあまり省けず、一方でテスト観点が教材から省かれた。また、手で実装しても設計理解は思ったほど実感できなかったため、Phase 7(ステージ3)から自動実装で先に完成させ、完成品から仕様を追う方針に切り替えた。旧モードとの対応: Phase 1〜6 = off、Phase 7〜24 = on(Phase 0 は設計フェーズで対象外)。詳細は [`textbook/appendix/overall-retrospective.md`](./textbook/appendix/overall-retrospective.md)。
 
-**#22. Phase 完了チェック**(所感5.1-⑥対応)。各 `Phase-<N>-introduction.md` に「Phase 完了チェック」として概念理解を問う設問を 3〜5 問用意する。実装前チェックリスト(#11、着手前)と対をなす完了判定(着手後)。
+**#22. Phase 完了チェック**(所感5.1-⑥対応)。各 `Phase-<N>-introduction.md` に「Phase 完了チェック」として概念理解を問う設問を 3〜5 問用意する。実装前チェックリスト(#11、着手前)と対をなし、Phase の要点を問いの形で示す要約(読み物)とする。回答は求めず、完了の判定には使わない(ステージ6完了後に位置づけ直した。ステージ4以降、設問に答えた記録が無いため。経緯は [`textbook/appendix/overall-retrospective.md`](./textbook/appendix/overall-retrospective.md) 10節)。
 
 **#23. 写経順序の明記 + 実 import 監査の毎回実施**(所感5.6対応)。各 introduction ファイルに「写経順序」を明記する(章番号順と一致する場合も「章番号順」と明記する)。実 import 監査(#15)は Phase 生成の都度、全 import 文を読む形で行う。章単位のオーバーレイ再構築(章 N までを都度クリーンな環境に重ねて検証する方式)は、所感5.6の見送り推奨のとおり導入しない。
 
@@ -166,6 +166,8 @@ When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the tar
 > **運用注記(#37 ── ステージ5完了後)**: 画面確認は Phase ごとに済ませず、この節に積んで、統合/E2E・本番確認の Phase でまとめて行ってよい(ステージ5では Phase 27〜31 の分を本番で一度に確かめた)。#18 の見直しの材料として、セッションの区切り(1 Phase を何セッションで行ったか)もこの節に記録し続ける。経緯は [`textbook/appendix/overall-retrospective.md`](./textbook/appendix/overall-retrospective.md) 9節。
 
 **#38. AI の提案と最終決定**(ステージ4完了後の振り返りで確立)。AI が書くコード・設計・計画は提案であり、採用するか変更するかはユーザーが最終的に決める。画面確認の後の修正や、Phase の分割・撤回・番号の付け直しは、問題ではなく通常の工程として扱う。経緯は q_a(#8)と、introduction の「後続 Phase での改訂」(#12)に残す。
+
+**#39. AI の提案の精度の振り返り**(ステージ6完了後に確立)。ステージ完了時の振り返り(#10)で、AI の提案の精度を記録から分析し、[`overall-retrospective.md`](./textbook/appendix/overall-retrospective.md) の当該ステージの節に書く。見るもの: 着手時の相談で推奨と違った選択(件数と向き)/ 計画の変動(分割・撤回・番号送り)/ 完了後の調整の回数と原因 / 本番確認の指摘。前のステージと比べて変化の理由を記録から裏付け、採否だけでは区別できない要因(ユーザーが推奨に寄った可能性など)を、採否と独立な指標(本番確認・効果測定など)で確かめる。記録の書式は決めず、数字は AI が記録を読んで数える概算でよい。初回はステージ3〜6 の横断分析(同ファイル 11節)。
 
 ### プロジェクトのゴール
 

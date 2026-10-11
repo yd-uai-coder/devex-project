@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
@@ -12,6 +12,7 @@
 # Phase-31-3:追記 ── app.detailed_design.procedure_basis.procedure_basis
 # Phase-31-4:追記 ── collections.abc.Mapping, app.detailed_design.procedure_basis.ProcedureBasis, app.detailed_design.stages(StageInputs, stage_inputs)
 # Phase-31-4：削除 ── app.detailed_design(PLAN_STAGE, STAGE_INPUTS, PlanModel), app.detailed_design.procedure_doc_refs.unit_context
+# Phase-42-1:追記 ── app.detailed_design(PLAN_STAGE, PlanModel, ProcedureDocModel, assign_unit_keys, relabel_units)
 import uuid
 from collections.abc import Mapping
 
@@ -22,15 +23,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.detailed_design import (
     DATA_MODEL_STAGE,
     ER_SUBJECT,
+    PLAN_STAGE,
     PROCEDURE_DOC_STAGE,
     PROCEDURE_STAGE,
     STRUCTURE_STAGE,
     STRUCTURE_SUBJECT,
     Fingerprint,
     ModuleListModel,
+    PlanModel,
+    ProcedureDocModel,
     ProcedureModel,
     StageRecord,
     StageView,
+    assign_unit_keys,
     can_approve,
     component_layers,
     confirm_drafts,
@@ -40,6 +45,7 @@ from app.detailed_design import (
     er_table_names,
     find_unit,
     module_dependencies,
+    relabel_units,
     table_key,
     tables_without_primary_key,
 )
@@ -191,12 +197,16 @@ class DesignStageService:
         self, project: Project, *, stage: int, expected_version: int | None, model: dict
     ) -> DesignStageRead:
         """段階の内容を人の編集として保存する。承認済みの段階を保存すると承認をやり直す
-        (`reviewing`へ戻し、versionを増やす)。未着手の段階は、初めての保存で行を作る。"""
+        (`reviewing`へ戻し、versionを増やす)。未着手の段階は、初めての保存で行を作る。
+        段階7は、キーの無いタスク(画面で足したタスク)に単位のキーを振ってから保存する。"""
         # Phase-31-4：更新
         # _ensure_detailed(project)
         # rows, views, _ = await self._load(project.id)
         # ↓↓
         _ensure_stage(project, stage)
+        # Phase-42-1:追記
+        if stage == PLAN_STAGE:
+            model = _with_unit_keys(model)
         rows, views, _ = await self._load(project)
         _ensure_open(views[stage])
         row = rows.get(stage)
@@ -701,6 +711,28 @@ def _approved_versions(
 # Phase-16-3：更新
 # def _to_read(view: StageView, row: DesignStage | None) -> DesignStageRead:
 # ↓↓
+# Phase-42-1:追記
+def _with_unit_keys(model: dict) -> dict:
+    """段階7の内容に単位のキーを振る。形の正しくない内容はそのまま返す(検証が指摘する)。"""
+    try:
+        plan = PlanModel.model_validate(model)
+    except ValidationError:
+        return model
+    return assign_unit_keys(plan).model_dump(mode="json")
+
+
+def _relabeled(model: dict | None, basis: ProcedureBasis | None) -> dict | None:
+    """段階8の手順書の表示の ID を、作業単位の今の並び順に付け直す(画面は ID で単位に付けるため)。
+    作業単位が無い・形の正しくない内容はそのまま返す。"""
+    if not model or basis is None:
+        return model
+    try:
+        doc = ProcedureDocModel.model_validate(model)
+    except ValidationError:
+        return model
+    return relabel_units(doc, basis.plan).model_dump(mode="json")
+
+
 def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) -> DesignStageRead:
     # Phase-27-2：更新
     # issues = validate_stage(view.stage, row.model, sources) if row is not None else []
@@ -734,7 +766,10 @@ def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) ->
         missing_inputs=list(view.missing_inputs),
         version=row.version if row is not None else None,
         approved_version=row.approved_version if row is not None else None,
-        model=row.model if row is not None else None,
+        # Phase-42-1：更新
+        # model=row.model if row is not None else None,
+        # ↓↓
+        model=_relabeled(row.model, basis) if row is not None else None,
         updated_at=row.updated_at if row is not None else None,
         # Phase-16-3:追記
         generation_status=row.generation_status if row is not None else None,  # type: ignore[arg-type]

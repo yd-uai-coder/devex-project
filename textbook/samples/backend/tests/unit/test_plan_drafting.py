@@ -1,4 +1,4 @@
-# 作成：Phase-23-4｜更新：Phase-26-2
+# 作成：Phase-23-4｜更新：Phase-26-2,42-2
 # 写経レベル: 定型 ── プロンプトの組み立てと変換の確認。
 """段階7の下書きの入出力(プロンプト・出力スキーマ・意味モデルへの変換)のテスト。
 
@@ -185,6 +185,23 @@ def test_system_prompts_name_default_topics_and_end_with_naming_rules():
     # 機能ごとの縦割り・並び順から導く ID・環境・設定のファイルの欄を指示する
     for phrase in ("kind=feature", "kind=base", "M-01-T02", "depends_on", "config_files"):
         assert phrase in PLAN_SYSTEM_PROMPT
+    # Phase-42-2:追記
+    # 横断事項には、担う要件の ID を要件定義書の ID のまま書かせる
+    assert "req_ids" in CROSSCUTTING_SYSTEM_PROMPT
+
+
+def test_to_crosscutting_normalizes_requirement_ids():
+    """AI が書いた要件ID は形をそろえ、形の違う値は捨てる。"""
+    output = CrossCuttingGenerationOutput(
+        crosscutting=[
+            GeneratedCrossCutting(
+                topic="認証", policy="JWT", modules=[], req_ids=["nfr-1", " FR-002 ", "全部"]
+            ),
+            GeneratedCrossCutting(topic="ログ", policy="JSON", modules=[]),
+        ]
+    )
+    rows = to_crosscutting(output)
+    assert [row.req_ids for row in rows] == [["NFR-001", "FR-002"], []]
 
 
 # --- E2E 用の固定の出力 ---

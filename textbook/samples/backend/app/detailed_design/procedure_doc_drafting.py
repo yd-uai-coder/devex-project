@@ -1,4 +1,4 @@
-# 作成：Phase-28-2｜更新：Phase-31-3
+# 作成：Phase-28-2｜更新：Phase-31-3,42-1
 # Phase-31-3：更新(docstring: 簡易モードの入力と、指摘の直す先を文書で書かせること)
 """段階8(実装手順書)のAIの下書きの入出力(純粋関数。docs/external_design.md 2.7節)。
 
@@ -282,9 +282,14 @@ def _finding(finding: GeneratedFinding | GeneratedSimpleFinding) -> AiFinding:
 def to_unit_procedure(
     unit: PlanUnit, output: ProcedureDocGenerationOutput | SimpleProcedureDocGenerationOutput
 ) -> UnitProcedure:
-    """構造化出力を、単位の手順書にする(ID とタスク名は作業単位から写す)。空の行は捨てる。"""
+    # Phase-42-1：更新
+    # """構造化出力を、単位の手順書にする(ID とタスク名は作業単位から写す)。空の行は捨てる。"""
+    # ↓↓
+    """構造化出力を、単位の手順書にする(ID・キー・タスク名は作業単位から写す)。空の行は捨てる。"""
     return UnitProcedure(
         unit_id=unit.unit_id,
+        # Phase-42-1:追記
+        unit_key=unit.key,
         title=unit.task.title,
         purpose=output.purpose.strip(),
         files=[

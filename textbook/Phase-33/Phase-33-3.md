@@ -25,11 +25,11 @@ md の見本(samples の対象外):
 | [`src/features/hearing-points/demo/hearingPointsModel.ts`](../samples/frontend/src/features/hearing-points/demo/hearingPointsModel.ts) | 観点の定義と、完了の判定・カードの答え・要件の数え方・追跡の純粋関数 |
 | [`src/features/hearing-points/demo/demoData.ts`](../samples/frontend/src/features/hearing-points/demo/demoData.ts) | 仮データ(途中の観点の表・カード・要件・段階1の機能・段階7の単位) |
 | [`src/features/hearing-points/demo/HearingPointsDemoPageContent.tsx`](../samples/frontend/src/features/hearing-points/demo/HearingPointsDemoPageContent.tsx) | デモ画面(規模・完了の表示・カード・観点の表・要件の一覧・追跡) |
-| [`src/app/hearing-points-demo/page.tsx`](../samples/frontend/src/app/hearing-points-demo/page.tsx) | ルート `/hearing-points-demo`(本体は `src/app/(pages)/` 配下) |
+| `src/app/hearing-points-demo/page.tsx`(ステージ6の完了時に削除) | ルート `/hearing-points-demo`(本体は `src/app/(pages)/` 配下) |
 | [`src/lib/menu-tree.ts`](../samples/frontend/src/lib/menu-tree.ts) | メニューの「開発用」にデモを足す |
 | [`src/features/hearing-points/demo/__tests__/hearingPointsModel.test.ts`](../samples/frontend/src/features/hearing-points/demo/__tests__/hearingPointsModel.test.ts) | 純粋関数のテスト |
 | [`src/features/hearing-points/demo/__tests__/HearingPointsDemoPageContent.test.tsx`](../samples/frontend/src/features/hearing-points/demo/__tests__/HearingPointsDemoPageContent.test.tsx) | 画面の操作のテスト |
-| [`src/app/hearing-points-demo/__tests__/page.test.tsx`](../samples/frontend/src/app/hearing-points-demo/__tests__/page.test.tsx) | ルートのテスト |
+| `src/app/hearing-points-demo/__tests__/page.test.tsx`(ステージ6の完了時に削除) | ルートのテスト |
 
 ## md の見本の要点
 
