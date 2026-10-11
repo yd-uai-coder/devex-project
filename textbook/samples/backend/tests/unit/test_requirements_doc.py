@@ -1,4 +1,4 @@
-# 作成：Phase-36-1｜更新：Phase-36(完了後の調整)
+# 作成：Phase-36-1｜更新：Phase-36(完了後の調整),40-1
 """要件定義書の model・組み立て・md・検証(純粋関数)。
 
 SUT: app/documents/requirements の各関数。ドライバ: このテスト。
@@ -103,6 +103,16 @@ def test_cap_source_without_grounding_points_is_assumed() -> None:
     assert cap_source("user", [], states) == "assumed"
     assert cap_source("user", ["scale"], states) == "assumed"  # 規模だけでは上げない
     assert cap_source("unknown", ["core"], _states(core="decided")) == "assumed"
+
+
+# Phase-40-1:追記
+def test_cap_source_counts_scale_only_for_constraints() -> None:
+    """制約(CON)の行は規模そのものを述べるので、規模の状態も上限に数える(機能・非機能は数えない)。"""
+    states = _states(scale="adopted")
+
+    assert cap_source("user", ["scale"], states, kind="CON") == "adopted"
+    assert cap_source("user", ["scale"], states, kind="NFR") == "assumed"
+    assert cap_source("user", ["scale"], _states(scale="open"), kind="CON") == "assumed"
 
 
 def test_cap_source_uses_strongest_point() -> None:

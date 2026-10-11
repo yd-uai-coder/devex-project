@@ -1,0 +1,17 @@
+=== 観点の表 scale=public sufficient=True stale=False legacy=False
+  scale                  必須 decided         誰でも登録できるサービスとして展開する
+  purpose                必須 decided         システム開発初期のドキュメント作成工数と属人化を削減する
+  users                  必須 decided         SE、ITコンサル、PM、個人開発者、スタートアップ創業者が新規プロジェクト立ち上げ時に利用する
+  daily_flow             必須 decided         打ち合わせ後に30分ほどでヒアリングを済ませ、その日のうちにドラフトを見直して共有する
+  core                   必須 decided         対話型チャットによるヒアリングと4種設計書の自動生成・自己診断・プレビュー等を行う
+  scope                  必須 decided         コード自動生成や外部ツール連携などはMVPから除外し、参考資料の読み込みは実装する
+  exceptions             必須 decided         AI応答失敗時は理由を出して再送を促し、生成失敗時は再試行できるようにする
+  future                 必須 decided         テンプレート選択、版の履歴画面、設計図の追加を将来的に予定している
+  tech                   必須 decided         PostgreSQLにユーザー・チャット履歴・生成文書を保存する
+  schedule               任意 open            
+  availability           必須 decided         半日程度の停止や夜間の保守停止は許容する
+  performance            必須 decided         同時に数人から十数人が利用し、チャットの最初の文字は数秒、4文書生成は数分まで待てる
+  operability            必須 adopted         開発者自身がエラーログや死活監視ツールの通知メールで気づく
+  migration              必須 adopted         特に移行するデータや仕組みはない(ゼロからスタート)
+  security               必須 decided         本人以外が他人のプロジェクトを見られないようアクセス権限を管理する
+  environment            必須 decided         PCの最新ブラウザを利用し、スマホは読めれば十分とする

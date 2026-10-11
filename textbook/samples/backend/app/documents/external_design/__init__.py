@@ -1,6 +1,7 @@
-# 作成：Phase-37-1
+# 作成：Phase-37-1｜更新：Phase-40-1
 """外部設計書の意味モデル(model・組み立て・md・検証)。"""
 
+# Phase-40-1:追記 ── app.documents.external_design.model.NO_BODY
 from app.documents.external_design.assemble import (
     ApiDraft,
     ExternalDesignDraft,
@@ -12,6 +13,7 @@ from app.documents.external_design.assemble import (
 from app.documents.external_design.markdown import render_external_design
 from app.documents.external_design.model import (
     BODY_METHODS,
+    NO_BODY,
     SCREEN_PREFIX,
     ApiRow,
     ExternalDesignModel,
@@ -27,6 +29,8 @@ from app.documents.external_design.validation import (
 
 __all__ = [
     "BODY_METHODS",
+    # Phase-40-1:追記
+    "NO_BODY",
     "SCREEN_PREFIX",
     "ApiDraft",
     "ApiRow",

@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整),36-2,37-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整),36-2,37-2,39-1
 # 写経レベル: コア ── 実機検証で発見した2件の不具合(ヒアリング完了判定の誤カウント、
 # doc_type判別の誤マッチ)の回帰テスト。当初はPlaywright(Phase 4-4)のみで検証する設計にして
 # いたが、両方ともpytestレベルの単体テストで安価に検知できる性質のバグだったため、事後的に
@@ -66,7 +66,12 @@ def _sufficient(result: HearingPointsJudgement) -> bool:
         JudgedPoint(p.key, p.status, p.summary, tuple(str(n) for n in p.evidence))
         for p in result.points
     ]
-    return is_sufficient(merge_judgement(initial_states(), judged), result.scale)
+    # Phase-39-1：更新
+    # return is_sufficient(merge_judgement(initial_states(), judged), result.scale)
+    # ↓↓
+    user_messages = {e for p in judged for e in p.evidence}
+    merged = merge_judgement(initial_states(), judged, user_messages=user_messages)
+    return is_sufficient(merged, result.scale)
 
 
 async def test_insufficient_with_only_intake_message() -> None:

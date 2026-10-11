@@ -1,0 +1,49 @@
+{
+  "stage": 2,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "summaries": [
+      {
+        "input": "POST /api/v1/projects",
+        "output": "プロジェクト作成結果",
+        "process": "アップロードされた参考資料を検証し、プロジェクトを作成して参考資料をデータベースに保存する。",
+        "function_id": "F-01"
+      },
+      {
+        "input": "POST /api/v1/chats",
+        "output": "AI応答結果",
+        "process": "チャットメッセージの入力を検証し、AIサービスを呼び出して応答を取得し、チャット履歴を保存する。",
+        "function_id": "F-02"
+      },
+      {
+        "input": "POST /api/v1/documents/generate",
+        "output": "設計書一括生成と自己診断結果",
+        "process": "プロジェクトの情報を取得し、AIサービスを呼び出して4種のMarkdown設計書を一括生成して自己診断を実行し、生成結果を保存する。",
+        "function_id": "F-03"
+      },
+      {
+        "input": "GET /api/v1/documents/{id}",
+        "output": "生成された設計書と自己診断結果",
+        "process": "リクエストされた識別子に基づいて生成された設計書と自己診断結果をデータベースから取得する。",
+        "function_id": "F-04"
+      }
+    ],
+    "dfd_groups": [
+      "projects",
+      "chats",
+      "documents"
+    ]
+  },
+  "updated_at": "2026-10-11T06:49:38.008240Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {}
+}

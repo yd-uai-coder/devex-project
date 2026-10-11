@@ -1,4 +1,4 @@
-# 作成：Phase-37-1
+# 作成：Phase-37-1｜更新：Phase-40-1
 """外部設計書の意味モデル(`generated_documents.model`に JSON で持つ)。
 
 一覧(画面・API・外部連携)は行にし、各行に関係する要件ID(要件定義書の`FR-001`など)を持つ。
@@ -14,6 +14,9 @@ from app.documents.requirements.model import Priority
 SCREEN_PREFIX = "SCR"
 # 本文(リクエストボディ)を持つはずのメソッド
 BODY_METHODS = ("POST", "PUT", "PATCH")
+# Phase-40-1:追記
+# 本文の要らない POST など(生成・ログアウトの操作)の本文の欄に書く値。空欄と区別する
+NO_BODY = "なし"
 
 
 class ScreenRow(BaseModel):

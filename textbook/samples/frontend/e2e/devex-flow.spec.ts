@@ -1,4 +1,4 @@
-// 作成：Phase-4-4｜更新：Phase-6-6,24-2,24(ゴール3後の調整),31-5,32-2
+// 作成：Phase-4-4｜更新：Phase-6-6,24-2,24(ゴール3後の調整),31-5,32-2,40-3
 // 写経レベル: コア ── docs/implementation_plan.md 4.2節が定義するE2Eフロー
 // 「ログイン→プロジェクト作成→チャットヒアリング→設計書生成→ダウンロード」を
 // ブラウザ経由でそのまま再現する、Phase 4の中心的な成果物。
@@ -108,9 +108,14 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
   ]);
 
   // 4種のドキュメントタブがすべて生成され、E2E Fake由来の内容が表示されていることを確認する
+  // Phase-40-3:追記
+  // (要件定義書・外部設計書は表の行ごとに E2E Fake が出るので、先頭の1つを見る)
   for (const label of ["要件定義", "外部設計", "内部設計", "実装計画"]) {
     await page.getByRole("tab", { name: label }).click();
-    await expect(page.getByText("E2E Fake", { exact: false })).toBeVisible();
+    // Phase-40-3：更新
+    // await expect(page.getByText("E2E Fake", { exact: false })).toBeVisible();
+    // ↓↓
+    await expect(page.getByText("E2E Fake", { exact: false }).first()).toBeVisible();
   }
 
   // ダウンロード(.md)
@@ -118,6 +123,15 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
   await page.getByRole("button", { name: "ダウンロード(.md)" }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe("implementation_plan.md");
+
+  // Phase-40-3:追記
+  // 要件定義書の推測の要件を「採用にする」と、同じ版のまま出どころの件数が変わる
+  await page.getByRole("tab", { name: "要件定義" }).click();
+  const sources = page.getByLabel("要件の出どころ");
+  await expect(sources).toContainText("ユーザー 4 / 採用 1 / 推測 1");
+  await sources.getByRole("button", { name: "NFR-002 を採用にする" }).click();
+  await expect(sources).toContainText("ユーザー 4 / 採用 2 / 推測 0");
+  await expect(sources.getByRole("button", { name: /を採用にする$/ })).toHaveCount(0);
 
   // Phase-31-5:追記
   // 簡易モードは、同じ詳細設計画面を段階8(実装手順書)だけで開く。作業単位は実装計画書の WBS から読む

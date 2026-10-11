@@ -1,0 +1,1 @@
+フロントは Next.js(App Router)+ Tamagui、バックエンドは FastAPI + LangChain・LangGraph(Python 3.13)、DB は PostgreSQL、Redis(レート制限・トークン失効)です。VPS に Docker Compose で置き、nginx を前に立てます。GitHub Actions で main への push から自動デプロイします。LLM は Gemini Flash-Lite(無料枠)で、上限超過のエラーをエラー処理に入れます。

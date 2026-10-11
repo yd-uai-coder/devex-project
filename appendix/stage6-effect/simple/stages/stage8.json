@@ -1,0 +1,643 @@
+{
+  "stage": 8,
+  "mode": "simple",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 3,
+  "approved_version": 3,
+  "model": {
+    "units": [
+      {
+        "gwt": [
+          "Given 開発環境のDocker Composeコンテナが起動している",
+          "When ルートパスへHTTPリクエストを送信する",
+          "Then 正常なレスポンスが返却される"
+        ],
+        "files": [
+          {
+            "kind": "config",
+            "path": "docker-compose.yml",
+            "basis": "段階7 環境・設定のファイル",
+            "responsibility": "Docker Composeによるマルチコンテナ環境の定義を行う"
+          },
+          {
+            "kind": "config",
+            "path": "backend/Dockerfile",
+            "basis": "段階7 環境・設定のファイル",
+            "responsibility": "FastAPIバックエンド用のコンテナイメージ構築手順を定義する"
+          },
+          {
+            "kind": "config",
+            "path": "backend/requirements.txt",
+            "basis": "段階7 環境・設定のファイル",
+            "responsibility": "Python依存パッケージのバージョン固定と管理を行う"
+          },
+          {
+            "kind": "module",
+            "path": "backend/app/core/config.py",
+            "basis": "段階4",
+            "responsibility": "環境変数やアプリケーション設定の読み込みと管理を行う"
+          },
+          {
+            "kind": "module",
+            "path": "backend/app/core/database.py",
+            "basis": "段階4",
+            "responsibility": "PostgreSQLデータベースへの接続セッション管理を行う"
+          },
+          {
+            "kind": "module",
+            "path": "backend/app/main.py",
+            "basis": "段階4",
+            "responsibility": "FastAPIアプリケーションのエントリポイントとルーティング初期化を行う"
+          }
+        ],
+        "notes": [
+          "基盤構築の単位であるため、docker-compose.ymlなどの設定ファイルから順に作成し、最後にバックエンドのエントリポイントを実装する。"
+        ],
+        "tests": [
+          {
+            "sut": "backend/app/main.py",
+            "stub": "スタブ不要 ── 外部依存無しの初期起動確認のため",
+            "driver": "curlによるAPIの疎通確認",
+            "viewpoint": "アプリケーションが正常に起動し、ヘルスチェックやルートパスへのアクセスに応答することを確認する"
+          }
+        ],
+        "title": "開発環境とDB・Docker構成を用意する",
+        "verify": [
+          "docker compose up --build によりすべてのコンテナがエラーなく起動することを確認する",
+          "curlまたはブラウザでバックエンドの起動確認エンドポイントにアクセスし、応答があることを確認する"
+        ],
+        "purpose": "開発環境およびデータベースのコンテナ構成を構築し、バックエンドの基本設定と起動確認を行う。",
+        "unit_id": "M-01-T01",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given データベースモデルとPydanticスキーマが定義されていること",
+          "When モデルおよびスキーマをインポートしてインスタンス化する",
+          "Then 期待される属性と制約を持ったオブジェクトが正しく生成されること"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/app/models/orm.py",
+            "basis": "段階4のモジュール",
+            "responsibility": "PostgreSQLのテーブル構造に対応するSQLAlchemyのORMモデルを定義する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/app/schemas/pydantic.py",
+            "basis": "段階4のモジュール",
+            "responsibility": "APIの入出力データを検証するためのPydanticスキーマを定義する"
+          }
+        ],
+        "notes": [
+          "内部設計書3.2に記載されている4つの主要エンティティ(projects, chat_messages, documents, diagnostics)に対応するORMモデルを実装する。",
+          "backend/app/models/orm.pyを先に作成し、そのデータ構造を参照する形でbackend/app/schemas/pydantic.pyを実装する。"
+        ],
+        "tests": [
+          {
+            "sut": "backend/app/models/orm.py および backend/app/schemas/pydantic.py",
+            "stub": "スタブ不要 ── データベース接続やモジュール単体のインポート確認のため",
+            "driver": "単体テストまたは対話型シェルによるインポートおよびスキーマ検証",
+            "viewpoint": "定義したORMモデルを通じてテーブル構造が正しく構築され、Pydanticスキーマによるバリデーションが期待通りに機能すること"
+          }
+        ],
+        "title": "SQLAlchemyによるORMモデルとPydanticスキーマを定義する",
+        "verify": [
+          "Python環境で backend/app/models/orm.py と backend/app/schemas/pydantic.py がエラーなくインポートできることを確認する。"
+        ],
+        "purpose": "SQLAlchemyによるORMモデルとPydanticスキーマを定義し、データベースのエンティティ構造とAPIの入出力バリデーションの基盤を構築する。",
+        "unit_id": "M-01-T02",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given 利用者がプロジェクト名と初期要望および参考資料ファイルを入力しているとき",
+          "When POST /api/v1/projects エンドポイントを呼び出すと",
+          "Then projectsテーブルにレコードが作成されproject_idを含むレスポンスが返ること"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/app/api/v1/router.py",
+            "basis": "backend/app/api/v1/router.py",
+            "responsibility": "プロジェクト作成のエンドポイントをルーターに登録する。"
+          },
+          {
+            "kind": "module",
+            "path": "backend/app/api/v1/endpoints/projects.py",
+            "basis": "backend/app/api/v1/endpoints/projects.py",
+            "responsibility": "POST /api/v1/projects のリクエスト受付、バリデーション、レスポンス返却を行う。"
+          }
+        ],
+        "notes": [
+          "レイヤードアーキテクチャのルーター層として新規作成する",
+          "依存先であるschemasの読み込みとエンドポイント関数の定義を先に行う"
+        ],
+        "tests": [
+          {
+            "sut": "POST /api/v1/projects",
+            "stub": "スタブ不要 ── 実データベースおよびサービス層を結合して検証する",
+            "driver": "API手動テスト(curlやPostman)",
+            "viewpoint": "正常なパラメータとファイル送信時にプロジェクトが作成されプロジェクトIDが返ること"
+          }
+        ],
+        "title": "プロジェクト作成と参考資料解析のエンドポイントを実装する",
+        "verify": [
+          "curlまたはPostmanを用いてPOST /api/v1/projectsへリクエストを送信し、ステータスコード200または201とプロジェクトIDが返ることを確認する",
+          "データベースのprojectsテーブルにレコードが正しく保存されていることを確認する"
+        ],
+        "purpose": "プロジェクト作成と参考資料解析のAPIエンドポイントを追加し、利用者からの入力を受け付けてprojectsテーブルに保存できるようにする。",
+        "unit_id": "M-02-T01",
+        "findings": [
+          {
+            "level": "critical",
+            "target": "DF-001",
+            "message": "ファイルテキスト抽出の具体的な処理手順やサービス層の関数名が内部設計書に定義されていないため、呼び出すべきビジネスロジックの関数仕様を明確にする必要がある。",
+            "fix_stage": 8,
+            "fix_document": "internal_design"
+          }
+        ]
+      },
+      {
+        "gwt": [
+          "Given 有効なプロジェクトIDとチャットメッセージがある When APIにPOSTリクエストを送る Then AI応答が返りメッセージが保存される",
+          "Given 空のメッセージがある When APIにPOSTリクエストを送る Then 400エラーが返る"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/app/services/ai_agent.py",
+            "basis": "段階4のモジュール",
+            "responsibility": "LangGraphを利用した対話処理とGemini API呼び出しを行う"
+          },
+          {
+            "kind": "module",
+            "path": "backend/app/services/chat_service.py",
+            "basis": "段階4のモジュール",
+            "responsibility": "メッセージのバリデーション、履歴のロード、DB保存のビジネスロジックを制御する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/app/api/v1/endpoints/chat.py",
+            "basis": "段階4のモジュール",
+            "responsibility": "POST /api/v1/projects/{id}/chat のリクエストを受け付け、サービス層を呼び出してレスポンスを返す"
+          }
+        ],
+        "notes": [
+          "依存関係に従い、ai_agent.py、chat_service.py、chat.pyの順に実装する。",
+          "共通エラーレスポンス形式に従い、例外発生時は指定されたJSON構造でレスポンスを返却する。"
+        ],
+        "tests": [
+          {
+            "sut": "POST /api/v1/projects/{id}/chat",
+            "stub": "外部サービス (Gemini API) はダウングレードまたはモック化して検証可能とする",
+            "driver": "API手動テスト (curl / Postman)",
+            "viewpoint": "正常なメッセージ送信によりAI応答が取得でき、DBに保存されること"
+          },
+          {
+            "sut": "POST /api/v1/projects/{id}/chat",
+            "stub": "スタブ不要 ── バリデーション層の検証",
+            "driver": "API手動テスト (curl / Postman)",
+            "viewpoint": "空文字や制限超過のメッセージ送信時に適切なエラーレスポンスが返ること"
+          }
+        ],
+        "title": "チャットヒアリングとLangGraph対話処理・エラーハンドリングを実装する",
+        "verify": [
+          "curlまたはPostmanを使用して POST /api/v1/projects/{id}/chat にリクエストを送り、期待されるレスポンスとDBへの保存状態を確認する。"
+        ],
+        "purpose": "チャットメッセージの送信受付、LangGraphを活用したAIエージェントによる対話処理、およびチャット履歴の永続化とエラーハンドリングを実装する。",
+        "unit_id": "M-03-T01",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given 該当プロジェクトのチャット履歴が存在する When POST /api/v1/projects/{id}/generate を呼び出す Then 4種設計書と自己診断結果が生成されDBに保存される"
+        ],
+        "files": [
+          {
+            "kind": "module",
+            "path": "backend/app/services/ai_agent.py",
+            "basis": "内部設計書 3.3",
+            "responsibility": "チャット履歴を入力としてGemini APIを呼び出し、4種設計書と自己診断結果を生成する。"
+          },
+          {
+            "kind": "module",
+            "path": "backend/app/services/document_service.py",
+            "basis": "内部設計書 3.3",
+            "responsibility": "AIエージェントの呼び出し結果を受け取り、documentsおよびdiagnosticsテーブルへ保存するトランザクションを制御する。"
+          },
+          {
+            "kind": "module",
+            "path": "backend/app/api/v1/endpoints/documents.py",
+            "basis": "内部設計書 3.3",
+            "responsibility": "POST /api/v1/projects/{id}/generateのエンドポイントを提供し、バリデーションとレスポンス返却を行う。"
+          }
+        ],
+        "notes": [
+          "ai_agent.pyの実装後にdocument_service.pyを実装し、最後にdocuments.pyのエンドポイントから呼び出す順序とする。"
+        ],
+        "tests": [
+          {
+            "sut": "POST /api/v1/projects/{id}/generate",
+            "stub": "スタブ不要 ── 実際のGemini APIおよびPostgreSQLデータベースを使用する",
+            "driver": "API手動テスト (curlまたはPostman)",
+            "viewpoint": "チャット履歴を元に設計書と自己診断が正常に生成され保存されること"
+          }
+        ],
+        "title": "設計書一括生成および自己診断AIパイプラインを実装する",
+        "verify": [
+          "curlまたはPostmanを使用してPOST /api/v1/projects/{id}/generateを実行し、HTTPステータスコード200または適切なレスポンスが返ることを確認する",
+          "PostgreSQLのdocumentsおよびdiagnosticsテーブルにデータが正しく保存されていることを確認する"
+        ],
+        "purpose": "チャット履歴を元に4種の設計書および自己診断を一括生成するAIパイプラインを実行し、結果をデータベースに保存する。",
+        "unit_id": "M-04-T01",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given: 対象プロジェクトの設計書と診断結果がデータベースに存在する",
+          "When: GET /api/v1/projects/{id}/documents にリクエストを送信する",
+          "Then: 該当する設計書データおよび診断結果のJSONレスポンスが返却される"
+        ],
+        "files": [
+          {
+            "kind": "config",
+            "path": "frontend/package.json",
+            "basis": "環境・設定のファイル",
+            "responsibility": "フロントエンドの依存パッケージを定義する"
+          },
+          {
+            "kind": "config",
+            "path": "frontend/next.config.js",
+            "basis": "環境・設定のファイル",
+            "responsibility": "Next.jsの設定を定義する"
+          },
+          {
+            "kind": "module",
+            "path": "backend/app/api/v1/endpoints/documents.py",
+            "basis": "内部設計書 3.3",
+            "responsibility": "設計書・診断結果の取得APIエンドポイントを提供する"
+          },
+          {
+            "kind": "module",
+            "path": "frontend/components/DocumentViewer.tsx",
+            "basis": "内部設計書 3.3",
+            "responsibility": "設計書および診断結果を表示するUIコンポーネントを提供する"
+          },
+          {
+            "kind": "module",
+            "path": "frontend/app/projects/[id]/page.tsx",
+            "basis": "内部設計書 3.3",
+            "responsibility": "プロジェクト詳細画面として設計書と診断結果のビューを統合する"
+          }
+        ],
+        "notes": [
+          "バックエンドのエンドポイント実装後にフロントエンドからのフェッチ処理を実装する順序とする。"
+        ],
+        "tests": [
+          {
+            "sut": "GET /api/v1/projects/{id}/documents",
+            "stub": "スタブ不要 ── 実際のデータベース接続を利用して検証する",
+            "driver": "手動テスト (curl / Postman)",
+            "viewpoint": "指定されたプロジェクトIDの設計書および診断結果が正しく取得できること"
+          }
+        ],
+        "title": "設計書・診断結果の取得APIとNext.jsフロントエンドのUIを実装する",
+        "verify": [
+          "curlまたはPostmanを使用してAPIエンドポイントへリクエストを送り、期待されるJSONが返却されることを確認する。",
+          "Next.jsのフロントエンド画面を開き、設計書と診断結果が正しく表示されることを目視で確認する。"
+        ],
+        "purpose": "設計書および診断結果を取得するバックエンドAPIと、それを表示するNext.jsフロントエンドのUIを実装する。",
+        "unit_id": "M-05-T01",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given Docker Composeの設定が完了している When docker compose upを実行する Then 全てのコンテナが正常に起動する"
+        ],
+        "files": [
+          {
+            "kind": "config",
+            "path": "nginx/Dockerfile",
+            "basis": "段階7 環境・設定のファイル",
+            "responsibility": "Nginxのカスタムビルドまたは設定適用を行うためのDockerfileを定義する"
+          },
+          {
+            "kind": "module",
+            "path": "nginx/conf.d/default.conf",
+            "basis": "段階4",
+            "responsibility": "リバースプロキシのルーティングとSSL終端、静的ファイル配信の設定を行う"
+          },
+          {
+            "kind": "config",
+            "path": "docker-compose.yml",
+            "basis": "段階7 環境・設定のファイル",
+            "responsibility": "バックエンド・フロントエンド・データベース・Nginxを含むVPS用統合Docker Compose環境を定義する"
+          }
+        ],
+        "notes": [
+          "nginx/conf.d/default.confを先に配置し、それを参照するnginx/Dockerfileおよびdocker-compose.ymlを順に作成する。"
+        ],
+        "tests": [
+          {
+            "sut": "docker-compose.yml",
+            "stub": "スタブ不要 ── インフラ構築のため",
+            "driver": "手動テスト (docker compose up)",
+            "viewpoint": "NginxおよびDocker Compose環境が正常に起動しリバースプロキシとして機能するか"
+          }
+        ],
+        "title": "NginxリバースプロキシとVPS用Docker Compose設定を構築する",
+        "verify": [
+          "docker compose up --buildコマンドを実行し、エラーなくコンテナが起動することを確認する。",
+          "ブラウザまたはcurlでNginx経由のアクセスが各バックエンド・フロントエンドコンテナへルーティングされることを確認する。"
+        ],
+        "purpose": "VPS環境向けのNginxリバースプロキシと統合Docker Compose設定を構築する。",
+        "unit_id": "M-06-T01",
+        "findings": []
+      },
+      {
+        "gwt": [
+          "Given 変更した .github/workflows/deploy.yml ファイルが存在する",
+          "When GitHubリポジトリのmainブランチにコードがプッシュされる",
+          "Then GitHub Actionsにより自動デプロイワークフローが実行される"
+        ],
+        "files": [
+          {
+            "kind": "config",
+            "path": ".github/workflows/deploy.yml",
+            "basis": "段階7 環境・設定のファイル",
+            "responsibility": "mainブランチへのプッシュをトリガーとした自動デプロイのワークフローを定義する"
+          }
+        ],
+        "notes": [
+          "VPSへの接続に必要なSSH秘密鍵やホスト名などの機密情報は、GitHub Actionsのシークレットに設定することを前提とする。"
+        ],
+        "tests": [
+          {
+            "sut": ".github/workflows/deploy.yml",
+            "stub": "スタブ不要 ── 設定ファイルのため",
+            "driver": "静的構文チェック（YAMLlint等）またはGitHub上のワークフロー構文チェッカー",
+            "viewpoint": "GitHub Actionsのワークフロー定義ファイルの構文が正しく、YAMLとしてパースできること"
+          }
+        ],
+        "title": "GitHub Actionsによる自動デプロイワークフローを設定する",
+        "verify": [
+          "GitHubのリポジトリ画面でActionsタブを開き、ワークフローファイルが正常に読み込まれていることを確認する。",
+          "mainブランチへテストプッシュを行い、デプロイアクションが意図通りにトリガーされることを確認する。"
+        ],
+        "purpose": "GitHub Actionsによる自動デプロイワークフローを設定し、mainブランチへのプッシュ時にVPS上のDocker Compose環境へ自動でデプロイできるようにする。",
+        "unit_id": "M-06-T02",
+        "findings": [
+          {
+            "level": "critical",
+            "target": "デプロイ対象のVPS接続情報およびデプロイ手順",
+            "message": "VPS上のデプロイ先ディレクトリパス、使用するSSH鍵のシークレット名、およびデプロイ時に実行する具体的なシェルコマンド（docker compose pull / up等）の定義が設計書に記載されていないため、ワークフローの詳細を記述できない。",
+            "fix_stage": 8,
+            "fix_document": "implementation_plan"
+          }
+        ]
+      }
+    ]
+  },
+  "updated_at": "2026-10-11T06:53:03.466993Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [],
+  "plan": {
+    "crosscutting": [],
+    "milestones": [
+      {
+        "name": "プロジェクト基盤とデータベース構築",
+        "goal": "バックエンド・フロントエンドの雛形が立ち上がり、PostgreSQLに接続できること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "kind": "base",
+            "title": "開発環境とDB・Docker構成を用意する",
+            "function_ids": [],
+            "depends_on": [],
+            "modules": [
+              "backend/app/main.py",
+              "backend/app/core/config.py",
+              "backend/app/core/database.py"
+            ],
+            "config_files": [
+              "docker-compose.yml",
+              "backend/Dockerfile",
+              "backend/requirements.txt"
+            ],
+            "req_ids": []
+          },
+          {
+            "kind": "base",
+            "title": "SQLAlchemyによるORMモデルとPydanticスキーマを定義する",
+            "function_ids": [],
+            "depends_on": [
+              "M-01-T01"
+            ],
+            "modules": [
+              "backend/app/models/orm.py",
+              "backend/app/schemas/pydantic.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-006"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "プロジェクト作成と参考資料読み込み機能",
+        "goal": "プロジェクトを作成し、初期要望と参考資料をDBに保存できること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "kind": "feature",
+            "title": "プロジェクト作成と参考資料解析のエンドポイントを実装する",
+            "function_ids": [
+              "DF-001"
+            ],
+            "depends_on": [
+              "M-01-T02"
+            ],
+            "modules": [
+              "backend/app/api/v1/endpoints/projects.py",
+              "backend/app/api/v1/router.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-005",
+              "FR-006"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "チャットヒアリングと例外処理機能",
+        "goal": "チャットでAIと対話し、バリデーションやLLMエラー時の例外処理が正しく動作すること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "kind": "feature",
+            "title": "チャットヒアリングとLangGraph対話処理・エラーハンドリングを実装する",
+            "function_ids": [
+              "DF-002"
+            ],
+            "depends_on": [
+              "M-02-T01"
+            ],
+            "modules": [
+              "backend/app/services/ai_agent.py",
+              "backend/app/services/chat_service.py",
+              "backend/app/api/v1/endpoints/chat.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-001",
+              "FR-006",
+              "FR-012",
+              "FR-013"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "4種設計書一括生成と自己診断機能",
+        "goal": "チャット履歴をもとに4種のMarkdown設計書とAI自己診断結果を生成しDBに保存できること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "kind": "feature",
+            "title": "設計書一括生成および自己診断AIパイプラインを実装する",
+            "function_ids": [
+              "DF-003"
+            ],
+            "depends_on": [
+              "M-03-T01"
+            ],
+            "modules": [
+              "backend/app/services/ai_agent.py",
+              "backend/app/services/document_service.py",
+              "backend/app/api/v1/endpoints/documents.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-002",
+              "FR-003",
+              "FR-006"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "文書プレビュー・ダウンロードとデータ取得API",
+        "goal": "生成された設計書や診断結果をAPI経由で取得し、フロントエンド側でプレビュー・コピー・ダウンロードできること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "kind": "feature",
+            "title": "設計書・診断結果の取得APIとNext.jsフロントエンドのUIを実装する",
+            "function_ids": [
+              "DF-004"
+            ],
+            "depends_on": [
+              "M-04-T01"
+            ],
+            "modules": [
+              "backend/app/api/v1/endpoints/documents.py",
+              "frontend/app/projects/[id]/page.tsx",
+              "frontend/components/"
+            ],
+            "config_files": [
+              "frontend/package.json",
+              "frontend/next.config.js"
+            ],
+            "req_ids": [
+              "FR-004",
+              "FR-006"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Docker・Nginx・CI/CDによるデプロイ基盤構築",
+        "goal": "GitHub ActionsからVPSのDocker環境へ自動デプロイされ、Nginx経由でサービスにアクセスできること",
+        "priority": "Should",
+        "tasks": [
+          {
+            "kind": "base",
+            "title": "NginxリバースプロキシとVPS用Docker Compose設定を構築する",
+            "function_ids": [],
+            "depends_on": [
+              "M-05-T01"
+            ],
+            "modules": [
+              "nginx/conf.d/default.conf"
+            ],
+            "config_files": [
+              "docker-compose.yml",
+              "nginx/Dockerfile"
+            ],
+            "req_ids": [
+              "NFR-005",
+              "CON-004"
+            ]
+          },
+          {
+            "kind": "base",
+            "title": "GitHub Actionsによる自動デプロイワークフローを設定する",
+            "function_ids": [],
+            "depends_on": [
+              "M-06-T01"
+            ],
+            "modules": [],
+            "config_files": [
+              ".github/workflows/deploy.yml"
+            ],
+            "req_ids": [
+              "CON-006"
+            ]
+          }
+        ]
+      }
+    ],
+    "environment": "### ### 1. 開発に必要なツール・技術スタック\n- **言語・ランタイム**: Python 3.13, Node.js (LTS)\n- **コンテナ技術**: Docker, Docker Compose\n- **データベース**: PostgreSQL, Redis\n- **外部AI**: Google Gemini API (Flash-Lite)\n\n### ### 2. リポジトリ構成\n```text\n/\n├── backend/            # FastAPIバックエンド\n├── frontend/           # Next.jsフロントエンド\n├── nginx/              # Nginx設定ファイル\n├── .github/workflows/  # GitHub Actions CI/CD設定\n└── docker-compose.yml  # 統合Docker Compose定義\n```\n\n### ### 3. 自動テスト・CI/CD方針\n- **テスト方針**: MVPフェーズでは自動テストコードの作成は後回しとし、APIエンドポイントの動作確認（Postman/curl等）を中心に手動テストで品質を担保する。\n- **CI/CD方針**: mainブランチへのプッシュをトリガーとして、GitHub ActionsによりVPS上のDocker Compose環境へ自動ビルドおよびコンテナ再起動（デプロイ）を行う。",
+    "risks": []
+  },
+  "unit_req_ids": {
+    "M-01-T01": [],
+    "M-01-T02": [
+      "FR-006"
+    ],
+    "M-02-T01": [
+      "FR-005",
+      "FR-006"
+    ],
+    "M-03-T01": [
+      "FR-001",
+      "FR-006",
+      "FR-012",
+      "FR-013"
+    ],
+    "M-04-T01": [
+      "FR-002",
+      "FR-003",
+      "FR-006"
+    ],
+    "M-05-T01": [
+      "FR-004",
+      "FR-006"
+    ],
+    "M-06-T01": [
+      "NFR-005",
+      "CON-004"
+    ],
+    "M-06-T02": [
+      "CON-006"
+    ]
+  }
+}

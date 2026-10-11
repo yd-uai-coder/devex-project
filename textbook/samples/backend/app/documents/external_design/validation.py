@@ -1,11 +1,12 @@
-# 作成：Phase-37-1
+# 作成：Phase-37-1｜更新：Phase-40-1
 """外部設計書の検証(純粋関数)。指摘は警告だけで、生成も保存も止めない。
 
 要件ID は生成した時点の要件定義書の写し(`model.known_req_ids`・`must_fr_ids`)と照らす。写しが
 空(要件定義書に model が無かった)なら、要件ID の照合はしない。
 """
 
-from app.documents.external_design.model import BODY_METHODS, ExternalDesignModel
+# Phase-40-1:追記 ── app.documents.external_design.model.NO_BODY
+from app.documents.external_design.model import BODY_METHODS, NO_BODY, ExternalDesignModel
 from app.documents.issues import DocumentIssue
 
 
@@ -44,7 +45,11 @@ def validate_external_design(model: ExternalDesignModel) -> list[DocumentIssue]:
             DocumentIssue(
                 "major",
                 "API_BODY_MISSING",
-                "本文の欄が空の API があります: " + "・".join(no_body),
+                # Phase-40-1：更新
+                # "本文の欄が空の API があります: " + "・".join(no_body),
+                # ↓↓
+                "本文の欄が空の API があります: " + "・".join(no_body)
+                + f"(本文の要らない API は「{NO_BODY}」と書いてください)",
                 tuple(no_body),
             )
         )

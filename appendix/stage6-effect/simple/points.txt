@@ -1,0 +1,17 @@
+=== 観点の表 scale=internal sufficient=True stale=False legacy=False
+  scale                  必須 adopted         SE・ITコンサルタント・PMや個人開発者が利用する社内および個人向けツールとする。
+  purpose                必須 decided         AIとの対話でヒアリングを行い、要件定義などの4種のMarkdown設計書を一括生成する。
+  users                  必須 decided         SE・ITコンサルタント・PM、個人開発者・スタートアップ創業者が利用する。
+  daily_flow             必須 adopted         打ち合わせ後に30分ほどでヒアリングし、その日のうちにドラフトを見直して共有する。
+  core                   必須 decided         チャットヒアリング、4種設計書の生成、AI自己診断、プレビュー・ダウンロード、参考資料読み込み、DB保存を実装する。
+  scope                  必須 decided         コード自動生成、外部連携、マルチテナント権限管理、音声入力、同時編集はスコープ外とする。
+  exceptions             必須 decided         エラー時は再送を促しメッセージを保存せず、入力は文字数制限と空送信禁止を設ける。
+  future                 任意 open            
+  tech                   必須 decided         Next.js、FastAPI、PostgreSQL、Redisを用い、VPSのDocker環境でGitHub Actionsにより自動デプロイする。
+  schedule               任意 open            
+  availability           必須 decided         夜間や休日の停止や半日程度の停止は許容し、夜間保守での停止も問題ない。
+  performance            必須 adopted         同時利用は数人から十数人で、チャットの応答は数秒、文書生成は数分まで待つ。
+  operability            必須 decided         エラー追跡や死活監視はMVPの後に導入する。
+  migration              必須 adopted         特に移行するものはなく、ゼロから新しいデータで始める。
+  security               必須 decided         本人以外が他人のプロジェクトを見られないように認証とデータ紐付けを行う。
+  environment            必須 adopted         フロントエンドにNext.js(App Router)+Tamaguiを使用する。

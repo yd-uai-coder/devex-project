@@ -1,0 +1,296 @@
+{
+  "points": {
+    "scale": "internal",
+    "legacy": false,
+    "stale": false,
+    "is_sufficient": true,
+    "points": [
+      {
+        "key": "scale",
+        "kind": "function",
+        "label": "規模",
+        "question": "使うのは自分(と数人)だけですか。社内の人ですか。誰でも登録できるサービスですか",
+        "required": true,
+        "status": "adopted",
+        "summary": "SE・ITコンサルタント・PMや個人開発者が利用する社内および個人向けツールとする。",
+        "evidence": [
+          {
+            "message_id": "d8466139-85fb-41cd-8f58-b59a800205b7",
+            "label": "発言1"
+          }
+        ]
+      },
+      {
+        "key": "purpose",
+        "kind": "function",
+        "label": "目的・課題",
+        "question": "これが無いと、今は何に困っていますか",
+        "required": true,
+        "status": "decided",
+        "summary": "AIとの対話でヒアリングを行い、要件定義などの4種のMarkdown設計書を一括生成する。",
+        "evidence": [
+          {
+            "message_id": "64286168-f570-40dc-8b7f-341cd16e90fb",
+            "label": "初期入力"
+          }
+        ]
+      },
+      {
+        "key": "users",
+        "kind": "function",
+        "label": "利用者と使う場面",
+        "question": "誰が、どんなときに開きますか",
+        "required": true,
+        "status": "decided",
+        "summary": "SE・ITコンサルタント・PM、個人開発者・スタートアップ創業者が利用する。",
+        "evidence": [
+          {
+            "message_id": "d8466139-85fb-41cd-8f58-b59a800205b7",
+            "label": "発言1"
+          }
+        ]
+      },
+      {
+        "key": "daily_flow",
+        "kind": "function",
+        "label": "利用者の1日の流れ",
+        "question": "使う人の1日のどこで、どのくらいの時間使いますか",
+        "required": true,
+        "status": "adopted",
+        "summary": "打ち合わせ後に30分ほどでヒアリングし、その日のうちにドラフトを見直して共有する。",
+        "evidence": [
+          {
+            "message_id": "01154867-7796-4b7e-a30f-2a02ceb0acf9",
+            "label": "発言2"
+          }
+        ]
+      },
+      {
+        "key": "core",
+        "kind": "function",
+        "label": "コア機能",
+        "question": "最初の版で、これだけはできてほしいことは何ですか",
+        "required": true,
+        "status": "decided",
+        "summary": "チャットヒアリング、4種設計書の生成、AI自己診断、プレビュー・ダウンロード、参考資料読み込み、DB保存を実装する。",
+        "evidence": [
+          {
+            "message_id": "64286168-f570-40dc-8b7f-341cd16e90fb",
+            "label": "初期入力"
+          },
+          {
+            "message_id": "c6b94815-9ea0-4514-b476-c5b42cd7ce3c",
+            "label": "発言3"
+          }
+        ]
+      },
+      {
+        "key": "scope",
+        "kind": "function",
+        "label": "MVP の範囲",
+        "question": "最初の版で作らないと決めているものはありますか",
+        "required": true,
+        "status": "decided",
+        "summary": "コード自動生成、外部連携、マルチテナント権限管理、音声入力、同時編集はスコープ外とする。",
+        "evidence": [
+          {
+            "message_id": "c6b94815-9ea0-4514-b476-c5b42cd7ce3c",
+            "label": "発言3"
+          }
+        ]
+      },
+      {
+        "key": "exceptions",
+        "kind": "function",
+        "label": "例外の場面",
+        "question": "入力を間違えた・取り消したい・途中で失敗した・権限が無い、のときにどうなってほしいですか",
+        "required": true,
+        "status": "decided",
+        "summary": "エラー時は再送を促しメッセージを保存せず、入力は文字数制限と空送信禁止を設ける。",
+        "evidence": [
+          {
+            "message_id": "ba6e80f1-0b04-4394-a0ed-42ad90a3d873",
+            "label": "発言4"
+          }
+        ]
+      },
+      {
+        "key": "future",
+        "kind": "function",
+        "label": "将来の拡張",
+        "question": "後で足したいと思っているものはありますか",
+        "required": false,
+        "status": "open",
+        "summary": "",
+        "evidence": []
+      },
+      {
+        "key": "tech",
+        "kind": "function",
+        "label": "技術スタック・環境の制約",
+        "question": "使いたい(使わなければならない)言語・フレームワーク・置き場所はありますか",
+        "required": true,
+        "status": "decided",
+        "summary": "Next.js、FastAPI、PostgreSQL、Redisを用い、VPSのDocker環境でGitHub Actionsにより自動デプロイする。",
+        "evidence": [
+          {
+            "message_id": "97a36481-b461-481a-ba87-5b517ccb84af",
+            "label": "発言5"
+          }
+        ]
+      },
+      {
+        "key": "schedule",
+        "kind": "function",
+        "label": "体制・期間",
+        "question": "何人で、いつまでに作りますか",
+        "required": false,
+        "status": "open",
+        "summary": "",
+        "evidence": []
+      },
+      {
+        "key": "availability",
+        "kind": "nonfunctional",
+        "label": "可用性",
+        "question": "夜中や休日に止まっていたら、どのくらいで困りますか",
+        "required": true,
+        "status": "decided",
+        "summary": "夜間や休日の停止や半日程度の停止は許容し、夜間保守での停止も問題ない。",
+        "evidence": [
+          {
+            "message_id": "bbfc0ed4-4047-4819-ab49-d47ec9023dc4",
+            "label": "発言6"
+          }
+        ]
+      },
+      {
+        "key": "performance",
+        "kind": "nonfunctional",
+        "label": "性能・拡張性",
+        "question": "同時に何人くらいが使いますか。待てるのは何秒までですか",
+        "required": true,
+        "status": "adopted",
+        "summary": "同時利用は数人から十数人で、チャットの応答は数秒、文書生成は数分まで待つ。",
+        "evidence": [
+          {
+            "message_id": "d33d9590-12c9-4eef-98f9-89d8dc294b99",
+            "label": "発言7"
+          }
+        ]
+      },
+      {
+        "key": "operability",
+        "kind": "nonfunctional",
+        "label": "運用・保守性",
+        "question": "止まったことに、誰がどうやって気づけばよいですか",
+        "required": true,
+        "status": "decided",
+        "summary": "エラー追跡や死活監視はMVPの後に導入する。",
+        "evidence": [
+          {
+            "message_id": "dee91cf5-f720-437a-a73b-816cb89560f3",
+            "label": "発言8"
+          }
+        ]
+      },
+      {
+        "key": "migration",
+        "kind": "nonfunctional",
+        "label": "移行性",
+        "question": "今使っている仕組みやデータから、移すものはありますか",
+        "required": true,
+        "status": "adopted",
+        "summary": "特に移行するものはなく、ゼロから新しいデータで始める。",
+        "evidence": [
+          {
+            "message_id": "5d6b5e9c-c06b-4001-802f-7897104533bf",
+            "label": "発言9"
+          }
+        ]
+      },
+      {
+        "key": "security",
+        "kind": "nonfunctional",
+        "label": "セキュリティ",
+        "question": "入れたデータを、誰に見られたら困りますか",
+        "required": true,
+        "status": "decided",
+        "summary": "本人以外が他人のプロジェクトを見られないように認証とデータ紐付けを行う。",
+        "evidence": [
+          {
+            "message_id": "7b3b9a3d-1421-42cb-b29e-5f914af358c5",
+            "label": "発言10"
+          }
+        ]
+      },
+      {
+        "key": "environment",
+        "kind": "nonfunctional",
+        "label": "システム環境・エコロジー",
+        "question": "どの端末・ブラウザで使いますか",
+        "required": true,
+        "status": "adopted",
+        "summary": "フロントエンドにNext.js(App Router)+Tamaguiを使用する。",
+        "evidence": [
+          {
+            "message_id": "97a36481-b461-481a-ba87-5b517ccb84af",
+            "label": "発言5"
+          }
+        ]
+      }
+    ]
+  },
+  "documents": {
+    "requirements": {
+      "version": 1,
+      "requirements": {
+        "counts": {
+          "user": 22,
+          "adopted": 2,
+          "assumed": 0
+        },
+        "assumed": [],
+        "issues": []
+      },
+      "external_design": null
+    },
+    "external_design": {
+      "version": 1,
+      "requirements": null,
+      "external_design": {
+        "counts": {
+          "screens": 3,
+          "apis": 4,
+          "integrations": 0
+        },
+        "issues": [
+          {
+            "level": "major",
+            "code": "API_BODY_MISSING",
+            "message": "本文の欄が空の API があります: POST /api/v1/projects/{id}/generate",
+            "targets": [
+              "POST /api/v1/projects/{id}/generate"
+            ]
+          }
+        ]
+      }
+    },
+    "internal_design": {
+      "version": 1,
+      "requirements": null,
+      "external_design": null
+    },
+    "implementation_plan": {
+      "version": 1,
+      "requirements": null,
+      "external_design": null
+    }
+  },
+  "stages": {
+    "8": {
+      "state": "approved",
+      "issues": {}
+    }
+  }
+}

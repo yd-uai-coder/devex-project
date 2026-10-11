@@ -1,0 +1,163 @@
+{
+  "stage": 6,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "logics": [
+      {
+        "pre": "有効な認証済みユーザーからのリクエストであること",
+        "args": "project_data: プロジェクト情報 / reference_data: 参考資料データ",
+        "post": "プロジェクトおよび参考資料がデータベースに永続化され、作成されたプロジェクト情報が返されること",
+        "module": "services/project.py",
+        "pseudo": [
+          {
+            "sub": [
+              "リクエストからプロジェクト名や関連情報を抽出する",
+              "repositories/project.pyを呼び出してレコードを挿入する"
+            ],
+            "text": "プロジェクト情報を取得し、projectsテーブルに新規プロジェクトを作成する"
+          },
+          {
+            "sub": [
+              "参考資料データのリストを走査する",
+              "repositories/reference.pyを呼び出して各参考資料を保存する"
+            ],
+            "text": "参考資料データを検証し、存在する場合はreferencesテーブルに登録する"
+          },
+          {
+            "sub": [
+              "永続化されたプロジェクトのIDを取得する",
+              "関連付けられた参考資料の情報を結果オブジェクトに格納する"
+            ],
+            "text": "作成されたプロジェクト情報と参考資料情報を統合して構築する"
+          },
+          {
+            "sub": [
+              "構築したプロジェクト情報を返す"
+            ],
+            "text": "作成されたプロジェクト情報を呼び出し元に返却する"
+          }
+        ],
+        "raises": "なし",
+        "returns": "作成されたプロジェクト情報",
+        "function": "ProjectService.create_project",
+        "signature": "def create_project(project_data: dict, reference_data: list) -> dict"
+      },
+      {
+        "pre": "検証済みリクエストデータが提供されていること",
+        "args": "request_data: 検証済みリクエストデータ",
+        "post": "チャットメッセージが保存され、AI応答結果が返却されること",
+        "module": "services/chat.py",
+        "pseudo": [
+          {
+            "sub": [
+              "プロジェクト情報やメッセージ内容を抽出する"
+            ],
+            "text": "リクエストデータから必要なパラメータを取得する"
+          },
+          {
+            "sub": [
+              "送信されたメッセージをデータベースに永続化する"
+            ],
+            "text": "repositories/chat.pyを使用してチャットメッセージをchatsテーブルに保存する"
+          },
+          {
+            "sub": [
+              "プロジェクトのコンテキストや関連するreferences、documentsを参照に含める"
+            ],
+            "text": "clients/ai.pyを使用してAIサービスにメッセージを送信し、AI応答を取得する"
+          },
+          {
+            "sub": [
+              "取得したAIの返答データを整理する"
+            ],
+            "text": "AI応答結果を整形して戻り値として構築する"
+          }
+        ],
+        "raises": "なし",
+        "returns": "AI応答結果",
+        "function": "ChatService.send_message",
+        "signature": "def send_message(self, request_data: dict) -> dict:"
+      },
+      {
+        "pre": "プロジェクトが存在していること",
+        "args": "projectId: プロジェクトID",
+        "post": "4種設計書が一括生成および自己診断され、その結果が返却されること",
+        "module": "services/document.py",
+        "pseudo": [
+          {
+            "sub": [
+              "repositories/project.pyの関数を使用してprojectsテーブルから対象のプロジェクトを取得する",
+              "プロジェクトが存在しない場合はNotFoundErrorを送出する"
+            ],
+            "text": "プロジェクトの存在確認を行う"
+          },
+          {
+            "sub": [
+              "references, chats, documentsの各テーブルから必要な情報を取得する"
+            ],
+            "text": "設計書生成に必要な関連データを収集する"
+          },
+          {
+            "sub": [
+              "clients/ai.pyの関数に収集したデータを渡して処理を依頼する"
+            ],
+            "text": "AIクライアントを呼び出して4種設計書の一括生成と自己診断を実行する"
+          },
+          {
+            "sub": [
+              "repositories/document.pyを使用して生成結果をデータベースに保存する",
+              "生成された設計書と自己診断結果を呼び出し元に返却する"
+            ],
+            "text": "生成された設計書と自己診断結果を保存および返却する"
+          }
+        ],
+        "raises": "NotFoundError: プロジェクトが存在しない場合 (404 Not Found)",
+        "returns": "生成された設計書と自己診断結果を含む辞書データ",
+        "function": "DocumentService.generate_documents",
+        "signature": "async def generate_documents(self, projectId: int) -> dict"
+      },
+      {
+        "pre": "データベースへの接続が確立されており、対象の識別子が有効であること",
+        "args": "id: 対象の設計書を一意に特定する識別子",
+        "post": "指定された設計書データが取得され、戻り値として返却されること",
+        "module": "services/document.py",
+        "pseudo": [
+          {
+            "sub": [
+              "リポジトリ関数を呼び出して documents テーブルからデータを検索する"
+            ],
+            "text": "設計書リポジトリから指定された識別子の設計書データを取得する"
+          },
+          {
+            "sub": [
+              "データが存在しない場合は ValueError を送出する"
+            ],
+            "text": "取得結果が存在するかどうかを検証する"
+          },
+          {
+            "sub": [
+              "設計書データと自己診断結果を結合して構築する"
+            ],
+            "text": "取得した設計書データを整形して返却する"
+          }
+        ],
+        "raises": "ValueError: 指定された識別子の設計書が存在しない場合 (HTTP 404)",
+        "returns": "取得した設計書データと自己診断結果を含む辞書",
+        "function": "DocumentService.get_document",
+        "signature": "def get_document(self, id: str) -> dict:"
+      }
+    ]
+  },
+  "updated_at": "2026-10-11T06:50:19.099958Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {}
+}

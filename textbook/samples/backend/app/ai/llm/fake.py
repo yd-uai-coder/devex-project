@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -738,12 +738,15 @@ def _hearing_reply(messages: list[Any]) -> HearingReplyOut:
 # 要件定義書の偽物の要件(種別・優先度・大項目・本文・出どころ・観点)。出どころは
 # doc_generator_service が観点の表で上限をかける。推測の要件を1つ含め、プレビューの
 # 「採用にする」を E2E で試せるようにする。
+# Phase-40-2:追記 ── 規模だけを根拠にした制約は、規模の状態が上限になる。
 _REQUIREMENTS: tuple[tuple[str, str, str, str, str, str], ...] = (
     ("FR", "Must", "", "[E2E Fake] 備品を予約できる", "user", "core"),
     ("FR", "Should", "", "[E2E Fake] 予約の履歴を見られる", "user", "future"),
     ("NFR", "", "可用性", "[E2E Fake] 半日止まってもよい", "adopted", "availability"),
     ("NFR", "", "セキュリティ", "[E2E Fake] 通信を HTTPS で暗号化する", "assumed", "security"),
     ("CON", "", "技術スタック", "[E2E Fake] Python と PostgreSQL を使う", "user", "tech"),
+    # Phase-40-2:追記
+    ("CON", "", "規模", "[E2E Fake] 個人で使う", "user", "scale"),
 )
 _PREVIOUS_SECTION = "## 前の版の要件\n"
 

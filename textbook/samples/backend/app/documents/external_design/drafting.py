@@ -1,4 +1,4 @@
-# 作成：Phase-37-2
+# 作成：Phase-37-2｜更新：Phase-40-1
 """外部設計書の AI の下書きの入出力(純粋関数)。
 
 AI には要件定義書から、画面・API・外部連携の行(関係する要件ID 付き)と本文の節を書かせる。
@@ -6,6 +6,7 @@ AI には要件定義書から、画面・API・外部連携の行(関係する�
 在る ID だけを引き継いで振り直す。
 """
 
+# Phase-40-1:追記 ── app.documents.external_design.model.NO_BODY
 from typing import Literal
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -17,7 +18,7 @@ from app.documents.external_design.assemble import (
     IntegrationDraft,
     ScreenDraft,
 )
-from app.documents.external_design.model import ExternalDesignModel
+from app.documents.external_design.model import NO_BODY, ExternalDesignModel
 
 _REQ_IDS_DESCRIPTION = "関係する要件ID(【要件定義書】の FR-001・NFR-001・CON-001 など。1つ以上)"
 
@@ -54,7 +55,10 @@ class GeneratedApi(BaseModel):
     body: str = Field(
         default="",
         description="リクエストの本文の主な項目(`email, password`など)。POST・PUT・PATCH は必ず"
-        "書く。本文の無い API は空",
+        # Phase-40-1：更新
+        # "書く。本文の無い API は空",
+        # ↓↓
+        f"書き、本文の要らないもの(生成の開始など)は`{NO_BODY}`と書く。GET・DELETE は空",
     )
     response: str = Field(description="成功時の応答(`201 予約`など)")
     errors: str = Field(default="", description="主なエラー(`404 対象なし、409 重複`など)")
@@ -97,7 +101,11 @@ SYSTEM_PROMPT = (
     "【要件定義書】に無い ID を作らない\n"
     "- Must の機能要件には、それを担う画面か API を必ず置く。Won't の機能要件の画面・API は"
     "作らない\n"
-    "- API は本システム自身が提供するものをすべて書く。POST・PUT・PATCH には本文の項目を書く\n"
+    # Phase-40-1：更新
+    # "- API は本システム自身が提供するものをすべて書く。POST・PUT・PATCH には本文の項目を書く\n"
+    # ↓↓
+    "- API は本システム自身が提供するものをすべて書く。POST・PUT・PATCH には本文の項目を書く"
+    f"(本文の要らないものは「{NO_BODY}」)\n"
     "- 画面ID は SCR-001 の形。【前の版の画面】に同じ画面があれば、その ID を使う。"
     "API の関連画面は画面ID で書く\n"
     "- 主要画面には UI 仕様(構成要素)を書く\n"

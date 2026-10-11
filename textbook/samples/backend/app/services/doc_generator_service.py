@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -9,6 +9,8 @@
 # Phase-36-2:追記 ── pydantic.ValidationError, app.documents.requirements(RequirementsModel, build_model, mark_adopted, render_requirements, source_counts, validate_requirements), app.documents.requirements.drafting(RequirementsGenerationOutput, build_requirements_messages, to_draft), app.hearing.as_scale, app.repositories.hearing_point.HearingPointRepository, app.schemas.document(AssumedRequirementRead, GeneratedDocumentRead, RequirementIssueRead, RequirementsSummaryRead), app.services.errors(RequirementNotAssumedError, RequirementNotFoundError), app.services.llm_retry.invoke_structured
 # Phase-37-2:追記 ── app.documents.external_design(ExternalDesignModel, build_model as build_external_design_model, render_external_design, row_counts, validate_external_design), app.documents.external_design.drafting(ExternalDesignGenerationOutput, build_external_design_messages, to_draft as to_external_design_draft), app.documents.issues.DocumentIssue, app.schemas.document(DocumentIssueRead, ExternalDesignSummaryRead)
 # Phase-37-2：削除 ── app.schemas.document.RequirementIssueRead
+# Phase-40-1:追記 ── re
+import re
 import uuid
 from datetime import UTC, datetime
 
@@ -274,6 +276,10 @@ _DOC_TYPE_INPUTS: dict[str, tuple[str, ...]] = {
     "internal_design": ("requirements", "external_design"),
     "implementation_plan": ("requirements", "internal_design"),
 }
+
+# Phase-40-1:追記
+# 見出しの記号が重なった行(LLM が「### ### 1. …」と書くことがある)。先頭の記号だけを残す
+_DOUBLED_HEADING = re.compile(r"^(#{1,6})(?:[ \t]+#{1,6})+(?=[ \t])", re.MULTILINE)
 
 # Phase-15-1:追記
 # モード(projects.mode)ごとに生成する文書。詳細設計モードは要件定義・外部設計だけを生成し、
@@ -703,7 +709,10 @@ class DocGeneratorService:
 
         async def _call() -> str:
             response = await llm.ainvoke(messages)
-            return extract_text_content(response.content)
+            # Phase-40-1：更新
+            # return extract_text_content(response.content)
+            # ↓↓
+            return _collapse_doubled_headings(extract_text_content(response.content))
 
         return await invoke_with_retry(_call, messages=messages)
 
@@ -738,6 +747,13 @@ class DocGeneratorService:
             return extract_text_content(response.content)
 
         return await invoke_with_retry(_call, messages=messages)
+
+
+# Phase-40-1:追記
+def _collapse_doubled_headings(markdown: str) -> str:
+    """見出しの記号の重なり(`### ### 1.`)を1つにまとめる(`### 1.`)。手順書の index などが
+    文書の見出しをそのまま写すため、生成の時点で直しておく。"""
+    return _DOUBLED_HEADING.sub(r"\1", markdown)
 
 
 def _render_transcript(history: list[ChatHistory]) -> str:

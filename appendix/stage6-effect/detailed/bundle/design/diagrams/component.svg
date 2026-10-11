@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="352" viewBox="0 0 960 352" font-family='"Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","Hiragino Kaku Gothic ProN",sans-serif' font-size="14">
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker></defs>
+<rect width="960" height="352" fill="#ffffff"/>
+<path d="M220.3,103.0 L263.4,103.0 L263.4,187.0 L277.4,187.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M447.6,196.0 L597.5,196.0 L597.5,252.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M447.6,178.0 L745.1,178.0 L745.1,281.0 L759.1,281.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#ar)"/>
+<rect x="34.7" y="84.0" width="185.6" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="127.5" y="108.0" text-anchor="middle" fill="#1a1a1a">ルーター(api/routes)</text>
+<rect x="277.4" y="168.0" width="170.3" height="38.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="362.5" y="192.0" text-anchor="middle" fill="#1a1a1a">サービス(services)</text>
+<rect x="529.7" y="252.0" width="135.6" height="58.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="597.5" y="276.0" text-anchor="middle" fill="#1a1a1a">AIクライアント</text>
+<text x="597.5" y="296.0" text-anchor="middle" fill="#1a1a1a">(clients)</text>
+<rect x="759.1" y="252.0" width="146.8" height="58.0" rx="8" fill="#f4f6fb" stroke="#7f89b0" stroke-width="1.5"/>
+<text x="832.5" y="276.0" text-anchor="middle" fill="#1a1a1a">リポジトリ</text>
+<text x="832.5" y="296.0" text-anchor="middle" fill="#1a1a1a">(repositories)</text>
+</svg>

@@ -1,0 +1,321 @@
+{
+  "points": {
+    "scale": "public",
+    "legacy": false,
+    "stale": false,
+    "is_sufficient": true,
+    "points": [
+      {
+        "key": "scale",
+        "kind": "function",
+        "label": "規模",
+        "question": "使うのは自分(と数人)だけですか。社内の人ですか。誰でも登録できるサービスですか",
+        "required": true,
+        "status": "adopted",
+        "summary": "誰でも登録できるサービスにする",
+        "evidence": [
+          {
+            "message_id": "4283cdd5-b932-4a41-b023-13b95cc853d1",
+            "label": "発言1"
+          }
+        ]
+      },
+      {
+        "key": "purpose",
+        "kind": "function",
+        "label": "目的・課題",
+        "question": "これが無いと、今は何に困っていますか",
+        "required": true,
+        "status": "decided",
+        "summary": "システム開発の初期フェーズにおけるドキュメント作成の工数削減と属人化解消を目的とする",
+        "evidence": [
+          {
+            "message_id": "ed93062d-2da1-458a-ab33-8edbc284bc71",
+            "label": "初期入力"
+          }
+        ]
+      },
+      {
+        "key": "users",
+        "kind": "function",
+        "label": "利用者と使う場面",
+        "question": "誰が、どんなときに開きますか",
+        "required": true,
+        "status": "decided",
+        "summary": "SE・ITコンサルタント・PMおよび個人開発者・スタートアップの創業者が使用する",
+        "evidence": [
+          {
+            "message_id": "6c2e50c7-ae76-491a-bbc8-09d114117021",
+            "label": "発言2"
+          }
+        ]
+      },
+      {
+        "key": "daily_flow",
+        "kind": "function",
+        "label": "利用者の1日の流れ",
+        "question": "使う人の1日のどこで、どのくらいの時間使いますか",
+        "required": true,
+        "status": "adopted",
+        "summary": "クライアントとの打ち合わせ後に約30分ヒアリングを済ませ、その日のうちにドラフトを見直して共有する",
+        "evidence": [
+          {
+            "message_id": "aadae6b5-a4d4-4051-84cf-75633a2c19fa",
+            "label": "発言3"
+          }
+        ]
+      },
+      {
+        "key": "core",
+        "kind": "function",
+        "label": "コア機能",
+        "question": "最初の版で、これだけはできてほしいことは何ですか",
+        "required": true,
+        "status": "decided",
+        "summary": "チャットヒアリング、4種の設計書一括生成、自己診断、Markdownのプレビュー・コピー・ダウンロード機能を提供する",
+        "evidence": [
+          {
+            "message_id": "ed93062d-2da1-458a-ab33-8edbc284bc71",
+            "label": "初期入力"
+          }
+        ]
+      },
+      {
+        "key": "scope",
+        "kind": "function",
+        "label": "MVP の範囲",
+        "question": "最初の版で作らないと決めているものはありますか",
+        "required": true,
+        "status": "decided",
+        "summary": "コード自動生成、Jira・Notion連携、マルチテナント権限管理、音声入力、複数人同時編集は作成しない",
+        "evidence": [
+          {
+            "message_id": "cac90733-17ef-410e-829a-28ef2656e5a5",
+            "label": "発言5"
+          }
+        ]
+      },
+      {
+        "key": "exceptions",
+        "kind": "function",
+        "label": "例外の場面",
+        "question": "入力を間違えた・取り消したい・途中で失敗した・権限が無い、のときにどうなってほしいですか",
+        "required": true,
+        "status": "adopted",
+        "summary": "AIの応答失敗時は理由を表示して再送を促し、入力は数千文字までで空送信を禁止する",
+        "evidence": [
+          {
+            "message_id": "eb113a2e-d2b7-4222-aaa3-5a3a8de6cf7b",
+            "label": "発言6"
+          }
+        ]
+      },
+      {
+        "key": "future",
+        "kind": "function",
+        "label": "将来の拡張",
+        "question": "後で足したいと思っているものはありますか",
+        "required": true,
+        "status": "decided",
+        "summary": "テンプレートの選択、版の履歴の画面、設計図(UML)を後で追加する",
+        "evidence": [
+          {
+            "message_id": "29715928-8e4f-4386-bf20-e29d51f4d8e2",
+            "label": "発言7"
+          }
+        ]
+      },
+      {
+        "key": "tech",
+        "kind": "function",
+        "label": "技術スタック・環境の制約",
+        "question": "使いたい(使わなければならない)言語・フレームワーク・置き場所はありますか",
+        "required": true,
+        "status": "decided",
+        "summary": "Next.jsとFastAPIを用いVPSにDockerでデプロイする",
+        "evidence": [
+          {
+            "message_id": "6b2e044d-6cf5-47df-a907-72bf345fe511",
+            "label": "発言8"
+          }
+        ]
+      },
+      {
+        "key": "schedule",
+        "kind": "function",
+        "label": "体制・期間",
+        "question": "何人で、いつまでに作りますか",
+        "required": false,
+        "status": "open",
+        "summary": "",
+        "evidence": []
+      },
+      {
+        "key": "availability",
+        "kind": "nonfunctional",
+        "label": "可用性",
+        "question": "夜中や休日に止まっていたら、どのくらいで困りますか",
+        "required": true,
+        "status": "decided",
+        "summary": "止まっても半日なら困らず、夜間の保守での停止も許容する",
+        "evidence": [
+          {
+            "message_id": "bb501b1e-cc36-4272-8cfe-7f73dae11f4e",
+            "label": "発言9"
+          }
+        ]
+      },
+      {
+        "key": "performance",
+        "kind": "nonfunctional",
+        "label": "性能・拡張性",
+        "question": "同時に何人くらいが使いますか。待てるのは何秒までですか",
+        "required": true,
+        "status": "decided",
+        "summary": "同時利用は十数人程度で、チャットは数秒、4文書生成は数分まで待つ",
+        "evidence": [
+          {
+            "message_id": "974b6573-aae9-485b-9bec-b064d12dda25",
+            "label": "発言11"
+          }
+        ]
+      },
+      {
+        "key": "operability",
+        "kind": "nonfunctional",
+        "label": "運用・保守性",
+        "question": "止まったことに、誰がどうやって気づけばよいですか",
+        "required": true,
+        "status": "adopted",
+        "summary": "エラー追跡と死活監視をMVPの後で導入する",
+        "evidence": [
+          {
+            "message_id": "ed2ccd7b-f417-4f66-a6a3-ef75a4d2ab2a",
+            "label": "発言13"
+          }
+        ]
+      },
+      {
+        "key": "migration",
+        "kind": "nonfunctional",
+        "label": "移行性",
+        "question": "今使っている仕組みやデータから、移すものはありますか",
+        "required": true,
+        "status": "adopted",
+        "summary": "移行するデータ・仕組みはない",
+        "evidence": [
+          {
+            "message_id": "1d5d099f-83d3-48a9-a191-06a98fe2fcbd",
+            "label": "発言14"
+          }
+        ]
+      },
+      {
+        "key": "security",
+        "kind": "nonfunctional",
+        "label": "セキュリティ",
+        "question": "入れたデータを、誰に見られたら困りますか。ログインはどうしますか",
+        "required": true,
+        "status": "decided",
+        "summary": "本人以外が他人のプロジェクトを見られないよう、JWTによるログイン機能をMVPに含める",
+        "evidence": [
+          {
+            "message_id": "725c091b-ab7f-4fc2-94e8-dadd130e89ea",
+            "label": "発言15"
+          }
+        ]
+      },
+      {
+        "key": "environment",
+        "kind": "nonfunctional",
+        "label": "システム環境・エコロジー",
+        "question": "どの端末・ブラウザで使いますか",
+        "required": true,
+        "status": "decided",
+        "summary": "PCの最新ブラウザ(Chrome, Edge, Firefox, Safari)を対象とし、スマホは閲覧のみ対応する",
+        "evidence": [
+          {
+            "message_id": "6f45094d-cf88-4882-943a-168fe535e0ea",
+            "label": "発言16"
+          }
+        ]
+      }
+    ]
+  },
+  "documents": {
+    "requirements": {
+      "version": 1,
+      "requirements": {
+        "counts": {
+          "user": 22,
+          "adopted": 4,
+          "assumed": 1
+        },
+        "assumed": [
+          {
+            "id": "CON-001",
+            "kind": "CON",
+            "text": "誰でも登録できる公開サービスとして提供する。"
+          }
+        ],
+        "issues": [
+          {
+            "level": "minor",
+            "code": "ASSUMED_REQUIREMENTS",
+            "message": "推測の要件が1件あります(利用者に確かめてください)。",
+            "targets": [
+              "CON-001"
+            ]
+          }
+        ]
+      },
+      "external_design": null
+    },
+    "external_design": {
+      "version": 1,
+      "requirements": null,
+      "external_design": {
+        "counts": {
+          "screens": 7,
+          "apis": 4,
+          "integrations": 1
+        },
+        "issues": []
+      }
+    }
+  },
+  "stages": {
+    "1": {
+      "state": "not_started",
+      "issues": {}
+    },
+    "2": {
+      "state": "not_started",
+      "issues": {}
+    },
+    "3": {
+      "state": "not_started",
+      "issues": {}
+    },
+    "4": {
+      "state": "not_started",
+      "issues": {}
+    },
+    "5": {
+      "state": "not_started",
+      "issues": {}
+    },
+    "6": {
+      "state": "not_started",
+      "issues": {}
+    },
+    "7": {
+      "state": "not_started",
+      "issues": {}
+    },
+    "8": {
+      "state": "not_started",
+      "issues": {}
+    }
+  }
+}

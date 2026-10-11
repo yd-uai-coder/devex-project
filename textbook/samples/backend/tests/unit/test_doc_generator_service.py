@@ -1,7 +1,8 @@
-# 作成：Phase-2-4｜更新：Phase-6-1,6-5,6-6,8-5,10-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2
+# 作成：Phase-2-4｜更新：Phase-6-1,6-5,6-6,8-5,10-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1
 # Phase-6-5:追記 ── structlog.testing
 # Phase-36-2:追記 ── tests.fixtures.requirements.requirements_output, app.documents.requirements.RequirementsModel, app.documents.requirements.drafting.RequirementsGenerationOutput, app.hearing.PointState, app.repositories.hearing_point.HearingPointRepository, app.services.doc_generator_service.document_read, app.services.errors(DocGenerationInProgressError, RequirementNotAssumedError, RequirementNotFoundError)
 # Phase-37-2:追記 ── tests.fixtures.external_design(external_design_output, upstream_outputs), app.documents.external_design.ExternalDesignModel, app.documents.external_design.drafting.ExternalDesignGenerationOutput
+# Phase-40-1:追記 ── app.services.doc_generator_service._collapse_doubled_headings
 import uuid
 from typing import Any
 
@@ -25,6 +26,7 @@ from app.repositories.generated_document import DOC_TYPES, GeneratedDocumentRepo
 from app.repositories.hearing_point import HearingPointRepository
 from app.services.doc_generator_service import (
     DocGeneratorService,
+    _collapse_doubled_headings,
     _render_transcript,
     document_read,
 )
@@ -627,6 +629,16 @@ async def test_get_document_raises_not_found_for_unknown_id(db_session: AsyncSes
 
     with pytest.raises(DocumentNotFoundError):
         await service.get_document(project=project, doc_id=uuid.uuid4())
+
+
+# Phase-40-1:追記
+def test_collapse_doubled_headings_keeps_the_first_marks() -> None:
+    """LLM が重ねた見出しの記号は先頭だけを残す。本文中の「#」やコードは変えない。"""
+    markdown = "## 4.3 開発環境\n\n### ### 1. ツール\n## ### 2. 構成\n- issue #12\n#タグ\n"
+
+    assert _collapse_doubled_headings(markdown) == (
+        "## 4.3 開発環境\n\n### 1. ツール\n## 2. 構成\n- issue #12\n#タグ\n"
+    )
 
 
 def test_render_transcript_excludes_others_sender() -> None:
