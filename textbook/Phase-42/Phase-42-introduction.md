@@ -148,7 +148,7 @@ Phase 41 から引き継いだもの(未解決のまま):
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- [Phase 43-2](../Phase-43/Phase-43-2.md): `Element` に元の行の内容 `body` を、`DesignModels` に ER のテーブル定義 `table_bodies` を足した(承認時の写しとの差分のため)。42-3 のスモークテストは `body` を除いて比べる形に直した。
 
 ## Phase 完了チェック(#22)
 

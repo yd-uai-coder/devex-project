@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -318,6 +318,15 @@ class DesignStageInvalidError(ConflictError):
     段階2で DFD を描くグループが上限を超えたまま生成を要求した場合にも送出する(Phase 17)。"""
 
     code: ClassVar[str | None] = "DESIGN_STAGE_INVALID"
+
+
+# Phase-43-3:追記
+class DesignStageUnreviewedImpactError(ConflictError):
+    """他の段階・文書の変更から届いた見直しの印が、確認済みになっていない段階を承認しようとした場合に
+    送出する(docs/external_design.md 2.10節)。印は変更の影響の取得で確かめ、確認済みにしてから
+    承認し直す。"""
+
+    code: ClassVar[str | None] = "DESIGN_STAGE_UNREVIEWED_IMPACT"
 
 
 class DesignStageGenerationInProgressError(ConflictError):

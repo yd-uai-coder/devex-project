@@ -197,6 +197,8 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | generation_error | TEXT | NULL可 | 直近の生成が失敗した理由(ユーザー向けの文言。Phase 16) |
 | generation_started_at | TIMESTAMP | NULL可 | 生成を始めた時刻。15分を超えて生成中のままなら、生成の受け付け時と一覧の取得時に`failed`へ戻す(Phase 16) |
 | input_fingerprint | JSONB | NULL可 | 承認したとき・AIの下書きを生成したとき(Phase 16)に入力にした前段の版(`{"stage:<n>": 承認済みの版, "doc:<doc_type>": 表示中の版}`)。今の値と「等しくない」ものがあれば「古い」と判定する(Phase 13の`source_doc_versions`と同じ考え方)。承認済みでない段階の今の値は`null`なので、前の段階を編集した時点で後ろの段階が古くなり、古さは後ろへ順に伝わる |
+| approved_model | JSONB | NULL可 | 直前に承認したときの`model`の写し(1件だけ。ステージ7、Phase 43、Alembic `e5f6a7b8c9d1`)。次の承認で今の`model`と要素の単位で比べ、変更の影響を求める。段階3の写しには、承認したときの ER のテーブル定義(`er_snapshot`)を添える。既存の行は、承認の後に変わっていない行にだけ写しを入れた |
+| impact | JSONB | NULL可 | 他の段階・文書・この段階の変更から届いた見直しの印(`{changes: [{source, key, change, stage, label, before, after, new_key}], marks: [{key, label, stage, path, reason, sources, reviewed}]}`。Phase 43)。段階を承認すると消える。他から届いた未確認の印があると承認できない(409 `DESIGN_STAGE_UNREVIEWED_IMPACT`) |
 | created_at / updated_at | TIMESTAMP | NOT NULL | 作成・更新日時 |
 
 `UNIQUE(project_id, stage)`。段階ごとの入力は`STAGE_INPUTS`(1: 外部設計 / 2: 段階1+要件定義 / 3: 段階2 / 4: 段階1〜3+要件定義 / 5: 段階2・4 / 6: 段階5 / 7: 段階1〜6+要件定義・外部設計)。入力がそろっていない段階は保存も承認もできない(409 `DESIGN_STAGE_LOCKED`)。前の段階を承認し直しても後ろの段階は自動で作り直さず、陳腐化の表示にとどめる(再生成は人が指示する。古い段階は内容を変えずに「承認し直す」こともできる)。プロジェクトのモードは`projects.mode`(②`projects`テーブル)で持つ。`design_stages`の行を持つのは`mode='detailed'`のプロジェクトだけ。
@@ -307,6 +309,8 @@ backend/
 | **GET** | `/api/v1/projects/{id}/design-stages` | （※ステージ4、Phase 15）段階1〜7の状態(`state`・`is_open`・`missing_inputs`・`version`・`approved_version`・`model`。Phase 16で`generation_status`・`generation_error`・`issues`を追加)。未着手の段階も含む。止まった生成(15分超)はここで回収する。Phase 31 で、簡易ドキュメントモードのプロジェクトには段階8だけを返すようにし(それまでは409 `DESIGN_STAGES_NOT_AVAILABLE`)、`mode`(プロジェクトのモード)と`plan`(段階8だけ。作業単位。詳細設計モードは段階7、簡易モードは実装計画書の WBS を読んだもの)を足した。モードに無い段階の保存・承認・生成は409 `DESIGN_STAGES_NOT_AVAILABLE` | 必要 |
 | **PUT** | `/api/v1/projects/{id}/design-stages/{stage}` | （※ステージ4、Phase 15）段階の内容の保存(`{version, model}`。未着手は`version: null`で作る。楽観ロック。承認済みは`reviewing`に戻る。開いていない段階は409 `DESIGN_STAGE_LOCKED`) | 必要 |
 | **POST** | `/api/v1/projects/{id}/design-stages/{stage}/approve` | （※ステージ4、Phase 15）段階の承認(`{version}`。下書き・レビュー中・古いが対象。承認時に`input_fingerprint`を記録する。versionは増やさない。承認済みで古くない・内容が空は409 `DESIGN_STAGE_NOT_APPROVABLE`。段階ごとの検証にエラーがあれば409 `DESIGN_STAGE_INVALID`(Phase 16)) | 必要 |
+| **GET** | `/api/v1/projects/{id}/design-stages/impact` | （※ステージ7、Phase 43）変更の影響(`{stages: [{stage, changes, marks, open, reviewed}], regeneration_targets: [{stage, key, label}]}`)。記録した印に、承認の後に編集してまだ承認していない段階から届く印(`pending: true`。記録しない)を足す。再生成の候補は段階5・6・8 の未確認の印の要素 | 必要 |
+| **POST** | `/api/v1/projects/{id}/design-stages/{stage}/impact/review` | （※ステージ7、Phase 43）段階の印を確認済みにする(`{keys, reviewed}`。`reviewed: false`で未確認に戻す。知らないキーは無視。段階の`version`は変えない)。応答は段階1つ分の`{stage, changes, marks, open, reviewed}` | 必要 |
 | **GET** | `/api/v1/projects/{id}/design-stages/document` | （※ステージ4、Phase 22）詳細設計書の zip(`detailed_design.html`・`detailed_design.md`・`diagrams/*.svg|.drawio`。Phase 23 で実装計画`implementation_plan.html`・`.md`を足した)。0件で承認した段階6は「省略」。zip に入れた図は`exported`になる。段階1〜7がすべて承認済み(古くない)でなければ409 `DESIGN_DOCUMENT_NOT_READY`(Phase 30 の調整。それまでは、いつでもダウンロードでき、未承認の章は「未承認」と書いた)。詳細設計モードでなければ409 `DESIGN_STAGES_NOT_AVAILABLE`(簡易モードは段階8だけを持つため) | 必要 |
 | **GET** | `/api/v1/projects/{id}/design-stages/procedure-document` | （※ステージ5、Phase 30）実装手順書の zip(`implementation_procedure.zip`。直下に`index.md`・`implementation_procedure.html`・単位ごとの md・`ai/<単位ID>.md`)。段階8が承認済み(古くない)でなければ409 `DESIGN_DOCUMENT_NOT_READY`。簡易ドキュメントモードのプロジェクトも、段階8を承認すれば同じ形で落とせる(Phase 31。それまでは409 `DESIGN_STAGES_NOT_AVAILABLE`) | 必要 |
 | **POST** | `/api/v1/projects/{id}/design-stages/{stage}/generate` | （※ステージ4、Phase 16）段階のAIの下書きの生成を受け付ける(202。段階は`generating`になり、裏で生成して`draft`・version+1で保存する。画面は一覧をポーリングする)。生成に対応していない段階は409 `DESIGN_STAGE_GENERATION_NOT_SUPPORTED`(Phase 16は段階1だけ。Phase 28 で段階1〜8すべて)、生成中は409 `DESIGN_STAGE_GENERATION_IN_PROGRESS`、開いていない段階は409 `DESIGN_STAGE_LOCKED`。本文で対象を選べる: 段階5`function_ids`・段階6`logics`・段階8`unit_ids`(Phase 28) | 必要 |
@@ -489,6 +493,12 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * **横断事項の要件ID**: `CrossCuttingRow.req_ids`。横断事項の生成(構造化出力)が要件定義書の ID を書き(形をそろえ、形の違う値は捨てる)、検証は外部設計書の model の要件ID の一覧と照らして`UNKNOWN_REQUIREMENT_ID`(警告)。画面の横断事項の表に「要件」の列。
   * **要素と参照・たどり方**: `app/detailed_design/impact/`(`elements`・`trace`。純粋関数)。`DesignModels.from_dicts(stages, documents, er_tables)` → `build_elements` → `impact_of(elements, Change(key, kind))` → `ImpactItem(key, path, reason)`。辺は12種(デモの11種に、手順書が参照する手順・処理ロジックの`implements`を足した。手順書の参照は段階8の`unit_refs`と同じ規則)。モジュールとテーブルの辺は、手順の行の DB 欄(`parse_db_tables`。段階3 の CRUD・ER に在る名前だけ)と同じ行の呼び出し先から作る。API・画面・写しはまだ無い(Phase 43・44)。
 * **差分**: 段階は直前の承認時の model の写し(1件)と今の model を、要素のキーで比べる。文書は`generated_documents.model`の版同士を比べる。今の陳腐化(`app/detailed_design/stages.py`の`derive_states`。段階単位・版数の比較)は変えず、その上に要素の印と「確認済み」を重ねる。
+* **Phase 43 で実装した部分**(経緯は[`textbook/Phase-43/Phase-43-introduction.md`](../textbook/Phase-43/Phase-43-introduction.md)):
+  * **写し**: `design_stages.approved_model`(承認時だけ撮る)。段階3は ER のテーブル定義を`er_snapshot`で添える(ER は段階の model の外の図のため。テーブルの要素の内容に列と説明を入れる)。
+  * **差分**: `app/detailed_design/impact/diff.py`の`diff_elements`。要素の内容`Element.body`(キーの欄・CRUD の下書きの印を除いた正規化した JSON)を比べ、辺は比べない。同じ種類・同じ内容で1対1なら改名(ID が名前そのものの種類だけ)。改名に合わせて参照の文字列を書き換えただけの変更は変わったものに入れない。`to_trace_changes`で`impact_of`の`Change`にする(増えた要素は除く。消えた要素は前のキー)。
+  * **印の記録**: 段階の承認時(写しと比べる)と、文書の表示中の版の切り替え時(生成・復元。前に表示していた版と比べる。詳細設計モードの要件定義書・外部設計書だけ)に、`app/detailed_design/impact/marks.py`の`marks_for`で印を求め、届いた段階(一度でも承認した段階だけ)の`design_stages.impact`に`record`で足す。前後の要素を合わせたグラフでたどる(消えた要素・改名の前のキーを、まだ参照している要素から見つけるため)。文書の要素と変わった要素そのものには付けない。同じ要素に新しい変更が届いたら未確認に戻す。写しが1件だけなので、その場で差分を取らず変わった時に記録する(上流を承認し直すと写しが置き換わるため)。
+  * **承認し直し**: 他の段階・文書から届いた未確認の印があれば承認は409(`DESIGN_STAGE_UNREVIEWED_IMPACT`)。自分の承認で付いた印(同じ段階の中の依存)は止めない。承認でその段階の印は消える。
+  * **API**: `GET /design-stages/impact`(記録した印と、承認前の編集の pending の印・再生成の候補)・`POST /design-stages/{stage}/impact/review`。`DesignStageRead.impact_open`・`impact_reviewed`。画面は Phase 44。
 * **簡易モード**: 内部設計書・実装計画書を意味モデルにする(要件定義書・外部設計書と同じ「構造化出力 → model → md」)。段階8が読む今の解析(`app/simple_procedure/`)は model を読むようにする。
 
 ---
@@ -521,6 +531,7 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 * `DOC_GENERATION_IN_PROGRESS`(409): 設計書の生成中に、生成を再度要求した(Phase 15)
 * `DESIGN_STAGES_NOT_AVAILABLE` / `DESIGN_STAGE_LOCKED` / `DESIGN_STAGE_NOT_APPROVABLE`(409): 詳細設計モードの段階(Phase 15)。段階の版の不一致は`VERSION_CONFLICT`(409、UML図と共通)
 * `DESIGN_STAGE_INVALID` / `DESIGN_STAGE_GENERATION_NOT_SUPPORTED` / `DESIGN_STAGE_GENERATION_IN_PROGRESS`(409): 段階ごとの検証のエラーがある段階の承認 / 生成に対応していない段階の生成 / 生成中の段階の生成・保存・承認(Phase 16)
+* `DESIGN_STAGE_UNREVIEWED_IMPACT`(409): 他の段階・文書の変更から届いた見直しの印が未確認のまま、段階を承認しようとした(ステージ7、Phase 43)
 * `INTERNAL_SERVER_ERROR`: `AppError`以外の予期せぬ例外をキャッチする最終防衛ラインのハンドラが返す(スタックトレース等の詳細はレスポンスに含めずサーバーログにのみ記録)
 
 **`UNAUTHORIZED`について**: 認証境界(`app/api/deps.py`の`get_current_user`)は意図的に`AppError`ではなく生の`HTTPException`を使っており(認証失敗の理由を外部に細かく漏らさないため)、`code`フィールドは付与されない。レスポンス形自体は`{"detail": "..."}`のまま変わらない。

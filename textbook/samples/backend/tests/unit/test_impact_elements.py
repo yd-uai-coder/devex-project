@@ -1,4 +1,4 @@
-# 作成：Phase-42-3
+# 作成：Phase-42-3｜更新：Phase-43-2
 """変更の影響を求めるための、設計の要素と参照の導出のテスト。
 
 SUT: DesignModels.from_dicts / build_elements / parse_db_tables
@@ -7,6 +7,9 @@ SUT: DesignModels.from_dicts / build_elements / parse_db_tables
 スタブ不要 ── どれも純粋関数(副作用なし)で、DB や LLM を呼ばないため。段階・文書の model は DB から
 読まず、fixture の dict で渡す(読み取りはサービス層の責務)。
 """
+
+# Phase-43-2:追記 ── dataclasses.replace
+from dataclasses import replace
 
 from tests.fixtures.change_impact import (
     REPOSITORY,
@@ -60,7 +63,10 @@ def test_smoke_builds_elements_for_documents_and_all_stages():
         "crosscutting",
         "unit",
     }
-    assert elements["fn:F-01"] == Element(
+    # Phase-43-2：更新
+    # assert elements["fn:F-01"] == Element(
+    # ↓↓
+    assert replace(elements["fn:F-01"], body="") == Element(
         "fn:F-01",
         "function",
         1,
@@ -71,6 +77,10 @@ def test_smoke_builds_elements_for_documents_and_all_stages():
             Ref("api:POST /api/v1/reservations", "trigger"),
         ),
     )
+    # Phase-43-2:追記
+    # 内容はキーになる欄(ID)を除いた正規化した JSON
+    assert '"name": "予約を登録する"' in elements["fn:F-01"].body
+    assert '"id"' not in elements["fn:F-01"].body
 
 
 # --- 種類ごとの辺 ---

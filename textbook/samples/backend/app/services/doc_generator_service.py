@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -10,6 +10,7 @@
 # Phase-37-2:追記 ── app.documents.external_design(ExternalDesignModel, build_model as build_external_design_model, render_external_design, row_counts, validate_external_design), app.documents.external_design.drafting(ExternalDesignGenerationOutput, build_external_design_messages, to_draft as to_external_design_draft), app.documents.issues.DocumentIssue, app.schemas.document(DocumentIssueRead, ExternalDesignSummaryRead)
 # Phase-37-2：削除 ── app.schemas.document.RequirementIssueRead
 # Phase-40-1:追記 ── re
+# Phase-43-3:追記 ── app.services.design_stage_service.DesignStageService
 import re
 import uuid
 from datetime import UTC, datetime
@@ -62,6 +63,7 @@ from app.schemas.document import (
     GeneratedDocumentRead,
     RequirementsSummaryRead,
 )
+from app.services.design_stage_service import DesignStageService
 from app.services.errors import (
     DocGenerationInProgressError,
     DocumentNotFoundError,
@@ -355,6 +357,8 @@ class DocGeneratorService:
         #
         # ↓↓
         self._hearing_points = HearingPointRepository(session)
+        # Phase-43-3:追記
+        self._stages = DesignStageService(session)
     # Phase-15-3:追記 ── 気づき#4・#5: 受け付け時の409と、止まった生成の回収
     async def request_generation(self, project: Project) -> str:
         """生成の要求を受け付け、`status`を`generating`にしてcommitする。戻り値は受け付ける前の状態
@@ -455,6 +459,15 @@ class DocGeneratorService:
             # Phase-37-2:追記
             requirements: RequirementsModel | None = None
             doc_types = DOC_TYPES_BY_MODE[project.mode]
+            # Phase-43-3:追記
+            # 詳細設計モードの変更の影響は、生成の前に表示していた版と比べる
+            previous_models: dict[str, dict | None] = {}
+            for doc_type in doc_types:
+                current = await self._documents.get_current(
+                    project_id=project_id, doc_type=doc_type
+                )
+                previous_models[doc_type] = current.model if current is not None else None
+            new_models: dict[str, dict | None] = {}
             for doc_type in doc_types:
                 # Phase-36-2：更新
                 # content = await self._generate_one(doc_type, transcript, generated, llm=llm)
@@ -482,6 +495,12 @@ class DocGeneratorService:
                     project_id=project_id, doc_type=doc_type, content=content, model=model
                 )
                 generated[doc_type] = content
+                # Phase-43-3:追記
+                new_models[doc_type] = model
+            for doc_type in doc_types:
+                await self._stages.record_document_change(
+                    project, doc_type, previous_models[doc_type], new_models[doc_type]
+                )
 
             diagnosis = await self._self_diagnose(generated, llm=llm)
             await self._chat_histories.add(
@@ -593,12 +612,23 @@ class DocGeneratorService:
 
         既存版の内容を書き換える例外は1つだけ: 承認済みのUML図を内部設計書へ反映するとき
         (`GeneratedDocumentRepository.update_content_in_place`、D1案A)。復元した版には、その版を
-        表示していた当時に反映した図のアンカーが残っている(陳腐化の判定はその`v=`で行う)。"""
+        表示していた当時に反映した図のアンカーが残っている(陳腐化の判定はその`v=`で行う)。
+        詳細設計モードでは、切り替える前に表示していた版と比べて、変更の影響を段階に記録する
+        (Phase 43-3)。"""
+        # Phase-43-3:追記
+        previous = await self._documents.get_current(project_id=project_id, doc_type=doc_type)
+        previous_model = previous.model if previous is not None else None
         restored = await self._documents.set_current(
             project_id=project_id, doc_type=doc_type, version=version
         )
         if restored is None:
             raise DocumentNotFoundError(f"{doc_type} version {version} not found")
+        # Phase-43-3:追記
+        project = await self._session.get(Project, project_id)
+        if project is not None:
+            await self._stages.record_document_change(
+                project, doc_type, previous_model, restored.model
+            )
         await self._session.commit()
         return restored
 

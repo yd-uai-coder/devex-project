@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2,29-1,29-2,42-1
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2,29-1,29-2,42-1,43-2
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -19,6 +19,7 @@
 # Phase-29-1:追記 ── app.detailed_design.procedure.StepKind, app.detailed_design.procedure.calls_function
 # Phase-29-2:追記 ── app.detailed_design.sequence(Participant, SequenceDiagram, SequenceIssue, SequenceMessage, SequenceNote, module_dependencies, reachable_callees, stubs_outside_sequence, sut_participant, to_mermaid, to_sequence)
 # Phase-42-1:追記 ── app.detailed_design.plan(assign_unit_keys, carry_over_unit_keys, unit_key), app.detailed_design.procedure_doc.relabel_units
+# Phase-43-2:追記 ── app.detailed_design.data_model.er_table_definitions
 from app.detailed_design.api_list import (
     ApiEndpoint,
     endpoint_key,
@@ -46,6 +47,7 @@ from app.detailed_design.data_model import (
     DfdAccess,
     confirm_drafts,
     dfd_accesses,
+    er_table_definitions,
     er_table_names,
     merge_crud,
     normalize_ops,
@@ -310,6 +312,8 @@ __all__ = [
     "carry_over_unit_keys",
     "endpoint_key",
     # Phase-18-1:追記
+    # Phase-43-2:追記
+    "er_table_definitions",
     "er_table_names",
     "extract_api_endpoints",
     # Phase-20-3:追記

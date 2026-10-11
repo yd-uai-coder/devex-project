@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5,31-4,31-7,38-2
+# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5,31-4,31-7,38-2,43-4
 # 写経レベル: 定型 ── Pydantic スキーマ。
 # Phase-31-4：更新(docstring: 簡易モードの段階8 ── fix_document・mode・plan・dataflow)
 # Phase-16-3:追記 ── typing.Literal, pydantic.Field
@@ -58,7 +58,9 @@ class DesignStageRead(BaseModel):
     DFD を読み直して導き直さないよう、導いた結果を渡す)。`plan`は段階8だけが持つ、作業単位
     (段階7と同じ形。詳細設計モードは承認済みの段階7、簡易モードは実装計画書の WBS を読んだもの。
     段階8が開いていなければ None)。`unit_req_ids`は段階8だけが持つ、作業単位ごとの要件ID
-    (詳細設計モードは単位の処理の段階1の要件、簡易モードは WBS の「要件」欄)。"""
+    (詳細設計モードは単位の処理の段階1の要件、簡易モードは WBS の「要件」欄)。`impact_open`・
+    `impact_reviewed`は、この段階に記録した変更の影響の印のうち、未確認・確認済みの件数(印の中身は
+    変更の影響の取得`DesignImpactRead`で読む)。"""
 
     stage: int
     # Phase-31-4:追記
@@ -80,6 +82,9 @@ class DesignStageRead(BaseModel):
     plan: dict[str, Any] | None = None
     # Phase-38-2:追記
     unit_req_ids: dict[str, list[str]] = Field(default_factory=dict)
+    # Phase-43-4:追記
+    impact_open: int = 0
+    impact_reviewed: int = 0
 
 
 class DesignStageSave(BaseModel):
@@ -179,3 +184,68 @@ class UnitAiMarkdownRead(BaseModel):
     state: StageState
     finding_total: int
     critical: int
+
+
+# Phase-43-4:追記
+class ElementChangeRead(BaseModel):
+    """変わった要素1つ(app/detailed_design/impact の ElementChange)。`source`は出どころ
+    (`stage:<N>`=段階の承認・`doc:<文書の種類>`=文書の版の切り替え)。`key`は前のキー(増えたものは
+    後のキー)、改名の後のキーは`new_key`。`before`・`after`は要素の内容(改名は前後の名前)。
+    `pending`は、まだ承認していない編集の差分(承認すると記録される)。"""
+
+    source: str
+    key: str
+    change: Literal["added", "removed", "content", "rename"]
+    stage: int
+    label: str
+    before: str | None = None
+    after: str | None = None
+    new_key: str | None = None
+    pending: bool = False
+
+
+class ImpactMarkRead(BaseModel):
+    """見直しが要る要素1つの印。`path`は変わった要素からこの要素までの道、`reason`は最後の辺の
+    種類から決まる理由の文、`sources`は届いた変更の出どころ。"""
+
+    key: str
+    label: str
+    stage: int
+    path: list[str]
+    reason: str
+    sources: list[str]
+    reviewed: bool = False
+    pending: bool = False
+
+
+class StageImpactRead(BaseModel):
+    """段階1つの、変わったものと印。`open`・`reviewed`は記録した印(pending を除く)の件数。
+    他の段階・文書から届いた未確認の印が残っていると、この段階は承認できない。"""
+
+    stage: int
+    changes: list[ElementChangeRead] = Field(default_factory=list)
+    marks: list[ImpactMarkRead] = Field(default_factory=list)
+    open: int = 0
+    reviewed: int = 0
+
+
+class RegenerationTargetRead(BaseModel):
+    """再生成の候補1つ(部分再生成できる段階5・6・8 の、印の付いた要素)。自動では再生成しない。"""
+
+    stage: int
+    key: str
+    label: str
+
+
+class DesignImpactRead(BaseModel):
+    """プロジェクトの変更の影響(作業領域の「変更の影響」パネルが読む)。`stages`はモードの全段階。"""
+
+    stages: list[StageImpactRead]
+    regeneration_targets: list[RegenerationTargetRead] = Field(default_factory=list)
+
+
+class ImpactReview(BaseModel):
+    """印の確認済みの切り替えリクエスト。`keys`の印を`reviewed`にする(知らないキーは無視する)。"""
+
+    keys: list[str] = Field(min_length=1)
+    reviewed: bool = True
