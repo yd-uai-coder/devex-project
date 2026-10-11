@@ -1,0 +1,38 @@
+/* 作成：Phase-35(完了後の調整) */
+/* 選択肢カードの選択肢(ラジオボタン)。選択中の色は CSS の :has(input:checked) で付けるので、
+   押した瞬間にブラウザが切り替える(React の描き直しを待たない)。Tamagui の Button のホバーの
+   色が選択中の色を隠す問題も起きない。色は Tamagui のテーマの CSS 変数を使う。 */
+.option {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 12px;
+  border: 1px solid var(--borderColor);
+  border-radius: 8px;
+  background: var(--background);
+  cursor: pointer;
+}
+
+.option:hover:not(:has(input:disabled)) {
+  background: var(--color3);
+}
+
+.option:has(input:checked) {
+  border: 2px solid var(--blue9);
+  background: var(--blue3);
+  /* 枠が1px太くなる分、内側の余白を減らして文字が動かないようにする */
+  padding: 7px 11px;
+}
+
+.option:has(input:disabled) {
+  cursor: default;
+}
+
+.option:has(input:disabled):not(:has(input:checked)) {
+  opacity: 0.6;
+}
+
+.radio {
+  margin-top: 4px;
+  accent-color: var(--blue9);
+}

@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-3-6,34-3
+// 作成：Phase-3-5｜更新：Phase-3-6,34-3,35(完了後の調整)
 "use client";
 
 // Phase-3-6：更新(ドキュメントプレビュー画面の再生成でも同じポーリングロジックが
@@ -48,6 +48,8 @@
 //   return (
 // ↓↓
 // Phase-34-3:追記 ── useMedia(tamagui), HearingPointsPanel
+// Phase-35(完了後の調整):追記 ── useState(react), HEADER_HEIGHT, ApiError
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { H2, Text, XStack, YStack, useMedia } from "tamagui";
@@ -55,6 +57,8 @@ import { ChatPanel } from "@/features/hearing/components/ChatPanel";
 import { HearingPointsPanel } from "@/features/hearing/components/HearingPointsPanel";
 import { useHearingStore } from "@/features/hearing/hearing-store";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
+import { HEADER_HEIGHT } from "@/components/layout/layout-constants";
+import { ApiError } from "@/lib/api/client";
 
 // POST /generateは202のみ返す(プッシュ通知が無い)ため、生成完了検知は
 // useGenerationPolling(元はここに直接書かれていたが、ドキュメントプレビュー画面の
@@ -65,8 +69,25 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
   const projectStatus = useHearingStore((s) => s.projectStatus);
   // Phase-34-3:追記
   const points = useHearingStore((s) => s.points);
+  // Phase-35(完了後の調整):追記
+  const skipPoint = useHearingStore((s) => s.skipPoint);
+  const [skippingKey, setSkippingKey] = useState<string | null>(null);
+  const [skipError, setSkipError] = useState<string | null>(null);
   // 広い画面(lg 以上)は観点の表をチャットの右に開いて置き、狭い画面はチャットの上に畳んで置く
   const wide = useMedia().lg;
+
+  // Phase-35(完了後の調整):追記
+  async function handleSkip(pointKey: string) {
+    setSkipError(null);
+    setSkippingKey(pointKey);
+    try {
+      await skipPoint(projectId, pointKey);
+    } catch (err) {
+      setSkipError(err instanceof ApiError ? err.message : "観点を対象外にできませんでした");
+    } finally {
+      setSkippingKey(null);
+    }
+  }
 
   const { timedOut } = useGenerationPolling(projectId, generationTriggered, () => {
     router.push(`/projects/${projectId}/documents`);
@@ -98,9 +119,38 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
           ↓↓ */}
       <YStack gap="$4" $lg={{ flexDirection: "row-reverse", alignItems: "flex-start" }}>
         {points ? (
-          <YStack $lg={{ width: 460, flexShrink: 0 }}>
+          // Phase-35(完了後の調整)：更新(広い画面では表をスクロールに追従させ、未決の必須を対象外にできるようにした)
+          // <YStack $lg={{ width: 460, flexShrink: 0 }}>
+          // 幅が変わって置き場所が変わったら、開閉の初期値を合わせ直す
+          // <HearingPointsPanel key={wide ? "wide" : "narrow"} view={points} defaultOpen={wide} />
+          // </YStack>
+          // ↓↓
+          // 広い画面では、チャットをスクロールしても表が見えるよう、ヘッダーの下に追従させる
+          // (表が画面より長ければ、表の中でスクロールする)
+          <YStack
+            gap="$2"
+            $lg={{
+              width: 460,
+              flexShrink: 0,
+              position: "sticky",
+              top: HEADER_HEIGHT + 16,
+              maxHeight: `calc(100vh - ${HEADER_HEIGHT + 32}px)`,
+              overflowY: "auto",
+            }}
+          >
             {/* 幅が変わって置き場所が変わったら、開閉の初期値を合わせ直す */}
-            <HearingPointsPanel key={wide ? "wide" : "narrow"} view={points} defaultOpen={wide} />
+            <HearingPointsPanel
+              key={wide ? "wide" : "narrow"}
+              view={points}
+              defaultOpen={wide}
+              onSkip={generationTriggered ? undefined : handleSkip}
+              skippingKey={skippingKey}
+            />
+            {skipError ? (
+              <Text role="alert" color="$color9" fontSize="$2">
+                {skipError}
+              </Text>
+            ) : null}
           </YStack>
         ) : null}
         <YStack minWidth={0} $lg={{ flex: 1 }}>

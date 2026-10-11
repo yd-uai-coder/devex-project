@@ -1,8 +1,9 @@
-# 作成：Phase-2-5｜更新：Phase-4-1,6-5,10-5,15-3,15-4,24(T2同期)
+# 作成：Phase-2-5｜更新：Phase-4-1,6-5,10-5,15-3,15-4,24(T2同期),35-2
 # 写経レベル: コア(Phase 2-5) ── docs/implementation_plan.md 4.4節リスク1(リトライ・クォータ処理)の実装箇所。chat_service.py/doc_generator_service.pyが共有する。
 # Phase-6-5:追記 ── time, structlog, langchain_core.messages.BaseMessage
 # Phase-10-5:追記 ── app.services.errors.LLMTokenLimitError
 # Phase-15-3:追記 ── app.core.errors.AppError
+# Phase-35-2：削除 ── app.core.errors.AppError(as_llm_error の削除で使わなくなった)
 import asyncio
 import time
 from collections.abc import Awaitable, Callable, Sequence
@@ -11,7 +12,6 @@ from typing import TypeVar
 import structlog
 from langchain_core.messages import BaseMessage
 
-from app.core.errors import AppError
 from app.services.errors import GenerationFailedError, LLMQuotaExceededError, LLMTokenLimitError
 
 T = TypeVar("T")
@@ -45,13 +45,13 @@ async def invoke_with_retry[T](
 ) -> T:
     """LLM呼び出しをラップし、クォータ超過は即座に諦め、それ以外の一時的エラーは規定回数までリトライする。
 
-    chat_service.py(完了判定)・doc_generator_service.py(4文書生成+自己診断)の双方が同じ
+    chat_service.py(観点の判定・返信)・doc_generator_service.py(4文書生成+自己診断)の双方が同じ
     リトライ・クォータ判定ロジックを必要とするため、この共有モジュールに集約した
     (docs/implementation_plan.md 4.4節リスク1「指数バックオフ」の実装箇所)。
 
-    ストリーミング応答(chat_service.ChatService.stream_reply)には適用していない ──
-    ストリームは途中までクライアントへ送信済みの可能性があり、最初からやり直すのは安全でないため
-    (この場合はストリームの失敗をそのまま伝播させ、クライアント側の再送に委ねる)。
+    (Phase 35-2: 以前はストリーミング応答には適用しないと書いていた。)
+    ヒアリングの返信も、本文と選択肢カードを構造化出力の1回で作るため(トークンごとには流さず、
+    クライアントへ何も送っていない段階で呼ぶため)、ここでリトライしてよい。
 
     Phase 6-5: 呼び出し成功時はDEBUGでレイテンシ・プロンプト文字数を、一時的失敗・クォータ超過は
     WARNINGを、規定回数リトライしても失敗した場合はERROR(スタックトレース付き)を記録する
@@ -128,18 +128,20 @@ async def invoke_with_retry[T](
 
 
 # Phase-15-3:追記
-def as_llm_error(exc: Exception) -> Exception:
-    """再試行しないLLM呼び出し(ストリーミング)の失敗を、invoke_with_retryと同じ共通の例外に
-    揃える(トークン上限 / クォータ超過 / それ以外の失敗)。既にAppErrorならそのまま返す。"""
-    if isinstance(exc, AppError):
-        return exc
-    if _is_input_token_limit_error(exc):
-        return LLMTokenLimitError("AIへの入力が大きすぎるため処理できませんでした。")
-    if _is_quota_error(exc):
-        return LLMQuotaExceededError("本日の利用上限に達しました。時間をおいて再度お試しください。")
-    return GenerationFailedError("AIからの応答生成に失敗しました。時間をおいて再度お試しください。")
-
-
+# Phase-35-2：削除(ヒアリングの返信を構造化出力の1回にし、ストリーミングの失敗を変換する呼び出し元が
+# 無くなった。返信も invoke_with_retry を通る)
+# def as_llm_error(exc: Exception) -> Exception:
+#     """再試行しないLLM呼び出し(ストリーミング)の失敗を、invoke_with_retryと同じ共通の例外に
+#     揃える(トークン上限 / クォータ超過 / それ以外の失敗)。既にAppErrorならそのまま返す。"""
+#     if isinstance(exc, AppError):
+#         return exc
+#     if _is_input_token_limit_error(exc):
+#         return LLMTokenLimitError("AIへの入力が大きすぎるため処理できませんでした。")
+#     if _is_quota_error(exc):
+#         return LLMQuotaExceededError("本日の利用上限に達しました。時間をおいて再度お試しください。")
+#     return GenerationFailedError("AIからの応答生成に失敗しました。時間をおいて再度お試しください。")
+#
+#
 # Phase-15-4：更新(気づき#7: Tavilyの利用上限超過も判定する)
 # def _is_quota_error(exc: Exception) -> bool:
 #     """例外がGemini APIのクォータ超過(429相当)を示すものかどうかを判定する。

@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整)
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -20,6 +20,8 @@
 # Phase-15-3:追記 ── structlog, app.core.errors.AppError
 # Phase-24(T2同期):追記 ── contextlib(ruff の SIM105 に合わせ、try/except/pass を contextlib.suppress にした)
 # Phase-34-2:追記 ── app.schemas.hearing.HearingPointsRead
+# Phase-35-2:追記 ── app.services.chat_service.ReplyCards
+# Phase-35(完了後の調整):追記 ── app.schemas.hearing.HearingPointUpdate
 import contextlib
 import json
 import uuid
@@ -34,9 +36,14 @@ from app.api.responses import content_disposition
 from app.core.errors import AppError, BadRequestError
 from app.schemas.document import DocType, GeneratedDocumentRead
 from app.schemas.generation import HearingCompletionCheck
-from app.schemas.hearing import ChatHistoryRead, HearingMessageRequest, HearingPointsRead
+from app.schemas.hearing import (
+    ChatHistoryRead,
+    HearingMessageRequest,
+    HearingPointsRead,
+    HearingPointUpdate,
+)
 from app.schemas.project import ProjectDetail, ProjectMode, ProjectRead
-from app.services.chat_service import ChatService
+from app.services.chat_service import ChatService, ReplyCards
 from app.services.doc_generator_service import DocGeneratorService, generate_documents
 from app.services.errors import GenerationFailedError, LLMQuotaExceededError
 from app.services.project import ProjectService, UploadedFileInput
@@ -153,7 +160,10 @@ async def get_project(session: SessionDep, current_project: CurrentProjectDep) -
 async def send_hearing_message(
     payload: HearingMessageRequest, session: SessionDep, current_project: CurrentProjectDep
 ) -> StreamingResponse:
-    """ヒアリングチャットへメッセージを送信し、AI応答をSSE(Server-Sent Events)でストリーミング返却する。"""
+    # Phase-35-2：更新(docstring: 本文とカードのイベント)
+    """ヒアリングチャットへメッセージ(と選択肢カードへの回答)を送信し、AI応答をSSE
+    (Server-Sent Events)で返す。本文は`data: {"delta": ...}`、選択肢カードは
+    `event: cards`(`data: {"cards": [...]}`)で送り、`data: [DONE]`で終える。"""
 
     # Phase-15-3：更新
     # async def event_stream():
@@ -165,10 +175,28 @@ async def send_hearing_message(
     # ↓↓
     async def event_stream():
         try:
-            async for chunk in ChatService(session).stream_reply(
-                current_project, user_message=payload.message
+            # Phase-35-2：更新
+            # async for chunk in ChatService(session).stream_reply(
+            #     current_project, user_message=payload.message
+            # ↓↓
+            # Phase-35(完了後の調整)：更新(continue_optional を渡す)
+            # async for item in ChatService(session).stream_reply(
+            #     current_project, user_message=payload.message, card_answers=payload.card_answers
+            # ↓↓
+            async for item in ChatService(session).stream_reply(
+                current_project,
+                user_message=payload.message,
+                card_answers=payload.card_answers,
+                continue_optional=payload.continue_optional,
             ):
-                yield f"data: {json.dumps({'delta': chunk}, ensure_ascii=False)}\n\n"
+                # Phase-35-2：更新
+                # yield f"data: {json.dumps({'delta': chunk}, ensure_ascii=False)}\n\n"
+                # ↓↓
+                if isinstance(item, ReplyCards):
+                    body = json.dumps({"cards": item.cards}, ensure_ascii=False)
+                    yield f"event: cards\ndata: {body}\n\n"
+                else:
+                    yield f"data: {json.dumps({'delta': item}, ensure_ascii=False)}\n\n"
         except Exception as exc:  # noqa: BLE001 -- 200を返した後なので、失敗はSSEのイベントで伝える
             await session.rollback()
             yield _sse_error_event(exc)
@@ -229,6 +257,19 @@ async def get_hearing_points(
 ) -> HearingPointsRead:
     """チャット画面の観点の表を返す(判定はチャットの送信時に行い、ここではLLMを呼ばない)。"""
     return await ChatService(session).points_view(current_project)
+
+
+# Phase-35(完了後の調整):追記
+@router.put("/{project_id}/hearing-points/{point_key}", response_model=HearingPointsRead)
+async def update_hearing_point(
+    point_key: str,
+    payload: HearingPointUpdate,
+    session: SessionDep,
+    current_project: CurrentProjectDep,
+) -> HearingPointsRead:
+    """観点の表の画面から、未決の観点を「対象外(後で決める)」にし、作り直した表を返す
+    (LLMは呼ばない。完了判定もその場で表から作り直す)。"""
+    return await ChatService(session).mark_point_not_applicable(current_project, point_key)
 
 
 @router.post("/{project_id}/generate", status_code=status.HTTP_202_ACCEPTED)

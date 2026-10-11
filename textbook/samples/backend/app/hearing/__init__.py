@@ -1,6 +1,28 @@
-# 作成：Phase-34-1
+# 作成：Phase-34-1｜更新：Phase-35-1,35(完了後の調整)
 """ヒアリングのドメインロジック(純粋関数)。"""
 
+# Phase-35-1:追記 ── app.hearing.cards(選択肢カードの型と純粋関数)
+# Phase-35(完了後の調整):追記 ── carry_over_cards, describe_points, open_optional
+from app.hearing.cards import (
+    CARD_LIMIT,
+    SCALE_CARD_OPTIONS,
+    Card,
+    CardAnswerError,
+    CardOption,
+    apply_card_answers,
+    card_as_text,
+    card_from_dict,
+    card_targets,
+    card_to_dict,
+    cards_from_json,
+    carry_over_cards,
+    compose_answer_message,
+    mark_selected,
+    resolve_answers,
+    sanitize_cards,
+    scale_card,
+    scale_of_answer,
+)
 from app.hearing.points import (
     DEFAULT_SCALE,
     POINT_DEFS,
@@ -15,6 +37,7 @@ from app.hearing.points import (
     PointStatus,
     Scale,
     build_summary,
+    describe_points,
     effective_scale,
     initial_states,
     is_point_key,
@@ -23,6 +46,7 @@ from app.hearing.points import (
     merge_judgement,
     missing_labels,
     number_messages,
+    open_optional,
     open_required,
     point_def,
     questions_for_reply,
@@ -31,6 +55,25 @@ from app.hearing.points import (
 )
 
 __all__ = [
+    # Phase-35-1:追記
+    "CARD_LIMIT",
+    "SCALE_CARD_OPTIONS",
+    "Card",
+    "CardAnswerError",
+    "CardOption",
+    "apply_card_answers",
+    "card_as_text",
+    "card_from_dict",
+    "carry_over_cards",
+    "card_targets",
+    "card_to_dict",
+    "cards_from_json",
+    "compose_answer_message",
+    "mark_selected",
+    "resolve_answers",
+    "sanitize_cards",
+    "scale_card",
+    "scale_of_answer",
     "DEFAULT_SCALE",
     "POINT_DEFS",
     "POINT_KEYS",
@@ -44,6 +87,7 @@ __all__ = [
     "PointStatus",
     "Scale",
     "build_summary",
+    "describe_points",
     "effective_scale",
     "initial_states",
     "is_point_key",
@@ -52,6 +96,7 @@ __all__ = [
     "merge_judgement",
     "missing_labels",
     "number_messages",
+    "open_optional",
     "open_required",
     "point_def",
     "questions_for_reply",

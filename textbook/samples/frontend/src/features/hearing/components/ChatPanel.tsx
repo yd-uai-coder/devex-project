@@ -1,12 +1,50 @@
-// 作成：Phase-3-5｜更新：Phase-4-2,15-8
+// 作成：Phase-3-5｜更新：Phase-4-2,15-8,35-3,35(完了後の調整)
 "use client";
 
+// Phase-35-3:追記 ── ChoiceCards, latestAiMessage・pendingAnswers(@/features/hearing/cards)
+// Phase-35(完了後の調整):追記 ── HearingCard(@/features/hearing/api/hearingApi)
 import { useEffect, useState } from "react";
 import { Button, TextArea, Text, XStack, YStack } from "tamagui";
+import { ChoiceCards } from "@/features/hearing/components/ChoiceCards";
 import { MessageBubble } from "@/features/hearing/components/MessageBubble";
+import { latestAiMessage, pendingAnswers } from "@/features/hearing/cards";
 import { HearingCompletionBanner } from "@/features/hearing/components/HearingCompletionBanner";
 import { useHearingStore } from "@/features/hearing/hearing-store";
+import type { HearingCard } from "@/features/hearing/api/hearingApi";
 import { ApiError } from "@/lib/api/client";
+
+// Phase-35(完了後の調整)：削除(文は送らず、サーバーが決まった文を残す)
+// // 「任意項目についてヒアリングを続ける」で送る発言(履歴に残り、AI も読む)
+// const CONTINUE_OPTIONAL_MESSAGE = "任意の項目についてもヒアリングを続けてください";
+
+// Phase-35(完了後の調整):追記
+// 最新の AI の発言のカード。選択中の状態はここだけがストアから読む(選ぶたびにチャット全体を
+// 描き直さないため。描き直すと、発言ごとの Markdown の解析で色が付くのが遅くなる)
+function LatestChoiceCards({
+  cards,
+  onSend,
+  disabled,
+}: {
+  cards: HearingCard[];
+  onSend: (cardId: string) => void;
+  disabled: boolean;
+}) {
+  const cardDrafts = useHearingStore((s) => s.cardDrafts);
+  // Phase-35(完了後の調整)：削除
+  // const selectCardOption = useHearingStore((s) => s.selectCardOption);
+  return (
+    <ChoiceCards
+      cards={cards}
+      drafts={cardDrafts}
+      onSelect={selectCardOption}
+      onSend={onSend}
+      disabled={disabled}
+    />
+  );
+}
+
+const NO_DRAFTS: Record<string, number> = {};
+
 
 export function ChatPanel({ projectId }: { projectId: string }) {
   const messages = useHearingStore((s) => s.messages);
@@ -21,6 +59,12 @@ export function ChatPanel({ projectId }: { projectId: string }) {
   const sendMessage = useHearingStore((s) => s.sendMessage);
   const approveAndGenerate = useHearingStore((s) => s.approveAndGenerate);
   const dismissConnectionLost = useHearingStore((s) => s.dismissConnectionLost);
+  // Phase-35-3:追記
+  // Phase-35(完了後の調整)：削除(選択中の状態は LatestChoiceCards だけが読む)
+  // const cardDrafts = useHearingStore((s) => s.cardDrafts);
+  // Phase-35(完了後の調整):追記
+  const points = useHearingStore((s) => s.points);
+  const selectCardOption = useHearingStore((s) => s.selectCardOption);
 
   const [draft, setDraft] = useState("");
   const [approving, setApproving] = useState(false);
@@ -30,9 +74,23 @@ export function ChatPanel({ projectId }: { projectId: string }) {
     void loadHistory(projectId);
   }, [projectId, loadHistory]);
 
+  // Phase-35-3:追記
+  // 選べるのは最新の AI の発言のカードだけ。カードを選んでいれば、文が空でも送れる
+  const latestAi = latestAiMessage(messages);
+  // Phase-35(完了後の調整)：更新(件数だけを購読する。件数が変わったときだけ描き直す)
+  // const selectedCount = pendingAnswers(latestAi?.cards ?? [], cardDrafts).length;
+  // ↓↓
+  const selectedCount = useHearingStore(
+    (s) => pendingAnswers(latestAiMessage(s.messages)?.cards ?? [], s.cardDrafts).length,
+  );
+  const canSend = !sending && !generationTriggered && (draft.trim().length > 0 || selectedCount > 0);
+
   function handleSend() {
     const text = draft.trim();
-    if (!text || sending) return;
+    // Phase-35-3：更新
+    // if (!text || sending) return;
+    // ↓↓
+    if (!canSend) return;
     setDraft("");
     void sendMessage(projectId, text);
   }
@@ -47,6 +105,28 @@ export function ChatPanel({ projectId }: { projectId: string }) {
   //   setApproving(false);
   // }
   // ↓↓
+  // Phase-35(完了後の調整):追記
+  // 必須がそろった後に、バナーに並べる未決の任意の観点(観点の表から)
+  const optionalPoints = points?.points.filter((p) => !p.required && p.status === "open") ?? [];
+
+  // バナーの「任意項目についてヒアリングを続ける」。返信に任意の観点のカードが付く
+  function handleContinueOptional() {
+    if (sending || generationTriggered) return;
+    // Phase-35(完了後の調整)：更新(文は送らない。サーバーが決まった文を利用者の発言として残し、判定の LLM は呼ばない)
+    // void sendMessage(projectId, CONTINUE_OPTIONAL_MESSAGE, { continueOptional: true });
+    // ↓↓
+    void sendMessage(projectId, "", { continueOptional: true });
+  }
+
+  // Phase-35(完了後の調整):追記
+  // カードごとの「この回答を送る」。入力欄の文も一緒に送る
+  function handleSendCard(cardId: string) {
+    if (sending || generationTriggered) return;
+    const text = draft.trim();
+    setDraft("");
+    void sendMessage(projectId, text, { cardIds: [cardId] });
+  }
+
   async function handleApprove() {
     // Phase-15-8:追記 ── 二度押しの防止(ボタンも approving の間は無効にする)
     if (approving) return;
@@ -110,7 +190,33 @@ export function ChatPanel({ projectId }: { projectId: string }) {
         {messages
           .filter((message) => message.sender !== "attachment" && message.sender !== "others")
           .map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            // Phase-35-3：更新
+            // <MessageBubble key={message.id} message={message} />
+            // ↓↓
+            <YStack key={message.id} gap="$2">
+              <MessageBubble message={message} />
+              {message.cards && message.cards.length > 0 ? (
+                // Phase-35(完了後の調整)：更新(最新のカードだけが選択中の状態を読む)
+                // <ChoiceCards
+                // cards={message.cards}
+                // drafts={message === latestAi ? cardDrafts : {}}
+                // onSelect={message === latestAi ? selectCardOption : undefined}
+                // Phase-35(完了後の調整):追記
+                // onSend={message === latestAi ? handleSendCard : undefined}
+                // disabled={sending || generationTriggered}
+                // />
+                // ↓↓
+                message === latestAi ? (
+                  <LatestChoiceCards
+                    cards={message.cards}
+                    onSend={handleSendCard}
+                    disabled={sending || generationTriggered}
+                  />
+                ) : (
+                  <ChoiceCards cards={message.cards} drafts={NO_DRAFTS} />
+                )
+              ) : null}
+            </YStack>
           ))}
         {streamingReply ? (
           <MessageBubble
@@ -120,7 +226,17 @@ export function ChatPanel({ projectId }: { projectId: string }) {
       </YStack>
 
       {completion && !generationTriggered ? (
-        <HearingCompletionBanner completion={completion} onApprove={handleApprove} approving={approving} />
+        // Phase-35(完了後の調整)：更新(任意の観点の一覧と「続ける」を渡す)
+        // <HearingCompletionBanner completion={completion} onApprove={handleApprove} approving={approving} />
+        // ↓↓
+        <HearingCompletionBanner
+          completion={completion}
+          onApprove={handleApprove}
+          approving={approving}
+          optionalPoints={optionalPoints}
+          onContinueOptional={handleContinueOptional}
+          sending={sending}
+        />
       ) : null}
       {approveError ? (
         <Text role="alert" color="$color9" fontSize="$2">
@@ -135,8 +251,12 @@ export function ChatPanel({ projectId }: { projectId: string }) {
           placeholder="メッセージを入力"
           disabled={sending || generationTriggered}
         />
+        {/* Phase-35-3：更新
         <Button onPress={handleSend} disabled={sending || generationTriggered || draft.trim().length === 0}>
           {sending ? "送信中..." : "送信"}
+        ↓↓ */}
+        <Button onPress={handleSend} disabled={!canSend}>
+          {sending ? "送信中..." : selectedCount > 0 ? `送信(カード ${selectedCount} 件の選択を含む)` : "送信"}
         </Button>
       </YStack>
     </YStack>

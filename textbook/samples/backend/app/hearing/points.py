@@ -1,4 +1,4 @@
-# 作成：Phase-34-1
+# 作成：Phase-34-1｜更新：Phase-35(完了後の調整)
 """ヒアリングの観点の表(純粋関数)。
 
 docs/internal_design.md 3.3節「観点の定義はコードに持つ」。観点は機能面の観点と、IPA の
@@ -240,6 +240,17 @@ def open_required(states: Mapping[str, PointState], scale: Scale | None) -> list
     ]
 
 
+# Phase-35(完了後の調整):追記
+def open_optional(states: Mapping[str, PointState], scale: Scale | None) -> list[PointDef]:
+    """任意で未決の観点(定義の順)。必須がそろった後に、利用者が続けると選んだときに聞く。"""
+    return [
+        d
+        for d in POINT_DEFS
+        if not is_required(d.key, scale)
+        and (states[d.key].status if d.key in states else "open") == "open"
+    ]
+
+
 def is_sufficient(states: Mapping[str, PointState], scale: Scale | None) -> bool:
     """ヒアリングの完了: 必須の観点がすべて未決以外(対象外でもよい)。"""
     return not open_required(states, scale)
@@ -249,7 +260,16 @@ def questions_for_reply(
     states: Mapping[str, PointState], scale: Scale | None, *, limit: int = 3
 ) -> list[str]:
     """返信の LLM に渡す「まだ確認できていない観点」。未決の必須を定義の順に最大`limit`件。"""
-    return [f"{d.label}(例: {d.question})" for d in open_required(states, scale)[:limit]]
+    # Phase-35(完了後の調整)：更新(形を describe_points に切り出した。任意の観点を聞くときも使う)
+    # return [f"{d.label}(例: {d.question})" for d in open_required(states, scale)[:limit]]
+    # ↓↓
+    return describe_points(open_required(states, scale)[:limit])
+
+
+# Phase-35(完了後の調整):追記
+def describe_points(defs: Iterable[PointDef]) -> list[str]:
+    """観点を「名前(例: 場面で聞く問い)」の形にする(返信の LLM に渡す)。"""
+    return [f"{d.label}(例: {d.question})" for d in defs]
 
 
 def to_state(

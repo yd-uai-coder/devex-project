@@ -22,7 +22,7 @@
 ### 2. アーキテクチャ方針
 
 * **バックエンド構成**: クリーンアーキテクチャ（またはレイヤードアーキテクチャ）の考え方を導入し、「ルーター（API）」、「サービス（ビジネスロジック・LangChain連携）」、「リポジトリ（DBアクセスマネジメント）」に責務を分離する。これにより、プロンプトのチューニングやLLMモデルの変更に対する拡張性を高める。
-* **非同期・ストリーミング処理**: チャットの対話では **Server-Sent Events (SSE)** を用いたストリーミング応答を実装し、ユーザーの待ち時間を軽減する。SSEを採用する理由: (1) 通常のHTTPで完結しFastAPIの`StreamingResponse`で実装できる、(2) 送信はユーザーからのPOSTで十分でありサーバー→クライアントの片方向で要件を満たせる、(3) ブラウザの`EventSource`が自動再接続を標準サポートする、(4) 現行要件に双方向のリアルタイム機能(タイピングインジケーター等)が無い。将来双方向のリアルタイム機能が必要になった場合はWebSocketへの移行を再検討する。また、ヒアリング完了後の「4種の設計書一括生成」では、タスクがタイムアウトしないよう非同期バックグラウンドワーカー（FastAPI BackgroundTasks もしくは Celery）による処理を導入する。
+* **非同期・ストリーミング処理**: チャットの対話では **Server-Sent Events (SSE)** を用いたストリーミング応答を実装し、ユーザーの待ち時間を軽減する。SSEを採用する理由: (1) 通常のHTTPで完結しFastAPIの`StreamingResponse`で実装できる、(2) 送信はユーザーからのPOSTで十分でありサーバー→クライアントの片方向で要件を満たせる、(3) ブラウザの`EventSource`が自動再接続を標準サポートする、(4) 現行要件に双方向のリアルタイム機能(タイピングインジケーター等)が無い。将来双方向のリアルタイム機能が必要になった場合はWebSocketへの移行を再検討する。なお、ステージ6(Phase 35)からヒアリングの返信は本文と選択肢カードを1回の構造化出力で作るため、本文はトークンごとには流れず、まとめて1回で届く(SSE は本文・カード・失敗を順に伝える経路として使い続ける)。また、ヒアリング完了後の「4種の設計書一括生成」では、タスクがタイムアウトしないよう非同期バックグラウンドワーカー（FastAPI BackgroundTasks もしくは Celery）による処理を導入する。
 * **認証(JWT)のトークン方針**: アクセストークン有効期限は30分、リフレッシュトークン有効期限は14日とする。リフレッシュトークンはhttpOnly Secure Cookieに保持(XSS対策)し、アクセストークンはクライアントメモリ(Zustandストア、非persist)に保持する。リフレッシュは`devex-ui`既存の`auth-store.ts`(JWT `exp`検知+サイレントリフレッシュタイマー)パターンを踏襲し、有効期限の一定時間前に自動リフレッシュする。この仕様は将来の別プロジェクトでも再利用する想定であり、Devexプロジェクト完了後に`devex-api`/`devex-ui`テンプレートリポジトリ側のデフォルト仕様として反映する(`textbook/decision-digest.md`参照)。
 
 ---
@@ -74,7 +74,8 @@
 | project_id | UUID | FK (`projects.id`), NOT NULL | プロジェクトID |
 | sender | VARCHAR(20) | NOT NULL | 送信者タイプ ('user' / 'ai' / 'intake': 初期ヒアリング入力の記録 / 'others': ドキュメント自己診断結果の記録) |
 | message | TEXT | NOT NULL | メッセージ本文 |
-| created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 送信日時 |
+| cards | JSONB | NULL可 | 選択肢カード(AI の発言だけが持つ。カードごとに id・観点のキーと名前・問い・選択肢(名前と結果)・おすすめの番号と理由・選ばれた選択肢の番号。Phase 35) |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 送信日時。アプリが行ごとに時刻を入れる(1回の送信で利用者の発言と AI の返信を同じトランザクションで保存するため、DB の`now()`(トランザクションの開始時刻)では2行が同じ時刻になり、発生順に並ばない。Phase 35 完了後の調整) |
 
 #### ④ `generated_documents` テーブル
 
@@ -274,8 +275,9 @@ backend/
 | **POST** | `/api/v1/projects` | 新規プロジェクト作成(初期ヒアリング入力を`intake`として受け取る。ステージ4では`mode`(`simple`/`detailed`、省略時`simple`)も受け取る。添付ファイル最大3件・txt/md/pdfのみを伴う場合は`multipart/form-data`になる。[外部設計書](external_design.md) 2.5節3項・5項参照) | 必要 |
 | **GET** | `/api/v1/projects` | ユーザーのプロジェクト一覧取得 | 必要 |
 | **GET** | `/api/v1/projects/{id}` | 特定プロジェクトの詳細・状態取得(添付ファイルのサマリ ── ファイル名・形式・`status` ── を含む。`extracted_text`本文は含めない) | 必要 |
-| **POST** | `/api/v1/projects/{id}/chat` | チャットメッセージ送信・AI応答取得（ストリーミング対応）。途中で失敗したときは`event: error`(`data: {code, detail}`)を送って終える(200を返した後のため。発話は保存しない。Phase 15) | 必要 |
+| **POST** | `/api/v1/projects/{id}/chat` | チャットメッセージ送信・AI応答取得（SSE）。本文は`{message, card_answers: [{card_id, option}], continue_optional}`(message と card_answers のどちらか一方は要る。Phase 35。`continue_optional`は必須がそろった後に任意の観点を続けるとき。Phase 35 完了後の調整)。応答は本文`data: {"delta"}`・選択肢カード`event: cards`(`data: {"cards": [...]}`)・`data: [DONE]`の順。途中で失敗したときは`event: error`(`data: {code, detail}`)を送って終える(200を返した後のため。発話は保存しない。Phase 15。古いカード・回答済みのカードへの回答は`INVALID_CARD_ANSWER`) | 必要 |
 | **GET** | `/api/v1/projects/{id}/chat` | 特定プロジェクトのチャット履歴取得 | 必要 |
+| **PUT** | `/api/v1/projects/{id}/hearing-points/{key}` | 観点の表の画面から、未決の観点を「対象外(後で決める)」にする(本文`{status: "not_applicable"}`のみ)。LLM は呼ばず、完了判定をその場で表から作り直し、作り直した観点の表を返す。知らないキーは 404、未決でない観点・生成中は 409(Phase 35 完了後の調整) | 必要 |
 | **POST** | `/api/v1/projects/{id}/generate` | 設計書の自動生成トリガー（非同期。簡易ドキュメントモードは4種、詳細設計モードは要件定義・外部設計の2種。生成中は409 `DOC_GENERATION_IN_PROGRESS`。Phase 15） | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents` | 生成された設計書一覧(doc_typeごとの現在表示中(`is_current`)の版のみ)・内容の取得 | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents/{doc_id}/download` | 指定Markdownドキュメントのダウンロード | 必要 |
@@ -459,6 +461,10 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 * **観点の定義はコードに持つ**: 観点のキー・名前・種類(機能面 / 非機能)・場面で聞く問いの例・規模ごとの必須を、コードの表で持つ(テンプレートや DB には持たない)。完了の判定・次に聞く観点・画面の表示は、この表と`hearing_points`から決定的に導く。
 * **判定の LLM の役割を狭める(Phase 34 で実装)**: `ChatService.judge_points`が、利用者側の発言に`[#n]`の番号を付け、今の観点の表と一緒に LLM に渡す。LLM は観点ごとの状態・決めたこと・根拠の番号と規模を返す(`HearingPointsJudgement`)。コードが番号を`chat_histories.id`に直し、根拠の無い「決定」を捨てて表に取り込む(`app/hearing/points.py`の`merge_judgement`)。「十分」はコードが決める。未決の必須の観点は、規模を先頭に定義の順で3つまで、返信を作る LLM に渡す。発言の回数の下限(3回)は外した。画面には`GET /projects/{id}/hearing-points`で表を返す。
 * **選択肢カード**: AI の問いを構造化(観点・問い・選択肢・選択肢ごとの結果・おすすめ)して、チャットのストリーミングとは別のイベントで返す。カードは1回の返信で数枚まとめて出す(独立した観点だけ。規模は単独で先に)。選択はコードがその場で`hearing_points`を`adopted`にする(LLM は呼ばない)。まとめた選択は1つの利用者の発言として`chat_histories`に残し、判定と返信はまとめて1回だけ回す(Phase 33 完了後に決定)。
+  * **Phase 35 で実装した部分**: カードは`chat_histories.cards`(AI の行)に持ち、選ばれた選択肢も同じ JSON に書く。送信の処理の順は「回答を確かめる(最新の AI の発言のカードか・未回答か・番号の範囲。`app/hearing/cards.py`の`resolve_answers`)→ 選んだ内容と文を1つの発言として保存(`compose_answer_message`)→ 選ばれた観点を`adopted`(決めたこと = 選んだ選択肢、根拠 = その発言。`apply_card_answers`)にして表に保存 → 判定の LLM(表には採用が入った状態で渡る)→ 返信」。カードにしてよい観点はコードが決める(`card_targets`: 規模が未決なら規模だけ、決まっていれば未決の必須の先頭3つ)。返信は本文とカードの構造化出力(`HearingReplyOut`)を`invoke_with_retry`で1回呼び、候補の外・壊れたカードは`sanitize_cards`で捨てる。規模のカードは LLM に作らせず、コードが決まった選択肢で出し(`scale_card`)、選ばれたら`projects.hearing_scale`に入れる。返信をトークンごとに流すのはやめた(本文は1回の`delta`で届く)。AI の発言を LLM に見せるときは、カードの問いと選択肢を文にして後ろに足す。
+  * **Phase 35 完了後の調整**: AI の最初の発話にも規模のカードを付ける(`generate_opening_reply`。LLM の呼び出しは1回のまま)。返信のプロンプトの「まだ確認できていない観点」に、一覧が残っている間は「要件がそろった・生成のボタンを押す」と書かないよう足した(`_MISSING_POINTS_NOTE`)。行き詰まりの逃げ道として、利用者が画面で未決の観点を「対象外」にできる(`ChatService.mark_point_not_applicable`)。この状態は根拠の発言を持たない(判定の LLM の取り込み規則「根拠の無い決定は取り込まない」は LLM の出力にだけ掛ける。利用者の画面の操作は、それ自体が利用者の決定のため)。
+  * **Phase 35 完了後の調整(2回目)**: `_record_user_turn`は最新の AI の発言のカードと今回の回答を返し、`carry_over_cards`(`app/hearing/cards.py`)が、答えなかったカードのうち観点がまだ未決のものを id を振り直して次の返信に付け直す(付け直す観点は LLM のカードの候補から外す)。返信にカードが無く、本文に問いも無く、聞くべき観点が残っていれば、`_ensure_question`が先頭の観点の問いを本文に足す。必須がそろった後は、`continue_optional`または任意の観点のカードへの回答があり、未決の任意(`open_optional`)が残っているときだけ、未決の任意の先頭3つを候補にして返信を作る(それ以外はまとめ)。完了判定は必須だけで決めるので、任意を続けている間も十分のまま。
+  * **Phase 35 完了後の調整(3回目)**: `CARD_LIMIT = 1`(1回の返信の問いは1つ)。`_next_targets`が次に聞く観点を1つ選び(必須が未決なら`card_targets`、そろっていれば未決の任意)、前の返信で答えなかったカードがあればそれを付け直す(`_compose_reply`の`code_card`。LLM にはカードを作らせず、`_CODE_CARD_NOTE`で前置きだけを書かせる)。`sanitize_cards`は既定で1枚まで。`generate_opening_reply`は先に`judge_points`で初期入力・添付資料を判定し(失敗しても続ける)、判定後の表で次の観点の問いを付ける(最初の発話も構造化出力)。`stream_reply`は、送信に文が無く(カードの回答だけ・「任意を続ける」だけ)、判定が済んでいる(`hearing_check`があり、観点の表の行がある)ときは`judge_points`を呼ばず、記録後の表から完了を判定する。
 * **要件定義書・外部設計書の意味モデル**: ステージ4の段階と同じく「構造化出力 → Pydantic の model → md を組み立てる」。要件定義書は要件の行(`FR`/`NFR`/`CON`の ID・優先度または大項目・本文・出どころ`user`/`adopted`/`assumed`・観点のキー)と、1.1〜1.3 の本文。外部設計書は画面・API・外部連携の行(関係する要件ID を持つ)と、本文の節。model の置き場(`generated_documents`の列にするか)と、再生成したときの ID の扱いは Phase 36 で決める。
 * **後続は md を読む**: 段階・自己診断・簡易モードの後続の文書は、model から組み立てた md を今と同じく入力にする。要件ID は md に出るので、段階1の下書き・WBS がそれを参照できる。
 * **要件 → 処理**: 段階1の機能の行に`req_ids`を足す(`FunctionRow`)。段階1の検証に、処理の無い Must の機能要件(中程度)・要件の無い処理(軽微)・要件定義書に無い要件ID(軽微)を足す。要件定義書に model が無いプロジェクトは「要件ID が無い」の軽微な指摘だけにする。簡易モードは`simple_procedure/wbs.parse_wbs`が WBS の「要件」の行を読む。

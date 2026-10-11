@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -11,6 +11,7 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 決定論的に応答を組み立てる設計にした。
 """
 # Phase-24：削除 ── app.uml.generation.schemas.DfdGenerationOutput, app.uml.generation.schemas.ErGenerationOutput, app.uml.generation.schemas.GeneratedColumn, app.uml.generation.schemas.GeneratedProcess, app.uml.generation.schemas.GeneratedTable
+# Phase-35-2:追記 ── app.hearing.is_point_key, app.schemas.hearing(CardOptionOut, CardOut, HearingReplyOut)
 from __future__ import annotations
 
 # Phase-10-5:追記 ── app.uml.generation.schemas(UML生成の出力スキーマ一式)
@@ -67,8 +68,14 @@ from app.detailed_design.procedure_doc_drafting import (
 )
 from app.detailed_design.procedure_drafting import GeneratedStep, ProcedureGenerationOutput
 from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleListGenerationOutput
-from app.hearing import POINT_DEFS
-from app.schemas.hearing import HearingPointsJudgement, JudgedPointOut
+from app.hearing import POINT_DEFS, is_point_key
+from app.schemas.hearing import (
+    CardOptionOut,
+    CardOut,
+    HearingPointsJudgement,
+    HearingReplyOut,
+    JudgedPointOut,
+)
 from app.uml.generation.schemas import (
     ComponentGenerationOutput,
     GeneratedDataItem,
@@ -99,6 +106,10 @@ _TURNS_UNTIL_SUFFICIENT = 4
 # Phase-34-2:追記
 # 判定のLLMに見せる発言の番号([#n])。根拠の番号として返す
 _MESSAGE_NUMBER = re.compile(r"^\[#(\d+)\] ")
+
+# Phase-35-2:追記
+# 返信のシステムプロンプトにある「カードにしてよい観点」の行(- キー: 観点(例: ...))
+_CARD_TARGET = re.compile(r"^- ([a-z_]+): ", re.MULTILINE)
 
 # doc_generator_service.pyの各doc_type専用プロンプト(_DOC_TYPE_PROMPTS)は、他doc_typeへの
 # 入力参照を「以下の【要件定義書】および【外部設計書】に基づき...」のような角括弧表記で行うため、
@@ -630,6 +641,29 @@ def _judge_points(messages: list[Any]) -> HearingPointsJudgement:
     )
 
 
+# Phase-35-2:追記
+def _hearing_reply(messages: list[Any]) -> HearingReplyOut:
+    """ヒアリングの返信の偽物。固定の本文と、カードにしてよい観点の先頭1つのカードを返す
+    (候補が無ければカードは無し。規模のカードはchat_serviceが出すので、ここでは作らない)。"""
+    system_text = "\n".join(
+        str(m.content) for m in messages if m.__class__.__name__ == "SystemMessage"
+    )
+    keys = [key for key in _CARD_TARGET.findall(system_text) if is_point_key(key)]
+    cards = [
+        CardOut(
+            point_key=keys[0],  # type: ignore[arg-type]
+            question="[E2E Fake] どれにしますか",
+            options=[
+                CardOptionOut(label="[E2E Fake] 小さく始める", result="手間が少ない"),
+                CardOptionOut(label="[E2E Fake] しっかり作る", result="手間が増える"),
+            ],
+            recommended=0,
+            reason="[E2E Fake] 最初の版のため",
+        )
+    ] if keys else []
+    return HearingReplyOut(message=_HEARING_REPLY, cards=cards)
+
+
 class _FakeStructuredE2e:
     """`with_structured_output(schema)`が返す構造化出力用サブクライアントのE2E版。"""
 
@@ -682,7 +716,12 @@ class _FakeStructuredE2e:
         # Phase-34-2：更新
         # # HearingCompletionCheck・UML生成スキーマ以外のスキーマが追加された場合は
         # ↓↓
-        # HearingPointsJudgement・UML生成スキーマ以外のスキーマが追加された場合は
+        # Phase-35-2：更新
+        # # HearingPointsJudgement・UML生成スキーマ以外のスキーマが追加された場合は
+        # ↓↓
+        if self._schema is HearingReplyOut:
+            return _hearing_reply(messages)
+        # ヒアリング・UML生成スキーマ以外のスキーマが追加された場合は
         # 「対応漏れ」に気づけるよう黙って汎用値を返さず例外にする。
         raise NotImplementedError(f"E2eFakeLLMが未対応のスキーマ: {self._schema}")
 

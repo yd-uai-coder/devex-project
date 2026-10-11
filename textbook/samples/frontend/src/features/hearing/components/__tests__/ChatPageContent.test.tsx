@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-3-6,34-3
+// 作成：Phase-3-5｜更新：Phase-3-6,34-3,35(完了後の調整)
 // Phase-3-6：更新(ポーリングの詳細な挙動はuseGenerationPolling.test.tsへ移動したため、
 // ここではChatPageContent自身の配線(見出し・状態メッセージの出し分け・フックへ正しい
 // 引数を渡すか)だけを見る形に書き換えた)
@@ -79,11 +79,14 @@
 //   });
 // });
 // ↓↓
+// Phase-35(完了後の調整):追記 ── userEvent, ApiError
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { ChatPageContent } from "../ChatPageContent";
+import { ApiError } from "@/lib/api/client";
 import { useHearingStore } from "@/features/hearing/hearing-store";
 
 const push = vi.fn();
@@ -218,7 +221,10 @@ describe("ChatPageContent", () => {
 
     const { container } = renderContent();
 
-    expect(screen.getByText("観点の表 ── 未決の必須 1 件")).toBeInTheDocument();
+    // Phase-35(完了後の調整)：更新
+    // expect(screen.getByText("観点の表 ── 未決の必須 1 件")).toBeInTheDocument();
+    // ↓↓
+    expect(screen.getByText("観点の表 ── 未決の必須 1 件: 規模")).toBeInTheDocument();
     expect(container.querySelector("details")?.open).toBe(false);
   });
 
@@ -229,5 +235,24 @@ describe("ChatPageContent", () => {
     const { container } = renderContent();
 
     expect(container.querySelector("details")?.open).toBe(true);
+  });
+  // Phase-35(完了後の調整):追記
+  it("未決の必須の「対象外にする」で skipPoint を呼び、失敗したら理由を出す", async () => {
+    const skipPoint = vi.fn().mockRejectedValueOnce(new ApiError(409, "未決の観点だけを対象外にできます"));
+    useHearingStore.setState({ points: POINTS, skipPoint });
+    const user = userEvent.setup();
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "規模を対象外にする" }));
+
+    expect(skipPoint).toHaveBeenCalledWith("p1", "scale");
+    expect(await screen.findByRole("alert")).toHaveTextContent("未決の観点だけを対象外にできます");
+  });
+
+  it("生成中は「対象外にする」を出さない", () => {
+    useHearingStore.setState({ points: POINTS, generationTriggered: true });
+    renderContent();
+
+    expect(screen.queryByRole("button", { name: "規模を対象外にする" })).not.toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整)
 # 写経レベル: コア ── 実機検証で発見した2件の不具合(ヒアリング完了判定の誤カウント、
 # doc_type判別の誤マッチ)の回帰テスト。当初はPlaywright(Phase 4-4)のみで検証する設計にして
 # いたが、両方ともpytestレベルの単体テストで安価に検知できる性質のバグだったため、事後的に
@@ -7,13 +7,24 @@
 # Phase-34-2:追記 ── app.hearing(POINT_DEFS, JudgedPoint, initial_states, is_sufficient,
 #   merge_judgement), app.schemas.hearing.HearingPointsJudgement
 # Phase-34-2：削除 ── app.schemas.generation.HearingCompletionCheck
+# Phase-35-2:追記 ── app.hearing.point_def, app.models.project.Project,
+#   app.schemas.hearing.HearingReplyOut, app.services.chat_service._build_messages
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.ai.llm.fake import E2eFakeLLM
 from app.detailed_design.plan import unit_ids
 from app.detailed_design.simple_procedure import parse_wbs
-from app.hearing import POINT_DEFS, JudgedPoint, initial_states, is_sufficient, merge_judgement
-from app.schemas.hearing import HearingPointsJudgement
+from app.hearing import (
+    POINT_DEFS,
+    JudgedPoint,
+    initial_states,
+    is_sufficient,
+    merge_judgement,
+    point_def,
+)
+from app.models.project import Project
+from app.schemas.hearing import HearingPointsJudgement, HearingReplyOut
+from app.services.chat_service import _build_messages
 from app.services.doc_generator_service import _DOC_TYPE_PROMPTS, _SELF_DIAGNOSIS_SYSTEM_PROMPT
 
 
@@ -159,6 +170,36 @@ async def test_hearing_reply_is_returned_for_ordinary_chat_turn() -> None:
     result = await llm.ainvoke(messages)
 
     assert "承知しました" in result.content
+
+
+# Phase-35-2:追記
+async def test_hearing_reply_returns_card_for_first_card_target_of_real_prompt() -> None:
+    """chat_serviceの返信のプロンプト(カードにしてよい観点の行)から、先頭の観点のカードを返す。
+    プロンプトの書式を変えたときに偽物が追従しているかの契約テスト。"""
+    llm = E2eFakeLLM()
+    messages = _build_messages(
+        [], Project(), card_targets=[point_def("availability"), point_def("security")]
+    )
+
+    result = await llm.with_structured_output(HearingReplyOut).ainvoke(messages)
+
+    assert isinstance(result, HearingReplyOut)
+    assert "承知しました" in result.message
+    assert [card.point_key for card in result.cards] == ["availability"]
+    assert len(result.cards[0].options) == 2
+
+
+async def test_hearing_reply_has_no_card_when_scale_card_is_left_to_code() -> None:
+    llm = E2eFakeLLM()
+    # Phase-35(完了後の調整)：更新
+    # messages = _build_messages([], Project(), scale_card=True)
+    # ↓↓
+    messages = _build_messages([], Project(), code_card_label="規模")
+
+    result = await llm.with_structured_output(HearingReplyOut).ainvoke(messages)
+
+    assert isinstance(result, HearingReplyOut)
+    assert result.cards == []
 
 
 async def test_astream_yields_a_single_chunk_with_the_same_reply() -> None:

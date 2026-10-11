@@ -1,5 +1,7 @@
-// 作成：Phase-34-3
-import { describe, expect, it } from "vitest";
+// 作成：Phase-34-3｜更新：Phase-35(完了後の調整)
+// Phase-35(完了後の調整):追記 ── vi, userEvent
+import { describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@testing-library/react";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
@@ -45,10 +47,17 @@ function view(overrides: Partial<HearingPointsView> = {}): HearingPointsView {
   };
 }
 
-function renderPanel(v: HearingPointsView, defaultOpen = true) {
+// Phase-35(完了後の調整)：更新(onSkip・skippingKey を渡せるようにした)
+// function renderPanel(v: HearingPointsView, defaultOpen = true) {
+// ↓↓
+function renderPanel(
+  v: HearingPointsView,
+  defaultOpen = true,
+  props: { onSkip?: (key: string) => void; skippingKey?: string | null } = {},
+) {
   return render(
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      <HearingPointsPanel view={v} defaultOpen={defaultOpen} />
+      <HearingPointsPanel view={v} defaultOpen={defaultOpen} {...props} />
     </TamaguiProvider>,
   );
 }
@@ -61,12 +70,21 @@ describe("HearingPointsPanel", () => {
   it("見出しに未決の必須の件数、表に状態・決めたこと・根拠を出す", () => {
     renderPanel(view());
 
-    expect(screen.getByText("観点の表 ── 未決の必須 1 件")).toBeInTheDocument();
+    // Phase-35(完了後の調整)：更新
+    // expect(screen.getByText("観点の表 ── 未決の必須 1 件")).toBeInTheDocument();
+    // ↓↓
+    // 見出しに未決の必須の名前も並べる(どれが必須かを一目で分かるように)
+    expect(screen.getByText("観点の表 ── 未決の必須 1 件: 目的・課題")).toBeInTheDocument();
     const rows = within(screen.getByRole("table", { name: "観点の表" })).getAllByRole("row");
     expect(rows[1]).toHaveTextContent("規模○ユーザーが決定個人発言1");
     // 未決の観点は、決めたことの代わりに問いの例を出す
-    expect(rows[2]).toHaveTextContent("目的・課題○未決これが無いと、今は何に困っていますか");
-    expect(rows[3]).toHaveTextContent("体制・期間未決");
+    // Phase-35(完了後の調整)：更新
+    // expect(rows[2]).toHaveTextContent("目的・課題○未決これが無いと、今は何に困っていますか");
+    // expect(rows[3]).toHaveTextContent("体制・期間未決");
+    // ↓↓
+    // 未決は、必須か任意かを書き分ける
+    expect(rows[2]).toHaveTextContent("目的・課題○未決(必須)これが無いと、今は何に困っていますか");
+    expect(rows[3]).toHaveTextContent("体制・期間未決(任意)");
     expect(rows[4]).toHaveTextContent("移行性○対象外新規初期入力・発言2");
   });
 
@@ -94,5 +112,24 @@ describe("HearingPointsPanel", () => {
     const { container } = renderPanel(view(), false);
 
     expect(container.querySelector("details")?.open).toBe(false);
+  });
+  // Phase-35(完了後の調整):追記
+  it("onSkip があれば、未決の必須の行にだけ「対象外にする」を出す", async () => {
+    const onSkip = vi.fn();
+    const user = userEvent.setup();
+    renderPanel(view(), true, { onSkip });
+
+    expect(screen.queryByRole("button", { name: "体制・期間を対象外にする" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "目的・課題を対象外にする" }));
+
+    expect(onSkip).toHaveBeenCalledWith("purpose");
+  });
+
+  it("対象外にしている最中・以前の判定のプロジェクトでは押せない / 出さない", () => {
+    renderPanel(view(), true, { onSkip: vi.fn(), skippingKey: "purpose" });
+    expect(screen.getByRole("button", { name: "目的・課題を対象外にする" })).toHaveAttribute("aria-disabled", "true");
+
+    renderPanel(view({ legacy: true }), true, { onSkip: vi.fn() });
+    expect(screen.getAllByRole("button", { name: "目的・課題を対象外にする" })).toHaveLength(1);
   });
 });

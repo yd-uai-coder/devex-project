@@ -1,5 +1,7 @@
-// 作成：Phase-3-5｜更新：Phase-24(完了後の UI 調整)
+// 作成：Phase-3-5｜更新：Phase-24(完了後の UI 調整),35-3,35(完了後の調整)
 // Phase-24:追記(完了後の UI 調整) ── react-markdown.Components
+// Phase-35(完了後の調整):追記 ── memo(react)
+import { memo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
@@ -21,7 +23,11 @@ const MARKDOWN_COMPONENTS: Components = {
   ol: ({ children }) => <ol style={{ paddingLeft: "1.5em" }}>{children}</ol>,
 };
 
-export function MessageBubble({ message }: { message: ChatHistoryEntry }) {
+// Phase-35(完了後の調整)：更新(memo: 発言のオブジェクトはストアで同じ参照のまま残るので、カードの選択などで
+// チャットが描き直されても、発言ごとの Markdown を解析し直さない)
+// export function MessageBubble({ message }: { message: ChatHistoryEntry }) {
+// ↓↓
+export const MessageBubble = memo(function MessageBubble({ message }: { message: ChatHistoryEntry }) {
   const isUser = message.sender === "user";
 
   return (
@@ -35,7 +41,13 @@ export function MessageBubble({ message }: { message: ChatHistoryEntry }) {
         borderColor="$borderColor"
       >
         {isUser ? (
-          <Text color="white">{message.message}</Text>
+          // Phase-35-3：更新
+          // <Text color="white">{message.message}</Text>
+          // ↓↓
+          // カードの選択を送った発言は「【観点】選択肢」を改行で並べるので、改行をそのまま見せる
+          <Text color="white" whiteSpace="pre-wrap">
+            {message.message}
+          </Text>
         ) : (
           // Phase-24：更新(完了後の UI 調整)
           // <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{message.message}</ReactMarkdown>
@@ -47,4 +59,4 @@ export function MessageBubble({ message }: { message: ChatHistoryEntry }) {
       </YStack>
     </XStack>
   );
-}
+});

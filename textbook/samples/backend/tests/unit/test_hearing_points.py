@@ -1,4 +1,4 @@
-# 作成：Phase-34-1
+# 作成：Phase-34-1｜更新：Phase-35(完了後の調整)
 """ヒアリングの観点の表(観点の定義・必須・完了の判定・判定の取り込み・まとめ)のテスト。
 
 SUT: app/hearing/points.py と、パッケージの re-export(app/hearing/__init__.py)
@@ -6,12 +6,14 @@ SUT: app/hearing/points.py と、パッケージの re-export(app/hearing/__init
 スタブ不要 ── どれも純粋関数(副作用なし)で、外部依存を呼ばないため。
 """
 
+# Phase-35(完了後の調整):追記 ── app.hearing(describe_points, open_optional)
 from app.hearing import (
     POINT_DEFS,
     POINT_KEYS,
     JudgedPoint,
     PointState,
     build_summary,
+    describe_points,
     effective_scale,
     initial_states,
     is_required,
@@ -19,6 +21,7 @@ from app.hearing import (
     merge_judgement,
     missing_labels,
     number_messages,
+    open_optional,
     open_required,
     questions_for_reply,
     scale_after,
@@ -156,3 +159,17 @@ def test_number_messages_numbers_user_side_messages_and_labels_them() -> None:
         ("u1", 3, "発言1"),
         ("u2", 4, "発言2"),
     ]
+
+
+# Phase-35(完了後の調整):追記
+def test_open_optional_lists_open_points_not_required_for_scale() -> None:
+    states = initial_states()
+    states["schedule"] = PointState("schedule", "decided", "1人", ("m",))
+
+    personal = [d.key for d in open_optional(states, "personal")]
+    assert personal == ["daily_flow", "future", "operability", "migration", "environment"]
+    assert [d.key for d in open_optional(states, "public")] == []
+    assert describe_points(open_optional(states, "internal")) == [
+        "将来の拡張(例: 後で足したいと思っているものはありますか)"
+    ]
+

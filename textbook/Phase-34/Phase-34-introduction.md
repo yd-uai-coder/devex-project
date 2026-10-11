@@ -125,7 +125,7 @@ Phase 33 から引き継いだもの:
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- [Phase 35](../Phase-35/Phase-35-introduction.md): 返信の生成を `stream_reply` から `_compose_reply` に切り出し、本文と選択肢カードの構造化出力の1回にした(トークンごとに流さず、`invoke_with_retry` を通る)。返信の前に、カードの回答を「AI の提案を採用」として表に記録する。`chat_histories` に `cards` の列を足した。
 
 ## Phase 完了チェック(#22)
 

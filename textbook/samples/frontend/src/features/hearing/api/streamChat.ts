@@ -1,4 +1,5 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-6
+// 作成：Phase-3-5｜更新：Phase-6-6,15-6,35-3,35(完了後の調整)
+// Phase-35-3:追記 ── CardAnswer, HearingCard(@/features/hearing/api/hearingApi)
 import { refreshTokens, useAuthStore } from "@/components/auth/auth-store";
 
 // Phase-6-6：更新(NEXT_PUBLIC_API_URLの末尾スラッシュで`//api/...`となりCookieのpathに一致せず、
@@ -6,6 +7,7 @@ import { refreshTokens, useAuthStore } from "@/components/auth/auth-store";
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 // ↓↓
 import { API_BASE_URL } from "@/lib/api/base-url";
+import type { CardAnswer, HearingCard } from "@/features/hearing/api/hearingApi";
 
 // Phase-15-6：更新(気づき#2: SSEの失敗イベントのcodeを持たせる)
 // export class StreamChatError extends Error {}
@@ -27,24 +29,60 @@ export class StreamChatError extends Error {
 // // event:/id:/retry:等の他のSSEフィールドは使わないため、@microsoft/fetch-event-source等の
 // // 汎用ライブラリは導入せず、fetch+ReadableStreamで直接パースする(#17: 依存追加より
 // ↓↓
+// Phase-35-3:追記
+// ストリームから届くもの: 返信の本文(delta)と、本文の後の選択肢カード(cards)
+export type ChatStreamEvent =
+  | { kind: "delta"; delta: string }
+  | { kind: "cards"; cards: HearingCard[] };
+
 // POST /api/v1/projects/{id}/chat のSSEレスポンスを解釈する。バックエンドの形式は
-// `data: {"delta": "..."}\n\n` を`data: [DONE]\n\n`まで繰り返すだけの単純なもので、
+// Phase-35-3：更新
+// // `data: {"delta": "..."}\n\n` を`data: [DONE]\n\n`まで繰り返すだけの単純なもので、
+// ↓↓
+// `data: {"delta": "..."}\n\n`(本文)と`event: cards\ndata: {"cards": [...]}\n\n`(選択肢カード)を
+// `data: [DONE]\n\n`まで送るだけの単純なもので、
 // 途中で失敗したときだけ`event: error\ndata: {"code": "...", "detail": "..."}\n\n`を送って終わる
-// (200を返した後なのでステータスコードでは伝えられないため)。id:/retry:等は使わないため、
+// Phase-35-3：更新
+// // (200を返した後なのでステータスコードでは伝えられないため)。id:/retry:等は使わないため、
+// ↓↓
+// (200を返した後なのでステータスコードでは伝えられないため)。本文は構造化出力の1回で作るので、
+// 今は1回の delta で全文が届く(形は断片の連続のまま受ける)。id:/retry:等は使わないため、
 // @microsoft/fetch-event-source等の汎用ライブラリは導入せず、fetch+ReadableStreamで直接パースする(#17: 依存追加より
 // 十数行の自前実装のほうが妥当と判断)。apiFetchの401リトライ機構はbodyのストリームを
 // 一度しか読めないため使えず、このヘルパー自身で1回だけリフレッシュ→リトライする。
+// Phase-35-3:追記
+// cardAnswers は最新の AI の発言の選択肢カードへの回答(サーバーが選んだ内容を発言の本文に足す)。
+// continueOptional は、必須がそろった後も任意の観点のヒアリングを続けるときに立てる。
 export async function* streamChat(
   projectId: string,
   message: string,
-  options?: { signal?: AbortSignal },
-): AsyncGenerator<string, void, void> {
-  let res = await sendRequest(projectId, message, options?.signal);
+  // Phase-35-3：更新
+  // options?: { signal?: AbortSignal },
+  // ): AsyncGenerator<string, void, void> {
+  // let res = await sendRequest(projectId, message, options?.signal);
+  // ↓↓
+  // Phase-35(完了後の調整)：更新(continueOptional)
+  // options?: { signal?: AbortSignal; cardAnswers?: CardAnswer[] },
+  // ↓↓
+  options?: { signal?: AbortSignal; cardAnswers?: CardAnswer[]; continueOptional?: boolean },
+): AsyncGenerator<ChatStreamEvent, void, void> {
+  // Phase-35(完了後の調整)：更新
+  // const body = { message, card_answers: options?.cardAnswers ?? [] };
+  // ↓↓
+  const body = {
+    message,
+    card_answers: options?.cardAnswers ?? [],
+    continue_optional: options?.continueOptional ?? false,
+  };
+  let res = await sendRequest(projectId, body, options?.signal);
 
   if (!res.ok && res.status === 401 && useAuthStore.getState().accessToken) {
     const refreshed = await refreshTokens();
     if (refreshed) {
-      res = await sendRequest(projectId, message, options?.signal);
+      // Phase-35-3：更新
+      // res = await sendRequest(projectId, message, options?.signal);
+      // ↓↓
+      res = await sendRequest(projectId, body, options?.signal);
     }
   }
 
@@ -76,13 +114,27 @@ export async function* streamChat(
       const event = parseEvent(rawEvent);
       if (event.kind === "done") return;
       if (event.kind === "error") throw new StreamChatError(event.detail, event.code);
-      if (event.kind === "delta") yield event.delta;
+      // Phase-35-3：更新
+      // if (event.kind === "delta") yield event.delta;
+      // ↓↓
+      if (event.kind === "delta") yield { kind: "delta", delta: event.delta };
+      if (event.kind === "cards") yield { kind: "cards", cards: event.cards };
       boundary = buffer.indexOf("\n\n");
     }
   }
 }
 
-function sendRequest(projectId: string, message: string, signal?: AbortSignal): Promise<Response> {
+// Phase-35-3：更新
+// function sendRequest(projectId: string, message: string, signal?: AbortSignal): Promise<Response> {
+// ↓↓
+function sendRequest(
+  projectId: string,
+  // Phase-35(完了後の調整)：更新
+  // body: { message: string; card_answers: CardAnswer[] },
+  // ↓↓
+  body: { message: string; card_answers: CardAnswer[]; continue_optional: boolean },
+  signal?: AbortSignal,
+): Promise<Response> {
   const accessToken = useAuthStore.getState().accessToken;
   return fetch(`${API_BASE_URL}/api/v1/projects/${projectId}/chat`, {
     method: "POST",
@@ -93,7 +145,10 @@ function sendRequest(projectId: string, message: string, signal?: AbortSignal): 
       Accept: "text/event-stream",
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
-    body: JSON.stringify({ message }),
+    // Phase-35-3：更新
+    // body: JSON.stringify({ message }),
+    // ↓↓
+    body: JSON.stringify(body),
   });
 }
 
@@ -115,6 +170,8 @@ function sendRequest(projectId: string, message: string, signal?: AbortSignal): 
 // ↓↓
 type SseEvent =
   | { kind: "delta"; delta: string }
+  // Phase-35-3:追記
+  | { kind: "cards"; cards: HearingCard[] }
   | { kind: "done" }
   | { kind: "error"; code?: string; detail: string }
   | { kind: "ignored" };
@@ -133,6 +190,15 @@ export function parseEvent(rawEvent: string): SseEvent {
       return { kind: "error", code: parsed.code, detail: parsed.detail || STREAM_ERROR_FALLBACK };
     } catch {
       return { kind: "error", detail: STREAM_ERROR_FALLBACK };
+    }
+  }
+  // Phase-35-3:追記
+  if (eventName === "cards") {
+    try {
+      const parsed = JSON.parse(payload) as { cards?: HearingCard[] };
+      return Array.isArray(parsed.cards) ? { kind: "cards", cards: parsed.cards } : { kind: "ignored" };
+    } catch {
+      return { kind: "ignored" };
     }
   }
   if (!dataLine) return { kind: "ignored" };

@@ -1,6 +1,7 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3,35-3,35(完了後の調整)
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useHearingStore } from "../hearing-store";
+// Phase-35(完了後の調整):追記 ── CONTINUE_OPTIONAL_MESSAGE
+import { CONTINUE_OPTIONAL_MESSAGE, useHearingStore } from "../hearing-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
 // Phase-15-8：更新(StreamChatError は本物を使う。ストアが instanceof で見分けるため)
@@ -17,9 +18,33 @@ vi.mock("@/features/hearing/api/streamChat", async () => {
 
 // Phase-15-8:追記 ── StreamChatError
 import { streamChat, StreamChatError } from "@/features/hearing/api/streamChat";
+// Phase-35-3:追記
+import type { ChatStreamEvent } from "@/features/hearing/api/streamChat";
+import type { HearingCard } from "@/features/hearing/api/hearingApi";
 
-async function* fakeStream(deltas: string[]) {
-  for (const delta of deltas) yield delta;
+// Phase-35-3：更新
+// async function* fakeStream(deltas: string[]) {
+//   for (const delta of deltas) yield delta;
+// ↓↓
+async function* fakeStream(deltas: string[], cards: HearingCard[] = []): AsyncGenerator<ChatStreamEvent> {
+  for (const delta of deltas) yield { kind: "delta", delta };
+  if (cards.length > 0) yield { kind: "cards", cards };
+}
+
+function card(id: string, label: string, selected: number | null = null): HearingCard {
+  return {
+    id,
+    point_key: id,
+    label,
+    question: `${label}の問い`,
+    options: [
+      { label: `${label}A`, result: "a" },
+      { label: `${label}B`, result: "b" },
+    ],
+    recommended: 0,
+    reason: "",
+    selected,
+  };
 }
 
 function resetStore() {
@@ -36,6 +61,8 @@ function resetStore() {
     completion: null,
     // Phase-34-3:追記
     points: null,
+    // Phase-35-3:追記
+    cardDrafts: {},
     generationTriggered: false,
     projectStatus: null,
   });
@@ -268,6 +295,142 @@ describe("useHearingStore", () => {
 
     useHearingStore.getState().dismissConnectionLost();
     expect(useHearingStore.getState().streamError).toBeNull();
+  });
+
+  // Phase-35-3:追記
+  it("返信に付いたカードを、確定したAIの発言に持たせる", async () => {
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["教えてください"], [card("scale", "規模")]));
+
+    await useHearingStore.getState().sendMessage("p1", "はじめまして");
+
+    const ai = useHearingStore.getState().messages[1];
+    expect(ai.cards?.map((c) => c.id)).toEqual(["scale"]);
+  });
+
+  // Phase-35(完了後の調整)：更新(ラジオボタンなので外さない)
+  // it("selectCardOption()は選択を置き、同じ選択肢をもう一度選ぶと外す", () => {
+  //   const { selectCardOption } = useHearingStore.getState();
+  //
+  //   selectCardOption("c1", 1);
+  //   selectCardOption("c2", 0);
+  //   selectCardOption("c2", 0);
+  //
+  //   expect(useHearingStore.getState().cardDrafts).toEqual({ c1: 1 });
+  // });
+  // ↓↓
+  it("selectCardOption()は選択を置き、選び直すと置き換える(ラジオボタンなので外さない)", () => {
+    const { selectCardOption } = useHearingStore.getState();
+
+    selectCardOption("c1", 1);
+    selectCardOption("c2", 0);
+    selectCardOption("c2", 0);
+    selectCardOption("c1", 0);
+
+    expect(useHearingStore.getState().cardDrafts).toEqual({ c1: 0, c2: 0 });
+  });
+
+  it("sendMessage()は最新のAIの発言のカードの選択を送り、選んだ内容と文を1つの発言として表示する", async () => {
+    useHearingStore.setState({
+      messages: [
+        { id: "a1", sender: "ai", message: "古い", cards: [card("old", "古い")], created_at: "" },
+        {
+          id: "a2",
+          sender: "ai",
+          message: "質問",
+          cards: [card("avail", "可用性"), card("sec", "セキュリティ"), card("done", "済み", 0)],
+          created_at: "",
+        },
+      ],
+      cardDrafts: { sec: 0, avail: 1, old: 0 },
+    });
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["了解"]));
+
+    await useHearingStore.getState().sendMessage("p1", "補足");
+
+    expect(streamChat).toHaveBeenCalledWith("p1", "補足", {
+      cardAnswers: [
+        { card_id: "avail", option: 1 },
+        { card_id: "sec", option: 0 },
+      ],
+    });
+    const { messages, cardDrafts } = useHearingStore.getState();
+    expect(messages[2].message).toBe("【可用性】可用性B\n【セキュリティ】セキュリティA\n\n補足");
+    expect(messages[1].cards?.map((c) => c.selected)).toEqual([1, 0, 0]);
+    expect(messages[0].cards?.[0].selected).toBeNull();
+    expect(cardDrafts).toEqual({});
+  });
+
+  // Phase-35(完了後の調整):追記
+  it("sendMessage()にcardIdsを渡すと、そのカードの回答だけを送り、選択中はすべて捨てる", async () => {
+    useHearingStore.setState({
+      messages: [
+        {
+          id: "a1",
+          sender: "ai",
+          message: "質問",
+          cards: [card("avail", "可用性"), card("sec", "セキュリティ")],
+          created_at: "",
+        },
+      ],
+      cardDrafts: { avail: 1, sec: 0 },
+    });
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["了解"]));
+
+    await useHearingStore.getState().sendMessage("p1", "", { cardIds: ["sec"] });
+
+    expect(streamChat).toHaveBeenCalledWith("p1", "", { cardAnswers: [{ card_id: "sec", option: 0 }] });
+    const { messages, cardDrafts } = useHearingStore.getState();
+    expect(messages[1].message).toBe("【セキュリティ】セキュリティA");
+    expect(messages[0].cards?.map((c) => c.selected)).toEqual([null, 0]);
+    expect(cardDrafts).toEqual({});
+  });
+
+  // Phase-35(完了後の調整):追記
+  it("sendMessage()にcontinueOptionalを渡すと、streamChatへそのまま渡す", async () => {
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["任意の点を伺います"]));
+
+    await useHearingStore.getState().sendMessage("p1", "続けて", { continueOptional: true });
+
+    expect(streamChat).toHaveBeenCalledWith("p1", "続けて", { cardAnswers: [], continueOptional: true });
+  });
+
+  // Phase-35(完了後の調整):追記
+  it("「任意を続ける」だけの送信は、サーバーが残す決まった文を楽観表示する", async () => {
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["任意の点を伺います"]));
+
+    await useHearingStore.getState().sendMessage("p1", "", { continueOptional: true });
+
+    expect(useHearingStore.getState().messages[0].message).toBe(CONTINUE_OPTIONAL_MESSAGE);
+  });
+
+  it("skipPoint()は観点を対象外にして表を置き、完了判定を取り直す", async () => {
+    useHearingStore.setState({ projectId: "p1" });
+    stub.queue({ status: 200, body: { ...POINTS_VIEW, is_sufficient: true } });
+    stub.queue({ status: 200, body: { is_sufficient: true, summary: "- 規模: 個人・小規模", missing_points: [] } });
+
+    await useHearingStore.getState().skipPoint("p1", "purpose");
+
+    expect(stub.requests[0].url).toMatch(/\/hearing-points\/purpose$/);
+    expect(stub.requests[0].init?.method).toBe("PUT");
+    expect(useHearingStore.getState().points?.is_sufficient).toBe(true);
+    expect(useHearingStore.getState().completion?.is_sufficient).toBe(true);
+  });
+
+  it("バックエンドが失敗を伝えたら、カードの選択も送信の前に戻す", async () => {
+    const before = [
+      { id: "a1", sender: "ai" as const, message: "質問", cards: [card("avail", "可用性")], created_at: "" },
+    ];
+    useHearingStore.setState({ messages: before, cardDrafts: { avail: 0 } });
+    vi.mocked(streamChat).mockImplementation(async function* () {
+      throw new StreamChatError("古いカードです", "INVALID_CARD_ANSWER");
+    });
+
+    await useHearingStore.getState().sendMessage("p1", "");
+
+    const { messages, cardDrafts, streamError } = useHearingStore.getState();
+    expect(messages).toEqual(before);
+    expect(cardDrafts).toEqual({ avail: 0 });
+    expect(streamError).toBe("古いカードです");
   });
 
   it("approveAndGenerate()はtriggerGenerationを呼びgenerationTriggeredを立てる", async () => {

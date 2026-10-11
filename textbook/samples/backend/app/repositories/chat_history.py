@@ -1,4 +1,4 @@
-# 作成：Phase-2-1
+# 作成：Phase-2-1｜更新：Phase-35-1
 # 写経レベル: 定型 ── ConversationRepositoryのadd/list系メソッドと同型。
 import uuid
 
@@ -11,9 +11,17 @@ class ChatHistoryRepository(CRUDRepository[ChatHistory]):
 
     model = ChatHistory
 
-    async def add(self, *, project_id: uuid.UUID, sender: str, message: str) -> ChatHistory:
-        """チャット履歴を1件追加し、flushしてIDを確定させた状態で返す。"""
-        entry = ChatHistory(project_id=project_id, sender=sender, message=message)
+    # Phase-35-1：更新
+    # async def add(self, *, project_id: uuid.UUID, sender: str, message: str) -> ChatHistory:
+    #     """チャット履歴を1件追加し、flushしてIDを確定させた状態で返す。"""
+    #     entry = ChatHistory(project_id=project_id, sender=sender, message=message)
+    # ↓↓
+    async def add(
+        self, *, project_id: uuid.UUID, sender: str, message: str, cards: list | None = None
+    ) -> ChatHistory:
+        """チャット履歴を1件追加し、flushしてIDを確定させた状態で返す(cardsはAIの発言の
+        選択肢カード)。"""
+        entry = ChatHistory(project_id=project_id, sender=sender, message=message, cards=cards)
         self._session.add(entry)
         await self._session.flush()
         return entry

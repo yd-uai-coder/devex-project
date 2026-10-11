@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整)
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 from typing import ClassVar
@@ -342,3 +342,25 @@ class DocGenerationInProgressError(ConflictError):
     二重で塞ぐ)。"""
 
     code: ClassVar[str | None] = "DOC_GENERATION_IN_PROGRESS"
+
+
+# Phase-35-2:追記
+class InvalidCardAnswerError(BadRequestError):
+    """選択肢カードへの回答が、最新のAIの発言のカードに当たらない場合に送出する(古いカード・
+    回答済みのカード・範囲の外の選択肢)。画面が古いまま送ったときに起きうる。"""
+
+    code: ClassVar[str | None] = "INVALID_CARD_ANSWER"
+
+
+# Phase-35(完了後の調整):追記
+class HearingPointNotFoundError(NotFoundError):
+    """観点の表に無いキーの観点を変えようとした場合に送出する。"""
+
+    code: ClassVar[str | None] = "HEARING_POINT_NOT_FOUND"
+
+
+class HearingPointNotOpenError(ConflictError):
+    """未決でない観点を、画面から対象外にしようとした場合に送出する(決まった観点を画面の操作で
+    上書きしない。言い直しはチャットで行う)。"""
+
+    code: ClassVar[str | None] = "HEARING_POINT_NOT_OPEN"
