@@ -117,16 +117,17 @@
 * **方針(Phase 41で確定)**: 「処理を軸」のたどり方(改名は直接の参照元だけ、理由は参照の種類からシステムが書き LLM は使わない)。段階は直前の承認の写しと、文書は前の版の model と比べて変わったものを求める。段階の「古い」は残し、その中の要素に印を付けて「確認済み」にしていく。横断事項に要件ID、作業単位に安定キー。簡易モードは内部設計書・実装計画書も意味モデルにする。あわせて、ヒアリングで聞かれない側面(L2・L5・L6・L14)と段階3・5 の書き落としを直す([外部設計書](external_design.md) 2.10節、[内部設計書](internal_design.md) 3.3節「7. 変更影響分析・変更管理」)。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-41/Phase-41-5.md`](../textbook/Phase-41/Phase-41-5.md)参照):
   * Phase 41: 要件定義フェーズ(ベースライン・仕様診断・見本とデモ・docs反映・ステージ7の実装計画) ── **完了**([`textbook/Phase-41/Phase-41-introduction.md`](../textbook/Phase-41/Phase-41-introduction.md))
-  * Phase 42: 要素のグラフと影響のたどり方(詳細設計モード。横断事項の要件ID・作業単位の安定キーを含む)
-  * Phase 43: 承認時の写しと要素単位の陳腐化(差分・見直しの印・確認済み・承認し直し)
-  * Phase 44: 影響の画面(作業領域のパネル・各段階の表の印・行の強調・再生成の候補)
-  * Phase 45: 簡易モードの文書のモデル化(内部設計書・実装計画書の model と検証)
-  * Phase 46: 簡易モードの変更の影響(段階8の単位の印)
-  * Phase 47: ヒアリングの側面(L2・L5・L6・L14)と判定のゆらぎ
-  * Phase 48: 段階3・5 の書き落とし(CRUD の下書きと DFD の食い違い・分岐の行)
-  * Phase 49: 効果測定(ベースラインと同じシナリオ・ヒアリングはステージ6のペルソナで複数回)
-  * Phase 50: 統合/E2E・デプロイでの確認
-* **マイルストーン8**: 設計の要素を変えると、見直しが要る要素が理由つきで示され、段階の「古い」の中で要素を確認していける。ベースラインと比べて、示す要素の過剰が減り、見落としが増えていないことを数字で示せる。
+  * Phase 42: 要素のグラフと影響のたどり方(詳細設計モード。横断事項の要件ID・作業単位の安定キーを含む) ── **完了**([`textbook/Phase-42/Phase-42-introduction.md`](../textbook/Phase-42/Phase-42-introduction.md))
+  * Phase 43: 承認時の写しと要素単位の陳腐化(差分・見直しの印・確認済み・承認し直し) ── **完了**([`textbook/Phase-43/Phase-43-introduction.md`](../textbook/Phase-43/Phase-43-introduction.md))
+  * Phase 44: 影響の画面(作業領域のパネル・各段階の表の印・行の強調・再生成の候補) ── **完了**([`textbook/Phase-44/Phase-44-introduction.md`](../textbook/Phase-44/Phase-44-introduction.md))
+  * Phase 45: 簡易モードの文書のモデル化(内部設計書・実装計画書の model と検証) ── **完了**([`textbook/Phase-45/Phase-45-introduction.md`](../textbook/Phase-45/Phase-45-introduction.md))
+  * Phase 46: 簡易モードの変更の影響(段階8の単位の印) ── **完了**([`textbook/Phase-46/Phase-46-introduction.md`](../textbook/Phase-46/Phase-46-introduction.md))
+  * Phase 47: ヒアリングの側面(L2・L5・L6・L14)と判定のゆらぎ ── **完了**([`textbook/Phase-47/Phase-47-introduction.md`](../textbook/Phase-47/Phase-47-introduction.md))
+  * Phase 48: 段階3・5 の書き落とし(CRUD の下書きと DFD の食い違い・分岐の行) ── **完了**([`textbook/Phase-48/Phase-48-introduction.md`](../textbook/Phase-48/Phase-48-introduction.md))
+  * Phase 49: 効果測定(ベースラインと同じシナリオ・ヒアリングはステージ6のペルソナで複数回。基準(過剰 ≤ 35%・見落とし S ≤ 5 / N ≤ 1)に届かず、差分の再生成・単位のキーの引き継ぎ・たどり方を直して再測定: シナリオ S 過剰 22%・見落とし 2、N 過剰 23%・見落とし 0、別のプロジェクトの再生成で揺れの印 0) ── **完了**([`textbook/Phase-49/Phase-49-introduction.md`](../textbook/Phase-49/Phase-49-introduction.md)、[`appendix/stage7-effect/`](../appendix/stage7-effect/README.md))
+  * Phase 50: 統合/E2E・デプロイでの確認(偽LLMの変更の影響の契約テスト・変更の影響の流れを足した E2E と既存を含めた全 E2E・マイグレーションの往復・本番反映の手順・「開発用」メニューを外す) ── **完了**([`textbook/Phase-50/Phase-50-introduction.md`](../textbook/Phase-50/Phase-50-introduction.md))
+* **マイルストーン8**: 設計の要素を変えると、見直しが要る要素が理由つきで示され、段階の「古い」の中で要素を確認していける。ベースラインと比べて、示す要素の過剰が減り、見落としが増えていないことを数字で示せる。(Phase 49で達成)
+* **達成範囲(Phase 50で終了)**: 要素のグラフと「処理を軸」のたどり方(理由はシステムが書く)、承認時の写しと文書の版の model の差分から付ける見直しの印・確認済み・承認し直しの条件、作業領域の「変更の影響」パネルと各段階の表の印・再生成の候補、簡易モードの内部設計書・実装計画書の意味モデルと段階8の単位の印、差分の再生成と単位の安定キー、ヒアリングの側面(データの保全・保持と削除・ログ・不正利用)、段階3・5 の書き落としの直し、効果測定(ベースラインと比べた数字)。Phase 50で、偽LLMの出力が写し・差分・印・確認済み・承認し直しと、同じ出力での再生成(印が増えない)を通ることを契約テスト(ブラウザ無し)で固定し、E2E(Playwright)は段階1を直して承認し直し、下流の印を確認済みにして承認し直す流れを足して、既存を含めた全 E2E を通した。共有のモジュールの中で「どれを直すか」と、非機能要件から横断事項の対象を使う手順まで(シナリオ S2)は示さない。本番への反映は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.4節の手順による。
 
 ---
 

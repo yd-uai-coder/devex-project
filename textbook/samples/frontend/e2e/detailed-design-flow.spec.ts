@@ -1,11 +1,16 @@
-// 作成：Phase-24-3｜更新：24(ゴール3後の調整),30-4,30-7,32-2
+// 作成：Phase-24-3｜更新：24(ゴール3後の調整),30-4,30-7,32-2,50-2
 // 写経レベル: コア ── 非同期の生成の待ち方・図の承認(自動レイアウト)・段階の承認の順序。
 // 詳細設計モードの通しの E2E(Phase 24)。詳細設計モードでプロジェクトを作り、ヒアリング後に
 // Phase-32-2：更新
 // // 段階1〜7を生成・承認して、詳細設計書と実装計画の zip をダウンロードする。
 // ↓↓
 // 段階1〜7を生成・承認して、詳細設計書と実装計画の zip をダウンロードし、段階8の手順書を生成する
-// (段階8の承認と実装手順書の zip は、devex-api の契約テストが通す)。
+// Phase-50-2：更新
+// // (段階8の承認と実装手順書の zip は、devex-api の契約テストが通す)。
+// ↓↓
+// (段階8の承認と実装手順書の zip は、devex-api の契約テストが通す)。続けて、段階1の処理を1つ直して
+// 承認し直し、下流の段階に付いた「変更の影響」の印を確認済みにしてから段階2を承認し直す(印の付き方は
+// devex-api の tests/unit/test_fake_llm_change_impact.py が固定している)。
 //
 // devex-api 側は E2E_FAKE_LLM=true で起動し、E2eFakeLLM が段階ごとの下書きを返す。その出力が
 // 段階の検証と図の検証を通ることは、devex-api の tests/unit/test_fake_llm_detailed_design.py が
@@ -38,9 +43,15 @@ const BUNDLE_FILES = [
 ];
 
 // 段階の作業領域(見出し「段階N …」から下)。図のエディタの「承認」と段階の「承認する」を
-// 取り違えないよう、ボタンの名前は exact で探す。
+// Phase-50-2：更新
+// // 取り違えないよう、ボタンの名前は exact で探す。
+// ↓↓
+// 取り違えないよう、ボタンの名前は全体で照合する(入力が変わった「古い」段階では「このまま承認し直す」)。
 function stageApproveButton(page: Page): Locator {
-  return page.getByRole("button", { name: "承認する", exact: true });
+  // Phase-50-2：更新
+  // return page.getByRole("button", { name: "承認する", exact: true });
+  // ↓↓
+  return page.getByRole("button", { name: /^(承認する|このまま承認し直す)$/ });
 }
 
 // 段階の下書きを生成し、生成が終わるまで待つ(段階1・3・4・7。段階2・5・6は選択の保存が先に要る)。
@@ -87,6 +98,22 @@ async function saveStage(page: Page) {
   await expect(page.getByText("保存していない編集があります。").first()).toBeHidden();
 }
 
+// Phase-50-2:追記
+// 段階のステッパーで段階を選ぶ(名前は「段階N 題名(状態)」)。
+async function selectStage(page: Page, stage: number, title: string) {
+  await page.getByRole("button", { name: new RegExp(`^段階${stage} ${title}\\(`) }).click();
+  await expect(page.getByRole("heading", { name: `段階${stage} ${title}` })).toBeVisible();
+}
+
+// 「変更の影響」パネル。印が付く前から画面にあると、たたんだまま出るので開く。
+async function openImpactPanel(page: Page): Promise<Locator> {
+  const panel = page.getByRole("region", { name: "変更の影響" });
+  await expect(panel).toBeVisible({ timeout: GENERATION_TIMEOUT });
+  const toggle = panel.getByRole("button", { name: "開く" });
+  if (await toggle.isVisible()) await toggle.click();
+  return panel;
+}
+
 // zip のファイル名は、ローカルファイルヘッダに平文(UTF-8)で入るので、展開せずに探せる。
 function zipEntriesInclude(content: Buffer, name: string): boolean {
   return content.includes(Buffer.from(name, "utf-8"));
@@ -95,7 +122,10 @@ function zipEntriesInclude(content: Buffer, name: string): boolean {
 // Phase-32-2：更新
 // test("詳細設計モードで段階1〜7を承認し、詳細設計書と実装計画の zip をダウンロードする", async ({
 // ↓↓
-test("詳細設計モードで段階1〜7を承認して詳細設計書と実装計画の zip をダウンロードし、段階8の手順書を生成する", async ({
+// Phase-50-2：更新
+// test("詳細設計モードで段階1〜7を承認して詳細設計書と実装計画の zip をダウンロードし、段階8の手順書を生成する", async ({
+// ↓↓
+test("詳細設計モードで段階1〜7を承認して詳細設計書と実装計画の zip をダウンロードし、段階8の手順書を生成して、段階1の変更の影響を確かめて承認し直す", async ({
   page,
 }) => {
   test.setTimeout(5 * 60 * 1000);
@@ -201,4 +231,36 @@ test("詳細設計モードで段階1〜7を承認して詳細設計書と実装
     "aria-disabled",
     "true",
   );
+
+  // Phase-50-2:追記
+  // 変更の影響: 段階1の F-01 の概要を直して保存すると、承認する前から下流に届く印(承認すると届く)が見える。
+  // パネルは選んでいる段階に届いた印だけを出すので、直した段階1では「全段階」に切り替えて見る
+  await selectStage(page, 1, "機能一覧");
+  const summary = page.getByLabel("F-01 の概要");
+  await summary.fill(`${await summary.inputValue()}(取消の期限も検証する)`);
+  await saveStage(page);
+  const panel = await openImpactPanel(page);
+  await panel.getByRole("button", { name: "全段階" }).click();
+  await expect(panel.getByRole("table", { name: "変わったもの" })).toContainText("fn:F-01");
+  await expect(panel).toContainText("(承認すると届く)");
+
+  // 段階1を承認し直すと印が記録され、段階2〜7 に計7つの見直しの印が付く(段階8はまだ承認していないので付かない)
+  await approveStage(page, 1, "機能一覧");
+  await expect(page.getByRole("heading", { name: "段階2 データフロー" })).toBeVisible();
+  await expect(panel).toContainText("変更の影響(未確認 7)");
+  await expect(page.getByRole("button", { name: "段階2 データフロー(古い)" })).toContainText(
+    "見直し 1",
+  );
+
+  // 未確認の印が残る段階2は承認できない(押すと理由が出る)。確認済みにすると承認し直せる
+  await expect(
+    page.getByText("他の段階・文書から届いた見直しの印は、確認済みにしてから承認し直してください。"),
+  ).toBeVisible();
+  await stageApproveButton(page).click();
+  await expect(page.getByText(/見直しの印が残っています/)).toBeVisible();
+  await panel.getByRole("button", { name: "段階2(未確認 1)" }).click();
+  await expect(panel).toContainText("summary:F-01");
+  await panel.getByRole("button", { name: "この段階の未確認をすべて確認済みにする" }).click();
+  await expect(panel).toContainText("変更の影響(未確認 6)");
+  await approveStage(page, 2, "データフロー");
 });

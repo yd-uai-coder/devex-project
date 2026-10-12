@@ -1,4 +1,4 @@
-# 作成：Phase-24-1｜更新：Phase-27-1,32-1,37-2,38-2
+# 作成：Phase-24-1｜更新：Phase-27-1,32-1,37-2,38-2,50-1
 # 写経レベル: コア ── 偽LLM の出力を本物の検証・承認・出力の経路に通す契約テスト。
 """E2E用の偽LLM(`E2eFakeLLM`)の、詳細設計モードの段階1〜8の出力の契約テスト。
 
@@ -19,108 +19,79 @@ SUT: E2eFakeLLM の構造化出力(app/ai/llm/fake.py)と、それを受ける�
 
 # Phase-37-2:追記 ── tests.fixtures.external_design.e2e_fake_external_design_md
 # Phase-38-2：更新 ── tests.fixtures.external_design.e2e_fake_external_design_md を e2e_fake_upstream に、langchain_core.messages.SystemMessage を削除
+# Phase-50-1：更新 ── 段階の生成・承認の手順を tests.fixtures.fake_llm_flow へ移した(tests.fixtures.detailed_design.create_detailed_project・tests.fixtures.external_design.e2e_fake_upstream・app.detailed_design・app.models.project・app.repositories.generated_document・app.repositories.uml_diagram・app.services.design_stage_generation_service・app.services.uml_diagram_service を削除し、tests.fixtures.fake_llm_flow を追記)
 import io
 import zipfile
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from tests.fixtures.detailed_design import create_detailed_project
-from tests.fixtures.external_design import e2e_fake_upstream
+from tests.fixtures.fake_llm_flow import (
+    FAKE_UNITS,
+    approve_stage,
+    create_fake_detailed_project,
+    generate_and_approve_stages_1_to_7,
+    generate_stage,
+)
 
 from app.ai.llm.fake import E2eFakeLLM
-from app.detailed_design import has_errors, validate_stage
-from app.models.project import Project
-from app.repositories.generated_document import GeneratedDocumentRepository
-from app.repositories.uml_diagram import UmlDiagramRepository
-from app.services.design_stage_generation_service import DesignStageGenerationService
 from app.services.design_stage_service import DesignStageService
 from app.services.detailed_design_export_service import DetailedDesignExportService
-from app.services.uml_diagram_service import UmlDiagramService
-
-# 段階ごとに、生成の後に承認する図の記法(段階2 = DFD、3 = ER、4 = 構成図)
-_DIAGRAMS_OF_STAGE: dict[int, str] = {2: "dfd", 3: "er", 4: "component"}
-
-# 段階6で詳細を書く関数(偽LLM の段階5の手順の、呼び出し先と関数)
-_LOGIC_TARGET = ("app/services/reservation.py", "ReservationService.create")
 
 
-# Phase-38-2：削除
-# async def _fake_document(llm: E2eFakeLLM, marker: str) -> str:
-#     """偽LLM が、その文書のプロンプト(見出しの印)に返す本文。"""
-#     return str((await llm.ainvoke([SystemMessage(content=marker)])).content)
+# Phase-50-1：削除(tests/fixtures/fake_llm_flow.py へ移した。E2E の変更の影響の契約テストと共有する)
+# # 段階ごとに、生成の後に承認する図の記法(段階2 = DFD、3 = ER、4 = 構成図)
+# _DIAGRAMS_OF_STAGE: dict[int, str] = {2: "dfd", 3: "er", 4: "component"}
+#
+# # 段階6で詳細を書く関数(偽LLM の段階5の手順の、呼び出し先と関数)
+# _LOGIC_TARGET = ("app/services/reservation.py", "ReservationService.create")
 #
 #
-async def _create_project(session: AsyncSession, llm: E2eFakeLLM) -> Project:
-    # Phase-38-2：更新
-    # """ヒアリング後の詳細設計モードのプロジェクト(要件定義・外部設計は偽LLM の本文)。"""
-    # ↓↓
-    """ヒアリング後の詳細設計モードのプロジェクト(要件定義・外部設計は偽LLM の構造化出力から
-    model → md。段階1は 2.6 の API 一覧と、外部設計書の model の要件ID を読む)。"""
-    project = await create_detailed_project(session, with_documents=False)
-    documents = GeneratedDocumentRepository(session)
-    # Phase-37-2：更新
-    # for doc_type, marker in (
-    #     ("requirements", "# 1. 要件定義書"),
-    #     ("external_design", "# 2. 外部設計書"),
-    # ):
-    #     await documents.create_version(
-    #         project_id=project.id, doc_type=doc_type, content=await _fake_document(llm, marker)
-    #     )
-    # ↓↓
-    # Phase-38-2：更新
-    # await documents.create_version(
-    #     project_id=project.id,
-    #     doc_type="requirements",
-    #     content=await _fake_document(llm, "# 1. 要件定義書"),
-    # )
-    # # 外部設計書は構造化出力 → model → md(段階1は 2.6 の API 一覧を読む)
-    # await documents.create_version(
-    #     project_id=project.id,
-    #     doc_type="external_design",
-    #     content=await e2e_fake_external_design_md(llm),
-    # )
-    # ↓↓
-    for doc_type, (content, model) in (await e2e_fake_upstream(llm)).items():
-        await documents.create_version(
-            project_id=project.id, doc_type=doc_type, content=content, model=model
-        )
-    await session.commit()
-    return project
-
-
-async def _generate(
-    session: AsyncSession, project: Project, stage: int, llm: E2eFakeLLM, **targets
-) -> None:
-    """画面の「生成」と同じく、受け付けてから実行する(実行はバックグラウンドの代わりに直接)。"""
-    service = DesignStageGenerationService(session)
-    await service.request_generation(project, stage=stage, **targets)
-    await service.execute(
-        project_id=project.id, user_id=project.user_id, stage=stage, llm=llm, **targets
-    )
-    read = await DesignStageService(session).read(project.id, stage)
-    assert read.generation_status == "completed", (stage, read.generation_error)
-
-
-async def _approve_diagrams(session: AsyncSession, project: Project, notation: str) -> None:
-    """画面で図を開いたときの自動レイアウトと、図の「承認」。"""
-    diagrams = UmlDiagramService(session)
-    for diagram in await UmlDiagramRepository(session).list_for_project(project.id):
-        if diagram.notation != notation:
-            continue
-        laid_out = await diagrams.compute_layout(project_id=project.id, diagram_id=diagram.id)
-        await diagrams.approve(
-            project_id=project.id, diagram_id=diagram.id, expected_version=laid_out.version
-        )
-
-
-async def _approve_stage(session: AsyncSession, project: Project, stage: int) -> None:
-    """検証のエラーが無いことを確かめてから、段階を承認する(失敗したときにコードが分かるよう、
-    承認の前に検証の結果を見る)。"""
-    stages = DesignStageService(session)
-    row, _, sources = await stages.stage_view(project, stage)
-    assert row is not None
-    issues = validate_stage(stage, row.model, sources)
-    assert not has_errors(issues), (stage, [i for i in issues if i.severity == "error"])
-    await stages.approve(project, stage=stage, expected_version=row.version)
+# async def _create_project(session: AsyncSession, llm: E2eFakeLLM) -> Project:
+#     """ヒアリング後の詳細設計モードのプロジェクト(要件定義・外部設計は偽LLM の構造化出力から
+#     model → md。段階1は 2.6 の API 一覧と、外部設計書の model の要件ID を読む)。"""
+#     project = await create_detailed_project(session, with_documents=False)
+#     documents = GeneratedDocumentRepository(session)
+#     for doc_type, (content, model) in (await e2e_fake_upstream(llm)).items():
+#         await documents.create_version(
+#             project_id=project.id, doc_type=doc_type, content=content, model=model
+#         )
+#     await session.commit()
+#     return project
+#
+#
+# async def _generate(
+#     session: AsyncSession, project: Project, stage: int, llm: E2eFakeLLM, **targets
+# ) -> None:
+#     """画面の「生成」と同じく、受け付けてから実行する(実行はバックグラウンドの代わりに直接)。"""
+#     service = DesignStageGenerationService(session)
+#     await service.request_generation(project, stage=stage, **targets)
+#     await service.execute(
+#         project_id=project.id, user_id=project.user_id, stage=stage, llm=llm, **targets
+#     )
+#     read = await DesignStageService(session).read(project.id, stage)
+#     assert read.generation_status == "completed", (stage, read.generation_error)
+#
+#
+# async def _approve_diagrams(session: AsyncSession, project: Project, notation: str) -> None:
+#     """画面で図を開いたときの自動レイアウトと、図の「承認」。"""
+#     diagrams = UmlDiagramService(session)
+#     for diagram in await UmlDiagramRepository(session).list_for_project(project.id):
+#         if diagram.notation != notation:
+#             continue
+#         laid_out = await diagrams.compute_layout(project_id=project.id, diagram_id=diagram.id)
+#         await diagrams.approve(
+#             project_id=project.id, diagram_id=diagram.id, expected_version=laid_out.version
+#         )
+#
+#
+# async def _approve_stage(session: AsyncSession, project: Project, stage: int) -> None:
+#     """検証のエラーが無いことを確かめてから、段階を承認する(失敗したときにコードが分かるよう、
+#     承認の前に検証の結果を見る)。"""
+#     stages = DesignStageService(session)
+#     row, _, sources = await stages.stage_view(project, stage)
+#     assert row is not None
+#     issues = validate_stage(stage, row.model, sources)
+#     assert not has_errors(issues), (stage, [i for i in issues if i.severity == "error"])
+#     await stages.approve(project, stage=stage, expected_version=row.version)
 
 
 # Phase-32-1：更新
@@ -128,61 +99,70 @@ async def _approve_stage(session: AsyncSession, project: Project, stage: int) ->
 # ↓↓
 async def test_e2e_fake_outputs_pass_stages_1_to_8_and_bundle(db_session: AsyncSession) -> None:
     llm = E2eFakeLLM()
-    project = await _create_project(db_session, llm)
+    # Phase-50-1：更新
+    # project = await _create_project(db_session, llm)
+    # ↓↓
+    project = await create_fake_detailed_project(db_session, llm)
     stages = DesignStageService(db_session)
+
+    # Phase-50-1:追記
+    # 段階1〜7 を画面と同じ順に生成・承認する(段階ごとの手順は tests/fixtures/fake_llm_flow.py)
+    await generate_and_approve_stages_1_to_7(db_session, project, llm)
 
     # Phase-38-2：更新
     # # 段階1: 機能一覧(F-01・F-02、グループ reservations)
     # ↓↓
     # 段階1: 機能一覧(F-01・F-02、グループ reservations)。要件ID は外部設計書の 2.6 から写り、
     # 要件の追跡の指摘は無い
-    await _generate(db_session, project, 1, llm)
+    # Phase-50-1：削除
+    # await _generate(db_session, project, 1, llm)
     # Phase-38-2:追記
     stage1 = await stages.read(project.id, 1)
     assert stage1.model is not None
     assert [f["req_ids"] for f in stage1.model["functions"]] == [["FR-001"], ["FR-002"]]
     assert stage1.issues == []
-    await _approve_stage(db_session, project, 1)
-
-    # 段階2: グループを選んで保存してから生成する(初回は行が無いので version なしで保存)
-    await stages.save(
-        project,
-        stage=2,
-        expected_version=None,
-        model={"dfd_groups": ["reservations"], "summaries": []},
-    )
-    await _generate(db_session, project, 2, llm)
-
-    for stage in (2, 3, 4):
-        if stage != 2:
-            await _generate(db_session, project, stage, llm)
-        await _approve_diagrams(db_session, project, _DIAGRAMS_OF_STAGE[stage])
-        await _approve_stage(db_session, project, stage)
-
-    # 段階5: 処理を選んで保存し、手順の無い処理を生成する
-    await stages.save(
-        project,
-        stage=5,
-        expected_version=None,
-        model={"procedures": [{"function_id": "F-01"}, {"function_id": "F-02"}]},
-    )
-    await _generate(db_session, project, 5, llm)
-    await _approve_stage(db_session, project, 5)
-
-    # 段階6: 関数を1つ選んで保存し、その関数を生成する
-    module, function = _LOGIC_TARGET
-    await stages.save(
-        project,
-        stage=6,
-        expected_version=None,
-        model={"logics": [{"module": module, "function": function}]},
-    )
-    await _generate(db_session, project, 6, llm, logics=[_LOGIC_TARGET])
-    await _approve_stage(db_session, project, 6)
-
-    # 段階7: 横断事項と実装計画
-    await _generate(db_session, project, 7, llm)
-    await _approve_stage(db_session, project, 7)
+    # Phase-50-1：削除
+    # await _approve_stage(db_session, project, 1)
+    #
+    # # 段階2: グループを選んで保存してから生成する(初回は行が無いので version なしで保存)
+    # await stages.save(
+    #     project,
+    #     stage=2,
+    #     expected_version=None,
+    #     model={"dfd_groups": ["reservations"], "summaries": []},
+    # )
+    # await _generate(db_session, project, 2, llm)
+    #
+    # for stage in (2, 3, 4):
+    #     if stage != 2:
+    #         await _generate(db_session, project, stage, llm)
+    #     await _approve_diagrams(db_session, project, _DIAGRAMS_OF_STAGE[stage])
+    #     await _approve_stage(db_session, project, stage)
+    #
+    # # 段階5: 処理を選んで保存し、手順の無い処理を生成する
+    # await stages.save(
+    #     project,
+    #     stage=5,
+    #     expected_version=None,
+    #     model={"procedures": [{"function_id": "F-01"}, {"function_id": "F-02"}]},
+    # )
+    # await _generate(db_session, project, 5, llm)
+    # await _approve_stage(db_session, project, 5)
+    #
+    # # 段階6: 関数を1つ選んで保存し、その関数を生成する
+    # module, function = _LOGIC_TARGET
+    # await stages.save(
+    #     project,
+    #     stage=6,
+    #     expected_version=None,
+    #     model={"logics": [{"module": module, "function": function}]},
+    # )
+    # await _generate(db_session, project, 6, llm, logics=[_LOGIC_TARGET])
+    # await _approve_stage(db_session, project, 6)
+    #
+    # # 段階7: 横断事項と実装計画
+    # await _generate(db_session, project, 7, llm)
+    # await _approve_stage(db_session, project, 7)
 
     # Phase-27-1：更新
     # assert [s.state for s in await stages.list_stages(project)] == ["approved"] * 7
@@ -203,12 +183,19 @@ async def test_e2e_fake_outputs_pass_stages_1_to_8_and_bundle(db_session: AsyncS
 
     # Phase-32-1:追記
     # 段階8: 段階7の全単位(M-01-T01〜T03)の手順書を生成して承認し、実装手順書の zip を作る
-    units = ["M-01-T01", "M-01-T02", "M-01-T03"]
-    await _generate(db_session, project, 8, llm, unit_ids=units)
+    # Phase-50-1：更新
+    # units = ["M-01-T01", "M-01-T02", "M-01-T03"]
+    # await _generate(db_session, project, 8, llm, unit_ids=units)
+    # ↓↓
+    units = FAKE_UNITS
+    await generate_stage(db_session, project, 8, llm, unit_ids=units)
     drafted = await stages.read(project.id, 8)
     assert drafted.model is not None
     assert [u["unit_id"] for u in drafted.model["units"]] == units
-    await _approve_stage(db_session, project, 8)
+    # Phase-50-1：更新
+    # await _approve_stage(db_session, project, 8)
+    # ↓↓
+    await approve_stage(db_session, project, 8)
     procedure = await DetailedDesignExportService(db_session).bundle_procedure(project)
     # Phase-38-2：更新
     # names = zipfile.ZipFile(io.BytesIO(procedure.content)).namelist()
