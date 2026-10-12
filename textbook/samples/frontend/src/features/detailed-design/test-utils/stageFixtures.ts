@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1,31-5,38-3,42-1,42-2,44-1,44-3
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1,31-5,38-3,42-1,42-2,44-1,44-3,46-3
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
@@ -367,5 +367,32 @@ export function impactWith(...marks: ImpactMarkRead[]): DesignImpactRead {
       };
     }),
     regeneration_targets: [],
+  };
+}
+
+// Phase-46-3:追記
+// 簡易モードの変更の影響(テスト専用)。内部設計書の処理別データフロー DF-1 が消え、それを参照する
+// 段階8の単位の手順書に印(簡易モードは段階8だけを返す)。
+export function makeSimpleImpact(): DesignImpactRead {
+  const change = makeElementChange({
+    source: "doc:internal_design",
+    key: "df:DF-1",
+    change: "removed",
+    stage: 0,
+    label: "DF-1 POST /api/v1/reservations",
+    before: "POST /api/v1/reservations",
+    after: null,
+  });
+  const unit = makeMark({
+    key: "unit:U-002",
+    label: "M-01-T02 の手順書",
+    stage: 8,
+    path: ["df:DF-1", "unit:U-002"],
+    reason: "この設計を手順書で実装する",
+    sources: ["doc:internal_design"],
+  });
+  return {
+    stages: [{ stage: 8, changes: [change], marks: [unit], open: 1, reviewed: 0 }],
+    regeneration_targets: [{ stage: 8, key: "unit:U-002", label: "M-01-T02 の手順書" }],
   };
 }

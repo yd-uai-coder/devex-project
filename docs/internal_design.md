@@ -511,6 +511,11 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * **生成**: 4文書とも構造化出力になり、md をそのまま書かせる経路(`_DOC_TYPE_PROMPTS`・`_generate_one`)は消した。入力の文書(`_DOC_TYPE_INPUTS`)は変えていない。文書の応答に`internal_design`・`implementation_plan`(`DocumentSummaryRead`。行数と指摘)。
   * **段階8**: `procedure_basis`に`document_models`を渡し、簡易モードは内部設計書・実装計画書の model があれば model から読む(`simple_procedure.book_from_model`・`to_plan`)。model の無い以前の版は今までどおり md を解析する。model から読んだ単位は安定キー(`U-001`)を持つ(以前の版は単位の ID がキー)。
   * 既存の文書は移していない(再生成で model を持つ)。
+* **Phase 46 で実装した部分**(簡易モードの変更の影響。経緯は[`textbook/Phase-46/Phase-46-introduction.md`](../textbook/Phase-46/Phase-46-introduction.md)):
+  * **要素**: `app/detailed_design/impact/simple.py`(`SimpleModels.from_dicts(stage8, documents)` → `build_simple_elements`)。置き場0に要件・画面・API(詳細設計モードと共有の`add_document_elements`)、処理別データフロー`df:DF-1`(種類`dataflow`。→ トリガーの API・本文に名前の出るテーブル)、テーブル`table:`・モジュール一覧の行`module:`、実装計画書のタスク`task:U-001`(→ DF・要件・モジュール)。置き場8に単位の手順書`unit:U-001`(→ タスク・DF・モジュール)。計画とモジュールは段階8と同じ規則(`book_from_model`・`normalize_plan`・`simple_unit_refs`・`module_layer`)。内部設計書 3.3 の API 行は要素にしない。
+  * **たどり方**: `trace.py`の軸の判定(`_is_axis`)を、処理・DF・文書のタスク(置き場0)に広げた。詳細設計モードの挙動は変えていない。
+  * **記録**: `record_document_change`が簡易モードも扱う(`IMPACT_DOCUMENTS`をモードごとにし、簡易モードは4文書)。`_impact_by_stage`・`_record_impact`は要素の列を受け、組み立てはモードで切り替える。承認前の編集の pending の印は詳細設計モードだけ。
+  * **画面**: devex-ui の`mayHaveImpact`は、簡易モードでは記録した印があるときだけ影響を取る。詳細設計画面は簡易モードでも「変更の影響」パネルを出す(段階8の単位の行の印は Phase 44 の部品のまま)。
 
 ---
 

@@ -1,4 +1,4 @@
-// 作成：Phase-44-1｜更新：Phase-44-4,44(完了後の調整)
+// 作成：Phase-44-1｜更新：Phase-44-4,44(完了後の調整),46-3
 // Phase-44-4:追記 ── @/features/detailed-design/api/types(MAX_LOGIC_TARGETS, MAX_PROCEDURE_DOC_TARGETS, MAX_PROCEDURE_TARGETS, RegenerationTargetRead)
 import {
   MAX_LOGIC_TARGETS,
@@ -65,13 +65,23 @@ export function pathText(path: string[]): string {
 }
 
 // 影響を取りに行く必要があるか。記録した印があるか、承認の後に編集した段階(承認すると届く印 pending
-// がありうる)があるときだけ取る(簡易モードは段階8だけで印が無いので取らない)。
+// Phase-46-3：更新
+// // がありうる)があるときだけ取る(簡易モードは段階8だけで印が無いので取らない)。
+// ↓↓
+// がありうる)があるときだけ取る。簡易モードは段階8だけで下流が無く pending の印は出ないので、
+// 文書の切り替えで記録した印があるときだけ取る。
 export function mayHaveImpact(stages: DesignStageRead[]): boolean {
+  // Phase-46-3:追記
+  const recorded = (s: DesignStageRead) => (s.impact_open ?? 0) + (s.impact_reviewed ?? 0) > 0;
+  if (stages[0]?.mode === "simple") return stages.some(recorded);
   if (stages[0]?.mode !== "detailed") return false;
   return stages.some(
     (s) =>
-      (s.impact_open ?? 0) + (s.impact_reviewed ?? 0) > 0 ||
-      (s.approved_version !== null && s.state !== "approved"),
+      // Phase-46-3：更新
+      // (s.impact_open ?? 0) + (s.impact_reviewed ?? 0) > 0 ||
+      // (s.approved_version !== null && s.state !== "approved"),
+      // ↓↓
+      recorded(s) || (s.approved_version !== null && s.state !== "approved"),
   );
 }
 

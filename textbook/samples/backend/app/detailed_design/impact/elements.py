@@ -1,4 +1,4 @@
-# 作成：Phase-42-3｜更新：Phase-43-2
+# 作成：Phase-42-3｜更新：Phase-43-2,46-1
 """変更の影響を求めるための、設計の要素と参照の導出(純粋関数)。
 
 docs/internal_design.md 3.3節「7. 変更影響分析・変更管理」。
@@ -60,6 +60,8 @@ ElementKind = Literal[
     "task",
     "crosscutting",
     "unit",
+    # Phase-46-1:追記
+    "dataflow",  # 簡易モードの処理別データフロー(内部設計書)
 ]
 
 # 参照の種類(A が B を参照する)。理由の文は trace.py の`EDGE_REASON`
@@ -78,7 +80,10 @@ EdgeKind = Literal[
     "covers",  # 横断事項の対象のモジュールを含む
 ]
 
-# 置き場。0 = 文書(要件定義書・外部設計書)、1〜8 = 詳細設計の段階
+# Phase-46-1：更新
+# # 置き場。0 = 文書(要件定義書・外部設計書)、1〜8 = 詳細設計の段階
+# ↓↓
+# 置き場。0 = 文書(要件定義書・外部設計書。簡易モードは4文書)、1〜8 = 詳細設計の段階
 DOCUMENT_STAGE = 0
 
 # 手順の行の DB 欄の「テーブル名 + 操作(C/R/U/D)」(例: `reservations R`・`users CU`)
@@ -152,23 +157,38 @@ class DesignModels:
             else {}
         )
         return cls(
-            functions=_parse(FunctionListModel, stages.get(1)) or FunctionListModel(),
-            data_flow=_parse(DataFlowModel, stages.get(2)) or DataFlowModel(),
-            crud=_parse(CrudModel, stages.get(3)) or CrudModel(),
-            modules=_parse(ModuleListModel, stages.get(4)) or ModuleListModel(),
-            procedures=_parse(ProcedureModel, stages.get(5)) or ProcedureModel(),
-            logics=_parse(LogicModel, stages.get(6)) or LogicModel(),
-            plan=_parse(PlanModel, stages.get(7)) or PlanModel(),
-            procedure_docs=_parse(ProcedureDocModel, stages.get(8)) or ProcedureDocModel(),
-            requirements=_parse(RequirementsModel, documents.get("requirements")),
-            external_design=_parse(ExternalDesignModel, documents.get("external_design")),
+            # Phase-46-1：更新
+            # functions=_parse(FunctionListModel, stages.get(1)) or FunctionListModel(),
+            # data_flow=_parse(DataFlowModel, stages.get(2)) or DataFlowModel(),
+            # crud=_parse(CrudModel, stages.get(3)) or CrudModel(),
+            # modules=_parse(ModuleListModel, stages.get(4)) or ModuleListModel(),
+            # procedures=_parse(ProcedureModel, stages.get(5)) or ProcedureModel(),
+            # logics=_parse(LogicModel, stages.get(6)) or LogicModel(),
+            # plan=_parse(PlanModel, stages.get(7)) or PlanModel(),
+            # procedure_docs=_parse(ProcedureDocModel, stages.get(8)) or ProcedureDocModel(),
+            # requirements=_parse(RequirementsModel, documents.get("requirements")),
+            # external_design=_parse(ExternalDesignModel, documents.get("external_design")),
+            # ↓↓
+            functions=parse_model(FunctionListModel, stages.get(1)) or FunctionListModel(),
+            data_flow=parse_model(DataFlowModel, stages.get(2)) or DataFlowModel(),
+            crud=parse_model(CrudModel, stages.get(3)) or CrudModel(),
+            modules=parse_model(ModuleListModel, stages.get(4)) or ModuleListModel(),
+            procedures=parse_model(ProcedureModel, stages.get(5)) or ProcedureModel(),
+            logics=parse_model(LogicModel, stages.get(6)) or LogicModel(),
+            plan=parse_model(PlanModel, stages.get(7)) or PlanModel(),
+            procedure_docs=parse_model(ProcedureDocModel, stages.get(8)) or ProcedureDocModel(),
+            requirements=parse_model(RequirementsModel, documents.get("requirements")),
+            external_design=parse_model(ExternalDesignModel, documents.get("external_design")),
             er_tables=tuple(er_tables),
             # Phase-43-2:追記
             table_bodies=bodies,
         )
 
 
-def _parse[M: BaseModel](model_type: type[M], value: Mapping[str, Any] | None) -> M | None:
+# Phase-46-1：更新
+# def _parse[M: BaseModel](model_type: type[M], value: Mapping[str, Any] | None) -> M | None:
+# ↓↓
+def parse_model[M: BaseModel](model_type: type[M], value: Mapping[str, Any] | None) -> M | None:
     if not value:
         return None
     try:
@@ -178,7 +198,10 @@ def _parse[M: BaseModel](model_type: type[M], value: Mapping[str, Any] | None) -
 
 
 # Phase-43-2:追記
-def _body(row: BaseModel, *keys: str) -> str:
+# Phase-46-1：更新
+# def _body(row: BaseModel, *keys: str) -> str:
+# ↓↓
+def row_body(row: BaseModel, *keys: str) -> str:
     """行の内容を、キーになる欄(`keys`)を除いた正規化した JSON にする(差分で比べる値)。"""
     return _json(row.model_dump(mode="json", exclude=set(keys)))
 
@@ -195,7 +218,10 @@ def parse_db_tables(db: str, known_tables: Iterable[str]) -> list[str]:
     return list(dict.fromkeys(name for name in found if name in known))
 
 
-class _Builder:
+# Phase-46-1：更新
+# class _Builder:
+# ↓↓
+class ElementBuilder:
     """要素を足していく入れ物。辺は、参照先が要素として在るものだけを残す(`build`の最後で)。"""
 
     def __init__(self) -> None:
@@ -235,33 +261,60 @@ class _Builder:
 
 def build_elements(models: DesignModels) -> list[Element]:
     """設計の要素と参照を作る(文書 → 段階1〜8 の順。同じ置き場の中は model の並び順)。"""
-    b = _Builder()
-    _documents(b, models)
+    # Phase-46-1：更新
+    # b = _Builder()
+    # _documents(b, models)
+    # ↓↓
+    b = ElementBuilder()
+    add_document_elements(b, models.requirements, models.external_design)
     _stages_1_to_4(b, models)
     _stages_5_to_8(b, models)
     return b.build()
 
 
-def _documents(b: _Builder, models: DesignModels) -> None:
-    if models.requirements is not None:
-        for row in models.requirements.rows:
+# Phase-46-1：更新
+# def _documents(b: _Builder, models: DesignModels) -> None:
+#     if models.requirements is not None:
+#         for row in models.requirements.rows:
+# ↓↓
+def add_document_elements(
+    b: ElementBuilder,
+    requirements: RequirementsModel | None,
+    external_design: ExternalDesignModel | None,
+) -> None:
+    """要件定義書・外部設計書の要素(要件・画面・API)。両モードで共有する。"""
+    if requirements is not None:
+        for row in requirements.rows:
             # Phase-43-2：更新
             # b.add(f"req:{row.id}", "requirement", DOCUMENT_STAGE, f"{row.id} {row.text}")
             # ↓↓
             label = f"{row.id} {row.text}"
-            b.add(f"req:{row.id}", "requirement", DOCUMENT_STAGE, label, _body(row, "id"))
-    if models.external_design is not None:
-        for screen in models.external_design.screens:
+            # Phase-46-1：更新
+            # b.add(f"req:{row.id}", "requirement", DOCUMENT_STAGE, label, _body(row, "id"))
+            # ↓↓
+            b.add(f"req:{row.id}", "requirement", DOCUMENT_STAGE, label, row_body(row, "id"))
+    # Phase-46-1：更新
+    # if models.external_design is not None:
+    #     for screen in models.external_design.screens:
+    # ↓↓
+    if external_design is not None:
+        for screen in external_design.screens:
             label = f"{screen.id} {screen.name}"
             # Phase-43-2：更新
             # key = b.add(f"screen:{screen.id}", "screen", DOCUMENT_STAGE, label)
             # ↓↓
             key = b.add(
-                f"screen:{screen.id}", "screen", DOCUMENT_STAGE, label, _body(screen, "id")
+                # Phase-46-1：更新
+                # f"screen:{screen.id}", "screen", DOCUMENT_STAGE, label, _body(screen, "id")
+                # ↓↓
+                f"screen:{screen.id}", "screen", DOCUMENT_STAGE, label, row_body(screen, "id")
             )
             for req in screen.req_ids:
                 b.ref(key, f"req:{req}", "requirement")
-        for api in models.external_design.apis:
+        # Phase-46-1：更新
+        # for api in models.external_design.apis:
+        # ↓↓
+        for api in external_design.apis:
             label = f"{api.method} {api.path}"
             # Phase-43-2：更新
             # key = b.add(f"api:{endpoint_key(api.method, api.path)}", "api", DOCUMENT_STAGE, label)
@@ -271,7 +324,10 @@ def _documents(b: _Builder, models: DesignModels) -> None:
                 "api",
                 DOCUMENT_STAGE,
                 label,
-                _body(api, "method", "path"),
+                # Phase-46-1：更新
+                # _body(api, "method", "path"),
+                # ↓↓
+                row_body(api, "method", "path"),
             )
             for screen_id in api.screens:
                 b.ref(key, f"screen:{screen_id}", "screen")
@@ -279,12 +335,18 @@ def _documents(b: _Builder, models: DesignModels) -> None:
                 b.ref(key, f"req:{req}", "requirement")
 
 
-def _stages_1_to_4(b: _Builder, models: DesignModels) -> None:
+# Phase-46-1：更新
+# def _stages_1_to_4(b: _Builder, models: DesignModels) -> None:
+# ↓↓
+def _stages_1_to_4(b: ElementBuilder, models: DesignModels) -> None:
     for row in models.functions.functions:
         # Phase-43-2：更新
         # key = b.add(f"fn:{row.id}", "function", 1, f"{row.id} {row.name}")
         # ↓↓
-        key = b.add(f"fn:{row.id}", "function", 1, f"{row.id} {row.name}", _body(row, "id"))
+        # Phase-46-1：更新
+        # key = b.add(f"fn:{row.id}", "function", 1, f"{row.id} {row.name}", _body(row, "id"))
+        # ↓↓
+        key = b.add(f"fn:{row.id}", "function", 1, f"{row.id} {row.name}", row_body(row, "id"))
         for req in row.req_ids:
             b.ref(key, f"req:{req}", "requirement")
         for screen_id in row.screens:
@@ -298,7 +360,10 @@ def _stages_1_to_4(b: _Builder, models: DesignModels) -> None:
         # key = b.add(f"summary:{fid}", "summary", 2, f"{fid} の処理の要約")
         # ↓↓
         label = f"{fid} の処理の要約"
-        key = b.add(f"summary:{fid}", "summary", 2, label, _body(summary, "function_id"))
+        # Phase-46-1：更新
+        # key = b.add(f"summary:{fid}", "summary", 2, label, _body(summary, "function_id"))
+        # ↓↓
+        key = b.add(f"summary:{fid}", "summary", 2, label, row_body(summary, "function_id"))
         b.ref(key, f"fn:{fid}", "function")
     for name in [*models.er_tables, *(cell.table for cell in models.crud.cells)]:
         # Phase-43-2：更新
@@ -312,7 +377,10 @@ def _stages_1_to_4(b: _Builder, models: DesignModels) -> None:
         # key = b.add(f"crud:{fid}×{table}", "crud", 3, f"{fid} × {cell.table.strip()}")
         # ↓↓
         label = f"{fid} × {cell.table.strip()}"
-        body = _body(cell, "function_id", "table", "draft")
+        # Phase-46-1：更新
+        # body = _body(cell, "function_id", "table", "draft")
+        # ↓↓
+        body = row_body(cell, "function_id", "table", "draft")
         key = b.add(f"crud:{fid}×{table}", "crud", 3, label, body)
         b.ref(key, f"fn:{fid}", "function")
         b.ref(key, f"table:{table}", "table")
@@ -320,7 +388,10 @@ def _stages_1_to_4(b: _Builder, models: DesignModels) -> None:
         # Phase-43-2：更新
         # b.add(f"module:{module.path}", "module", 4, module.path)
         # ↓↓
-        b.add(f"module:{module.path}", "module", 4, module.path, _body(module, "path"))
+        # Phase-46-1：更新
+        # b.add(f"module:{module.path}", "module", 4, module.path, _body(module, "path"))
+        # ↓↓
+        b.add(f"module:{module.path}", "module", 4, module.path, row_body(module, "path"))
     for module in models.modules.modules:
         key = f"module:{module.path}"
         for fid in module.functions:
@@ -329,14 +400,21 @@ def _stages_1_to_4(b: _Builder, models: DesignModels) -> None:
             b.ref(key, f"module:{dep}", "depends")
 
 
-def _stages_5_to_8(b: _Builder, models: DesignModels) -> None:
+# Phase-46-1：更新
+# def _stages_5_to_8(b: _Builder, models: DesignModels) -> None:
+# ↓↓
+def _stages_5_to_8(b: ElementBuilder, models: DesignModels) -> None:
     tables = [k.removeprefix("table:") for k in b.elements if k.startswith("table:")]
     for procedure in models.procedures.procedures:
         fid = procedure.function_id
         # Phase-43-2：更新
         # key = b.add(f"proc:{fid}", "procedure", 5, f"{fid} の手順")
         # ↓↓
-        key = b.add(f"proc:{fid}", "procedure", 5, f"{fid} の手順", _body(procedure, "function_id"))
+        # Phase-46-1：更新
+        # key = b.add(f"proc:{fid}", "procedure", 5, f"{fid} の手順", _body(procedure, "function_id"))
+        # ↓↓
+        body = row_body(procedure, "function_id")
+        key = b.add(f"proc:{fid}", "procedure", 5, f"{fid} の手順", body)
         b.ref(key, f"fn:{fid}", "function")
         for step in procedure.steps:
             module = f"module:{step.callee.strip()}"
@@ -353,7 +431,10 @@ def _stages_5_to_8(b: _Builder, models: DesignModels) -> None:
         # key = b.add(f"logic:{name}", "logic", 6, f"{logic.module} の {logic.function}")
         # ↓↓
         label = f"{logic.module} の {logic.function}"
-        key = b.add(f"logic:{name}", "logic", 6, label, _body(logic, "module", "function"))
+        # Phase-46-1：更新
+        # key = b.add(f"logic:{name}", "logic", 6, label, _body(logic, "module", "function"))
+        # ↓↓
+        key = b.add(f"logic:{name}", "logic", 6, label, row_body(logic, "module", "function"))
         b.ref(key, f"module:{logic.module.strip()}", "placed")
         for procedure in models.procedures.procedures:
             if any(_calls(step, logic.module, logic.function) for step in procedure.steps):
@@ -364,7 +445,10 @@ def _stages_5_to_8(b: _Builder, models: DesignModels) -> None:
         # key = b.add(f"task:{unit.key}", "task", 7, f"{unit.unit_id} {unit.task.title}")
         # ↓↓
         label = f"{unit.unit_id} {unit.task.title}"
-        key = b.add(f"task:{unit.key}", "task", 7, label, _body(unit.task, "key"))
+        # Phase-46-1：更新
+        # key = b.add(f"task:{unit.key}", "task", 7, label, _body(unit.task, "key"))
+        # ↓↓
+        key = b.add(f"task:{unit.key}", "task", 7, label, row_body(unit.task, "key"))
         for fid in unit.task.function_ids:
             b.ref(key, f"fn:{fid}", "function")
         for path in unit.task.modules:
@@ -373,7 +457,10 @@ def _stages_5_to_8(b: _Builder, models: DesignModels) -> None:
         # Phase-43-2：更新
         # key = b.add(f"cc:{row.topic}", "crosscutting", 7, row.topic)
         # ↓↓
-        key = b.add(f"cc:{row.topic}", "crosscutting", 7, row.topic, _body(row, "topic"))
+        # Phase-46-1：更新
+        # key = b.add(f"cc:{row.topic}", "crosscutting", 7, row.topic, _body(row, "topic"))
+        # ↓↓
+        key = b.add(f"cc:{row.topic}", "crosscutting", 7, row.topic, row_body(row, "topic"))
         for req in row.req_ids:
             b.ref(key, f"req:{req}", "requirement")
         for path in row.modules:
@@ -381,7 +468,10 @@ def _stages_5_to_8(b: _Builder, models: DesignModels) -> None:
     _units(b, models, units)
 
 
-def _units(b: _Builder, models: DesignModels, units: list[PlanUnit]) -> None:
+# Phase-46-1：更新
+# def _units(b: _Builder, models: DesignModels, units: list[PlanUnit]) -> None:
+# ↓↓
+def _units(b: ElementBuilder, models: DesignModels, units: list[PlanUnit]) -> None:
     """段階8の手順書(キーで段階7の単位に付くものだけ)。参照する設計(手順・処理ロジック・
     モジュール)は、段階8の画面・生成と同じ`unit_refs`で導き、手順書のモジュールのファイルも足す。"""
     index = design_index(
@@ -401,7 +491,10 @@ def _units(b: _Builder, models: DesignModels, units: list[PlanUnit]) -> None:
         # key = b.add(f"unit:{unit.key}", "unit", 8, f"{unit.unit_id} の手順書")
         # ↓↓
         label = f"{unit.unit_id} の手順書"
-        key = b.add(f"unit:{unit.key}", "unit", 8, label, _body(doc, "unit_id", "unit_key"))
+        # Phase-46-1：更新
+        # key = b.add(f"unit:{unit.key}", "unit", 8, label, _body(doc, "unit_id", "unit_key"))
+        # ↓↓
+        key = b.add(f"unit:{unit.key}", "unit", 8, label, row_body(doc, "unit_id", "unit_key"))
         b.ref(key, f"task:{unit.key}", "unit")
         refs = unit_refs(unit.task, index)
         paths = [r.key for r in refs if r.kind == "module"]

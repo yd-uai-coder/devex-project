@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -100,8 +100,12 @@ export function DetailedDesignPageContent({
       {stages.length > 0 ? <DesignDocumentBar projectId={projectId} stages={stages} /> : null}
 
       {/* Phase-44-2:追記 */}
-      {/* 変更の影響(印も変わったものも無ければ出さない。簡易モードは印が無い) */}
+      {/* Phase-46-3：更新
+      変更の影響(印も変わったものも無ければ出さない。簡易モードは印が無い)
       {stages.length > 0 && !simple ? <ChangeImpactPanel projectId={projectId} /> : null}
+      ↓↓ */}
+      {/* 変更の影響(印も変わったものも無ければ出さない。簡易モードは文書の変更から段階8の単位に印) */}
+      {stages.length > 0 ? <ChangeImpactPanel projectId={projectId} /> : null}
 
       {stages.length > 0 ? (
         <XStack gap="$5" alignItems="flex-start" flexWrap="wrap">

@@ -1,4 +1,4 @@
-// 作成：Phase-44-1｜更新：Phase-44-4,44(完了後の調整)
+// 作成：Phase-44-1｜更新：Phase-44-4,44(完了後の調整),46-3
 // Phase-44-4:追記 ── ../impactOps(REGENERATION_LIMITS, regenerationGroups)
 // Phase-44(完了後の調整):追記 ── ../impactOps(stageMarkSummary, visibleMarks)
 import { describe, expect, it } from "vitest";
@@ -46,12 +46,21 @@ describe("impactOps", () => {
     expect(pathText(["fn:F-01", "proc:F-01"])).toBe("fn:F-01 → proc:F-01");
   });
 
-  it("印か承認後の編集がある詳細設計モードだけ影響を取りに行く", () => {
+  // Phase-46-3：更新
+  // it("印か承認後の編集がある詳細設計モードだけ影響を取りに行く", () => {
+  // ↓↓
+  it("印か承認後の編集があるときだけ影響を取りに行く(簡易モードは記録した印だけ)", () => {
     expect(mayHaveImpact(makeStages())).toBe(false);
     expect(mayHaveImpact(makeStages({ 5: { impact_open: 1 } }))).toBe(true);
     expect(mayHaveImpact(makeStages({ 4: { state: "reviewing", approved_version: 2 } }))).toBe(true);
     expect(mayHaveImpact(makeStages({ 4: { state: "approved", approved_version: 2 } }))).toBe(false);
-    expect(mayHaveImpact([{ ...makeStages()[7], mode: "simple", impact_open: 1 }])).toBe(false);
+    // Phase-46-3：更新
+    // expect(mayHaveImpact([{ ...makeStages()[7], mode: "simple", impact_open: 1 }])).toBe(false);
+    // ↓↓
+    const simple = { ...makeStages()[7], mode: "simple" as const };
+    expect(mayHaveImpact([{ ...simple, impact_open: 1 }])).toBe(true);
+    expect(mayHaveImpact([{ ...simple, impact_reviewed: 1 }])).toBe(true);
+    expect(mayHaveImpact([{ ...simple, state: "outdated", approved_version: 1 }])).toBe(false);
   });
 
   it("段階の印をキーで引き、記録した印を pending より優先する", () => {

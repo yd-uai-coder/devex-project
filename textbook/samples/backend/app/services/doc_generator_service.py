@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -598,12 +598,11 @@ class DocGeneratorService:
         # ↓↓
         """指定バージョンを表示中(is_current)に切り替える。バージョン番号は増やさず、新しい行も
         作らない(既存版の内容も書き換えない)。指定バージョンが存在しなければDocumentNotFoundError。
-
         既存版の内容を書き換える例外は1つだけ: 承認済みのUML図を内部設計書へ反映するとき
         (`GeneratedDocumentRepository.update_content_in_place`、D1案A)。復元した版には、その版を
         表示していた当時に反映した図のアンカーが残っている(陳腐化の判定はその`v=`で行う)。
-        詳細設計モードでは、切り替える前に表示していた版と比べて、変更の影響を段階に記録する
-        (Phase 43-3)。"""
+        切り替える前に表示していた版と比べて、変更の影響を段階に記録する(model を持つ文書。
+        Phase 43-3、簡易モードは Phase 46-2)。"""
         # Phase-43-3:追記
         previous = await self._documents.get_current(project_id=project_id, doc_type=doc_type)
         previous_model = previous.model if previous is not None else None

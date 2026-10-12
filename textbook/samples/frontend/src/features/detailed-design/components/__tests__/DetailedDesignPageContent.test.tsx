@@ -1,9 +1,10 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-44-2:追記 ── ../../test-utils/stageFixtures.makeImpact
+// Phase-46-3:追記 ── ../../test-utils/stageFixtures.makeSimpleImpact, @testing-library/react.within
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
@@ -17,6 +18,7 @@ import {
   makeImpact,
   makePlan,
   makeProcedureDoc,
+  makeSimpleImpact,
   makeStages,
 } from "../../test-utils/stageFixtures";
 
@@ -232,6 +234,39 @@ describe("DetailedDesignPageContent", () => {
     useDetailedDesignStore.setState({ impact: makeImpact(), impactError: null });
     renderContent();
     expect(screen.getByRole("region", { name: "変更の影響" })).toBeInTheDocument();
+
+    useDetailedDesignStore.setState({ impact: null });
+  });
+
+  // Phase-46-3:追記
+  it("簡易モードでも、文書の変更から届いた段階8の単位の印をパネルと単位の行に出す", () => {
+    useDetailedDesignStore.setState({
+      stages: makeStages({
+        8: {
+          mode: "simple",
+          is_open: true,
+          missing_inputs: [],
+          state: "outdated",
+          approved_version: 1,
+          impact_open: 1,
+          plan: makePlan(),
+          model: makeProcedureDoc(),
+        },
+      }).slice(7),
+      selectedStage: 8,
+      impact: makeSimpleImpact(),
+      impactError: null,
+    });
+
+    renderContent();
+
+    const panel = screen.getByRole("region", { name: "変更の影響" });
+    expect(within(panel).getAllByText("内部設計書").length).toBeGreaterThan(0);
+    expect(within(panel).getByRole("link", { name: /文書を開く/ })).toHaveAttribute(
+      "href",
+      "/projects/p1/documents",
+    );
+    expect(within(panel).getAllByText("M-01-T02 の手順書").length).toBeGreaterThan(0);
 
     useDetailedDesignStore.setState({ impact: null });
   });
