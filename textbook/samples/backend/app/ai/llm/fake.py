@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -14,6 +14,7 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 # Phase-35-2:追記 ── app.hearing.is_point_key, app.schemas.hearing(CardOptionOut, CardOut, HearingReplyOut)
 # Phase-36-2:追記 ── app.documents.requirements.drafting(GeneratedRequirement, GeneratedUserScene, RequirementsGenerationOutput)
 # Phase-37-2:追記 ── app.documents.external_design.drafting(ExternalDesignGenerationOutput, GeneratedApi, GeneratedScreen)
+# Phase-45-3:追記 ── app.documents.implementation_plan.drafting(plan_doc), app.documents.internal_design.drafting(internal_doc)
 from __future__ import annotations
 
 # Phase-10-5:追記 ── app.uml.generation.schemas(UML生成の出力スキーマ一式)
@@ -75,6 +76,8 @@ from app.documents.external_design.drafting import (
     GeneratedApi,
     GeneratedScreen,
 )
+from app.documents.implementation_plan import drafting as plan_doc
+from app.documents.internal_design import drafting as internal_doc
 from app.documents.requirements.drafting import (
     GeneratedRequirement,
     GeneratedUserScene,
@@ -123,94 +126,162 @@ _MESSAGE_NUMBER = re.compile(r"^\[#(\d+)\] ")
 # 返信のシステムプロンプトにある「カードにしてよい観点」の行(- キー: 観点(例: ...))
 _CARD_TARGET = re.compile(r"^- ([a-z_]+): ", re.MULTILINE)
 
-# doc_generator_service.pyの各doc_type専用プロンプト(_DOC_TYPE_PROMPTS)は、他doc_typeへの
-# 入力参照を「以下の【要件定義書】および【外部設計書】に基づき...」のような角括弧表記で行うため、
-# 単純な「要件定義書」等の裸のラベル文字列でマッチさせると、internal_design/external_design/
-# implementation_plan向けのプロンプト(要件定義書という文字列を必ず含む)が誤って
-# requirementsと判定されてしまう(実機検証で発見、(2)の不具合)。各プロンプトが自分自身の
-# 出力フォーマットとして持つ「# N. ラベル」という見出し(cross-reference表記には現れない、
-# doc_type固有の文字列)をマッチ対象にすることでこれを避ける。
-# Phase-36-2:追記
-# Phase-37-2：更新
-# # 要件定義書は構造化出力(RequirementsGenerationOutput)で作るので、ここには無い。
-# ↓↓
-# 要件定義書・外部設計書は構造化出力(RequirementsGenerationOutput・
-# ExternalDesignGenerationOutput)で作るので、ここには無い。
-_DOC_TYPE_MARKERS: dict[str, str] = {
-    # Phase-36-2：削除
-    # "requirements": "# 1. 要件定義書",
-    # Phase-37-2：削除
-    # "external_design": "# 2. 外部設計書",
-    "internal_design": "# 3. 内部設計書",
-    "implementation_plan": "# 4. 実装計画書",
-}
-# Phase-36-2：削除
-# _DOC_TYPE_LABELS: dict[str, str] = {
-#     "requirements": "要件定義書",
-#     "external_design": "外部設計書",
-#     "internal_design": "内部設計書",
-#     "implementation_plan": "実装計画書",
+# Phase-45-3：更新
+# # doc_generator_service.pyの各doc_type専用プロンプト(_DOC_TYPE_PROMPTS)は、他doc_typeへの
+# # 入力参照を「以下の【要件定義書】および【外部設計書】に基づき...」のような角括弧表記で行うため、
+# # 単純な「要件定義書」等の裸のラベル文字列でマッチさせると、internal_design/external_design/
+# # implementation_plan向けのプロンプト(要件定義書という文字列を必ず含む)が誤って
+# # requirementsと判定されてしまう。各プロンプトが自分自身の
+# # 出力フォーマットとして持つ「# N. ラベル」という見出し(cross-reference表記には現れない、
+# # doc_type固有の文字列)をマッチ対象にすることでこれを避ける。
+# # 要件定義書・外部設計書は構造化出力(RequirementsGenerationOutput・
+# # ExternalDesignGenerationOutput)で作るので、ここには無い。
+# _DOC_TYPE_MARKERS: dict[str, str] = {
+#     "internal_design": "# 3. 内部設計書",
+#     "implementation_plan": "# 4. 実装計画書",
 # }
-
-# Phase-10-1:追記
-# Phase-24：更新
-# # 内部設計書だけは、UML図の生成候補(3.2節のテーブル見出し・処理別データフローのDF見出し)を
-# # E2Eでも列挙できるよう、内部設計書プロンプトが指示する固定形式の見出しを含めて返す(Phase 10)。
+#
+# # 内部設計書は、内部設計書プロンプトが指示する固定形式の見出し(3.2節のテーブル・3.3節のAPI一覧・
+# # モジュール一覧・処理別データフロー・3.4節)を含めて返す。簡易モードの実装手順書が読むため。
+# _INTERNAL_DESIGN_REPLY = (
+#     "# 内部設計書(E2E Fake)\n\n"
+#     "## 3.1 技術スタック選定・アーキテクチャ方針\n- api / service / repository の3層構成\n\n"
+#     "## 3.2 データモデル定義\n\n"
+#     "### テーブル: reservations\n| カラム名 | データ型 | 制約 | 説明 |\n|---|---|---|---|\n"
+#     "| id | UUID | PK | 予約ID |\n\n"
+#     "## 3.3 バックエンド処理・モジュール設計\n- api → service → repository\n\n"
+#     "| メソッド | パス | 概要 |\n|---|---|---|\n"
+#     "| POST | /api/v1/reservations | 予約を登録する(ルート → サービス) |\n\n"
+#     "### モジュール一覧\n| パス | 層 | 責務 | 主な依存先 |\n|---|---|---|---|\n"
+#     "| app/main.py | 起動 | アプリの組み立て | app/api/reservations.py |\n"
+#     "| app/api/reservations.py | api | 予約のルート | app/services/reservation.py |\n"
+#     "| app/services/reservation.py | service | 予約の検証と保存 | — |\n\n"
+#     "### 処理別データフロー\n\n"
+#     "#### DF-1: POST /api/v1/reservations\n| 元 | データ | 変換 | 先 |\n|---|---|---|---|\n"
+#     "| 利用者 | 予約リクエスト | 検証して保存 | reservations |\n"
+#     "- データ項目: 予約リクエスト(item_id, start_at)\n\n"
+#     "## 3.4 例外処理・エラーハンドリング・ログ設計\n"
+#     "- エラーは {code, message} の形で返す\n"
 # ↓↓
-# Phase-31-1：更新
-# # 内部設計書は、内部設計書プロンプトが指示する固定形式の見出し(3.2節のテーブル・処理別データフロー)
-# # を含めて返す。
-# ↓↓
-# 内部設計書は、内部設計書プロンプトが指示する固定形式の見出し(3.2節のテーブル・3.3節のAPI一覧・
-# モジュール一覧・処理別データフロー・3.4節)を含めて返す。簡易モードの実装手順書が読むため。
-_INTERNAL_DESIGN_REPLY = (
-    "# 内部設計書(E2E Fake)\n\n"
-    "## 3.1 技術スタック選定・アーキテクチャ方針\n- api / service / repository の3層構成\n\n"
-    "## 3.2 データモデル定義\n\n"
-    "### テーブル: reservations\n| カラム名 | データ型 | 制約 | 説明 |\n|---|---|---|---|\n"
-    "| id | UUID | PK | 予約ID |\n\n"
-    "## 3.3 バックエンド処理・モジュール設計\n- api → service → repository\n\n"
-    # Phase-31-1:追記
-    "| メソッド | パス | 概要 |\n|---|---|---|\n"
-    "| POST | /api/v1/reservations | 予約を登録する(ルート → サービス) |\n\n"
-    "### モジュール一覧\n| パス | 層 | 責務 | 主な依存先 |\n|---|---|---|---|\n"
-    "| app/main.py | 起動 | アプリの組み立て | app/api/reservations.py |\n"
-    "| app/api/reservations.py | api | 予約のルート | app/services/reservation.py |\n"
-    "| app/services/reservation.py | service | 予約の検証と保存 | — |\n\n"
-    "### 処理別データフロー\n\n"
-    "#### DF-1: POST /api/v1/reservations\n| 元 | データ | 変換 | 先 |\n|---|---|---|---|\n"
-    "| 利用者 | 予約リクエスト | 検証して保存 | reservations |\n"
-    # Phase-31-1：更新
-    # "- データ項目: 予約リクエスト(item_id, start_at)\n"
-    # ↓↓
-    "- データ項目: 予約リクエスト(item_id, start_at)\n\n"
-    "## 3.4 例外処理・エラーハンドリング・ログ設計\n"
-    "- エラーは {code, message} の形で返す\n"
+# 内部設計書の下書き。簡易モードの実装手順書が読むテーブル・API 一覧・モジュール一覧・処理別データ
+# フローを持つ(md は生成と同じく model から組み立てる)。処理は外部設計書の POST の1つだけ。
+_INTERNAL_DESIGN_OUTPUT = internal_doc.InternalDesignGenerationOutput(
+    architecture="[E2E Fake] api / service / repository の3層構成",
+    data_model_note="- reservations: 予約",
+    tables=[
+        internal_doc.GeneratedTable(
+            name="reservations",
+            description="予約",
+            columns=[
+                internal_doc.GeneratedColumn(
+                    name="id", type="UUID", constraints="PK", description="予約ID"
+                )
+            ],
+        )
+    ],
+    module_policy="- api → service → repository",
+    apis=[
+        internal_doc.GeneratedInternalApi(
+            method="POST",
+            path="/api/v1/reservations",
+            summary="予約を登録する(ルート → サービス)",
+        )
+    ],
+    modules=[
+        internal_doc.GeneratedModule(
+            path="app/main.py",
+            layer="起動",
+            responsibility="アプリの組み立て",
+            depends_on=["app/api/reservations.py"],
+        ),
+        internal_doc.GeneratedModule(
+            path="app/api/reservations.py",
+            layer="api",
+            responsibility="予約のルート",
+            depends_on=["app/services/reservation.py"],
+        ),
+        internal_doc.GeneratedModule(
+            path="app/services/reservation.py",
+            layer="service",
+            responsibility="予約の検証と保存",
+            depends_on=[],
+        ),
+    ],
+    dataflows=[
+        internal_doc.GeneratedDataFlow(
+            trigger="POST /api/v1/reservations",
+            flows=[
+                internal_doc.GeneratedFlow(
+                    source="利用者",
+                    data="予約リクエスト",
+                    transform="検証して保存",
+                    target="reservations",
+                )
+            ],
+            data_items=[
+                internal_doc.GeneratedDataItem(
+                    name="予約リクエスト", fields=["item_id", "start_at"]
+                )
+            ],
+        )
+    ],
+    error_policy="- エラーは {code, message} の形で返す",
 )
 
 # Phase-31-1:追記
-# 実装計画書は、実装計画書プロンプトが指示する固定形式の WBS(4.2節。縦割り・ID 付き)で返す。
-# 簡易モードの実装手順書が作業単位として読むため、_INTERNAL_DESIGN_REPLY の DF・モジュールに
-# そろえる。「要件」は偽の要件定義書(_REQUIREMENTS)の Must の FR-001(Phase 38)。
-_IMPLEMENTATION_PLAN_REPLY = (
-    "# 実装計画書(E2E Fake)\n\n"
-    "## 4.1 開発フェーズ分割・マイルストーン\n### フェーズ1(M-01) ── 【Must】\n\n"
-    "## 4.2 タスク分解（WBS）\n"
-    "### M-01: 予約の登録 ── 【Must】\n- ゴール: 備品を予約できる\n"
-    "- [ ] M-01-T01 [基盤] 開発環境を用意する\n"
-    # Phase-38-2：更新
-    # "  - 処理: なし\n  - 依存: なし\n  - モジュール: app/main.py\n"
-    # ↓↓
-    "  - 処理: なし\n  - 要件: なし\n  - 依存: なし\n  - モジュール: app/main.py\n"
-    "  - 環境・設定: docker-compose.yml\n"
-    "- [ ] M-01-T02 [機能] 予約を登録する\n"
-    # Phase-38-2：更新
-    # "  - 処理: DF-1\n  - 依存: M-01-T01\n"
-    # ↓↓
-    "  - 処理: DF-1\n  - 要件: FR-001\n  - 依存: M-01-T01\n"
-    "  - モジュール: app/api/reservations.py, app/services/reservation.py\n"
-    "  - 環境・設定: なし\n\n"
-    "## 4.3 開発環境・CI/CD・事前準備事項\n- Docker Compose で API と DB を起動する\n"
+# Phase-45-3：更新
+# # 実装計画書は、実装計画書プロンプトが指示する固定形式の WBS(4.2節。縦割り・ID 付き)で返す。
+# # 簡易モードの実装手順書が作業単位として読むため、_INTERNAL_DESIGN_REPLY の DF・モジュールに
+# # そろえる。「要件」は偽の要件定義書(_REQUIREMENTS)の Must の FR-001。
+# _IMPLEMENTATION_PLAN_REPLY = (
+#     "# 実装計画書(E2E Fake)\n\n"
+#     "## 4.1 開発フェーズ分割・マイルストーン\n### フェーズ1(M-01) ── 【Must】\n\n"
+#     "## 4.2 タスク分解（WBS）\n"
+#     "### M-01: 予約の登録 ── 【Must】\n- ゴール: 備品を予約できる\n"
+#     "- [ ] M-01-T01 [基盤] 開発環境を用意する\n"
+#     "  - 処理: なし\n  - 要件: なし\n  - 依存: なし\n  - モジュール: app/main.py\n"
+#     "  - 環境・設定: docker-compose.yml\n"
+#     "- [ ] M-01-T02 [機能] 予約を登録する\n"
+#     "  - 処理: DF-1\n  - 要件: FR-001\n  - 依存: M-01-T01\n"
+#     "  - モジュール: app/api/reservations.py, app/services/reservation.py\n"
+#     "  - 環境・設定: なし\n\n"
+#     "## 4.3 開発環境・CI/CD・事前準備事項\n- Docker Compose で API と DB を起動する\n"
+# ↓↓
+# 実装計画書の下書き。簡易モードの実装手順書が作業単位として読むので、_INTERNAL_DESIGN_OUTPUT の
+# DF・モジュールにそろえる。「要件」は偽の要件定義書(_REQUIREMENTS)の Must の FR-001。
+_IMPLEMENTATION_PLAN_OUTPUT = plan_doc.ImplementationPlanGenerationOutput(
+    phases="[E2E Fake] フェーズ1(M-01) ── 【Must】",
+    milestones=[
+        plan_doc.GeneratedMilestone(
+            name="予約の登録",
+            priority="Must",
+            goal="備品を予約できる",
+            tasks=[
+                plan_doc.GeneratedTask(
+                    id="M-01-T01",
+                    kind="base",
+                    title="開発環境を用意する",
+                    dataflow_ids=[],
+                    req_ids=[],
+                    depends_on=[],
+                    modules=["app/main.py"],
+                    config_files=["docker-compose.yml"],
+                ),
+                plan_doc.GeneratedTask(
+                    id="M-01-T02",
+                    kind="feature",
+                    title="予約を登録する",
+                    dataflow_ids=["DF-1"],
+                    req_ids=["FR-001"],
+                    depends_on=["M-01-T01"],
+                    modules=["app/api/reservations.py", "app/services/reservation.py"],
+                    config_files=[],
+                ),
+            ],
+        )
+    ],
+    environment="- Docker Compose で API と DB を起動する",
+    risks=[plan_doc.GeneratedRisk(risk="予約の重複", mitigation="一意制約で防ぐ")],
 )
 
 # Phase-16-1:追記
@@ -847,6 +918,11 @@ class _FakeStructuredE2e:
         # Phase-37-2:追記
         if self._schema is ExternalDesignGenerationOutput:
             return _EXTERNAL_DESIGN_OUTPUT
+        # Phase-45-3:追記
+        if self._schema is internal_doc.InternalDesignGenerationOutput:
+            return _INTERNAL_DESIGN_OUTPUT
+        if self._schema is plan_doc.ImplementationPlanGenerationOutput:
+            return _IMPLEMENTATION_PLAN_OUTPUT
         # ヒアリング・UML生成スキーマ以外のスキーマが追加された場合は
         # 「対応漏れ」に気づけるよう黙って汎用値を返さず例外にする。
         raise NotImplementedError(f"E2eFakeLLMが未対応のスキーマ: {self._schema}")
@@ -880,23 +956,12 @@ class E2eFakeLLM:
         system_text = "\n".join(
             str(m.content) for m in messages if m.__class__.__name__ == "SystemMessage"
         )
-        for doc_type, marker in _DOC_TYPE_MARKERS.items():
-            if marker in system_text:
-                # Phase-10-1:追記
-                if doc_type == "internal_design":
-                    return _INTERNAL_DESIGN_REPLY
-                # Phase-16-1:追記
-                # Phase-37-2：削除
-                # if doc_type == "external_design":
-                #     return _EXTERNAL_DESIGN_REPLY
-                # Phase-31-1:追記
-                # Phase-36-2：更新
-                # if doc_type == "implementation_plan":
-                #     return _IMPLEMENTATION_PLAN_REPLY
-                # label = _DOC_TYPE_LABELS[doc_type]
-                # return f"# {label}(E2E Fake)\n\nこれはE2Eテスト用に生成されたダミーの{label}です。"
-                # ↓↓
-                return _IMPLEMENTATION_PLAN_REPLY
+        # Phase-45-3：削除
+        # for doc_type, marker in _DOC_TYPE_MARKERS.items():
+        #     if marker in system_text:
+        #         if doc_type == "internal_design":
+        #             return _INTERNAL_DESIGN_REPLY
+        #         return _IMPLEMENTATION_PLAN_REPLY
         if "レビュアー" in system_text:
             return _SELF_DIAGNOSIS_REPLY
         # ヒアリング対話(_HEARING_SYSTEM_PROMPT、_OPENING_TURN_PROMPT共通)への応答。

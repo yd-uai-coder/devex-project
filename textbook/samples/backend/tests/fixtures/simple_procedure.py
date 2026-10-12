@@ -1,4 +1,4 @@
-# 作成：Phase-31-1｜更新：Phase-31-2,31-3,31-4,31-7,38-1,38-2
+# 作成：Phase-31-1｜更新：Phase-31-2,31-3,31-4,31-7,38-1,38-2,45-3
 """簡易ドキュメントモードの実装手順書のテスト用の文書(実装計画書・内部設計書の Markdown)。
 
 `app/services/doc_generator_service.py`のプロンプトが指示する書式で書く。内部設計書の DF と
@@ -251,17 +251,24 @@ def sample_simple_procedure_source(*, state: StageState = "approved") -> Procedu
 
 # Phase-31-4:追記
 async def create_simple_procedure_project(
-    session: AsyncSession, **overrides: str
+    # Phase-45-3：更新
+    # session: AsyncSession, **overrides: str
+    # ↓↓
+    session: AsyncSession, *, models: dict[str, dict] | None = None, **overrides: str
 ) -> Project:
     # Phase-38-2：更新
     # """簡易モードのプロジェクト(4文書`simple_documents()`を1版ずつ持ち、段階8が開いている)。"""
     # ↓↓
     """簡易モードのプロジェクト(4文書`simple_documents()`を1版ずつ持ち、段階8が開いている)。
-    要件定義書は model(`simple_document_models()`)も持つ。"""
+    要件定義書は model(`simple_document_models()`)も持つ。`models`でほかの文書の model も足す
+    (内部設計書・実装計画書の model があれば、段階8は md でなく model を読む)。"""
     project = await create_detailed_project(session, mode="simple", with_documents=False)
     documents = GeneratedDocumentRepository(session)
     # Phase-38-2:追記
-    models = simple_document_models()
+    # Phase-45-3：更新
+    # models = simple_document_models()
+    # ↓↓
+    models = {**simple_document_models(), **(models or {})}
     for doc_type, content in simple_documents(**overrides).items():
         # Phase-38-2：更新
         # await documents.create_version(project_id=project.id, doc_type=doc_type, content=content)

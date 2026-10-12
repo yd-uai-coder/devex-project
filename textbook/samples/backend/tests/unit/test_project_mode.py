@@ -1,8 +1,10 @@
-# 作成：Phase-15-1｜更新：24(ゴール3後の調整),36-2,37-2
+# 作成：Phase-15-1｜更新：24(ゴール3後の調整),36-2,37-2｜更新：Phase-45-3
 # 写経レベル: コア ── ルートが template_id・mode を渡すこと(気づき#1)と、モードごとの文書の組が生成の順序を守ることを確かめる。
 # Phase-36-2:追記 ── tests.fixtures.requirements.requirements_output
 # Phase-37-2:追記 ── tests.fixtures.external_design.upstream_outputs
 # Phase-37-2：削除 ── tests.fixtures.requirements.requirements_output
+# Phase-45-3:追記 ── app.detailed_design.structure.ModuleRow, app.documents.internal_design(InternalDesignModel, render_internal_design)
+# Phase-45-3：削除 ── app.services.doc_generator_service._DOC_TYPE_PROMPTS
 import uuid
 
 import pytest
@@ -11,6 +13,8 @@ from tests.fixtures.external_design import upstream_outputs
 from tests.fixtures.fake_llm import FakeLLM
 
 from app.api.routes.projects import create_project
+from app.detailed_design.structure import ModuleRow
+from app.documents.internal_design import InternalDesignModel, render_internal_design
 from app.models.project import Project
 from app.models.prompt_template import PromptTemplate
 from app.models.user import User
@@ -21,7 +25,6 @@ from app.schemas.project import ProjectRead
 from app.services.chat_service import ChatService
 from app.services.doc_generator_service import (
     _DOC_TYPE_INPUTS,
-    _DOC_TYPE_PROMPTS,
     DOC_TYPES_BY_MODE,
     DocGeneratorService,
 )
@@ -127,9 +130,21 @@ async def test_generate_in_detailed_mode_creates_only_two_documents(
     assert project.status == "completed"
 
 
-def test_internal_design_prompt_asks_for_module_list_table() -> None:
-    """簡易ドキュメントモードの内部設計書にも、段階4と同じ列(関わる処理を除く)の表を求める。"""
-    prompt = _DOC_TYPE_PROMPTS["internal_design"]
+# Phase-45-3：更新
+# def test_internal_design_prompt_asks_for_module_list_table() -> None:
+#     """簡易ドキュメントモードの内部設計書にも、段階4と同じ列(関わる処理を除く)の表を求める。"""
+#     prompt = _DOC_TYPE_PROMPTS["internal_design"]
+# ↓↓
+def test_internal_design_model_renders_module_list_table() -> None:
+    """簡易ドキュメントモードの内部設計書にも、段階4と同じ列(関わる処理を除く)の表がある
+    (内部設計書は model から md を組み立てる)。"""
+    model = InternalDesignModel(modules=[ModuleRow(path="app/main.py", layer="起動")])
 
-    assert "### モジュール一覧" in prompt
-    assert "(パス/層/責務/主な依存先)" in prompt
+    # Phase-45-3：更新
+    # assert "### モジュール一覧" in prompt
+    # assert "(パス/層/責務/主な依存先)" in prompt
+    # ↓↓
+    markdown = render_internal_design(model)
+
+    assert "### モジュール一覧" in markdown
+    assert "| パス | 層 | 責務 | 主な依存先 |" in markdown

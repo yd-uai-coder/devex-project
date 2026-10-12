@@ -1,4 +1,4 @@
-# 作成：Phase-22-5｜更新：Phase-23-3,24(完了後の調整),30-4,30-7,31-3,31-4,38-2
+# 作成：Phase-22-5｜更新：Phase-23-3,24(完了後の調整),30-4,30-7,31-3,31-4,38-2,45-4
 # 写経レベル: コア ── 承認済みの章の図だけを描いて載せ、出力した図を exported にする。
 # Phase-23-3：更新(docstring: 実装計画と、入力を集める collect を段階7の生成も使うこと)
 # Phase-30-4：更新(docstring: 段階8の実装手順書を`implementation_procedure/`に入れること)
@@ -443,7 +443,12 @@ def procedure_source(
     return procedure_output_source(
         title,
         states[PROCEDURE_DOC_STAGE],
-        procedure_basis(sources.mode, sources.stages, sources.documents),
+        # Phase-45-4：更新
+        # procedure_basis(sources.mode, sources.stages, sources.documents),
+        # ↓↓
+        procedure_basis(
+            sources.mode, sources.stages, sources.documents, sources.document_models
+        ),
         model,
         validate_stage(PROCEDURE_DOC_STAGE, model, sources) if model is not None else [],
         sources.documents.get("requirements", ""),

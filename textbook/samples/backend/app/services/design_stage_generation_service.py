@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
 # Phase-31-4：更新(docstring: 簡易モードの段階8は、作業単位を WBS、参照を内部設計書から取ること)
@@ -576,7 +576,12 @@ async def generate_procedure_docs(context: StageGenerationContext) -> dict:
     # plan = PlanModel.model_validate(context.sources.stages.get(PLAN_STAGE) or {})
     # ↓↓
     sources = context.sources
-    basis = procedure_basis(sources.mode, sources.stages, sources.documents)
+    # Phase-45-4：更新
+    # basis = procedure_basis(sources.mode, sources.stages, sources.documents)
+    # ↓↓
+    basis = procedure_basis(
+        sources.mode, sources.stages, sources.documents, sources.document_models
+    )
     plan = basis.plan
     model = ProcedureDocModel.model_validate(context.previous or {})
     for unit_id in context.targets:
@@ -748,7 +753,12 @@ def _plan(sources: StageSources | None) -> PlanModel:
     """段階8の作業単位(モードの土台から)。"""
     if sources is None:
         return PlanModel()
-    return procedure_basis(sources.mode, sources.stages, sources.documents).plan
+    # Phase-45-4：更新
+    # return procedure_basis(sources.mode, sources.stages, sources.documents).plan
+    # ↓↓
+    return procedure_basis(
+        sources.mode, sources.stages, sources.documents, sources.document_models
+    ).plan
 
 
 # Phase-21-3：更新(関数の指定を受け取り、段階6の対象を確かめる)

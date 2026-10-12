@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
@@ -927,7 +927,12 @@ def _ensure_stage(project: Project, stage: int) -> None:
 # Phase-31-4:追記
 def _basis(sources: StageSources) -> ProcedureBasis:
     """段階8の土台(作業単位と参照の出どころ。モードで変わる)。"""
-    return procedure_basis(sources.mode, sources.stages, sources.documents)
+    # Phase-45-4：更新
+    # return procedure_basis(sources.mode, sources.stages, sources.documents)
+    # ↓↓
+    return procedure_basis(
+        sources.mode, sources.stages, sources.documents, sources.document_models
+    )
 
 
 def _ensure_open(view: StageView) -> None:

@@ -1,4 +1,4 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2,45-4
 # 写経レベル: コア ── 段階ごとの検証の登録(STAGE_VALIDATORS)と、エラーと警告の分け方。
 # Phase-23-1：更新(docstring: 段階7の検証を登録したことと、その入力を書いた)
 # Phase-26-1：更新(docstring: 段階7が段階4のモジュール一覧も使うことを書いた)
@@ -967,7 +967,12 @@ def validate_procedure_doc(
     # by_id = {unit.unit_id: unit for unit in units}
     # index = design_index(sources.stages)
     # ↓↓
-    basis = procedure_basis(sources.mode, sources.stages, sources.documents)
+    # Phase-45-4：更新
+    # basis = procedure_basis(sources.mode, sources.stages, sources.documents)
+    # ↓↓
+    basis = procedure_basis(
+        sources.mode, sources.stages, sources.documents, sources.document_models
+    )
     issues, matched = _matched_procedures(parsed, basis)
     if basis.mode == "simple":
         # Phase-31-7：更新

@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-6,13-6,24(完了後の調整)
+// 作成：Phase-3-6｜更新：Phase-6-6,13-6,24(完了後の調整),45-5
 // Phase-13-6:追記 ── @/lib/api/test-utils/fetch-stub.stubFetch, umlFixtures.makeEmbed,
 //   documentsApi.DocType(SAMPLE_DOC の doc_type を internal_design に差し替えられるようにする)
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -174,6 +174,9 @@ describe("DocumentMarkdownView", () => {
     // expect(screen.queryByRole("button", { name: "図を再反映" })).not.toBeInTheDocument();
     // ↓↓
     expect(screen.queryByText(/uml:diagram/)).not.toBeInTheDocument();
+    // Phase-45-5:追記
+    // model の無い以前の版なので、書き落としの検証の代わりに再生成の案内を出す
+    expect(screen.getByText(/書き落としの検証がありません/)).toBeInTheDocument();
     expect(stub.requests).toHaveLength(0);
     stub.restore();
   });

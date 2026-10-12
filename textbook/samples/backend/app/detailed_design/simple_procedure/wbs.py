@@ -1,4 +1,4 @@
-# 作成：Phase-31-1｜更新：Phase-31-3,38-1
+# 作成：Phase-31-1｜更新：Phase-31-3,38-1,45-2
 """簡易ドキュメントモードの実装計画書「4.2 タスク分解(WBS)」の解析(純粋関数)。
 
 docs/internal_design.md 3.3節「5. 実装手順書」の簡易モード。
@@ -29,6 +29,7 @@ docs/internal_design.md 3.3節「5. 実装手順書」の簡易モード。
 """
 
 # Phase-38-1:追記 ── app.detailed_design.requirement_trace.normalize_req_id
+# Phase-45-2:追記 ── app.detailed_design.plan.renamed_task_ids
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -39,6 +40,7 @@ from app.detailed_design.plan import (
     PlanTask,
     Priority,
     UnitKind,
+    renamed_task_ids,
     task_id,
 )
 from app.detailed_design.procedure_doc import DesignDocument, FindingLevel
@@ -242,11 +244,15 @@ def _set_req_ids(task: _Task, values: list[str]) -> list[WbsIssue]:
 def _to_plan(milestones: list[_Milestone], environment: str) -> tuple[PlanModel, list[WbsIssue]]:
     """並び順から ID を導き、書かれた ID との違いを指摘し、依存先を導いた ID に読み替える。"""
     issues: list[WbsIssue] = []
-    renames: dict[str, str] = {}
+    # Phase-45-2：更新
+    # renames: dict[str, str] = {}
+    # ↓↓
+    renames = renamed_task_ids([[t.written_id for t in m.tasks] for m in milestones])
     for m, milestone in enumerate(milestones):
         for t, task in enumerate(milestone.tasks):
             derived = task_id(m, t)
-            renames.setdefault(task.written_id, derived)
+            # Phase-45-2：削除
+            # renames.setdefault(task.written_id, derived)
             if task.written_id != derived:
                 message = (
                     f"タスク「{task.title}」の ID {task.written_id} が、並び順の ID {derived} と"
@@ -264,7 +270,10 @@ def _to_plan(milestones: list[_Milestone], environment: str) -> tuple[PlanModel,
                         kind=task.kind,
                         title=task.title,
                         function_ids=task.function_ids,
-                        depends_on=[renames.get(d, d) for d in task.depends_on],
+                        # Phase-45-2：更新
+                        # depends_on=[renames.get(d, d) for d in task.depends_on],
+                        # ↓↓
+                        depends_on=[renames.get(d.upper(), d) for d in task.depends_on],
                         modules=task.modules,
                         config_files=task.config_files,
                         # Phase-38-1:追記

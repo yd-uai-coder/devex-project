@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2
+# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 import uuid
 from datetime import datetime
@@ -15,7 +15,10 @@ DocType = Literal["requirements", "external_design", "internal_design", "impleme
 #     """要件定義書の検証の指摘(app/documents/requirements/validation.py)。"""
 # ↓↓
 class DocumentIssueRead(BaseModel):
-    """要件定義書・外部設計書の検証の指摘(app/documents/issues.py の DocumentIssue)。"""
+    # Phase-45-3：更新
+    # """要件定義書・外部設計書の検証の指摘(app/documents/issues.py の DocumentIssue)。"""
+    # ↓↓
+    """上流の文書(4文書)の検証の指摘(app/documents/issues.py の DocumentIssue)。"""
 
     level: Literal["critical", "major", "minor"]
     code: str
@@ -42,11 +45,21 @@ class RequirementsSummaryRead(BaseModel):
     issues: list[DocumentIssueRead]
 
 
-class ExternalDesignSummaryRead(BaseModel):
-    """外部設計書の行数(screens / apis / integrations)と検証の指摘。"""
+# Phase-45-3：更新
+# class ExternalDesignSummaryRead(BaseModel):
+#     """外部設計書の行数(screens / apis / integrations)と検証の指摘。"""
+# ↓↓
+class DocumentSummaryRead(BaseModel):
+    """文書の行数と検証の指摘。内部設計書は tables / apis / modules / dataflows、実装計画書は
+    milestones / tasks / risks の行数。"""
 
     counts: dict[str, int]
     issues: list[DocumentIssueRead]
+
+
+# Phase-45-3:追記
+class ExternalDesignSummaryRead(DocumentSummaryRead):
+    """外部設計書の行数(screens / apis / integrations)と検証の指摘。"""
 
 
 class GeneratedDocumentRead(BaseModel):
@@ -67,3 +80,7 @@ class GeneratedDocumentRead(BaseModel):
     # Phase-37-2:追記
     # 外部設計書で model を持つ版だけ(ほかは None)。ルートが external_design_summary で入れる
     external_design: ExternalDesignSummaryRead | None = None
+    # Phase-45-3:追記
+    # 内部設計書・実装計画書で model を持つ版だけ(ほかは None)。ルートが document_read で入れる
+    internal_design: DocumentSummaryRead | None = None
+    implementation_plan: DocumentSummaryRead | None = None

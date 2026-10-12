@@ -1,4 +1,4 @@
-# 作成：Phase-23-1｜更新：Phase-26-1,38-1,42-1,42-2
+# 作成：Phase-23-1｜更新：Phase-26-1,38-1,42-1,42-2,45-2
 # 写経レベル: コア ── タスクをマイルストーンに入れ子にし、M-ID を並び順から導く。処理ID とパスで段階1・4に突き合わせる。
 """段階7 横断事項と実装計画の意味モデル(純粋関数)。
 
@@ -145,6 +145,18 @@ def milestone_id(index: int) -> str:
 def task_id(milestone_index: int, task_index: int) -> str:
     """マイルストーンとタスクの並び順(0始まり)から単位の ID を導く(`M-01-T01`…)。"""
     return f"{milestone_id(milestone_index)}-T{task_index + 1:02d}"
+
+
+# Phase-45-2:追記
+def renamed_task_ids(written: Sequence[Sequence[str]]) -> dict[str, str]:
+    """マイルストーンごとに並べたタスクの書かれた ID(`M-01-T01`)→ 並び順から導いた ID。
+    同じ ID が2つ書かれていれば、最初のタスクを指す。依存先を導いた ID に読み替えるのに使う
+    (書き手は並べ替えや書き損じで、並び順と違う ID を書くことがある)。"""
+    renames: dict[str, str] = {}
+    for m, task_ids in enumerate(written):
+        for t, written_id in enumerate(task_ids):
+            renames.setdefault(written_id.strip().upper(), task_id(m, t))
+    return renames
 
 
 # Phase-42-1:追記

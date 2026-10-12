@@ -85,7 +85,7 @@
 | project_id | UUID | FK (`projects.id`), NOT NULL | プロジェクトID |
 | doc_type | VARCHAR(50) | NOT NULL | 種別 ('requirements', 'external_design', 'internal_design', 'implementation_plan') |
 | content | TEXT | NOT NULL | 生成されたMarkdownテキスト |
-| model | JSONB | NULL可 | 意味モデル(要件定義書だけ。要件の行・ID・出どころ・観点、生成した時点の観点の状態)。`content`はこれから組み立てたmd。modelを持たない文書・以前の版はNULL(mdのまま使う)(Phase 36) |
+| model | JSONB | NULL可 | 意味モデル。要件定義書は要件の行・ID・出どころ・観点、生成した時点の観点の状態(Phase 36)。外部設計書は画面・API・外部連携の行(Phase 37)。内部設計書はテーブル・API・モジュール・処理別データフローの行と説明の節、実装計画書はマイルストーン・タスク(段階7と同じ型)・リスクと説明の節(簡易モード。Phase 45)。`content`はこれから組み立てたmd。modelを持たない以前の版はNULL(mdのまま使う) |
 | version | INT | NOT NULL, DEFAULT 1 | バージョン番号 |
 | is_current | BOOLEAN | NOT NULL, DEFAULT false | 現在表示中のバージョンか。同一`project_id`+`doc_type`につきちょうど1行のみ`true`(ステージ2追補) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
@@ -505,6 +505,12 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * **表の印と強調**: 段階1〜8 の表の行(段階3の CRUD 図はセル)に印を出し、「表で見る」と「段階Nで直す」で移った先の行を強調する。「段階Nで直す」の直す先(LLM が書く文字列)は、処理ID・テーブル名・パス・関数名・単位の ID・横断事項の項目を段階の model と照合して要素のキーにする。
   * **部分再生成**: 再生成の候補のキーを生成の引数に変える(段階5は処理ID、段階6はモジュールと関数、段階8は単位のキーから今の表示の ID)。段階ごとにまとめて選び、その段階へ移ってから生成を呼ぶ。再生成しても印は確認済みにしない。
 * **簡易モード**: 内部設計書・実装計画書を意味モデルにする(要件定義書・外部設計書と同じ「構造化出力 → model → md」)。段階8が読む今の解析(`app/simple_procedure/`)は model を読むようにする。
+* **Phase 45 で実装した部分**(簡易モードの文書の model。経緯は[`textbook/Phase-45/Phase-45-introduction.md`](../textbook/Phase-45/Phase-45-introduction.md)):
+  * **内部設計書**: `app/documents/internal_design`(`model`・`assemble`・`markdown`・`validation`・`drafting`)。model はテーブル(列)・API エンドポイント一覧・モジュール一覧(段階4と同じ`ModuleRow`)・処理別データフロー(トリガー・流れの行・データ項目)の行と、3.1・3.2 の概要・3.3 の分割方針・3.4 の本文。md は以前のプロンプトと同じ見出し(`### テーブル:`・`### モジュール一覧`・`#### DF-<n>:`)で組み立て、本文の見出しは太字にする(節の切り出しが切れないように)。**処理別データフローの ID**: AI には書かせず、前の版に同じ処理(同じ API の`endpoint_key`・同じバッチ名)があればその ID、無ければ次の番号(`next_dataflow_seq`。消えた ID は使い回さない。`DF-1`の形はそのまま)。**照合の写し**: 同じ生成の外部設計書の model の API(`external_apis`)。**検証**(警告だけ): `NO_MODULE_LIST`(最重要)・`API_WITHOUT_DATAFLOW`(中程度。外部設計書の API に処理別データフローが無い)・`DATAFLOW_API_UNLISTED`・`DATAFLOW_EMPTY`(軽微)。
+  * **実装計画書**: `app/documents/implementation_plan`(同じ5つ)。model はマイルストーン・タスク・リスクを段階7の型(`Milestone`・`PlanTask`・`Risk`)で持ち、`to_plan()`で段階7と同じ`PlanModel`にする。4.1・4.3 は本文。md は以前の WBS の書式。依存先は AI の書いた ID を並び順の ID に読み替える(`plan.renamed_task_ids`。WBS の解析と共有)。**キー**: 前の版の model からタスク名で引き継ぎ(`carry_over_unit_keys`)、残りに次の番号。**照合の写し**: 内部設計書の model の処理の ID(`known_dataflow_ids`)、要件定義書の要件ID・Must の機能要件ID。**検証**(警告だけ): `NO_TASKS`(最重要)、`FEATURE_WITHOUT_DATAFLOW`・`UNKNOWN_DATAFLOW`・`UNKNOWN_DEPENDENCY`・`FORWARD_DEPENDENCY`・`MUST_REQUIREMENT_UNPLANNED`(中程度)、`UNPLANNED_DATAFLOW`・`UNLINKED_UNIT`・`UNKNOWN_REQUIREMENT_ID`(軽微)。段階8の検証も同じ書き落としを単位ごとに出す(文書の検証は同じ種類を1件にまとめてプレビューに出す)。
+  * **生成**: 4文書とも構造化出力になり、md をそのまま書かせる経路(`_DOC_TYPE_PROMPTS`・`_generate_one`)は消した。入力の文書(`_DOC_TYPE_INPUTS`)は変えていない。文書の応答に`internal_design`・`implementation_plan`(`DocumentSummaryRead`。行数と指摘)。
+  * **段階8**: `procedure_basis`に`document_models`を渡し、簡易モードは内部設計書・実装計画書の model があれば model から読む(`simple_procedure.book_from_model`・`to_plan`)。model の無い以前の版は今までどおり md を解析する。model から読んだ単位は安定キー(`U-001`)を持つ(以前の版は単位の ID がキー)。
+  * 既存の文書は移していない(再生成で model を持つ)。
 
 ---
 

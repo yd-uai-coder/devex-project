@@ -200,7 +200,7 @@ Phase 30 から引き継いだもの:
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- [Phase 45](../Phase-45/Phase-45-introduction.md): 内部設計書・実装計画書を「構造化出力 → model → md」にし、段階8は model を持つ版では md を解析せず model から読む([45-4](../Phase-45/Phase-45-4.md))。`parse_wbs`・`parse_internal_design` は model の無い以前の版のために残し、WBS の依存先の読み替えは `plan.renamed_task_ids` に寄せた([45-2](../Phase-45/Phase-45-2.md))。内部設計書・実装計画書のプロンプト(`_DOC_TYPE_PROMPTS`)は各文書の `drafting.py` に移った。
 
 ## Phase 完了チェック(#22)
 
