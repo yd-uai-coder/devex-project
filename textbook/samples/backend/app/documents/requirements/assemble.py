@@ -1,4 +1,4 @@
-# 作成：Phase-36-1｜更新：Phase-37-1,40-1
+# 作成：Phase-36-1｜更新：Phase-37-1,40-1,47-1
 """AI の下書きから要件定義書の model を組み立てる(純粋関数)。
 
 AI には要件の中身・出どころ・観点だけを書かせ、ID は書かせない(前の版の同じ要件の ID を
@@ -42,7 +42,12 @@ _NOT_GROUNDING: frozenset[str] = frozenset({"scale"})
 # Phase-40-1:追記
 # ただし制約(CON)の行は規模そのもの(公開か社内か)を述べるので、規模も根拠に数える
 _SCALE_GROUNDS_KINDS: frozenset[str] = frozenset({"CON"})
-_NFR_CATEGORY: dict[str, str] = {d.key: d.label for d in POINT_DEFS if d.kind == "nonfunctional"}
+# Phase-47-1：更新
+# _NFR_CATEGORY: dict[str, str] = {d.key: d.label for d in POINT_DEFS if d.kind == "nonfunctional"}
+# ↓↓
+_NFR_CATEGORY: dict[str, str] = {
+    d.key: d.ipa_category for d in POINT_DEFS if d.kind == "nonfunctional"
+}
 _OTHER_CATEGORY = "その他"
 # 1.2(利用者と使う場面)の根拠の観点
 _USER_POINTS = ("users", "daily_flow")

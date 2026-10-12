@@ -1,4 +1,4 @@
-# 作成：Phase-34-1
+# 作成：Phase-34-1｜更新：Phase-47-1
 """観点の表の永続化のテスト。
 
 SUT: HearingPointRepository(app/repositories/hearing_point.py)、
@@ -7,9 +7,10 @@ SUT: HearingPointRepository(app/repositories/hearing_point.py)、
 スタブ不要 ── インメモリ SQLite の db_session を使う(永続化そのものが対象のため)。
 """
 
+# Phase-47-1:追記 ── app.hearing.POINT_DEFS
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.hearing import PointState, initial_states
+from app.hearing import POINT_DEFS, PointState, initial_states
 from app.models.hearing_point import HearingPoint
 from app.models.project import Project
 from app.models.user import User
@@ -33,7 +34,10 @@ async def test_save_states_inserts_one_row_per_point(db_session: AsyncSession) -
     await repo.save_states(project.id, initial_states().values())
 
     rows = await repo.list_for_project(project.id)
-    assert len(rows) == 16
+    # Phase-47-1：更新
+    # assert len(rows) == 16
+    # ↓↓
+    assert len(rows) == len(POINT_DEFS)
     assert all(isinstance(row, HearingPoint) and row.status == "open" for row in rows)
 
 
@@ -47,7 +51,10 @@ async def test_save_states_updates_existing_rows_by_key(db_session: AsyncSession
     )
 
     rows = {row.point_key: row for row in await repo.list_for_project(project.id)}
-    assert len(rows) == 16
+    # Phase-47-1：更新
+    # assert len(rows) == 16
+    # ↓↓
+    assert len(rows) == len(POINT_DEFS)
     assert rows["purpose"].status == "decided"
     assert rows["purpose"].summary == "工数を減らす"
     assert rows["purpose"].evidence == ["id-1", "id-2"]

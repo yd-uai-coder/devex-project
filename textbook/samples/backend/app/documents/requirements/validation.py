@@ -1,4 +1,4 @@
-# 作成：Phase-36-1｜更新：Phase-37-1
+# 作成：Phase-36-1｜更新：Phase-37-1,47-1
 """要件定義書の検証(純粋関数)。指摘は警告だけで、生成も保存も止めない。
 
 ID の重複・形の誤りは`assemble`が決定的に振るので起きない。ここでは、利用者に確かめてほしい
@@ -35,7 +35,13 @@ def source_counts(model: RequirementsModel) -> dict[RequirementSource, int]:
 # def validate_requirements(model: RequirementsModel) -> list[RequirementIssue]:
 # ↓↓
 def validate_requirements(model: RequirementsModel) -> list[DocumentIssue]:
-    """生成した時点の観点の表(`model.point_statuses`)に対して検証する。"""
+    # Phase-47-1：更新
+    # """生成した時点の観点の表(`model.point_statuses`)に対して検証する。"""
+    # ↓↓
+    """生成した時点の観点の表(`model.point_statuses`)に対して検証する。
+
+    必須の未決は、表に記録した観点だけで数える(生成した後に足した観点は、その版では聞いて
+    いないので指摘しない)。"""
     statuses = model.point_statuses
     scale = as_scale(model.scale)
     # Phase-37-1：更新
@@ -52,7 +58,10 @@ def validate_requirements(model: RequirementsModel) -> list[DocumentIssue]:
     open_required = [
         d
         for d in POINT_DEFS
-        if is_required(d.key, scale) and statuses.get(d.key, "open") == "open"
+        # Phase-47-1：更新
+        # if is_required(d.key, scale) and statuses.get(d.key, "open") == "open"
+        # ↓↓
+        if is_required(d.key, scale) and statuses.get(d.key) == "open"
     ]
     if open_required:
         issues.append(

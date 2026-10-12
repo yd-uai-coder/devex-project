@@ -1,4 +1,4 @@
-# 作成：Phase-34-1｜更新：Phase-35(完了後の調整),36-1,39-1
+# 作成：Phase-34-1｜更新：Phase-35(完了後の調整),36-1,39-1,47-1
 # Phase-39-1：更新(docstring: 「採用」とチャットで確かめる観点は、利用者の発言が根拠のときだけ取り込む)
 """ヒアリングの観点の表(純粋関数)。
 
@@ -32,10 +32,17 @@ PointKey = Literal[
     "tech",
     "schedule",
     "availability",
+    # Phase-47-1:追記
+    "backup",
     "performance",
     "operability",
+    # Phase-47-1:追記
+    "data_retention",
     "migration",
     "security",
+    # Phase-47-1:追記
+    "logging",
+    "abuse",
     "environment",
 ]
 
@@ -70,6 +77,15 @@ class PointDef:
     # 初期入力・添付から推し量らず、チャットで利用者に確かめる観点(規模・技術スタック)。
     # 規模は後の必須を切り替え、技術スタックは推測で埋まると設計の全体が創作になるため
     confirm_in_chat: bool = False
+    # Phase-47-1:追記
+    # IPA の大項目(非機能の観点で、ラベルが大項目と違うとき)。大項目の2つ目以降の側面(データの
+    # 保全・ログなど)は別の観点にして、1つの観点に1つの問いで届くようにしている
+    category: str = ""
+
+    @property
+    def ipa_category(self) -> str:
+        """IPA の大項目。`category`が空ならラベル。"""
+        return self.category or self.label
 
 
 _ALL: frozenset[Scale] = frozenset({"personal", "internal", "public"})
@@ -77,7 +93,11 @@ _INTERNAL_UP: frozenset[Scale] = frozenset({"internal", "public"})
 _PUBLIC: frozenset[Scale] = frozenset({"public"})
 _NONE: frozenset[Scale] = frozenset()
 
-# 定義の順 = 画面の行の順 = 返信の LLM に渡す順(規模を最初に聞く)。技術スタックは規模によらず必須
+# Phase-47-1：更新
+# # 定義の順 = 画面の行の順 = 返信の LLM に渡す順(規模を最初に聞く)。技術スタックは規模によらず必須
+# ↓↓
+# 定義の順 = 画面の行の順 = 返信の LLM に渡す順(規模を最初に聞く)。技術スタックは規模によらず必須。
+# 大項目の2つ目以降の側面は、その大項目の観点のすぐ後ろに置く(続けて聞く)
 POINT_DEFS: tuple[PointDef, ...] = (
     PointDef(
         key="scale",
@@ -187,6 +207,19 @@ POINT_DEFS: tuple[PointDef, ...] = (
         # Phase-39-1:追記
         done_when="止まったとき、どのくらいで困るかが分かる",
     ),
+    # Phase-47-1:追記
+    PointDef(
+        key="backup",
+        kind="nonfunctional",
+        label="可用性(データの保全)",
+        question="入れたデータが消えてしまったら、どのくらい前の状態まで戻せればよいですか",
+        required=_ALL,
+        done_when=(
+            "データを失ったときにどこまで戻せればよいか(バックアップの要否・頻度・残す期間の"
+            "どれか)が分かる"
+        ),
+        category="可用性",
+    ),
     PointDef(
         key="performance",
         kind="nonfunctional",
@@ -204,6 +237,19 @@ POINT_DEFS: tuple[PointDef, ...] = (
         required=_INTERNAL_UP,
         # Phase-39-1:追記
         done_when="止まったこと・エラーに、誰がどう気づくかが分かる",
+    ),
+    # Phase-47-1:追記
+    PointDef(
+        key="data_retention",
+        kind="nonfunctional",
+        label="運用・保守性(データの保持・削除)",
+        question="作ったデータやアカウントを、利用者が消せる必要はありますか。いつまで残しますか",
+        required=_ALL,
+        done_when=(
+            "データ・アカウントを消せる必要があるか(あるなら、いつ・誰が消すか)、"
+            "または残す期間が分かる"
+        ),
+        category="運用・保守性",
     ),
     PointDef(
         key="migration",
@@ -225,6 +271,27 @@ POINT_DEFS: tuple[PointDef, ...] = (
         required=_ALL,
         # Phase-39-1:追記
         done_when="見られて困る相手と、ログインの要否(要るなら、その方法)が分かる",
+    ),
+    # Phase-47-1:追記
+    PointDef(
+        key="logging",
+        kind="nonfunctional",
+        label="セキュリティ(ログ)",
+        question="動きの記録(ログ)に、入力した内容を残してよいですか",
+        required=_INTERNAL_UP,
+        done_when="記録(ログ)に残してよいもの・残してはいけないものが分かる",
+        category="セキュリティ",
+    ),
+    PointDef(
+        key="abuse",
+        kind="nonfunctional",
+        label="セキュリティ(不正利用)",
+        question="なりすましや、機械的な大量の登録・利用を防ぐ必要はありますか",
+        required=_INTERNAL_UP,
+        done_when=(
+            "防ぎたい不正な使い方(総当たり・大量の登録や利用など)と、防ぐ必要があるかが分かる"
+        ),
+        category="セキュリティ",
     ),
     PointDef(
         key="environment",
