@@ -1,10 +1,14 @@
-// 作成：Phase-18-8
+// 作成：Phase-18-8｜更新：Phase-48-1
 // 写経レベル: コア ── DFD から決まる R を人の編集でも守り、書き換えたセルの下書きの印を外す。
 import type { CrudCell, CrudModel, DfdAccess } from "@/features/detailed-design/api/types";
 
 // 段階3(データモデル)の CRUD 図の編集操作(純粋関数)。どれも新しいモデルを返し、引数は変えない。
 // DFD の線から決まる部分(読みの R)はバックエンドの merge_crud と同じ規則で守り、人の編集でも外させない。
-// 人が編集したセルは、AI の下書きの印(draft)を外す(段階3の承認で残りの印も外れる。Phase 18)。
+// Phase-48-1：更新
+// // 人が編集したセルは、AI の下書きの印(draft)を外す(段階3の承認で残りの印も外れる)。
+// ↓↓
+// 人が編集したセルは、AI の下書きの印(draft)と推定の印(inferred)を外す(段階3の承認で残りの
+// 印も外れる)。編集していないセルの印は、保存しても消えないように残す。
 
 const CRUD_OPS = "CRUD";
 
@@ -28,6 +32,8 @@ export function toCrud(model: Record<string, unknown> | null): CrudModel {
           table: String(cell.table ?? ""),
           ops: String(cell.ops ?? ""),
           draft: Boolean(cell.draft),
+          // Phase-48-1:追記
+          ...(cell.inferred ? { inferred: true } : {}),
         }),
       )
     : [];
@@ -69,7 +75,10 @@ export function accessOf(
 
 // セルの操作を人が書き換える。DFD に読みの線があるセルは R を必ず残す。操作が空になり、DFD に
 // 書き込みの線も無ければセルを消す(書き込みの線があれば、空のまま残して検証で C/U/D を求める)。
-// 書き換えたセルは下書きの印を外す。
+// Phase-48-1：更新
+// // 書き換えたセルは下書きの印を外す。
+// ↓↓
+// 書き換えたセルは下書き・推定の印を外す。
 export function setCellOps(
   model: CrudModel,
   functionId: string,

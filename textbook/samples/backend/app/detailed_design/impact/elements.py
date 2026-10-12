@@ -1,4 +1,4 @@
-# 作成：Phase-42-3｜更新：Phase-43-2,46-1
+# 作成：Phase-42-3｜更新：Phase-43-2,46-1,48-1
 """変更の影響を求めるための、設計の要素と参照の導出(純粋関数)。
 
 docs/internal_design.md 3.3節「7. 変更影響分析・変更管理」。
@@ -380,7 +380,10 @@ def _stages_1_to_4(b: ElementBuilder, models: DesignModels) -> None:
         # Phase-46-1：更新
         # body = _body(cell, "function_id", "table", "draft")
         # ↓↓
-        body = row_body(cell, "function_id", "table", "draft")
+        # Phase-48-1：更新
+        # body = row_body(cell, "function_id", "table", "draft")
+        # ↓↓
+        body = row_body(cell, "function_id", "table", "draft", "inferred")
         key = b.add(f"crud:{fid}×{table}", "crud", 3, label, body)
         b.ref(key, f"fn:{fid}", "function")
         b.ref(key, f"table:{table}", "table")

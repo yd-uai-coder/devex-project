@@ -1,4 +1,4 @@
-# 作成：Phase-20-1｜更新：Phase-20-3,29-1
+# 作成：Phase-20-1｜更新：Phase-20-3,29-1,48-2
 # 写経レベル: コア ── 手順番号を保存せず導き、呼び出し先をモジュール一覧のパスにそろえる。05↔06 の紐づけを持たない。
 # Phase-29-1：更新(docstring: 行の種別。ProcedureStep・_normalize_steps の docstring も)
 """段階5 主要処理の手順の意味モデルと、手順の組み立て(純粋関数)。
@@ -10,7 +10,8 @@ docs/internal_design.md 3.3節「4. 詳細設計モード」。
 
 - 選んだ処理 = `procedures`の行。`steps`が空の行は、まだ下書きを作っていない処理。
 - 手順番号は保存しない。並び順と`is_branch`から`number_steps`で導く(`1, 1a, 2…`)。行を足したり
-  消したりしても、番号の付け直しを人や AI に任せずに済む。
+  消したりしても、番号の付け直しを人や AI に任せずに済む。AI の下書きでは、元の手順の分岐の欄の
+  参照(「1a へ」)も並びから付け直す(`link_branch_refs`)。
 - 呼び出し先(`callee`)は、段階4のモジュール一覧のパスか、外部の役者(利用者・スケジューラなど。
   「/」を含まない名前)。パスは「処理 × モジュール」の関与表の列の鍵なので、`resolve_callee`で
   モジュール一覧の行のパスにそろえ、そろわないものは検証のエラーにする。
@@ -23,6 +24,8 @@ docs/internal_design.md 3.3節「4. 詳細設計モード」。
 """
 
 # Phase-29-1:追記 ── typing.Literal
+# Phase-48-2:追記 ── re
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from string import ascii_lowercase
@@ -43,6 +46,17 @@ MAX_PROCEDURE_TARGETS = 5
 # 手順の行の種別。call = 同期の呼び出し(戻りを待つ)、async = 非同期の呼び出し(戻りを待たない)、
 # return = 戻り(呼び出し元へ値を返す)
 StepKind = Literal["call", "async", "return"]
+
+# Phase-48-2:追記
+# 分岐の欄の参照(「2a へ」「F-02a へ」「1a・1b へ」)。下書きの参照は付け直すので、まず消す。
+# 並べた参照の前の方は添え字の文字を求める(「400、1a へ」の 400 を参照とみなさないため)
+_BRANCH_REFS = re.compile(
+    r"(?:[A-Za-z0-9-]*[0-9]+[a-z]+\s*[、,・/]\s*)*[A-Za-z0-9-]*[0-9]+[a-z]*\s*へ"
+)
+# 参照を消した後の、前後に残る区切り
+_REF_SEPARATORS = re.compile(r"^[\s、,・/]+|[\s、,・/]+$")
+# 分岐の欄が空であることを表す書き方
+_EMPTY_BRANCH = {"", "—", "-", "なし"}
 
 
 class ProcedureStep(BaseModel):
@@ -110,6 +124,33 @@ def number_steps(steps: Sequence[ProcedureStep]) -> list[str]:
             sub = 0
             numbers.append(str(main))
     return numbers
+
+
+# Phase-48-2:追記
+def _without_refs(branch: str) -> str:
+    text = _REF_SEPARATORS.sub("", _BRANCH_REFS.sub("", branch))
+    return "" if text in _EMPTY_BRANCH else text
+
+
+def link_branch_refs(steps: Sequence[ProcedureStep]) -> list[ProcedureStep]:
+    """分岐の欄の参照を、行の並びから付け直す。どの行からも書かれた参照(「…Na へ」)を消し、
+    直後に分岐の行がある手順に、その番号の参照(「2a へ」、複数は「2a へ、2b へ」)を付ける。
+    参照の他に書いてあることは前に残す。番号は`number_steps`と同じ数え方。"""
+    numbers = number_steps(steps)
+    linked: list[ProcedureStep] = []
+    for index, step in enumerate(steps):
+        text = _without_refs(step.branch)
+        if not step.is_branch:
+            targets: list[str] = []
+            for following, number in zip(steps[index + 1 :], numbers[index + 1 :], strict=True):
+                if not following.is_branch:
+                    break
+                targets.append(f"{number} へ")
+            if targets:
+                refs = "、".join(targets)
+                text = f"{text}({refs})" if text else refs
+        linked.append(step.model_copy(update={"branch": text}))
+    return linked
 
 
 def step_id(function_id: str, number: str) -> str:
@@ -192,8 +233,12 @@ def merge_procedure(
 
     選定理由は人が書いたものを残し、空のときだけ下書きの値を使う。注記は下書きで置き換える。
     選ばれていない処理の下書きは、末尾に足す(生成の受け付けで、選んだ処理だけに絞っている)。
+    分岐の参照は、空の行を捨てた後の並びで付け直す(`link_branch_refs`)。
     """
-    steps = _normalize_steps(draft.steps, module_paths)
+    # Phase-48-2：更新
+    # steps = _normalize_steps(draft.steps, module_paths)
+    # ↓↓
+    steps = link_branch_refs(_normalize_steps(draft.steps, module_paths))
     procedures: list[Procedure] = []
     found = False
     for procedure in model.procedures:

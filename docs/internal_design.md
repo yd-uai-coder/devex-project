@@ -518,6 +518,10 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * **記録**: `record_document_change`が簡易モードも扱う(`IMPACT_DOCUMENTS`をモードごとにし、簡易モードは4文書)。`_impact_by_stage`・`_record_impact`は要素の列を受け、組み立てはモードで切り替える。承認前の編集の pending の印は詳細設計モードだけ。
   * **画面**: devex-ui の`mayHaveImpact`は、簡易モードでは記録した印があるときだけ影響を取る。詳細設計画面は簡易モードでも「変更の影響」パネルを出す(段階8の単位の行の印は Phase 44 の部品のまま)。
 
+* **Phase 48 で実装した部分**(段階3・5 の書き落とし。経緯は[`textbook/Phase-48/Phase-48-introduction.md`](../textbook/Phase-48/Phase-48-introduction.md)):
+  * **段階3**: DFD の下書きのプロンプト(`DFD_SYSTEM_PROMPT`)に、処理 → データストアの線は作成・更新・削除する処理にだけ描く規則を足した。`merge_crud`は、DFD に書き込みの線があるのに AI の C/U/D が無いセルに`infer_write_ops`(処理の名前から推定)の文字を足し、`CrudCell.inferred`の印を付ける(真のときだけ保存する。印の無いセルの保存の形は変えない)。検証の警告 `DFD_WRITE_INFERRED`、`DFD_WRITE_MISSING`の文に DFD を直す案内を足した。人が書き換える(devex-ui の`setCellOps`)か承認(`confirm_drafts`)で印は外れる。変更の影響の差分では、`draft`と同じく内容に入れない。
+  * **段階5**: 生成のスキーマの`GeneratedStep`から`is_branch`・`branch`を外し、`branches: list[GeneratedBranch(condition, result)]`にした。`to_procedure_draft`が元の手順の直後に分岐の行を並べ、`merge_procedure`が空の行を捨てた後に`link_branch_refs`で参照(「2a へ」、複数は「2a へ、2b へ」)を並びから振る(AI の書いた参照は消す)。保存の model(`ProcedureStep`)・画面・既存データは変えていない。ステージ6の測定の stage5.json に当てると、`MISSING_BRANCH_TARGET` は 15 → 0・4 → 0。
+
 ---
 
 ## 3.4 例外処理・エラーハンドリング・ログ設計

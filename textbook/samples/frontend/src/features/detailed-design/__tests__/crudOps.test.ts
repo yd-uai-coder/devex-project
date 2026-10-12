@@ -1,4 +1,4 @@
-// 作成：Phase-18-8
+// 作成：Phase-18-8｜更新：Phase-48-1
 import { describe, expect, it } from "vitest";
 import {
   accessOf,
@@ -48,6 +48,14 @@ describe("crudOps", () => {
       { function_id: "F-01", table: "reservations", ops: "CU", draft: false },
     ]);
     expect(countDrafts(edited)).toBe(0);
+
+    // Phase-48-1:追記
+    // DFD の書き込みの線から推定した印は、保存しても残り、書き換えると外れる
+    const inferred = toCrud({
+      cells: [{ function_id: "F-01", table: "reservations", ops: "U", draft: true, inferred: true }],
+    });
+    expect(inferred.cells[0].inferred).toBe(true);
+    expect(setCellOps(inferred, "F-01", "reservations", "c", ACCESSES).cells[0].inferred).toBeUndefined();
 
     const read = setCellOps({ cells: [] }, "F-02", "reservations", "", ACCESSES);
     expect(read.cells).toEqual([

@@ -1,4 +1,4 @@
-# 作成：Phase-43-2
+# 作成：Phase-43-2｜更新：Phase-48-1
 """変わったもの(承認時の写しと今の model の、要素の単位の差分)のテスト。
 
 SUT: diff_elements / to_trace_changes / ElementChange(app/detailed_design/impact/diff.py)、
@@ -125,10 +125,16 @@ def test_ambiguous_pairs_are_not_renames():
 
 
 def test_draft_flag_and_derived_refs_are_not_changes():
-    """AI の下書きの印と、別の段階から導く辺(手順の行 → モジュールのテーブル)は内容に入れない。"""
+    # Phase-48-1：更新
+    # """AI の下書きの印と、別の段階から導く辺(手順の行 → モジュールのテーブル)は内容に入れない。"""
+    # ↓↓
+    """AI の下書き・推定の印と、別の段階から導く辺(手順の行 → モジュールのテーブル)は内容に
+    入れない。"""
     before = impact_stages()
     after = copy.deepcopy(before)
     after[3]["cells"][0]["draft"] = True
+    # Phase-48-1:追記
+    after[3]["cells"][0]["inferred"] = True
     after[5]["procedures"][0]["steps"][2]["db"] = "—"
 
     changes = diff_elements(_elements(before), _elements(after), stages=[3, 4])

@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
 
@@ -21,6 +21,7 @@ from __future__ import annotations
 # Phase-34-2:追記 ── re, app.hearing.POINT_DEFS,
 #   app.schemas.hearing(HearingPointsJudgement, JudgedPointOut)
 # Phase-34-2：削除 ── app.schemas.generation.HearingCompletionCheck
+# Phase-48-2:追記 ── app.detailed_design.procedure_drafting.GeneratedBranch
 
 import re
 from collections.abc import AsyncIterator
@@ -69,7 +70,11 @@ from app.detailed_design.procedure_doc_drafting import (
     ProcedureDocGenerationOutput,
     SimpleProcedureDocGenerationOutput,
 )
-from app.detailed_design.procedure_drafting import GeneratedStep, ProcedureGenerationOutput
+from app.detailed_design.procedure_drafting import (
+    GeneratedBranch,
+    GeneratedStep,
+    ProcedureGenerationOutput,
+)
 from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleListGenerationOutput
 from app.documents.external_design.drafting import (
     ExternalDesignGenerationOutput,
@@ -549,19 +554,22 @@ _UML_OUTPUTS[ProcedureGenerationOutput] = ProcedureGenerationOutput(
             action="本文を型で検証する",
             result="ReservationCreate",
             db="—",
-            branch="1a へ",
-            is_branch=False,
-        ),
-        GeneratedStep(
-            caller="",
-            callee="",
-            call="",
-            data="",
-            action="本文の型が不正",
-            result="",
-            db="",
-            branch="422",
-            is_branch=True,
+            # Phase-48-2：更新
+            # branch="1a へ",
+            # is_branch=False,
+            # ),
+            # GeneratedStep(
+            # caller="",
+            # callee="",
+            # call="",
+            # data="",
+            # action="本文の型が不正",
+            # result="",
+            # db="",
+            # branch="422",
+            # is_branch=True,
+            # ↓↓
+            branches=[GeneratedBranch(condition="本文の型が不正", result="422")],
         ),
         GeneratedStep(
             caller="app/api/routes/reservations.py",
@@ -571,8 +579,9 @@ _UML_OUTPUTS[ProcedureGenerationOutput] = ProcedureGenerationOutput(
             action="重複を確かめて予約を保存する",
             result="予約",
             db="reservations C",
-            branch="—",
-            is_branch=False,
+            # Phase-48-2：削除
+            # branch="—",
+            # is_branch=False,
         ),
         GeneratedStep(
             caller="app/api/routes/reservations.py",
@@ -582,8 +591,9 @@ _UML_OUTPUTS[ProcedureGenerationOutput] = ProcedureGenerationOutput(
             action="応答に詰めて返す",
             result="201 Created",
             db="—",
-            branch="—",
-            is_branch=False,
+            # Phase-48-2：削除
+            # branch="—",
+            # is_branch=False,
             # Phase-29-2:追記
             kind="return",
         ),

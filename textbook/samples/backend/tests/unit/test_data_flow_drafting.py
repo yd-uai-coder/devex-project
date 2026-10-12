@@ -1,4 +1,4 @@
-# 作成：Phase-17-2
+# 作成：Phase-17-2｜更新：Phase-48-1
 # 写経レベル: コア ── 組み替えた結果をステージ3の写像と DFD 規則にそのまま通す。
 """段階2(データフロー)のAIの下書きの入出力のテスト。
 
@@ -123,3 +123,6 @@ def test_group_dfd_messages_contain_only_group_summaries_and_dictionary() -> Non
     assert "F-01: 入力=予約" in content
     assert "別グループ" not in content
     assert "- 予約(id, item_id)" in content
+    # Phase-48-1:追記
+    # 読むだけの処理に書き込みの線を描かない(CRUD 図の書き込みと食い違わないように)
+    assert "読むだけの処理は データストア → 処理 の線だけ" in str(messages[0].content)

@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7,38-3,42-1,42-2,44-1
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7,38-3,42-1,42-2,44-1,48-1
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -152,12 +152,18 @@ export const MAX_DFD_GROUPS = 5;
 // 段階3 データモデルの意味モデル(devex-api app/detailed_design/data_model.py)。
 // ER・テーブル定義は uml_diagrams(notation=er、subject='')が正本で、ここには CRUD 図のセルだけを
 // 持つ(Phase 18)。ops は C・R・U・D をこの順に並べた文字列(「CR」など)。draft は AI の下書きの
-// まま人が確定していない印(人が直すと外れ、段階3の承認で残りも外れる)。
+// Phase-48-1：更新
+// // まま人が確定していない印(人が直すと外れ、段階3の承認で残りも外れる)。
+// ↓↓
+// まま人が確定していない印(人が直すと外れ、段階3の承認で残りも外れる)。inferred は、DFD の
+// 書き込みの線から操作を推定して補った印(外れ方は draft と同じ。無ければ false とみなす)。
 export type CrudCell = {
   function_id: string; // 段階1の処理ID
   table: string; // ER のテーブル名
   ops: string;
   draft: boolean;
+  // Phase-48-1:追記
+  inferred?: boolean;
 };
 
 export type CrudModel = {

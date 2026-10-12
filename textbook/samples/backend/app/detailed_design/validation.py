@@ -1,4 +1,4 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2,45-4
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2,45-4,48-1
 # 写経レベル: コア ── 段階ごとの検証の登録(STAGE_VALIDATORS)と、エラーと警告の分け方。
 # Phase-23-1：更新(docstring: 段階7の検証を登録したことと、その入力を書いた)
 # Phase-26-1：更新(docstring: 段階7が段階4のモジュール一覧も使うことを書いた)
@@ -479,7 +479,8 @@ def validate_data_model(model: Mapping[str, Any], sources: StageSources) -> list
     セルの処理IDが機能一覧に無い / セルのテーブルが ER に無い / セルの重複 /
     操作が空・C,R,U,D の順の形でない /
     DFD に読みの線があるのに R が無い / DFD に書き込みの線があるのに C/U/D が無い。
-    警告: 下書きのままのセルがある / DFD のデータストアが ER に無い /
+    警告: 下書きのままのセルがある / DFD の書き込みの線から操作を推定したセル /
+    DFD のデータストアが ER に無い /
     どの処理も触れないテーブル / 主キーの無いテーブル。
     """
     try:
@@ -553,7 +554,11 @@ def validate_data_model(model: Mapping[str, Any], sources: StageSources) -> list
         if access.kind == "write" and not set(ops) & {"C", "U", "D"}:
             message = (
                 f"DFD では {target} の書き込みの線がありますが、CRUD 図に C/U/D がありません"
-                "(C・U・D のどれかを決めてください)。"
+                # Phase-48-1：更新
+                # "(C・U・D のどれかを決めてください)。"
+                # ↓↓
+                "(C・U・D のどれかを決めてください。読むだけの処理なら、段階2の DFD の線の向きを"
+                "直してください)。"
             )
             issues.append(_error("DFD_WRITE_MISSING", message, target))
     for (function_id, table), ops in ops_by_cell.items():
@@ -566,6 +571,15 @@ def validate_data_model(model: Mapping[str, Any], sources: StageSources) -> list
     if drafts:
         message = f"AI の下書きのままのセルが {drafts} 個あります(承認すると確定します)。"
         issues.append(_warning("DRAFT_CELLS", message))
+    # Phase-48-1:追記
+    for cell in parsed.cells:
+        if cell.inferred:
+            target = f"{cell.function_id} × {cell.table}"
+            message = (
+                f"DFD の書き込みの線から、{target} の操作を「{cell.ops}」と推定しました。"
+                "読むだけの処理なら、段階2の DFD の線の向きを直してください。"
+            )
+            issues.append(_warning("DFD_WRITE_INFERRED", message, target))
     for table in store_not_in_er:
         message = f"DFD のデータストア「{table}」が、ER のテーブルにありません。"
         issues.append(_warning("STORE_NOT_IN_ER", message, table))
