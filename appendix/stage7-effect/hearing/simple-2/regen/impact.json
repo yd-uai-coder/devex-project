@@ -1,0 +1,145 @@
+{
+  "stages": [
+    {
+      "stage": 8,
+      "changes": [
+        {
+          "source": "doc:requirements",
+          "key": "req:FR-003",
+          "change": "content",
+          "stage": 0,
+          "label": "FR-003 参考資料(txt、md、pdf、最大5件)を初期入力で読み込めるようにする",
+          "before": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"参考資料(txt、md、pdf、最大3件)を初期入力で読み込めるようにする\"}",
+          "after": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"参考資料(txt、md、pdf、最大5件)を初期入力で読み込めるようにする\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:external_design",
+          "key": "api:POST /api/v1/projects",
+          "change": "content",
+          "stage": 0,
+          "label": "POST /api/v1/projects",
+          "before": "{\"body\": \"files (txt/md/pdf, 最大3件)\", \"errors\": \"400 ファイル形式不正または件数超過、401 認証エラー\", \"req_ids\": [\"FR-003\", \"NFR-006\"], \"response\": \"201 プロジェクト作成成功\", \"screens\": [\"SCR-002\"], \"summary\": \"プロジェクト作成・参考資料アップロード\"}",
+          "after": "{\"body\": \"files (txt/md/pdf, 最大5件)\", \"errors\": \"400 ファイル形式不正または件数超過、401 認証エラー\", \"req_ids\": [\"FR-003\", \"NFR-006\"], \"response\": \"201 プロジェクト作成成功\", \"screens\": [\"SCR-002\"], \"summary\": \"プロジェクト作成・参考資料アップロード\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:external_design",
+          "key": "screen:SCR-002",
+          "change": "content",
+          "stage": 0,
+          "label": "SCR-002 メイン機能画面（初期入力・チャットヒアリング・設計書生成）",
+          "before": "{\"name\": \"メイン機能画面（初期入力・チャットヒアリング・設計書生成）\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-004\", \"FR-005\", \"FR-007\", \"FR-008\"], \"role\": \"参考資料の読み込み、チャット形式のヒアリング、4種設計書の一括生成と自己診断の提示を行う\", \"ui_spec\": \"- 入力項目: 参考資料ファイルアップロード(txt, md, pdf、最大3件)、チャットメッセージ入力欄(数千文字まで、空送信禁止)\\n- 表示項目: チャット履歴、生成された4種設計書(要件定義・外部設計・内部設計・実装計画)、AIによる各文書の不足点自己診断結果(3段階: 最重要/中程度/軽微)\\n- 操作ボタン: ファイル選択・アップロードボタン、メッセージ送信ボタン、再送ボタン、再生成ボタン\\n- アクション: メッセージ送信によりAIヒアリングを実行、完了時に設計書を一括生成・自己診断を表示、エラー時は再送・再生成を促す\"}",
+          "after": "{\"name\": \"メイン機能画面（初期入力・チャットヒアリング・設計書生成）\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-004\", \"FR-005\", \"FR-007\", \"FR-008\"], \"role\": \"参考資料の読み込み、チャット形式のヒアリング、4種設計書の一括生成と自己診断の提示を行う\", \"ui_spec\": \"- 入力項目: 参考資料ファイルアップロード(txt, md, pdf、最大5件)、チャットメッセージ入力欄(数千文字まで、空送信禁止)\\n- 表示項目: チャット履歴、生成された4種設計書(要件定義・外部設計・内部設計・実装計画)、AIによる各文書の不足点自己診断結果(3段階: 最重要/中程度/軽微)\\n- 操作ボタン: ファイル選択・アップロードボタン、メッセージ送信ボタン、再送ボタン、再生成ボタン\\n- アクション: メッセージ送信によりAIヒアリングを実行、完了時に設計書を一括生成・自己診断を表示、エラー時は再送・再生成を促す\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:internal_design",
+          "key": "df:DF-3",
+          "change": "content",
+          "stage": 0,
+          "label": "DF-3 POST /api/v1/projects",
+          "before": "{\"data_items\": [{\"fields\": [\"files\", \"reference_file_paths\"], \"name\": \"参考資料\"}], \"flows\": [{\"data\": \"files (txt/md/pdf, 最大3件)\", \"source\": \"利用者\", \"target\": \"backend/api/v1/projects.py\", \"transform\": \"\"}, {\"data\": \"user_id, reference_file_paths\", \"source\": \"backend/api/v1/projects.py\", \"target\": \"projects\", \"transform\": \"ファイル保存・パス紐付け\"}, {\"data\": \"プロジェクト作成成功データ\", \"source\": \"projects\", \"target\": \"利用者\", \"transform\": \"\"}], \"trigger\": \"POST /api/v1/projects\"}",
+          "after": "{\"data_items\": [{\"fields\": [\"files\", \"reference_file_paths\"], \"name\": \"参考資料\"}], \"flows\": [{\"data\": \"files (txt/md/pdf, 最大5件)\", \"source\": \"利用者\", \"target\": \"backend/api/v1/projects.py\", \"transform\": \"\"}, {\"data\": \"user_id, reference_file_paths\", \"source\": \"backend/api/v1/projects.py\", \"target\": \"projects\", \"transform\": \"ファイル保存・パス紐付け\"}, {\"data\": \"プロジェクト作成成功データ\", \"source\": \"projects\", \"target\": \"利用者\", \"transform\": \"\"}], \"trigger\": \"POST /api/v1/projects\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:implementation_plan",
+          "key": "task:U-004",
+          "change": "content",
+          "stage": 0,
+          "label": "M-04-T01 チャットメッセージ送信とAI対話フローの実装",
+          "before": "{\"config_files\": [], \"depends_on\": [\"M-02-T02\"], \"function_ids\": [\"DF-4\"], \"kind\": \"feature\", \"modules\": [\"backend/api/v1/chat.py\", \"backend/services/chat_graph.py\"], \"req_ids\": [\"FR-007\", \"FR-008\"], \"title\": \"チャットメッセージ送信とAI対話フローの実装\"}",
+          "after": "{\"config_files\": [], \"depends_on\": [\"M-03-T01\"], \"function_ids\": [\"DF-4\"], \"kind\": \"feature\", \"modules\": [\"backend/api/v1/chat.py\", \"backend/services/chat_graph.py\"], \"req_ids\": [\"FR-007\", \"FR-008\"], \"title\": \"チャットメッセージ送信とAI対話フローの実装\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:implementation_plan",
+          "key": "task:U-005",
+          "change": "content",
+          "stage": 0,
+          "label": "M-05-T01 設計書一括生成と自己診断機能の実装",
+          "before": "{\"config_files\": [], \"depends_on\": [\"M-03-T01\"], \"function_ids\": [\"DF-5\"], \"kind\": \"feature\", \"modules\": [\"backend/api/v1/documents.py\", \"backend/services/ai_service.py\"], \"req_ids\": [\"FR-004\", \"FR-005\", \"FR-006\"], \"title\": \"設計書一括生成と自己診断機能の実装\"}",
+          "after": "{\"config_files\": [], \"depends_on\": [\"M-04-T01\"], \"function_ids\": [\"DF-5\"], \"kind\": \"feature\", \"modules\": [\"backend/api/v1/documents.py\", \"backend/services/ai_service.py\"], \"req_ids\": [\"FR-004\", \"FR-005\", \"FR-006\"], \"title\": \"設計書一括生成と自己診断機能の実装\"}",
+          "new_key": null,
+          "pending": false
+        }
+      ],
+      "marks": [
+        {
+          "key": "unit:U-003",
+          "label": "M-03-T01 の手順書",
+          "stage": 8,
+          "path": [
+            "df:DF-3",
+            "unit:U-003"
+          ],
+          "reason": "この設計を手順書で実装する",
+          "sources": [
+            "doc:requirements",
+            "doc:external_design",
+            "doc:internal_design"
+          ],
+          "reviewed": false,
+          "pending": false
+        },
+        {
+          "key": "unit:U-004",
+          "label": "M-04-T01 の手順書",
+          "stage": 8,
+          "path": [
+            "task:U-004",
+            "unit:U-004"
+          ],
+          "reason": "この作業単位の手順書",
+          "sources": [
+            "doc:external_design",
+            "doc:implementation_plan"
+          ],
+          "reviewed": false,
+          "pending": false
+        },
+        {
+          "key": "unit:U-005",
+          "label": "M-05-T01 の手順書",
+          "stage": 8,
+          "path": [
+            "task:U-005",
+            "unit:U-005"
+          ],
+          "reason": "この作業単位の手順書",
+          "sources": [
+            "doc:external_design",
+            "doc:implementation_plan"
+          ],
+          "reviewed": false,
+          "pending": false
+        }
+      ],
+      "open": 3,
+      "reviewed": 0
+    }
+  ],
+  "regeneration_targets": [
+    {
+      "stage": 8,
+      "key": "unit:U-003",
+      "label": "M-03-T01 の手順書"
+    },
+    {
+      "stage": 8,
+      "key": "unit:U-004",
+      "label": "M-04-T01 の手順書"
+    },
+    {
+      "stage": 8,
+      "key": "unit:U-005",
+      "label": "M-05-T01 の手順書"
+    }
+  ]
+}

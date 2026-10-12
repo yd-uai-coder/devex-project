@@ -1,0 +1,44 @@
+ヒアリングの内容をまとめました。
+
+- 規模: 公開サービス
+- 目的・課題: システム開発の初期フェーズにおけるドキュメント作成の工数と質のばらつきを減らす
+- 利用者と使う場面: SE・ITコンサルタント・PM、個人開発者・スタートアップ創業者
+- 利用者の1日の流れ: クライアントとの打ち合わせ後に30分程度で使用する
+- コア機能: AIとの対話でヒアリングし4種の設計書を一括生成、不足点の3段階自己診断、Markdownのプレビュー等、参考資料の読み込み(上限5件)とPostgreSQLへの保存
+- MVP の範囲: 最初の版の対象外はコードの自動生成、Jira・Notion連携、マルチテナント権限管理、音声入力、複数人同時編集
+- 例外の場面: AI応答失敗時はエラーと理由を表示しメッセージを保存せず再送を促す、生成失敗時は再生成を行う、数千文字の文字数制限と空送信防止を設ける
+- 将来の拡張: テンプレートの選択、版の履歴の画面、設計図(UML)を後で足したい
+- 技術スタック・環境の制約: フロントはNext.js(App Router)+Tamagui、バックエンドはFastAPI+LangChain/LangGraph(Python 3.13)、DBはPostgreSQL、Redis、サーバーはVPSにDocker Composeとnginxで置きGitHub Actionsで自動デプロイ、LLMはGemini Flash-Lite
+- 可用性: 日中のみ動いていれば十分で、夜間や休日の停止は困らない
+- 可用性(データの保全): DBを毎日バックアップし7日分を残し、VPSの外にもコピーする
+- 性能・拡張性: 同時接続は数人〜十数人、チャットの最初の文字が数秒で出ればよく4文書の生成は数分まで待つ
+- 運用・保守性: エラーの追跡と死活監視はMVPの後で実装する
+- 運用・保守性(データの保持・削除): プロジェクト削除や退会機能はMVPでは不要とする
+- 移行性: 特に移行するデータや仕組みはない
+- セキュリティ: 本人以外が他人のプロジェクトを見られないようにし、メールとパスワードのJWT(アクセス30分、リフレッシュ14日・HttpOnly Cookie)でログインする
+- セキュリティ(ログ): AIの入力内容や対話の内容はログに残さない
+- セキュリティ(不正利用): ログインの総当たり、登録の大量作成、チャットや生成の回数上限を設ける
+- システム環境・エコロジー: PCの最新のChrome・Edge・Firefox・Safariを使用し、スマホは読めれば十分とする
+
+この内容でよければ「この内容で設計書を生成する」を押してください。直したい点があれば、チャットで伝えてください。
+=== 観点の表 scale=public sufficient=True stale=False legacy=False
+  scale                  必須 adopted         誰でも登録できるサービスとして提供する
+  purpose                必須 decided         システム開発の初期フェーズにおけるドキュメント作成の工数と質のばらつきを減らす
+  users                  必須 decided         SE・ITコンサルタント・PM、個人開発者・スタートアップ創業者
+  daily_flow             必須 adopted         クライアントとの打ち合わせ後に30分程度で使用する
+  core                   必須 decided         AIとの対話でヒアリングし4種の設計書を一括生成、不足点の3段階自己診断、Markdownのプレビュー等、参考資料の読み込み(上限5件)とPostgreSQLへの保存
+  scope                  必須 decided         最初の版の対象外はコードの自動生成、Jira・Notion連携、マルチテナント権限管理、音声入力、複数人同時編集
+  exceptions             必須 decided         AI応答失敗時はエラーと理由を表示しメッセージを保存せず再送を促す、生成失敗時は再生成を行う、数千文字の文字数制限と空送信防止を設ける
+  future                 必須 decided         テンプレートの選択、版の履歴の画面、設計図(UML)を後で足したい
+  tech                   必須 decided         フロントはNext.js(App Router)+Tamagui、バックエンドはFastAPI+LangChain/LangGraph(Python 3.13)、DBはPostgr
+  schedule               任意 open            
+  availability           必須 adopted         日中のみ動いていれば十分で、夜間や休日の停止は困らない
+  backup                 必須 decided         DBを毎日バックアップし7日分を残し、VPSの外にもコピーする
+  performance            必須 decided         同時接続は数人〜十数人、チャットの最初の文字が数秒で出ればよく4文書の生成は数分まで待つ
+  operability            必須 decided         エラーの追跡と死活監視はMVPの後で実装する
+  data_retention         必須 decided         プロジェクト削除や退会機能はMVPでは不要とする
+  migration              必須 adopted         特に移行するデータや仕組みはない
+  security               必須 decided         本人以外が他人のプロジェクトを見られないようにし、メールとパスワードのJWT(アクセス30分、リフレッシュ14日・HttpOnly Cookie)でログインする
+  logging                必須 adopted         AIの入力内容や対話の内容はログに残さない
+  abuse                  必須 decided         ログインの総当たり、登録の大量作成、チャットや生成の回数上限を設ける
+  environment            必須 decided         PCの最新のChrome・Edge・Firefox・Safariを使用し、スマホは読めれば十分とする

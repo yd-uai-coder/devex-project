@@ -1,12 +1,15 @@
-# 作成：Phase-37-2｜更新：Phase-40-1
+# 作成：Phase-37-2｜更新：Phase-40-1,49-3
 """外部設計書の AI の下書きの入出力(純粋関数)。
 
 AI には要件定義書から、画面・API・外部連携の行(関係する要件ID 付き)と本文の節を書かせる。
 画面ID は仮の ID として書かせ(前の版と同じ画面なら前の版の ID)、`assemble.build_model`が前の版に
-在る ID だけを引き継いで振り直す。
+在る ID だけを引き継いで振り直す。再生成では、前の版の画面・API の行と要件定義書の変わった行を
+見せ、変えない行を`unchanged`と答えさせる(`app.documents.revision`)。
 """
 
 # Phase-40-1:追記 ── app.documents.external_design.model.NO_BODY
+# Phase-49-3:追記 ── collections.abc.Sequence, app.documents.revision.NONE_TEXT, REVISION_RULE, UNCHANGED_DESCRIPTION, changed_rows_text, rows_text
+from collections.abc import Sequence
 from typing import Literal
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -19,6 +22,13 @@ from app.documents.external_design.assemble import (
     ScreenDraft,
 )
 from app.documents.external_design.model import NO_BODY, ExternalDesignModel
+from app.documents.revision import (
+    NONE_TEXT,
+    REVISION_RULE,
+    UNCHANGED_DESCRIPTION,
+    changed_rows_text,
+    rows_text,
+)
 
 _REQ_IDS_DESCRIPTION = "関係する要件ID(【要件定義書】の FR-001・NFR-001・CON-001 など。1つ以上)"
 
@@ -41,6 +51,8 @@ class GeneratedScreen(BaseModel):
         description="主要画面の UI/UX 仕様(構成要素: 入力項目・表示項目・操作ボタン・アクション)。"
         "Markdown の箇条書き。見出しは書かない。主要でない画面は空",
     )
+    # Phase-49-3:追記
+    unchanged: bool = Field(default=False, description=UNCHANGED_DESCRIPTION)
 
 
 class GeneratedApi(BaseModel):
@@ -62,6 +74,11 @@ class GeneratedApi(BaseModel):
     )
     response: str = Field(description="成功時の応答(`201 予約`など)")
     errors: str = Field(default="", description="主なエラー(`404 対象なし、409 重複`など)")
+    # Phase-49-3:追記
+    unchanged: bool = Field(
+        default=False,
+        description=f"{UNCHANGED_DESCRIPTION}。前の版の同じメソッド・パスの API を指す",
+    )
 
 
 class GeneratedIntegration(BaseModel):
@@ -109,22 +126,42 @@ SYSTEM_PROMPT = (
     "- 画面ID は SCR-001 の形。【前の版の画面】に同じ画面があれば、その ID を使う。"
     "API の関連画面は画面ID で書く\n"
     "- 主要画面には UI 仕様(構成要素)を書く\n"
-    "- 要件定義書に無い技術・外部サービスを創作しない"
+    # Phase-49-3：更新
+    # "- 要件定義書に無い技術・外部サービスを創作しない"
+    # ↓↓
+    "- 要件定義書に無い技術・外部サービスを創作しない\n"
+    f"{REVISION_RULE}(【前の版】は【前の版の画面】【前の版の API】。【上流の変わった行】は"
+    "要件定義書の要件)"
 )
 
 
 def previous_screens_text(previous: ExternalDesignModel | None) -> str:
-    """前の版の画面(画面ID の引き継ぎに使う)。無ければ「なし」。"""
+    # Phase-49-3：更新
+    # """前の版の画面(画面ID の引き継ぎに使う)。無ければ「なし」。"""
+    # ↓↓
+    """前の版の画面(画面ID の引き継ぎと、変えない行の判断に使う)。無ければ「なし」。"""
     if previous is None or not previous.screens:
-        return "なし"
-    return "\n".join(f"{s.id}|{s.name}" for s in previous.screens)
+        # Phase-49-3：更新
+        # return "なし"
+        # return "\n".join(f"{s.id}|{s.name}" for s in previous.screens)
+        # ↓↓
+        return NONE_TEXT
+    return rows_text(previous.screens)
 
 
 def build_external_design_messages(
-    requirements_md: str, previous: ExternalDesignModel | None
+    # Phase-49-3：更新
+    # requirements_md: str, previous: ExternalDesignModel | None
+    # ↓↓
+    requirements_md: str,
+    previous: ExternalDesignModel | None,
+    changed_requirements: Sequence[str] = (),
 ) -> list[BaseMessage]:
     human = (
         f"## 前の版の画面\n{previous_screens_text(previous)}\n\n"
+        # Phase-49-3:追記
+        f"## 前の版の API\n{rows_text(previous.apis if previous else [])}\n\n"
+        f"## 上流の変わった行\n{changed_rows_text(changed_requirements)}\n\n"
         f"## 要件定義書\n{requirements_md}"
     )
     return [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=human)]
@@ -136,7 +173,12 @@ def to_draft(output: ExternalDesignGenerationOutput) -> ExternalDesignDraft:
         transition=output.transition,
         data_io=output.data_io,
         screens=tuple(
-            ScreenDraft(s.id, s.name, s.role, s.priority, tuple(s.req_ids), s.ui_spec)
+            # Phase-49-3：更新
+            # ScreenDraft(s.id, s.name, s.role, s.priority, tuple(s.req_ids), s.ui_spec)
+            # ↓↓
+            ScreenDraft(
+                s.id, s.name, s.role, s.priority, tuple(s.req_ids), s.ui_spec, s.unchanged
+            )
             for s in output.screens
         ),
         apis=tuple(
@@ -149,6 +191,8 @@ def to_draft(output: ExternalDesignGenerationOutput) -> ExternalDesignDraft:
                 a.body,
                 a.response,
                 a.errors,
+                # Phase-49-3:追記
+                a.unchanged,
             )
             for a in output.apis
         ),

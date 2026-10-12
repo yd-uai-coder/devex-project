@@ -1,4 +1,4 @@
-# 作成：Phase-42-3｜更新：Phase-43-2,46-1,48-1
+# 作成：Phase-42-3｜更新：Phase-43-2,46-1,48-1,49-3,49-4
 """変更の影響を求めるための、設計の要素と参照の導出(純粋関数)。
 
 docs/internal_design.md 3.3節「7. 変更影響分析・変更管理」。
@@ -78,6 +78,8 @@ EdgeKind = Literal[
     "implements",  # 手順書が参照する設計(手順・処理ロジック)
     "unit",  # 作業単位の手順書
     "covers",  # 横断事項の対象のモジュールを含む
+    # Phase-49-3:追記
+    "receives",  # API を受ける(手順の最初の呼び出し先のモジュール → 処理のトリガーの API)
 ]
 
 # Phase-46-1：更新
@@ -208,6 +210,17 @@ def row_body(row: BaseModel, *keys: str) -> str:
 
 def _json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True)
+
+
+# Phase-49-4:追記
+def task_body(unit: PlanUnit, units: Iterable[PlanUnit]) -> str:
+    """タスクの行の内容。依存先(並び順の単位の ID)は単位のキーに読み替える(マイルストーンの
+    並べ替え・挿入で表示の ID がずれただけのタスクを、変わったものにしないため)。"""
+    keys = {u.unit_id: u.key for u in units}
+    task = unit.task.model_copy(
+        update={"depends_on": [keys.get(d.strip(), d) for d in unit.task.depends_on]}
+    )
+    return row_body(task, "key")
 
 
 def parse_db_tables(db: str, known_tables: Iterable[str]) -> list[str]:
@@ -408,6 +421,8 @@ def _stages_1_to_4(b: ElementBuilder, models: DesignModels) -> None:
 # ↓↓
 def _stages_5_to_8(b: ElementBuilder, models: DesignModels) -> None:
     tables = [k.removeprefix("table:") for k in b.elements if k.startswith("table:")]
+    # Phase-49-3:追記
+    triggers = {row.id: trigger_key(row.trigger) for row in models.functions.functions}
     for procedure in models.procedures.procedures:
         fid = procedure.function_id
         # Phase-43-2：更新
@@ -419,6 +434,12 @@ def _stages_5_to_8(b: ElementBuilder, models: DesignModels) -> None:
         body = row_body(procedure, "function_id")
         key = b.add(f"proc:{fid}", "procedure", 5, f"{fid} の手順", body)
         b.ref(key, f"fn:{fid}", "function")
+        # Phase-49-3:追記
+        entry = next((s.callee.strip() for s in procedure.steps if calls_function(s)), "")
+        api = triggers.get(fid)
+        if entry and api is not None and f"module:{entry}" in b.elements:
+            # 利用者が最初に呼ぶモジュールが、処理のトリガーの API を受ける
+            b.ref(f"module:{entry}", f"api:{api}", "receives")
         for step in procedure.steps:
             module = f"module:{step.callee.strip()}"
             if calls_function(step):
@@ -451,7 +472,10 @@ def _stages_5_to_8(b: ElementBuilder, models: DesignModels) -> None:
         # Phase-46-1：更新
         # key = b.add(f"task:{unit.key}", "task", 7, label, _body(unit.task, "key"))
         # ↓↓
-        key = b.add(f"task:{unit.key}", "task", 7, label, row_body(unit.task, "key"))
+        # Phase-49-4：更新
+        # key = b.add(f"task:{unit.key}", "task", 7, label, row_body(unit.task, "key"))
+        # ↓↓
+        key = b.add(f"task:{unit.key}", "task", 7, label, task_body(unit, units))
         for fid in unit.task.function_ids:
             b.ref(key, f"fn:{fid}", "function")
         for path in unit.task.modules:

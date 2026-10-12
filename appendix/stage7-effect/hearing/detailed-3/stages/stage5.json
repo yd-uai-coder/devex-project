@@ -1,0 +1,879 @@
+{
+  "stage": 5,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 3,
+  "approved_version": 3,
+  "model": {
+    "procedures": [
+      {
+        "note": "手順3から4が1つのトランザクション",
+        "steps": [
+          {
+            "db": "—",
+            "call": "register",
+            "data": "メールアドレス、パスワード",
+            "kind": "call",
+            "action": "ユーザー登録リクエストを受信する",
+            "branch": "1a へ",
+            "callee": "app/api/routes/auth.py",
+            "caller": "利用者",
+            "result": "登録処理の実行",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "メールアドレスまたはパスワードの形式が不正",
+            "branch": "ValidationError → 400",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "—",
+            "call": "register_user",
+            "data": "メールアドレス、パスワード",
+            "kind": "call",
+            "action": "ビジネスロジックを実行しパスワードをハッシュ化する",
+            "branch": "2a へ",
+            "callee": "app/services/auth.py",
+            "caller": "app/api/routes/auth.py",
+            "result": "ハッシュ化されたユーザー情報",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "すでに登録済みのメールアドレス",
+            "branch": "ConflictError → 409",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "users C",
+            "call": "create_user",
+            "data": "メールアドレス、ハッシュ化されたパスワード",
+            "kind": "call",
+            "action": "PostgreSQLへユーザー情報を保存する",
+            "branch": "",
+            "callee": "app/repositories/user.py",
+            "caller": "app/services/auth.py",
+            "result": "保存完了",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "登録成功メッセージ",
+            "kind": "return",
+            "action": "登録成功の結果をルーターへ返す",
+            "branch": "",
+            "callee": "app/api/routes/auth.py",
+            "caller": "app/services/auth.py",
+            "result": "登録成功メッセージ",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "登録成功メッセージ",
+            "kind": "return",
+            "action": "登録成功メッセージを利用者へ返す",
+            "branch": "",
+            "callee": "利用者",
+            "caller": "app/api/routes/auth.py",
+            "result": "201 Created",
+            "is_branch": false
+          }
+        ],
+        "reason": "メールアドレスとパスワードの検証、パスワードのハッシュ化、データベースへの保存を安全に行うため",
+        "function_id": "F-01"
+      },
+      {
+        "note": "手順2〜4が1つのトランザクション",
+        "steps": [
+          {
+            "db": "—",
+            "call": "login",
+            "data": "メールアドレス, パスワード",
+            "kind": "call",
+            "action": "ログインAPIリクエストを受け取る",
+            "branch": "",
+            "callee": "app/api/routes/auth.py",
+            "caller": "利用者",
+            "result": "認証トークン",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "authenticate_user",
+            "data": "メールアドレス, パスワード",
+            "kind": "call",
+            "action": "認証ビジネスロジックを実行する",
+            "branch": "",
+            "callee": "app/services/auth.py",
+            "caller": "app/api/routes/auth.py",
+            "result": "ユーザー情報",
+            "is_branch": false
+          },
+          {
+            "db": "users R",
+            "call": "find_by_email",
+            "data": "メールアドレス",
+            "kind": "call",
+            "action": "メールアドレスをもとにユーザーを検索する",
+            "branch": "3a へ",
+            "callee": "app/repositories/user.py",
+            "caller": "app/services/auth.py",
+            "result": "ユーザー情報",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "ユーザーが存在しない場合、またはパスワードが一致しない場合",
+            "branch": "AuthenticationError → 401 Unauthorized",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "tokens C",
+            "call": "create_token",
+            "data": "ユーザーID",
+            "kind": "call",
+            "action": "Redisを使用して認証トークンを発行・保存する",
+            "branch": "",
+            "callee": "app/cache/token.py",
+            "caller": "app/services/auth.py",
+            "result": "認証トークン",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "認証トークン",
+            "kind": "return",
+            "action": "認証トークンをルーターへ返却する",
+            "branch": "",
+            "callee": "app/api/routes/auth.py",
+            "caller": "app/services/auth.py",
+            "result": "認証トークン",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "認証トークン",
+            "kind": "return",
+            "action": "ログイン成功レスポンスを返却する",
+            "branch": "",
+            "callee": "利用者",
+            "caller": "app/api/routes/auth.py",
+            "result": "認証トークン",
+            "is_branch": false
+          }
+        ],
+        "reason": "メールアドレスとパスワードによる認証を行い、DBからのユーザー検証とRedisへのトークン発行を安全に連携させるため",
+        "function_id": "F-02"
+      },
+      {
+        "note": "",
+        "steps": [
+          {
+            "db": "—",
+            "call": "get_projects",
+            "data": "認証トークン",
+            "kind": "call",
+            "action": "プロジェクト一覧取得APIへのリクエストを送信する",
+            "branch": "1a へ",
+            "callee": "app/api/routes/projects.py",
+            "caller": "利用者",
+            "result": "プロジェクト一覧データ",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "認証トークンが無効または期限切れである",
+            "branch": "UnauthorizedError → 401",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "—",
+            "call": "ProjectService.get_projects",
+            "data": "認証トークン",
+            "kind": "call",
+            "action": "プロジェクト一覧の取得をサービス層に依頼する",
+            "branch": "",
+            "callee": "app/services/project.py",
+            "caller": "app/api/routes/projects.py",
+            "result": "プロジェクト一覧データ",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "AuthService.verify_token",
+            "data": "認証トークン",
+            "kind": "call",
+            "action": "認証トークンの検証を依頼する",
+            "branch": "",
+            "callee": "app/services/auth.py",
+            "caller": "app/services/project.py",
+            "result": "ユーザーID",
+            "is_branch": false
+          },
+          {
+            "db": "projects R",
+            "call": "ProjectRepository.find_all_by_user_id",
+            "data": "ユーザーID",
+            "kind": "call",
+            "action": "ユーザーIDに紐づくプロジェクト一覧の取得をリポジトリ層に依頼する",
+            "branch": "",
+            "callee": "app/repositories/project.py",
+            "caller": "app/services/project.py",
+            "result": "プロジェクト一覧データ",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "プロジェクト一覧データ",
+            "kind": "return",
+            "action": "取得したプロジェクト一覧データをルーター層へ返す",
+            "branch": "",
+            "callee": "app/api/routes/projects.py",
+            "caller": "app/services/project.py",
+            "result": "プロジェクト一覧データ",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "プロジェクト一覧データ",
+            "kind": "return",
+            "action": "プロジェクト一覧データをレスポンスとして返却する",
+            "branch": "",
+            "callee": "利用者",
+            "caller": "app/api/routes/projects.py",
+            "result": "プロジェクト一覧データ",
+            "is_branch": false
+          }
+        ],
+        "reason": "認証トークンを検証して既存のプロジェクト一覧を取得する一連の流れを正確に記述する",
+        "function_id": "F-03"
+      },
+      {
+        "note": "手順 2〜5 が1つのトランザクション",
+        "steps": [
+          {
+            "db": "—",
+            "call": "create_project",
+            "data": "プロジェクト情報、認証トークン",
+            "kind": "call",
+            "action": "プロジェクト作成リクエストを受信する",
+            "branch": "1a へ",
+            "callee": "app/api/routes/projects.py",
+            "caller": "利用者",
+            "result": "プロジェクト作成処理の起動",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "認証トークンが無効または期限切れ",
+            "branch": "UnauthorizedError → 401",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "—",
+            "call": "ProjectService.create_project",
+            "data": "認証トークン、プロジェクト情報",
+            "kind": "call",
+            "action": "プロジェクト作成ビジネスロジックを呼び出す",
+            "branch": "",
+            "callee": "app/services/project.py",
+            "caller": "app/api/routes/projects.py",
+            "result": "プロジェクト作成処理の実行",
+            "is_branch": false
+          },
+          {
+            "db": "tokens R",
+            "call": "AuthService.verify_token",
+            "data": "認証トークン",
+            "kind": "call",
+            "action": "認証トークンを検証しユーザーを特定する",
+            "branch": "3a へ",
+            "callee": "app/services/auth.py",
+            "caller": "app/services/project.py",
+            "result": "ユーザー情報",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "トークン検証失敗",
+            "branch": "AuthError → 401",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "projects C",
+            "call": "ProjectRepository.save",
+            "data": "ユーザーID、プロジェクト情報",
+            "kind": "call",
+            "action": "プロジェクト情報をPostgreSQLに新規保存する",
+            "branch": "",
+            "callee": "app/repositories/project.py",
+            "caller": "app/services/project.py",
+            "result": "作成されたプロジェクトデータ",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "作成されたプロジェクトデータ",
+            "kind": "return",
+            "action": "作成されたプロジェクトデータを返す",
+            "branch": "",
+            "callee": "app/api/routes/projects.py",
+            "caller": "app/services/project.py",
+            "result": "プロジェクトデータ",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "作成されたプロジェクトデータ",
+            "kind": "return",
+            "action": "プロジェクト作成完了レスポンスを返す",
+            "branch": "",
+            "callee": "利用者",
+            "caller": "app/api/routes/projects.py",
+            "result": "201 Created",
+            "is_branch": false
+          }
+        ],
+        "reason": "プロジェクト作成APIにおける認証確認からデータベースへの新規保存までの処理手順を明確にするため。",
+        "function_id": "F-04"
+      },
+      {
+        "note": "手順3から手順5が1つのトランザクション",
+        "steps": [
+          {
+            "db": "—",
+            "call": "ChatRouter.send_message",
+            "data": "プロジェクトID、チャットメッセージ、認証トークン",
+            "kind": "call",
+            "action": "チャットメッセージ送信リクエストを受け付ける",
+            "branch": "1a へ、1b へ",
+            "callee": "app/api/routes/chat.py",
+            "caller": "利用者",
+            "result": "チャット応答メッセージ",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "メッセージが空または文字数制限を超過している場合",
+            "branch": "ValidationError → 400",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "認証トークンが無効な場合",
+            "branch": "UnauthorizedError → 401",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "—",
+            "call": "ChatService.process_message",
+            "data": "プロジェクトID、チャットメッセージ、認証トークン",
+            "kind": "call",
+            "action": "認証トークンを検証し、チャットメッセージのビジネスロジックを実行する",
+            "branch": "",
+            "callee": "app/services/chat.py",
+            "caller": "app/api/routes/chat.py",
+            "result": "AIからのチャット応答メッセージ",
+            "is_branch": false
+          },
+          {
+            "db": "chats C",
+            "call": "ChatRepository.save",
+            "data": "プロジェクトID、チャットメッセージ",
+            "kind": "call",
+            "action": "送信されたチャットメッセージをデータベースに保存する",
+            "branch": "",
+            "callee": "app/repositories/chat.py",
+            "caller": "app/services/chat.py",
+            "result": "保存完了",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "LLMClient.invoke_chat",
+            "data": "プロジェクトID、チャットメッセージ",
+            "kind": "call",
+            "action": "LangChain・LangGraphとGemini Flash-Liteを呼び出して応答を取得する",
+            "branch": "",
+            "callee": "app/llm/client.py",
+            "caller": "app/services/chat.py",
+            "result": "AIからのチャット応答メッセージ",
+            "is_branch": false
+          },
+          {
+            "db": "chats C",
+            "call": "ChatRepository.save",
+            "data": "プロジェクトID、AIからのチャット応答メッセージ",
+            "kind": "call",
+            "action": "AIからのチャット応答メッセージをデータベースに保存する",
+            "branch": "",
+            "callee": "app/repositories/chat.py",
+            "caller": "app/services/chat.py",
+            "result": "保存完了",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "AIからのチャット応答メッセージ",
+            "kind": "return",
+            "action": "AIからのチャット応答メッセージを返却する",
+            "branch": "",
+            "callee": "利用者",
+            "caller": "app/api/routes/chat.py",
+            "result": "HTTP 200 OK",
+            "is_branch": false
+          }
+        ],
+        "reason": "チャットメッセージのバリデーション、永続化、およびLangChain・LangGraphとGemini Flash-Liteを通じたLLM応答の取得を確実に行うため",
+        "function_id": "F-05"
+      },
+      {
+        "note": "手順3〜4が1つのトランザクション",
+        "steps": [
+          {
+            "db": "—",
+            "call": "upload_document",
+            "data": "プロジェクトID、参考資料ファイル、認証トークン",
+            "kind": "call",
+            "action": "参考資料アップロードリクエストを受け付ける",
+            "branch": "1a へ、1b へ",
+            "callee": "app/api/routes/documents.py",
+            "caller": "利用者",
+            "result": "HTTPレスポンス",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "認証トークンが無効または期限切れ",
+            "branch": "HTTP 401 Unauthorized",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "プロジェクトIDが存在しない",
+            "branch": "HTTP 404 Not Found",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "tokens R",
+            "call": "verify_token",
+            "data": "認証トークン",
+            "kind": "call",
+            "action": "認証トークンを検証してユーザー情報を取得する",
+            "branch": "",
+            "callee": "app/services/auth.py",
+            "caller": "app/api/routes/documents.py",
+            "result": "ユーザー情報",
+            "is_branch": false
+          },
+          {
+            "db": "documents C",
+            "call": "process_and_save_document",
+            "data": "プロジェクトID、参考資料ファイル",
+            "kind": "call",
+            "action": "ファイルを読み込んでテキスト化し、DBに保存する",
+            "branch": "3a へ",
+            "callee": "app/services/document.py",
+            "caller": "app/api/routes/documents.py",
+            "result": "保存完了メッセージ",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "サポート外のファイル形式",
+            "branch": "HTTP 400 Bad Request",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "documents C",
+            "call": "save_document",
+            "data": "プロジェクトID、抽出されたテキストデータ",
+            "kind": "call",
+            "action": "参考資料のテキストデータをPostgreSQLに保存する",
+            "branch": "",
+            "callee": "app/repositories/document.py",
+            "caller": "app/services/document.py",
+            "result": "保存成功",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "保存完了メッセージ",
+            "kind": "return",
+            "action": "サービス層から結果を返す",
+            "branch": "",
+            "callee": "app/api/routes/documents.py",
+            "caller": "app/services/document.py",
+            "result": "保存完了メッセージ",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "保存完了メッセージ",
+            "kind": "return",
+            "action": "保存完了メッセージを返却する",
+            "branch": "",
+            "callee": "利用者",
+            "caller": "app/api/routes/documents.py",
+            "result": "HTTP 200 OK",
+            "is_branch": false
+          }
+        ],
+        "reason": "アップロードされた参考資料ファイルを読み込んでテキスト化し、PostgreSQLへ安全に永続化するため。",
+        "function_id": "F-06"
+      },
+      {
+        "note": "手順 3〜4 が1つのトランザクション",
+        "steps": [
+          {
+            "db": "—",
+            "call": "approve_summary",
+            "data": "プロジェクトID、構造化サマリ承認データ、認証トークン",
+            "kind": "call",
+            "action": "構造化サマリ承認と文書生成開始のAPIリクエストを受け取る",
+            "branch": "1a へ、1b へ",
+            "callee": "app/api/routes/summary.py",
+            "caller": "利用者",
+            "result": "文書生成開始の応答",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "認証トークンが無効である",
+            "branch": "UnauthorizedError → 401",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "対象のプロジェクトまたは構造化サマリが存在しない",
+            "branch": "NotFoundError → 404",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "—",
+            "call": "approve_and_generate",
+            "data": "プロジェクトID、構造化サマリ承認データ、認証トークン",
+            "kind": "call",
+            "action": "構造化サマリの承認と文書生成開始のビジネスロジックを呼び出す",
+            "branch": "",
+            "callee": "app/services/summary.py",
+            "caller": "app/api/routes/summary.py",
+            "result": "処理開始確認",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "verify_token",
+            "data": "認証トークン",
+            "kind": "call",
+            "action": "認証トークンを検証する",
+            "branch": "",
+            "callee": "app/services/auth.py",
+            "caller": "app/services/summary.py",
+            "result": "ユーザー情報",
+            "is_branch": false
+          },
+          {
+            "db": "summaries U",
+            "call": "update_summary_status",
+            "data": "プロジェクトID、構造化サマリ承認データ",
+            "kind": "call",
+            "action": "構造化サマリを承認状態に更新する",
+            "branch": "",
+            "callee": "app/repositories/summary.py",
+            "caller": "app/services/summary.py",
+            "result": "更新完了",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "generate_documents_async",
+            "data": "プロジェクトID",
+            "kind": "async",
+            "action": "Gemini Flash-Liteを用いた4種文書の順次生成および自己診断をバックグラウンドで開始する",
+            "branch": "",
+            "callee": "app/services/summary.py",
+            "caller": "app/services/summary.py",
+            "result": "バックグラウンド処理起動",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "generate_four_documents",
+            "data": "プロジェクトID、構造化サマリデータ",
+            "kind": "call",
+            "action": "Gemini Flash-Liteを使用して4種文書の順次生成と自己診断を実行する",
+            "branch": "",
+            "callee": "app/llm/client.py",
+            "caller": "app/services/summary.py",
+            "result": "生成された4種文書データ",
+            "is_branch": false
+          },
+          {
+            "db": "documents C",
+            "call": "save_generated_documents",
+            "data": "プロジェクトID、生成された4種文書データ",
+            "kind": "call",
+            "action": "生成された4種文書をデータベースに保存する",
+            "branch": "",
+            "callee": "app/repositories/document.py",
+            "caller": "app/services/summary.py",
+            "result": "保存完了",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "処理受付完了",
+            "kind": "return",
+            "action": "サービス層の処理結果を返す",
+            "branch": "",
+            "callee": "app/api/routes/summary.py",
+            "caller": "app/services/summary.py",
+            "result": "処理受付完了",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "文書生成開始の応答",
+            "kind": "return",
+            "action": "APIレスポンスを返す",
+            "branch": "",
+            "callee": "利用者",
+            "caller": "app/api/routes/summary.py",
+            "result": "文書生成開始の応答",
+            "is_branch": false
+          }
+        ],
+        "reason": "構造化サマリの承認後、非同期でLLMを利用した4種文書の順次生成および自己診断を開始するため、同期処理と非同期バッチ処理の連携が重要である。",
+        "function_id": "F-07"
+      },
+      {
+        "note": "",
+        "steps": [
+          {
+            "db": "—",
+            "call": "get_documents",
+            "data": "プロジェクトID, 認証トークン",
+            "kind": "call",
+            "action": "生成文書および版一覧取得のリクエストを受け取る",
+            "branch": "1a へ",
+            "callee": "app/api/routes/documents.py",
+            "caller": "利用者",
+            "result": "文書および版一覧データ",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "認証トークンが無効または期限切れ",
+            "branch": "UnauthorizedError -> 401",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "—",
+            "call": "verify_token",
+            "data": "認証トークン",
+            "kind": "call",
+            "action": "認証トークンを検証し、ユーザーを特定する",
+            "branch": "",
+            "callee": "app/services/auth.py",
+            "caller": "app/api/routes/documents.py",
+            "result": "ユーザー情報",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "get_documents",
+            "data": "プロジェクトID",
+            "kind": "call",
+            "action": "生成文書と版の履歴の取得をサービスに指示する",
+            "branch": "",
+            "callee": "app/services/document.py",
+            "caller": "app/api/routes/documents.py",
+            "result": "生成文書および版履歴データ",
+            "is_branch": false
+          },
+          {
+            "db": "documents R",
+            "call": "find_documents_by_project_id",
+            "data": "プロジェクトID",
+            "kind": "call",
+            "action": "PostgreSQLからプロジェクトに紐づく4種文書と直近3件の版履歴を取得する",
+            "branch": "4a へ",
+            "callee": "app/repositories/document.py",
+            "caller": "app/services/document.py",
+            "result": "文書および版履歴のレコード",
+            "is_branch": false
+          },
+          {
+            "db": "",
+            "call": "",
+            "data": "",
+            "kind": "call",
+            "action": "プロジェクトが見つからない",
+            "branch": "NotFoundError -> 404",
+            "callee": "",
+            "caller": "",
+            "result": "",
+            "is_branch": true
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "生成文書および版履歴データ",
+            "kind": "return",
+            "action": "取得した文書および版履歴データをルーターへ返す",
+            "branch": "",
+            "callee": "app/api/routes/documents.py",
+            "caller": "app/services/document.py",
+            "result": "生成文書および版履歴データ",
+            "is_branch": false
+          },
+          {
+            "db": "—",
+            "call": "",
+            "data": "生成文書および版履歴データ",
+            "kind": "return",
+            "action": "生成文書および版一覧のレスポンスを返す",
+            "branch": "",
+            "callee": "利用者",
+            "caller": "app/api/routes/documents.py",
+            "result": "200 OK, 生成文書および版履歴データ",
+            "is_branch": false
+          }
+        ],
+        "reason": "プロジェクトIDに紐づく4種文書と直近3件までの版履歴を効率的に取得するため、認証チェック後にリポジトリ経由でデータを取得する。",
+        "function_id": "F-08"
+      }
+    ]
+  },
+  "updated_at": "2026-10-12T08:05:50.235295Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "CALLEE_NOT_DEPENDENCY",
+      "message": "手順 F-06#2 の呼び出し先 app/services/auth.py が、呼び出し元 app/api/routes/documents.py の依存先(段階4)にありません。",
+      "target": "F-06#2",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "CALLEE_NOT_DEPENDENCY",
+      "message": "手順 F-08#2 の呼び出し先 app/services/auth.py が、呼び出し元 app/api/routes/documents.py の依存先(段階4)にありません。",
+      "target": "F-08#2",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    }
+  ],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

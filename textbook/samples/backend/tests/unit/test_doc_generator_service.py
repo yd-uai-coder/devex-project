@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-6-1,6-5,6-6,8-5,10-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,45-3
+# 作成：Phase-2-4｜更新：Phase-6-1,6-5,6-6,8-5,10-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,45-3,49-3
 # Phase-6-5:追記 ── structlog.testing
 # Phase-36-2:追記 ── tests.fixtures.requirements.requirements_output, app.documents.requirements.RequirementsModel, app.documents.requirements.drafting.RequirementsGenerationOutput, app.hearing.PointState, app.repositories.hearing_point.HearingPointRepository, app.services.doc_generator_service.document_read, app.services.errors(DocGenerationInProgressError, RequirementNotAssumedError, RequirementNotFoundError)
 # Phase-37-2:追記 ── tests.fixtures.external_design(external_design_output, upstream_outputs), app.documents.external_design.ExternalDesignModel, app.documents.external_design.drafting.ExternalDesignGenerationOutput
@@ -508,7 +508,10 @@ async def test_regenerate_external_design_keeps_screen_ids(db_session: AsyncSess
 
     await service.generate(project.id, project.user_id, llm=fake_llm)
 
-    assert "SCR-001|予約画面" in fake_llm.structured_messages[1][-1].content
+    # Phase-49-3：更新
+    # assert "SCR-001|予約画面" in fake_llm.structured_messages[1][-1].content
+    # ↓↓
+    assert '"id": "SCR-001", "name": "予約画面"' in fake_llm.structured_messages[1][-1].content
     document = await GeneratedDocumentRepository(db_session).get_current(
         project_id=project.id, doc_type="external_design"
     )

@@ -1,0 +1,448 @@
+{
+  "stage": 4,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "modules": [
+      {
+        "path": "app/api/routes/auth.py",
+        "layer": "ルーター(api/routes)",
+        "functions": [
+          "F-01",
+          "F-02"
+        ],
+        "depends_on": [
+          "app/services/auth.py"
+        ],
+        "all_functions": false,
+        "responsibility": "ユーザー登録およびログインのAPIエンドポイントを提供する。"
+      },
+      {
+        "path": "app/api/routes/projects.py",
+        "layer": "ルーター(api/routes)",
+        "functions": [
+          "F-03",
+          "F-04"
+        ],
+        "depends_on": [
+          "app/services/project.py"
+        ],
+        "all_functions": false,
+        "responsibility": "プロジェクト一覧取得および新規作成のAPIエンドポイントを提供する。"
+      },
+      {
+        "path": "app/api/routes/chat.py",
+        "layer": "ルーター(api/routes)",
+        "functions": [
+          "F-05"
+        ],
+        "depends_on": [
+          "app/services/chat.py"
+        ],
+        "all_functions": false,
+        "responsibility": "チャットメッセージ送信のAPIエンドポイントを提供する。"
+      },
+      {
+        "path": "app/api/routes/documents.py",
+        "layer": "ルーター(api/routes)",
+        "functions": [
+          "F-06",
+          "F-08"
+        ],
+        "depends_on": [
+          "app/services/document.py"
+        ],
+        "all_functions": false,
+        "responsibility": "参考資料アップロードおよび生成文書・版一覧取得のAPIエンドポイントを提供する。"
+      },
+      {
+        "path": "app/api/routes/summary.py",
+        "layer": "ルーター(api/routes)",
+        "functions": [
+          "F-07"
+        ],
+        "depends_on": [
+          "app/services/summary.py"
+        ],
+        "all_functions": false,
+        "responsibility": "構造化サマリ承認と文書生成開始のAPIエンドポイントを提供する。"
+      },
+      {
+        "path": "app/services/auth.py",
+        "layer": "サービス(services)",
+        "functions": [
+          "F-01",
+          "F-02",
+          "F-03",
+          "F-04",
+          "F-05",
+          "F-06",
+          "F-07",
+          "F-08"
+        ],
+        "depends_on": [
+          "app/repositories/user.py",
+          "app/cache/token.py"
+        ],
+        "all_functions": false,
+        "responsibility": "認証に関するビジネスロジックを制御する。"
+      },
+      {
+        "path": "app/services/project.py",
+        "layer": "サービス(services)",
+        "functions": [
+          "F-03",
+          "F-04"
+        ],
+        "depends_on": [
+          "app/repositories/project.py",
+          "app/services/auth.py"
+        ],
+        "all_functions": false,
+        "responsibility": "プロジェクトに関するビジネスロジックを制御する。"
+      },
+      {
+        "path": "app/services/chat.py",
+        "layer": "サービス(services)",
+        "functions": [
+          "F-05"
+        ],
+        "depends_on": [
+          "app/repositories/chat.py",
+          "app/llm/client.py",
+          "app/services/auth.py"
+        ],
+        "all_functions": false,
+        "responsibility": "チャットヒアリングのビジネスロジックとLLM連携を制御する。"
+      },
+      {
+        "path": "app/services/document.py",
+        "layer": "サービス(services)",
+        "functions": [
+          "F-06",
+          "F-08"
+        ],
+        "depends_on": [
+          "app/repositories/document.py",
+          "app/services/auth.py"
+        ],
+        "all_functions": false,
+        "responsibility": "参考資料のテキスト化と生成文書の版管理のビジネスロジックを制御する。"
+      },
+      {
+        "path": "app/services/summary.py",
+        "layer": "サービス(services)",
+        "functions": [
+          "F-07"
+        ],
+        "depends_on": [
+          "app/repositories/summary.py",
+          "app/repositories/document.py",
+          "app/llm/client.py",
+          "app/services/auth.py"
+        ],
+        "all_functions": false,
+        "responsibility": "構造化サマリの承認と4種文書の順次生成および自己診断を制御する。"
+      },
+      {
+        "path": "app/llm/client.py",
+        "layer": "LLM連携(llm)",
+        "functions": [
+          "F-05",
+          "F-07"
+        ],
+        "depends_on": [
+          "langchain",
+          "langgraph"
+        ],
+        "all_functions": false,
+        "responsibility": "LangChain・LangGraphとGemini Flash-Liteの呼び出しを制御する。"
+      },
+      {
+        "path": "app/repositories/user.py",
+        "layer": "リポジトリ(repositories)",
+        "functions": [
+          "F-01",
+          "F-02"
+        ],
+        "depends_on": [
+          "psycopg2"
+        ],
+        "all_functions": false,
+        "responsibility": "PostgreSQLへのユーザー情報の永続化と取得処理を行う。"
+      },
+      {
+        "path": "app/repositories/project.py",
+        "layer": "リポジトリ(repositories)",
+        "functions": [
+          "F-03",
+          "F-04"
+        ],
+        "depends_on": [
+          "psycopg2"
+        ],
+        "all_functions": false,
+        "responsibility": "PostgreSQLへのプロジェクト情報の永続化と取得処理を行う。"
+      },
+      {
+        "path": "app/repositories/chat.py",
+        "layer": "リポジトリ(repositories)",
+        "functions": [
+          "F-05"
+        ],
+        "depends_on": [
+          "psycopg2"
+        ],
+        "all_functions": false,
+        "responsibility": "PostgreSQLへのチャットメッセージの永続化を行う。"
+      },
+      {
+        "path": "app/repositories/document.py",
+        "layer": "リポジトリ(repositories)",
+        "functions": [
+          "F-06",
+          "F-07",
+          "F-08"
+        ],
+        "depends_on": [
+          "psycopg2"
+        ],
+        "all_functions": false,
+        "responsibility": "PostgreSQLへの参考資料および生成文書・版履歴の永続化と取得処理を行う。"
+      },
+      {
+        "path": "app/repositories/summary.py",
+        "layer": "リポジトリ(repositories)",
+        "functions": [
+          "F-07"
+        ],
+        "depends_on": [
+          "psycopg2"
+        ],
+        "all_functions": false,
+        "responsibility": "PostgreSQLの構造化サマリ情報の更新処理を行う。"
+      },
+      {
+        "path": "app/cache/token.py",
+        "layer": "キャッシュ・トークン管理(cache)",
+        "functions": [
+          "F-02"
+        ],
+        "depends_on": [
+          "redis"
+        ],
+        "all_functions": false,
+        "responsibility": "Redisを用いたトークン管理とレート制限処理を行う。"
+      },
+      {
+        "path": "app/main.py",
+        "layer": "ルーター(api/routes)",
+        "functions": [],
+        "depends_on": [
+          "app/api/routes/auth.py",
+          "app/api/routes/projects.py",
+          "app/api/routes/chat.py",
+          "app/api/routes/documents.py",
+          "app/api/routes/summary.py",
+          "fastapi"
+        ],
+        "all_functions": true,
+        "responsibility": "アプリケーションの組み立て、認証のDI、例外の変換を一括して行う。"
+      }
+    ]
+  },
+  "updated_at": "2026-10-12T08:04:24.168819Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/api/routes/auth.py の層「ルーター(api/routes)」が、構成図の層にありません。",
+      "target": "app/api/routes/auth.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/api/routes/projects.py の層「ルーター(api/routes)」が、構成図の層にありません。",
+      "target": "app/api/routes/projects.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/api/routes/chat.py の層「ルーター(api/routes)」が、構成図の層にありません。",
+      "target": "app/api/routes/chat.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/api/routes/documents.py の層「ルーター(api/routes)」が、構成図の層にありません。",
+      "target": "app/api/routes/documents.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/api/routes/summary.py の層「ルーター(api/routes)」が、構成図の層にありません。",
+      "target": "app/api/routes/summary.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/services/auth.py の層「サービス(services)」が、構成図の層にありません。",
+      "target": "app/services/auth.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/services/project.py の層「サービス(services)」が、構成図の層にありません。",
+      "target": "app/services/project.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/services/chat.py の層「サービス(services)」が、構成図の層にありません。",
+      "target": "app/services/chat.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/services/document.py の層「サービス(services)」が、構成図の層にありません。",
+      "target": "app/services/document.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/services/summary.py の層「サービス(services)」が、構成図の層にありません。",
+      "target": "app/services/summary.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/llm/client.py の層「LLM連携(llm)」が、構成図の層にありません。",
+      "target": "app/llm/client.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/repositories/user.py の層「リポジトリ(repositories)」が、構成図の層にありません。",
+      "target": "app/repositories/user.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/repositories/project.py の層「リポジトリ(repositories)」が、構成図の層にありません。",
+      "target": "app/repositories/project.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/repositories/chat.py の層「リポジトリ(repositories)」が、構成図の層にありません。",
+      "target": "app/repositories/chat.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/repositories/document.py の層「リポジトリ(repositories)」が、構成図の層にありません。",
+      "target": "app/repositories/document.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/repositories/summary.py の層「リポジトリ(repositories)」が、構成図の層にありません。",
+      "target": "app/repositories/summary.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/cache/token.py の層「キャッシュ・トークン管理(cache)」が、構成図の層にありません。",
+      "target": "app/cache/token.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "UNKNOWN_LAYER",
+      "message": "app/main.py の層「ルーター(api/routes)」が、構成図の層にありません。",
+      "target": "app/main.py",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    }
+  ],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

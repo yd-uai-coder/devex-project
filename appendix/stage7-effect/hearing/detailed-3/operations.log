@@ -1,0 +1,53 @@
+段階1 生成  → completed(10秒) 
+段階1 承認(v2)
+段階2 DFD を描くグループ: ['auth', 'projects', 'chat', 'documents', 'summary']
+段階2 生成  → completed(45秒) 
+  図 dfd auth を配置して承認
+  図 dfd chat を配置して承認
+  図 dfd documents を配置して承認
+  図 dfd projects を配置して承認
+  図 dfd summary を配置して承認
+段階2 承認(v2)
+段階3 生成  → completed(15秒) 
+  図 er (全体) を配置して承認
+  検証 warning DRAFT_CELLS AI の下書きのままのセルが 7 個あります(承認すると確定します)。
+段階3 承認(v2)
+段階4 生成  → completed(15秒) 
+  図 component (全体) を配置して承認
+  検証 warning UNKNOWN_LAYER app/api/routes/auth.py の層「ルーター(api/routes)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/api/routes/projects.py の層「ルーター(api/routes)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/api/routes/chat.py の層「ルーター(api/routes)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/api/routes/documents.py の層「ルーター(api/routes)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/api/routes/summary.py の層「ルーター(api/routes)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/services/auth.py の層「サービス(services)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/services/project.py の層「サービス(services)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/services/chat.py の層「サービス(services)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/services/document.py の層「サービス(services)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/services/summary.py の層「サービス(services)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/llm/client.py の層「LLM連携(llm)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/repositories/user.py の層「リポジトリ(repositories)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/repositories/project.py の層「リポジトリ(repositories)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/repositories/chat.py の層「リポジトリ(repositories)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/repositories/document.py の層「リポジトリ(repositories)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/repositories/summary.py の層「リポジトリ(repositories)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/cache/token.py の層「キャッシュ・トークン管理(cache)」が、構成図の層にありません。
+  検証 warning UNKNOWN_LAYER app/main.py の層「ルーター(api/routes)」が、構成図の層にありません。
+段階4 承認(v2)
+段階5 手順を書く処理: ['F-01', 'F-02', 'F-03', 'F-04', 'F-05', 'F-06', 'F-07', 'F-08'](全件)
+段階5 生成 {"function_ids": ["F-01", "F-02", "F-03", "F-04", "F-05"]} → completed(35秒) 
+段階5 生成 {"function_ids": ["F-06", "F-07", "F-08"]} → completed(50秒) 
+  検証 warning CALLEE_NOT_DEPENDENCY 手順 F-06#2 の呼び出し先 app/services/auth.py が、呼び出し元 app/api/routes/documents.py の依存先(段階4)にありません。
+  検証 warning CALLEE_NOT_DEPENDENCY 手順 F-08#2 の呼び出し先 app/services/auth.py が、呼び出し元 app/api/routes/documents.py の依存先(段階4)にありません。
+段階5 承認(v3)
+段階6 詳細を書く関数: ['app/services/auth.py の register_user', 'app/services/auth.py の authenticate_user', 'app/services/project.py の ProjectService.get_projects', 'app/services/auth.py の AuthService.verify_token', 'app/services/project.py の ProjectService.create_project']
+段階6 生成 {"logics": [{"module": "app/services/auth.py", "function": "register_user"}, {"module": "app/services/auth.py", "function": "authenticate_user"}, {"module": "app/services/project.py", "function": "ProjectService.get_projects"}, {"module": "app/services/auth.py", "function": "AuthService.verify_token"}, {"module": "app/services/project.py", "function": "ProjectService.create_project"}]} → completed(92秒) 
+段階6 承認(v2)
+段階7 生成  → completed(15秒) 
+段階7 承認(v2)
+詳細設計書・実装計画の zip: 200 54273 bytes
+段階8 手順書を作る単位: ['M-01-T01', 'M-01-T02', 'M-01-T03', 'M-02-T01', 'M-02-T02', 'M-02-T03', 'M-03-T01', 'M-04-T01', 'M-04-T02'](全件)
+段階8 生成 {"unit_ids": ["M-01-T01", "M-01-T02", "M-01-T03", "M-02-T01", "M-02-T02"]} → completed(15秒) 
+段階8 生成 {"unit_ids": ["M-02-T03", "M-03-T01", "M-04-T01", "M-04-T02"]} → completed(15秒) 
+  検証 warning STUB_OUTSIDE_SEQUENCE M-03-T01 のテスト観点3のスタブ(app/api/routes/auth.py, app/cache/token.py, app/services/auth.py)は、F-05 の手順で SUT(app/services/chat.
+段階8 承認(v3)
+実装手順書の zip: 200 76296 bytes

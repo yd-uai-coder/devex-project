@@ -1,0 +1,196 @@
+{
+  "stage": 6,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "logics": [
+      {
+        "pre": "有効なメールアドレスとパスワードが入力されていること",
+        "args": "email: メールアドレス / password: パスワード",
+        "post": "ユーザーが新規登録され、ハッシュ化されたユーザー情報が返却されること",
+        "module": "app/services/auth.py",
+        "pseudo": [
+          {
+            "sub": [
+              "app/repositories/user.py を使用して検索を行う",
+              "すでに存在する場合は ConflictError を送出する"
+            ],
+            "text": "入力されたメールアドレスが users テーブルにすでに存在するか確認する"
+          },
+          {
+            "sub": [
+              "平文のパスワードを暗号学的なハッシュ関数で変換する"
+            ],
+            "text": "パスワードを安全な方式でハッシュ化する"
+          },
+          {
+            "sub": [
+              "メールアドレスとハッシュ化済みパスワードをユーザー情報としてまとめる"
+            ],
+            "text": "ハッシュ化された情報を含むユーザーデータを構築する"
+          },
+          {
+            "sub": [
+              "app/repositories/user.py を使用して users テーブルに登録する",
+              "登録されたユーザー情報を戻り値として返す"
+            ],
+            "text": "構築したユーザー情報を保存し、結果を返却する"
+          }
+        ],
+        "raises": "ConflictError: すでに登録済みのメールアドレスの場合(HTTP 409)",
+        "returns": "ハッシュ化されたユーザー情報",
+        "function": "register_user",
+        "signature": "def register_user(email: str, password: str) -> dict"
+      },
+      {
+        "pre": "有効なメールアドレスとパスワードが入力されていること",
+        "args": "email: メールアドレス / password: パスワード",
+        "post": "ユーザーが認証され情報が返却されること",
+        "module": "app/services/auth.py",
+        "pseudo": [
+          {
+            "sub": [
+              "app/repositories/user.py を呼び出す"
+            ],
+            "text": "メールアドレスをもとにリポジトリからユーザー情報を取得する"
+          },
+          {
+            "sub": [
+              "入力されたパスワードとハッシュ値を比較する"
+            ],
+            "text": "取得したユーザー情報のパスワードを検証する"
+          },
+          {
+            "sub": [
+              "認証成功時はユーザー情報を返却する"
+            ],
+            "text": "検証結果に応じてユーザー情報を返却する"
+          }
+        ],
+        "raises": "なし",
+        "returns": "認証されたユーザー情報",
+        "function": "authenticate_user",
+        "signature": "def authenticate_user(email: str, password: str) -> dict:"
+      },
+      {
+        "pre": "有効な認証トークンが渡されていること",
+        "args": "token: 認証トークン",
+        "post": "指定されたユーザーのプロジェクト一覧データが正常に取得されること",
+        "module": "app/services/project.py",
+        "pseudo": [
+          {
+            "sub": [
+              "認証サービス(app/services/auth.py)を呼び出す",
+              "トークンが無効な場合は例外を送出する"
+            ],
+            "text": "認証トークンを使用してユーザーを検証する"
+          },
+          {
+            "sub": [
+              "プロジェクトリポジトリ(app/repositories/project.py)の関数を呼び出す",
+              "projectsテーブルからデータを取得する"
+            ],
+            "text": "プロジェクト一覧の取得をリポジトリ層に依頼する"
+          },
+          {
+            "sub": [
+              "結果をリスト形式に変換する"
+            ],
+            "text": "取得したプロジェクト一覧データを整形して返却する"
+          }
+        ],
+        "raises": "認証エラーなどの例外が発生した場合は適切なHTTPステータスコードと共に送出する",
+        "returns": "プロジェクト一覧データ",
+        "function": "ProjectService.get_projects",
+        "signature": "def get_projects(token: str) -> list[dict]:"
+      },
+      {
+        "pre": "有効な認証トークン文字列が渡されること",
+        "args": "token: 認証トークン",
+        "post": "トークンが検証され、紐づくユーザー情報が返されること",
+        "module": "app/services/auth.py",
+        "pseudo": [
+          {
+            "sub": [
+              "トークンが空または不正な形式の場合はAuthErrorを送出する"
+            ],
+            "text": "認証トークンの形式を検証する"
+          },
+          {
+            "sub": [
+              "tokensテーブルから該当するトークン情報を取得する(tokens R)"
+            ],
+            "text": "キャッシュまたはtokensテーブルを参照してトークンを検索する"
+          },
+          {
+            "sub": [
+              "トークンが存在しないまたは期限切れの場合はAuthErrorを送出する"
+            ],
+            "text": "トークンの有効期限と存在を判定する"
+          },
+          {
+            "sub": [
+              "usersテーブルからユーザー情報を取得する",
+              "ユーザー情報を戻り値として返す"
+            ],
+            "text": "紐づくユーザー情報を取得して返却する"
+          }
+        ],
+        "raises": "AuthError: トークンが無効または期限切れの場合、401を返す",
+        "returns": "ユーザー情報",
+        "function": "AuthService.verify_token",
+        "signature": "def verify_token(self, token: str) -> dict:"
+      },
+      {
+        "pre": "有効な認証トークンが提供されていること",
+        "args": "token: 認証トークン / project_data: プロジェクト情報",
+        "post": "projects テーブルに新しいプロジェクトが作成されること",
+        "module": "app/services/project.py",
+        "pseudo": [
+          {
+            "sub": [
+              "app/services/auth.py を利用して token の有効性を確認する",
+              "無効な場合は ValueError を送出する"
+            ],
+            "text": "認証トークンの検証を行う"
+          },
+          {
+            "sub": [
+              "project_data から必要な値を取り出す"
+            ],
+            "text": "プロジェクト作成データを準備する"
+          },
+          {
+            "sub": [
+              "app/repositories/project.py を呼び出して projects テーブルにレコードを追加する"
+            ],
+            "text": "プロジェクトを永続化する"
+          },
+          {
+            "sub": [
+              "データベースから返されたプロジェクト情報を呼び出し元に返す"
+            ],
+            "text": "作成されたプロジェクト情報を返却する"
+          }
+        ],
+        "raises": "ValueError: トークンが無効または期限切れの場合(HTTP 401)",
+        "returns": "作成されたプロジェクト情報",
+        "function": "ProjectService.create_project",
+        "signature": "def create_project(token: str, project_data: dict) -> dict"
+      }
+    ]
+  },
+  "updated_at": "2026-10-12T08:07:23.056943Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

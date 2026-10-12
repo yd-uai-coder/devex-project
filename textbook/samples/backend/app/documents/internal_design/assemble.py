@@ -1,4 +1,4 @@
-# 作成：Phase-45-1
+# 作成：Phase-45-1｜更新：Phase-49-3
 """AI の下書きから内部設計書の model を組み立てる(純粋関数)。
 
 - 処理別データフローの ID: AI には書かせない。前の版に同じ処理(同じ API の照合のキー・同じバッチ
@@ -6,6 +6,8 @@
 - API: メソッドを大文字にそろえ、形の違う行(知らないメソッド・`/`で始まらないパス)と、同じ
   API の2行目を捨てる(`app.detailed_design.api_list`が読める形だけを残す)。
 - テーブル・モジュール: 名前・パスの無い行と、同じ名前・パスの2行目を捨てる。
+- 変更なし(`unchanged`): 前の版の同じ名前のテーブル・同じパスのモジュール・同じ API・同じ処理の
+  処理別データフローがあれば、その行をそのまま使う(`app.documents.revision`)。
 """
 
 from collections.abc import Iterable, Sequence
@@ -41,6 +43,8 @@ class TableDraft:
     name: str
     description: str = ""
     columns: tuple[ColumnDraft, ...] = ()
+    # Phase-49-3:追記
+    unchanged: bool = False
 
 
 @dataclass(frozen=True)
@@ -48,6 +52,8 @@ class InternalApiDraft:
     method: str
     path: str
     summary: str = ""
+    # Phase-49-3:追記
+    unchanged: bool = False
 
 
 @dataclass(frozen=True)
@@ -56,6 +62,8 @@ class ModuleDraft:
     layer: str = ""
     responsibility: str = ""
     depends_on: tuple[str, ...] = ()
+    # Phase-49-3:追記
+    unchanged: bool = False
 
 
 @dataclass(frozen=True)
@@ -79,6 +87,8 @@ class DataFlowDraft:
     trigger: str
     flows: tuple[FlowDraft, ...] = ()
     data_items: tuple[DataItemDraft, ...] = ()
+    # Phase-49-3:追記
+    unchanged: bool = False
 
 
 @dataclass(frozen=True)
@@ -104,7 +114,11 @@ def _cell(value: str) -> str:
     return "" if value in _EMPTY_CELLS else value
 
 
-def _tables(drafts: Iterable[TableDraft]) -> list[TableDef]:
+# Phase-49-3：更新
+# def _tables(drafts: Iterable[TableDraft]) -> list[TableDef]:
+# ↓↓
+def _tables(drafts: Iterable[TableDraft], previous: InternalDesignModel | None) -> list[TableDef]:
+    same = {t.name: t for t in previous.tables} if previous else {}
     tables: list[TableDef] = []
     seen: set[str] = set()
     for d in drafts:
@@ -112,6 +126,10 @@ def _tables(drafts: Iterable[TableDraft]) -> list[TableDef]:
         if not name or name in seen:
             continue
         seen.add(name)
+        # Phase-49-3:追記
+        if d.unchanged and name in same:
+            tables.append(same[name])
+            continue
         columns = [
             ColumnRow(
                 name=_plain(c.name),
@@ -126,7 +144,13 @@ def _tables(drafts: Iterable[TableDraft]) -> list[TableDef]:
     return tables
 
 
-def _apis(drafts: Iterable[InternalApiDraft]) -> list[InternalApiRow]:
+# Phase-49-3：更新
+# def _apis(drafts: Iterable[InternalApiDraft]) -> list[InternalApiRow]:
+# ↓↓
+def _apis(
+    drafts: Iterable[InternalApiDraft], previous: InternalDesignModel | None
+) -> list[InternalApiRow]:
+    same = {a.key: a for a in previous.apis} if previous else {}
     rows: list[InternalApiRow] = []
     seen: set[str] = set()
     for d in drafts:
@@ -138,11 +162,21 @@ def _apis(drafts: Iterable[InternalApiDraft]) -> list[InternalApiRow]:
         if key in seen:
             continue
         seen.add(key)
+        # Phase-49-3:追記
+        if d.unchanged and key in same:
+            rows.append(same[key])
+            continue
         rows.append(InternalApiRow(method=method, path=path, summary=d.summary.strip()))
     return rows
 
 
-def _modules(drafts: Iterable[ModuleDraft]) -> list[ModuleRow]:
+# Phase-49-3：更新
+# def _modules(drafts: Iterable[ModuleDraft]) -> list[ModuleRow]:
+# ↓↓
+def _modules(
+    drafts: Iterable[ModuleDraft], previous: InternalDesignModel | None
+) -> list[ModuleRow]:
+    same = {m.path: m for m in previous.modules} if previous else {}
     rows: list[ModuleRow] = []
     seen: set[str] = set()
     for d in drafts:
@@ -150,6 +184,10 @@ def _modules(drafts: Iterable[ModuleDraft]) -> list[ModuleRow]:
         if not path or path in seen:
             continue
         seen.add(path)
+        # Phase-49-3:追記
+        if d.unchanged and path in same:
+            rows.append(same[path])
+            continue
         depends = [_plain(x) for x in d.depends_on if _plain(x) not in _EMPTY_CELLS]
         rows.append(
             ModuleRow(
@@ -167,7 +205,10 @@ def _dataflows(
 ) -> tuple[list[DataFlowRow], int]:
     """処理別データフローの行と、次の番号。"""
     prev_rows = previous.dataflows if previous else []
-    prev_ids = {row.match_key: row.id for row in prev_rows}
+    # Phase-49-3：更新
+    # prev_ids = {row.match_key: row.id for row in prev_rows}
+    # ↓↓
+    same = {row.match_key: row for row in prev_rows}
     seqs = [s for s in (dataflow_seq(row.id) for row in prev_rows) if s is not None]
     seq = max([previous.next_dataflow_seq if previous else 1, *(s + 1 for s in seqs)])
     rows: list[DataFlowRow] = []
@@ -198,10 +239,20 @@ def _dataflows(
         if row.match_key in seen:
             continue
         seen.add(row.match_key)
-        carried = prev_ids.get(row.match_key)
-        if carried is None:
-            carried = dataflow_id(seq)
-            seq += 1
+        # Phase-49-3：更新
+        # carried = prev_ids.get(row.match_key)
+        # if carried is None:
+        #     carried = dataflow_id(seq)
+        #     seq += 1
+        # ↓↓
+        prev = same.get(row.match_key)
+        if prev is not None and d.unchanged:
+            rows.append(prev)
+            continue
+        if prev is None:
+            carried, seq = dataflow_id(seq), seq + 1
+        else:
+            carried = prev.id
         rows.append(row.model_copy(update={"id": carried}))
     return rows, seq
 
@@ -217,10 +268,17 @@ def build_model(
     return InternalDesignModel(
         architecture=draft.architecture.strip(),
         data_model_note=draft.data_model_note.strip(),
-        tables=_tables(draft.tables),
+        # Phase-49-3：更新
+        # tables=_tables(draft.tables),
+        # ↓↓
+        tables=_tables(draft.tables, previous),
         module_policy=draft.module_policy.strip(),
-        apis=_apis(draft.apis),
-        modules=_modules(draft.modules),
+        # Phase-49-3：更新
+        # apis=_apis(draft.apis),
+        # modules=_modules(draft.modules),
+        # ↓↓
+        apis=_apis(draft.apis, previous),
+        modules=_modules(draft.modules, previous),
         dataflows=dataflows,
         error_policy=draft.error_policy.strip(),
         external_apis=list(dict.fromkeys(a.strip() for a in external_apis if a.strip())),

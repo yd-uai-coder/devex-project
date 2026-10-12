@@ -1,0 +1,956 @@
+{
+  "stage": 8,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 3,
+  "approved_version": 3,
+  "model": {
+    "units": [
+      {
+        "unit_id": "M-01-T01",
+        "unit_key": "U-001",
+        "title": "Docker環境、データベース接続、共通例外ハンドラー、およびRedisキャッシュの土台を構築する",
+        "purpose": "Docker環境、データベース接続、共通例外ハンドラー、およびRedisキャッシュの土台を構築し、アプリケーションの実行基盤を整える。",
+        "files": [
+          {
+            "path": "Dockerfile",
+            "kind": "config",
+            "responsibility": "Pythonおよび必要なパッケージを含むバックエンドのコンテナイメージを定義する。",
+            "basis": "段階7 開発環境"
+          },
+          {
+            "path": "docker-compose.yml",
+            "kind": "config",
+            "responsibility": "バックエンド、PostgreSQL、Redisの各コンテナを連携させて起動する構成を定義する。",
+            "basis": "段階7 開発環境"
+          },
+          {
+            "path": "app/cache/token.py",
+            "kind": "module",
+            "responsibility": "Redisを用いたトークン管理とレート制限処理の土台を提供する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/main.py",
+            "kind": "module",
+            "responsibility": "アプリケーションの組み立て、認証のDI、例外の変換を一括して行う。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "Docker環境の構築とデータベース接続の設定を最初に行い、その後にアプリケーションの基盤モジュールを作成する。",
+          "共通例外ハンドラーとRedis接続設定はapp/main.pyおよびapp/cache/token.pyの実装に含める。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "Dockerコンテナおよび各サービスが正常に起動すること",
+            "sut": "docker-compose.yml",
+            "driver": "結合テスト(Docker Composeコマンドによる起動確認)",
+            "stub": "スタブ不要 ── 実際のコンテナ環境を使用する"
+          },
+          {
+            "viewpoint": "共通例外ハンドラーが指定のステータスコードを返却すること",
+            "sut": "app/main.py",
+            "driver": "単体テスト(pytest)",
+            "stub": "スタブ不要 ── FastAPIのTestClientを使用する"
+          }
+        ],
+        "gwt": [
+          "Given Docker環境が構築されている When docker compose upを実行する Then すべてのコンテナが正常に起動する",
+          "Given 共通例外ハンドラーが設定されている When 独自例外が発生する When 対応するHTTPステータスコードが返却される"
+        ],
+        "verify": [
+          "docker compose upコマンドによりエラーなくコンテナが起動することを確認する。",
+          "pytestを実行し、基盤部分のテストが成功することを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-01-T02",
+        "unit_key": "U-002",
+        "title": "ユーザー登録機能の実装",
+        "purpose": "利用者からのユーザー登録リクエストを受け付け、ビジネスロジックでパスワードをハッシュ化してPostgreSQLへ永続化できるようにする。",
+        "files": [
+          {
+            "path": "app/repositories/user.py",
+            "kind": "module",
+            "responsibility": "PostgreSQLへのユーザー情報の永続化と取得処理を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/auth.py",
+            "kind": "module",
+            "responsibility": "認証に関するビジネスロジックを制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/api/routes/auth.py",
+            "kind": "module",
+            "responsibility": "ユーザー登録およびログインのAPIエンドポイントを提供する。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "app/repositories/user.py から実装し、次に app/services/auth.py、最後に app/api/routes/auth.py の順に作成する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "有効なメールアドレスとパスワードでユーザー登録が成功すること",
+            "sut": "register_user",
+            "driver": "pytestによる単体テスト",
+            "stub": "スタブ不要 ── 実際のデータベースまたはテスト用セッションを使用する"
+          }
+        ],
+        "gwt": [
+          "Given 有効なメールアドレスとパスワードが入力されているとき When register_user を実行すると Then ユーザーが新規登録されハッシュ化されたユーザー情報が返却される"
+        ],
+        "verify": [
+          "pytestを実行し、ユーザー登録機能に関するテストがすべて成功することを確認する。"
+        ],
+        "findings": [
+          {
+            "level": "critical",
+            "target": "app/api/routes/auth.py",
+            "message": "段階6において register 関数の詳細設計が定義されていない。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "critical",
+            "target": "app/repositories/user.py",
+            "message": "段階6において create_user 関数の詳細設計が定義されていない。",
+            "fix_stage": 6,
+            "fix_document": null
+          }
+        ]
+      },
+      {
+        "unit_id": "M-01-T03",
+        "unit_key": "U-003",
+        "title": "ログイン機能の実装",
+        "purpose": "利用者がメールアドレスとパスワードでログインし、認証トークンを取得できるようにする。",
+        "files": [
+          {
+            "path": "app/repositories/user.py",
+            "kind": "module",
+            "responsibility": "メールアドレスをもとにPostgreSQLからユーザー情報を取得する",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/cache/token.py",
+            "kind": "module",
+            "responsibility": "Redisを使用して認証トークンを発行・保存する",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/auth.py",
+            "kind": "module",
+            "responsibility": "認証に関するビジネスロジックを制御しユーザー認証とトークン生成を行う",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/api/routes/auth.py",
+            "kind": "module",
+            "responsibility": "ログインAPIエンドポイントを提供する",
+            "basis": "段階4"
+          },
+          {
+            "path": "tests/test_auth.py",
+            "kind": "test",
+            "responsibility": "ログイン機能の単体テストおよび結合テストを実施する",
+            "basis": "段階7 開発環境"
+          }
+        ],
+        "notes": [
+          "依存される順序に従い、リポジトリ層、キャッシュ層、サービス層、ルーター層の順に実装する。",
+          "パスワードのハッシュ化および検証には既存のセキュリティライブラリを使用する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "有効な認証情報でログインした場合に認証トークンが返却されること",
+            "sut": "login",
+            "driver": "結合テスト(pytest)",
+            "stub": "スタブ不要 ── 実データベースおよびRedisを使用"
+          },
+          {
+            "viewpoint": "存在しないメールアドレスまたは無効なパスワードの場合に401エラーになること",
+            "sut": "login",
+            "driver": "結合テスト(pytest)",
+            "stub": "スタブ不要 ── 実データベースおよびRedisを使用"
+          }
+        ],
+        "gwt": [
+          "Given 登録済みのユーザーが存在する When 正しいメールアドレスとパスワードでログインする Then 認証トークンが返却される"
+        ],
+        "verify": [
+          "pytestを実行し、ログイン機能に関するテストがすべて成功することを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-02-T01",
+        "unit_key": "U-004",
+        "title": "プロジェクト一覧取得機能の実装",
+        "purpose": "認証トークンを用いたプロジェクト一覧の取得APIおよび関連するサービス・リポジトリ層の処理を実装し、ユーザー固有のプロジェクト一覧データを返却できるようにする。",
+        "files": [
+          {
+            "path": "app/repositories/project.py",
+            "kind": "module",
+            "responsibility": "PostgreSQLのprojectsテーブルからユーザーIDに紐づくプロジェクト一覧を取得する処理を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/auth.py",
+            "kind": "module",
+            "responsibility": "認証トークンの検証を行い、紐づくユーザー情報を取得する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/project.py",
+            "kind": "module",
+            "responsibility": "認証とリポジトリ層を呼び出してプロジェクト一覧を取得するビジネスロジックを制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/api/routes/projects.py",
+            "kind": "module",
+            "responsibility": "プロジェクト一覧取得APIのエンドポイントを提供する。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "依存される順序(リポジトリ層 -> 認証サービス層 -> プロジェクトサービス層 -> ルーター層)に従って実装を進める。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "有効な認証トークンが渡された場合にプロジェクト一覧が正常に取得できること",
+            "sut": "app/api/routes/projects.pyのget_projectsエンドポイント",
+            "driver": "pytestを用いた結合テスト",
+            "stub": "スタブ不要 ── 実際のデータベースおよびサービス層を使用する"
+          }
+        ],
+        "gwt": [
+          "Given 有効な認証トークンと対象ユーザーに紐づくプロジェクトが存在する状態, When get_projects APIを呼び出す, Then プロジェクト一覧データが返される"
+        ],
+        "verify": [
+          "pytestを実行し、プロジェクト一覧取得に関するテストがすべて成功することを確認する。"
+        ],
+        "findings": [
+          {
+            "level": "critical",
+            "target": "段階6 get_projects(app/api/routes/projects.py)",
+            "message": "設計に詳細が記載されていないため、ルーター層のシグネチャや例外ハンドリングの詳細仕様が不明である。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "critical",
+            "target": "段階6 ProjectRepository.find_all_by_user_id(app/repositories/project.py)",
+            "message": "設計に詳細が記載されていないため、リポジトリ層のメソッドシグネチャやクエリの詳細仕様が不明である。",
+            "fix_stage": 6,
+            "fix_document": null
+          }
+        ]
+      },
+      {
+        "unit_id": "M-02-T02",
+        "unit_key": "U-005",
+        "title": "プロジェクト作成機能の実装",
+        "purpose": "利用者からのプロジェクト作成リクエストを受け付け、認証を経て新しいプロジェクトをPostgreSQLに永続化する機能を実現する。",
+        "files": [
+          {
+            "path": "app/repositories/project.py",
+            "kind": "module",
+            "responsibility": "PostgreSQLへのプロジェクト情報の永続化と取得処理を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/auth.py",
+            "kind": "module",
+            "responsibility": "認証に関するビジネスロジックを制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/project.py",
+            "kind": "module",
+            "responsibility": "プロジェクトに関するビジネスロジックを制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/api/routes/projects.py",
+            "kind": "module",
+            "responsibility": "プロジェクト一覧取得および新規作成のAPIエンドポイントを提供する。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "依存される順序として、データ永続化のリポジトリ、認証サービス、プロジェクトサービス、最後にAPIルーターの順に実装する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "有効な認証トークンとプロジェクト情報が与えられたとき、プロジェクトが正常に作成され201が返ること",
+            "sut": "app/api/routes/projects.py",
+            "driver": "結合テスト(FastAPI TestClient)",
+            "stub": "スタブ不要 ── 実際のサービスおよびデータベース接続またはモックを使用する"
+          },
+          {
+            "viewpoint": "無効な認証トークンが与えられたとき、401エラーが返ること",
+            "sut": "app/api/routes/projects.py",
+            "driver": "結合テスト(FastAPI TestClient)",
+            "stub": "スタブ不要 ── 実際のサービスおよびデータベース接続またはモックを使用する"
+          }
+        ],
+        "gwt": [
+          "Given 有効な認証トークンとプロジェクト情報がある When プロジェクト作成APIを呼び出す Then プロジェクトが作成され201レスポンスが返る",
+          "Given 無効な認証トークンがある When プロジェクト作成APIを呼び出す Then 認証エラーとなり401レスポンスが返る"
+        ],
+        "verify": [
+          "pytestを実行し、プロジェクト作成に関するテストケースがすべて成功することを確認する。"
+        ],
+        "findings": [
+          {
+            "level": "critical",
+            "target": "段階6 create_project(app/api/routes/projects.py)",
+            "message": "段階6において app/api/routes/projects.py の詳細設計が記載されていないため、リクエストスキーマや正確なエンドポイントのシグネチャを特定できない。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "critical",
+            "target": "段階6 ProjectRepository.save(app/repositories/project.py)",
+            "message": "段階6において ProjectRepository.save の詳細設計が記載されていないため、引数や戻り値のデータ構造を特定できない。",
+            "fix_stage": 6,
+            "fix_document": null
+          }
+        ]
+      },
+      {
+        "unit_id": "M-02-T03",
+        "unit_key": "U-006",
+        "title": "参考資料アップロード機能の実装",
+        "purpose": "プロジェクトに対する参考資料のアップロード機能およびテキスト化と保存処理を実装する。",
+        "files": [
+          {
+            "path": "app/repositories/document.py",
+            "kind": "module",
+            "responsibility": "PostgreSQLへの参考資料データの永続化と取得処理を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/auth.py",
+            "kind": "module",
+            "responsibility": "認証トークンを検証してユーザー情報を取得するビジネスロジックを制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/document.py",
+            "kind": "module",
+            "responsibility": "参考資料のテキスト化と永続化のビジネスロジックを制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/api/routes/documents.py",
+            "kind": "module",
+            "responsibility": "参考資料アップロードのAPIエンドポイントを提供する。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "リポジトリ層、サービス層、APIルーターの順に実装する。",
+          "トランザクション境界を厳守し、失敗時はロールバックする。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "有効な参考資料ファイルとトークンでアップロードが成功すること",
+            "sut": "upload_document",
+            "driver": "結合テスト(pytest)",
+            "stub": "スタブ不要 ── 実モジュールを使用"
+          }
+        ],
+        "gwt": [
+          "Given: 有効なプロジェクトIDと認証トークンが存在する",
+          "When: サポート内の参考資料ファイルをアップロードする",
+          "Then: 保存完了メッセージと HTTP 200 OK が返却される"
+        ],
+        "verify": [
+          "pytestを実行し、参考資料アップロード機能のテストがすべて成功することを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-03-T01",
+        "unit_key": "U-007",
+        "title": "チャットメッセージ送信とLLM連携機能の実装",
+        "purpose": "チャットメッセージの送信を受け付け、認証確認、データベースへの保存、LLMとの連携を経て応答メッセージを返却できるようにする。",
+        "files": [
+          {
+            "path": "app/repositories/chat.py",
+            "kind": "module",
+            "responsibility": "PostgreSQLへのチャットメッセージの永続化を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/llm/client.py",
+            "kind": "module",
+            "responsibility": "LangChain・LangGraphとGemini Flash-Liteの呼び出しを制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/chat.py",
+            "kind": "module",
+            "responsibility": "チャットヒアリングのビジネスロジックとLLM連携を制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/api/routes/chat.py",
+            "kind": "module",
+            "responsibility": "チャットメッセージ送信のAPIエンドポイントを提供する。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "手順3から手順5までのデータベース保存およびLLM呼び出しの一連の処理はトランザクション境界を厳守して実装する。",
+          "セキュリティ要件に基づきチャットの入力内容はログに残さないように注意する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常系: チャットメッセージを送信し、保存とLLM応答取得が成功してAIの応答メッセージが返却されること",
+            "sut": "ChatRouter.send_message",
+            "driver": "結合テスト (pytest)",
+            "stub": "LLMClient.invoke_chat は固定の応答を返すようにスタブ化する"
+          },
+          {
+            "viewpoint": "異常系: メッセージが空または文字数制限を超過している場合にValidationError (400) が発生すること",
+            "sut": "ChatRouter.send_message",
+            "driver": "単体テスト (pytest)",
+            "stub": "スタブ不要 ── バリデーション層の検証"
+          },
+          {
+            "viewpoint": "異常系: 認証トークンが無効な場合にUnauthorizedError (401) が発生すること",
+            "sut": "ChatService.process_message",
+            "driver": "単体テスト (pytest)",
+            "stub": "auth.py の verify_token を無効なトークンを検知するようにスタブ化する"
+          }
+        ],
+        "gwt": [
+          "Given 有効なプロジェクトIDと認証トークンとチャットメッセージがある When ChatRouter.send_message を呼び出す Then AIからのチャット応答メッセージが返却される",
+          "Given 空のメッセージまたは制限を超えるメッセージがある When ChatRouter.send_message を呼び出す Then ValidationError が発生する",
+          "Given 無効な認証トークンがある When ChatService.process_message を呼び出す Then UnauthorizedError が発生する"
+        ],
+        "verify": [
+          "pytest を実行してチャット送信機能に関するすべての単体テストおよび結合テストが成功することを確認する。"
+        ],
+        "findings": [
+          {
+            "level": "critical",
+            "target": "段階6 ChatRouter.send_message",
+            "message": "チャットメッセージの文字数制限の具体的な上限値が設計に定義されていない。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "critical",
+            "target": "段階6 ChatService.process_message",
+            "message": "認証トークンの有効期限の具体的な仕様や検証方法の詳細が設計に定義されていない。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "major",
+            "target": "段階6 LLMClient.invoke_chat",
+            "message": "Gemini Flash-Liteのプロンプト構成やLangGraphの具体的なステート管理の仕様が設計に定義されていない。",
+            "fix_stage": 6,
+            "fix_document": null
+          }
+        ]
+      },
+      {
+        "unit_id": "M-04-T01",
+        "unit_key": "U-008",
+        "title": "構造化サマリ承認と文書生成開始機能の実装",
+        "purpose": "利用者が構造化サマリを承認し、Gemini Flash-Liteを用いた4種文書の順次生成および自己診断をバックグラウンドで非同期開始できるようにする。",
+        "files": [
+          {
+            "path": "app/repositories/summary.py",
+            "kind": "module",
+            "responsibility": "構造化サマリを承認状態に更新する処理を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/repositories/document.py",
+            "kind": "module",
+            "responsibility": "生成された4種文書をデータベースに保存する処理を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/auth.py",
+            "kind": "module",
+            "responsibility": "認証トークンを検証する処理を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/llm/client.py",
+            "kind": "module",
+            "responsibility": "Gemini Flash-Liteを使用して4種文書の順次生成と自己診断を実行する処理を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/summary.py",
+            "kind": "module",
+            "responsibility": "構造化サマリの承認、バックグラウンドでの文書生成および自己診断を制御するビジネスロジックを提供する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/api/routes/summary.py",
+            "kind": "module",
+            "responsibility": "構造化サマリ承認と文書生成開始のAPIエンドポイントを提供する。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "リポジトリ層での更新処理とサービス層におけるトランザクション境界の管理を確立する。",
+          "依存関係の順序として、リポジトリ層および共通の認証サービスを先に実装し、その後にLLMクライアント、サービス層、最後にAPIルーター層を実装する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常系: 構造化サマリが承認され、バックグラウンドでの文書生成が開始されること",
+            "sut": "approve_summary",
+            "driver": "pytestによる結合テスト",
+            "stub": "app/llm/client.py ── Gemini APIの実際の呼び出しをモックに差し替える"
+          },
+          {
+            "viewpoint": "異常系: 無効な認証トークンの場合に401エラーが返却されること",
+            "sut": "approve_summary",
+            "driver": "pytestによる結合テスト",
+            "stub": "スタブ不要 ── 実際の認証サービスを利用"
+          },
+          {
+            "viewpoint": "異常系: 対象のプロジェクトまたは構造化サマリが存在しない場合に404エラーが返却されること",
+            "sut": "approve_summary",
+            "driver": "pytestによる結合テスト",
+            "stub": "スタブ不要 ── 実際のデータベースを利用"
+          }
+        ],
+        "gwt": [
+          "Given 有効な認証トークンと存在するプロジェクトおよび構造化サマリが存在する When 構造化サマリ承認APIを呼び出す Then 構造化サマリが承認状態に更新され文書生成が開始されること"
+        ],
+        "verify": [
+          "pytestを実行し、構造化サマリ承認と文書生成開始のテストが成功することを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-04-T02",
+        "unit_key": "U-009",
+        "title": "生成文書および版一覧取得機能の実装",
+        "purpose": "プロジェクトに紐づく生成文書および版履歴の一覧をクライアントへ返却できるようにする。",
+        "files": [
+          {
+            "path": "app/repositories/document.py",
+            "kind": "module",
+            "responsibility": "PostgreSQLからプロジェクトに紐づく4種文書と直近3件の版履歴を取得する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/auth.py",
+            "kind": "module",
+            "responsibility": "認証トークンを検証し、ユーザーを特定する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/document.py",
+            "kind": "module",
+            "responsibility": "生成文書と版の履歴の取得をサービスに制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/api/routes/documents.py",
+            "kind": "module",
+            "responsibility": "生成文書および版一覧取得のAPIエンドポイントを提供する。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "依存される順にリポジトリ層、サービス層、ルーター層の順で実装を作成または変更する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常系: 指定したプロジェクトIDの生成文書および版一覧が取得できること",
+            "sut": "get_documents",
+            "driver": "pytestによるAPI結合テスト",
+            "stub": "スタブ不要 ── 実際のデータベースおよび認証モジュールを使用する"
+          },
+          {
+            "viewpoint": "異常系: 無効な認証トークンを指定した場合に401エラーになること",
+            "sut": "get_documents",
+            "driver": "pytestによるAPI結合テスト",
+            "stub": "スタブ不要"
+          },
+          {
+            "viewpoint": "異常系: 存在しないプロジェクトIDを指定した場合に404エラーになること",
+            "sut": "get_documents",
+            "driver": "pytestによるAPI結合テスト",
+            "stub": "スタブ不要"
+          }
+        ],
+        "gwt": [
+          "Given: 有効な認証トークンと存在するプロジェクトIDがある When: GET /api/v1/projects/{id}/documents を呼び出す Then: ステータスコード 200 と生成文書および版履歴データが返却される",
+          "Given: 無効な認証トークンがある When: GET /api/v1/projects/{id}/documents を呼び出す Then: ステータスコード 401 が返却される",
+          "Given: 存在しないプロジェクトIDがある When: GET /api/v1/projects/{id}/documents を呼び出す Then: ステータスコード 404 が返却される"
+        ],
+        "verify": [
+          "pytestを実行し、生成文書および版一覧取得機能に関連するテストがすべて成功することを確認する。"
+        ],
+        "findings": []
+      }
+    ]
+  },
+  "updated_at": "2026-10-12T08:08:10.014198Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "STUB_OUTSIDE_SEQUENCE",
+      "message": "M-03-T01 のテスト観点3のスタブ(app/api/routes/auth.py, app/cache/token.py, app/services/auth.py)は、F-05 の手順で SUT(app/services/chat.py)から呼ばれていません(手順に無い依存です。手順に足すか、観点のスタブを直します)。",
+      "target": "F-05",
+      "level": "minor",
+      "fix_stage": 5,
+      "unit": "M-03-T01",
+      "fix_document": null
+    }
+  ],
+  "dfd_accesses": [],
+  "plan": {
+    "crosscutting": [
+      {
+        "topic": "例外と HTTP",
+        "policy": "発生した例外は app/main.py の共通例外ハンドラーで捕捉し、ValidationError は HTTP 400、AuthenticationError や UnauthorizedError は HTTP 401、ConflictError は HTTP 409、NotFoundError は HTTP 404、その他の予期せぬエラーは HTTP 500 としてクライアントへ返却する。AIの応答失敗時および文書生成失敗時には適切なエラーメッセージを含めたレスポンスを返す。",
+        "modules": [
+          "app/main.py",
+          "app/api/routes/auth.py",
+          "app/api/routes/projects.py",
+          "app/api/routes/chat.py",
+          "app/api/routes/documents.py",
+          "app/api/routes/summary.py"
+        ],
+        "req_ids": [
+          "FR-009",
+          "FR-010"
+        ]
+      },
+      {
+        "topic": "認証",
+        "policy": "ユーザー登録およびログインにより発行された認証トークンは Redis および tokens テーブルで管理する。各APIリクエストのヘッダーに含まれるトークンは app/services/auth.py の verify_token により検証し、有効期限(要決定)が切れている場合は 401 Unauthorized エラーとする。",
+        "modules": [
+          "app/api/routes/auth.py",
+          "app/services/auth.py",
+          "app/cache/token.py",
+          "app/repositories/user.py"
+        ],
+        "req_ids": [
+          "FR-001"
+        ]
+      },
+      {
+        "topic": "トランザクション",
+        "policy": "データベースへの書き込み伴う処理(ユーザー登録、ログインでのトークン発行、プロジェクト作成、チャットの保存、参考資料の保存、構造化サマリの承認と文書保存など)は、各リポジトリ層およびサービス層でトランザクション境界を厳守し、失敗時はロールバックしてデータの整合性を保つ。",
+        "modules": [
+          "app/repositories/user.py",
+          "app/repositories/project.py",
+          "app/repositories/chat.py",
+          "app/repositories/document.py",
+          "app/repositories/summary.py"
+        ],
+        "req_ids": []
+      },
+      {
+        "topic": "ログ",
+        "policy": "セキュリティ要件に基づき、チャットの入力内容はログに残さず、ユーザーの操作記録やシステムの稼働状況などの監査ログのみを保存する。エラー発生時はトレースバックを含む詳細情報をログに出力し、死活監視や追跡に活用する。",
+        "modules": [
+          "app/main.py",
+          "app/services/chat.py"
+        ],
+        "req_ids": [
+          "NFR-004",
+          "NFR-007"
+        ]
+      },
+      {
+        "topic": "レート制限",
+        "policy": "ログインの総当たり、登録の大量作成、チャットや生成の回数上限を設けて不正利用を防ぐため、Redisを利用してIPアドレスまたはユーザー単位のリクエスト頻度を制限する。上限を超過した場合は HTTP 429 Too Many Requests を返却する。",
+        "modules": [
+          "app/cache/token.py",
+          "app/main.py"
+        ],
+        "req_ids": [
+          "NFR-008"
+        ]
+      },
+      {
+        "topic": "外部サービスの呼び出し",
+        "policy": "Gemini Flash-Liteの呼び出しは app/llm/client.py にカプセル化し、APIキーを用いた認証を行う。上限超過やタイムアウトなどのエラーが発生した場合は、理由をメッセージに含めて例外として送出し、安全に再送や再生成を促せるようにする。",
+        "modules": [
+          "app/llm/client.py",
+          "app/services/chat.py",
+          "app/services/summary.py"
+        ],
+        "req_ids": [
+          "FR-009",
+          "CON-004"
+        ]
+      }
+    ],
+    "milestones": [
+      {
+        "name": "環境構築と認証・土台の実装",
+        "goal": "開発環境が整い、ユーザー登録およびログイン機能が安全に動作する",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-001",
+            "kind": "base",
+            "title": "Docker環境、データベース接続、共通例外ハンドラー、およびRedisキャッシュの土台を構築する",
+            "function_ids": [],
+            "depends_on": [],
+            "modules": [
+              "app/main.py",
+              "app/cache/token.py"
+            ],
+            "config_files": [
+              "Dockerfile",
+              "docker-compose.yml"
+            ],
+            "req_ids": []
+          },
+          {
+            "key": "U-002",
+            "kind": "feature",
+            "title": "ユーザー登録機能の実装",
+            "function_ids": [
+              "F-01"
+            ],
+            "depends_on": [
+              "M-01-T01"
+            ],
+            "modules": [
+              "app/api/routes/auth.py",
+              "app/services/auth.py",
+              "app/repositories/user.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          },
+          {
+            "key": "U-003",
+            "kind": "feature",
+            "title": "ログイン機能の実装",
+            "function_ids": [
+              "F-02"
+            ],
+            "depends_on": [
+              "M-01-T02"
+            ],
+            "modules": [
+              "app/api/routes/auth.py",
+              "app/services/auth.py",
+              "app/repositories/user.py",
+              "app/cache/token.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          }
+        ]
+      },
+      {
+        "name": "プロジェクト管理と参考資料アップロードの実装",
+        "goal": "プロジェクトの作成・一覧取得、および参考資料のテキスト化と保持ができるようになる",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-004",
+            "kind": "feature",
+            "title": "プロジェクト一覧取得機能の実装",
+            "function_ids": [
+              "F-03"
+            ],
+            "depends_on": [
+              "M-01-T03"
+            ],
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/services/auth.py",
+              "app/repositories/project.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          },
+          {
+            "key": "U-005",
+            "kind": "feature",
+            "title": "プロジェクト作成機能の実装",
+            "function_ids": [
+              "F-04"
+            ],
+            "depends_on": [
+              "M-02-T01"
+            ],
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/services/auth.py",
+              "app/repositories/project.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          },
+          {
+            "key": "U-006",
+            "kind": "feature",
+            "title": "参考資料アップロード機能の実装",
+            "function_ids": [
+              "F-06"
+            ],
+            "depends_on": [
+              "M-02-T02"
+            ],
+            "modules": [
+              "app/api/routes/documents.py",
+              "app/services/auth.py",
+              "app/services/document.py",
+              "app/repositories/document.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          }
+        ]
+      },
+      {
+        "name": "チャットヒアリング機能の実装",
+        "goal": "AIとのチャットによるヒアリングおよび文字数・空送信のバリデーションが機能する",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-007",
+            "kind": "feature",
+            "title": "チャットメッセージ送信とLLM連携機能の実装",
+            "function_ids": [
+              "F-05"
+            ],
+            "depends_on": [
+              "M-02-T02"
+            ],
+            "modules": [
+              "app/api/routes/chat.py",
+              "app/services/chat.py",
+              "app/llm/client.py",
+              "app/repositories/chat.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          }
+        ]
+      },
+      {
+        "name": "構造化サマリ承認と文書生成・版管理の実装",
+        "goal": "構造化サマリの承認から4種文書の順次生成・自己診断を行い、版履歴を取得・プレビューできるようになる",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-008",
+            "kind": "feature",
+            "title": "構造化サマリ承認と文書生成開始機能の実装",
+            "function_ids": [
+              "F-07"
+            ],
+            "depends_on": [
+              "M-03-T01"
+            ],
+            "modules": [
+              "app/api/routes/summary.py",
+              "app/services/summary.py",
+              "app/services/auth.py",
+              "app/repositories/summary.py",
+              "app/repositories/document.py",
+              "app/llm/client.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          },
+          {
+            "key": "U-009",
+            "kind": "feature",
+            "title": "生成文書および版一覧取得機能の実装",
+            "function_ids": [
+              "F-08"
+            ],
+            "depends_on": [
+              "M-04-T01"
+            ],
+            "modules": [
+              "app/api/routes/documents.py",
+              "app/services/auth.py",
+              "app/services/document.py",
+              "app/repositories/document.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          }
+        ]
+      }
+    ],
+    "environment": "開発環境としてPython 3.13、FastAPI、Next.js(App Router) + Tamaguiを使用し、データベースにはPostgreSQL、キャッシュ・レート制限用にRedisを利用する。コンテナ化にはDocker Composeを用い、GitHub ActionsによるmainブランチへのプッシュでVPSへの自動デプロイを行う構成とする。自動テストはpytestを用いてバックエンドの主要APIおよびサービスロジックの単体テスト・結合テストを実施する。",
+    "risks": [
+      {
+        "risk": "Gemini Flash-Lite(無料枠)のレートリミットまたは利用上限超過によるチャット・文書生成の失敗",
+        "mitigation": "エラーハンドリングを厳重に行い、上限超過時は適切なエラーメッセージをクライアントへ返却して再送を促す。納期が厳しい場合の代替手段として、一時的なモック応答モードへの切り替えを検討する。"
+      },
+      {
+        "risk": "LLMによる4種文書の順次生成および自己診断の処理時間が長引き、タイムアウトが発生するリスク",
+        "mitigation": "同期的なAPIリクエストの代わりにバックグラウンド非同期処理(BackgroundTasks)を用いて処理を受け付け、進捗や結果は別APIで取得する設計とする。"
+      },
+      {
+        "risk": "PDFやマークダウンなどの参考資料のテキスト化におけるパースエラーや想定外のファイル形式による不具合",
+        "mitigation": "対応するファイル形式を明確に制限し、パース失敗時はValidationError(HTTP 400)を返却する。複雑なフォーマットの解析機能はMVPのスコープから外してプレーンテキストとマークダウンを優先する。"
+      }
+    ],
+    "next_unit_seq": 10
+  },
+  "unit_req_ids": {
+    "M-01-T01": [],
+    "M-01-T02": [
+      "FR-001"
+    ],
+    "M-01-T03": [
+      "FR-001"
+    ],
+    "M-02-T01": [
+      "FR-002"
+    ],
+    "M-02-T02": [
+      "FR-002"
+    ],
+    "M-02-T03": [
+      "FR-003"
+    ],
+    "M-03-T01": [
+      "FR-002",
+      "FR-009",
+      "FR-010"
+    ],
+    "M-04-T01": [
+      "FR-004",
+      "FR-005",
+      "FR-006"
+    ],
+    "M-04-T02": [
+      "FR-007",
+      "FR-008"
+    ]
+  },
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

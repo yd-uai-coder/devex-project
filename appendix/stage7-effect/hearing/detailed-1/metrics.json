@@ -1,0 +1,399 @@
+{
+  "points": {
+    "scale": "public",
+    "legacy": false,
+    "stale": false,
+    "is_sufficient": true,
+    "points": [
+      {
+        "key": "scale",
+        "kind": "function",
+        "label": "規模",
+        "question": "使うのは自分(と数人)だけですか。社内の人ですか。誰でも登録できるサービスですか",
+        "required": true,
+        "status": "adopted",
+        "summary": "誰でも登録できるサービスとして展開する",
+        "evidence": [
+          {
+            "message_id": "f2911371-6d22-4aa3-82ff-9cb938404659",
+            "label": "発言1"
+          }
+        ]
+      },
+      {
+        "key": "purpose",
+        "kind": "function",
+        "label": "目的・課題",
+        "question": "これが無いと、今は何に困っていますか",
+        "required": true,
+        "status": "decided",
+        "summary": "システム開発の初期フェーズにおけるドキュメント作成の工数と、属人化による質のばらつきを減らしたい",
+        "evidence": [
+          {
+            "message_id": "5cdfe5b4-cd73-4c4f-aa12-5d53fa8160d4",
+            "label": "発言2"
+          }
+        ]
+      },
+      {
+        "key": "users",
+        "kind": "function",
+        "label": "利用者と使う場面",
+        "question": "誰が、どんなときに開きますか",
+        "required": true,
+        "status": "decided",
+        "summary": "SE・ITコンサルタント・PMや個人開発者・スタートアップの創業者が新規プロジェクト立ち上げやクライアントヒアリング時に使う",
+        "evidence": [
+          {
+            "message_id": "532cd86a-4719-4a3a-bd44-35a65dbd3a08",
+            "label": "発言3"
+          }
+        ]
+      },
+      {
+        "key": "daily_flow",
+        "kind": "function",
+        "label": "利用者の1日の流れ",
+        "question": "使う人の1日のどこで、どのくらいの時間使いますか",
+        "required": true,
+        "status": "decided",
+        "summary": "クライアントとの打ち合わせの後に30分ほどでヒアリングを済ませ、その日のうちに生成されたドラフトを見直して共有する",
+        "evidence": [
+          {
+            "message_id": "fe2e3226-3465-4afa-a747-07be8921c20d",
+            "label": "発言4"
+          }
+        ]
+      },
+      {
+        "key": "core",
+        "kind": "function",
+        "label": "コア機能",
+        "question": "最初の版で、これだけはできてほしいことは何ですか",
+        "required": true,
+        "status": "decided",
+        "summary": "チャットヒアリングによる4種の設計書自動生成、不足点の3段階診断、プレビュー・コピー・ダウンロード、参考資料読み込み(最大5件)、PostgreSQLへのデータ保存",
+        "evidence": [
+          {
+            "message_id": "45116d3c-8c9b-4b01-b2ae-eab452245bd1",
+            "label": "初期入力"
+          },
+          {
+            "message_id": "a9fa334e-9549-4341-a409-494fe6102fc7",
+            "label": "発言19"
+          }
+        ]
+      },
+      {
+        "key": "scope",
+        "kind": "function",
+        "label": "MVP の範囲",
+        "question": "最初の版で作らないと決めているものはありますか",
+        "required": true,
+        "status": "decided",
+        "summary": "最初の版ではコードの自動生成、Jira・Notion連携、マルチテナントの権限管理、音声入力、複数人の同時編集を作らない",
+        "evidence": [
+          {
+            "message_id": "686737c4-d305-4c63-b45c-755a49d26c01",
+            "label": "発言5"
+          }
+        ]
+      },
+      {
+        "key": "exceptions",
+        "kind": "function",
+        "label": "例外の場面",
+        "question": "入力を間違えた・取り消したい・途中で失敗した・権限が無い、のときにどうなってほしいですか",
+        "required": true,
+        "status": "decided",
+        "summary": "AIの応答が途中で失敗した場合は理由を出して送ったメッセージを保存せずに再送を促し、生成失敗時は再生成できるようにする。チャットは数千文字までで空送信は不可とする",
+        "evidence": [
+          {
+            "message_id": "a85fa257-57c7-4444-bdfe-aa27456dd938",
+            "label": "発言6"
+          }
+        ]
+      },
+      {
+        "key": "future",
+        "kind": "function",
+        "label": "将来の拡張",
+        "question": "後で足したいと思っているものはありますか",
+        "required": true,
+        "status": "decided",
+        "summary": "テンプレートの選択、版の履歴の画面、設計図(UML)を後で追加する",
+        "evidence": [
+          {
+            "message_id": "9a4c9004-6d8f-40c3-9b1f-ba56dcb842e7",
+            "label": "発言7"
+          }
+        ]
+      },
+      {
+        "key": "tech",
+        "kind": "function",
+        "label": "技術スタック・環境の制約",
+        "question": "使いたい(使わなければならない)言語・フレームワーク・置き場所はありますか",
+        "required": true,
+        "status": "decided",
+        "summary": "フロントエンドは Next.js(App Router)+ Tamagui、バックエンドは FastAPI + LangChain・LangGraph(Python 3.13)、DB は PostgreSQL、Redis(レート制限・トークン失効)。VPS に Docker Compose と nginx で置き、GitHub Actions で main への push から自動デプロイする。LLM は Gemini Flash-Lite(無料枠)",
+        "evidence": [
+          {
+            "message_id": "ca36de92-0935-436e-9695-ad6bba8897ca",
+            "label": "発言8"
+          }
+        ]
+      },
+      {
+        "key": "schedule",
+        "kind": "function",
+        "label": "体制・期間",
+        "question": "何人で、いつまでに作りますか",
+        "required": false,
+        "status": "open",
+        "summary": "",
+        "evidence": []
+      },
+      {
+        "key": "availability",
+        "kind": "nonfunctional",
+        "label": "可用性",
+        "question": "夜中や休日に止まっていたら、どのくらいで困りますか",
+        "required": true,
+        "status": "decided",
+        "summary": "止まっても半日なら困らず、夜間の保守の停止はかまわない",
+        "evidence": [
+          {
+            "message_id": "d93fc818-7771-4aca-9c91-3b5d8c9f6978",
+            "label": "発言9"
+          }
+        ]
+      },
+      {
+        "key": "backup",
+        "kind": "nonfunctional",
+        "label": "可用性(データの保全)",
+        "question": "入れたデータが消えてしまったら、どのくらい前の状態まで戻せればよいですか",
+        "required": true,
+        "status": "decided",
+        "summary": "DBを毎日バックアップし7日分を残し、VPSの外にもコピーする",
+        "evidence": [
+          {
+            "message_id": "78f14faf-46ef-4856-91c4-2dbea24fd292",
+            "label": "発言10"
+          }
+        ]
+      },
+      {
+        "key": "performance",
+        "kind": "nonfunctional",
+        "label": "性能・拡張性",
+        "question": "同時に何人くらいが使いますか。待てるのは何秒までですか",
+        "required": true,
+        "status": "decided",
+        "summary": "同時に使うのは数人〜十数人で、チャットの最初の文字が数秒で出ればよく、4文書の生成は数分まで待てる",
+        "evidence": [
+          {
+            "message_id": "6559c838-9688-4d5d-a65f-2db5bf64b4c7",
+            "label": "発言11"
+          }
+        ]
+      },
+      {
+        "key": "operability",
+        "kind": "nonfunctional",
+        "label": "運用・保守性",
+        "question": "止まったことに、誰がどうやって気づけばよいですか",
+        "required": true,
+        "status": "adopted",
+        "summary": "エラーの追跡と死活監視はMVPの後で行う",
+        "evidence": [
+          {
+            "message_id": "00eade67-c271-41cb-a61a-81b1bddaf96d",
+            "label": "発言12"
+          }
+        ]
+      },
+      {
+        "key": "data_retention",
+        "kind": "nonfunctional",
+        "label": "運用・保守性(データの保持・削除)",
+        "question": "作ったデータやアカウントを、利用者が消せる必要はありますか。いつまで残しますか",
+        "required": true,
+        "status": "decided",
+        "summary": "プロジェクトの削除やアカウント退会機能はMVPでは不要とする",
+        "evidence": [
+          {
+            "message_id": "d00b3510-af07-4f33-b03d-dcf97b64d36b",
+            "label": "発言13"
+          }
+        ]
+      },
+      {
+        "key": "migration",
+        "kind": "nonfunctional",
+        "label": "移行性",
+        "question": "今使っている仕組みやデータから、移すものはありますか",
+        "required": true,
+        "status": "adopted",
+        "summary": "移すものは無い(すべて新しく始める)",
+        "evidence": [
+          {
+            "message_id": "7cb37f0e-faf3-4e70-8b7e-44a0ab262507",
+            "label": "発言14"
+          }
+        ]
+      },
+      {
+        "key": "security",
+        "kind": "nonfunctional",
+        "label": "セキュリティ",
+        "question": "入れたデータを、誰に見られたら困りますか。ログインはどうしますか",
+        "required": true,
+        "status": "decided",
+        "summary": "本人以外が他人のプロジェクトを見られないようにし、メールアドレスとパスワードによるJWT認証(アクセス30分・リフレッシュ14日、リフレッシュはHttpOnly Cookie)を用いる",
+        "evidence": [
+          {
+            "message_id": "dd76705a-05ad-4a75-8bdd-7719913adbb9",
+            "label": "発言15"
+          }
+        ]
+      },
+      {
+        "key": "logging",
+        "kind": "nonfunctional",
+        "label": "セキュリティ(ログ)",
+        "question": "動きの記録(ログ)に、入力した内容を残してよいですか",
+        "required": true,
+        "status": "adopted",
+        "summary": "機密情報を避けてシステムのエラーや動作履歴だけを残す",
+        "evidence": [
+          {
+            "message_id": "7c89bdec-1e9b-4d09-8e51-1c3ad4b76c77",
+            "label": "発言16"
+          }
+        ]
+      },
+      {
+        "key": "abuse",
+        "kind": "nonfunctional",
+        "label": "セキュリティ(不正利用)",
+        "question": "なりすましや、機械的な大量の登録・利用を防ぐ必要はありますか",
+        "required": true,
+        "status": "decided",
+        "summary": "ログインの総当たり、登録の大量作成、チャットと生成の回数上限を設けて不正利用を防ぐ",
+        "evidence": [
+          {
+            "message_id": "402fe9aa-061b-40b9-acc2-9b1591be774f",
+            "label": "発言17"
+          }
+        ]
+      },
+      {
+        "key": "environment",
+        "kind": "nonfunctional",
+        "label": "システム環境・エコロジー",
+        "question": "どの端末・ブラウザで使いますか",
+        "required": true,
+        "status": "decided",
+        "summary": "PCの最新のChrome・Edge・Firefox・Safariで使い、スマホは読めれば十分とする",
+        "evidence": [
+          {
+            "message_id": "2265368f-f470-4981-9615-6b5be9a8ad48",
+            "label": "発言18"
+          }
+        ]
+      }
+    ]
+  },
+  "documents": {
+    "requirements": {
+      "version": 2,
+      "requirements": {
+        "counts": {
+          "user": 21,
+          "adopted": 3,
+          "assumed": 0
+        },
+        "assumed": [],
+        "issues": []
+      },
+      "external_design": null
+    },
+    "external_design": {
+      "version": 2,
+      "requirements": null,
+      "external_design": {
+        "counts": {
+          "screens": 4,
+          "apis": 6,
+          "integrations": 1
+        },
+        "issues": [
+          {
+            "level": "major",
+            "code": "API_BODY_MISSING",
+            "message": "本文の欄が空の API があります: POST /api/v1/projects/{id}/generate(本文の要らない API は「なし」と書いてください)",
+            "targets": [
+              "POST /api/v1/projects/{id}/generate"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "stages": {
+    "1": {
+      "state": "outdated",
+      "issues": {
+        "warning:MISSING_API": 1
+      }
+    },
+    "2": {
+      "state": "outdated",
+      "issues": {
+        "error:UNKNOWN_DFD_GROUP": 5,
+        "error:UNKNOWN_FUNCTION": 7
+      }
+    },
+    "3": {
+      "state": "outdated",
+      "issues": {
+        "error:UNKNOWN_FUNCTION": 8
+      }
+    },
+    "4": {
+      "state": "outdated",
+      "issues": {
+        "error:UNKNOWN_FUNCTION": 21
+      }
+    },
+    "5": {
+      "state": "outdated",
+      "issues": {
+        "error:UNKNOWN_FUNCTION": 7,
+        "error:UNKNOWN_CALLEE": 31
+      }
+    },
+    "6": {
+      "state": "outdated",
+      "issues": {
+        "error:UNCALLED_LOGIC": 5
+      }
+    },
+    "7": {
+      "state": "outdated",
+      "issues": {
+        "error:UNKNOWN_MODULE": 23,
+        "error:UNKNOWN_FUNCTION": 7,
+        "warning:NO_MODULES": 2
+      }
+    },
+    "8": {
+      "state": "outdated",
+      "issues": {
+        "error:UNIT_MISMATCH": 8
+      }
+    }
+  }
+}

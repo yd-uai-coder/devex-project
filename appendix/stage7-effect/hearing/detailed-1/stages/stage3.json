@@ -1,0 +1,96 @@
+{
+  "stage": 3,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "cells": [
+      {
+        "ops": "C",
+        "draft": false,
+        "table": "users",
+        "function_id": "F-01"
+      },
+      {
+        "ops": "R",
+        "draft": false,
+        "table": "users",
+        "function_id": "F-02"
+      },
+      {
+        "ops": "C",
+        "draft": false,
+        "table": "projects",
+        "function_id": "F-03"
+      },
+      {
+        "ops": "C",
+        "draft": false,
+        "table": "reference_files",
+        "function_id": "F-03"
+      },
+      {
+        "ops": "CR",
+        "draft": false,
+        "table": "chat_messages",
+        "function_id": "F-04"
+      },
+      {
+        "ops": "CRU",
+        "draft": false,
+        "table": "projects",
+        "function_id": "F-05"
+      },
+      {
+        "ops": "R",
+        "draft": false,
+        "table": "chat_messages",
+        "function_id": "F-05"
+      },
+      {
+        "ops": "CR",
+        "draft": false,
+        "table": "documents",
+        "function_id": "F-05"
+      }
+    ]
+  },
+  "updated_at": "2026-10-12T07:22:35.748765Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [
+    {
+      "function_id": "F-01",
+      "table": "users",
+      "kind": "write"
+    },
+    {
+      "function_id": "F-02",
+      "table": "users",
+      "kind": "read"
+    },
+    {
+      "function_id": "F-03",
+      "table": "projects",
+      "kind": "write"
+    },
+    {
+      "function_id": "F-05",
+      "table": "projects",
+      "kind": "read"
+    },
+    {
+      "function_id": "F-05",
+      "table": "projects",
+      "kind": "write"
+    }
+  ],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

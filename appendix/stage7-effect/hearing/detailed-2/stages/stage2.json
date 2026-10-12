@@ -1,0 +1,58 @@
+{
+  "stage": 2,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "summaries": [
+      {
+        "input": "アカウント登録情報",
+        "output": "登録完了のメッセージ",
+        "process": "入力情報の検証を行い、アカウントを新規登録してPostgreSQLに保存する。",
+        "function_id": "F-01"
+      },
+      {
+        "input": "ログイン情報",
+        "output": "JWTを含むアクセスの結果",
+        "process": "認証を行ってJWTを取得し、HttpOnly Cookieを設定する。",
+        "function_id": "F-02"
+      },
+      {
+        "input": "チャットメッセージと参考資料",
+        "output": "AI応答の結果",
+        "process": "入力されたメッセージと参考資料を受け取り、Gemini Flash-Lite APIを利用してAI応答を生成する。",
+        "function_id": "F-03"
+      },
+      {
+        "input": "チャット履歴およびヒアリング結果",
+        "output": "4種のMarkdown設計書と不足点自己診断結果",
+        "process": "要件定義・外部設計・内部設計・実装計画の4種のMarkdown設計書を自動生成し、不足点の自己診断を実行する。",
+        "function_id": "F-04"
+      },
+      {
+        "input": "選択されたタブ",
+        "output": "プレビュー画面",
+        "process": "選択されたタブの状態を判定し、対応する4種のMarkdown設計書と不足点自己診断結果を表示する。",
+        "function_id": "F-05"
+      }
+    ],
+    "dfd_groups": [
+      "auth",
+      "chats",
+      "documents",
+      "設計書プレビュー機能"
+    ]
+  },
+  "updated_at": "2026-10-12T08:03:52.517782Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

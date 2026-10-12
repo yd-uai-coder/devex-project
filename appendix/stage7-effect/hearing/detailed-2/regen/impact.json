@@ -1,0 +1,242 @@
+{
+  "stages": [
+    {
+      "stage": 1,
+      "changes": [
+        {
+          "source": "doc:requirements",
+          "key": "req:FR-006",
+          "change": "content",
+          "stage": 0,
+          "label": "FR-006 参考資料(txt/md/pdf、最大5件)を初期入力で読み込める",
+          "before": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"参考資料(txt/md/pdf、最大3件)を初期入力で読み込める\"}",
+          "after": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"参考資料(txt/md/pdf、最大5件)を初期入力で読み込める\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:external_design",
+          "key": "screen:SCR-003",
+          "change": "content",
+          "stage": 0,
+          "label": "SCR-003 AI対話・ヒアリング画面",
+          "before": "{\"name\": \"AI対話・ヒアリング画面\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-006\", \"FR-008\", \"FR-010\"], \"role\": \"AIと対話しながらヒアリングを進め、参考資料をアップロードする画面\", \"ui_spec\": \"- 入力項目: チャットメッセージ入力欄（数千文字の文字数制限あり・空送信防止）、参考資料アップロード（txt/md/pdf、最大3件）\\n- 表示項目: チャット履歴一覧、AIからの応答メッセージ、エラー理由表示（エラー時）\\n- 操作ボタン: メッセージ送信ボタン、ファイル添付ボタン、設計書生成開始ボタン、再送ボタン\\n- アクション: メッセージ送信時にバリデーションチェックを行いAPIを呼び出す。AI応答失敗時は再送を促すUIを表示する\"}",
+          "after": "{\"name\": \"AI対話・ヒアリング画面\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-006\", \"FR-008\", \"FR-010\"], \"role\": \"AIと対話しながらヒアリングを進め、参考資料をアップロードする画面\", \"ui_spec\": \"- 入力項目: チャットメッセージ入力欄（数千文字の文字数制限あり・空送信防止）、参考資料アップロード（txt/md/pdf、最大5件）\\n- 表示項目: チャット履歴一覧、AIからの応答メッセージ、エラー理由表示（エラー時）\\n- 操作ボタン: メッセージ送信ボタン、ファイル添付ボタン、設計書生成開始ボタン、再送ボタン\\n- アクション: メッセージ送信時にバリデーションチェックを行いAPIを呼び出す。AI応答失敗時は再送を促すUIを表示する\"}",
+          "new_key": null,
+          "pending": false
+        }
+      ],
+      "marks": [
+        {
+          "key": "fn:F-03",
+          "label": "F-03 チャットメッセージ送信とAI応答",
+          "stage": 1,
+          "path": [
+            "screen:SCR-003",
+            "fn:F-03"
+          ],
+          "reason": "この画面に関わる",
+          "sources": [
+            "doc:requirements",
+            "doc:external_design"
+          ],
+          "reviewed": false,
+          "pending": false
+        }
+      ],
+      "open": 1,
+      "reviewed": 0
+    },
+    {
+      "stage": 2,
+      "changes": [],
+      "marks": [],
+      "open": 0,
+      "reviewed": 0
+    },
+    {
+      "stage": 3,
+      "changes": [],
+      "marks": [],
+      "open": 0,
+      "reviewed": 0
+    },
+    {
+      "stage": 4,
+      "changes": [],
+      "marks": [],
+      "open": 0,
+      "reviewed": 0
+    },
+    {
+      "stage": 5,
+      "changes": [
+        {
+          "source": "doc:requirements",
+          "key": "req:FR-006",
+          "change": "content",
+          "stage": 0,
+          "label": "FR-006 参考資料(txt/md/pdf、最大5件)を初期入力で読み込める",
+          "before": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"参考資料(txt/md/pdf、最大3件)を初期入力で読み込める\"}",
+          "after": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"参考資料(txt/md/pdf、最大5件)を初期入力で読み込める\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:external_design",
+          "key": "screen:SCR-003",
+          "change": "content",
+          "stage": 0,
+          "label": "SCR-003 AI対話・ヒアリング画面",
+          "before": "{\"name\": \"AI対話・ヒアリング画面\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-006\", \"FR-008\", \"FR-010\"], \"role\": \"AIと対話しながらヒアリングを進め、参考資料をアップロードする画面\", \"ui_spec\": \"- 入力項目: チャットメッセージ入力欄（数千文字の文字数制限あり・空送信防止）、参考資料アップロード（txt/md/pdf、最大3件）\\n- 表示項目: チャット履歴一覧、AIからの応答メッセージ、エラー理由表示（エラー時）\\n- 操作ボタン: メッセージ送信ボタン、ファイル添付ボタン、設計書生成開始ボタン、再送ボタン\\n- アクション: メッセージ送信時にバリデーションチェックを行いAPIを呼び出す。AI応答失敗時は再送を促すUIを表示する\"}",
+          "after": "{\"name\": \"AI対話・ヒアリング画面\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-006\", \"FR-008\", \"FR-010\"], \"role\": \"AIと対話しながらヒアリングを進め、参考資料をアップロードする画面\", \"ui_spec\": \"- 入力項目: チャットメッセージ入力欄（数千文字の文字数制限あり・空送信防止）、参考資料アップロード（txt/md/pdf、最大5件）\\n- 表示項目: チャット履歴一覧、AIからの応答メッセージ、エラー理由表示（エラー時）\\n- 操作ボタン: メッセージ送信ボタン、ファイル添付ボタン、設計書生成開始ボタン、再送ボタン\\n- アクション: メッセージ送信時にバリデーションチェックを行いAPIを呼び出す。AI応答失敗時は再送を促すUIを表示する\"}",
+          "new_key": null,
+          "pending": false
+        }
+      ],
+      "marks": [
+        {
+          "key": "proc:F-03",
+          "label": "F-03 の手順",
+          "stage": 5,
+          "path": [
+            "screen:SCR-003",
+            "fn:F-03",
+            "proc:F-03"
+          ],
+          "reason": "この処理に属する",
+          "sources": [
+            "doc:requirements",
+            "doc:external_design"
+          ],
+          "reviewed": false,
+          "pending": false
+        }
+      ],
+      "open": 1,
+      "reviewed": 0
+    },
+    {
+      "stage": 6,
+      "changes": [
+        {
+          "source": "doc:requirements",
+          "key": "req:FR-006",
+          "change": "content",
+          "stage": 0,
+          "label": "FR-006 参考資料(txt/md/pdf、最大5件)を初期入力で読み込める",
+          "before": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"参考資料(txt/md/pdf、最大3件)を初期入力で読み込める\"}",
+          "after": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"参考資料(txt/md/pdf、最大5件)を初期入力で読み込める\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:external_design",
+          "key": "screen:SCR-003",
+          "change": "content",
+          "stage": 0,
+          "label": "SCR-003 AI対話・ヒアリング画面",
+          "before": "{\"name\": \"AI対話・ヒアリング画面\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-006\", \"FR-008\", \"FR-010\"], \"role\": \"AIと対話しながらヒアリングを進め、参考資料をアップロードする画面\", \"ui_spec\": \"- 入力項目: チャットメッセージ入力欄（数千文字の文字数制限あり・空送信防止）、参考資料アップロード（txt/md/pdf、最大3件）\\n- 表示項目: チャット履歴一覧、AIからの応答メッセージ、エラー理由表示（エラー時）\\n- 操作ボタン: メッセージ送信ボタン、ファイル添付ボタン、設計書生成開始ボタン、再送ボタン\\n- アクション: メッセージ送信時にバリデーションチェックを行いAPIを呼び出す。AI応答失敗時は再送を促すUIを表示する\"}",
+          "after": "{\"name\": \"AI対話・ヒアリング画面\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-006\", \"FR-008\", \"FR-010\"], \"role\": \"AIと対話しながらヒアリングを進め、参考資料をアップロードする画面\", \"ui_spec\": \"- 入力項目: チャットメッセージ入力欄（数千文字の文字数制限あり・空送信防止）、参考資料アップロード（txt/md/pdf、最大5件）\\n- 表示項目: チャット履歴一覧、AIからの応答メッセージ、エラー理由表示（エラー時）\\n- 操作ボタン: メッセージ送信ボタン、ファイル添付ボタン、設計書生成開始ボタン、再送ボタン\\n- アクション: メッセージ送信時にバリデーションチェックを行いAPIを呼び出す。AI応答失敗時は再送を促すUIを表示する\"}",
+          "new_key": null,
+          "pending": false
+        }
+      ],
+      "marks": [
+        {
+          "key": "logic:services/chat.py::ChatService.process_chat",
+          "label": "services/chat.py の ChatService.process_chat",
+          "stage": 6,
+          "path": [
+            "screen:SCR-003",
+            "fn:F-03",
+            "proc:F-03",
+            "logic:services/chat.py::ChatService.process_chat"
+          ],
+          "reason": "この手順から呼ばれる",
+          "sources": [
+            "doc:requirements",
+            "doc:external_design"
+          ],
+          "reviewed": false,
+          "pending": false
+        }
+      ],
+      "open": 1,
+      "reviewed": 0
+    },
+    {
+      "stage": 7,
+      "changes": [],
+      "marks": [],
+      "open": 0,
+      "reviewed": 0
+    },
+    {
+      "stage": 8,
+      "changes": [
+        {
+          "source": "doc:requirements",
+          "key": "req:FR-006",
+          "change": "content",
+          "stage": 0,
+          "label": "FR-006 参考資料(txt/md/pdf、最大5件)を初期入力で読み込める",
+          "before": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"参考資料(txt/md/pdf、最大3件)を初期入力で読み込める\"}",
+          "after": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"参考資料(txt/md/pdf、最大5件)を初期入力で読み込める\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:external_design",
+          "key": "screen:SCR-003",
+          "change": "content",
+          "stage": 0,
+          "label": "SCR-003 AI対話・ヒアリング画面",
+          "before": "{\"name\": \"AI対話・ヒアリング画面\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-006\", \"FR-008\", \"FR-010\"], \"role\": \"AIと対話しながらヒアリングを進め、参考資料をアップロードする画面\", \"ui_spec\": \"- 入力項目: チャットメッセージ入力欄（数千文字の文字数制限あり・空送信防止）、参考資料アップロード（txt/md/pdf、最大3件）\\n- 表示項目: チャット履歴一覧、AIからの応答メッセージ、エラー理由表示（エラー時）\\n- 操作ボタン: メッセージ送信ボタン、ファイル添付ボタン、設計書生成開始ボタン、再送ボタン\\n- アクション: メッセージ送信時にバリデーションチェックを行いAPIを呼び出す。AI応答失敗時は再送を促すUIを表示する\"}",
+          "after": "{\"name\": \"AI対話・ヒアリング画面\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-006\", \"FR-008\", \"FR-010\"], \"role\": \"AIと対話しながらヒアリングを進め、参考資料をアップロードする画面\", \"ui_spec\": \"- 入力項目: チャットメッセージ入力欄（数千文字の文字数制限あり・空送信防止）、参考資料アップロード（txt/md/pdf、最大5件）\\n- 表示項目: チャット履歴一覧、AIからの応答メッセージ、エラー理由表示（エラー時）\\n- 操作ボタン: メッセージ送信ボタン、ファイル添付ボタン、設計書生成開始ボタン、再送ボタン\\n- アクション: メッセージ送信時にバリデーションチェックを行いAPIを呼び出す。AI応答失敗時は再送を促すUIを表示する\"}",
+          "new_key": null,
+          "pending": false
+        }
+      ],
+      "marks": [
+        {
+          "key": "unit:U-004",
+          "label": "M-02-T01 の手順書",
+          "stage": 8,
+          "path": [
+            "screen:SCR-003",
+            "fn:F-03",
+            "proc:F-03",
+            "unit:U-004"
+          ],
+          "reason": "この設計を手順書で実装する",
+          "sources": [
+            "doc:requirements",
+            "doc:external_design"
+          ],
+          "reviewed": false,
+          "pending": false
+        }
+      ],
+      "open": 1,
+      "reviewed": 0
+    }
+  ],
+  "regeneration_targets": [
+    {
+      "stage": 5,
+      "key": "proc:F-03",
+      "label": "F-03 の手順"
+    },
+    {
+      "stage": 6,
+      "key": "logic:services/chat.py::ChatService.process_chat",
+      "label": "services/chat.py の ChatService.process_chat"
+    },
+    {
+      "stage": 8,
+      "key": "unit:U-004",
+      "label": "M-02-T01 の手順書"
+    }
+  ]
+}

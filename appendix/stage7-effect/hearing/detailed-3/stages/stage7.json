@@ -1,0 +1,314 @@
+{
+  "stage": 7,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "risks": [
+      {
+        "risk": "Gemini Flash-Lite(無料枠)のレートリミットまたは利用上限超過によるチャット・文書生成の失敗",
+        "mitigation": "エラーハンドリングを厳重に行い、上限超過時は適切なエラーメッセージをクライアントへ返却して再送を促す。納期が厳しい場合の代替手段として、一時的なモック応答モードへの切り替えを検討する。"
+      },
+      {
+        "risk": "LLMによる4種文書の順次生成および自己診断の処理時間が長引き、タイムアウトが発生するリスク",
+        "mitigation": "同期的なAPIリクエストの代わりにバックグラウンド非同期処理(BackgroundTasks)を用いて処理を受け付け、進捗や結果は別APIで取得する設計とする。"
+      },
+      {
+        "risk": "PDFやマークダウンなどの参考資料のテキスト化におけるパースエラーや想定外のファイル形式による不具合",
+        "mitigation": "対応するファイル形式を明確に制限し、パース失敗時はValidationError(HTTP 400)を返却する。複雑なフォーマットの解析機能はMVPのスコープから外してプレーンテキストとマークダウンを優先する。"
+      }
+    ],
+    "milestones": [
+      {
+        "goal": "開発環境が整い、ユーザー登録およびログイン機能が安全に動作する",
+        "name": "環境構築と認証・土台の実装",
+        "tasks": [
+          {
+            "key": "U-001",
+            "kind": "base",
+            "title": "Docker環境、データベース接続、共通例外ハンドラー、およびRedisキャッシュの土台を構築する",
+            "modules": [
+              "app/main.py",
+              "app/cache/token.py"
+            ],
+            "req_ids": [],
+            "depends_on": [],
+            "config_files": [
+              "Dockerfile",
+              "docker-compose.yml"
+            ],
+            "function_ids": []
+          },
+          {
+            "key": "U-002",
+            "kind": "feature",
+            "title": "ユーザー登録機能の実装",
+            "modules": [
+              "app/api/routes/auth.py",
+              "app/services/auth.py",
+              "app/repositories/user.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-01-T01"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-01"
+            ]
+          },
+          {
+            "key": "U-003",
+            "kind": "feature",
+            "title": "ログイン機能の実装",
+            "modules": [
+              "app/api/routes/auth.py",
+              "app/services/auth.py",
+              "app/repositories/user.py",
+              "app/cache/token.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-01-T02"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-02"
+            ]
+          }
+        ],
+        "priority": "Must"
+      },
+      {
+        "goal": "プロジェクトの作成・一覧取得、および参考資料のテキスト化と保持ができるようになる",
+        "name": "プロジェクト管理と参考資料アップロードの実装",
+        "tasks": [
+          {
+            "key": "U-004",
+            "kind": "feature",
+            "title": "プロジェクト一覧取得機能の実装",
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/services/auth.py",
+              "app/repositories/project.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-01-T03"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-03"
+            ]
+          },
+          {
+            "key": "U-005",
+            "kind": "feature",
+            "title": "プロジェクト作成機能の実装",
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/services/auth.py",
+              "app/repositories/project.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-02-T01"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-04"
+            ]
+          },
+          {
+            "key": "U-006",
+            "kind": "feature",
+            "title": "参考資料アップロード機能の実装",
+            "modules": [
+              "app/api/routes/documents.py",
+              "app/services/auth.py",
+              "app/services/document.py",
+              "app/repositories/document.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-02-T02"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-06"
+            ]
+          }
+        ],
+        "priority": "Must"
+      },
+      {
+        "goal": "AIとのチャットによるヒアリングおよび文字数・空送信のバリデーションが機能する",
+        "name": "チャットヒアリング機能の実装",
+        "tasks": [
+          {
+            "key": "U-007",
+            "kind": "feature",
+            "title": "チャットメッセージ送信とLLM連携機能の実装",
+            "modules": [
+              "app/api/routes/chat.py",
+              "app/services/chat.py",
+              "app/llm/client.py",
+              "app/repositories/chat.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-02-T02"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-05"
+            ]
+          }
+        ],
+        "priority": "Must"
+      },
+      {
+        "goal": "構造化サマリの承認から4種文書の順次生成・自己診断を行い、版履歴を取得・プレビューできるようになる",
+        "name": "構造化サマリ承認と文書生成・版管理の実装",
+        "tasks": [
+          {
+            "key": "U-008",
+            "kind": "feature",
+            "title": "構造化サマリ承認と文書生成開始機能の実装",
+            "modules": [
+              "app/api/routes/summary.py",
+              "app/services/summary.py",
+              "app/services/auth.py",
+              "app/repositories/summary.py",
+              "app/repositories/document.py",
+              "app/llm/client.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-03-T01"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-07"
+            ]
+          },
+          {
+            "key": "U-009",
+            "kind": "feature",
+            "title": "生成文書および版一覧取得機能の実装",
+            "modules": [
+              "app/api/routes/documents.py",
+              "app/services/auth.py",
+              "app/services/document.py",
+              "app/repositories/document.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-04-T01"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-08"
+            ]
+          }
+        ],
+        "priority": "Must"
+      }
+    ],
+    "environment": "開発環境としてPython 3.13、FastAPI、Next.js(App Router) + Tamaguiを使用し、データベースにはPostgreSQL、キャッシュ・レート制限用にRedisを利用する。コンテナ化にはDocker Composeを用い、GitHub ActionsによるmainブランチへのプッシュでVPSへの自動デプロイを行う構成とする。自動テストはpytestを用いてバックエンドの主要APIおよびサービスロジックの単体テスト・結合テストを実施する。",
+    "crosscutting": [
+      {
+        "topic": "例外と HTTP",
+        "policy": "発生した例外は app/main.py の共通例外ハンドラーで捕捉し、ValidationError は HTTP 400、AuthenticationError や UnauthorizedError は HTTP 401、ConflictError は HTTP 409、NotFoundError は HTTP 404、その他の予期せぬエラーは HTTP 500 としてクライアントへ返却する。AIの応答失敗時および文書生成失敗時には適切なエラーメッセージを含めたレスポンスを返す。",
+        "modules": [
+          "app/main.py",
+          "app/api/routes/auth.py",
+          "app/api/routes/projects.py",
+          "app/api/routes/chat.py",
+          "app/api/routes/documents.py",
+          "app/api/routes/summary.py"
+        ],
+        "req_ids": [
+          "FR-009",
+          "FR-010"
+        ]
+      },
+      {
+        "topic": "認証",
+        "policy": "ユーザー登録およびログインにより発行された認証トークンは Redis および tokens テーブルで管理する。各APIリクエストのヘッダーに含まれるトークンは app/services/auth.py の verify_token により検証し、有効期限(要決定)が切れている場合は 401 Unauthorized エラーとする。",
+        "modules": [
+          "app/api/routes/auth.py",
+          "app/services/auth.py",
+          "app/cache/token.py",
+          "app/repositories/user.py"
+        ],
+        "req_ids": [
+          "FR-001"
+        ]
+      },
+      {
+        "topic": "トランザクション",
+        "policy": "データベースへの書き込み伴う処理(ユーザー登録、ログインでのトークン発行、プロジェクト作成、チャットの保存、参考資料の保存、構造化サマリの承認と文書保存など)は、各リポジトリ層およびサービス層でトランザクション境界を厳守し、失敗時はロールバックしてデータの整合性を保つ。",
+        "modules": [
+          "app/repositories/user.py",
+          "app/repositories/project.py",
+          "app/repositories/chat.py",
+          "app/repositories/document.py",
+          "app/repositories/summary.py"
+        ],
+        "req_ids": []
+      },
+      {
+        "topic": "ログ",
+        "policy": "セキュリティ要件に基づき、チャットの入力内容はログに残さず、ユーザーの操作記録やシステムの稼働状況などの監査ログのみを保存する。エラー発生時はトレースバックを含む詳細情報をログに出力し、死活監視や追跡に活用する。",
+        "modules": [
+          "app/main.py",
+          "app/services/chat.py"
+        ],
+        "req_ids": [
+          "NFR-004",
+          "NFR-007"
+        ]
+      },
+      {
+        "topic": "レート制限",
+        "policy": "ログインの総当たり、登録の大量作成、チャットや生成の回数上限を設けて不正利用を防ぐため、Redisを利用してIPアドレスまたはユーザー単位のリクエスト頻度を制限する。上限を超過した場合は HTTP 429 Too Many Requests を返却する。",
+        "modules": [
+          "app/cache/token.py",
+          "app/main.py"
+        ],
+        "req_ids": [
+          "NFR-008"
+        ]
+      },
+      {
+        "topic": "外部サービスの呼び出し",
+        "policy": "Gemini Flash-Liteの呼び出しは app/llm/client.py にカプセル化し、APIキーを用いた認証を行う。上限超過やタイムアウトなどのエラーが発生した場合は、理由をメッセージに含めて例外として送出し、安全に再送や再生成を促せるようにする。",
+        "modules": [
+          "app/llm/client.py",
+          "app/services/chat.py",
+          "app/services/summary.py"
+        ],
+        "req_ids": [
+          "FR-009",
+          "CON-004"
+        ]
+      }
+    ],
+    "next_unit_seq": 10
+  },
+  "updated_at": "2026-10-12T08:07:38.473284Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

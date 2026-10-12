@@ -1,4 +1,4 @@
-# 作成：Phase-37-1
+# 作成：Phase-37-1｜更新：Phase-49-3
 """AI の下書きから外部設計書の model を組み立てる(純粋関数)。
 
 - 画面ID: AI には仮の画面ID を書かせる(前の版と同じ画面なら前の版の ID)。前の版に在る ID だけを
@@ -7,6 +7,8 @@
 - API: メソッドを大文字にそろえ、形の違う行(知らないメソッド・`/`で始まらないパス)と、同じ
   API の2行目を捨てる(`app.detailed_design.api_list`が読める形だけを残す)。
 - 要件ID: 大文字にそろえて重複を除く。要件定義書に無い ID も捨てずに残し、検証で指摘する。
+- 変更なし(`unchanged`): 前の版の同じ画面ID の画面・同じ API の行があれば、その行をそのまま
+  使う(`app.documents.revision`)。
 """
 
 import re
@@ -39,6 +41,8 @@ class ScreenDraft:
     priority: str = ""
     req_ids: tuple[str, ...] = ()
     ui_spec: str = ""
+    # Phase-49-3:追記
+    unchanged: bool = False
 
 
 @dataclass(frozen=True)
@@ -51,6 +55,8 @@ class ApiDraft:
     body: str = ""
     response: str = ""
     errors: str = ""
+    # Phase-49-3:追記
+    unchanged: bool = False
 
 
 @dataclass(frozen=True)
@@ -108,10 +114,16 @@ def _screens(
         {s.id: SCREEN_PREFIX for s in prev_screens},
         next_seq,
     )
+    # Phase-49-3:追記
+    same = {s.id: s for s in prev_screens}
     mapping: dict[str, str] = {}
     rows: list[ScreenRow] = []
     for final_id, d in zip(ids, kept, strict=True):
         mapping.setdefault(d.id.strip().upper(), final_id)
+        # Phase-49-3:追記
+        if d.unchanged and final_id in same:
+            rows.append(same[final_id])
+            continue
         rows.append(
             ScreenRow(
                 id=final_id,
@@ -125,7 +137,13 @@ def _screens(
     return rows, mapping, next_seq
 
 
-def _apis(drafts: Iterable[ApiDraft], screen_ids: dict[str, str]) -> list[ApiRow]:
+# Phase-49-3：更新
+# def _apis(drafts: Iterable[ApiDraft], screen_ids: dict[str, str]) -> list[ApiRow]:
+# ↓↓
+def _apis(
+    drafts: Iterable[ApiDraft], screen_ids: dict[str, str], previous: ExternalDesignModel | None
+) -> list[ApiRow]:
+    same = {endpoint_key(a.method, a.path): a for a in previous.apis} if previous else {}
     rows: list[ApiRow] = []
     seen: set[str] = set()
     for d in drafts:
@@ -137,6 +155,10 @@ def _apis(drafts: Iterable[ApiDraft], screen_ids: dict[str, str]) -> list[ApiRow
         if key in seen:
             continue
         seen.add(key)
+        # Phase-49-3:追記
+        if d.unchanged and key in same:
+            rows.append(same[key])
+            continue
         screens = [screen_ids.get(ref, ref) for ref in split_ids(d.screens)]
         rows.append(
             ApiRow(
@@ -177,7 +199,10 @@ def build_model(
         transition=draft.transition.strip(),
         data_io=draft.data_io.strip(),
         screens=screens,
-        apis=_apis(draft.apis, screen_ids),
+        # Phase-49-3：更新
+        # apis=_apis(draft.apis, screen_ids),
+        # ↓↓
+        apis=_apis(draft.apis, screen_ids, previous),
         integrations=integrations,
         known_req_ids=[r.id for r in rows],
         must_fr_ids=[r.id for r in rows if r.kind == "FR" and r.priority == "Must"],

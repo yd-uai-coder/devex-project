@@ -1,0 +1,71 @@
+{
+  "stage": 2,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "summaries": [
+      {
+        "input": "メールアドレス、パスワード",
+        "output": "登録成功メッセージ",
+        "process": "メールアドレスとパスワードの入力を検証し、新規ユーザーをデータベースに保存する。",
+        "function_id": "F-01"
+      },
+      {
+        "input": "メールアドレス、パスワード",
+        "output": "アクセストークン",
+        "process": "メールアドレスとパスワードを検証し、アクセストークンを返却する。",
+        "function_id": "F-02"
+      },
+      {
+        "input": "プロジェクト情報、参考資料ファイル(txt/md/pdf)",
+        "output": "プロジェクト作成完了結果",
+        "process": "プロジェクト情報と参考資料ファイルを検証し、新しいプロジェクトを作成して関連ファイルを保存する。",
+        "function_id": "F-03"
+      },
+      {
+        "input": "チャットメッセージ",
+        "output": "AIの応答メッセージ",
+        "process": "ユーザーのチャットメッセージを受け付け、Gemini Flash-Liteを使用してAIの応答メッセージを取得する。",
+        "function_id": "F-04"
+      },
+      {
+        "input": "チャット履歴",
+        "output": "4種の設計書および不足点診断結果",
+        "process": "これまでのチャット履歴等をもとに4種の設計書を自動生成し、AIによる不足点の3段階診断を実行する。",
+        "function_id": "F-05"
+      },
+      {
+        "input": "チャットメッセージの入力内容",
+        "output": "検証結果(送信可否)",
+        "process": "チャットメッセージの入力内容に対して空送信でないかをクライアント側で検証する。",
+        "function_id": "F-06"
+      },
+      {
+        "input": "選択した設計書のMarkdown内容",
+        "output": "クリップボードのデータまたはダウンロードファイル",
+        "process": "選択した設計書のMarkdown内容を検証し、クリップボードにコピーするかファイルとしてダウンロードする。",
+        "function_id": "F-07"
+      }
+    ],
+    "dfd_groups": [
+      "auth",
+      "projects",
+      "chat",
+      "generate",
+      "チャットヒアリング処理"
+    ]
+  },
+  "updated_at": "2026-10-12T07:22:20.358478Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

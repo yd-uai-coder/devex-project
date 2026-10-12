@@ -490,7 +490,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 * **横断事項の要件ID**: 段階7の横断事項に`req_ids`を足す(Phase 38 の案2。影響分析が使う)。
 * **作業単位の安定キー**: 段階7の`PlanTask`に並べ替えで変わらないキーを持たせ、段階8の`UnitProcedure`(今は位置で決まる`unit_id`をキーにしている)と影響の記録はそのキーで指す。
 * **Phase 42 で実装した部分**(経緯は[`textbook/Phase-42/Phase-42-introduction.md`](../textbook/Phase-42/Phase-42-introduction.md)):
-  * **安定キー**: `PlanTask.key`(`U-001`…)と`PlanModel.next_unit_seq`。`assign_unit_keys`がキーの無い・重複したタスクに次の番号を振る(段階7の保存時と生成時)。作り直しは`carry_over_unit_keys`でタスク名が同じ単位のキーを引き継ぐ。段階8は`UnitProcedure.unit_key`で単位に付き、表示の`unit_id`は`relabel_units`が今の並び順から付け直す(検証・出力・画面の応答・生成の前)。キーの無い単位(簡易モードの WBS)は単位の ID をキーにする(`PlanUnit.key`)。改名(タスク名の不一致)は今までどおり`UNIT_MISMATCH`。既存データは Alembic `d4e5f6a7b8c0`(段階7に並び順でキーを振り、段階8を今の`unit_id`で突き合わせる。状態と版は変えない)。単位の間の`depends_on`は表示の ID のまま。
+  * **安定キー**: `PlanTask.key`(`U-001`…)と`PlanModel.next_unit_seq`。`assign_unit_keys`がキーの無い・重複したタスクに次の番号を振る(段階7の保存時と生成時)。作り直しは`carry_over_unit_keys`でタスク名が同じ単位のキーを引き継ぐ(Phase 49 で、処理・要件の重なりと似たタスク名でも引き継ぐようにした。下の「Phase 49 で直した部分」)。段階8は`UnitProcedure.unit_key`で単位に付き、表示の`unit_id`は`relabel_units`が今の並び順から付け直す(検証・出力・画面の応答・生成の前)。キーの無い単位(簡易モードの WBS)は単位の ID をキーにする(`PlanUnit.key`)。改名(タスク名の不一致)は今までどおり`UNIT_MISMATCH`。既存データは Alembic `d4e5f6a7b8c0`(段階7に並び順でキーを振り、段階8を今の`unit_id`で突き合わせる。状態と版は変えない)。単位の間の`depends_on`は表示の ID のまま。
   * **横断事項の要件ID**: `CrossCuttingRow.req_ids`。横断事項の生成(構造化出力)が要件定義書の ID を書き(形をそろえ、形の違う値は捨てる)、検証は外部設計書の model の要件ID の一覧と照らして`UNKNOWN_REQUIREMENT_ID`(警告)。画面の横断事項の表に「要件」の列。
   * **要素と参照・たどり方**: `app/detailed_design/impact/`(`elements`・`trace`。純粋関数)。`DesignModels.from_dicts(stages, documents, er_tables)` → `build_elements` → `impact_of(elements, Change(key, kind))` → `ImpactItem(key, path, reason)`。辺は12種(デモの11種に、手順書が参照する手順・処理ロジックの`implements`を足した。手順書の参照は段階8の`unit_refs`と同じ規則)。モジュールとテーブルの辺は、手順の行の DB 欄(`parse_db_tables`。段階3 の CRUD・ER に在る名前だけ)と同じ行の呼び出し先から作る。API・画面・写しはまだ無い(Phase 43・44)。
 * **差分**: 段階は直前の承認時の model の写し(1件)と今の model を、要素のキーで比べる。文書は`generated_documents.model`の版同士を比べる。今の陳腐化(`app/detailed_design/stages.py`の`derive_states`。段階単位・版数の比較)は変えず、その上に要素の印と「確認済み」を重ねる。
@@ -521,6 +521,12 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 * **Phase 48 で実装した部分**(段階3・5 の書き落とし。経緯は[`textbook/Phase-48/Phase-48-introduction.md`](../textbook/Phase-48/Phase-48-introduction.md)):
   * **段階3**: DFD の下書きのプロンプト(`DFD_SYSTEM_PROMPT`)に、処理 → データストアの線は作成・更新・削除する処理にだけ描く規則を足した。`merge_crud`は、DFD に書き込みの線があるのに AI の C/U/D が無いセルに`infer_write_ops`(処理の名前から推定)の文字を足し、`CrudCell.inferred`の印を付ける(真のときだけ保存する。印の無いセルの保存の形は変えない)。検証の警告 `DFD_WRITE_INFERRED`、`DFD_WRITE_MISSING`の文に DFD を直す案内を足した。人が書き換える(devex-ui の`setCellOps`)か承認(`confirm_drafts`)で印は外れる。変更の影響の差分では、`draft`と同じく内容に入れない。
   * **段階5**: 生成のスキーマの`GeneratedStep`から`is_branch`・`branch`を外し、`branches: list[GeneratedBranch(condition, result)]`にした。`to_procedure_draft`が元の手順の直後に分岐の行を並べ、`merge_procedure`が空の行を捨てた後に`link_branch_refs`で参照(「2a へ」、複数は「2a へ、2b へ」)を並びから振る(AI の書いた参照は消す)。保存の model(`ProcedureStep`)・画面・既存データは変えていない。ステージ6の測定の stage5.json に当てると、`MISSING_BRANCH_TARGET` は 15 → 0・4 → 0。
+
+* **Phase 49 で直した部分**(効果測定で基準に届かなかった分。経緯は[`textbook/Phase-49/Phase-49-introduction.md`](../textbook/Phase-49/Phase-49-introduction.md)):
+  * **たどり方**(`trace.py`): テーブルの変更は処理まで上らず、読み書きする要素と、その手順を実装する処理ロジック・手順書まで。文書の要素の変更では、届いた処理の CRUD と作業単位(段階7のタスク。簡易モードの軸のタスクは除く)を示さず、要件・画面の変更では要約も示さない。画面は、変わった要素そのもののときだけ通る(要件が共有の画面を通って別の処理へ広がらない)。辺を1種足した: `receives`(手順の最初の呼び出し先のモジュール → 処理のトリガーの API)。API の変更で、API を受ける入口のモジュールが直接の参照元になる。非機能要件 → 横断事項の対象のモジュールを使う手順(ベースラインの S2)は、ID の辺では届かないので範囲の外とした。
+  * **差分の再生成**(`app/documents/revision.py`と4文書の`drafting`・`assemble`): 再生成では、AI に前の版の行(1行1つの JSON)と、上流の文書で前の版から変わった行(`DocGeneratorService.upstream_changes`。要件定義書の上流は会話)を見せ、変えない行を`unchanged`と答えさせる。組み立てが前の版の同じ行(要件ID・画面ID・API・テーブル名・モジュールのパス・処理別データフローのトリガー・タスクのキー)をそのまま使う。実装計画書のタスクは`prev_key`で前の版のタスクのキーを指させる(依存先は並び順の ID なので今回の並びのもの)。
+  * **単位のキーの引き継ぎ**(`carry_over_unit_keys`): 前のキーを持つタスク → タスク名が同じタスク → 種別が同じで処理・要件の重なり(Jaccard)が大きい順、重なりが無ければタスク名が似ている(`difflib`の比 0.6 以上)もの、の順に1対1。
+  * **タスクの要素の内容**(`elements.task_body`): 依存先を単位のキーに読み替えて比べる(マイルストーンの並べ替え・挿入で表示の ID がずれただけのタスクを変わったものにしない)。
 
 ---
 

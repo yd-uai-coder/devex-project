@@ -1,0 +1,721 @@
+{
+  "stage": 8,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 3,
+  "approved_version": 3,
+  "model": {
+    "units": [
+      {
+        "unit_id": "M-01-T01",
+        "unit_key": "U-001",
+        "title": "開発環境およびデータベースの土台構築",
+        "purpose": "開発環境およびデータベースの土台となるDocker環境と設定ファイルを構築する。",
+        "files": [
+          {
+            "path": "Dockerfile",
+            "kind": "config",
+            "responsibility": "アプリケーションのコンテナイメージを定義する。",
+            "basis": "段階7 開発環境"
+          },
+          {
+            "path": "docker-compose.yml",
+            "kind": "config",
+            "responsibility": "PostgreSQL、Redis、およびアプリケーションのコンテナ構成を定義する。",
+            "basis": "段階7 開発環境"
+          },
+          {
+            "path": "nginx.conf",
+            "kind": "config",
+            "responsibility": "リバースプロキシのルーティングと設定を定義する。",
+            "basis": "段階7 開発環境"
+          }
+        ],
+        "notes": [
+          "基盤の単位であるため処理は実装しない。",
+          "Docker Composeを用いてPostgreSQLとRedisを含むインフラの土台を整備する順序とする。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "Docker Composeによって各コンテナが正常に起動すること",
+            "sut": "docker-compose.yml",
+            "driver": "コマンドラインでのコンテナ起動確認",
+            "stub": "スタブ不要 ── インフラ構築のため"
+          }
+        ],
+        "gwt": [
+          "Given 開発環境の設定ファイルが配置されているとき When docker compose upを実行すると Then PostgreSQLとRedisおよびアプリケーションコンテナが正常に起動する"
+        ],
+        "verify": [
+          "docker compose upコマンドを実行し、エラーなくコンテナが起動してデータベースに接続できることを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-01-T02",
+        "unit_key": "U-002",
+        "title": "アカウント登録機能の実装",
+        "purpose": "利用者がアカウントを新規登録できるようにし、入力検証と重複チェックを経てデータベースに保存する。",
+        "files": [
+          {
+            "path": "models/user.py",
+            "kind": "module",
+            "responsibility": "ユーザーのデータ構造とルールを定義する",
+            "basis": "段階4 models/user.py"
+          },
+          {
+            "path": "repositories/user.py",
+            "kind": "module",
+            "responsibility": "usersテーブルへのデータ永続化と取得を行う",
+            "basis": "段階4 repositories/user.py"
+          },
+          {
+            "path": "services/auth.py",
+            "kind": "module",
+            "responsibility": "認証のビジネスロジックを制御する",
+            "basis": "段階4 services/auth.py"
+          },
+          {
+            "path": "api/routes/auth.py",
+            "kind": "module",
+            "responsibility": "アカウント登録のエンドポイントを定義しリクエストを受け付ける",
+            "basis": "段階4 api/routes/auth.py"
+          }
+        ],
+        "notes": [
+          "依存関係の順序に従い、models/user.py、repositories/user.py、services/auth.py、api/routes/auth.pyの順に実装する。",
+          "トランザクション管理をサービス層またはリポジトリ層に適用する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常なアカウント登録情報が提供された場合にユーザーが登録され完了メッセージが返る",
+            "sut": "api/routes/auth.py",
+            "driver": "結合テスト(FastAPI TestClient)",
+            "stub": "スタブ不要 ── 実際のデータベースとサービス層を使用する"
+          },
+          {
+            "viewpoint": "すでに登録済みのメールアドレスの場合にConflictErrorとなり409が返る",
+            "sut": "services/auth.py",
+            "driver": "単体テスト(pytest)",
+            "stub": "repositories/user.pyをスタブ化して既存ユーザーが存在する状態を模倣する"
+          }
+        ],
+        "gwt": [
+          "Given 有効なアカウント登録情報がある When register を実行する Then 登録完了のメッセージが返る",
+          "Given 既存のメールアドレスがある When register_user を実行する Then ConflictError が送出される"
+        ],
+        "verify": [
+          "単体テストおよび結合テストが全て成功することを確認する。",
+          "POST /api/v1/auth/register にリクエストを送り、200 OKと登録完了メッセージが返ることを確認する。"
+        ],
+        "findings": [
+          {
+            "level": "minor",
+            "target": "段階6 register(api/routes/auth.py)",
+            "message": "段階6の詳細な擬似フローや関数シグネチャが記載されていないため、実装時に適切な型定義やリクエストボディの構造体(Pydanticモデルなど)を補完する必要がある。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "minor",
+            "target": "段階6 validate(models/user.py)",
+            "message": "段階6のvalidate関数の詳細な検証ルールやシグネチャが記載されていないため、Pydanticモデルのフィールド定義に基づく自動検証に依存するか明示的な定義が必要。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "minor",
+            "target": "段階6 save(repositories/user.py)",
+            "message": "段階6のsave関数の詳細なシグネチャやSQLクエリの仕様が明記されていないため、ORMまたはSQLの構築方法は実装者の判断に委ねられる。",
+            "fix_stage": 6,
+            "fix_document": null
+          }
+        ]
+      },
+      {
+        "unit_id": "M-01-T03",
+        "unit_key": "U-003",
+        "title": "ログインとJWT認証機能の実装",
+        "purpose": "利用者のログイン要求を受け付け、認証ビジネスロジックを経てJWTアクセストークンを生成し、HttpOnly Cookieに設定して返却できるようにする。",
+        "files": [
+          {
+            "path": "repositories/user.py",
+            "kind": "module",
+            "responsibility": "usersテーブルからメールアドレスをもとにユーザー情報を取得する",
+            "basis": "段階4"
+          },
+          {
+            "path": "services/auth.py",
+            "kind": "module",
+            "responsibility": "認証ビジネスロジックを実行し、JWTアクセストークンを生成する",
+            "basis": "段階4"
+          },
+          {
+            "path": "api/routes/auth.py",
+            "kind": "module",
+            "responsibility": "ログインリクエストを受け付け、サービス層を呼び出し、HttpOnly CookieにJWTを設定して応答を返す",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "依存される順序に従い、 repositories/user.py 、 services/auth.py 、 api/routes/auth.py の順に実装する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常なメールアドレスとパスワードでログインした場合にJWTが生成されHttpOnly Cookieに設定されること",
+            "sut": "api/routes/auth.py の login",
+            "driver": "結合テスト(APIテスト)",
+            "stub": "スタブ不要 ── 実際のデータベースおよびサービス層を使用する"
+          },
+          {
+            "viewpoint": "存在しないメールアドレスまたは一致しないパスワードの場合に401 Unauthorizedが返却されること",
+            "sut": "services/auth.py の authenticate",
+            "driver": "単体テスト",
+            "stub": "repositories/user.py をモック化してユーザー不在やパスワード不一致を再現する"
+          }
+        ],
+        "gwt": [
+          "Given 登録済みのユーザーが存在する When 正しいメールアドレスとパスワードでログインを要求する Then JWTが生成されHttpOnly Cookieに設定されて返却される",
+          "Given 登録されていないメールアドレスである When ログインを要求する Then AuthenticationErrorが送出され401が返却される"
+        ],
+        "verify": [
+          "POST /api/v1/auth/login に対して正しい認証情報を送信し、ステータスコード200とHttpOnly CookieにJWTが設定されることを確認する。",
+          "誤った認証情報を送信し、401 Unauthorizedが返却されることを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-02-T01",
+        "unit_key": "U-004",
+        "title": "チャットメッセージ送信とAI応答機能の実装",
+        "purpose": "利用者が送信したチャットメッセージと参考資料を受け取り、Gemini APIを用いてAI応答を生成した上で、結果を永続化して返却できるようにする。",
+        "files": [
+          {
+            "path": "models/chat.py",
+            "kind": "module",
+            "responsibility": "チャットのデータ構造とルールを定義する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "repositories/chat.py",
+            "kind": "module",
+            "responsibility": "chatsテーブルへのデータ永続化と取得を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "external/gemini.py",
+            "kind": "module",
+            "responsibility": "Gemini Flash-Lite APIやLangChain/LangGraphと通信する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "services/chat.py",
+            "kind": "module",
+            "responsibility": "チャットのビジネスロジックを制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "api/routes/chats.py",
+            "kind": "module",
+            "responsibility": "チャットメッセージ送信とAI応答のエンドポイントを定義しリクエストを受け付ける。",
+            "basis": "段階4"
+          },
+          {
+            "path": "tests/test_chat.py",
+            "kind": "test",
+            "responsibility": "チャットメッセージ送信とAI応答機能の単体・結合テストを行う。",
+            "basis": "段階7 開発環境"
+          }
+        ],
+        "notes": [
+          "models/chat.py、repositories/chat.py、external/gemini.py を先に実装し、それらを呼び出す services/chat.py、最後に api/routes/chats.py の順に実装する。",
+          "データベースへの書き込みを伴うため、サービス層またはリポジトリ層でトランザクション管理を実装する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常系: 有効なメッセージと参考資料を受け取り、AI応答結果が返却されデータが保存されること",
+            "sut": "api/routes/chats.py",
+            "driver": "結合テスト (FastAPI TestClient)",
+            "stub": "GeminiClient.generate_response ── 外部API呼び出しをモック化して固定のAI生成テキストを返す"
+          },
+          {
+            "viewpoint": "異常系: 不正なリクエストデータの場合はValidationErrorにより400が返却されること",
+            "sut": "api/routes/chats.py",
+            "driver": "結合テスト (FastAPI TestClient)",
+            "stub": "スタブ不要 ── バリデーションエラーを検証するため"
+          },
+          {
+            "viewpoint": "異常系: 外部API呼び出しに失敗した場合はExternalAPIErrorにより502が返却されること",
+            "sut": "services/chat.py",
+            "driver": "単体テスト",
+            "stub": "GeminiClient.generate_response ── ExternalAPIErrorを送出するように差し替える"
+          }
+        ],
+        "gwt": [
+          "Given 認証済みの利用者が有効なチャットメッセージと参考資料を用意しているとき, When POST /api/v1/chats エンドポイントにリクエストを送信すると, Then AI応答の結果が返却されチャットデータが保存されること"
+        ],
+        "verify": [
+          "pytest を実行し、チャットメッセージ送信およびAI応答に関するテストがすべてパスすることを確認する。"
+        ],
+        "findings": [
+          {
+            "level": "minor",
+            "target": "段階6 chats(api/routes/chats.py)",
+            "message": "段階6の該当項目に『設計にありません』と記載されているため、詳細なエンドポイントの入出力スキーマの定義を補完する必要がある。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "minor",
+            "target": "段階6 GeminiClient.generate_response(external/gemini.py)",
+            "message": "段階6の該当項目に『設計にありません』と記載されているため、プロンプトの具体的な構築方法やAPIのパラメータ詳細を補完する必要がある。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "minor",
+            "target": "段階6 ChatRepository.create(repositories/chat.py)",
+            "message": "段階6の該当項目に『設計にありません』と記載されているため、保存するテーブルの列定義やクエリの詳細を補完する必要がある。",
+            "fix_stage": 6,
+            "fix_document": null
+          }
+        ]
+      },
+      {
+        "unit_id": "M-03-T01",
+        "unit_key": "U-005",
+        "title": "設計書一括生成と自己診断機能の実装",
+        "purpose": "チャット履歴とヒアリング結果をもとに、Gemini Flash-Lite APIを利用して4種のMarkdown設計書および自己診断結果を一括生成し、データベースに保存する。",
+        "files": [
+          {
+            "path": "models/document.py",
+            "kind": "module",
+            "responsibility": "設計書のデータ構造とルールを定義する。",
+            "basis": "段階4 models/document.py"
+          },
+          {
+            "path": "repositories/document.py",
+            "kind": "module",
+            "responsibility": "documentsおよびgenerated_documentsテーブルへのデータ永続化と取得を行う。",
+            "basis": "段階4 repositories/document.py"
+          },
+          {
+            "path": "external/gemini.py",
+            "kind": "module",
+            "responsibility": "Gemini Flash-Lite APIやLangChain/LangGraphと通信する。",
+            "basis": "段階4 external/gemini.py"
+          },
+          {
+            "path": "services/document.py",
+            "kind": "module",
+            "responsibility": "設計書生成のビジネスロジックを制御する。",
+            "basis": "段階4 services/document.py"
+          },
+          {
+            "path": "api/routes/documents.py",
+            "kind": "module",
+            "responsibility": "設計書一括生成と自己診断のエンドポイントを定義しリクエストを受け付ける。",
+            "basis": "段階4 api/routes/documents.py"
+          }
+        ],
+        "notes": [
+          "モデル、永続化層、外部連携層、サービス層、ルーティング層の順に依存関係に合わせて実装する。",
+          "データベースへの書き込みを伴うためトランザクションをサービス層またはリポジトリ層で適用する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常なチャット履歴とヒアリング結果から設計書が一括生成され保存されること",
+            "sut": "DocumentService.generate",
+            "driver": "単体テスト",
+            "stub": "GeminiClient.generate_documents はモック化し固定のAI生成結果を返す"
+          },
+          {
+            "viewpoint": "外部API呼び出し失敗時に ExternalServiceError が発生し 502 が返ること",
+            "sut": "api/routes/documents.py の generate_documents エンドポイント",
+            "driver": "結合テスト",
+            "stub": "GeminiClient.generate_documents は ExternalServiceError を送出するようモック化する"
+          }
+        ],
+        "gwt": [
+          "Given 有効なチャット履歴とヒアリング結果が存在する",
+          "When ユーザーが設計書一括生成エンドポイントにリクエストを送信する",
+          "Then 4種のMarkdown設計書と自己診断結果が返却されデータベースに保存される"
+        ],
+        "verify": [
+          "POST /api/v1/documents/generate に対するリクエストが成功し、4種のMarkdown設計書と不足点自己診断結果のJSONレスポンスが返却されることを確認する。",
+          "データベースの該当テーブルに生成された設計書データが正しく保存されていることを確認する。"
+        ],
+        "findings": [
+          {
+            "level": "critical",
+            "target": "段階6 api/routes/documents.py",
+            "message": "generate_documents の詳細な実装仕様(リクエストバリデーションやHTTPステータスコードの細部)が段階6に定義されていない。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "critical",
+            "target": "段階6 external/gemini.py",
+            "message": "GeminiClient.generate_documents のシグネチャ、引数、戻り値の型定義が段階6に定義されていない。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "critical",
+            "target": "段階6 repositories/document.py",
+            "message": "DocumentRepository.save のシグネチャ、引数、戻り値の型定義が段階6に定義されていない。",
+            "fix_stage": 6,
+            "fix_document": null
+          }
+        ]
+      },
+      {
+        "unit_id": "M-03-T02",
+        "unit_key": "U-006",
+        "title": "プレビューの切り替えと設計書表示機能の実装",
+        "purpose": "利用者がタブを選択した際に、対応する設計書または自己診断結果のデータを取得し、プレビュー画面に表示できるようにする。",
+        "files": [
+          {
+            "path": "models/document.py",
+            "kind": "module",
+            "responsibility": "設計書のデータ構造とルールを定義する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "repositories/document.py",
+            "kind": "module",
+            "responsibility": "generated_documentsテーブルからタブ種別に応じたデータを取得する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "services/document.py",
+            "kind": "module",
+            "responsibility": "タブ種別に基づく設計書または自己診断結果の取得処理を制御する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/page.tsx",
+            "kind": "module",
+            "responsibility": "プレビューの切り替え操作を検知し、取得したデータに基づきプレビュー画面をレンダリングする。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "依存される順にmodels、repositories、services、app/page.tsxの順で実装を行う。",
+          "既存のデータベース接続および基本設定を利用する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "タブ種別に対応する設計書データを正常に取得しプレビューに表示できること",
+            "sut": "app/page.tsx",
+            "driver": "結合テスト(React Testing Library)",
+            "stub": "services/document.py (ダミーのプレビューデータを返すようスタブ化)"
+          },
+          {
+            "viewpoint": "該当する設計書データが存在しない場合にNotFoundErrorが送出されること",
+            "sut": "services/document.py",
+            "driver": "単体テスト(pytest)",
+            "stub": "repositories/document.py (データを返さないようスタブ化)"
+          }
+        ],
+        "gwt": [
+          "Given 利用者が特定のタブを選択している状態",
+          "When タブの切り替え操作を行う",
+          "Then 該当する設計書データが取得されプレビュー画面に表示される"
+        ],
+        "verify": [
+          "単体テストおよび結合テストが全て成功することを確認する。",
+          "画面上でタブを切り替えた際に、該当する設計書や自己診断結果がプレビューに正しく表示されることを手動で確認する。"
+        ],
+        "findings": [
+          {
+            "level": "major",
+            "target": "段階6 DocumentService.getPreviewContent",
+            "message": "DocumentService.getPreviewContentの具体的な実装詳細（例外ハンドリングやデータの加工ルールなど）が段階6に記載されていない。",
+            "fix_stage": 6,
+            "fix_document": null
+          },
+          {
+            "level": "major",
+            "target": "段階6 DocumentRepository.findByTabType",
+            "message": "DocumentRepository.findByTabTypeの具体的なクエリ内容やテーブル定義の前提条件が段階6に記載されていない。",
+            "fix_stage": 6,
+            "fix_document": null
+          }
+        ]
+      }
+    ]
+  },
+  "updated_at": "2026-10-12T08:07:28.161766Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "STUB_OUTSIDE_SEQUENCE",
+      "message": "M-03-T01 のテスト観点1のスタブ(api/routes/documents.py)は、F-04 の手順で SUT(services/document.py)から呼ばれていません(手順に無い依存です。手順に足すか、観点のスタブを直します)。",
+      "target": "F-04",
+      "level": "minor",
+      "fix_stage": 5,
+      "unit": "M-03-T01",
+      "fix_document": null
+    }
+  ],
+  "dfd_accesses": [],
+  "plan": {
+    "crosscutting": [
+      {
+        "topic": "例外と HTTP",
+        "policy": "APIでエラーが発生した際は、不正な入力には 400 Bad Request、認証失敗には 401 Unauthorized、すでに存在するデータの登録には 409 Conflict、外部APIやAI応答の失敗には 502 Bad Gateway または 500 Internal Server Error を返す。例外発生時はスタックトレースをログに記録し、クライアントにはエラーコードとエラーメッセージを JSON 形式で返却する。",
+        "modules": [
+          "api/routes/auth.py",
+          "api/routes/chats.py",
+          "api/routes/documents.py"
+        ],
+        "req_ids": [
+          "FR-008",
+          "FR-009",
+          "FR-010"
+        ]
+      },
+      {
+        "topic": "認証",
+        "policy": "メールとパスワードによる認証を行い、JWTのアクセストークンの有効期限は 30 分、リフレッシュトークンの有効期限は 14 日とする。リフレッシュトークンは HttpOnly Cookie に設定し、クロスサイトリクエストフォージェリを防止する。本人以外が他人のプロジェクトを見られないようにアクセス制御を行う。",
+        "modules": [
+          "api/routes/auth.py",
+          "services/auth.py",
+          "repositories/user.py"
+        ],
+        "req_ids": [
+          "FR-001",
+          "FR-002",
+          "NFR-007"
+        ]
+      },
+      {
+        "topic": "トランザクション",
+        "policy": "データベースへの書き込みを伴う処理（アカウント登録、チャット履歴保存、設計書一括生成後の保存など）では、サービス層またはリポジトリ層でトランザクションを開始する。処理が正常に完了した場合はコミットし、例外が発生した場合はロールバックしてデータの整合性を保つ。",
+        "modules": [
+          "services/auth.py",
+          "services/chat.py",
+          "services/document.py",
+          "repositories/user.py",
+          "repositories/chat.py",
+          "repositories/document.py"
+        ],
+        "req_ids": [
+          "FR-001",
+          "FR-003",
+          "FR-007"
+        ]
+      },
+      {
+        "topic": "ログ",
+        "policy": "システムのエラー発生時や重要イベント時には、発生時刻、処理ID、エラー内容、ユーザーIDをログに出力する。ただし、セキュリティおよびプライバシー保護の観点から、AIの入力内容や対話の内容はログに残さない。",
+        "modules": [
+          "api/routes/auth.py",
+          "api/routes/chats.py",
+          "api/routes/documents.py",
+          "services/chat.py",
+          "services/document.py"
+        ],
+        "req_ids": [
+          "NFR-004",
+          "NFR-008"
+        ]
+      },
+      {
+        "topic": "外部サービスの呼び出し",
+        "policy": "Gemini Flash-Lite APIを呼び出す際はタイムアウトとリトライのポリシーを適用する。外部APIの呼び出しに失敗した場合は ExternalAPIError または ExternalServiceError を送出の上、適切にエラーハンドリングを行いユーザーに再送を促すUIを表示する。",
+        "modules": [
+          "external/gemini.py",
+          "services/chat.py",
+          "services/document.py"
+        ],
+        "req_ids": [
+          "FR-003",
+          "FR-004",
+          "FR-008",
+          "FR-009",
+          "CON-004"
+        ]
+      }
+    ],
+    "milestones": [
+      {
+        "name": "環境構築と認証・横断事項の実装",
+        "goal": "開発環境が整備され、アカウント登録とログイン機能が安全に動作する",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-001",
+            "kind": "base",
+            "title": "開発環境およびデータベースの土台構築",
+            "function_ids": [],
+            "depends_on": [],
+            "modules": [],
+            "config_files": [
+              "Dockerfile",
+              "docker-compose.yml",
+              "nginx.conf"
+            ],
+            "req_ids": []
+          },
+          {
+            "key": "U-002",
+            "kind": "feature",
+            "title": "アカウント登録機能の実装",
+            "function_ids": [
+              "F-01"
+            ],
+            "depends_on": [
+              "M-01-T01"
+            ],
+            "modules": [
+              "api/routes/auth.py",
+              "services/auth.py",
+              "models/user.py",
+              "repositories/user.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          },
+          {
+            "key": "U-003",
+            "kind": "feature",
+            "title": "ログインとJWT認証機能の実装",
+            "function_ids": [
+              "F-02"
+            ],
+            "depends_on": [
+              "M-01-T02"
+            ],
+            "modules": [
+              "api/routes/auth.py",
+              "services/auth.py",
+              "repositories/user.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          }
+        ]
+      },
+      {
+        "name": "チャットとAI応答の実装",
+        "goal": "チャットメッセージ送信とGemini Flash-Lite APIを利用したAI応答・履歴保存ができる",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-004",
+            "kind": "feature",
+            "title": "チャットメッセージ送信とAI応答機能の実装",
+            "function_ids": [
+              "F-03"
+            ],
+            "depends_on": [
+              "M-01-T03"
+            ],
+            "modules": [
+              "api/routes/chats.py",
+              "services/chat.py",
+              "models/chat.py",
+              "external/gemini.py",
+              "repositories/chat.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          }
+        ]
+      },
+      {
+        "name": "設計書一括生成とプレビューの実装",
+        "goal": "4種の設計書の一括生成、自己診断の実行、およびプレビューの切り替え表示ができる",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-005",
+            "kind": "feature",
+            "title": "設計書一括生成と自己診断機能の実装",
+            "function_ids": [
+              "F-04"
+            ],
+            "depends_on": [
+              "M-02-T01"
+            ],
+            "modules": [
+              "api/routes/documents.py",
+              "services/document.py",
+              "models/document.py",
+              "external/gemini.py",
+              "repositories/document.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          },
+          {
+            "key": "U-006",
+            "kind": "feature",
+            "title": "プレビューの切り替えと設計書表示機能の実装",
+            "function_ids": [
+              "F-05"
+            ],
+            "depends_on": [
+              "M-03-T01"
+            ],
+            "modules": [
+              "app/page.tsx",
+              "services/document.py",
+              "models/document.py",
+              "repositories/document.py"
+            ],
+            "config_files": [],
+            "req_ids": []
+          }
+        ]
+      }
+    ],
+    "environment": "開発環境としてPython 3.13、FastAPI、Next.js (App Router)、Tamagui、PostgreSQL、Redisを使用する。VPS上のDocker Composeとnginxで配置し、GitHub Actionsを用いて自動デプロイを行う。単体テストおよび結合テストを各レイヤーで実施する。",
+    "risks": [
+      {
+        "risk": "Gemini Flash-Lite APIの応答遅延やレートリミットによるエラー発生",
+        "mitigation": "タイムアウト設定とリトライポリシーを実装し、エラー時にはユーザーに再送を促すUIを表示する。納期が厳しい場合は高度な診断ロジックを縮小して基本生成を優先する。"
+      },
+      {
+        "risk": "PDFや長文参考資料の読み込み処理におけるパフォーマンス低下",
+        "mitigation": "参考資料のファイルサイズおよび最大件数(3件)の制限を厳格に適用し、必要に応じてテキスト抽出処理を最適化する。"
+      },
+      {
+        "risk": "認証情報の管理不備によるセキュリティ脆弱性",
+        "mitigation": "JWTの有効期限を厳守し、リフレッシュトークンをHttpOnly Cookieに安全に格納するアクセス制御を徹底する。"
+      }
+    ],
+    "next_unit_seq": 7
+  },
+  "unit_req_ids": {
+    "M-01-T01": [],
+    "M-01-T02": [
+      "FR-001"
+    ],
+    "M-01-T03": [
+      "FR-002"
+    ],
+    "M-02-T01": [
+      "FR-003",
+      "FR-006",
+      "FR-008",
+      "FR-010"
+    ],
+    "M-03-T01": [
+      "FR-003",
+      "FR-004",
+      "FR-009"
+    ],
+    "M-03-T02": [
+      "FR-005"
+    ]
+  },
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

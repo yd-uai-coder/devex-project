@@ -1,0 +1,397 @@
+{
+  "stage": 8,
+  "mode": "simple",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "units": [
+      {
+        "unit_id": "M-01-T01",
+        "unit_key": "U-001",
+        "title": "プロジェクトリポジトリおよびDocker環境構築",
+        "purpose": "プロジェクトの基本構造を作成し、Docker Composeを用いてローカル開発環境のコンテナ群を起動できるようにする。",
+        "files": [
+          {
+            "path": "Dockerfile",
+            "kind": "config",
+            "responsibility": "バックエンドおよびフロントエンドのコンテナイメージ構築定義を行う。",
+            "basis": "段階7 環境・設定のファイル"
+          },
+          {
+            "path": "docker-compose.yml",
+            "kind": "config",
+            "responsibility": "アプリケーション、データベース、キャッシュ、リバースプロキシなどのサービス構成を定義する。",
+            "basis": "段階7 環境・設定のファイル"
+          },
+          {
+            "path": "nginx/nginx.conf",
+            "kind": "config",
+            "responsibility": "リバースプロキシのルーティング設定を行う。",
+            "basis": "段階7 環境・設定のファイル"
+          }
+        ],
+        "notes": [
+          "基盤の単位のため処理やモジュールは存在しない。",
+          "Docker Composeの各サービス定義は、実装計画書 4.3 開発環境および内部設計書 3.1 技術スタックに従う。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "Docker Composeにより全コンテナが正常に起動し、Nginx経由で各サービスにアクセスできること",
+            "sut": "docker-compose.yml",
+            "driver": "手動結合テスト(docker composeコマンド)",
+            "stub": "スタブ不要 ── 外部サービスモジュールは未実装のためコンテナの起動確認のみ実施"
+          }
+        ],
+        "gwt": [
+          "Given docker-compose.ymlと各設定ファイルが配置されている",
+          "When docker compose up --buildコマンドを実行する",
+          "Then 全てのコンテナがエラーなく起動し正常に稼働状態になる"
+        ],
+        "verify": [
+          "docker compose psコマンドを実行し、定義した全てのコンテナが起動していることを確認する。",
+          "ブラウザまたはcurlコマンドでNginx経由のエンドポイントにアクセスし、疎通ができることを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-02-T01",
+        "unit_key": "U-002",
+        "title": "アカウント登録・ログイン機能の実装",
+        "purpose": "利用者からのアカウント登録およびログインのリクエストを受け付け、データベースを介してユーザー情報の登録と認証を行う。",
+        "files": [
+          {
+            "path": "app/repositories/user_repository.py",
+            "kind": "module",
+            "responsibility": "users テーブルへのデータ永続化操作を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/auth_service.py",
+            "kind": "module",
+            "responsibility": "アカウント登録やログインのビジネスロジックを実行する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/api/auth.py",
+            "kind": "module",
+            "responsibility": "認証関連のHTTPリクエストを受け付け、サービス層へ処理を委譲する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "tests/test_auth.py",
+            "kind": "test",
+            "responsibility": "アカウント登録・ログインAPIの結合テストを行う。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "リポジトリ層、サービス層、API層の順に依存関係に沿って実装する。",
+          "パスワードハッシュ化やJWTトークン発行などの自明なセキュリティ処理の共通部品を利用する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常なデータでアカウント登録ができること",
+            "sut": "POST /api/v1/auth/register",
+            "driver": "結合テスト(pytest)",
+            "stub": "スタブ不要 ── 実データベースを利用する"
+          },
+          {
+            "viewpoint": "登録済みメールアドレスでの重複登録時にエラーとなること",
+            "sut": "POST /api/v1/auth/register",
+            "driver": "結合テスト(pytest)",
+            "stub": "スタブ不要 ── 実データベースを利用する"
+          },
+          {
+            "viewpoint": "正しいメールアドレスとパスワードでログインできること",
+            "sut": "POST /api/v1/auth/login",
+            "driver": "結合テスト(pytest)",
+            "stub": "スタブ不要 ── 実データベースを利用する"
+          }
+        ],
+        "gwt": [
+          "Given 未登録のメールアドレスとパスワードがある When アカウント登録APIを呼び出す Then ユーザーが作成されること",
+          "Given 登録済みのメールアドレスがある When アカウント登録APIを呼び出す Then エラーレスポンスが返されること",
+          "Given 登録済みのユーザー情報がある When 正しい認証情報でログインAPIを呼び出す Then 認証が成功すること"
+        ],
+        "verify": [
+          "pytest を実行してすべてのテストがパスすることを確認する。",
+          "FastAPIの対話型ドキュメント等からAPIエンドポイントを直接叩き、期待通りのレスポンスが返ることを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-03-T01",
+        "unit_key": "U-003",
+        "title": "対話チャットおよび参考資料読み込み、例外ハンドリングの実装",
+        "purpose": "利用者からのチャットメッセージを受け付け、メッセージ履歴の保存、AIエージェントによる応答生成、および例外ハンドリングを実装する。",
+        "files": [
+          {
+            "path": "app/repositories/chat_repository.py",
+            "kind": "module",
+            "responsibility": "chat_messages テーブルへのデータ操作を行う。",
+            "basis": "段階4のモジュール"
+          },
+          {
+            "path": "app/services/ai_agent.py",
+            "kind": "module",
+            "responsibility": "LangChain と LangGraph を用いて Gemini Flash-Lite API と連携し対話応答を生成する。",
+            "basis": "段階4のモジュール"
+          },
+          {
+            "path": "app/services/chat_service.py",
+            "kind": "module",
+            "responsibility": "チャットの進行管理とAIエージェントの呼び出し制御を行う。",
+            "basis": "段階4のモジュール"
+          },
+          {
+            "path": "app/api/chat.py",
+            "kind": "module",
+            "responsibility": "チャット関連のHTTPリクエストを受け付け、サービス層へ処理を委譲する。",
+            "basis": "段階4のモジュール"
+          },
+          {
+            "path": "tests/test_chat.py",
+            "kind": "test",
+            "responsibility": "チャットメッセージ送信APIの正常系および異常系をテストする。",
+            "basis": "段階4のモジュール"
+          }
+        ],
+        "notes": [
+          "依存関係の順序に従い、リポジトリ層、AIエージェント層、サービス層、API層の順に実装する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常なメッセージ送信時にAIの応答が返却されること",
+            "sut": "POST /api/v1/chat/messages",
+            "driver": "FastAPI TestClient による結合テスト",
+            "stub": "ai_agent.py 内の外部API呼び出し部分をモック化し、固定の応答を返すようにする"
+          }
+        ],
+        "gwt": [
+          "Given: 有効な message と session_id が入力されること",
+          "When: POST /api/v1/chat/messages エンドポイントにリクエストが送信されること",
+          "Then: メッセージが保存され、AIの応答メッセージが返却されること"
+        ],
+        "verify": [
+          "pytest を実行してテストがすべて成功することを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-04-T01",
+        "unit_key": "U-004",
+        "title": "設計書一括生成、自己診断、プレビュー・コピー・ダウンロード機能の実装",
+        "purpose": "利用者のセッションとアップロードされたファイルから4種の設計書を一括生成し、自己診断とともにデータベースへ保存してプレビュー・ダウンロード機能の基盤となるAPIを提供する。",
+        "files": [
+          {
+            "path": "app/repositories/document_repository.py",
+            "kind": "module",
+            "responsibility": "generated_documents および self_diagnostics テーブルへのデータ操作を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/ai_agent.py",
+            "kind": "module",
+            "responsibility": "Gemini Flash-Lite API と連携し、一括生成処理を実行する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/services/document_service.py",
+            "kind": "module",
+            "responsibility": "4種の設計書の一括生成と自己診断ロジックを実行する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "app/api/documents.py",
+            "kind": "module",
+            "responsibility": "設計書生成関連のHTTPリクエストを受け付け、サービス層へ処理を委譲する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "tests/test_documents.py",
+            "kind": "test",
+            "responsibility": "設計書一括生成および自己診断APIの動作を検証する。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "リポジトリ層、AIエージェント層、サービス層、API層の順に実装する。",
+          "FastAPIの例外ハンドラーを用いて共通エラーレスポンスを返却する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常なリクエストを受け取り、4種の設計書と自己診断結果が保存されること",
+            "sut": "POST /api/v1/documents/generate",
+            "driver": "結合テスト (FastAPI TestClient)",
+            "stub": "Gemini Flash-Lite API をモック化し、固定の設計書データと自己診断データを返却する"
+          }
+        ],
+        "gwt": [
+          "Given 有効な session_id とファイルが含まれているとき",
+          "When POST /api/v1/documents/generate エンドポイントを呼び出した場合",
+          "Then 4種の設計書が生成されデータベースに保存され、正常なレスポンスが返ること"
+        ],
+        "verify": [
+          "pytest を実行してテストがすべて成功することを確認する。"
+        ],
+        "findings": []
+      }
+    ]
+  },
+  "updated_at": "2026-10-12T08:03:23.917129Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [],
+  "plan": {
+    "crosscutting": [],
+    "milestones": [
+      {
+        "name": "プロジェクト基盤構築",
+        "goal": "Next.jsとFastAPIの基本リポジトリ構造とDocker環境が起動するようになること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-001",
+            "kind": "base",
+            "title": "プロジェクトリポジトリおよびDocker環境構築",
+            "function_ids": [],
+            "depends_on": [],
+            "modules": [],
+            "config_files": [
+              "Dockerfile",
+              "docker-compose.yml",
+              "nginx/nginx.conf"
+            ],
+            "req_ids": []
+          }
+        ]
+      },
+      {
+        "name": "認証基盤・アカウント機能",
+        "goal": "ユーザーがアカウント登録とメール/パスワードによるログインを行えるようになること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-002",
+            "kind": "feature",
+            "title": "アカウント登録・ログイン機能の実装",
+            "function_ids": [
+              "DF-1",
+              "DF-2"
+            ],
+            "depends_on": [
+              "M-01-T01"
+            ],
+            "modules": [
+              "app/api/auth.py",
+              "app/services/auth_service.py",
+              "app/repositories/user_repository.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-001",
+              "FR-002"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "チャットヒアリング機能",
+        "goal": "対話型チャットによるヒアリングと参考資料の読み込み、例外時の再送制御ができるようになること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-003",
+            "kind": "feature",
+            "title": "対話チャットおよび参考資料読み込み、例外ハンドリングの実装",
+            "function_ids": [
+              "DF-3"
+            ],
+            "depends_on": [
+              "M-02-T01"
+            ],
+            "modules": [
+              "app/api/chat.py",
+              "app/services/chat_service.py",
+              "app/repositories/chat_repository.py",
+              "app/services/ai_agent.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-003",
+              "FR-004",
+              "FR-008",
+              "FR-009"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "設計書一括生成・自己診断・プレビュー機能",
+        "goal": "4種の設計書の自動生成、AI自己診断結果の提示、プレビュー・コピー・ダウンロード機能が動作すること",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-004",
+            "kind": "feature",
+            "title": "設計書一括生成、自己診断、プレビュー・コピー・ダウンロード機能の実装",
+            "function_ids": [
+              "DF-4"
+            ],
+            "depends_on": [
+              "M-03-T01"
+            ],
+            "modules": [
+              "app/api/documents.py",
+              "app/services/document_service.py",
+              "app/repositories/document_repository.py",
+              "app/services/ai_agent.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-005",
+              "FR-006",
+              "FR-007"
+            ]
+          }
+        ]
+      }
+    ],
+    "environment": "開発環境として Python 3.13, FastAPI, Next.js (App Router), PostgreSQL, Redis, Docker Compose を利用する。CI/CD パイプラインは GitHub Actions を用いて構築し、自動テストやコンテナのビルド・デプロイを行う。",
+    "risks": [
+      {
+        "risk": "Gemini Flash-Lite API の応答速度やレートリミットによる遅延",
+        "mitigation": "非同期処理の活用とエラー時の再送促しUIによりUXの低下を防ぐ"
+      },
+      {
+        "risk": "機密保持要件によるログ出力制限下でのデバッグ困難性",
+        "mitigation": "ローカル環境における厳格なモックテストと例外ハンドリングの単体テストを強化する"
+      }
+    ],
+    "next_unit_seq": 5
+  },
+  "unit_req_ids": {
+    "M-01-T01": [],
+    "M-02-T01": [
+      "FR-001",
+      "FR-002"
+    ],
+    "M-03-T01": [
+      "FR-003",
+      "FR-004",
+      "FR-008",
+      "FR-009"
+    ],
+    "M-04-T01": [
+      "FR-005",
+      "FR-006",
+      "FR-007"
+    ]
+  },
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

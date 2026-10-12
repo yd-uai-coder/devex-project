@@ -1,0 +1,70 @@
+{
+  "stages": [
+    {
+      "stage": 8,
+      "changes": [
+        {
+          "source": "doc:requirements",
+          "key": "req:FR-004",
+          "change": "content",
+          "stage": 0,
+          "label": "FR-004 初期入力として参考資料(txt、md、pdf、最大5件)を読み込めること。",
+          "before": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"初期入力として参考資料(txt、md、pdf、最大3件)を読み込めること。\"}",
+          "after": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\"], \"priority\": \"Must\", \"source\": \"user\", \"text\": \"初期入力として参考資料(txt、md、pdf、最大5件)を読み込めること。\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:external_design",
+          "key": "screen:SCR-002",
+          "change": "content",
+          "stage": 0,
+          "label": "SCR-002 チャット・参考資料アップロード画面",
+          "before": "{\"name\": \"チャット・参考資料アップロード画面\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-004\", \"FR-009\"], \"role\": \"対話型チャットによるヒアリングと初期参考資料の読み込みを行う画面\", \"ui_spec\": \"- 入力項目: チャットメッセージ入力欄、参考資料ファイル選択(txt, md, pdf、最大3件)\\n- 表示項目: チャット履歴一覧、ファイルアップロード状況\\n- 操作ボタン: 送信ボタン、資料アップロードボタン、設計書生成開始ボタン\\n- アクション: メッセージ送信および資料アップロードを行い、AIからの応答をストリーミング表示する。エラー時は理由を表示し再送を促す\"}",
+          "after": "{\"name\": \"チャット・参考資料アップロード画面\", \"priority\": \"Must\", \"req_ids\": [\"FR-003\", \"FR-004\", \"FR-009\"], \"role\": \"対話型チャットによるヒアリングと初期参考資料の読み込みを行う画面\", \"ui_spec\": \"- 入力項目: チャットメッセージ入力欄、参考資料ファイル選択(txt, md, pdf、最大5件)\\n- 表示項目: チャット履歴一覧、ファイルアップロード状況\\n- 操作ボタン: 送信ボタン、資料アップロードボタン、設計書生成開始ボタン\\n- アクション: メッセージ送信および資料アップロードを行い、AIからの応答をストリーミング表示する。エラー時は理由を表示し再送を促す\"}",
+          "new_key": null,
+          "pending": false
+        },
+        {
+          "source": "doc:internal_design",
+          "key": "df:DF-3",
+          "change": "content",
+          "stage": 0,
+          "label": "DF-3 POST /api/v1/chat/messages",
+          "before": "{\"data_items\": [{\"fields\": [\"message\", \"session_id\", \"sender\", \"content\"], \"name\": \"チャットメッセージ\"}], \"flows\": [{\"data\": \"message, session_id\", \"source\": \"利用者\", \"target\": \"app/api/chat.py\", \"transform\": \"バリデーション\"}, {\"data\": \"message, session_id\", \"source\": \"app/api/chat.py\", \"target\": \"app/services/chat_service.py\", \"transform\": \"\"}, {\"data\": \"メッセージ履歴\", \"source\": \"app/services/chat_service.py\", \"target\": \"app/repositories/chat_repository.py\", \"transform\": \"\"}, {\"data\": \"取得データ\", \"source\": \"app/repositories/chat_repository.py\", \"target\": \"chat_messages\", \"transform\": \"\"}, {\"data\": \"プロンプト\", \"source\": \"app/services/chat_service.py\", \"target\": \"app/services/ai_agent.py\", \"transform\": \"\"}, {\"data\": \"AI応答生成依頼\", \"source\": \"app/services/ai_agent.py\", \"target\": \"Gemini Flash-Lite API\", \"transform\": \"\"}], \"trigger\": \"POST /api/v1/chat/messages\"}",
+          "after": "{\"data_items\": [{\"fields\": [\"message\", \"session_id\", \"sender\", \"content\", \"files\"], \"name\": \"チャットメッセージ\"}], \"flows\": [{\"data\": \"message, session_id, files\", \"source\": \"利用者\", \"target\": \"app/api/chat.py\", \"transform\": \"バリデーション・ファイル形式件数チェック\"}, {\"data\": \"message, session_id, files\", \"source\": \"app/api/chat.py\", \"target\": \"app/services/chat_service.py\", \"transform\": \"\"}, {\"data\": \"メッセージ履歴・ファイルデータ\", \"source\": \"app/services/chat_service.py\", \"target\": \"app/repositories/chat_repository.py\", \"transform\": \"\"}, {\"data\": \"取得データ\", \"source\": \"app/repositories/chat_repository.py\", \"target\": \"chat_messages\", \"transform\": \"\"}, {\"data\": \"プロンプト（資料含む）\", \"source\": \"app/services/chat_service.py\", \"target\": \"app/services/ai_agent.py\", \"transform\": \"\"}, {\"data\": \"AI応答生成依頼\", \"source\": \"app/services/ai_agent.py\", \"target\": \"Gemini Flash-Lite API\", \"transform\": \"\"}], \"trigger\": \"POST /api/v1/chat/messages\"}",
+          "new_key": null,
+          "pending": false
+        }
+      ],
+      "marks": [
+        {
+          "key": "unit:U-003",
+          "label": "M-03-T01 の手順書",
+          "stage": 8,
+          "path": [
+            "df:DF-3",
+            "unit:U-003"
+          ],
+          "reason": "この設計を手順書で実装する",
+          "sources": [
+            "doc:requirements",
+            "doc:external_design",
+            "doc:internal_design"
+          ],
+          "reviewed": false,
+          "pending": false
+        }
+      ],
+      "open": 1,
+      "reviewed": 0
+    }
+  ],
+  "regeneration_targets": [
+    {
+      "stage": 8,
+      "key": "unit:U-003",
+      "label": "M-03-T01 の手順書"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# 作成：Phase-42-3｜更新：Phase-43-2
+# 作成：Phase-42-3｜更新：Phase-43-2,49-3
 """変更の影響を求めるための、設計の要素と参照の導出のテスト。
 
 SUT: DesignModels.from_dicts / build_elements / parse_db_tables
@@ -108,11 +108,18 @@ def test_stage_2_to_4_elements_reference_functions_tables_and_dependencies():
         ("fn:F-01", "function"),
         ("table:reservations", "table"),
     }
+    # Phase-49-3:追記
+    # 入口のモジュールは、手順の最初の呼び出し先として、処理のトリガーの API を受ける
     assert _refs(elements[f"module:{ROUTE}"]) == {
         ("fn:F-01", "function"),
         ("fn:F-02", "function"),
         (f"module:{SERVICE}", "depends"),
+        # Phase-49-3:追記
+        ("api:POST /api/v1/reservations", "receives"),
+        ("api:GET /api/v1/reservations", "receives"),
     }
+    # Phase-49-3:追記
+    assert ("api:GET /api/v1/reservations", "receives") not in _refs(elements[f"module:{SERVICE}"])
 
 
 def test_procedure_references_callees_and_tables_from_db_column():

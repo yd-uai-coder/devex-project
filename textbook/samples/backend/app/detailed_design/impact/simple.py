@@ -1,4 +1,4 @@
-# 作成：Phase-46-1
+# 作成：Phase-46-1｜更新：Phase-49-4
 """簡易ドキュメントモードの、変更の影響を求めるための要素と参照の導出(純粋関数)。
 
 docs/internal_design.md 3.3節「7. 変更影響分析・変更管理」。
@@ -16,6 +16,7 @@ docs/internal_design.md 3.3節「7. 変更影響分析・変更管理」。
 - 内部設計書 3.3 の API エンドポイント一覧の行は要素にしない(API の要素は外部設計書 2.6 の行)。
 """
 
+# Phase-49-4:追記 ── app.detailed_design.impact.elements.task_body
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -29,6 +30,7 @@ from app.detailed_design.impact.elements import (
     add_document_elements,
     parse_model,
     row_body,
+    task_body,
 )
 from app.detailed_design.plan import PlanModel, normalize_plan
 from app.detailed_design.procedure_doc import ProcedureDocModel, plan_units
@@ -129,7 +131,10 @@ def _tasks_and_units(
     units = plan_units(plan)
     for unit in units:
         label = f"{unit.unit_id} {unit.task.title}"
-        key = b.add(f"task:{unit.key}", "task", DOCUMENT_STAGE, label, row_body(unit.task, "key"))
+        # Phase-49-4：更新
+        # key = b.add(f"task:{unit.key}", "task", DOCUMENT_STAGE, label, row_body(unit.task, "key"))
+        # ↓↓
+        key = b.add(f"task:{unit.key}", "task", DOCUMENT_STAGE, label, task_body(unit, units))
         for df in unit.task.function_ids:
             b.ref(key, f"df:{df.strip()}", "function")
         for req in unit.task.req_ids:

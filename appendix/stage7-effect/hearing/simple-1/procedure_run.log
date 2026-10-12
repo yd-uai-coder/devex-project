@@ -1,0 +1,10 @@
+202 null
+status completed
+requirements 1 8335
+external_design 1 5520
+internal_design 1 13169
+implementation_plan 1 3709
+段階8 手順書を作る単位: ['M-01-T01', 'M-01-T02', 'M-02-T01', 'M-02-T02', 'M-03-T01'](全件)
+段階8 生成 {"unit_ids": ["M-01-T01", "M-01-T02", "M-02-T01", "M-02-T02", "M-03-T01"]} → completed(15秒) 
+段階8 承認(v2)
+実装手順書の zip: 200 38213 bytes

@@ -1,0 +1,2041 @@
+[
+  {
+    "id": "d850b87f-48b7-4d93-b204-cb2112b29209",
+    "view": "dataflow",
+    "notation": "dfd",
+    "subject": "projects",
+    "scope": null,
+    "semantic_model": {
+      "notation": "dfd",
+      "elements": [
+        {
+          "id": "F-03",
+          "name": "F-03 プロジェクト一覧を取得する",
+          "element_type": "process",
+          "description": "認証トークンを検証し、PostgreSQLから既存のプロジェクト一覧を取得する",
+          "layer": "取得処理"
+        },
+        {
+          "id": "F-04",
+          "name": "F-04 プロジェクトを作成する",
+          "element_type": "process",
+          "description": "認証トークンを検証し、入力されたプロジェクト情報をPostgreSQLに新規保存する",
+          "layer": "作成処理"
+        },
+        {
+          "id": "client",
+          "name": "クライアント",
+          "element_type": "external_entity"
+        },
+        {
+          "id": "projects",
+          "name": "projects",
+          "element_type": "data_store"
+        }
+      ],
+      "relations": [
+        {
+          "id": "f1",
+          "source_id": "client",
+          "target_id": "F-03",
+          "data_item_id": "821403b9-0d21-4a3b-a056-9b2f87d499fd"
+        },
+        {
+          "id": "f2",
+          "source_id": "projects",
+          "target_id": "F-03",
+          "data_item_id": "3cd57bd7-8563-457d-b575-a1a4772e729a"
+        },
+        {
+          "id": "f3",
+          "source_id": "F-03",
+          "target_id": "client",
+          "data_item_id": "3cd57bd7-8563-457d-b575-a1a4772e729a"
+        },
+        {
+          "id": "f4",
+          "source_id": "client",
+          "target_id": "F-04",
+          "data_item_id": "229ef2c8-db7c-4ca1-a370-be67ccd975fa"
+        },
+        {
+          "id": "f5",
+          "source_id": "client",
+          "target_id": "F-04",
+          "data_item_id": "821403b9-0d21-4a3b-a056-9b2f87d499fd"
+        },
+        {
+          "id": "f6",
+          "source_id": "F-04",
+          "target_id": "projects",
+          "data_item_id": "229ef2c8-db7c-4ca1-a370-be67ccd975fa"
+        },
+        {
+          "id": "f7",
+          "source_id": "F-04",
+          "target_id": "client",
+          "data_item_id": "156c50a4-f59a-42f2-8dbe-f69e06250460"
+        }
+      ]
+    },
+    "layout_model": {
+      "width": 960.0,
+      "height": 426.0,
+      "nodes": {
+        "F-03": {
+          "x": 36.977666666666636,
+          "y": 84.0,
+          "w": 259.37800000000004,
+          "h": 38.0,
+          "lane": 0,
+          "row": 0
+        },
+        "F-04": {
+          "x": 365.01099999999997,
+          "y": 252.0,
+          "w": 229.97800000000004,
+          "h": 38.0,
+          "lane": 1,
+          "row": 2
+        },
+        "client": {
+          "x": 735.2333333333333,
+          "y": 168.0,
+          "w": 116.2,
+          "h": 38.0,
+          "lane": 2,
+          "row": 1
+        },
+        "projects": {
+          "x": 739.0533333333333,
+          "y": 336.0,
+          "w": 108.56,
+          "h": 48.0,
+          "lane": 2,
+          "row": 3
+        }
+      },
+      "edges": {
+        "f1": {
+          "points": [
+            [
+              803.33,
+              168.0
+            ],
+            [
+              803.33,
+              94.0
+            ],
+            [
+              296.36,
+              94.0
+            ]
+          ],
+          "label_pos": [
+            549.845,
+            81.0
+          ]
+        },
+        "f2": {
+          "points": [
+            [
+              739.05,
+              360.0
+            ],
+            [
+              310.36,
+              360.0
+            ],
+            [
+              310.36,
+              112.0
+            ],
+            [
+              296.36,
+              112.0
+            ]
+          ],
+          "label_pos": [
+            524.7049999999999,
+            347.0
+          ]
+        },
+        "f3": {
+          "points": [
+            [
+              296.36,
+              103.0
+            ],
+            [
+              783.33,
+              103.0
+            ],
+            [
+              783.33,
+              168.0
+            ]
+          ],
+          "label_pos": [
+            539.845,
+            116.0
+          ]
+        },
+        "f4": {
+          "points": [
+            [
+              773.33,
+              206.0
+            ],
+            [
+              773.33,
+              259.0
+            ],
+            [
+              594.99,
+              259.0
+            ]
+          ],
+          "label_pos": [
+            684.1600000000001,
+            246.0
+          ]
+        },
+        "f5": {
+          "points": [
+            [
+              793.33,
+              206.0
+            ],
+            [
+              793.33,
+              267.0
+            ],
+            [
+              594.99,
+              267.0
+            ]
+          ],
+          "label_pos": [
+            848.4300000000001,
+            236.5
+          ]
+        },
+        "f6": {
+          "points": [
+            [
+              594.99,
+              283.0
+            ],
+            [
+              793.33,
+              283.0
+            ],
+            [
+              793.33,
+              336.0
+            ]
+          ],
+          "label_pos": [
+            694.1600000000001,
+            296.0
+          ]
+        },
+        "f7": {
+          "points": [
+            [
+              594.99,
+              275.0
+            ],
+            [
+              813.33,
+              275.0
+            ],
+            [
+              813.33,
+              206.0
+            ]
+          ],
+          "label_pos": [
+            927.23,
+            240.5
+          ]
+        }
+      },
+      "metrics": {
+        "crossings": 0,
+        "overlaps": 0,
+        "collisions": 0
+      }
+    },
+    "status": "exported",
+    "version": 2,
+    "generation_status": "completed",
+    "generation_error": null,
+    "source_doc_versions": {
+      "stage:1": 2,
+      "doc:requirements": 1
+    },
+    "created_at": "2026-10-12T08:03:03.626799Z",
+    "updated_at": "2026-10-12T08:07:38.538406Z"
+  },
+  {
+    "id": "ba0aadb3-bac2-4871-bf90-779ee3d3483f",
+    "view": "dataflow",
+    "notation": "dfd",
+    "subject": "auth",
+    "scope": null,
+    "semantic_model": {
+      "notation": "dfd",
+      "elements": [
+        {
+          "id": "F-01",
+          "name": "F-01 ユーザー登録する",
+          "element_type": "process",
+          "description": "メールアドレスとパスワードの形式を検証し、パスワードをハッシュ化してPostgreSQLにユーザー情報を保存する",
+          "layer": "受け付け・検証"
+        },
+        {
+          "id": "F-02",
+          "name": "F-02 ログインする",
+          "element_type": "process",
+          "description": "メールアドレスとパスワードをもとにPostgreSQLで認証を行い、認証成功時にRedisを用いてトークンを発行する",
+          "layer": "認証・発行"
+        },
+        {
+          "id": "user",
+          "name": "ユーザー",
+          "element_type": "external_entity"
+        },
+        {
+          "id": "users",
+          "name": "users",
+          "element_type": "data_store"
+        },
+        {
+          "id": "tokens",
+          "name": "tokens",
+          "element_type": "data_store"
+        }
+      ],
+      "relations": [
+        {
+          "id": "fl1",
+          "source_id": "user",
+          "target_id": "F-01",
+          "data_item_id": "4510be00-0e48-4743-a86d-02781b3117b2"
+        },
+        {
+          "id": "fl2",
+          "source_id": "user",
+          "target_id": "F-01",
+          "data_item_id": "6616c4fa-9a7f-4f4a-b1da-43ff06d458b5"
+        },
+        {
+          "id": "fl3",
+          "source_id": "F-01",
+          "target_id": "user",
+          "data_item_id": "0a986d60-c8c1-4ddb-aa3a-b0b398359958"
+        },
+        {
+          "id": "fl4",
+          "source_id": "F-01",
+          "target_id": "users",
+          "data_item_id": "7915d010-5baa-4654-97b3-340718c94802"
+        },
+        {
+          "id": "fl5",
+          "source_id": "user",
+          "target_id": "F-02",
+          "data_item_id": "4510be00-0e48-4743-a86d-02781b3117b2"
+        },
+        {
+          "id": "fl6",
+          "source_id": "user",
+          "target_id": "F-02",
+          "data_item_id": "6616c4fa-9a7f-4f4a-b1da-43ff06d458b5"
+        },
+        {
+          "id": "fl7",
+          "source_id": "users",
+          "target_id": "F-02",
+          "data_item_id": "7915d010-5baa-4654-97b3-340718c94802"
+        },
+        {
+          "id": "fl8",
+          "source_id": "F-02",
+          "target_id": "tokens",
+          "data_item_id": "1bbdcef3-ac20-47d4-8941-a8f7e028f928"
+        },
+        {
+          "id": "fl9",
+          "source_id": "F-02",
+          "target_id": "user",
+          "data_item_id": "821403b9-0d21-4a3b-a056-9b2f87d499fd"
+        }
+      ]
+    },
+    "layout_model": {
+      "width": 960.0,
+      "height": 520.0,
+      "nodes": {
+        "F-01": {
+          "x": 73.72766666666665,
+          "y": 84.0,
+          "w": 185.87800000000001,
+          "h": 38.0,
+          "lane": 0,
+          "row": 0
+        },
+        "F-02": {
+          "x": 401.76099999999997,
+          "y": 346.0,
+          "w": 156.478,
+          "h": 38.0,
+          "lane": 1,
+          "row": 3
+        },
+        "user": {
+          "x": 745.3333333333333,
+          "y": 262.0,
+          "w": 96.0,
+          "h": 38.0,
+          "lane": 2,
+          "row": 2
+        },
+        "users": {
+          "x": 745.3333333333333,
+          "y": 168.0,
+          "w": 96.0,
+          "h": 48.0,
+          "lane": 2,
+          "row": 1
+        },
+        "tokens": {
+          "x": 745.3333333333333,
+          "y": 430.0,
+          "w": 96.0,
+          "h": 48.0,
+          "lane": 2,
+          "row": 4
+        }
+      },
+      "edges": {
+        "fl1": {
+          "points": [
+            [
+              745.33,
+              290.0
+            ],
+            [
+              273.61,
+              290.0
+            ],
+            [
+              273.61,
+              115.0
+            ],
+            [
+              259.61,
+              115.0
+            ]
+          ],
+          "label_pos": [
+            509.47,
+            303.0
+          ]
+        },
+        "fl2": {
+          "points": [
+            [
+              745.33,
+              272.0
+            ],
+            [
+              731.33,
+              272.0
+            ],
+            [
+              731.33,
+              99.0
+            ],
+            [
+              259.61,
+              99.0
+            ]
+          ],
+          "label_pos": [
+            495.47,
+            112.0
+          ]
+        },
+        "fl3": {
+          "points": [
+            [
+              259.61,
+              107.0
+            ],
+            [
+              323.33,
+              107.0
+            ],
+            [
+              323.33,
+              281.0
+            ],
+            [
+              745.33,
+              281.0
+            ]
+          ],
+          "label_pos": [
+            534.33,
+            268.0
+          ]
+        },
+        "fl4": {
+          "points": [
+            [
+              259.61,
+              91.0
+            ],
+            [
+              793.33,
+              91.0
+            ],
+            [
+              793.33,
+              168.0
+            ]
+          ],
+          "label_pos": [
+            526.47,
+            78.0
+          ]
+        },
+        "fl5": {
+          "points": [
+            [
+              773.33,
+              300.0
+            ],
+            [
+              773.33,
+              349.0
+            ],
+            [
+              558.24,
+              349.0
+            ]
+          ],
+          "label_pos": [
+            665.7850000000001,
+            336.0
+          ]
+        },
+        "fl6": {
+          "points": [
+            [
+              793.33,
+              300.0
+            ],
+            [
+              793.33,
+              357.0
+            ],
+            [
+              558.24,
+              357.0
+            ]
+          ],
+          "label_pos": [
+            675.7850000000001,
+            370.0
+          ]
+        },
+        "fl7": {
+          "points": [
+            [
+              841.33,
+              192.0
+            ],
+            [
+              855.33,
+              192.0
+            ],
+            [
+              855.33,
+              373.0
+            ],
+            [
+              558.24,
+              373.0
+            ]
+          ],
+          "label_pos": [
+            910.4300000000001,
+            282.5
+          ]
+        },
+        "fl8": {
+          "points": [
+            [
+              558.24,
+              381.0
+            ],
+            [
+              793.33,
+              381.0
+            ],
+            [
+              793.33,
+              430.0
+            ]
+          ],
+          "label_pos": [
+            675.7850000000001,
+            394.0
+          ]
+        },
+        "fl9": {
+          "points": [
+            [
+              558.24,
+              365.0
+            ],
+            [
+              813.33,
+              365.0
+            ],
+            [
+              813.33,
+              300.0
+            ]
+          ],
+          "label_pos": [
+            868.4300000000001,
+            332.5
+          ]
+        }
+      },
+      "metrics": {
+        "crossings": 0,
+        "overlaps": 0,
+        "collisions": 0
+      }
+    },
+    "status": "exported",
+    "version": 2,
+    "generation_status": "completed",
+    "generation_error": null,
+    "source_doc_versions": {
+      "stage:1": 2,
+      "doc:requirements": 1
+    },
+    "created_at": "2026-10-12T08:03:03.626799Z",
+    "updated_at": "2026-10-12T08:07:38.538406Z"
+  },
+  {
+    "id": "1cd2266e-dcfb-48ab-8ce4-90021008a7eb",
+    "view": "dataflow",
+    "notation": "dfd",
+    "subject": "chat",
+    "scope": null,
+    "semantic_model": {
+      "notation": "dfd",
+      "elements": [
+        {
+          "id": "F-05",
+          "name": "F-05 チャットメッセージを送信する",
+          "element_type": "process",
+          "description": "認証トークンを検証しチャットメッセージを処理してAI応答を取得する",
+          "layer": "チャット処理"
+        },
+        {
+          "id": "e1",
+          "name": "ユーザー",
+          "element_type": "external_entity"
+        },
+        {
+          "id": "ds1",
+          "name": "chats",
+          "element_type": "data_store"
+        }
+      ],
+      "relations": [
+        {
+          "id": "fl1",
+          "source_id": "e1",
+          "target_id": "F-05",
+          "data_item_id": "6fa5cf6e-dd95-471c-ba44-07763c850c6e"
+        },
+        {
+          "id": "fl2",
+          "source_id": "e1",
+          "target_id": "F-05",
+          "data_item_id": "821403b9-0d21-4a3b-a056-9b2f87d499fd"
+        },
+        {
+          "id": "fl3",
+          "source_id": "e1",
+          "target_id": "F-05",
+          "data_item_id": "c2de6161-9c8f-46c0-8092-f24c805827dc"
+        },
+        {
+          "id": "fl4",
+          "source_id": "F-05",
+          "target_id": "e1",
+          "data_item_id": "19ce8abb-30cc-45cb-8fa4-bee8c69192b1"
+        },
+        {
+          "id": "fl5",
+          "source_id": "F-05",
+          "target_id": "ds1",
+          "data_item_id": "f7e70ca7-4e61-4f3c-98b0-5ae921644384"
+        }
+      ]
+    },
+    "layout_model": {
+      "width": 660.0,
+      "height": 342.0,
+      "nodes": {
+        "e1": {
+          "x": 442.0,
+          "y": 168.0,
+          "w": 96.0,
+          "h": 38.0,
+          "lane": 1,
+          "row": 1
+        },
+        "ds1": {
+          "x": 442.0,
+          "y": 252.0,
+          "w": 96.0,
+          "h": 48.0,
+          "lane": 1,
+          "row": 2
+        },
+        "F-05": {
+          "x": 32.960999999999984,
+          "y": 84.0,
+          "w": 274.07800000000003,
+          "h": 38.0,
+          "lane": 0,
+          "row": 0
+        }
+      },
+      "edges": {
+        "fl1": {
+          "points": [
+            [
+              520.0,
+              168.0
+            ],
+            [
+              520.0,
+              87.0
+            ],
+            [
+              307.04,
+              87.0
+            ]
+          ],
+          "label_pos": [
+            413.52,
+            74.0
+          ]
+        },
+        "fl2": {
+          "points": [
+            [
+              500.0,
+              168.0
+            ],
+            [
+              500.0,
+              95.0
+            ],
+            [
+              307.04,
+              95.0
+            ]
+          ],
+          "label_pos": [
+            555.1,
+            131.5
+          ]
+        },
+        "fl3": {
+          "points": [
+            [
+              480.0,
+              168.0
+            ],
+            [
+              480.0,
+              103.0
+            ],
+            [
+              307.04,
+              103.0
+            ]
+          ],
+          "label_pos": [
+            415.198,
+            135.5
+          ]
+        },
+        "fl4": {
+          "points": [
+            [
+              307.04,
+              111.0
+            ],
+            [
+              460.0,
+              111.0
+            ],
+            [
+              460.0,
+              168.0
+            ]
+          ],
+          "label_pos": [
+            336.39799999999997,
+            139.5
+          ]
+        },
+        "fl5": {
+          "points": [
+            [
+              307.04,
+              119.0
+            ],
+            [
+              428.0,
+              119.0
+            ],
+            [
+              428.0,
+              276.0
+            ],
+            [
+              442.0,
+              276.0
+            ]
+          ],
+          "label_pos": [
+            394.95,
+            197.5
+          ]
+        }
+      },
+      "metrics": {
+        "crossings": 0,
+        "overlaps": 0,
+        "collisions": 0
+      }
+    },
+    "status": "exported",
+    "version": 2,
+    "generation_status": "completed",
+    "generation_error": null,
+    "source_doc_versions": {
+      "stage:1": 2,
+      "doc:requirements": 1
+    },
+    "created_at": "2026-10-12T08:03:03.626799Z",
+    "updated_at": "2026-10-12T08:07:38.538406Z"
+  },
+  {
+    "id": "96ee0bda-c633-4629-8ee1-44fee8ad1dcd",
+    "view": "dataflow",
+    "notation": "dfd",
+    "subject": "documents",
+    "scope": null,
+    "semantic_model": {
+      "notation": "dfd",
+      "elements": [
+        {
+          "id": "F-06",
+          "name": "F-06 参考資料をアップロードする",
+          "element_type": "process",
+          "description": "認証トークンを検証し、参考資料ファイルを読み込んでテキスト化してPostgreSQLに保存する",
+          "layer": "API処理"
+        },
+        {
+          "id": "F-08",
+          "name": "F-08 生成文書および版一覧を取得する",
+          "element_type": "process",
+          "description": "認証トークンを検証し、PostgreSQLから生成文書と版の履歴を取得する",
+          "layer": "API処理"
+        },
+        {
+          "id": "user",
+          "name": "利用者(SE・ITコンサルタント・PM)",
+          "element_type": "external_entity"
+        },
+        {
+          "id": "documents_store",
+          "name": "documents",
+          "element_type": "data_store"
+        }
+      ],
+      "relations": [
+        {
+          "id": "f1",
+          "source_id": "user",
+          "target_id": "F-06",
+          "data_item_id": "4af943ef-3eae-46e1-adb8-2581cb5cd938"
+        },
+        {
+          "id": "f2",
+          "source_id": "user",
+          "target_id": "F-06",
+          "data_item_id": "781aa228-5da5-4159-a546-24004fbe69c1"
+        },
+        {
+          "id": "f3",
+          "source_id": "user",
+          "target_id": "F-06",
+          "data_item_id": "122a1bd7-0444-496a-b0ab-affb3c0533a5"
+        },
+        {
+          "id": "f4",
+          "source_id": "F-06",
+          "target_id": "user",
+          "data_item_id": "0fd223f9-db23-4c96-bfbc-56b922e8a4b2"
+        },
+        {
+          "id": "f5",
+          "source_id": "F-06",
+          "target_id": "documents_store",
+          "data_item_id": "90a75150-2007-4225-8c01-85b05d7a3283"
+        },
+        {
+          "id": "f6",
+          "source_id": "user",
+          "target_id": "F-08",
+          "data_item_id": "781aa228-5da5-4159-a546-24004fbe69c1"
+        },
+        {
+          "id": "f7",
+          "source_id": "user",
+          "target_id": "F-08",
+          "data_item_id": "122a1bd7-0444-496a-b0ab-affb3c0533a5"
+        },
+        {
+          "id": "f8",
+          "source_id": "documents_store",
+          "target_id": "F-08",
+          "data_item_id": "cb842da3-fe8a-4bfc-a334-d97b550df0c5"
+        },
+        {
+          "id": "f9",
+          "source_id": "F-08",
+          "target_id": "user",
+          "data_item_id": "cb842da3-fe8a-4bfc-a334-d97b550df0c5"
+        }
+      ]
+    },
+    "layout_model": {
+      "width": 660.0,
+      "height": 426.0,
+      "nodes": {
+        "F-06": {
+          "x": 40.31099999999998,
+          "y": 84.0,
+          "w": 259.37800000000004,
+          "h": 38.0,
+          "lane": 0,
+          "row": 0
+        },
+        "F-08": {
+          "x": 25.61099999999999,
+          "y": 346.0,
+          "w": 288.778,
+          "h": 38.0,
+          "lane": 0,
+          "row": 3
+        },
+        "user": {
+          "x": 352.226,
+          "y": 168.0,
+          "w": 275.548,
+          "h": 38.0,
+          "lane": 1,
+          "row": 1
+        },
+        "documents_store": {
+          "x": 431.31,
+          "y": 252.0,
+          "w": 117.38000000000001,
+          "h": 48.0,
+          "lane": 1,
+          "row": 2
+        }
+      },
+      "edges": {
+        "f1": {
+          "points": [
+            [
+              352.23,
+              179.0
+            ],
+            [
+              313.69,
+              179.0
+            ],
+            [
+              313.69,
+              112.0
+            ],
+            [
+              299.69,
+              112.0
+            ]
+          ],
+          "label_pos": [
+            437.733,
+            145.5
+          ]
+        },
+        "f2": {
+          "points": [
+            [
+              352.23,
+              163.0
+            ],
+            [
+              338.23,
+              163.0
+            ],
+            [
+              338.23,
+              94.0
+            ],
+            [
+              299.69,
+              94.0
+            ]
+          ],
+          "label_pos": [
+            421.848,
+            114.7
+          ]
+        },
+        "f3": {
+          "points": [
+            [
+              352.23,
+              171.0
+            ],
+            [
+              330.0,
+              171.0
+            ],
+            [
+              330.0,
+              103.0
+            ],
+            [
+              299.69,
+              103.0
+            ]
+          ],
+          "label_pos": [
+            410.09000000000003,
+            137.0
+          ]
+        },
+        "f4": {
+          "points": [
+            [
+              180.0,
+              122.0
+            ],
+            [
+              180.0,
+              187.0
+            ],
+            [
+              352.23,
+              187.0
+            ]
+          ],
+          "label_pos": [
+            231.669,
+            174.0
+          ]
+        },
+        "f5": {
+          "points": [
+            [
+              160.0,
+              122.0
+            ],
+            [
+              160.0,
+              276.0
+            ],
+            [
+              431.31,
+              276.0
+            ]
+          ],
+          "label_pos": [
+            295.655,
+            263.0
+          ]
+        },
+        "f6": {
+          "points": [
+            [
+              352.23,
+              195.0
+            ],
+            [
+              150.0,
+              195.0
+            ],
+            [
+              150.0,
+              346.0
+            ]
+          ],
+          "label_pos": [
+            66.382,
+            270.5
+          ]
+        },
+        "f7": {
+          "points": [
+            [
+              352.23,
+              203.0
+            ],
+            [
+              170.0,
+              203.0
+            ],
+            [
+              170.0,
+              346.0
+            ]
+          ],
+          "label_pos": [
+            250.09,
+            303.1
+          ]
+        },
+        "f8": {
+          "points": [
+            [
+              490.0,
+              300.0
+            ],
+            [
+              490.0,
+              365.0
+            ],
+            [
+              314.39,
+              365.0
+            ]
+          ],
+          "label_pos": [
+            437.317,
+            352.0
+          ]
+        },
+        "f9": {
+          "points": [
+            [
+              190.0,
+              346.0
+            ],
+            [
+              190.0,
+              211.0
+            ],
+            [
+              352.23,
+              211.0
+            ]
+          ],
+          "label_pos": [
+            271.115,
+            224.0
+          ]
+        }
+      },
+      "metrics": {
+        "crossings": 3,
+        "overlaps": 0,
+        "collisions": 0
+      }
+    },
+    "status": "exported",
+    "version": 2,
+    "generation_status": "completed",
+    "generation_error": null,
+    "source_doc_versions": {
+      "stage:1": 2,
+      "doc:requirements": 1
+    },
+    "created_at": "2026-10-12T08:03:03.626799Z",
+    "updated_at": "2026-10-12T08:07:38.538406Z"
+  },
+  {
+    "id": "5dcab8c5-a25c-4155-82ca-a6fd5a7abb77",
+    "view": "dataflow",
+    "notation": "dfd",
+    "subject": "summary",
+    "scope": null,
+    "semantic_model": {
+      "notation": "dfd",
+      "elements": [
+        {
+          "id": "F-07",
+          "name": "F-07 構造化サマリを承認して文書生成を開始する",
+          "element_type": "process",
+          "description": "認証トークンを検証し構造化サマリを承認状態に更新して4種文書の順次生成および自己診断を開始する",
+          "layer": "API受付"
+        },
+        {
+          "id": "user",
+          "name": "ユーザー",
+          "element_type": "external_entity"
+        },
+        {
+          "id": "summaries",
+          "name": "summaries",
+          "element_type": "data_store"
+        },
+        {
+          "id": "documents",
+          "name": "documents",
+          "element_type": "data_store"
+        }
+      ],
+      "relations": [
+        {
+          "id": "f1",
+          "source_id": "user",
+          "target_id": "F-07",
+          "data_item_id": "122a1bd7-0444-496a-b0ab-affb3c0533a5"
+        },
+        {
+          "id": "f2",
+          "source_id": "user",
+          "target_id": "F-07",
+          "data_item_id": "e0e94ab4-e696-439f-be76-ff1ab39b802a"
+        },
+        {
+          "id": "f3",
+          "source_id": "user",
+          "target_id": "F-07",
+          "data_item_id": "781aa228-5da5-4159-a546-24004fbe69c1"
+        },
+        {
+          "id": "f4",
+          "source_id": "F-07",
+          "target_id": "user",
+          "data_item_id": "d01ecdd4-070e-47cb-85f6-99c6ee868f8e"
+        },
+        {
+          "id": "f5",
+          "source_id": "F-07",
+          "target_id": "summaries",
+          "data_item_id": "e0e94ab4-e696-439f-be76-ff1ab39b802a"
+        },
+        {
+          "id": "f6",
+          "source_id": "F-07",
+          "target_id": "documents",
+          "data_item_id": "cb842da3-fe8a-4bfc-a334-d97b550df0c5"
+        }
+      ]
+    },
+    "layout_model": {
+      "width": 660.0,
+      "height": 456.0,
+      "nodes": {
+        "F-07": {
+          "x": 32.960999999999984,
+          "y": 84.0,
+          "w": 274.07800000000003,
+          "h": 58.0,
+          "lane": 0,
+          "row": 0
+        },
+        "user": {
+          "x": 442.0,
+          "y": 188.0,
+          "w": 96.0,
+          "h": 38.0,
+          "lane": 1,
+          "row": 1
+        },
+        "documents": {
+          "x": 431.31,
+          "y": 366.0,
+          "w": 117.38000000000001,
+          "h": 48.0,
+          "lane": 1,
+          "row": 3
+        },
+        "summaries": {
+          "x": 431.31,
+          "y": 272.0,
+          "w": 117.38000000000001,
+          "h": 48.0,
+          "lane": 1,
+          "row": 2
+        }
+      },
+      "edges": {
+        "f1": {
+          "points": [
+            [
+              520.0,
+              188.0
+            ],
+            [
+              520.0,
+              93.0
+            ],
+            [
+              307.04,
+              93.0
+            ]
+          ],
+          "label_pos": [
+            413.52,
+            80.0
+          ]
+        },
+        "f2": {
+          "points": [
+            [
+              500.0,
+              188.0
+            ],
+            [
+              500.0,
+              101.0
+            ],
+            [
+              307.04,
+              101.0
+            ]
+          ],
+          "label_pos": [
+            591.85,
+            144.5
+          ]
+        },
+        "f3": {
+          "points": [
+            [
+              480.0,
+              188.0
+            ],
+            [
+              480.0,
+              109.0
+            ],
+            [
+              307.04,
+              109.0
+            ]
+          ],
+          "label_pos": [
+            396.382,
+            148.5
+          ]
+        },
+        "f4": {
+          "points": [
+            [
+              307.04,
+              117.0
+            ],
+            [
+              460.0,
+              117.0
+            ],
+            [
+              460.0,
+              188.0
+            ]
+          ],
+          "label_pos": [
+            383.52,
+            104.0
+          ]
+        },
+        "f5": {
+          "points": [
+            [
+              307.04,
+              125.0
+            ],
+            [
+              417.31,
+              125.0
+            ],
+            [
+              417.31,
+              296.0
+            ],
+            [
+              431.31,
+              296.0
+            ]
+          ],
+          "label_pos": [
+            509.16,
+            244.7
+          ]
+        },
+        "f6": {
+          "points": [
+            [
+              307.04,
+              133.0
+            ],
+            [
+              321.04,
+              133.0
+            ],
+            [
+              321.04,
+              390.0
+            ],
+            [
+              431.31,
+              390.0
+            ]
+          ],
+          "label_pos": [
+            214.49,
+            261.5
+          ]
+        }
+      },
+      "metrics": {
+        "crossings": 0,
+        "overlaps": 0,
+        "collisions": 0
+      }
+    },
+    "status": "exported",
+    "version": 2,
+    "generation_status": "completed",
+    "generation_error": null,
+    "source_doc_versions": {
+      "stage:1": 2,
+      "doc:requirements": 1
+    },
+    "created_at": "2026-10-12T08:03:03.626799Z",
+    "updated_at": "2026-10-12T08:07:38.538406Z"
+  },
+  {
+    "id": "0b077efb-4749-4dbb-95ef-c98756b0617c",
+    "view": "data",
+    "notation": "er",
+    "subject": "",
+    "scope": null,
+    "semantic_model": {
+      "notation": "er",
+      "elements": [
+        {
+          "id": "t1",
+          "name": "users",
+          "kind": "table",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "is_primary_key": true,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "ユーザーID"
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "UNIQUE",
+              "description": "メールアドレス"
+            },
+            {
+              "name": "password_hash",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "パスワードハッシュ"
+            }
+          ],
+          "description": "ユーザー情報テーブル"
+        },
+        {
+          "id": "t2",
+          "name": "tokens",
+          "kind": "table",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "is_primary_key": true,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "トークンID"
+            },
+            {
+              "name": "token",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "UNIQUE",
+              "description": "認証トークン"
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "メールアドレス"
+            }
+          ],
+          "description": "セッション情報・認証トークンテーブル"
+        },
+        {
+          "id": "t3",
+          "name": "projects",
+          "kind": "table",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "is_primary_key": true,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "プロジェクトID"
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "プロジェクト情報"
+            }
+          ],
+          "description": "プロジェクト情報テーブル"
+        },
+        {
+          "id": "t4",
+          "name": "chats",
+          "kind": "table",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "is_primary_key": true,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "チャットID"
+            },
+            {
+              "name": "project_id",
+              "type": "UUID",
+              "is_primary_key": false,
+              "is_foreign_key": true,
+              "nullable": false,
+              "constraints": "FK projects(id) ON DELETE CASCADE",
+              "description": "プロジェクトID"
+            },
+            {
+              "name": "message",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "チャットメッセージ"
+            },
+            {
+              "name": "response",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "AIからのチャット応答メッセージ"
+            }
+          ],
+          "description": "チャットメッセージテーブル"
+        },
+        {
+          "id": "t5",
+          "name": "documents",
+          "kind": "table",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "is_primary_key": true,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "文書ID"
+            },
+            {
+              "name": "project_id",
+              "type": "UUID",
+              "is_primary_key": false,
+              "is_foreign_key": true,
+              "nullable": false,
+              "constraints": "FK projects(id) ON DELETE CASCADE",
+              "description": "プロジェクトID"
+            },
+            {
+              "name": "content",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "参考資料テキストデータ"
+            }
+          ],
+          "description": "参考資料テキストデータ・ファイルテーブル"
+        },
+        {
+          "id": "t6",
+          "name": "summaries",
+          "kind": "table",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "is_primary_key": true,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "",
+              "description": "サマリID"
+            },
+            {
+              "name": "project_id",
+              "type": "UUID",
+              "is_primary_key": false,
+              "is_foreign_key": true,
+              "nullable": false,
+              "constraints": "FK projects(id) ON DELETE CASCADE",
+              "description": "プロジェクトID"
+            },
+            {
+              "name": "approved",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_foreign_key": false,
+              "nullable": false,
+              "constraints": "DEFAULT false",
+              "description": "構造化サマリ承認データ"
+            }
+          ],
+          "description": "構造化サマリ承認データ・生成文書および版履歴データテーブル"
+        }
+      ],
+      "relations": [
+        {
+          "id": "r1",
+          "source_id": "t3",
+          "target_id": "t4",
+          "relation_type": "one_to_many"
+        },
+        {
+          "id": "r2",
+          "source_id": "t3",
+          "target_id": "t5",
+          "relation_type": "one_to_many"
+        },
+        {
+          "id": "r3",
+          "source_id": "t3",
+          "target_id": "t6",
+          "relation_type": "one_to_many"
+        }
+      ]
+    },
+    "layout_model": {
+      "width": 340.0,
+      "height": 980.0,
+      "nodes": {
+        "t1": {
+          "x": 39.28199999999998,
+          "y": 84.0,
+          "w": 261.43600000000004,
+          "h": 104.0,
+          "lane": 0,
+          "row": 0
+        },
+        "t2": {
+          "x": 73.386,
+          "y": 234.0,
+          "w": 193.228,
+          "h": 104.0,
+          "lane": 0,
+          "row": 1
+        },
+        "t3": {
+          "x": 77.79599999999999,
+          "y": 384.0,
+          "w": 184.40800000000002,
+          "h": 84.0,
+          "lane": 0,
+          "row": 2
+        },
+        "t4": {
+          "x": 76.032,
+          "y": 514.0,
+          "w": 187.936,
+          "h": 124.0,
+          "lane": 0,
+          "row": 3
+        },
+        "t5": {
+          "x": 76.032,
+          "y": 684.0,
+          "w": 187.936,
+          "h": 104.0,
+          "lane": 0,
+          "row": 4
+        },
+        "t6": {
+          "x": 76.032,
+          "y": 834.0,
+          "w": 187.936,
+          "h": 104.0,
+          "lane": 0,
+          "row": 5
+        }
+      },
+      "edges": {
+        "r1": {
+          "points": [
+            [
+              170.0,
+              468.0
+            ],
+            [
+              170.0,
+              514.0
+            ]
+          ],
+          "label_pos": [
+            193.936,
+            491.0
+          ]
+        },
+        "r2": {
+          "points": [
+            [
+              262.2,
+              426.0
+            ],
+            [
+              276.2,
+              426.0
+            ],
+            [
+              276.2,
+              736.0
+            ],
+            [
+              263.97,
+              736.0
+            ]
+          ],
+          "label_pos": [
+            300.13599999999997,
+            581.0
+          ]
+        },
+        "r3": {
+          "points": [
+            [
+              77.8,
+              426.0
+            ],
+            [
+              63.8,
+              426.0
+            ],
+            [
+              63.8,
+              886.0
+            ],
+            [
+              76.03,
+              886.0
+            ]
+          ],
+          "label_pos": [
+            87.73599999999999,
+            656.0
+          ]
+        }
+      },
+      "metrics": {
+        "crossings": 0,
+        "overlaps": 0,
+        "collisions": 0
+      }
+    },
+    "status": "exported",
+    "version": 2,
+    "generation_status": "completed",
+    "generation_error": null,
+    "source_doc_versions": {
+      "stage:2": 2
+    },
+    "created_at": "2026-10-12T08:03:53.470841Z",
+    "updated_at": "2026-10-12T08:07:38.538406Z"
+  },
+  {
+    "id": "452b0bc7-1d01-4e7e-b77f-3e199f088e9a",
+    "view": "structure",
+    "notation": "component",
+    "subject": "",
+    "scope": null,
+    "semantic_model": {
+      "notation": "component",
+      "elements": [
+        {
+          "id": "m1",
+          "name": "ルーター(api/routes)",
+          "kind": "module",
+          "description": "APIのエンドポイント定義とリクエストの受け付け",
+          "layer": "入口"
+        },
+        {
+          "id": "m2",
+          "name": "サービス(services)",
+          "kind": "module",
+          "description": "認証、プロジェクト、チャット、文書生成のビジネスロジック",
+          "layer": "ユースケース"
+        },
+        {
+          "id": "m3",
+          "name": "LLM連携(llm)",
+          "kind": "module",
+          "description": "LangChain・LangGraphとGemini Flash-Liteの呼び出し制御",
+          "layer": "外部連携"
+        },
+        {
+          "id": "m4",
+          "name": "リポジトリ(repositories)",
+          "kind": "module",
+          "description": "PostgreSQLへのデータ永続化と取得処理",
+          "layer": "永続化"
+        },
+        {
+          "id": "m5",
+          "name": "キャッシュ・トークン管理(cache)",
+          "kind": "module",
+          "description": "Redisを用いたトークン管理とレート制限処理",
+          "layer": "永続化"
+        }
+      ],
+      "relations": [
+        {
+          "id": "d1",
+          "source_id": "m1",
+          "target_id": "m2",
+          "relation_type": "depends_on"
+        },
+        {
+          "id": "d2",
+          "source_id": "m2",
+          "target_id": "m3",
+          "relation_type": "depends_on"
+        },
+        {
+          "id": "d3",
+          "source_id": "m2",
+          "target_id": "m4",
+          "relation_type": "depends_on"
+        },
+        {
+          "id": "d4",
+          "source_id": "m2",
+          "target_id": "m5",
+          "relation_type": "depends_on"
+        }
+      ]
+    },
+    "layout_model": {
+      "width": 960.0,
+      "height": 456.0,
+      "nodes": {
+        "m1": {
+          "x": 34.707999999999984,
+          "y": 84.0,
+          "w": 185.58400000000003,
+          "h": 38.0,
+          "lane": 0,
+          "row": 0
+        },
+        "m2": {
+          "x": 277.352,
+          "y": 168.0,
+          "w": 170.29600000000002,
+          "h": 38.0,
+          "lane": 1,
+          "row": 1
+        },
+        "m3": {
+          "x": 534.549,
+          "y": 262.0,
+          "w": 125.90200000000002,
+          "h": 38.0,
+          "lane": 2,
+          "row": 2
+        },
+        "m4": {
+          "x": 759.112,
+          "y": 252.0,
+          "w": 146.776,
+          "h": 58.0,
+          "lane": 3,
+          "row": 2
+        },
+        "m5": {
+          "x": 737.65,
+          "y": 356.0,
+          "w": 189.70000000000002,
+          "h": 58.0,
+          "lane": 3,
+          "row": 3
+        }
+      },
+      "edges": {
+        "d1": {
+          "points": [
+            [
+              220.29,
+              103.0
+            ],
+            [
+              263.35,
+              103.0
+            ],
+            [
+              263.35,
+              187.0
+            ],
+            [
+              277.35,
+              187.0
+            ]
+          ],
+          "label_pos": null
+        },
+        "d2": {
+          "points": [
+            [
+              447.65,
+              196.0
+            ],
+            [
+              520.55,
+              196.0
+            ],
+            [
+              520.55,
+              281.0
+            ],
+            [
+              534.55,
+              281.0
+            ]
+          ],
+          "label_pos": null
+        },
+        "d3": {
+          "points": [
+            [
+              447.65,
+              178.0
+            ],
+            [
+              745.11,
+              178.0
+            ],
+            [
+              745.11,
+              281.0
+            ],
+            [
+              759.11,
+              281.0
+            ]
+          ],
+          "label_pos": null
+        },
+        "d4": {
+          "points": [
+            [
+              447.65,
+              187.0
+            ],
+            [
+              723.65,
+              187.0
+            ],
+            [
+              723.65,
+              385.0
+            ],
+            [
+              737.65,
+              385.0
+            ]
+          ],
+          "label_pos": null
+        }
+      },
+      "metrics": {
+        "crossings": 0,
+        "overlaps": 0,
+        "collisions": 0
+      }
+    },
+    "status": "exported",
+    "version": 2,
+    "generation_status": "completed",
+    "generation_error": null,
+    "source_doc_versions": {
+      "stage:1": 2,
+      "stage:2": 2,
+      "stage:3": 2,
+      "doc:requirements": 1
+    },
+    "created_at": "2026-10-12T08:04:08.863928Z",
+    "updated_at": "2026-10-12T08:07:38.538406Z"
+  }
+]
