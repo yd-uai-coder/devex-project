@@ -1,10 +1,11 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38-3,38(完了後の調整)
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38-3,38(完了後の調整),44-3
 // 注: Phase 28 で大きく書き直したため、旧コードのコメントアウトは要所だけにした(27-3 の版は Phase-27-3 の教材を参照)。
 "use client";
 
 // Phase-28-3:追記 ── react.useEffect, ConfirmDialog, StyledButton, MAX_PROCEDURE_DOC_TARGETS, StageSaveBar, useStageGenerationPolling, toggleUnit
 // Phase-28-4:追記 ── ProcedureDocModel, UnitProcedureEditor
 // Phase-38(完了後の調整):追記 ── @/features/detailed-design/components/StrayProcedureList.StrayProcedureList
+// Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
 import { useEffect, useState } from "react";
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -18,6 +19,7 @@ import {
 } from "@/features/detailed-design/api/types";
 // Phase-31-5:追記
 import { FixTargetButton } from "@/features/detailed-design/components/FixTargetButton";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import { StrayProcedureList } from "@/features/detailed-design/components/StrayProcedureList";
@@ -25,6 +27,8 @@ import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/t
 import { UnitProcedureEditor } from "@/features/detailed-design/components/UnitProcedureEditor";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   FINDING_LEVEL_LABELS,
   FINDING_SOURCE_LABELS,
@@ -163,6 +167,8 @@ export function ProcedureDocPanel({
   const save = useDetailedDesignStore((s) => s.save);
   const generate = useDetailedDesignStore((s) => s.generate);
   const jumpTo = useDetailedDesignStore((s) => s.jumpTo);
+  // Phase-44-3:追記
+  const impact = useStageImpact(stage.stage);
   const setTab = useDetailedDesignStore((s) => s.setTab);
   const [filter, setFilter] = useState<FindingLevel | "all">("all");
 
@@ -260,7 +266,14 @@ export function ProcedureDocPanel({
               {units.map((unit) => (
                 <tr
                   key={unit.id}
-                  style={unit.id === opened ? { background: "var(--blue2)" } : undefined}
+                  // Phase-44-3：更新
+                  // style={unit.id === opened ? { background: "var(--blue2)" } : undefined}
+                  // ↓↓
+                  {...impact.row(elementKey.unit(unit.key))}
+                  style={
+                    impact.row(elementKey.unit(unit.key)).style ??
+                    (unit.id === opened ? { background: "var(--blue2)" } : undefined)
+                  }
                 >
                   {/* Phase-28-3:追記(生成の選択の列) */}
                   <td style={NOWRAP}>
@@ -293,6 +306,8 @@ export function ProcedureDocPanel({
                     >
                       {unit.id}
                     </button>
+                    {/* Phase-44-3:追記 */}
+                    <ImpactBadge mark={impact.mark(elementKey.unit(unit.key))} />
                   </td>
                   <td style={NOWRAP}>{UNIT_KIND_LABELS[unit.kind]}</td>
                   <td style={CELL}>{unit.title}</td>

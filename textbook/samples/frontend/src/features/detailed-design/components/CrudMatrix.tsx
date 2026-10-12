@@ -1,7 +1,8 @@
-// 作成：Phase-18-8
+// 作成：Phase-18-8｜更新：Phase-44-3
 // 写経レベル: コア ── 下書きのセルと DFD 由来のセルを見た目で区別する。
 "use client";
 
+// Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
 import type { CSSProperties } from "react";
 import { Paragraph, Text, YStack } from "tamagui";
 import type {
@@ -9,13 +10,19 @@ import type {
   DfdAccess,
   FunctionRow,
 } from "@/features/detailed-design/api/types";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { CELL, HEAD, INPUT, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { accessOf, cellOf, countDrafts, setCellOps } from "@/features/detailed-design/crudOps";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 
 // AI の下書きのまま(人が確定していない)セルの背景
 const DRAFT_CELL: CSSProperties = { background: "var(--yellow4, #fdf3c4)" };
 // DFD の線から決まっている(外せない)読み書きのセルの枠
 const FIXED_CELL: CSSProperties = { boxShadow: "inset 0 0 0 2px var(--blue8, #5b9bd5)" };
+// Phase-44-3:追記
+// 「表で見る」で強調するセル(下書きの黄色と見分けるため、背景でなく外枠にする)
+const HIGHLIGHT_CELL: CSSProperties = { outline: "2px solid var(--orange9)", outlineOffset: -2 };
 
 // 段階3の CRUD 図(処理 × テーブル)。行は段階1の機能一覧、列は ER のテーブル。
 // セルには C・R・U・D を書く(並びは自動で C→R→U→D にそろえる)。DFD に読みの線があるセルの R は
@@ -36,6 +43,8 @@ export function CrudMatrix({
   onChange: (model: CrudModel) => void;
 }) {
   const drafts = countDrafts(model);
+  // Phase-44-3:追記
+  const impact = useStageImpact(3);
 
   return (
     <YStack gap="$2">
@@ -70,13 +79,21 @@ export function CrudMatrix({
                     const cell = cellOf(model, fn.id, table);
                     const access = accessOf(accesses, fn.id, table);
                     const fixed = access.read || access.write;
+                    // Phase-44-3:追記
+                    const key = elementKey.crud(fn.id, table);
+                    const highlight = impact.row(key);
                     return (
                       <td
                         key={table}
+                        // Phase-44-3:追記
+                        ref={highlight.ref}
+                        aria-current={highlight["aria-current"]}
                         style={{
                           ...CELL,
                           ...(cell?.draft ? DRAFT_CELL : {}),
                           ...(fixed ? FIXED_CELL : {}),
+                          // Phase-44-3:追記
+                          ...(highlight.style ? HIGHLIGHT_CELL : {}),
                         }}
                         data-draft={cell?.draft ? "true" : undefined}
                         data-dfd={fixed ? "true" : undefined}
@@ -95,6 +112,8 @@ export function CrudMatrix({
                             onChange(setCellOps(model, fn.id, table, e.target.value, accesses))
                           }
                         />
+                        {/* Phase-44-3:追記 */}
+                        <ImpactBadge mark={impact.mark(key)} />
                       </td>
                     );
                   })}

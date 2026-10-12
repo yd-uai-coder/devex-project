@@ -1,13 +1,15 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
 // Phase-18-9:追記 ── react.useState, @/components/ui/layout-blocks/ConfirmDialog.ConfirmDialog, @/features/detailed-design/labels.STAGE_TITLES
 // Phase-22-6:追記 ── @/features/detailed-design/components/DesignDocumentBar.DesignDocumentBar
+// Phase-44-2:追記 ── @/features/detailed-design/components/ChangeImpactPanel.ChangeImpactPanel
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { H2, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import { ChangeImpactPanel } from "@/features/detailed-design/components/ChangeImpactPanel";
 import { DesignDocumentBar } from "@/features/detailed-design/components/DesignDocumentBar";
 import { StageStepper } from "@/features/detailed-design/components/StageStepper";
 import { StageWorkArea } from "@/features/detailed-design/components/StageWorkArea";
@@ -96,6 +98,10 @@ export function DetailedDesignPageContent({
       {/* Phase-22-6:追記 */}
       {/* 詳細設計書のダウンロード(いつでもできる。Phase 22) */}
       {stages.length > 0 ? <DesignDocumentBar projectId={projectId} stages={stages} /> : null}
+
+      {/* Phase-44-2:追記 */}
+      {/* 変更の影響(印も変わったものも無ければ出さない。簡易モードは印が無い) */}
+      {stages.length > 0 && !simple ? <ChangeImpactPanel projectId={projectId} /> : null}
 
       {stages.length > 0 ? (
         <XStack gap="$5" alignItems="flex-start" flexWrap="wrap">

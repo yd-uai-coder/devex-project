@@ -1,9 +1,10 @@
-// 作成：Phase-21-7｜更新：Phase-21-8,21-7(画面確認後の修正。処理ごとのタブ・二重タブ・上下の保存バー)
+// 作成：Phase-21-7｜更新：Phase-21-8,21-7(画面確認後の修正。処理ごとのタブ・二重タブ・上下の保存バー),44-3
 // 写経レベル: コア ── 候補は段階5から導き、飛ばす = 0件を保存して承認。候補と詳細は処理のタブで切り替え、データと L-ID は全体のまま。
 "use client";
 
 // Phase-21-8:追記 ── react.useRef
 // Phase-21-7:追記(画面確認後の修正) ── react.CSSProperties, @/features/detailed-design/components/StageSaveBar.StageSaveBar, @/features/detailed-design/functionListOps.toFunctionList, @/features/detailed-design/logicOps(candidatesByProcedure, logicIdsByKey, logicStatus, pendingInTab, selectAll, TabCandidate。logicId・pendingLogics は使わなくなった)
+// Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -14,6 +15,7 @@ import {
   type LogicModel,
   type LogicTarget,
 } from "@/features/detailed-design/api/types";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { LogicSpecEditor } from "@/features/detailed-design/components/LogicSpecEditor";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
@@ -21,6 +23,8 @@ import { BADGE, CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/compo
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   buildReverseIndex,
   candidatesByProcedure,
@@ -101,6 +105,8 @@ export function LogicPanel({
   const jumpTo = useDetailedDesignStore((s) => s.jumpTo);
   const clearFocus = useDetailedDesignStore((s) => s.clearFocus);
   // ── ここから Phase-21-7 の作成分 ──
+  // Phase-44-3:追記
+  const impact = useStageImpact(stage.stage);
 
   const procedures = toProcedures(stage5Model);
   const candidates = logicCandidates(procedures);
@@ -669,8 +675,15 @@ export function LogicPanel({
                   </thead>
                   <tbody>
                     {reverse.map(({ id, row, stepIds }) => (
-                      <tr key={keyOf(row)}>
-                        <td style={{ ...CELL, ...MONO }}>{id}</td>
+                      // Phase-44-3：更新
+                      // <tr key={keyOf(row)}>
+                      //   <td style={{ ...CELL, ...MONO }}>{id}</td>
+                      // ↓↓
+                      <tr key={keyOf(row)} {...impact.row(elementKey.logic(row.module, row.function))}>
+                        <td style={{ ...CELL, ...MONO }}>
+                          {id}
+                          <ImpactBadge mark={impact.mark(elementKey.logic(row.module, row.function))} />
+                        </td>
                         <td style={{ ...CELL, ...MONO }}>{row.function}</td>
                         <td style={{ ...CELL, ...MONO }}>{row.module}</td>
                         <td style={{ ...CELL, ...MONO }}>{stepIds.join(", ") || "—"}</td>

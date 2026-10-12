@@ -1,5 +1,6 @@
-// 作成：Phase-16-6｜更新：Phase-21-7(画面確認後の修正),38-3
+// 作成：Phase-16-6｜更新：Phase-21-7(画面確認後の修正),38-3,44-3
 // 写経レベル: コア ── 生成・確認・編集・保存の流れを画面越しに確かめる。
+// Phase-44-3:追記 ── ../../test-utils/stageFixtures(impactWith, makeMark)
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -7,7 +8,12 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { FunctionListPanel } from "../FunctionListPanel";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
-import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
+import {
+  impactWith,
+  makeFunctionList,
+  makeMark,
+  makeStages,
+} from "../../test-utils/stageFixtures";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 
 function renderPanel(stage: DesignStageRead, onDirtyChange = vi.fn()) {
@@ -144,5 +150,18 @@ describe("FunctionListPanel", () => {
       "aria-disabled",
       "true",
     );
+  });
+
+  // Phase-44-3:追記
+  it("変更の影響の印を処理の行に出し、「表で見る」の行を強調する", () => {
+    useDetailedDesignStore.setState({
+      impact: impactWith(makeMark({ key: "fn:F-01", stage: 1 })),
+      highlight: { stage: 1, key: "fn:F-01" },
+    });
+    renderPanel(makeStages({ 1: { state: "reviewing", version: 1, model: makeFunctionList() } })[0]);
+
+    expect(screen.getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
+    expect(screen.getByLabelText("F-01 の名称").closest("tr")).toHaveAttribute("aria-current", "true");
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

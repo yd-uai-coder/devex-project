@@ -1,12 +1,14 @@
-// 作成：Phase-19-6｜更新：Phase-23-6
+// 作成：Phase-19-6｜更新：Phase-23-6,44-3
 // 写経レベル: コア ── 「,」区切りの欄を手元の文字列で持ち、構成図に無い層を残して示す。
 "use client";
 
 // Phase-23-6：更新 ── react(useState, CSSProperties)・moduleListOps(listToText, textToList) を外し、
 //   @/features/detailed-design/components/ListInput.ListInput を足した(ListInput を切り出した)
+// Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
 import { Paragraph, Text, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import type { ModuleListModel } from "@/features/detailed-design/api/types";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { ListInput } from "@/features/detailed-design/components/ListInput";
 import {
   CELL,
@@ -16,6 +18,8 @@ import {
   OPTION,
   TABLE,
 } from "@/features/detailed-design/components/tableStyles";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   addModule,
   duplicatePaths,
@@ -39,6 +43,8 @@ export function ModuleListTable({
   onChange: (model: ModuleListModel) => void;
 }) {
   const duplicated = duplicatePaths(model);
+  // Phase-44-3:追記
+  const impact = useStageImpact(4);
 
   return (
     <YStack gap="$2">
@@ -68,7 +74,10 @@ export function ModuleListTable({
                   onChange(updateModule(model, index, patch));
                 return (
                   // 行はパスで引かない(パスは書き換える欄で、重複もありうるため)
-                  <tr key={index}>
+                  // Phase-44-3：更新
+                  // <tr key={index}>
+                  // ↓↓
+                  <tr key={index} {...impact.row(elementKey.module(row.path))}>
                     <td style={{ ...CELL, minWidth: 240 }}>
                       <input
                         style={{ ...INPUT, ...MONO }}
@@ -80,6 +89,8 @@ export function ModuleListTable({
                       {duplicated.has(row.path.trim()) ? (
                         <div style={{ fontSize: 11, color: "var(--red10)" }}>パスが重複しています</div>
                       ) : null}
+                      {/* Phase-44-3:追記 */}
+                      <ImpactBadge mark={impact.mark(elementKey.module(row.path))} />
                     </td>
                     <td style={{ ...CELL, minWidth: 110 }}>
                       <select

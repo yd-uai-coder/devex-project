@@ -1,6 +1,7 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
+// Phase-44-2:追記 ── ../../test-utils/stageFixtures.makeImpact
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,6 +14,7 @@ import { useDetailedDesignStore } from "@/features/detailed-design/detailed-desi
 // ↓↓
 import {
   makeFunctionList,
+  makeImpact,
   makePlan,
   makeProcedureDoc,
   makeStages,
@@ -223,5 +225,14 @@ describe("DetailedDesignPageContent", () => {
 
     expect(screen.getByRole("heading", { name: "実装手順書" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "詳細設計書・実装計画をダウンロード(.zip)" })).not.toBeInTheDocument();
+  });
+
+  // Phase-44-2:追記
+  it("変更の影響があれば、作業領域の上に「変更の影響」パネルを出す", () => {
+    useDetailedDesignStore.setState({ impact: makeImpact(), impactError: null });
+    renderContent();
+    expect(screen.getByRole("region", { name: "変更の影響" })).toBeInTheDocument();
+
+    useDetailedDesignStore.setState({ impact: null });
   });
 });

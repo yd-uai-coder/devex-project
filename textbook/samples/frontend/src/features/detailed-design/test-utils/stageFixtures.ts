@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1,31-5,38-3,42-1,42-2
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1,31-5,38-3,42-1,42-2,44-1,44-3
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
@@ -8,11 +8,15 @@
 // Phase-21-4:追記 ── @/features/detailed-design/api/types.LogicModel, LogicRow
 // Phase-23-5:追記 ── @/features/detailed-design/api/types.PlanModel
 // Phase-27-3:追記 ── @/features/detailed-design/api/types.ProcedureDocModel
+// Phase-44-1:追記 ── @/features/detailed-design/api/types(DesignImpactRead, ElementChangeRead, ImpactMarkRead)
 import type {
   CrudModel,
   DataFlowModel,
+  DesignImpactRead,
   DesignStageRead,
+  ElementChangeRead,
   FunctionListModel,
+  ImpactMarkRead,
   LogicModel,
   LogicRow,
   ModuleListModel,
@@ -266,4 +270,102 @@ export function makeStages(
     plan: null,
     ...overrides[stage],
   }));
+}
+
+// Phase-44-1:追記
+// 変更の影響の印1つ(既定は段階5の F-01 の手順に、段階4のモジュールの変更から届いた未確認の印。テスト専用)。
+export function makeMark(patch: Partial<ImpactMarkRead> = {}): ImpactMarkRead {
+  return {
+    key: "proc:F-01",
+    label: "F-01 の手順",
+    stage: 5,
+    path: ["module:app/api/routes/reservations.py", "fn:F-01", "proc:F-01"],
+    reason: "この処理の手順が、変わったモジュールを呼ぶ",
+    sources: ["stage:4"],
+    reviewed: false,
+    pending: false,
+    ...patch,
+  };
+}
+
+// 段階4のモジュール一覧(makeModuleList)のパスの内容の変更1つ(テスト専用)。
+export function makeElementChange(patch: Partial<ElementChangeRead> = {}): ElementChangeRead {
+  return {
+    source: "stage:4",
+    key: "module:app/api/routes/reservations.py",
+    change: "content",
+    stage: 4,
+    label: "app/api/routes/reservations.py",
+    before: "予約の API",
+    after: "予約と取消の API",
+    new_key: null,
+    pending: false,
+    ...patch,
+  };
+}
+
+// 段階4のモジュールの変更から届いた変更の影響(テスト専用)。段階5の手順(未確認)・段階6の関数
+// (確認済み)・段階8の M-01-T02 の手順書(未確認、キー U-002)に記録した印と、段階7の M-01-T02 の
+// タスクに、承認の後の段階4の編集から承認すると付く印(pending)。再生成の候補は段階5と段階8の2件。
+export function makeImpact(): DesignImpactRead {
+  const change = makeElementChange();
+  // 段階4を承認の後にまた編集した(まだ承認していない)ときの差分
+  const pendingChange = makeElementChange({
+    key: "module:app/services/reservation_service.py",
+    label: "app/services/reservation_service.py",
+    before: "予約の業務処理",
+    after: "予約と取消の業務処理",
+    pending: true,
+  });
+  const logic = makeMark({
+    key: "logic:app/api/routes/reservations.py::create_reservation",
+    label: "app/api/routes/reservations.py の create_reservation",
+    stage: 6,
+    reason: "この関数の置き場のモジュールが変わった",
+    reviewed: true,
+  });
+  const unit = makeMark({ key: "unit:U-002", label: "M-01-T02 の手順書", stage: 8 });
+  const task = makeMark({
+    key: "task:U-002",
+    label: "M-01-T02 予約を登録する",
+    stage: 7,
+    path: ["module:app/services/reservation_service.py", "task:U-002"],
+    reason: "この単位が、変わったモジュールに依存する",
+    pending: true,
+  });
+  const empty = (stage: number) => ({ stage, changes: [], marks: [], open: 0, reviewed: 0 });
+  return {
+    stages: [
+      empty(1),
+      empty(2),
+      empty(3),
+      empty(4),
+      { stage: 5, changes: [change], marks: [makeMark()], open: 1, reviewed: 0 },
+      { stage: 6, changes: [change], marks: [logic], open: 0, reviewed: 1 },
+      { stage: 7, changes: [pendingChange], marks: [task], open: 0, reviewed: 0 },
+      { stage: 8, changes: [change], marks: [unit], open: 1, reviewed: 0 },
+    ],
+    regeneration_targets: [
+      { stage: 5, key: "proc:F-01", label: "F-01 の手順" },
+      { stage: 8, key: "unit:U-002", label: "M-01-T02 の手順書" },
+    ],
+  };
+}
+
+// Phase-44-3:追記
+// 渡した印だけを持つ変更の影響(段階の表の行の印のテスト用。件数は記録した印から数える)。
+export function impactWith(...marks: ImpactMarkRead[]): DesignImpactRead {
+  return {
+    stages: [1, 2, 3, 4, 5, 6, 7, 8].map((stage) => {
+      const own = marks.filter((m) => m.stage === stage);
+      return {
+        stage,
+        changes: [],
+        marks: own,
+        open: own.filter((m) => !m.pending && !m.reviewed).length,
+        reviewed: own.filter((m) => !m.pending && m.reviewed).length,
+      };
+    }),
+    regeneration_targets: [],
+  };
 }

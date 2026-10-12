@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7,38-3,42-1,42-2
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7,38-3,42-1,42-2,44-1
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -99,6 +99,10 @@ export type DesignStageRead = {
   // 段階8だけが持つ、作業単位 → 要件ID(詳細設計モードは単位の処理の段階1の要件、簡易モードは
   // WBS の「要件」欄)。古いバックエンドの応答には無い
   unit_req_ids?: Record<string, string[]>;
+  // Phase-44-1:追記
+  // 記録した変更の影響の印のうち、未確認の件数と確認済みの件数(古いバックエンドの応答には無い)
+  impact_open?: number;
+  impact_reviewed?: number;
 };
 
 // Phase-16-5:追記
@@ -440,4 +444,57 @@ export type UnitAiMarkdownRead = {
   state: StageState;
   finding_total: number;
   critical: number;
+};
+
+// Phase-44-1:追記
+// --- 変更の影響(devex-api app/schemas/design_stage.py の ElementChangeRead ほか) ---
+
+// 要素のキーは devex-api app/detailed_design/impact/elements.py と同じ形
+// (fn:F-01・summary:F-01・table:<小文字のテーブル名>・crud:F-01×<テーブル>・module:<パス>・proc:F-01・
+// logic:<モジュール>::<関数>・task:<単位のキー>・cc:<項目>・unit:<単位のキー>。文書は req:・screen:・api:)。
+export type ElementChangeKind = "added" | "removed" | "content" | "rename";
+
+// 変わった要素1つ。source は変わった場所(stage:<n> か doc:<doc_type>)、stage は要素の置き場(0 = 文書)。
+// pending はまだ承認していない編集の差分(承認すると記録される)。
+export type ElementChangeRead = {
+  source: string;
+  key: string;
+  change: ElementChangeKind;
+  stage: number;
+  label: string;
+  before: string | null;
+  after: string | null;
+  new_key: string | null;
+  pending: boolean;
+};
+
+// 見直しが要る要素の印1つ。path は変わった要素からこの要素までの道(先頭が変わった要素)、
+// sources は印を付けた変更の場所。pending の印は記録していないので確認済みにできない。
+export type ImpactMarkRead = {
+  key: string;
+  label: string;
+  stage: number;
+  path: string[];
+  reason: string;
+  sources: string[];
+  reviewed: boolean;
+  pending: boolean;
+};
+
+// 段階1つの変わったものと印。open・reviewed は記録した印の件数(pending を除く)。
+export type StageImpactRead = {
+  stage: number;
+  changes: ElementChangeRead[];
+  marks: ImpactMarkRead[];
+  open: number;
+  reviewed: number;
+};
+
+// 再生成の候補(部分再生成できる段階5・6・8 の、未確認の印の要素)。自動では再生成しない。
+export type RegenerationTargetRead = { stage: number; key: string; label: string };
+
+// プロジェクトの変更の影響(stages はモードの全段階)。
+export type DesignImpactRead = {
+  stages: StageImpactRead[];
+  regeneration_targets: RegenerationTargetRead[];
 };

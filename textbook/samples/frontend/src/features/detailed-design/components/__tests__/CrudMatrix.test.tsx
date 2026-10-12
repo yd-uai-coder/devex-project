@@ -1,11 +1,18 @@
-// 作成：Phase-18-8
+// 作成：Phase-18-8｜更新：Phase-44-3
+// Phase-44-3:追記 ── ../../test-utils/stageFixtures(impactWith, makeMark), @/features/detailed-design/detailed-design-store.useDetailedDesignStore
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { CrudMatrix } from "../CrudMatrix";
 import type { CrudModel, DfdAccess } from "@/features/detailed-design/api/types";
-import { makeCrud, makeFunctionList } from "../../test-utils/stageFixtures";
+import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import {
+  impactWith,
+  makeCrud,
+  makeFunctionList,
+  makeMark,
+} from "../../test-utils/stageFixtures";
 
 // SUT: CrudMatrix / ドライバ: render と入力の操作 / スタブ: onChange(vi.fn)── 編集の結果を受け取る
 // 親の代わり。セルの書き換えの規則そのものは crudOps.test.ts で検証する。
@@ -55,5 +62,19 @@ describe("CrudMatrix", () => {
   it("disabled のときは編集させない", () => {
     renderMatrix(makeCrud(), vi.fn(), true);
     expect(screen.getByLabelText("F-01 × reservations")).toBeDisabled();
+  });
+
+  // Phase-44-3:追記
+  it("変更の影響の印をセルに出し、「表で見る」のセルを強調する", () => {
+    useDetailedDesignStore.setState({
+      impact: impactWith(makeMark({ key: "crud:F-01×reservations", stage: 3 })),
+      highlight: { stage: 3, key: "crud:F-01×reservations" },
+    });
+    renderMatrix(makeCrud());
+
+    const cell = screen.getByLabelText("F-01 × reservations").closest("td");
+    expect(cell).toHaveAttribute("aria-current", "true");
+    expect(cell?.querySelector('[aria-label="変更の影響: 見直し"]')).not.toBeNull();
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

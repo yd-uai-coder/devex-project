@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7,20-7,21-7,21-7(画面確認後の修正),23-6
+// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7,20-7,21-7,21-7(画面確認後の修正),23-6,44-2,44(完了後の調整)
 // 写経レベル: コア ── 状態ごとのボタンと表示。
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-17-6:追記 ── @/features/detailed-design/detailed-design-store.useDetailedDesignStore
@@ -197,5 +197,47 @@ describe("StageWorkArea", () => {
     renderArea(stage1, vi.fn(), "承認に失敗しました");
 
     expect(screen.getByRole("alert")).toHaveTextContent("承認に失敗しました");
+  });
+
+  // Phase-44-2:追記
+  it("変更の影響の印の件数を出し、未確認があれば承認し直しの前に確認済みにするよう案内する", () => {
+    const stages = makeStages({
+      1: { state: "outdated", version: 2, approved_version: 2, model: makeFunctionList(), impact_open: 1, impact_reviewed: 2 },
+    });
+    useDetailedDesignStore.setState({ stages });
+    renderArea(stages[0]);
+
+    expect(screen.getByText("変更の影響: 見直し 1 / 確認済み 2")).toBeInTheDocument();
+    expect(screen.getByText(/確認済みにしてから承認し直してください/)).toBeInTheDocument();
+  });
+
+  // Phase-44(完了後の調整):追記
+  it("閉じた段階に保存した内容があれば、消えていないことと承認し直す段階を示し、その段階へ移れる", async () => {
+    const user = userEvent.setup();
+    const selectStage = vi.fn();
+    // 段階4は版が上がって承認済み、段階5は「古い」(開いている)、段階6は段階5が承認済みでないので閉じている
+    const stages = makeStages({
+      4: { state: "approved", version: 8, approved_version: 8, is_open: true, missing_inputs: [] },
+      5: { state: "outdated", version: 4, approved_version: 4, is_open: true, missing_inputs: [] },
+      6: { state: "outdated", version: 17, approved_version: 17, is_open: false, missing_inputs: ["stage:5"] },
+      7: { state: "outdated", version: 8, is_open: false, missing_inputs: ["stage:5", "stage:6"] },
+    });
+    useDetailedDesignStore.setState({ stages, selectStage });
+    renderArea(stages[6]);
+
+    expect(screen.getByText(/この段階には保存した内容があります\(消えていません\)/)).toHaveTextContent(
+      "段階5(古い)を承認し直すと、表示・編集できます。",
+    );
+    await user.click(screen.getByRole("button", { name: "段階5へ移る" }));
+    expect(selectStage).toHaveBeenCalledWith(5);
+  });
+
+  it("閉じた段階に内容が無ければ、今までどおり始め方だけを出す", () => {
+    const stages = makeStages();
+    useDetailedDesignStore.setState({ stages });
+    renderArea(stages[2]);
+
+    expect(screen.getByText("前の段階を承認すると、この段階を始められます。")).toBeInTheDocument();
+    expect(screen.queryByText(/保存した内容があります/)).not.toBeInTheDocument();
   });
 });

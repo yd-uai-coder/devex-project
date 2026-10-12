@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,24(完了後の UI 調整),27-3,31-7
+// 作成：Phase-15-7｜更新：Phase-16-6,24(完了後の,44-2 UI 調整),27-3,31-7
 // 写経レベル: 定型 ── 7段階の並びと状態の色。
 "use client";
 
@@ -117,9 +117,22 @@ export function StageStepper({
             <Text>
               {s.stage}. {STAGE_TITLES[s.stage]}
             </Text>
+            {/* Phase-44-2：更新
             <Text fontSize="$2" color={STATE_COLORS[s.state]}>
               {STATE_LABELS[s.state]}
             </Text>
+            ↓↓ */}
+            <XStack gap="$1" alignItems="center">
+              <Text fontSize="$2" color={STATE_COLORS[s.state]}>
+                {STATE_LABELS[s.state]}
+              </Text>
+              {/* 変更の影響の未確認の印の数 */}
+              {(s.impact_open ?? 0) > 0 ? (
+                <Text fontSize="$1" color="$red10" aria-label={`見直し ${s.impact_open}`}>
+                  {`見直し ${s.impact_open}`}
+                </Text>
+              ) : null}
+            </XStack>
           </XStack>
         );
       })}

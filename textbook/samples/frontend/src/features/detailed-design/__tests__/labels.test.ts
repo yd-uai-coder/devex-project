@@ -1,13 +1,15 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,44(完了後の調整)
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../labels.hasErrors, ../test-utils/stageFixtures.makeFunctionList
 import { describe, expect, it } from "vitest";
 // Phase-18-9:追記 ── ../labels(APPROVAL_TIME_CODES, approvalBlockers, visibleIssues)
+// Phase-44(完了後の調整):追記 ── ../labels.firstStageToApprove
 import {
   APPROVAL_TIME_CODES,
   approvalBlockers,
   canApprove,
   describeMissingInput,
+  firstStageToApprove,
   hasErrors,
   visibleIssues,
 } from "../labels";
@@ -91,5 +93,24 @@ describe("図の未承認は承認時に出す", () => {
     expect(visibleIssues(stage3.issues)).toEqual([]);
     expect(approvalBlockers(stage3)).toEqual([ER_PENDING]);
     expect(hasErrors({ ...stage3, issues: [ER_PENDING, OTHER] })).toBe(true);
+  });
+
+  // Phase-44(完了後の調整):追記
+  it("firstStageToApproveは閉じた段階から入力をたどり、今承認し直せる段階を返す", () => {
+    const stages = makeStages({
+      1: { state: "approved", is_open: true, missing_inputs: [] },
+      2: { state: "outdated", is_open: true, missing_inputs: [] },
+      3: { state: "outdated", is_open: false, missing_inputs: ["stage:2"] },
+      4: { state: "outdated", is_open: false, missing_inputs: ["stage:2", "stage:3"] },
+      5: { state: "outdated", is_open: false, missing_inputs: ["stage:4"] },
+    });
+    expect(firstStageToApprove(stages[2], stages)).toBe(2);
+    expect(firstStageToApprove(stages[3], stages)).toBe(2);
+    // 段階4は閉じているので、段階4の入力をたどる
+    expect(firstStageToApprove(stages[4], stages)).toBe(2);
+    // 足りないのが文書だけなら決まらない
+    expect(
+      firstStageToApprove({ ...stages[0], is_open: false, missing_inputs: ["doc:external_design"] }, stages),
+    ).toBeNull();
   });
 });

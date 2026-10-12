@@ -1,5 +1,6 @@
-// 作成：Phase-21-7｜更新：Phase-21-8,21-7(画面確認後の修正)
+// 作成：Phase-21-7｜更新：Phase-21-8,21-7(画面確認後の修正),44-3
 // 写経レベル: コア ── 候補・生成の対象・飛ばす操作(保存 → 承認)・段階またぎを確かめる。
+// Phase-44-3:追記 ── ../../test-utils/stageFixtures(impactWith, makeMark)
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -9,8 +10,10 @@ import { LogicPanel } from "../LogicPanel";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import type { DesignStageRead, ProcedureModel } from "@/features/detailed-design/api/types";
 import {
+  impactWith,
   makeBranch,
   makeLogic,
+  makeMark,
   makeStages,
   makeStep,
 } from "../../test-utils/stageFixtures";
@@ -483,5 +486,20 @@ describe("LogicPanel", () => {
       expect(screen.getByRole("tab", { name: /^F-02/ })).toHaveAttribute("aria-selected", "true");
       expect(screen.getByRole("tab", { name: "L-02 a" })).toHaveAttribute("aria-selected", "true");
     });
+  });
+
+  // Phase-44-3:追記
+  it("変更の影響の印を逆引きの関数の行に出し、「表で見る」の行を強調する", () => {
+    const key = `logic:${SERVICE}::ReservationService.create`;
+    useDetailedDesignStore.setState({
+      impact: impactWith(makeMark({ key, stage: 6 })),
+      highlight: { stage: 6, key },
+    });
+    renderPanel(setup({ state: "reviewing", version: 3, model: { logics: [makeLogic(), makeLogic({ ...CREATE })] } }));
+
+    const reverse = screen.getByRole("table", { name: "処理ロジックの逆引き" });
+    expect(reverse.querySelector('[aria-label="変更の影響: 見直し"]')).not.toBeNull();
+    expect(reverse.querySelector('tr[aria-current="true"]')).toHaveTextContent("L-02");
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

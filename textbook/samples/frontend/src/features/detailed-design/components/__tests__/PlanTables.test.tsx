@@ -1,12 +1,14 @@
-// 作成：Phase-23-6｜更新：Phase-26-5,42-2
+// 作成：Phase-23-6｜更新：Phase-26-5,42-2,44-3
 // 写経レベル: 定型 ── 表の操作の確認。
+// Phase-44-3:追記 ── ../../test-utils/stageFixtures(impactWith, makeMark), @/features/detailed-design/detailed-design-store.useDetailedDesignStore
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { CrossCuttingTable, MilestoneList, RiskTable } from "../PlanTables";
-import { makePlan } from "../../test-utils/stageFixtures";
+import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import { impactWith, makeMark, makePlan } from "../../test-utils/stageFixtures";
 import type { PlanModel } from "@/features/detailed-design/api/types";
 
 // SUT: CrossCuttingTable / MilestoneList / RiskTable(段階7の表)
@@ -153,4 +155,21 @@ describe("PlanTables", () => {
   //   expect(lastModel(onChange).milestones[0].tasks).toHaveLength(2);
   // });
 
+
+  // Phase-44-3:追記
+  it("変更の影響の印をタスク(単位のキー)と横断事項の行に出し、「表で見る」の行を強調する", () => {
+    useDetailedDesignStore.setState({
+      impact: impactWith(
+        makeMark({ key: "task:U-002", stage: 7 }),
+        makeMark({ key: "cc:認証", stage: 7, reviewed: true }),
+      ),
+      highlight: { stage: 7, key: "task:U-002" },
+    });
+    renderTables(makePlan());
+
+    expect(screen.getByLabelText("M-01-T02 の種別").closest("tr")).toHaveAttribute("aria-current", "true");
+    expect(screen.getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
+    expect(screen.getByLabelText("変更の影響: 確認済み")).toBeInTheDocument();
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
+  });
 });

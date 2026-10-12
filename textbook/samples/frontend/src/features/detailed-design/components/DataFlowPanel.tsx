@@ -1,10 +1,11 @@
-// 作成：Phase-17-6｜更新：Phase-17-7,17-8,21-7(画面確認後の修正)
+// 作成：Phase-17-6｜更新：Phase-17-7,17-8,21-7(画面確認後の修正),44-3
 // 写経レベル: コア ── グループの選択を保存してから生成させること、段階の dirty に DFD の未保存の編集も含めること。
 "use client";
 
 // Phase-21-7:追記(画面確認後の修正) ── @/features/detailed-design/components/StageSaveBar.StageSaveBar
 // Phase-17-7:追記 ── @/features/detailed-design/components/DfdEditorTabs.DfdEditorTabs
 // Phase-17-8:追記 ── @/features/detailed-design/components/DataDictionaryTable.DataDictionaryTable
+// Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -16,6 +17,7 @@ import {
 } from "@/features/detailed-design/api/types";
 import { DataDictionaryTable } from "@/features/detailed-design/components/DataDictionaryTable";
 import { DfdEditorTabs } from "@/features/detailed-design/components/DfdEditorTabs";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import { CELL, HEAD, INPUT, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
@@ -30,6 +32,8 @@ import {
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 
 // Phase-17-8：更新
 // // 段階2(データフロー)の作業領域の中身。DFD を描く機能グループの選択、AIの下書きの生成、
@@ -57,6 +61,8 @@ export function DataFlowPanel({
   );
   const save = useDetailedDesignStore((s) => s.save);
   const generate = useDetailedDesignStore((s) => s.generate);
+  // Phase-44-3:追記
+  const impact = useStageImpact(stage.stage);
 
   const functionList = toFunctionList(stage1Model);
   const saved = toDataFlow(stage.model);
@@ -202,8 +208,15 @@ export function DataFlowPanel({
                 {functionList.functions.map((fn) => {
                   const row = summaryOf(draft, fn.id);
                   return (
-                    <tr key={fn.id}>
-                      <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>{fn.id}</td>
+                    // Phase-44-3：更新
+                    // <tr key={fn.id}>
+                    //   <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>{fn.id}</td>
+                    // ↓↓
+                    <tr key={fn.id} {...impact.row(elementKey.summary(fn.id))}>
+                      <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>
+                        {fn.id}
+                        <ImpactBadge mark={impact.mark(elementKey.summary(fn.id))} />
+                      </td>
                       <td style={{ ...CELL, minWidth: 140 }}>{fn.name}</td>
                       <td style={{ ...CELL, whiteSpace: "nowrap" }}>{fn.group}</td>
                       <td style={{ ...CELL, minWidth: 140 }}>

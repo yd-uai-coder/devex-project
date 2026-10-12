@@ -1,10 +1,11 @@
-// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正。保存バー・タブの保持),29-4
+// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正。保存バー・タブの保持),29-4,44-3
 // 写経レベル: コア ── 生成は保存した選択から、まとめて(手順の無い処理)とタブごと(1処理)の2通り。
 "use client";
 
 // Phase-21-7:追記(画面確認後の修正) ── @/features/detailed-design/components/StageSaveBar.StageSaveBar
 // Phase-21-8:追記 ── @/features/detailed-design/logicOps(logicIdsByKey, toLogics)
 // Phase-29-4:追記 ── @/features/detailed-design/components/ProcedureSequenceView.ProcedureSequenceView
+// Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -14,6 +15,7 @@ import {
   type DesignStageRead,
   type ProcedureModel,
 } from "@/features/detailed-design/api/types";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { ProcedureSequenceView } from "@/features/detailed-design/components/ProcedureSequenceView";
 import { ProcedureStepTable } from "@/features/detailed-design/components/ProcedureStepTable";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
@@ -22,6 +24,8 @@ import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/t
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 import { logicIdsByKey, toLogics } from "@/features/detailed-design/logicOps";
 import { toModuleList } from "@/features/detailed-design/moduleListOps";
 import {
@@ -81,6 +85,8 @@ export function ProcedurePanel({
   const jumpTo = useDetailedDesignStore((s) => s.jumpTo);
   const clearFocus = useDetailedDesignStore((s) => s.clearFocus);
   // ── ここから Phase-20-7 の作成分 ──
+  // Phase-44-3:追記
+  const impact = useStageImpact(stage.stage);
 
   const functionList = toFunctionList(stage1Model);
   const modulePaths = toModuleList(stage4Model).modules.map((row) => row.path.trim());
@@ -257,8 +263,18 @@ export function ProcedurePanel({
               </thead>
               <tbody>
                 {index.map((row) => (
-                  <tr key={row.procedure.function_id}>
-                    <td style={{ ...CELL, ...MONO }}>{row.procedure.function_id}</td>
+                  // Phase-44-3：更新
+                  // <tr key={row.procedure.function_id}>
+                  //   <td style={{ ...CELL, ...MONO }}>{row.procedure.function_id}</td>
+                  // ↓↓
+                  <tr
+                    key={row.procedure.function_id}
+                    {...impact.row(elementKey.proc(row.procedure.function_id))}
+                  >
+                    <td style={{ ...CELL, ...MONO }}>
+                      {row.procedure.function_id}
+                      <ImpactBadge mark={impact.mark(elementKey.proc(row.procedure.function_id))} />
+                    </td>
                     <td style={CELL}>{row.fn?.name ?? "(機能一覧に無い処理)"}</td>
                     <td style={{ ...CELL, ...MONO }}>{row.fn?.trigger ?? ""}</td>
                     <td style={CELL}>{row.procedure.reason}</td>

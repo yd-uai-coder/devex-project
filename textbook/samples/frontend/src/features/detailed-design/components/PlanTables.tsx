@@ -1,8 +1,9 @@
-// 作成：Phase-23-6｜更新：Phase-26-5,42-2
+// 作成：Phase-23-6｜更新：Phase-26-5,42-2,44-3
 // 写経レベル: 定型 ── 表の入力欄の並びが大半。
 "use client";
 
 // Phase-26-5：更新 ── import の TASK_AREAS・TaskArea を UNIT_KINDS・UnitKind に替え、UNIT_KIND_LABELS・milestoneFunctions・moveTask・taskId を足した
+// Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import {
@@ -12,6 +13,7 @@ import {
   type Priority,
   type UnitKind,
 } from "@/features/detailed-design/api/types";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { ListInput } from "@/features/detailed-design/components/ListInput";
 import {
   CELL,
@@ -21,6 +23,8 @@ import {
   OPTION,
   TABLE,
 } from "@/features/detailed-design/components/tableStyles";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 import { UNIT_KIND_LABELS } from "@/features/detailed-design/labels";
 import {
   addCrossCutting,
@@ -58,6 +62,8 @@ type TableProps = {
 // 足せる。
 export function CrossCuttingTable({ model, disabled, onChange }: TableProps) {
   const missing = missingTopics(model);
+  // Phase-44-3:追記
+  const impact = useStageImpact(7);
   return (
     <YStack gap="$2">
       <Text fontWeight="700">07 横断事項</Text>
@@ -88,7 +94,10 @@ export function CrossCuttingTable({ model, disabled, onChange }: TableProps) {
                 const update = (patch: Parameters<typeof updateCrossCutting>[2]) =>
                   onChange(updateCrossCutting(model, index, patch));
                 return (
-                  <tr key={index}>
+                  // Phase-44-3：更新
+                  // <tr key={index}>
+                  // ↓↓
+                  <tr key={index} {...impact.row(elementKey.cc(row.topic))}>
                     <td style={{ ...CELL, minWidth: 140 }}>
                       <input
                         style={INPUT}
@@ -97,6 +106,8 @@ export function CrossCuttingTable({ model, disabled, onChange }: TableProps) {
                         disabled={disabled}
                         onChange={(e) => update({ topic: e.target.value })}
                       />
+                      {/* Phase-44-3:追記 */}
+                      <ImpactBadge mark={impact.mark(elementKey.cc(row.topic))} />
                     </td>
                     <td style={{ ...CELL, minWidth: 320 }}>
                       <textarea
@@ -397,6 +408,8 @@ function TaskTable({
 }: TableProps & { milestone: number }) {
   const id = milestoneId(milestone);
   const tasks = model.milestones[milestone].tasks;
+  // Phase-44-3:追記
+  const impact = useStageImpact(7);
   return (
     <YStack gap="$2">
       {tasks.length === 0 ? (
@@ -424,8 +437,15 @@ function TaskTable({
                 const update = (patch: Parameters<typeof updateTask>[3]) =>
                   onChange(updateTask(model, milestone, index, patch));
                 return (
-                  <tr key={index}>
-                    <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>{label}</td>
+                  // Phase-44-3：更新
+                  // <tr key={index}>
+                  //   <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>{label}</td>
+                  // ↓↓
+                  <tr key={index} {...impact.row(elementKey.task(task.key || label))}>
+                    <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>
+                      {label}
+                      <ImpactBadge mark={impact.mark(elementKey.task(task.key || label))} />
+                    </td>
                     <td style={{ ...CELL, minWidth: 90 }}>
                       <select
                         style={INPUT}

@@ -1,5 +1,6 @@
-// 作成：Phase-19-6
+// 作成：Phase-19-6｜更新：Phase-44-3
 // 写経レベル: 定型
+// Phase-44-3:追記 ── ../../test-utils/stageFixtures(impactWith, makeMark), @/features/detailed-design/detailed-design-store.useDetailedDesignStore
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -7,7 +8,8 @@ import { useState } from "react";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { ModuleListTable } from "../ModuleListTable";
-import { makeModuleList } from "../../test-utils/stageFixtures";
+import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import { impactWith, makeMark, makeModuleList } from "../../test-utils/stageFixtures";
 import type { ModuleListModel } from "@/features/detailed-design/api/types";
 
 // SUT: ModuleListTable / ドライバ: render と入力操作 / スタブ不要 ── 表示と onChange だけの部品で、
@@ -97,5 +99,22 @@ describe("ModuleListTable", () => {
     renderTable(makeModuleList(), true);
     expect(screen.getByLabelText(`${PATH} のパス`)).toBeDisabled();
     expect(screen.getByLabelText(`${PATH} の主な依存先`)).toBeDisabled();
+  });
+
+  // Phase-44-3:追記
+  it("変更の影響の印をモジュールの行に出し、「表で見る」の行を強調する", () => {
+    const key = "module:app/api/routes/reservations.py";
+    useDetailedDesignStore.setState({
+      impact: impactWith(makeMark({ key, stage: 4 })),
+      highlight: { stage: 4, key },
+    });
+    renderTable();
+
+    expect(screen.getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
+    expect(screen.getByLabelText("app/api/routes/reservations.py のパス").closest("tr")).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

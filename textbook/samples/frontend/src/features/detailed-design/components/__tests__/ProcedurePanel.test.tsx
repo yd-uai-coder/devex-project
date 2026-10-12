@@ -1,7 +1,8 @@
-// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正),29-4
+// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正),29-4,44-3
 // 写経レベル: コア ── 生成の対象・作り直しの確認・関与表の反映を確かめる。
 // Phase-21-8:追記 ── ../../test-utils/stageFixtures.makeLogics
 // Phase-29-4:追記 ── @/features/detailed-design/api/designStagesApi.getProcedureSequence
+// Phase-44-3:追記 ── ../../test-utils/stageFixtures(impactWith, makeMark)
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -12,8 +13,10 @@ import { getProcedureSequence } from "@/features/detailed-design/api/designStage
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import type { DesignStageRead, FunctionListModel } from "@/features/detailed-design/api/types";
 import {
+  impactWith,
   makeFunctionList,
   makeLogics,
+  makeMark,
   makeModuleList,
   makeProcedures,
   makeStages,
@@ -313,5 +316,18 @@ describe("ProcedurePanel", () => {
       "aria-selected",
       "true",
     );
+  });
+
+  // Phase-44-3:追記
+  it("変更の影響の印を索引の処理の行に出し、「表で見る」の行を強調する", () => {
+    useDetailedDesignStore.setState({
+      impact: impactWith(makeMark({ key: "proc:F-01", stage: 5 })),
+      highlight: { stage: 5, key: "proc:F-01" },
+    });
+    renderPanel(setup({ state: "reviewing", version: 4, model: makeProcedures() }));
+
+    expect(screen.getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
+    expect(within(screen.getByRole("table", { name: "手順の索引" })).getByText("F-01").closest("tr")).toHaveAttribute("aria-current", "true");
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

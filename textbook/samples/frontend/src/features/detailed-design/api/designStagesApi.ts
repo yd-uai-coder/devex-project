@@ -1,8 +1,9 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3,28-3,28-4,29-4,30-5,30-7
+// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3,28-3,28-4,29-4,30-5,30-7,44-1
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-21-4:追記 ── ./types.LogicTarget
 // Phase-22-6:追記 ── @/lib/api/download(fetchAttachment, parseFilename)
 // Phase-29-4:追記 ── ./types.SequenceRead
+// Phase-44-1:追記 ── ./types(DesignImpactRead, StageImpactRead)
 import { apiFetch } from "@/lib/api/client";
 import { fetchAttachment, parseFilename } from "@/lib/api/download";
 // Phase-28-4：更新
@@ -12,9 +13,11 @@ import { fetchAttachment, parseFilename } from "@/lib/api/download";
 // import type { DesignStageRead, LogicTarget, SequenceRead, UnitContextRead } from "./types";
 // ↓↓
 import type {
+  DesignImpactRead,
   DesignStageRead,
   LogicTarget,
   SequenceRead,
+  StageImpactRead,
   UnitAiMarkdownRead,
   UnitContextRead,
 } from "./types";
@@ -124,6 +127,27 @@ export function getUnitAiMarkdown(projectId: string, unitId: string): Promise<Un
 }
 
 // Phase-22-6:追記
+// Phase-44-1:追記
+// 変更の影響(全段階の変わったものと印・再生成の候補)。記録した印に、まだ承認していない編集から届く
+// 印(pending)を足して返す。
+export function getDesignImpact(projectId: string): Promise<DesignImpactRead> {
+  return apiFetch<DesignImpactRead>(`${base(projectId)}/impact`);
+}
+
+// 段階の印を確認済み(reviewed=false で未確認)にする。まとめて渡せる。知らないキーは無視される。
+// 段階の内容は変えないので版(楽観ロック)は持たせない。応答はその段階1つ分。
+export function reviewImpactMarks(
+  projectId: string,
+  stage: number,
+  keys: string[],
+  reviewed: boolean,
+): Promise<StageImpactRead> {
+  return apiFetch<StageImpactRead>(`${base(projectId)}/${stage}/impact/review`, {
+    method: "POST",
+    body: JSON.stringify({ keys, reviewed }),
+  });
+}
+
 export type DownloadedDocument = { filename: string; content: Blob };
 
 // Phase-30-5：更新
