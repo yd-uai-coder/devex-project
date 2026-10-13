@@ -1,0 +1,541 @@
+{
+  "requirements": {
+    "purpose": "システム開発の初期フェーズにおけるドキュメント作成の工数削減と属人化の解消",
+    "users": [
+      {
+        "user": "SE・ITコンサルタント・PM、個人開発者・スタートアップの創業者",
+        "scene": "プロジェクト立ち上げやクライアントへのヒアリング時に利用する",
+        "source": "user"
+      }
+    ],
+    "in_scope": [
+      "チャットヒアリング",
+      "完了後の構造化サマリ確認",
+      "逐次生成",
+      "版管理",
+      "参考資料のテキスト化と保持",
+      "ログイン機能",
+      "設計書の自己診断",
+      "プレビュー・コピー・ダウンロード機能"
+    ],
+    "out_of_scope": [
+      "コードの自動生成",
+      "Jira・Notion連携",
+      "マルチテナントの権限管理",
+      "音声入力",
+      "複数人の同時編集"
+    ],
+    "rows": [
+      {
+        "id": "FR-001",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "チャット機能によりAIが1つずつ質問して深掘りするヒアリングを行う",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-002",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "ヒアリング完了後に構造化サマリを提示し、ユーザーが承認してから生成する",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-003",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "要件定義・外部設計・内部設計・実装計画の4種の設計書を逐次で生成する",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-004",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "生成後にAIが各文書の不足点を3段階で自己診断して提示する",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-005",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "生成したMarkdownをプレビュー・コピー・ダウンロードできる",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-006",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "参考資料(txt/md/pdf、最大3件)を読み込み、テキストをDBに保存して対話のコンテキストに含める",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-007",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "ログイン機能を実装する",
+        "source": "adopted",
+        "points": [
+          "security"
+        ]
+      },
+      {
+        "id": "FR-008",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "文書ごとに版を増やして直近3件を保持し、チャットで追加の回答をして再生成できる",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-009",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "AIの応答失敗時は理由を表示してメッセージを送らずに再送を促し、生成失敗時は再生成できるようにする",
+        "source": "user",
+        "points": [
+          "exceptions"
+        ]
+      },
+      {
+        "id": "FR-010",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "チャットは数千文字までとし、空送信は不可とする",
+        "source": "user",
+        "points": [
+          "exceptions"
+        ]
+      },
+      {
+        "id": "FR-011",
+        "kind": "FR",
+        "priority": "Should",
+        "category": "",
+        "text": "テンプレートの選択、版の履歴の画面、設計図(UML)の追加を行う",
+        "source": "user",
+        "points": [
+          "future"
+        ]
+      },
+      {
+        "id": "NFR-001",
+        "kind": "NFR",
+        "priority": null,
+        "category": "可用性",
+        "text": "日中のみ動き、夜間や休日に止まっていても半日なら困らず、夜間の保守の停止はかまわない",
+        "source": "user",
+        "points": [
+          "availability"
+        ]
+      },
+      {
+        "id": "NFR-002",
+        "kind": "NFR",
+        "priority": null,
+        "category": "可用性",
+        "text": "データベースを毎日バックアップし、7日分を残し、VPSの外にもコピーする",
+        "source": "user",
+        "points": [
+          "backup"
+        ]
+      },
+      {
+        "id": "NFR-003",
+        "kind": "NFR",
+        "priority": null,
+        "category": "性能・拡張性",
+        "text": "同時に使うのは数人〜十数人で、チャットの最初の文字が数秒で出、4文書の生成は数分まで待てる",
+        "source": "user",
+        "points": [
+          "performance"
+        ]
+      },
+      {
+        "id": "NFR-004",
+        "kind": "NFR",
+        "priority": null,
+        "category": "運用・保守性",
+        "text": "エラーの追跡と死活監視はMVPの後で導入する",
+        "source": "user",
+        "points": [
+          "operability"
+        ]
+      },
+      {
+        "id": "NFR-005",
+        "kind": "NFR",
+        "priority": null,
+        "category": "運用・保守性",
+        "text": "プロジェクトやアカウントの削除機能はMVPでは不要とする",
+        "source": "user",
+        "points": [
+          "data_retention"
+        ]
+      },
+      {
+        "id": "NFR-006",
+        "kind": "NFR",
+        "priority": null,
+        "category": "移行性",
+        "text": "移行するデータや仕組みは特にない",
+        "source": "adopted",
+        "points": [
+          "migration"
+        ]
+      },
+      {
+        "id": "NFR-007",
+        "kind": "NFR",
+        "priority": null,
+        "category": "セキュリティ",
+        "text": "入力内容は残さず、操作の記録だけにする",
+        "source": "adopted",
+        "points": [
+          "logging"
+        ]
+      },
+      {
+        "id": "NFR-008",
+        "kind": "NFR",
+        "priority": null,
+        "category": "セキュリティ",
+        "text": "ログインの総当たり、登録の大量作成、チャットや生成の回数上限を設けて不正利用を防ぐ",
+        "source": "user",
+        "points": [
+          "abuse"
+        ]
+      },
+      {
+        "id": "NFR-009",
+        "kind": "NFR",
+        "priority": null,
+        "category": "システム環境・エコロジー",
+        "text": "PCの最新のChrome・Edge・Firefox・Safariで利用し、スマホは閲覧のみとする",
+        "source": "user",
+        "points": [
+          "environment"
+        ]
+      },
+      {
+        "id": "CON-001",
+        "kind": "CON",
+        "priority": null,
+        "category": "技術スタック",
+        "text": "フロントエンドはNext.js(App Router)+ Tamaguiを使用する",
+        "source": "user",
+        "points": [
+          "tech"
+        ]
+      },
+      {
+        "id": "CON-002",
+        "kind": "CON",
+        "priority": null,
+        "category": "技術スタック",
+        "text": "バックエンドはFastAPI + LangChain・LangGraph(Python 3.13)を使用する",
+        "source": "user",
+        "points": [
+          "tech"
+        ]
+      },
+      {
+        "id": "CON-003",
+        "kind": "CON",
+        "priority": null,
+        "category": "技術スタック",
+        "text": "データベースはPostgreSQLを使用する",
+        "source": "user",
+        "points": [
+          "tech"
+        ]
+      },
+      {
+        "id": "CON-004",
+        "kind": "CON",
+        "priority": null,
+        "category": "技術スタック",
+        "text": "レート制限・トークン失効用にRedisを使用する",
+        "source": "user",
+        "points": [
+          "tech"
+        ]
+      },
+      {
+        "id": "CON-005",
+        "kind": "CON",
+        "priority": null,
+        "category": "配置",
+        "text": "デプロイ先はVPSにDocker Composeとnginxを配置し、GitHub Actionsでmainへのpushから自動デプロイする",
+        "source": "user",
+        "points": [
+          "tech"
+        ]
+      },
+      {
+        "id": "CON-006",
+        "kind": "CON",
+        "priority": null,
+        "category": "外部サービス",
+        "text": "LLMはGemini Flash-Lite(無料枠)を使用し、上限超過のエラー時はエラー処理を挟む",
+        "source": "user",
+        "points": [
+          "tech"
+        ]
+      },
+      {
+        "id": "CON-007",
+        "kind": "CON",
+        "priority": null,
+        "category": "規模",
+        "text": "誰でも登録できるサービスとして提供する",
+        "source": "adopted",
+        "points": [
+          "scale"
+        ]
+      }
+    ],
+    "point_statuses": {
+      "scale": "adopted",
+      "purpose": "decided",
+      "users": "decided",
+      "daily_flow": "decided",
+      "core": "decided",
+      "scope": "decided",
+      "exceptions": "decided",
+      "future": "decided",
+      "tech": "decided",
+      "schedule": "open",
+      "availability": "decided",
+      "backup": "decided",
+      "performance": "decided",
+      "operability": "decided",
+      "data_retention": "decided",
+      "migration": "adopted",
+      "security": "adopted",
+      "logging": "adopted",
+      "abuse": "decided",
+      "environment": "decided"
+    },
+    "scale": "public",
+    "next_seq": {
+      "FR": 12,
+      "NFR": 10,
+      "CON": 8
+    }
+  },
+  "external_design": {
+    "overview": "本システムは、Next.js(App Router)+ Tamaguiによるフロントエンドと、FastAPI + LangChain・LangGraph(Python 3.13)によるバックエンド、PostgreSQLおよびRedisを用いた構成をとる。VPS上にDocker Composeとnginxでデプロイされ、外部のGemini Flash-Lite APIと連携してチャットヒアリングおよび各種設計書の逐次生成を行う。",
+    "transition": "SCR-001 (ログイン) -> SCR-002 (チャットヒアリング) -> SCR-003 (構造化サマリ確認) -> SCR-004 (設計書生成・プレビュー)",
+    "data_io": "- 参考資料ファイル入出力: txt, md, pdf形式、最大3件のアップロードを受け付け、テキスト化してPostgreSQLのDBに保存する。\n- Markdownファイル入出力: 生成された設計書のダウンロード対応。",
+    "screens": [
+      {
+        "id": "SCR-001",
+        "name": "ログイン画面",
+        "role": "ユーザー認証を行う",
+        "priority": "Must",
+        "req_ids": [
+          "FR-007"
+        ],
+        "ui_spec": "- メールアドレス入力欄\n- パスワード入力欄\n- ログインボタン"
+      },
+      {
+        "id": "SCR-002",
+        "name": "チャットヒアリング画面",
+        "role": "AIとの対話を通じて要件を深掘りする",
+        "priority": "Must",
+        "req_ids": [
+          "FR-001",
+          "FR-006",
+          "FR-009",
+          "FR-010"
+        ],
+        "ui_spec": "- メッセージ表示エリア\n- メッセージ入力欄(数千文字まで)\n- 空送信防止機能付き送信ボタン\n- 参考資料アップロード欄(txt/md/pdf、最大3件)\n- エラー時の再送促し表示"
+      },
+      {
+        "id": "SCR-003",
+        "name": "構造化サマリ確認・生成承認画面",
+        "role": "ヒアリング完了後のサマリ提示と生成承認を行う",
+        "priority": "Must",
+        "req_ids": [
+          "FR-002"
+        ],
+        "ui_spec": "- 構造化サマリ表示エリア\n- 承認ボタン\n- 修正要求ボタン"
+      },
+      {
+        "id": "SCR-004",
+        "name": "設計書生成・プレビュー画面",
+        "role": "4種の設計書の逐次生成およびプレビュー・コピー・ダウンロード・自己診断結果の確認を行う",
+        "priority": "Must",
+        "req_ids": [
+          "FR-003",
+          "FR-004",
+          "FR-005",
+          "FR-008",
+          "FR-009"
+        ],
+        "ui_spec": "- 設計書選択タブ(要件定義・外部設計・内部設計・実装計画)\n- Markdownプレビューエリア\n- コピーボタン\n- ダウンロードボタン\n- 自己診断結果表示エリア(不足点を3段階で提示)\n- 版管理一覧(直近3件の版切り替え)\n- 追加回答用チャット・再生成ボタン"
+      }
+    ],
+    "apis": [
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/login",
+        "summary": "ログイン認証",
+        "screens": [
+          "SCR-001"
+        ],
+        "req_ids": [
+          "FR-007"
+        ],
+        "body": "email, password",
+        "response": "200 認証成功とトークン",
+        "errors": "401 認証失敗、429 レート制限超過"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects",
+        "summary": "プロジェクト作成・チャットメッセージ送信",
+        "screens": [
+          "SCR-002"
+        ],
+        "req_ids": [
+          "FR-001",
+          "FR-010"
+        ],
+        "body": "message",
+        "response": "201 メッセージ受付",
+        "errors": "400 空送信エラー、429 レート制限超過"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/documents/summary",
+        "summary": "構造化サマリの取得・承認",
+        "screens": [
+          "SCR-003"
+        ],
+        "req_ids": [
+          "FR-002"
+        ],
+        "body": "approved",
+        "response": "200 承認完了",
+        "errors": "404 対象なし"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/documents/generate",
+        "summary": "設計書の逐次生成および自己診断実行",
+        "screens": [
+          "SCR-004"
+        ],
+        "req_ids": [
+          "FR-003",
+          "FR-004",
+          "FR-009"
+        ],
+        "body": "document_types",
+        "response": "201 生成開始・結果",
+        "errors": "500 LLMエラー時の再生成促し"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/{id}/documents",
+        "summary": "設計書および版履歴の取得",
+        "screens": [
+          "SCR-004"
+        ],
+        "req_ids": [
+          "FR-005",
+          "FR-008"
+        ],
+        "body": "",
+        "response": "200 設計書一覧と版情報(直近3件)",
+        "errors": "404 対象なし"
+      }
+    ],
+    "integrations": [
+      {
+        "service": "Gemini Flash-Lite API",
+        "purpose": "チャットヒアリングの対話生成および設計書の逐次生成",
+        "auth": "APIキー",
+        "timing": "リアルタイム対話時および生成時",
+        "req_ids": [
+          "CON-006"
+        ]
+      }
+    ],
+    "known_req_ids": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "NFR-001",
+      "NFR-002",
+      "NFR-003",
+      "NFR-004",
+      "NFR-005",
+      "NFR-006",
+      "NFR-007",
+      "NFR-008",
+      "NFR-009",
+      "CON-001",
+      "CON-002",
+      "CON-003",
+      "CON-004",
+      "CON-005",
+      "CON-006",
+      "CON-007"
+    ],
+    "must_fr_ids": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010"
+    ],
+    "next_seq": {
+      "SCR": 5
+    }
+  }
+}

@@ -1,6 +1,6 @@
-# 更新：Phase-6-3
+# 更新：Phase-6-3,51-2
 # 写経レベル: 定型 ── 既存のログインテストユーザー作成に、固定シードデータの投入を追加するのみ。
-"""開発用のシードデータ ── ブラウザで `/docs` からログインを試すためのテストユーザーを 1 人作る。
+"""開発用のシードデータ ── `/docs` からログインを試すテストユーザー(一般・superuser)を作る。
 また、SCR-003(プロンプトテンプレート選択)向けの固定テンプレート2件を投入する。
 
 使い方:
@@ -28,6 +28,14 @@ SEED_USER = {
     "full_name": "sample-user",
     "email": "example-user@example.com",
     "password": "Sample-user-0123",
+}
+
+# Phase-51-2:追記 ── superuser の固定ユーザー(本番の superuser は登録したアカウントを手で昇格させる)
+# superuser(レビュー機能のオン・オフを切り替えられるアカウント)
+SEED_SUPERUSER = {
+    "full_name": "sample-super-user",
+    "email": "example-super-user@example.com",
+    "password": "Sample-super-user-0123",
 }
 
 # Phase-6-3:追記 ── SCR-003向けの固定テンプレート(内部設計書3.2節⑤: CRUD機能は設けず固定シードデータのみ)
@@ -66,23 +74,50 @@ SEED_PROMPT_TEMPLATES = [
 
 
 async def seed() -> None:
-    """テストユーザーを1人登録し、固定プロンプトテンプレートを投入する(いずれも既存ならスキップ)。"""
+    # Phase-51-2：更新
+    # """テストユーザーを1人登録し、固定プロンプトテンプレートを投入する(いずれも既存ならスキップ)。"""
+    # ↓↓
+    """テストユーザー(一般・superuser)を登録し、固定プロンプトテンプレートを投入する(いずれも既存ならスキップ)。"""
     async with AsyncSessionLocal() as session:
-        await _seed_user(session)
+        # Phase-51-2：更新
+        # await _seed_user(session)
+        # ↓↓
+        await seed_users(session)
         await seed_prompt_templates(session)
 
 
-async def _seed_user(session: AsyncSession) -> None:
+# Phase-51-2：更新
+# async def _seed_user(session: AsyncSession) -> None:
+# ↓↓
+async def seed_users(session: AsyncSession) -> None:
+    """一般ユーザーと superuser を作る(email 一致で冪等判定。既存ユーザーの権限は変えない)。"""
     service = UserService(session)
-    try:
-        user = await service.create_user(
-            email=SEED_USER["email"],
-            password=SEED_USER["password"],
-            full_name=SEED_USER["full_name"],
-        )
-        print(f"created user: {user.email} ({user.id})")
-    except UserAlreadyExistsError:
-        print(f"user already exists: {SEED_USER['email']} (skip)")
+    # Phase-51-2：更新
+    # try:
+    #     user = await service.create_user(
+    #         email=SEED_USER["email"],
+    #         password=SEED_USER["password"],
+    #         full_name=SEED_USER["full_name"],
+    #     )
+    #     print(f"created user: {user.email} ({user.id})")
+    # except UserAlreadyExistsError:
+    #     print(f"user already exists: {SEED_USER['email']} (skip)")
+    # ↓↓
+    for data, is_superuser in ((SEED_USER, False), (SEED_SUPERUSER, True)):
+        try:
+            user = await service.create_user(
+                email=data["email"],
+                password=data["password"],
+                full_name=data["full_name"],
+            )
+        except UserAlreadyExistsError:
+            print(f"user already exists: {data['email']} (skip)")
+            continue
+        if is_superuser:
+            # 登録の経路(create_user)からは superuser を作れないため、作成後に昇格させる
+            user.is_superuser = True
+            await session.commit()
+        print(f"created user: {user.email} ({user.id}, superuser={user.is_superuser})")
 
 
 async def seed_prompt_templates(session: AsyncSession) -> None:

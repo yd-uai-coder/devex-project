@@ -1,0 +1,186 @@
+{
+  "model": "claude-sonnet-5-5",
+  "input_tokens": 8808,
+  "output_tokens": 3502,
+  "total_tokens": 12310,
+  "input_token_details": {
+    "cache_read": 0,
+    "cache_creation": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "ephemeral_1h_input_tokens": 0
+  },
+  "output_token_details": {
+    "reasoning": 0
+  },
+  "cost_usd": 0.0526,
+  "findings": [
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/projects/{id}/summary/approve",
+        "FR-005",
+        "FR-006",
+        "NFR-003",
+        "SCR-004",
+        "SCR-005"
+      ],
+      "problem": "4文書の順次生成と自己診断は数分かかる処理だが、承認APIが「200 OK(生成開始)」を返すだけで、進捗・完了の取得方法(非同期ジョブ、ポーリング、SSE等)や生成中の状態を取る手段がない。",
+      "reason": "NFR-003 は4文書生成に数分を許容している。SCR-005 は承認後すぐ遷移するが、生成状態を取得するAPIがなく、GET documents は404しか定義していない。途中失敗や再生成の扱いも決められない。",
+      "suggestion": "生成ジョブを非同期にして job/status 取得APIを追加し、文書ごとの状態(生成中・完了・失敗)と進捗を返す。画面は状態に応じて表示する。"
+    },
+    {
+      "level": "critical",
+      "cause": "inconsistency",
+      "targets": [
+        "SCR-005",
+        "FR-009",
+        "FR-008",
+        "FR-007",
+        "API一覧"
+      ],
+      "problem": "SCR-005 の再生成ボタン、版切り替え、自己診断結果の表示、コピー/ダウンロードに対応するAPIがない。生成失敗時の再生成(FR-009)もAPIが存在しない。",
+      "reason": "再生成は承認APIの再実行以外に手段がなく、承認APIは文書単位や版を指定できない。GET documents だけでは版の指定取得、診断結果の取得、ダウンロードが特定できない。",
+      "suggestion": "再生成API(POST /projects/{id}/documents/{docType}/regenerate)、版指定取得(GET .../documents/{docType}/versions/{n})、自己診断結果の取得、ダウンロード用の応答を定義する。"
+    },
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/projects",
+        "GET /api/v1/projects",
+        "POST /api/v1/projects/{id}/chat",
+        "POST /api/v1/projects/{id}/documents/upload",
+        "POST /api/v1/projects/{id}/summary/approve",
+        "GET /api/v1/projects/{id}/documents"
+      ],
+      "problem": "プロジェクト系APIで、認証必須の扱いと、他人のプロジェクトIDを指定された場合の認可(403/404)が定義されていない。401 も一部のAPIにしかない。",
+      "reason": "公開サービス(誰でも登録可)なので、{id} を指定するAPIで所有者チェックがないと他人のヒアリング内容や文書が見える。FR-001 の認証がAPIごとに反映されていない。",
+      "suggestion": "全プロジェクト系APIに Bearer トークン必須と所有者検証を明記し、401/403/404 を各APIのエラーにそろえる。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "NFR-008",
+        "POST /api/v1/auth/login",
+        "POST /api/v1/auth/register",
+        "POST /api/v1/projects/{id}/chat",
+        "POST /api/v1/projects/{id}/summary/approve"
+      ],
+      "problem": "回数上限(ログイン総当たり、登録の大量作成、チャット・生成の上限)は要件にあるが、具体的な数値・単位と、上限超過時の応答(429)がどのAPIにも定義されていない。",
+      "reason": "NFR-008 に対し、外部設計のエラー欄に 429 がなく、上限値もない。Gemini 無料枠(CON-004)の上限との関係も未整理。",
+      "suggestion": "各APIの上限値(例:ログイン5回/分/IP+メール)を決め、429 と Retry-After を各APIのエラーに追加する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "CON-004",
+        "POST /api/v1/projects/{id}/chat",
+        "POST /api/v1/projects/{id}/summary/approve",
+        "FR-009"
+      ],
+      "problem": "Gemini の無料枠超過・レート制限時の応答が、チャットは500、生成も500に一括りで、上限超過か一時障害かをユーザーに区別して示せない。FR-009 の「理由を表示」を満たしにくい。",
+      "reason": "CON-004 は上限超過時のエラー処理を求めている。失敗時にメッセージを保存しないという要件の扱いも設計に出てこない。",
+      "suggestion": "429/503 などの原因別コードとメッセージを定義し、チャット失敗時はユーザー発話を履歴に確定しない扱いを明記する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/projects/{id}/chat",
+        "SCR-003",
+        "NFR-003"
+      ],
+      "problem": "チャットは「最初の文字を数秒で出力」する要件だが、APIは通常の200 OK(AI応答)のみで、ストリーミング(SSE等)の仕様がない。",
+      "reason": "NFR-003 はトークン逐次出力を前提とした要件。応答仕様がないため、フロントとバックの実装方式が決まらない。",
+      "suggestion": "チャットを SSE/ストリーム応答として定義し、途中でエラーになった場合の通知方法も決める。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "SCR-003",
+        "FR-004",
+        "SCR-004",
+        "API一覧"
+      ],
+      "problem": "ヒアリング完了ボタン、構造化サマリの生成・取得、修正依頼ボタンに対応するAPIがない。チャット履歴の取得APIもない。",
+      "reason": "SCR-004 は構造化サマリを表示して修正依頼できるが、サマリを作る/取得する/修正するAPIが一覧になく、承認APIだけが存在する。SCR-003 のチャット履歴の再表示も取得手段がない。",
+      "suggestion": "ヒアリング完了(サマリ生成)API、サマリ取得API、修正依頼API、チャット履歴取得APIを追加する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "FR-003",
+        "POST /api/v1/projects/{id}/documents/upload",
+        "SCR-003"
+      ],
+      "problem": "参考資料のアップロードについて、ファイルサイズ上限、PDF のテキスト抽出失敗(スキャンPDF等)、テキスト化結果の確認・チャットやサマリ生成での利用方法が定義されていない。エラーは400のみ。",
+      "reason": "FR-003 はテキスト化して保持するとしているが、保持したテキストをどの処理に渡すかがなく、巨大ファイルがLLMの入力上限を超えうる。413 や抽出失敗のエラーもない。",
+      "suggestion": "サイズ上限、抽出失敗時のエラー(413/422)、保持テキストをLLMに渡す方法(要約・切り詰め)を定義する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "FR-008",
+        "GET /api/v1/projects/{id}/documents",
+        "SCR-005"
+      ],
+      "problem": "版管理の「直近3件を保持」について、どの操作で版が増えるか(再生成のたびか、承認のたびか)、4文書が同じ版番号を共有するかが決まっていない。データモデルの記載もない。",
+      "reason": "FR-008 は文書ごとに版を増やすとあるが、FR-011 の版履歴画面は将来扱い。4文書の順次生成が途中で失敗した場合に版が不揃いになりうる。",
+      "suggestion": "版の採番と古い版の削除ルールを定め、生成失敗時に版を確定させない扱いを決める。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "FR-005",
+        "SCR-002",
+        "FR-002"
+      ],
+      "problem": "SCR-002 の要件に FR-005 が対応づけられているが、画面にも API(GET/POST projects)にも文書生成に関わる機能がない。",
+      "reason": "外部設計の付録で FR-005 が SCR-002 に対応づけられているのは誤りで、実際の生成起点は SCR-004 の承認。",
+      "suggestion": "FR-005 の対応画面を SCR-004・SCR-005 に直す。SCR-002 の要件は FR-002 のみにする。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "FR-001",
+        "POST /api/v1/auth/login",
+        "CON-003",
+        "SCR-001"
+      ],
+      "problem": "認証方式の詳細(トークンの種類・有効期限・リフレッシュ、ログアウト、トークン失効のAPI)と、パスワード規則が決まっていない。ログアウトAPIもない。",
+      "reason": "CON-003 はトークン失効用の Redis を使うとしているが、失効させるAPI(ログアウト)がなく、login は「トークン返却」とあるだけ。",
+      "suggestion": "アクセストークンの有効期限、ログアウトAPI(Redis で失効)、パスワードの最小長などを定義する。"
+    },
+    {
+      "level": "minor",
+      "cause": "design",
+      "targets": [
+        "NFR-007"
+      ],
+      "problem": "チャットの入力内容はログに残さないとあるが、チャット履歴や参考資料テキストをDBに保存するのは別の話で、DB保存の扱いが明記されていない。",
+      "reason": "サマリ・文書生成にチャット履歴が必須で、DB保存は不可避だが、「残さない」の範囲が曖昧で実装時に解釈が割れる。",
+      "suggestion": "「アプリケーションログに残さない」と範囲を明記し、DBに保存するデータと分けて書く。"
+    },
+    {
+      "level": "minor",
+      "cause": "hearing",
+      "targets": [
+        "規模",
+        "体制・期間",
+        "FR-001"
+      ],
+      "problem": "公開サービスとして誰でも登録できる前提だが、メール確認、パスワードリセット、利用規約・個人情報の扱い、LLMへ顧客情報を送ることの注意などが聞けていない。体制・期間も未決。",
+      "reason": "規模とセキュリティは AI の提案を採用のままで、顧客のヒアリング内容を扱うため、確認を要する事実が要件に落ちていない。",
+      "suggestion": "メールアドレスの確認・パスワードリセットの要否と、機密情報を無料枠LLMに送る際の注意表示を、利用者に聞き直して決める。"
+    }
+  ],
+  "seconds": 28.2
+}

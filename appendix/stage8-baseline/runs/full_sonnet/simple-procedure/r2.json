@@ -1,0 +1,177 @@
+{
+  "model": "claude-sonnet-5-5",
+  "input_tokens": 33824,
+  "output_tokens": 3655,
+  "total_tokens": 37479,
+  "input_token_details": {
+    "cache_read": 0,
+    "cache_creation": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "ephemeral_1h_input_tokens": 0
+  },
+  "output_token_details": {
+    "reasoning": 0
+  },
+  "cost_usd": 0.1042,
+  "findings": [
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/chat/messages",
+        "POST /api/v1/documents/generate",
+        "POST /api/v1/projects",
+        "DF-4",
+        "DF-5"
+      ],
+      "problem": "チャット送信APIの本文は message だけで project_id が無く、対象プロジェクトを特定できない。プロジェクト作成後の project_id が応答に何を返すかも未定義。また、DF-4 は chat_messages に project_id を保存するのに、受け取る入力に project_id が含まれない。",
+      "reason": "外部設計書 2.6 の本文は message のみで、DF-4 の入力も message のみ。一方 chat_messages.project_id は NOT NULL。チャットと生成は project_id で結び付けられず、実装に着手できない。",
+      "suggestion": "チャット送信は project_id をパスまたは本文で受け取る形にする。プロジェクト作成の応答には project_id を含めると明記する。"
+    },
+    {
+      "level": "critical",
+      "cause": "inconsistency",
+      "targets": [
+        "NFR-006",
+        "POST /api/v1/chat/messages",
+        "POST /api/v1/documents/generate",
+        "DF-5"
+      ],
+      "problem": "他人のプロジェクトを閲覧できないという要件に対し、プロジェクトの所有者を確認する処理や 401/403/404 の応答が、chat と documents の API にも DF にも無い。documents/generate の 500 以外のエラーも定義されていない。",
+      "reason": "NFR-006 に対応するのは projects API の関連付けだけ。project_id を受け取る generate では、他人の project_id を指定すると他人のチャット履歴から設計書を生成できてしまう。",
+      "suggestion": "project_id を扱う全 API で、project.user_id と認証済みユーザーの一致を確認する。不一致は 403 か 404 を返す。401 も各 API のエラーに追加する。"
+    },
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "FR-006",
+        "SCR-002",
+        "SCR-003",
+        "外部設計書 2.6 API一覧"
+      ],
+      "problem": "生成済み設計書と自己診断を取得する API が無く、チャット履歴の取得 API も無い。プロジェクト一覧や再表示の API も無い。SCR-003 のプレビューと SCR-002 のチャット履歴表示は、何のデータを使うのか決まっていない。",
+      "reason": "付録の FR-006 は API が「—」。生成 API の応答は「201 成功」とだけ書かれ、本文の内容が未定義。リロードやログイン後に保存済みの設計書へアクセスする手段も無い。",
+      "suggestion": "設計書・自己診断の取得 API(例 GET /projects/{id}/documents)とチャット履歴の取得 API を追加する。または generate の応答に4文書と診断を含めると明記する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/auth/login",
+        "FR-002",
+        "CON-003",
+        "NFR-008"
+      ],
+      "problem": "リフレッシュトークンでアクセストークンを再発行する API と、ログアウトの API が無い。Redis にトークン失効の管理があるのに、失効させる操作の API が無い。",
+      "reason": "FR-002 はアクセストークン30分・リフレッシュ14日と定める。再発行手段が無いと30分ごとに再ログインが必要になる。CON-003 の「トークン失効」を使う処理も存在しない。",
+      "suggestion": "POST /auth/refresh と POST /auth/logout を追加する。ログアウトではトークンを Redis に失効登録する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/documents/generate",
+        "NFR-003",
+        "FR-007",
+        "DF-5"
+      ],
+      "problem": "数分かかる4文書の生成と自己診断を、同期の1リクエストで処理する設計になっている。タイムアウトの値や、途中失敗のときの扱いも決まっていない。4文書の保存と診断の保存を一括で行うか、一部が保存済みのまま失敗した場合どうするかも未定義。",
+      "reason": "NFR-003 は生成に数分かかると許容している。nginx やブラウザのタイムアウトで切断される恐れがある。FR-007 は再生成を求めているが、既存の documents との置き換えや重複の扱いが書かれていない。リスク4.4 は「非同期処理」とだけ言い、具体策が無い。",
+      "suggestion": "ジョブ化して状態の取得 API(ポーリング)を用意するか、タイムアウトを明記する。保存は1トランザクションにし、再生成時は既存の文書を置き換える、または版を持たせると決める。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "NFR-008",
+        "POST /api/v1/chat/messages",
+        "POST /api/v1/documents/generate",
+        "内部設計書 3.4"
+      ],
+      "problem": "チャットと生成の回数制限について、上限値(回数・期間・単位)が決まっていない。429 の応答も chat と generate の API に定義されていない。",
+      "reason": "NFR-008 と 3.4 は回数制限を実装するとだけ述べる。外部設計書 2.6 で 429 があるのは auth の2 API だけで、数値が無いと実装できない。LLM のコスト防御としても重要。",
+      "suggestion": "上限値をヒアリングで確認し、要件に数値を入れる。chat と generate のエラーに 429 を追加する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "DF-5",
+        "chat_messages",
+        "projects.reference_file_paths",
+        "DF-3"
+      ],
+      "problem": "DF-5 は「チャット履歴・参考資料取得」の取得元を chat_messages としか書いておらず、参考資料(ファイル)を読む処理が無い。また、pdf からのテキスト抽出が、どの処理にも書かれていない。参考資料が DF-4 のチャットにも使われるかは不明。",
+      "reason": "FR-003 は参考資料を初期入力で読み込むとしている。DF-3 はファイルパスを保存するだけで、内容の抽出・プロンプトへの反映が無い。アップロードしたファイルが生成に使われない恐れがある。",
+      "suggestion": "DF-3 か DF-5 に、ファイルからのテキスト抽出と、プロンプトへの組み込みを加える。ファイルサイズの上限も決める。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/projects",
+        "テーブル projects",
+        "SCR-002"
+      ],
+      "problem": "プロジェクト作成 API は files が必須のように読めるが、参考資料が無い場合の扱いが決まっていない。プロジェクト名やタイトルの項目も無い。複数のプロジェクトを区別できず、作成後の画面遷移や選択の仕組みも無い。",
+      "reason": "projects テーブルは id・user_id・パス配列・日時だけ。利用シーンは新規プロジェクトごとに使うことなので、複数のプロジェクトから選ぶ手段が要る。ファイルの保存先や容量の管理も未定義。",
+      "suggestion": "files を任意と明記し、プロジェクト名の列とプロジェクト一覧の API を追加する。ファイルの保存先(ボリューム)も決める。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "backend/api/v1/auth.py",
+        "モジュール一覧",
+        "内部設計書 3.3"
+      ],
+      "problem": "auth.py の依存先が ai_service.py になっている。認証処理と AI サービスは無関係で、users を扱うリポジトリ層も無い。また security.py の層が「モデル」になっている。",
+      "reason": "3.3 の説明はルーティング・サービス・リポジトリ・モデルの4層を分けているのに、モジュール一覧にはリポジトリ層が無い。層の依存ルールに従うと、実装者は auth.py から ai_service.py を呼ぶ形になり、不整合が出る。",
+      "suggestion": "auth.py の依存を security.py と DB 層に直す。リポジトリ層と、チャットの文脈でのレート制限・トークン検証のミドルウェアを、モジュール一覧に加える。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "M-01-T01",
+        "実装計画書 4.2",
+        "NFR-002",
+        "CON-005",
+        "SCR-001",
+        "SCR-002",
+        "SCR-003",
+        "NFR-008"
+      ],
+      "problem": "実装計画に、フロントエンド画面(SCR-001〜003)の実装、nginx・本番デプロイ・GitHub Actions、DB バックアップ、レート制限ミドルウェア、DB のマイグレーションのタスクが無い。M-01-T01 の要件欄も「なし」になっている。",
+      "reason": "計画はバックエンドの API 5本だけ。FR-006 のコピー・ダウンロードを行う画面も、NFR-002 の毎日バックアップ・外部コピーも、NFR-008 の回数制限も、CON-005 の自動デプロイもタスクに無く、MVP の完了条件を満たせない。",
+      "suggestion": "フロントエンド・デプロイとCI/CD・バックアップ・レート制限とトークン失効・マイグレーションのタスクを追加する。要件との紐付けも書く。"
+    },
+    {
+      "level": "minor",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/auth/register",
+        "POST /api/v1/auth/login",
+        "FR-008"
+      ],
+      "problem": "auth の2 API が FR-008(チャット入力数千文字・空送信禁止)に紐付いている。パスワードやメールの検証ルール(長さ・形式)は定義が無い。",
+      "reason": "FR-008 はチャット入力の制限で、認証とは関係が無い。公開サービスなのにパスワード強度の基準が無く、400 の条件が曖昧。",
+      "suggestion": "auth の要件を FR-001/FR-002/NFR-008 に直す。パスワードの最小文字数とメール形式のルールを決める。"
+    },
+    {
+      "level": "minor",
+      "cause": "hearing",
+      "targets": [
+        "数千文字",
+        "NFR-003",
+        "FR-008",
+        "保存データの保持"
+      ],
+      "problem": "「数千文字まで」「数秒」「数分」「数人〜十数人」が曖昧で、具体的な上限値がない。バックアップ済みデータの保持期間も決まっていない。体制・期間も未決のまま。",
+      "reason": "FR-008 の文字数上限は 400 を返す境界になり、実装・テストで値が要る。チャット履歴とプロジェクトは削除機能が無いまま無期限に溜まる点も、容量の見積もりがヒアリングにない。",
+      "suggestion": "文字数の上限と生成のタイムアウト値を利用者に確認する。データの無期限保存でよいかも確かめる。"
+    }
+  ],
+  "seconds": 30.6
+}

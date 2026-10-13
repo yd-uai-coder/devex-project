@@ -1,0 +1,10 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "input_tokens": 8758,
+  "output_tokens": 161,
+  "total_tokens": 8919,
+  "input_token_details": {
+    "cache_read": 6118
+  },
+  "seconds": 14.4
+}

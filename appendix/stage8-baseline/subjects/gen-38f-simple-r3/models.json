@@ -1,0 +1,2332 @@
+{
+  "requirements": {
+    "purpose": "システム開発の初期フェーズにおけるドキュメント作成の工数削減と属人化の防止",
+    "users": [
+      {
+        "user": "SE・ITコンサルタント・PM",
+        "scene": "新規プロジェクトの立ち上げ時やクライアントへのヒアリング後に、初期設計ドキュメントのドラフトを迅速に作成・共有する場面",
+        "source": "user"
+      },
+      {
+        "user": "個人開発者・スタートアップの創業者",
+        "scene": "新規アイデアやプロダクトの立ち上げ時に、要件や設計内容をチャット形式で整理・文章化する場面",
+        "source": "user"
+      }
+    ],
+    "in_scope": [
+      "誰でも登録・利用可能なWebサービスとしての提供",
+      "メール・パスワードによるユーザー登録・認証機能",
+      "AIチャットによる要望・アイデアのヒアリング機能",
+      "参考資料ファイル（txt/md/pdf、最大3件）の読み込み",
+      "4種の設計書（要件定義・外部設計・内部設計・実装計画）の一括Markdown自動生成",
+      "AIによる生成ドキュメントの不足点自己診断（3段階）の提示",
+      "生成されたMarkdownドキュメントのプレビュー、コピー、ダウンロード",
+      "ユーザー、チャット履歴、生成ドキュメントのPostgreSQL保存",
+      "レート制限および不正利用防止対策"
+    ],
+    "out_of_scope": [
+      "コードの自動生成機能",
+      "Jira・Notion連携機能",
+      "マルチテナントの権限管理機能",
+      "音声入力機能",
+      "複数人による同時編集機能",
+      "プロジェクトの削除機能およびアカウント退会機能",
+      "エラー追跡および外部死活監視ツールの導入（MVP後対応）",
+      "テンプレート選択、版履歴画面、設計図（UML）追加機能（将来拡張）",
+      "既存データや旧システムの移行作業"
+    ],
+    "rows": [
+      {
+        "id": "FR-001",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "ユーザーはメールアドレスとパスワードを用いて新規登録およびログイン認証ができること。認証には有効期限30分のアクセストークンおよび有効期限14日のHttpOnly Cookieを用いたリフレッシュトークン（JWT）を使用すること。",
+        "source": "user",
+        "points": [
+          "security",
+          "scale"
+        ]
+      },
+      {
+        "id": "FR-002",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "初期入力時に参考資料としてtxt、md、pdfファイルを最大3件まで読み込めること。",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-003",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "チャット画面にて対話形式でAIによるヒアリングを実施できること。なお、1回のメッセージ入力は数千文字までとし、空送信を禁止すること。",
+        "source": "user",
+        "points": [
+          "core",
+          "exceptions"
+        ]
+      },
+      {
+        "id": "FR-004",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "ヒアリング内容を基に、「要件定義書」「外部設計書」「内部設計書」「実装計画書」の4種のMarkdown設計書を一括で自動生成できること。",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-005",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "設計書生成後、AIが各ドキュメントの不足点を「最重要」「中程度」「軽微」の3段階で自己診断し、画面に提示すること。",
+        "source": "user",
+        "points": [
+          "core",
+          "scope"
+        ]
+      },
+      {
+        "id": "FR-006",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "生成されたMarkdown設計書を画面上でプレビュー表示し、クリップボードへのコピーおよびファイルダウンロードができること。",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-007",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "ユーザー情報、チャット履歴、生成された設計書データをPostgreSQLに保存し永続化すること。",
+        "source": "user",
+        "points": [
+          "core"
+        ]
+      },
+      {
+        "id": "FR-008",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "AI呼び出し等のエラー発生時は、送信メッセージを保存せずにエラー理由を表示して再送を促し、文書生成失敗時は再生成を実行できること。",
+        "source": "user",
+        "points": [
+          "exceptions"
+        ]
+      },
+      {
+        "id": "FR-009",
+        "kind": "FR",
+        "priority": "Must",
+        "category": "",
+        "text": "ログイン試行の総当たり防止、アカウントの大量作成防止、およびチャット・文書生成の回数制限による不正利用防止対策を実施すること。",
+        "source": "user",
+        "points": [
+          "abuse"
+        ]
+      },
+      {
+        "id": "FR-010",
+        "kind": "FR",
+        "priority": "Won't",
+        "category": "",
+        "text": "ユーザー自身によるプロジェクトデータの削除機能およびアカウント退会機能はMVPでは提供しない。",
+        "source": "user",
+        "points": [
+          "data_retention"
+        ]
+      },
+      {
+        "id": "FR-011",
+        "kind": "FR",
+        "priority": "Won't",
+        "category": "",
+        "text": "コードの自動生成機能は今回の対象外とする。",
+        "source": "user",
+        "points": [
+          "scope"
+        ]
+      },
+      {
+        "id": "FR-012",
+        "kind": "FR",
+        "priority": "Won't",
+        "category": "",
+        "text": "JiraおよびNotionとの連携機能は今回の対象外とする。",
+        "source": "user",
+        "points": [
+          "scope"
+        ]
+      },
+      {
+        "id": "FR-013",
+        "kind": "FR",
+        "priority": "Won't",
+        "category": "",
+        "text": "マルチテナント権限管理および複数人による同時編集機能は今回の対象外とする。",
+        "source": "user",
+        "points": [
+          "scope"
+        ]
+      },
+      {
+        "id": "FR-014",
+        "kind": "FR",
+        "priority": "Won't",
+        "category": "",
+        "text": "音声入力によるヒアリング機能は今回の対象外とする。",
+        "source": "user",
+        "points": [
+          "scope"
+        ]
+      },
+      {
+        "id": "FR-015",
+        "kind": "FR",
+        "priority": "Won't",
+        "category": "",
+        "text": "テンプレート選択機能、設計書の版履歴管理画面、設計図（UML）の追加機能は将来拡張とし、今回の対象外とする。",
+        "source": "user",
+        "points": [
+          "future"
+        ]
+      },
+      {
+        "id": "NFR-001",
+        "kind": "NFR",
+        "priority": null,
+        "category": "可用性",
+        "text": "サービス停止が発生しても半日程度の停止は許容し、夜間の定期保守に伴うサービス停止を許容する運用とする。",
+        "source": "user",
+        "points": [
+          "availability"
+        ]
+      },
+      {
+        "id": "NFR-002",
+        "kind": "NFR",
+        "priority": null,
+        "category": "可用性",
+        "text": "PostgreSQLデータベースのバックアップを日次で取得して7日分保持し、VPS外の環境へもバックアップデータを複製・退避すること。",
+        "source": "user",
+        "points": [
+          "backup"
+        ]
+      },
+      {
+        "id": "NFR-003",
+        "kind": "NFR",
+        "priority": null,
+        "category": "性能・拡張性",
+        "text": "同時に数人から十数人の利用を想定し、チャット応答は初文を数秒以内に出力開始し、4文書一括生成は数分以内に完了すること（生成中はチャット送信を制限する）。",
+        "source": "user",
+        "points": [
+          "performance"
+        ]
+      },
+      {
+        "id": "NFR-004",
+        "kind": "NFR",
+        "priority": null,
+        "category": "運用・保守性",
+        "text": "エラー追跡システムおよび外部死活監視の導入はMVPリリース後に行うものとし、最初のリリース時点では対象外とする。",
+        "source": "adopted",
+        "points": [
+          "operability"
+        ]
+      },
+      {
+        "id": "NFR-005",
+        "kind": "NFR",
+        "priority": null,
+        "category": "移行性",
+        "text": "既存システムや過去データからの移行対象データおよび仕組みは存在しない前提とする。",
+        "source": "adopted",
+        "points": [
+          "migration"
+        ]
+      },
+      {
+        "id": "NFR-006",
+        "kind": "NFR",
+        "priority": null,
+        "category": "セキュリティ",
+        "text": "プロジェクトの機密性を保持するため、アクセス制御を行い、自身が作成したプロジェクト以外の他人のプロジェクトを一切閲覧できないようにすること。",
+        "source": "user",
+        "points": [
+          "security"
+        ]
+      },
+      {
+        "id": "NFR-007",
+        "kind": "NFR",
+        "priority": null,
+        "category": "セキュリティ",
+        "text": "システムログには機密情報やユーザー入力内容を一切記録せず、エラーの有無および発生日時のみを記録すること。",
+        "source": "adopted",
+        "points": [
+          "logging"
+        ]
+      },
+      {
+        "id": "NFR-008",
+        "kind": "NFR",
+        "priority": null,
+        "category": "システム環境・エコロジー",
+        "text": "PC環境における最新のGoogle Chrome、Microsoft Edge、Mozilla Firefox、Safariでの正常動作をサポートし、スマートフォンブラウザでは閲覧表示が可能な状態とすること。",
+        "source": "user",
+        "points": [
+          "environment"
+        ]
+      },
+      {
+        "id": "CON-001",
+        "kind": "CON",
+        "priority": null,
+        "category": "技術スタック",
+        "text": "フロントエンドはNext.js(App Router)およびTamaguiを使用し、バックエンドはPython 3.13、FastAPI、LangChain、LangGraphを使用すること。",
+        "source": "user",
+        "points": [
+          "tech"
+        ]
+      },
+      {
+        "id": "CON-002",
+        "kind": "CON",
+        "priority": null,
+        "category": "技術スタック",
+        "text": "主データベースにPostgreSQLを使用し、レート制限およびトークン失効管理用キャッシュにRedisを使用すること。",
+        "source": "user",
+        "points": [
+          "tech"
+        ]
+      },
+      {
+        "id": "CON-003",
+        "kind": "CON",
+        "priority": null,
+        "category": "外部サービス",
+        "text": "LLMにはGemini Flash-Lite（無料枠）を利用し、API上限超過エラーに対する例外ハンドリングを実装すること。",
+        "source": "user",
+        "points": [
+          "tech"
+        ]
+      },
+      {
+        "id": "CON-004",
+        "kind": "CON",
+        "priority": null,
+        "category": "配置",
+        "text": "クラウドVPS上にDocker Composeおよびnginxを用いてインフラを構成し、GitHub Actionsを用いてmainブランチへのpushをトリガーに自動デプロイを実施すること。",
+        "source": "user",
+        "points": [
+          "tech"
+        ]
+      }
+    ],
+    "point_statuses": {
+      "scale": "adopted",
+      "purpose": "decided",
+      "users": "decided",
+      "daily_flow": "decided",
+      "core": "decided",
+      "scope": "decided",
+      "exceptions": "decided",
+      "future": "decided",
+      "tech": "decided",
+      "schedule": "open",
+      "availability": "decided",
+      "backup": "decided",
+      "performance": "decided",
+      "operability": "adopted",
+      "data_retention": "decided",
+      "migration": "adopted",
+      "security": "decided",
+      "logging": "adopted",
+      "abuse": "decided",
+      "environment": "decided"
+    },
+    "scale": "public",
+    "next_seq": {
+      "FR": 16,
+      "NFR": 9,
+      "CON": 5
+    }
+  },
+  "external_design": {
+    "overview": "本システムは、ブラウザからNext.js (Tamagui) によるWebフロントエンドを介し、リバースプロキシ (nginx) を経由してFastAPIバックエンドと通信するアーキテクチャである。\\n\\n```\\n+------------------+       +--------------------------------------------+\\n|   Web Browser    | <---> |                 Cloud VPS                  |\\n| (Next.js/Tamagui)|       |  +-------------+       +-----------------+ |\\n+------------------+       |  |    nginx    | <---> | FastAPI Backend | |\\n                           |  +-------------+       +--------+--------+ |\\n                           |                                 |          |\\n                           |        +------------------------+          |\\n                           |        |                |                  |\\n                           |  +-----v------+  +------v-------+          |\\n                           |  | PostgreSQL |  | Redis (Cache/|          |\\n                           |  | (Main DB)  |  | Rate Limit)  |          |\\n                           |  +------------+  +--------------+          |\\n                           +--------------------------------------------+\\n                                                     |\\n                                                     v\\n                                          +----------------------+\\n                                          | Google Gemini API    |\\n                                          | (Gemini Flash-Lite)  |\\n                                          +----------------------+\\n```",
+    "transition": "SCR-001 (新規登録) ---> SCR-003 (プロジェクト一覧・新規作成)\\nSCR-002 (ログイン)   ---> SCR-003 (プロジェクト一覧・新規作成)\\nSCR-003 (プロジェクト一覧・新規作成) <---> SCR-004 (要件ヒアリングチャット)\\nSCR-004 (要件ヒアリングチャット)     <---> SCR-005 (設計書プレビュー・自己診断)\\nSCR-003 (プロジェクト一覧・新規作成) <---> SCR-005 (設計書プレビュー・自己診断)",
+    "data_io": "### 1. 参考資料アップロード仕様 (FR-002)\\n- 受付ファイル形式: テキスト (`.txt`)、Markdown (`.md`)、PDF (`.pdf`)\\n- 受付件数: 1プロジェクトにつき最大3ファイル\\n- バリデーション: ファイル拡張子およびMIMEタイプの厳格チェック。サイズ超過および不正拡張子はリクエスト時に400エラーで拒否。\\n\\n### 2. チャット入出力仕様 (FR-003, FR-008)\\n- 入力テキスト: 最大4,000文字。空白文字のみの送信はバリデーションにより抑止。\\n- 出力テキスト: ストリーミングテキスト（SSE）形式によるレスポンス。\\n\\n### 3. 設計書エクスポート仕様 (FR-006)\\n- 出力形式: Markdownファイル (`.md`)\\n- 文字コード: UTF-8\\n- 提供形態: クリップボードへのプレーンテキストコピー、ブラウザ経由の個別ファイルダウンロード",
+    "screens": [
+      {
+        "id": "SCR-001",
+        "name": "新規登録画面",
+        "role": "新規ユーザーのアカウント登録を行う",
+        "priority": "Must",
+        "req_ids": [
+          "FR-001",
+          "FR-009"
+        ],
+        "ui_spec": "- 入力項目: メールアドレス、パスワード、パスワード確認\\n- 表示項目: サービスロゴ、ログイン画面への導線リンク、入力エラーメッセージ\\n- 操作ボタン: 「アカウント作成」ボタン\\n- アクション: 入力バリデーション実行後、登録APIを呼び出し、成功時はプロジェクト一覧画面へ遷移"
+      },
+      {
+        "id": "SCR-002",
+        "name": "ログイン画面",
+        "role": "登録済みユーザーの認証を行う",
+        "priority": "Must",
+        "req_ids": [
+          "FR-001",
+          "FR-009"
+        ],
+        "ui_spec": "- 入力項目: メールアドレス、パスワード\\n- 表示項目: サービスロゴ、新規登録画面への導線リンク、認証エラーメッセージ（試行制限警告含む）\\n- 操作ボタン: 「ログイン」ボタン\\n- アクション: 認証API呼び出し、JWT取得・Cookie保存後、プロジェクト一覧画面へ遷移"
+      },
+      {
+        "id": "SCR-003",
+        "name": "プロジェクト一覧・新規作成画面",
+        "role": "自身のプロジェクト一覧の確認および新規プロジェクトの立ち上げを行う",
+        "priority": "Must",
+        "req_ids": [
+          "FR-001",
+          "FR-002",
+          "FR-007",
+          "NFR-006",
+          "NFR-008"
+        ],
+        "ui_spec": "- 表示項目: ユーザー情報表示バー、過去に作成したプロジェクト一覧（プロジェクト名・作成日時・ステータス）、ログアウトボタン\\n- 入力項目(モーダルまたは展開エリア): 新規プロジェクト名、参考資料ファイル添付フォーム（txt/md/pdf、最大3ファイルまでドラッグ＆ドロップまたはファイル選択）\\n- 操作ボタン: 「新規プロジェクト作成」ボタン、各プロジェクトカード（選択でヒアリング画面または設計書画面へ遷移）\\n- アクション: ファイル拡張子・件数検証、新規プロジェクト登録API呼び出し後にSCR-004へ遷移"
+      },
+      {
+        "id": "SCR-004",
+        "name": "要件ヒアリングチャット画面",
+        "role": "対話形式でAIによるヒアリングを実施し、設計書生成を開始する",
+        "priority": "Must",
+        "req_ids": [
+          "FR-003",
+          "FR-004",
+          "FR-007",
+          "FR-008",
+          "FR-009",
+          "NFR-003",
+          "NFR-006",
+          "NFR-008"
+        ],
+        "ui_spec": "- 表示項目: プロジェクト名ヘッダー、参考資料プレビュー領域、チャットタイムライン（ユーザーメッセージ／AI質問の吹き出し）、文字数カウンター、エラー通知トースト（再送ボタン付き）、生成処理中インジケーター\\n- 入力項目: メッセージ入力テキストエリア（数千文字上限、空送信抑止）\\n- 操作ボタン: 「送信」ボタン、「設計書を一括生成する」ボタン、プロジェクト一覧へ戻るリンク\\n- アクション: メッセージ送信API実行（初文ストリーミング表示）、設計書一括生成APIのトリガー（生成中は入力欄とボタンを非活性化し、完了時にSCR-005へ自動遷移）"
+      },
+      {
+        "id": "SCR-005",
+        "name": "設計書プレビュー・自己診断画面",
+        "role": "自動生成された4種の設計書の閲覧、自己診断確認、コピーおよびダウンロードを行う",
+        "priority": "Must",
+        "req_ids": [
+          "FR-004",
+          "FR-005",
+          "FR-006",
+          "FR-007",
+          "FR-008",
+          "NFR-006",
+          "NFR-008"
+        ],
+        "ui_spec": "- 表示項目: ドキュメント種別タブ（要件定義書／外部設計書／内部設計書／実装計画書）、AI自己診断パネル（「最重要」「中程度」「軽微」の3段階バッジと不足点詳細リスト）、Markdownプレビュー表示エリア、生成失敗時の再生成案内バナー\\n- 操作ボタン: 「Markdownをコピー」ボタン、「Markdownをダウンロード」ボタン、「再生成する」ボタン（失敗時または再試行時）、「チャットに戻る」ボタン\\n- アクション: クリップボードへのMarkdownコピー、単体Markdownファイルのローカルダウンロード、再生成API呼び出し"
+      }
+    ],
+    "apis": [
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/register",
+        "summary": "ユーザー新規登録",
+        "screens": [
+          "SCR-001"
+        ],
+        "req_ids": [
+          "FR-001",
+          "FR-009"
+        ],
+        "body": "email, password",
+        "response": "201 作成成功（ユーザー情報とアクセストークン。リフレッシュトークンはHttpOnly Cookieに設定）",
+        "errors": "400 入力不備、409 メールアドレス重複、429 登録試行レート制限超過"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/login",
+        "summary": "ログイン認証",
+        "screens": [
+          "SCR-002"
+        ],
+        "req_ids": [
+          "FR-001",
+          "FR-009"
+        ],
+        "body": "email, password",
+        "response": "200 認証成功（アクセストークン。リフレッシュトークンはHttpOnly Cookieに設定）",
+        "errors": "400 入力不備、401 認証失敗、429 ログイン試行回数上限（総当たり防止）"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/refresh",
+        "summary": "アクセストークン再発行",
+        "screens": [
+          "SCR-003",
+          "SCR-004",
+          "SCR-005"
+        ],
+        "req_ids": [
+          "FR-001"
+        ],
+        "body": "",
+        "response": "200 再発行成功（新規アクセストークン）",
+        "errors": "401 Cookie内リフレッシュトークン無効・期限切れ"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/logout",
+        "summary": "ログアウト処理",
+        "screens": [
+          "SCR-003"
+        ],
+        "req_ids": [
+          "FR-001"
+        ],
+        "body": "",
+        "response": "200 ログアウト成功（Cookie削除およびRedis失効管理）",
+        "errors": "401 未認証"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects",
+        "summary": "プロジェクト一覧取得",
+        "screens": [
+          "SCR-003"
+        ],
+        "req_ids": [
+          "FR-007",
+          "NFR-006"
+        ],
+        "body": "",
+        "response": "200 プロジェクト一覧配列",
+        "errors": "401 未認証"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects",
+        "summary": "プロジェクト新規作成および資料アップロード",
+        "screens": [
+          "SCR-003"
+        ],
+        "req_ids": [
+          "FR-002",
+          "FR-007",
+          "FR-009"
+        ],
+        "body": "name, files(multipart/form-data, 最大3件)",
+        "response": "201 作成成功（プロジェクトID、資料メタ情報）",
+        "errors": "400 ファイル形式不正・件数超過、401 未認証、429 プロジェクト作成レート制限超過"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/{id}",
+        "summary": "プロジェクト詳細取得",
+        "screens": [
+          "SCR-004",
+          "SCR-005"
+        ],
+        "req_ids": [
+          "FR-007",
+          "NFR-006"
+        ],
+        "body": "",
+        "response": "200 プロジェクト基本情報とステータス",
+        "errors": "401 未認証、403 他人のプロジェクト、404 対象なし"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/{id}/messages",
+        "summary": "チャット履歴取得",
+        "screens": [
+          "SCR-004"
+        ],
+        "req_ids": [
+          "FR-003",
+          "FR-007",
+          "NFR-006"
+        ],
+        "body": "",
+        "response": "200 メッセージ履歴リスト",
+        "errors": "401 未認証、403 他人のプロジェクト、404 対象なし"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/messages",
+        "summary": "チャットメッセージ送信とAI応答ストリーミング",
+        "screens": [
+          "SCR-004"
+        ],
+        "req_ids": [
+          "FR-003",
+          "FR-007",
+          "FR-008",
+          "FR-009",
+          "NFR-003",
+          "NFR-006",
+          "CON-003"
+        ],
+        "body": "content",
+        "response": "200 Server-Sent Events (SSE) による回答ストリーム",
+        "errors": "400 空送信・文字数超過、401 未認証、403 他人のプロジェクト、429 チャット利用制限超過、502/503 AIサービスエラー"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/documents/generate",
+        "summary": "4種設計書の一括自動生成開始",
+        "screens": [
+          "SCR-004",
+          "SCR-005"
+        ],
+        "req_ids": [
+          "FR-004",
+          "FR-005",
+          "FR-007",
+          "FR-008",
+          "FR-009",
+          "NFR-003",
+          "NFR-006",
+          "CON-003"
+        ],
+        "body": "",
+        "response": "202 設計書生成開始受付（ジョブ情報）",
+        "errors": "400 対話不足等による生成不能、401 未認証、403 他人のプロジェクト、429 生成回数制限超過、502/503 AI生成エラー"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/{id}/documents",
+        "summary": "生成済み設計書および自己診断結果取得",
+        "screens": [
+          "SCR-005"
+        ],
+        "req_ids": [
+          "FR-004",
+          "FR-005",
+          "FR-006",
+          "FR-007",
+          "NFR-006"
+        ],
+        "body": "",
+        "response": "200 4種のMarkdown本文と自己診断結果（最重要・中程度・軽微）",
+        "errors": "401 未認証、403 他人のプロジェクト、404 設計書未生成・対象なし"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/{id}/documents/{doc_type}/download",
+        "summary": "個別設計書Markdownファイルダウンロード",
+        "screens": [
+          "SCR-005"
+        ],
+        "req_ids": [
+          "FR-006",
+          "NFR-006"
+        ],
+        "body": "",
+        "response": "200 Markdownファイルバイナリ (`text/markdown`)",
+        "errors": "400 doc_type不正、401 未認証、403 他人のプロジェクト、404 対象なし"
+      }
+    ],
+    "integrations": [
+      {
+        "service": "Google Gemini API (Gemini Flash-Lite)",
+        "purpose": "チャットヒアリング応答、4種Markdown設計書の自動生成、ドキュメントの不足点自己診断（3段階）の実行",
+        "auth": "API Key認証（サーバーサイド環境変数管理）",
+        "timing": "ユーザーからのチャットメッセージ送信時、および設計書一括生成リクエスト時",
+        "req_ids": [
+          "FR-003",
+          "FR-004",
+          "FR-005",
+          "FR-008",
+          "CON-003"
+        ]
+      }
+    ],
+    "known_req_ids": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015",
+      "NFR-001",
+      "NFR-002",
+      "NFR-003",
+      "NFR-004",
+      "NFR-005",
+      "NFR-006",
+      "NFR-007",
+      "NFR-008",
+      "CON-001",
+      "CON-002",
+      "CON-003",
+      "CON-004"
+    ],
+    "must_fr_ids": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009"
+    ],
+    "next_seq": {
+      "SCR": 6
+    }
+  },
+  "internal_design": {
+    "architecture": "フロントエンドはNext.js (App Router) を採用し、Tamaguiを用いてPCおよびスマートフォンブラウザでの表示に対応するレスポンシブUIを構築する。バックエンドはPython 3.13とFastAPIを採用し、非同期I/Oを活用してチャットのストリーミング応答(SSE)および設計書一括生成処理を効率的に処理する。LLM連携にはLangChainおよびLangGraphを用い、対話ヒアリング状態の遷移管理と4文書の順次・並列生成パイプラインを実装する。主データベースにはPostgreSQLを採用してアカウント、チャットログ、設計書等の永続化を行い、RedisはJWTの失効・ブラックリスト管理および各種エンドポイントのアクセス頻度を制御するレート制限用キャッシュとして利用する。インフラはクラウドVPS上にDocker Composeとnginxで構成し、リバースプロキシによるTLS終端およびリクエストルーティングを行う。\n\n```text\n+-----------------------------------------------------------+\n|                    Client (Browser)                       |\n+-----------------------------+-----------------------------+\n                              | HTTPS\n+-----------------------------v-----------------------------+\n|                   Cloud VPS (nginx)                       |\n+-----------------------------+-----------------------------+\n                              | Reverse Proxy\n+-----------------------------v-----------------------------+\n|              FastAPI Application (Python 3.13)            |\n|  +----------------------+      +-----------------------+  |\n|  | Auth / Project API   |      | LangChain / LangGraph |  |\n|  +----------+-----------+      +-----------+-----------+  |\n+-------------|------------------------------|--------------+\n              |                              | API Call\n    +---------+---------+          +---------v---------+\n    |                   |          | Google Gemini API |\n+---v------+     +------v----+     | (Gemini Flash-Lite|\n|PostgreSQL|     |   Redis   |     +-------------------+\n| (Main DB)|     |(Cache/RL) |                          \n+----------+     +-----------+                          \n```",
+    "data_model_note": "システムで管理する主要エンティティとリレーションは以下の通りである。ユーザー(users)は複数のプロジェクト(projects)を所有し、プロジェクトには参考資料(project_attachments)、チャット履歴(messages)、生成された設計書(documents)、および設計書の自己診断結果(document_diagnoses)が1対多で紐づく。他人のプロジェクトへの不正アクセスを防ぐため、すべての従属データはプロジェクトIDおよび所有ユーザーIDの検証を経てアクセスされる。\n\n```text\nusers\n  |--< projects\n         |--< project_attachments\n         |--< messages\n         |--< documents\n         |--< document_diagnoses\n```",
+    "tables": [
+      {
+        "name": "users",
+        "description": "システムを利用するユーザーのアカウント情報を保持するテーブル。",
+        "columns": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "constraints": "PRIMARY KEY",
+            "description": "ユーザーの一意識別子"
+          },
+          {
+            "name": "email",
+            "type": "VARCHAR(255)",
+            "constraints": "NOT NULL, UNIQUE",
+            "description": "ログイン用メールアドレス"
+          },
+          {
+            "name": "hashed_password",
+            "type": "VARCHAR(255)",
+            "constraints": "NOT NULL",
+            "description": "ハッシュ化されたパスワード"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP WITH TIME ZONE",
+            "constraints": "NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "description": "登録日時"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP WITH TIME ZONE",
+            "constraints": "NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "description": "更新日時"
+          }
+        ]
+      },
+      {
+        "name": "projects",
+        "description": "ユーザーが作成した要件定義・設計プロジェクトを保持するテーブル。",
+        "columns": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "constraints": "PRIMARY KEY",
+            "description": "プロジェクトの一意識別子"
+          },
+          {
+            "name": "user_id",
+            "type": "UUID",
+            "constraints": "NOT NULL, FOREIGN KEY (users.id) ON DELETE RESTRICT",
+            "description": "プロジェクトを所有するユーザーID"
+          },
+          {
+            "name": "name",
+            "type": "VARCHAR(255)",
+            "constraints": "NOT NULL",
+            "description": "プロジェクト名"
+          },
+          {
+            "name": "status",
+            "type": "VARCHAR(50)",
+            "constraints": "NOT NULL DEFAULT 'hearing'",
+            "description": "プロジェクト状態 (hearing, generating, generated, failed)"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP WITH TIME ZONE",
+            "constraints": "NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "description": "作成日時"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP WITH TIME ZONE",
+            "constraints": "NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "description": "更新日時"
+          }
+        ]
+      },
+      {
+        "name": "project_attachments",
+        "description": "プロジェクト立ち上げ時に添付された参考資料ファイルおよび抽出テキストを保持するテーブル。",
+        "columns": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "constraints": "PRIMARY KEY",
+            "description": "添付ファイルの一意識別子"
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "constraints": "NOT NULL, FOREIGN KEY (projects.id) ON DELETE CASCADE",
+            "description": "紐づくプロジェクトID"
+          },
+          {
+            "name": "file_name",
+            "type": "VARCHAR(255)",
+            "constraints": "NOT NULL",
+            "description": "アップロード元のファイル名"
+          },
+          {
+            "name": "file_type",
+            "type": "VARCHAR(50)",
+            "constraints": "NOT NULL",
+            "description": "ファイル種別 (txt, md, pdf)"
+          },
+          {
+            "name": "file_path",
+            "type": "VARCHAR(512)",
+            "constraints": "NOT NULL",
+            "description": "サーバー上での保存先パス"
+          },
+          {
+            "name": "extracted_text",
+            "type": "TEXT",
+            "constraints": "NOT NULL",
+            "description": "ファイルから抽出した参照用テキスト本文"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP WITH TIME ZONE",
+            "constraints": "NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "description": "アップロード日時"
+          }
+        ]
+      },
+      {
+        "name": "messages",
+        "description": "チャット画面におけるユーザーとAIのヒアリング対話ログを保持するテーブル。",
+        "columns": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "constraints": "PRIMARY KEY",
+            "description": "メッセージの一意識別子"
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "constraints": "NOT NULL, FOREIGN KEY (projects.id) ON DELETE CASCADE",
+            "description": "紐づくプロジェクトID"
+          },
+          {
+            "name": "role",
+            "type": "VARCHAR(20)",
+            "constraints": "NOT NULL",
+            "description": "発話者種別 (user または assistant)"
+          },
+          {
+            "name": "content",
+            "type": "TEXT",
+            "constraints": "NOT NULL",
+            "description": "メッセージ本文"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP WITH TIME ZONE",
+            "constraints": "NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "description": "送信日時"
+          }
+        ]
+      },
+      {
+        "name": "documents",
+        "description": "生成された4種類のMarkdown設計書本文を保持するテーブル。",
+        "columns": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "constraints": "PRIMARY KEY",
+            "description": "設計書レコードの一意識別子"
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "constraints": "NOT NULL, FOREIGN KEY (projects.id) ON DELETE CASCADE",
+            "description": "紐づくプロジェクトID"
+          },
+          {
+            "name": "doc_type",
+            "type": "VARCHAR(50)",
+            "constraints": "NOT NULL",
+            "description": "設計書種別 (requirement, external, internal, implementation)"
+          },
+          {
+            "name": "content",
+            "type": "TEXT",
+            "constraints": "NOT NULL",
+            "description": "Markdown形式のドキュメント本文"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP WITH TIME ZONE",
+            "constraints": "NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "description": "生成日時"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP WITH TIME ZONE",
+            "constraints": "NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "description": "最終更新日時"
+          }
+        ]
+      },
+      {
+        "name": "document_diagnoses",
+        "description": "生成ドキュメントに対するAI自己診断の不足点項目を保持するテーブル。",
+        "columns": [
+          {
+            "name": "id",
+            "type": "UUID",
+            "constraints": "PRIMARY KEY",
+            "description": "診断項目の一意識別子"
+          },
+          {
+            "name": "project_id",
+            "type": "UUID",
+            "constraints": "NOT NULL, FOREIGN KEY (projects.id) ON DELETE CASCADE",
+            "description": "紐づくプロジェクトID"
+          },
+          {
+            "name": "severity",
+            "type": "VARCHAR(20)",
+            "constraints": "NOT NULL",
+            "description": "重要度区分 (critical: 最重要, moderate: 中程度, minor: 軽微)"
+          },
+          {
+            "name": "issue_text",
+            "type": "TEXT",
+            "constraints": "NOT NULL",
+            "description": "診断された不足点の内容説明"
+          },
+          {
+            "name": "suggestion",
+            "type": "TEXT",
+            "constraints": "NOT NULL",
+            "description": "改善への推奨事項・追記提案"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP WITH TIME ZONE",
+            "constraints": "NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "description": "診断日時"
+          }
+        ]
+      }
+    ],
+    "module_policy": "FastAPIバックエンドはクリーンアーキテクチャのレイヤード構造をベースにし、ルーティング層(routers)、業務ロジック層(services)、データ永続化層(repositories)、外部AI連携ロジック層(agents/workflows)に分離する。LangGraphワークフローによりヒアリング状態管理とドキュメント一括生成パイプラインをカプセル化する。共通基盤として認証・トークン検証(core/auth)、Redisによるレート制限(core/rate_limit)、例外ハンドラ(core/errors)を配置する。\n\n```text\nbackend/\n├── app/\n│   ├── main.py\n│   ├── core/\n│   │   ├── config.py\n│   │   ├── security.py\n│   │   ├── rate_limit.py\n│   │   ├── exceptions.py\n│   │   └── database.py\n│   ├── routers/\n│   │   ├── auth.py\n│   │   ├── projects.py\n│   │   ├── messages.py\n│   │   └── documents.py\n│   ├── services/\n│   │   ├── auth_service.py\n│   │   ├── project_service.py\n│   │   ├── chat_service.py\n│   │   ├── file_service.py\n│   │   └── document_service.py\n│   ├── ai/\n│   │   ├── client.py\n│   │   ├── prompts.py\n│   │   └── workflows.py\n│   ├── repositories/\n│   │   ├── user_repo.py\n│   │   ├── project_repo.py\n│   │   ├── message_repo.py\n│   │   └── document_repo.py\n│   └── schemas/\n│       ├── auth.py\n│       ├── project.py\n│       ├── message.py\n│       └── document.py\n└── scripts/\n    └── backup.sh\n```",
+    "apis": [
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/register",
+        "summary": "新規ユーザー作成、パスワードハッシュ化、JWTアクセストークン発行およびリフレッシュトークンCookie設定"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/login",
+        "summary": "ユーザー資格情報検証、ログイン試行レート制限確認、JWTアクセストークン発行およびリフレッシュトークンCookie設定"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/refresh",
+        "summary": "Cookie内リフレッシュトークンの検証と失効有無の確認、新規アクセストークン再発行"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/auth/logout",
+        "summary": "リフレッシュトークンCookie破棄およびRedis失効ブラックリストへのトークン登録"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects",
+        "summary": "認証ユーザーが所有するプロジェクト一覧情報の取得"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects",
+        "summary": "プロジェクト作成、添付ファイル形式・件数バリデーション、テキスト抽出と保存"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/{id}",
+        "summary": "プロジェクト詳細情報および添付ファイルメタ情報の取得(所有者認可検証を含む)"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/{id}/messages",
+        "summary": "対象プロジェクトのヒアリングチャット対話履歴一覧の取得"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/messages",
+        "summary": "ユーザー入力の検証・一時受付、Gemini APIによるSSEストリーミング応答、対話ログ保存"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/documents/generate",
+        "summary": "LangGraphワークフローによる4種設計書の一括生成と3段階自己診断の実行・保存"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/{id}/documents",
+        "summary": "生成済み4種Markdown本文および自己診断結果一覧の取得"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/projects/{id}/documents/{doc_type}/download",
+        "summary": "指定ドキュメント種別のMarkdownファイルのローカルダウンロード用バイナリレスポンス生成"
+      }
+    ],
+    "modules": [
+      {
+        "path": "backend/app/routers/auth.py",
+        "layer": "ルート",
+        "responsibility": "認証・認可に関するHTTPリクエスト受付とCookie制御を行う。",
+        "depends_on": [
+          "backend/app/services/auth_service.py",
+          "backend/app/core/rate_limit.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/routers/projects.py",
+        "layer": "ルート",
+        "responsibility": "プロジェクト一覧・詳細取得および新規作成・ファイル添付受付を行う。",
+        "depends_on": [
+          "backend/app/services/project_service.py",
+          "backend/app/core/rate_limit.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/routers/messages.py",
+        "layer": "ルート",
+        "responsibility": "チャット履歴取得およびSSEによるAIヒアリング応答ストリーミングの配信を行う。",
+        "depends_on": [
+          "backend/app/services/chat_service.py",
+          "backend/app/core/rate_limit.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/routers/documents.py",
+        "layer": "ルート",
+        "responsibility": "設計書一括生成トリガー、ドキュメント取得およびファイルダウンロードを提供する。",
+        "depends_on": [
+          "backend/app/services/document_service.py",
+          "backend/app/core/rate_limit.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/services/auth_service.py",
+        "layer": "サービス",
+        "responsibility": "パスワード検証・ハッシュ化、トークン生成・リフレッシュおよび失効管理ロジックを担う。",
+        "depends_on": [
+          "backend/app/repositories/user_repo.py",
+          "backend/app/core/security.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/services/project_service.py",
+        "layer": "サービス",
+        "responsibility": "プロジェクト作成、権限チェック、添付ファイル解析処理の統括を行う。",
+        "depends_on": [
+          "backend/app/repositories/project_repo.py",
+          "backend/app/services/file_service.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/services/file_service.py",
+        "layer": "サービス",
+        "responsibility": "アップロードされたtxt/md/pdfの拡張子・形式バリデーションとテキスト抽出を行う。",
+        "depends_on": [
+          "pypdf"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/services/chat_service.py",
+        "layer": "サービス",
+        "responsibility": "ヒアリング対話の文脈構築、Geminiへのストリーミング要求、および対話履歴永続化を制御する。",
+        "depends_on": [
+          "backend/app/repositories/message_repo.py",
+          "backend/app/repositories/project_repo.py",
+          "backend/app/ai/client.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/services/document_service.py",
+        "layer": "サービス",
+        "responsibility": "設計書一括生成パイプラインの実行管理、診断結果集約、Markdown出力生成を担う。",
+        "depends_on": [
+          "backend/app/repositories/document_repo.py",
+          "backend/app/repositories/project_repo.py",
+          "backend/app/ai/workflows.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/ai/workflows.py",
+        "layer": "AIロジック",
+        "responsibility": "LangGraphを用いて4種設計書の自動生成と3段階自己診断を実行するパイプラインを定義する。",
+        "depends_on": [
+          "langgraph",
+          "langchain",
+          "backend/app/ai/client.py",
+          "backend/app/ai/prompts.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/ai/client.py",
+        "layer": "外部連携",
+        "responsibility": "Gemini Flash-Lite APIとの通信およびAPI上限エラーハンドリングを統括する。",
+        "depends_on": [
+          "google-genai",
+          "backend/app/core/config.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/repositories/*_repo.py",
+        "layer": "リポジトリ",
+        "responsibility": "PostgreSQLデータベースとのCRUD処理およびトランザクション制御を担当する。",
+        "depends_on": [
+          "sqlalchemy",
+          "backend/app/core/database.py"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/core/rate_limit.py",
+        "layer": "ミドルウェア",
+        "responsibility": "Redisを用いたトークンバケットまたは固定ウィンドウによるエンドポイント利用制限を行う。",
+        "depends_on": [
+          "redis"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/app/core/security.py",
+        "layer": "セキュリティ",
+        "responsibility": "JWTのエンコード・デコードおよびパスワードのArgon2/bcryptハッシュ化・照合を行う。",
+        "depends_on": [
+          "passlib",
+          "pyjwt"
+        ],
+        "functions": [],
+        "all_functions": false
+      },
+      {
+        "path": "backend/scripts/backup.sh",
+        "layer": "運用バッチ",
+        "responsibility": "PostgreSQLデータベースのダンプ日次バックアップを実行し、VPS外へ転送退避する。",
+        "depends_on": [],
+        "functions": [],
+        "all_functions": false
+      }
+    ],
+    "dataflows": [
+      {
+        "id": "DF-1",
+        "trigger": "POST /api/v1/auth/register",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "新規登録要求(email, password)",
+            "transform": "",
+            "target": "backend/app/routers/auth.py"
+          },
+          {
+            "source": "backend/app/routers/auth.py",
+            "data": "IP/アカウント単位の登録試行回数",
+            "transform": "レート制限チェック",
+            "target": "backend/app/core/rate_limit.py"
+          },
+          {
+            "source": "backend/app/routers/auth.py",
+            "data": "登録情報(email, raw_password)",
+            "transform": "",
+            "target": "backend/app/services/auth_service.py"
+          },
+          {
+            "source": "backend/app/services/auth_service.py",
+            "data": "重複確認クエリ",
+            "transform": "",
+            "target": "users"
+          },
+          {
+            "source": "backend/app/services/auth_service.py",
+            "data": "新規ユーザーエンティティ(email, hashed_password)",
+            "transform": "パスワードハッシュ化",
+            "target": "users"
+          },
+          {
+            "source": "backend/app/services/auth_service.py",
+            "data": "トークンペア(Access/Refresh JWT)",
+            "transform": "JWT生成",
+            "target": "backend/app/routers/auth.py"
+          },
+          {
+            "source": "backend/app/routers/auth.py",
+            "data": "登録成功応答(201 Created, アクセストークン, HttpOnly Cookie)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "RegisterRequest",
+            "fields": [
+              "email",
+              "password"
+            ]
+          },
+          {
+            "name": "AuthResponse",
+            "fields": [
+              "access_token",
+              "token_type",
+              "user_id"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-2",
+        "trigger": "POST /api/v1/auth/login",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "ログイン認証要求(email, password)",
+            "transform": "",
+            "target": "backend/app/routers/auth.py"
+          },
+          {
+            "source": "backend/app/routers/auth.py",
+            "data": "総当たり防止チェック",
+            "transform": "レート制限確認",
+            "target": "backend/app/core/rate_limit.py"
+          },
+          {
+            "source": "backend/app/routers/auth.py",
+            "data": "認証情報(email, password)",
+            "transform": "",
+            "target": "backend/app/services/auth_service.py"
+          },
+          {
+            "source": "backend/app/services/auth_service.py",
+            "data": "ユーザー取得クエリ",
+            "transform": "",
+            "target": "users"
+          },
+          {
+            "source": "users",
+            "data": "ユーザーレコード(id, hashed_password)",
+            "transform": "",
+            "target": "backend/app/services/auth_service.py"
+          },
+          {
+            "source": "backend/app/services/auth_service.py",
+            "data": "トークンペア",
+            "transform": "パスワード検証・JWT生成",
+            "target": "backend/app/routers/auth.py"
+          },
+          {
+            "source": "backend/app/routers/auth.py",
+            "data": "認証成功応答(200 OK, アクセストークン, HttpOnly Cookie)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "LoginRequest",
+            "fields": [
+              "email",
+              "password"
+            ]
+          },
+          {
+            "name": "AuthResponse",
+            "fields": [
+              "access_token",
+              "token_type",
+              "user_id"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-3",
+        "trigger": "POST /api/v1/auth/refresh",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "トークン再発行要求(Cookie内Refresh Token)",
+            "transform": "",
+            "target": "backend/app/routers/auth.py"
+          },
+          {
+            "source": "backend/app/routers/auth.py",
+            "data": "Refresh Token検証要求",
+            "transform": "",
+            "target": "backend/app/services/auth_service.py"
+          },
+          {
+            "source": "backend/app/services/auth_service.py",
+            "data": "トークン失効問い合わせ",
+            "transform": "",
+            "target": "backend/app/core/rate_limit.py"
+          },
+          {
+            "source": "backend/app/services/auth_service.py",
+            "data": "新規Access Token",
+            "transform": "署名検証・新JWT発行",
+            "target": "backend/app/routers/auth.py"
+          },
+          {
+            "source": "backend/app/routers/auth.py",
+            "data": "トークン再発行応答(200 OK, 新Access Token)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "RefreshTokenPayload",
+            "fields": [
+              "sub",
+              "exp",
+              "jti"
+            ]
+          },
+          {
+            "name": "TokenRefreshResponse",
+            "fields": [
+              "access_token",
+              "token_type"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-4",
+        "trigger": "POST /api/v1/auth/logout",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "ログアウト要求(Cookie内Refresh Token)",
+            "transform": "",
+            "target": "backend/app/routers/auth.py"
+          },
+          {
+            "source": "backend/app/routers/auth.py",
+            "data": "トークン無効化要求",
+            "transform": "",
+            "target": "backend/app/services/auth_service.py"
+          },
+          {
+            "source": "backend/app/services/auth_service.py",
+            "data": "トークンブラックリスト登録",
+            "transform": "有効期限までRedis登録",
+            "target": "backend/app/core/rate_limit.py"
+          },
+          {
+            "source": "backend/app/routers/auth.py",
+            "data": "ログアウト完了(200 OK, Cookieクリア)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "LogoutResponse",
+            "fields": [
+              "message"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-5",
+        "trigger": "GET /api/v1/projects",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "プロジェクト一覧要求(JWT)",
+            "transform": "",
+            "target": "backend/app/routers/projects.py"
+          },
+          {
+            "source": "backend/app/routers/projects.py",
+            "data": "所有プロジェクト検索(user_id)",
+            "transform": "",
+            "target": "backend/app/services/project_service.py"
+          },
+          {
+            "source": "backend/app/services/project_service.py",
+            "data": "SQL取得クエリ(user_id一致)",
+            "transform": "",
+            "target": "projects"
+          },
+          {
+            "source": "projects",
+            "data": "プロジェクト行一覧",
+            "transform": "",
+            "target": "backend/app/services/project_service.py"
+          },
+          {
+            "source": "backend/app/services/project_service.py",
+            "data": "プロジェクト一覧DTO",
+            "transform": "レスポンス整形",
+            "target": "backend/app/routers/projects.py"
+          },
+          {
+            "source": "backend/app/routers/projects.py",
+            "data": "プロジェクト一覧応答(200 OK)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "ProjectListItem",
+            "fields": [
+              "id",
+              "name",
+              "status",
+              "created_at",
+              "updated_at"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-6",
+        "trigger": "POST /api/v1/projects",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "新規プロジェクト情報および添付ファイル群",
+            "transform": "",
+            "target": "backend/app/routers/projects.py"
+          },
+          {
+            "source": "backend/app/routers/projects.py",
+            "data": "作成レート制限確認",
+            "transform": "",
+            "target": "backend/app/core/rate_limit.py"
+          },
+          {
+            "source": "backend/app/routers/projects.py",
+            "data": "プロジェクトデータ・ファイルバイナリ",
+            "transform": "",
+            "target": "backend/app/services/project_service.py"
+          },
+          {
+            "source": "backend/app/services/project_service.py",
+            "data": "添付ファイル群(txt/md/pdf, 最大3件)",
+            "transform": "",
+            "target": "backend/app/services/file_service.py"
+          },
+          {
+            "source": "backend/app/services/file_service.py",
+            "data": "検証済みファイルテキストおよびメタ情報",
+            "transform": "拡張子チェック・テキスト抽出",
+            "target": "backend/app/services/project_service.py"
+          },
+          {
+            "source": "backend/app/services/project_service.py",
+            "data": "新規プロジェクトエンティティ",
+            "transform": "",
+            "target": "projects"
+          },
+          {
+            "source": "backend/app/services/project_service.py",
+            "data": "添付ファイルレコード群",
+            "transform": "",
+            "target": "project_attachments"
+          },
+          {
+            "source": "backend/app/services/project_service.py",
+            "data": "作成プロジェクト情報DTO",
+            "transform": "",
+            "target": "backend/app/routers/projects.py"
+          },
+          {
+            "source": "backend/app/routers/projects.py",
+            "data": "プロジェクト作成応答(201 Created)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "ProjectCreateRequest",
+            "fields": [
+              "name",
+              "files"
+            ]
+          },
+          {
+            "name": "ProjectDetailResponse",
+            "fields": [
+              "id",
+              "name",
+              "status",
+              "attachments",
+              "created_at"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-7",
+        "trigger": "GET /api/v1/projects/{id}",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "プロジェクト詳細要求(project_id)",
+            "transform": "",
+            "target": "backend/app/routers/projects.py"
+          },
+          {
+            "source": "backend/app/routers/projects.py",
+            "data": "所有権限付き取得要求",
+            "transform": "",
+            "target": "backend/app/services/project_service.py"
+          },
+          {
+            "source": "backend/app/services/project_service.py",
+            "data": "プロジェクト取得クエリ",
+            "transform": "",
+            "target": "projects"
+          },
+          {
+            "source": "projects",
+            "data": "プロジェクトレコード(user_id照合)",
+            "transform": "",
+            "target": "backend/app/services/project_service.py"
+          },
+          {
+            "source": "backend/app/services/project_service.py",
+            "data": "添付資料取得クエリ",
+            "transform": "",
+            "target": "project_attachments"
+          },
+          {
+            "source": "project_attachments",
+            "data": "添付資料メタデータ一覧",
+            "transform": "",
+            "target": "backend/app/services/project_service.py"
+          },
+          {
+            "source": "backend/app/services/project_service.py",
+            "data": "プロジェクト詳細DTO",
+            "transform": "",
+            "target": "backend/app/routers/projects.py"
+          },
+          {
+            "source": "backend/app/routers/projects.py",
+            "data": "プロジェクト詳細応答(200 OK)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "ProjectDetailResponse",
+            "fields": [
+              "id",
+              "name",
+              "status",
+              "attachments",
+              "created_at"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-8",
+        "trigger": "GET /api/v1/projects/{id}/messages",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "対話履歴要求(project_id)",
+            "transform": "",
+            "target": "backend/app/routers/messages.py"
+          },
+          {
+            "source": "backend/app/routers/messages.py",
+            "data": "履歴取得要求",
+            "transform": "",
+            "target": "backend/app/services/chat_service.py"
+          },
+          {
+            "source": "backend/app/services/chat_service.py",
+            "data": "プロジェクト所有権確認",
+            "transform": "",
+            "target": "projects"
+          },
+          {
+            "source": "backend/app/services/chat_service.py",
+            "data": "対話履歴取得クエリ",
+            "transform": "",
+            "target": "messages"
+          },
+          {
+            "source": "messages",
+            "data": "メッセージ行リスト(時系列順)",
+            "transform": "",
+            "target": "backend/app/services/chat_service.py"
+          },
+          {
+            "source": "backend/app/services/chat_service.py",
+            "data": "対話履歴DTO",
+            "transform": "",
+            "target": "backend/app/routers/messages.py"
+          },
+          {
+            "source": "backend/app/routers/messages.py",
+            "data": "対話履歴一覧応答(200 OK)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "ChatMessage",
+            "fields": [
+              "id",
+              "role",
+              "content",
+              "created_at"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-9",
+        "trigger": "POST /api/v1/projects/{id}/messages",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "チャットメッセージ(content)",
+            "transform": "",
+            "target": "backend/app/routers/messages.py"
+          },
+          {
+            "source": "backend/app/routers/messages.py",
+            "data": "チャット利用回数チェック",
+            "transform": "",
+            "target": "backend/app/core/rate_limit.py"
+          },
+          {
+            "source": "backend/app/routers/messages.py",
+            "data": "メッセージ送信要求",
+            "transform": "",
+            "target": "backend/app/services/chat_service.py"
+          },
+          {
+            "source": "backend/app/services/chat_service.py",
+            "data": "所有者確認および状態確認",
+            "transform": "",
+            "target": "projects"
+          },
+          {
+            "source": "backend/app/services/chat_service.py",
+            "data": "過去対話履歴および添付資料テキスト取得",
+            "transform": "",
+            "target": "messages"
+          },
+          {
+            "source": "backend/app/services/chat_service.py",
+            "data": "ヒアリング用プロンプト文脈",
+            "transform": "コンテキスト組み立て",
+            "target": "backend/app/ai/client.py"
+          },
+          {
+            "source": "backend/app/ai/client.py",
+            "data": "Gemini API チャットストリーミング要求",
+            "transform": "",
+            "target": "Google Gemini API (Gemini Flash-Lite)"
+          },
+          {
+            "source": "Google Gemini API (Gemini Flash-Lite)",
+            "data": "ストリーミングチャンク",
+            "transform": "",
+            "target": "backend/app/services/chat_service.py"
+          },
+          {
+            "source": "backend/app/services/chat_service.py",
+            "data": "SSEイベントストリーム",
+            "transform": "",
+            "target": "利用者"
+          },
+          {
+            "source": "backend/app/services/chat_service.py",
+            "data": "ユーザーメッセージおよびAI全回答メッセージ",
+            "transform": "完了後コミット(エラー時は保存中止)",
+            "target": "messages"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "SendMessageRequest",
+            "fields": [
+              "content"
+            ]
+          },
+          {
+            "name": "StreamChunk",
+            "fields": [
+              "chunk",
+              "is_finished"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-10",
+        "trigger": "POST /api/v1/projects/{id}/documents/generate",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "設計書一括生成トリガー",
+            "transform": "",
+            "target": "backend/app/routers/documents.py"
+          },
+          {
+            "source": "backend/app/routers/documents.py",
+            "data": "生成レート制限チェック",
+            "transform": "",
+            "target": "backend/app/core/rate_limit.py"
+          },
+          {
+            "source": "backend/app/routers/documents.py",
+            "data": "設計書生成処理要求",
+            "transform": "",
+            "target": "backend/app/services/document_service.py"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "プロジェクト状態を 'generating' に更新",
+            "transform": "",
+            "target": "projects"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "全対話履歴および添付抽出テキスト",
+            "transform": "",
+            "target": "backend/app/ai/workflows.py"
+          },
+          {
+            "source": "backend/app/ai/workflows.py",
+            "data": "設計書生成・診断プロンプト要求",
+            "transform": "",
+            "target": "Google Gemini API (Gemini Flash-Lite)"
+          },
+          {
+            "source": "Google Gemini API (Gemini Flash-Lite)",
+            "data": "4種設計書Markdownおよび自己診断項目(3段階)",
+            "transform": "",
+            "target": "backend/app/ai/workflows.py"
+          },
+          {
+            "source": "backend/app/ai/workflows.py",
+            "data": "生成結果ドキュメント群および診断データ",
+            "transform": "",
+            "target": "backend/app/services/document_service.py"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "4種設計書レコード (要件・外部・内部・計画)",
+            "transform": "UPSERT更新",
+            "target": "documents"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "自己診断レコード群 (最重要・中程度・軽微)",
+            "transform": "",
+            "target": "document_diagnoses"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "プロジェクト状態を 'generated' に更新",
+            "transform": "",
+            "target": "projects"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "生成完了ジョブ応答",
+            "transform": "",
+            "target": "backend/app/routers/documents.py"
+          },
+          {
+            "source": "backend/app/routers/documents.py",
+            "data": "受付・完了ステータス(202 Accepted または完了通知)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "GenerateDocumentResponse",
+            "fields": [
+              "project_id",
+              "status",
+              "generated_at"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-11",
+        "trigger": "GET /api/v1/projects/{id}/documents",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "生成済みドキュメント取得要求(project_id)",
+            "transform": "",
+            "target": "backend/app/routers/documents.py"
+          },
+          {
+            "source": "backend/app/routers/documents.py",
+            "data": "ドキュメント取得要求",
+            "transform": "",
+            "target": "backend/app/services/document_service.py"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "所有者検証",
+            "transform": "",
+            "target": "projects"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "設計書レコード取得クエリ",
+            "transform": "",
+            "target": "documents"
+          },
+          {
+            "source": "documents",
+            "data": "4種のMarkdownドキュメントレコード",
+            "transform": "",
+            "target": "backend/app/services/document_service.py"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "自己診断レコード取得クエリ",
+            "transform": "",
+            "target": "document_diagnoses"
+          },
+          {
+            "source": "document_diagnoses",
+            "data": "重要度別診断項目リスト",
+            "transform": "",
+            "target": "backend/app/services/document_service.py"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "ドキュメント集約レスポンスDTO",
+            "transform": "",
+            "target": "backend/app/routers/documents.py"
+          },
+          {
+            "source": "backend/app/routers/documents.py",
+            "data": "4種ドキュメントおよび自己診断結果応答(200 OK)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "ProjectDocumentsResponse",
+            "fields": [
+              "project_id",
+              "documents",
+              "diagnoses"
+            ]
+          },
+          {
+            "name": "DiagnosisItem",
+            "fields": [
+              "severity",
+              "issue_text",
+              "suggestion"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-12",
+        "trigger": "GET /api/v1/projects/{id}/documents/{doc_type}/download",
+        "flows": [
+          {
+            "source": "利用者",
+            "data": "単体ファイルダウンロード要求(doc_type)",
+            "transform": "",
+            "target": "backend/app/routers/documents.py"
+          },
+          {
+            "source": "backend/app/routers/documents.py",
+            "data": "単体ドキュメント抽出要求",
+            "transform": "",
+            "target": "backend/app/services/document_service.py"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "所有者検証および対象ドキュメント取得",
+            "transform": "",
+            "target": "documents"
+          },
+          {
+            "source": "documents",
+            "data": "Markdown本文",
+            "transform": "",
+            "target": "backend/app/services/document_service.py"
+          },
+          {
+            "source": "backend/app/services/document_service.py",
+            "data": "Markdownバイナリデータ",
+            "transform": "ファイル名およびContent-Dispositionヘッダー付与",
+            "target": "backend/app/routers/documents.py"
+          },
+          {
+            "source": "backend/app/routers/documents.py",
+            "data": "Markdownファイルダウンロード応答(200 OK, text/markdown)",
+            "transform": "",
+            "target": "利用者"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "FileDownloadPayload",
+            "fields": [
+              "file_name",
+              "content_type",
+              "content"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "DF-13",
+        "trigger": "backend/scripts/backup.sh",
+        "flows": [
+          {
+            "source": "backend/scripts/backup.sh",
+            "data": "日次pg_dump実行要求",
+            "transform": "",
+            "target": "PostgreSQL"
+          },
+          {
+            "source": "PostgreSQL",
+            "data": "データベースダンプファイル(.sql.gz)",
+            "transform": "",
+            "target": "backend/scripts/backup.sh"
+          },
+          {
+            "source": "backend/scripts/backup.sh",
+            "data": "ダンプファイル複製・転送",
+            "transform": "7世代保持管理および外部VPS転送",
+            "target": "外部実体"
+          }
+        ],
+        "data_items": [
+          {
+            "name": "DatabaseDumpArchive",
+            "fields": [
+              "dump_file_name",
+              "checksum",
+              "created_at"
+            ]
+          }
+        ]
+      }
+    ],
+    "error_policy": "FastAPIの例外ハンドラ基盤により、システム全体の共通エラーレスポンス形式を統一する。エラーレスポンスはRFC 7807に準拠したJSON形式（code, message, details）で返却する。\n\n```json\n{\n  \"error\": {\n    \"code\": \"INVALID_INPUT\",\n    \"message\": \"入力内容に誤りがあります。\",\n    \"details\": [\"メールアドレスの形式が正しくありません。\"]\n  }\n}\n```\n\n例外検知およびログ出力方針は要件定義書のNFR-007に厳格に準拠する。機密保持の観点から、ログ出力にはユーザーの入力テキスト、アップロードされた資料の内容、チャット本文、生成された設計書本文などの個人情報・機密情報は一切含めない。ログフォーマットは構造化された最小限のメタデータとし、発生日時、HTTPステータスコード、内部エラーコード、リクエストID、エラー発生モジュール名のみを記録する。また、Gemini APIの無料枠制限超過(HTTP 429 / ResourceExhausted)や一時的な停止(HTTP 503)を検知した場合は、502/503エラーへマッピングし、画面側に再送・再試行を促すエラー通知を表示する。チャット送信時のAI呼び出し失敗時は、該当送信メッセージをDBに永続化させずロールバックすることで、画面とDBの不整合を抑止する。",
+    "external_apis": [
+      "POST /api/v1/auth/register",
+      "POST /api/v1/auth/login",
+      "POST /api/v1/auth/refresh",
+      "POST /api/v1/auth/logout",
+      "GET /api/v1/projects",
+      "POST /api/v1/projects",
+      "GET /api/v1/projects/{id}",
+      "GET /api/v1/projects/{id}/messages",
+      "POST /api/v1/projects/{id}/messages",
+      "POST /api/v1/projects/{id}/documents/generate",
+      "GET /api/v1/projects/{id}/documents",
+      "GET /api/v1/projects/{id}/documents/{doc_type}/download"
+    ],
+    "next_dataflow_seq": 14
+  },
+  "implementation_plan": {
+    "phases": "本計画では、コア機能の検証と安全なリリースを最短で実現するため、2段階のフェーズに分割して開発を進めます。\n\n- **フェーズ1 (MVPリリース)**: ユーザー登録・認証から、添付資料付きプロジェクト作成、AIヒアリング対話、4種Markdown設計書の一括自動生成、自己診断提示、およびプレビュー・ダウンロードまでの基本業務フローを網羅します。 (優先度: Must / 対象マイルストーン: M-01, M-02, M-03, M-04)\n- **フェーズ2 (運用強化・将来拡張)**: MVP稼働後の運用データとフィードバックに基づき、エラー追跡や外部死活監視の導入、テンプレート選択、版履歴管理などの拡張機能開発を検討します。 (優先度: Could / 今回の開発スコープ外)",
+    "milestones": [
+      {
+        "name": "M-01: 開発環境構築および認証・プロジェクト基盤整備",
+        "goal": "コンテナ環境上でユーザー登録・ログイン認証、セッション管理、および参考資料添付を含むプロジェクト作成・一覧・詳細取得が正常に動作すること。",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-001",
+            "kind": "base",
+            "title": "ローカルコンテナ環境および共通基盤の構築",
+            "function_ids": [],
+            "depends_on": [],
+            "modules": [
+              "backend/app/main.py",
+              "backend/app/core/config.py",
+              "backend/app/core/database.py",
+              "backend/app/core/exceptions.py"
+            ],
+            "config_files": [
+              "docker-compose.yml",
+              "Dockerfile",
+              "nginx/nginx.conf"
+            ],
+            "req_ids": []
+          },
+          {
+            "key": "U-002",
+            "kind": "feature",
+            "title": "ユーザー新規登録およびログイン認証機能の実装",
+            "function_ids": [
+              "DF-1",
+              "DF-2"
+            ],
+            "depends_on": [
+              "M-01-T01"
+            ],
+            "modules": [
+              "backend/app/routers/auth.py",
+              "backend/app/services/auth_service.py",
+              "backend/app/repositories/user_repo.py",
+              "backend/app/core/security.py",
+              "backend/app/core/rate_limit.py",
+              "backend/app/schemas/auth.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-001",
+              "FR-007",
+              "FR-009"
+            ]
+          },
+          {
+            "key": "U-003",
+            "kind": "feature",
+            "title": "トークンリフレッシュおよびログアウト機能の実装",
+            "function_ids": [
+              "DF-3",
+              "DF-4"
+            ],
+            "depends_on": [
+              "M-01-T02"
+            ],
+            "modules": [
+              "backend/app/routers/auth.py",
+              "backend/app/services/auth_service.py",
+              "backend/app/core/security.py",
+              "backend/app/core/rate_limit.py",
+              "backend/app/schemas/auth.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-001",
+              "FR-009"
+            ]
+          },
+          {
+            "key": "U-004",
+            "kind": "feature",
+            "title": "プロジェクト管理および添付資料解析・保存機能の実装",
+            "function_ids": [
+              "DF-5",
+              "DF-6",
+              "DF-7"
+            ],
+            "depends_on": [
+              "M-01-T03"
+            ],
+            "modules": [
+              "backend/app/routers/projects.py",
+              "backend/app/services/project_service.py",
+              "backend/app/services/file_service.py",
+              "backend/app/repositories/project_repo.py",
+              "backend/app/core/rate_limit.py",
+              "backend/app/schemas/project.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-002",
+              "FR-007",
+              "FR-009"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "M-02: AIヒアリング対話機能の実装",
+        "goal": "チャット画面にてユーザーがメッセージを送信し、Gemini APIによるストリーミング応答を受信して対話履歴が正常に蓄積・表示されること。",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-005",
+            "kind": "feature",
+            "title": "AIヒアリング対話およびSSEストリーミング応答機能の実装",
+            "function_ids": [
+              "DF-8",
+              "DF-9"
+            ],
+            "depends_on": [
+              "M-01-T04"
+            ],
+            "modules": [
+              "backend/app/routers/messages.py",
+              "backend/app/services/chat_service.py",
+              "backend/app/ai/client.py",
+              "backend/app/repositories/message_repo.py",
+              "backend/app/repositories/project_repo.py",
+              "backend/app/core/rate_limit.py",
+              "backend/app/schemas/message.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-003",
+              "FR-007",
+              "FR-008",
+              "FR-009"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "M-03: 設計書一括自動生成および出力機能の実装",
+        "goal": "ヒアリング対話履歴を基に4種のMarkdown設計書と自己診断結果が一括生成され、画面上でプレビュー、コピー、ダウンロードができること。",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-006",
+            "kind": "feature",
+            "title": "LangGraphワークフローによる4種設計書生成および自己診断機能の実装",
+            "function_ids": [
+              "DF-10"
+            ],
+            "depends_on": [
+              "M-02-T01"
+            ],
+            "modules": [
+              "backend/app/routers/documents.py",
+              "backend/app/services/document_service.py",
+              "backend/app/ai/workflows.py",
+              "backend/app/ai/prompts.py",
+              "backend/app/ai/client.py",
+              "backend/app/repositories/document_repo.py",
+              "backend/app/repositories/project_repo.py",
+              "backend/app/core/rate_limit.py",
+              "backend/app/schemas/document.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-004",
+              "FR-005",
+              "FR-007",
+              "FR-008",
+              "FR-009"
+            ]
+          },
+          {
+            "key": "U-007",
+            "kind": "feature",
+            "title": "生成設計書プレビュー・コピー・ダウンロード機能の実装",
+            "function_ids": [
+              "DF-11",
+              "DF-12"
+            ],
+            "depends_on": [
+              "M-03-T01"
+            ],
+            "modules": [
+              "backend/app/routers/documents.py",
+              "backend/app/services/document_service.py",
+              "backend/app/repositories/document_repo.py",
+              "backend/app/schemas/document.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-006"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "M-04: 運用保守・データ保全および本番デプロイ自動化",
+        "goal": "データベースの定期自動バックアップおよびGitHub ActionsによるクラウドVPSへのCI/CDデプロイが正常に実行されること。",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-008",
+            "kind": "feature",
+            "title": "データベース定期バックアップ・退避機能の実装",
+            "function_ids": [
+              "DF-13"
+            ],
+            "depends_on": [
+              "M-01-T01"
+            ],
+            "modules": [
+              "backend/scripts/backup.sh"
+            ],
+            "config_files": [],
+            "req_ids": []
+          },
+          {
+            "key": "U-009",
+            "kind": "base",
+            "title": "GitHub Actionsによる自動テスト・VPSデプロイパイプライン構築",
+            "function_ids": [],
+            "depends_on": [
+              "M-03-T02",
+              "M-04-T01"
+            ],
+            "modules": [],
+            "config_files": [
+              ".github/workflows/deploy.yml",
+              "docker-compose.prod.yml"
+            ],
+            "req_ids": []
+          }
+        ]
+      }
+    ],
+    "environment": "### 開発環境・ツール\n- **言語・ランタイム**: Python 3.13, Node.js (Next.js 実行環境)\n- **主要ライブラリ**: FastAPI, LangChain, LangGraph, Tamagui, pypdf, SQLAlchemy, pyjwt, passlib, redis-py\n- **コンテナ・インフラ**: Docker, Docker Compose, nginx\n- **ミドルウェア**: PostgreSQL, Redis\n- **外部API**: Google Gemini API (Gemini Flash-Lite)\n\n### リポジトリ構成\n- フロントエンド(Next.js App Router)とバックエンド(FastAPI)を単一リポジトリで管理するモノレポ構成を採用します。\n- `backend/`: FastAPI アプリケーションコード、データベース設定、マイグレーションスクリプト、運用スクリプト(`scripts/`)\n- `frontend/`: Next.js、Tamagui UI コンポーネント、API クライアント\n- ルートディレクトリ: `docker-compose.yml`, `nginx/`, `.github/workflows/`\n\n### CI/CD方針および自動テスト\n- **自動テスト**: pytest を用いたバックエンドの単体・統合テスト、およびフロントエンドのビルドチェックをプルリクエスト時に実行します。\n- **CI/CD**: GitHub Actions を利用し、`main` ブランチへの push をトリガーとしてリント・自動テスト・Dockerイメージビルドを実行後、SSH経由でクラウドVPS上の Docker Compose 環境を自動更新・デプロイします。",
+    "risks": [
+      {
+        "risk": "Gemini API無料枠の利用に伴うレートリミット(HTTP 429)や一時的な障害による設計書一括生成処理の中断",
+        "mitigation": "バックエンド(backend/app/ai/client.py)にて指数バックオフを伴う自動再試行を実装するとともに、失敗時はプロジェクト状態を'failed'に更新して画面上でユーザーが簡単に再生成を実行できるようにします。また、生成中はチャット送信を制限してAPI消費を抑制します。"
+      },
+      {
+        "risk": "参考資料PDFの構造やサイズによるテキスト抽出処理の遅延または失敗",
+        "mitigation": "ファイル添付数を最大3件に制限し、pypdfを用いた抽出処理でタイムアウトおよびサイズ上限を厳格にバリデーションします。抽出不可の異常なPDFについては明確なエラーメッセージを返し、再添付を促します。"
+      },
+      {
+        "risk": "短納期またはAPI仕様変更に伴うドキュメント生成品質のばらつき",
+        "mitigation": "プロンプトテンプレート(backend/app/ai/prompts.py)をコードから分離して迅速にチューニング可能な構造とし、出力形式のパースエラーが発生した際も段階的なフォールバックを行えるようにLangGraphワークフローを設計します。"
+      }
+    ],
+    "next_unit_seq": 10,
+    "known_dataflow_ids": [
+      "DF-1",
+      "DF-2",
+      "DF-3",
+      "DF-4",
+      "DF-5",
+      "DF-6",
+      "DF-7",
+      "DF-8",
+      "DF-9",
+      "DF-10",
+      "DF-11",
+      "DF-12",
+      "DF-13"
+    ],
+    "known_req_ids": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015",
+      "NFR-001",
+      "NFR-002",
+      "NFR-003",
+      "NFR-004",
+      "NFR-005",
+      "NFR-006",
+      "NFR-007",
+      "NFR-008",
+      "CON-001",
+      "CON-002",
+      "CON-003",
+      "CON-004"
+    ],
+    "must_fr_ids": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009"
+    ]
+  }
+}

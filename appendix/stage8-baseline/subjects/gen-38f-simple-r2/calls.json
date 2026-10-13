@@ -1,0 +1,38 @@
+{
+  "model": "gemini-3.8-flash",
+  "seconds": 604.9,
+  "calls": [
+    {
+      "doc": "requirements",
+      "quota_429": 0,
+      "busy_503_504": 1,
+      "seconds": 118.9,
+      "input_tokens": 4222,
+      "output_tokens": 3030
+    },
+    {
+      "doc": "external_design",
+      "quota_429": 0,
+      "busy_503_504": 1,
+      "seconds": 95.9,
+      "input_tokens": 2865,
+      "output_tokens": 4948
+    },
+    {
+      "doc": "internal_design",
+      "quota_429": 0,
+      "busy_503_504": 0,
+      "seconds": 138.1,
+      "input_tokens": 6728,
+      "output_tokens": 15916
+    },
+    {
+      "doc": "implementation_plan",
+      "quota_429": 0,
+      "busy_503_504": 0,
+      "seconds": 66.0,
+      "input_tokens": 12316,
+      "output_tokens": 6127
+    }
+  ]
+}

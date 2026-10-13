@@ -1,0 +1,208 @@
+{
+  "model": "claude-sonnet-5-5",
+  "input_tokens": 14168,
+  "output_tokens": 5572,
+  "total_tokens": 19740,
+  "input_token_details": {
+    "cache_read": 0,
+    "cache_creation": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "ephemeral_1h_input_tokens": 0
+  },
+  "output_token_details": {
+    "reasoning": 1527
+  },
+  "cost_usd": 0.0841,
+  "findings": [
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "テーブル users",
+        "DF-1",
+        "DF-2",
+        "backend/core/security.py",
+        "FR-002"
+      ],
+      "problem": "users.password に平文を保存し、ログイン時に「そのまま照合する」設計になっている。",
+      "reason": "公開サービスで機密性を求める NFR-006 に反する。同じ内部設計書の security.py は「パスワードのハッシュ化」(passlib)を責務としており、文書内で食い違う。",
+      "suggestion": "カラムを password_hash にし、登録時にハッシュ化、ログイン時はハッシュで検証すると明記する。DF-1・DF-2 にもハッシュ化の変換を加える。"
+    },
+    {
+      "level": "critical",
+      "cause": "inconsistency",
+      "targets": [
+        "POST /api/v1/auth/login",
+        "FR-002",
+        "3.3 APIエンドポイント一覧"
+      ],
+      "problem": "FR-002 は HttpOnly Cookie に保存すると定めているが、外部設計書の login 応答はトークンを本文で返し localStorage に保存するとしている。内部設計書は「Cookie を設定する」としている。",
+      "reason": "3つの記述が食い違い、どれで実装するか決まらない。localStorage は XSS でトークンを盗まれる恐れがあり、要件の意図に反する。",
+      "suggestion": "外部設計書の login 応答を Set-Cookie(HttpOnly, Secure, SameSite)に直し、localStorage の記述を削除する。"
+    },
+    {
+      "level": "critical",
+      "cause": "inconsistency",
+      "targets": [
+        "FR-010",
+        "NFR-006",
+        "1.3 システム化の範囲"
+      ],
+      "problem": "FR-010 は設計書を共有リンクで公開し未ログインでも閲覧可能とするが、NFR-006 は他人のプロジェクト閲覧不可としている。FR-010 はヒアリングの観点の表にも出てこない。",
+      "reason": "2つの要件が矛盾している。FR-010 の出どころは「ユーザー」だが、ヒアリングの内容や範囲に根拠が無い。公開範囲、リンクの失効、トークン形式の定義も無い。",
+      "suggestion": "利用者に共有リンクの要否を確認する。必要なら NFR-006 に例外を明記し、公開範囲・失効方法・URL の推測耐性を定める。不要なら FR-010 を外す。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "1.3 システム化の範囲",
+        "Jira連携による課題の自動登録"
+      ],
+      "problem": "In Scope に「Jira連携による課題の自動登録」があるが、Out of Scope には「Jira・Notion連携」がある。",
+      "reason": "同じ要件定義書の中で矛盾している。ヒアリングの MVP の範囲では Jira 連携は対象外とされており、In Scope の記述に根拠が無い。また、これに当たる機能要件・API・タスクも無い。",
+      "suggestion": "In Scope から Jira 連携を削除する。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "3.4 例外処理・エラーハンドリング・ログ設計",
+        "NFR-007"
+      ],
+      "problem": "NFR-007 は入力内容を一切ログに残さないとしているが、3.4 は AI 応答失敗時にチャット入力内容とプロンプト全文をログに出すとしている。",
+      "reason": "同じ段落の中で矛盾している。プロンプトには参考資料や機密性の高いヒアリング内容が入る。",
+      "suggestion": "入力内容やプロンプトはログに出さず、エラーコード・時刻・リクエストIDだけを残す。"
+    },
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/chat/messages",
+        "POST /api/v1/documents/generate",
+        "NFR-006"
+      ],
+      "problem": "chat/messages の本文は message だけで、どのプロジェクトのチャットか特定できない。chat・generate API には所有者チェック(401/403/404)の記載も無い。",
+      "reason": "DF-4 は chat_messages に project_id を保存するが、その入力元が無い。project_id を受け取る generate も、他人のプロジェクトを指定できてしまう。NFR-006 が満たされない。",
+      "suggestion": "chat/messages に project_id を追加する。両 API で認証必須とし、プロジェクトの所有者を検証して 401/403/404 を返す。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "SCR-003",
+        "FR-006",
+        "SCR-002",
+        "POST /api/v1/projects"
+      ],
+      "problem": "生成済みの設計書・自己診断・チャット履歴を取得する API が無い。リフレッシュ・ログアウト・プロジェクト一覧/取得の API も無い。",
+      "reason": "SCR-003 は選択した設計書をプレビューするが、読み出す API が無い(付録でも FR-006 の API は「—」)。アクセストークンは30分で切れ、Redis でトークン失効も管理する設計だが、更新と失効の API が無い。画面を再読み込みすると状態を復元できない。",
+      "suggestion": "GET /projects/{id}、GET /projects/{id}/documents、チャット履歴取得、POST /auth/refresh、POST /auth/logout を追加し、エラー応答も定める。"
+    },
+    {
+      "level": "major",
+      "cause": "hearing",
+      "targets": [
+        "NFR-008",
+        "POST /api/v1/chat/messages",
+        "POST /api/v1/documents/generate",
+        "3.4 例外処理・エラーハンドリング・ログ設計"
+      ],
+      "problem": "チャットと生成の回数制限は要件にあるが、上限値(回数・期間・単位)がどこにも決まっておらず、chat・generate API に 429 の応答も無い。",
+      "reason": "公開サービスでは、LLM の利用コストと不正利用に直結する。値が無いと、Redis のレート制限ミドルウェアを実装できない。",
+      "suggestion": "ユーザー単位・IP 単位の上限値(例: 1日あたりの生成回数)を利用者に聞いて NFR-008 に書き、各 API に 429 を追加する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/documents/generate",
+        "NFR-003",
+        "4.4 想定リスクと対策",
+        "テーブル documents"
+      ],
+      "problem": "4文書の生成と自己診断は数分かかるが、API は同期の1リクエストで 201 を返す設計になっている。タイムアウト、途中失敗、再生成時の扱いも決まっていない。",
+      "reason": "nginx やブラウザのタイムアウトで切れる恐れがある。4文書のうち一部だけ保存された場合や、再生成した場合の既存の documents・diagnostics の扱いが不明で、重複や不整合が起きうる。リスク欄は「非同期処理」と書くが、API はそうなっていない。",
+      "suggestion": "生成をバックグラウンドジョブにして状態取得 API(進行中/成功/失敗)を設け、保存はトランザクションで行う。再生成は旧版を置換するか版管理にするかを決める。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "DF-3",
+        "DF-4",
+        "DF-5",
+        "テーブル projects"
+      ],
+      "problem": "参考資料の内容が、チャットや生成のどの処理でも使われない。DF-3 はファイルパスの保存だけで、pdf のテキスト抽出も無い。DF-5 が取得するのは chat_messages だけで、reference_file_paths は読まれない。DF-4 もユーザー発言を保存せず、履歴の読み込みも示されていない。",
+      "reason": "FR-003 の目的(参考資料を設計書に反映する)が果たせない。ユーザー発言が保存されないので、生成時のチャット履歴も欠ける。",
+      "suggestion": "DF-3 でテキスト抽出と保存を行い、DF-4・DF-5 の入力に projects の参考資料と履歴を加える。DF-4 にユーザー発言の保存を加える(AI 応答成功時にまとめて保存)。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "SCR-002",
+        "POST /api/v1/documents/generate",
+        "FR-004"
+      ],
+      "problem": "ヒアリングの完了を誰がどう判断するかが定まっていない。SCR-002 は「完了時に生成」と書くが、generate は別 API で、完了条件が無い。",
+      "reason": "自動で生成するのか、ボタンで生成するのかが決まらず、画面と chat_graph の終了条件を実装できない。",
+      "suggestion": "生成ボタンによる明示操作にするか、LangGraph の完了判定条件を定義する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "テーブル projects",
+        "NFR-002",
+        "DF-3"
+      ],
+      "problem": "参考資料はファイルシステムに保存してパスだけを DB に持つが、保存先ボリュームがバックアップの対象に入っていない。",
+      "reason": "NFR-002 は DB のバックアップだけを扱う。復旧するとパスだけ残ってファイル本体が無くなる。",
+      "suggestion": "ファイルの保存先を Docker ボリュームと決めてバックアップ対象に含めるか、テキストを DB に保存する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "4.2 タスク分解(WBS)",
+        "SCR-001",
+        "SCR-002",
+        "SCR-003",
+        "NFR-002",
+        "NFR-008",
+        "CON-005"
+      ],
+      "problem": "実装計画に、フロントエンド(SCR-001〜003)のタスクが無い。nginx・HTTPS・GitHub Actions のデプロイ、DB バックアップ(NFR-002)、Redis のレート制限・トークン失効(NFR-008)、ログ方針(NFR-007)のタスクも無い。",
+      "reason": "フェーズ1 は VPS へのデプロイまでを含むと書かれているのに、バックエンド機能以外を担うタスクが無い。FR-006 もバックエンドのタスクに割り当てられている。M-01-T01 の要件欄は「なし」。",
+      "suggestion": "フロント画面ごとのタスク、nginx とデプロイ、バックアップ、レート制限・認可ミドルウェア、ログ設定のタスクを追加し、要件に紐付ける。"
+    },
+    {
+      "level": "minor",
+      "cause": "design",
+      "targets": [
+        "backend/api/v1/auth.py",
+        "backend/core/security.py",
+        "FR-008",
+        "POST /api/v1/auth/register"
+      ],
+      "problem": "auth.py の依存先が ai_service.py になっていて不自然。レート制限のミドルウェアが 3.3 のファイル構成に無い。security.py と database.py の層が「モデル」とされている。FR-008(チャット入力の制限)が register・login の要件欄や付録に入っている。",
+      "reason": "設計の内部が整合しておらず、実装時に責務が混乱する。",
+      "suggestion": "依存先を security.py と users のリポジトリに直す。ミドルウェアのファイルを追加する。FR-008 は chat API だけに紐付ける。"
+    },
+    {
+      "level": "minor",
+      "cause": "hearing",
+      "targets": [
+        "運用・保守性(データの保持・削除)",
+        "FR-001",
+        "NFR-006"
+      ],
+      "problem": "プロジェクトの削除や退会は不要と決めたが、機密性の高い入力と生成物を保持する期間や、Gemini へ送信する旨の扱いが要件に無い。パスワード再設定やメールアドレスの確認も決まっていない。",
+      "reason": "誰でも登録できる公開サービスなのに、データの保持と利用者への説明、アカウント回復について何も決まっていない。観点の表の「データの保持・削除」は要件に紐付いていない(付録で「—」)。",
+      "suggestion": "保持期間と LLM への送信の告知、パスワード再設定の要否を利用者に確認して要件に加える。"
+    }
+  ],
+  "seconds": 40.7
+}
