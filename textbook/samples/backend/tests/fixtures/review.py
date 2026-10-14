@@ -1,4 +1,4 @@
-# 作成：Phase-52-1
+# 作成：Phase-52-1｜更新：Phase-53(完了後の調整)
 """設計レビューの構造化出力の見本(レビューのテストで偽の LLM に返させる)。"""
 
 from app.review import ReviewFindingOut, ReviewOutput
@@ -10,12 +10,19 @@ def review_finding(
     cause: str = "design",
     point_key: str | None = None,
     problem: str = "API に認可が無い",
+    # Phase-53(完了後の調整):追記
+    documents: tuple[str, ...] = ("external_design",),
 ) -> ReviewFindingOut:
-    """指摘1件(重要度・原因・観点のキー・問題を変えられる)。"""
+    # Phase-53(完了後の調整)：更新
+    # """指摘1件(重要度・原因・観点のキー・問題を変えられる)。"""
+    # ↓↓
+    """指摘1件(重要度・原因・観点のキー・問題・関連する文書を変えられる)。"""
     return ReviewFindingOut(
         level=level,  # type: ignore[arg-type]
         cause=cause,  # type: ignore[arg-type]
         targets=["POST /api/v1/projects"],
+        # Phase-53(完了後の調整):追記
+        documents=list(documents),
         point_key=point_key,
         problem=problem,
         evidence="POST /api/v1/projects … 200 OK",
@@ -35,6 +42,8 @@ def review_output() -> ReviewOutput:
                 cause="hearing",
                 point_key="security",
                 problem="誰が誰のデータを見られるかが決まっていない",
+                # Phase-53(完了後の調整):追記
+                documents=("requirements", "external_design"),
             ),
         ]
     )

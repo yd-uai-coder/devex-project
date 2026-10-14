@@ -1,4 +1,4 @@
-# 作成：Phase-52-1
+# 作成：Phase-52-1｜更新：Phase-53(完了後の調整)
 """設計レビューの入力・出力・判定(app/review。純粋関数)のテスト。
 
 SUT は app/review の各関数、ドライバは pytest。スタブ不要 ── 対象が純粋(副作用なし)で、
@@ -125,3 +125,17 @@ def test_point_key_is_required_in_output_schema() -> None:
     # 省略できる項目にすると、モデルが書かないことがある(null は書ける)
     schema = ReviewFindingOut.model_json_schema()
     assert "point_key" in schema["required"]
+    # Phase-53(完了後の調整):追記
+    assert "documents" in schema["required"]
+
+
+def test_documents_drop_unknown_and_follow_upstream_order() -> None:
+    finding = review_finding(
+        documents=("implementation_plan", "設計書", "requirements", "requirements")
+    )
+    assert finding.documents == ["requirements", "implementation_plan"]
+
+
+def test_review_prompt_asks_for_documents_to_rewrite() -> None:
+    assert "documents には" in REVIEW_SYSTEM_PROMPT
+    assert "要件定義書を\n  入れない" in REVIEW_SYSTEM_PROMPT

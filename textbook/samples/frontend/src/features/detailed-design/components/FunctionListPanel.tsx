@@ -1,4 +1,4 @@
-// 作成：Phase-16-6｜更新：Phase-17-6,21-7(画面確認後の修正),38-3,44-3
+// 作成：Phase-16-6｜更新：Phase-17-6,21-7(画面確認後の修正),38-3,44-3,53(完了後の調整)
 // 写経レベル: コア ── 編集中の内容を手元に持ち、保存して初めて送ること。作り直す前の確認と、生成中の操作の止め方。
 "use client";
 
@@ -7,11 +7,13 @@
 // Phase-17-6：削除 ── react.CSSProperties(表の見た目を tableStyles.ts へ移した)
 // Phase-38-3：更新 ── @/features/detailed-design/components/ListInput.ListInput を追記、functionListOps の screensToText・textToScreens を削除
 // Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
+// Phase-53(完了後の調整):追記 ── ReviewFindingBadge(@/features/design-review/components/ReviewFindingBadge), useStageReview(@/features/detailed-design/hooks/useStageReview)
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import { StyledInput } from "@/components/ui/primitives/StyledInput";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { ListInput } from "@/features/detailed-design/components/ListInput";
 import type {
@@ -31,6 +33,7 @@ import {
 } from "@/features/detailed-design/components/tableStyles";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   addGroup,
@@ -98,6 +101,8 @@ export function FunctionListPanel({
   const generate = useDetailedDesignStore((s) => s.generate);
   // Phase-44-3:追記
   const impact = useStageImpact(stage.stage);
+  // Phase-53(完了後の調整):追記
+  const review = useStageReview(stage.stage);
 
   const saved = toFunctionList(stage.model);
   const [draft, setDraft] = useState<FunctionListModel>(saved);
@@ -241,6 +246,8 @@ export function FunctionListPanel({
                     <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>
                       {row.id}
                       <ImpactBadge mark={impact.mark(elementKey.fn(row.id))} />
+                      {/* Phase-53(完了後の調整):追記 */}
+                      <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.fn(row.id))} />
                     </td>
                     <td style={{ ...CELL, minWidth: 160 }}>
                       <input

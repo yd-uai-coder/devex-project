@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整)
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -23,6 +23,7 @@
 # Phase-35-2:追記 ── app.services.chat_service.ReplyCards
 # Phase-35(完了後の調整):追記 ── app.schemas.hearing.HearingPointUpdate
 # Phase-36-2:追記 ── app.services.doc_generator_service.document_read
+# Phase-53(完了後の調整):追記 ── app.api.deps.RedisDep, app.schemas.document(GenerationProgressRead, GenerationRequest), app.services.generation_progress.GenerationProgressStore
 import contextlib
 import json
 import uuid
@@ -32,10 +33,15 @@ import structlog
 from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, status
 from fastapi.responses import Response, StreamingResponse
 
-from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
+from app.api.deps import CurrentProjectDep, CurrentUserDep, RedisDep, SessionDep
 from app.api.responses import content_disposition
 from app.core.errors import AppError, BadRequestError
-from app.schemas.document import DocType, GeneratedDocumentRead
+from app.schemas.document import (
+    DocType,
+    GeneratedDocumentRead,
+    GenerationProgressRead,
+    GenerationRequest,
+)
 from app.schemas.generation import HearingCompletionCheck
 from app.schemas.hearing import (
     ChatHistoryRead,
@@ -51,6 +57,7 @@ from app.services.doc_generator_service import (
     generate_documents,
 )
 from app.services.errors import GenerationFailedError, LLMQuotaExceededError
+from app.services.generation_progress import GenerationProgressStore
 from app.services.project import ProjectService, UploadedFileInput
 
 # Phase-15-3:追記
@@ -283,6 +290,8 @@ async def trigger_generation(
     current_project: CurrentProjectDep,
     current_user: CurrentUserDep,
     background_tasks: BackgroundTasks,
+    # Phase-53(完了後の調整):追記
+    payload: GenerationRequest | None = None,
 ) -> None:
     """設計書4種の一括生成(+自己診断)をバックグラウンドでトリガーする。
 
@@ -293,13 +302,41 @@ async def trigger_generation(
 
     生成中なら409(DOC_GENERATION_IN_PROGRESS)。受け付けた時点で`generating`にし、受け付ける前の
     状態(失敗時に戻す先)をbackground taskへ渡す。
+
+    本文の`start_from`は再生成の起点(その文書から下流を作り直す。省略で全部)。モードに無い起点は
+    400、起点より上流の文書が無ければ409。
     """
+    # Phase-53(完了後の調整)：更新
+    # status_before_generation = await DocGeneratorService(session).request_generation(
+    #     current_project
+    # )
+    # background_tasks.add_task(
+    #     generate_documents, current_project.id, current_user.id, status_before_generation
+    # )
+    # ↓↓
+    start_from = payload.start_from if payload else None
     status_before_generation = await DocGeneratorService(session).request_generation(
-        current_project
+        current_project, start_from=start_from
     )
     background_tasks.add_task(
-        generate_documents, current_project.id, current_user.id, status_before_generation
+        generate_documents,
+        current_project.id,
+        current_user.id,
+        status_before_generation,
+        start_from=start_from,
     )
+
+
+# Phase-53(完了後の調整):追記
+@router.get("/{project_id}/generation-progress", response_model=GenerationProgressRead | None)
+async def get_generation_progress(
+    redis: RedisDep, current_project: CurrentProjectDep
+) -> GenerationProgressRead | None:
+    """生成の進み具合(作り直す文書・できた文書・今作っている文書)。生成していなければ null。"""
+    progress = await GenerationProgressStore(redis).read(current_project.id)
+    if progress is None:
+        return None
+    return GenerationProgressRead.model_validate(progress, from_attributes=True)
 
 
 # Phase-2-4:追記

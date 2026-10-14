@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整)
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 # Phase-52-2:追記 ── app.review.schemas.ReviewFindingOut, app.review.schemas.ReviewOutput
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
@@ -758,6 +758,8 @@ _REVIEW_OUTPUT = ReviewOutput(
             level="critical",
             cause="design",
             targets=["[E2E Fake] SCR-001"],
+            # Phase-53(完了後の調整):追記
+            documents=["external_design", "internal_design"],
             point_key=None,
             problem="[E2E Fake] 予約の取り消しの API が無い",
             evidence="[E2E Fake] 予約を取り消せる",
@@ -768,6 +770,8 @@ _REVIEW_OUTPUT = ReviewOutput(
             level="major",
             cause="hearing",
             targets=["[E2E Fake] 観点 セキュリティ"],
+            # Phase-53(完了後の調整):追記
+            documents=["requirements", "external_design"],
             point_key="security",
             problem="[E2E Fake] 誰が誰の予約を見られるかが決まっていない",
             evidence="[E2E Fake] 通信を HTTPS で暗号化する",

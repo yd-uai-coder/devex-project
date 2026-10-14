@@ -1,5 +1,6 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4,31-5,38-3,38(完了後の調整),44-3
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,31-5,38-3,38(完了後の調整),44-3,53-5
 // Phase-44-3:追記 ── ../../test-utils/stageFixtures(impactWith, makeMark)
+// Phase-53-5:追記 ── @/features/design-review/review-store.useReviewStore, @/features/design-review/test-utils/reviewFixtures(gate, user)
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -8,6 +9,8 @@ import tamaguiConfig from "@/tamagui.config";
 import { ProcedureDocPanel } from "../ProcedureDocPanel";
 import { StageWorkArea } from "../StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import { useReviewStore } from "@/features/design-review/review-store";
+import { gate, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
 import {
   impactWith,
   makeMark,
@@ -78,6 +81,8 @@ describe("ProcedureDocPanel", () => {
     // Phase-28-3：更新
     // useDetailedDesignStore.setState({ jumpTo: vi.fn() });
     // ↓↓
+    // Phase-53-5:追記
+    useReviewStore.setState({ me: null, gates: [] });
     useDetailedDesignStore.setState({
       jumpTo: vi.fn(),
       saving: false,
@@ -331,5 +336,35 @@ describe("ProcedureDocPanel", () => {
     expect(rows[2]).toHaveAttribute("aria-current", "true");
     expect(within(rows[2]).getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
     useDetailedDesignStore.setState({ impact: null, highlight: null });
+  });
+
+  // Phase-53-5:追記
+  it("レビューがオンで未レビューの区切りがあれば、生成を止めずに知らせる", async () => {
+    useReviewStore.setState({
+      me: reviewUser(),
+      gates: [gate({ status: "reviewed" }), gate({ gate: "stage7", status: "unreviewed" })],
+    });
+    const u = userEvent.setup();
+    renderPanel(stage8({ model: makeProcedureDoc(), version: 1 }));
+
+    await u.click(screen.getByLabelText("M-01-T01 を生成する"));
+    await u.click(screen.getByRole("button", { name: "選んだ単位の手順書を生成する(1/5)" }));
+
+    expect(useDetailedDesignStore.getState().generate).toHaveBeenCalled();
+    expect(screen.getByText("未レビューの区切りがあります(段階7の承認の後)。このまま手順書を生成できます。")).toBeInTheDocument();
+  });
+
+  it("レビューがオフなら知らせない", async () => {
+    useReviewStore.setState({
+      me: reviewUser({ review_enabled: false, review_effective: false }),
+      gates: [gate({ gate: "stage7", status: "unreviewed" })],
+    });
+    const u = userEvent.setup();
+    renderPanel(stage8({ model: makeProcedureDoc(), version: 1 }));
+
+    await u.click(screen.getByLabelText("M-01-T01 を生成する"));
+    await u.click(screen.getByRole("button", { name: "選んだ単位の手順書を生成する(1/5)" }));
+
+    expect(screen.queryByText(/未レビューの区切りがあります/)).not.toBeInTheDocument();
   });
 });

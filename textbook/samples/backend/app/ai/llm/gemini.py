@@ -1,4 +1,4 @@
-# 更新：Phase-2-3,4-3
+# 更新：Phase-2-3,4-3,53(完了後の調整)
 from functools import lru_cache
 from typing import Any
 
@@ -35,6 +35,10 @@ def get_gemini_llm(*, temperature: float = 0.7) -> Any:
     元々このパラメータを渡していなかったため、Gemini側の応答がハングした場合に
     クライアント側は無制限に待ち続ける(invoke_with_retryのリトライは例外発生時のみ
     働くため、ハングには無力)。Phase 4-5のパフォーマンス確認で発見した欠落。
+
+    SDK(google-genai)の中の再試行は`max_retries=1`で止める(Phase 53 の完了後の調整)。既定(6)のままだと、
+    障害(503・504)のときに SDK が中で再試行を重ね、その外側で invoke_with_retry も試すので、1回の
+    呼び出しがタイムアウトを大きく超えて数分かかる。`0`は「Google の既定(5回)」の意味になるので使わない。
     """
     if settings.E2E_FAKE_LLM:
         return get_e2e_fake_llm()
@@ -43,6 +47,8 @@ def get_gemini_llm(*, temperature: float = 0.7) -> Any:
         api_key=settings.GOOGLE_API_KEY,
         temperature=temperature,
         timeout=settings.LLM_TIMEOUT_SECONDS,
+        # Phase-53(完了後の調整):追記
+        max_retries=1,
     )
 
 

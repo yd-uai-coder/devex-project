@@ -1,10 +1,11 @@
-// 作成：Phase-21-7｜更新：Phase-21-8,21-7(画面確認後の修正。処理ごとのタブ・二重タブ・上下の保存バー),44-3
+// 作成：Phase-21-7｜更新：Phase-21-8,21-7(画面確認後の修正。処理ごとのタブ・二重タブ・上下の保存バー),44-3,53(完了後の調整)
 // 写経レベル: コア ── 候補は段階5から導き、飛ばす = 0件を保存して承認。候補と詳細は処理のタブで切り替え、データと L-ID は全体のまま。
 "use client";
 
 // Phase-21-8:追記 ── react.useRef
 // Phase-21-7:追記(画面確認後の修正) ── react.CSSProperties, @/features/detailed-design/components/StageSaveBar.StageSaveBar, @/features/detailed-design/functionListOps.toFunctionList, @/features/detailed-design/logicOps(candidatesByProcedure, logicIdsByKey, logicStatus, pendingInTab, selectAll, TabCandidate。logicId・pendingLogics は使わなくなった)
 // Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
+// Phase-53(完了後の調整):追記 ── ReviewFindingBadge(@/features/design-review/components/ReviewFindingBadge), useStageReview(@/features/detailed-design/hooks/useStageReview)
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -15,6 +16,7 @@ import {
   type LogicModel,
   type LogicTarget,
 } from "@/features/detailed-design/api/types";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { LogicSpecEditor } from "@/features/detailed-design/components/LogicSpecEditor";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
@@ -24,6 +26,7 @@ import { useDetailedDesignStore } from "@/features/detailed-design/detailed-desi
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   buildReverseIndex,
@@ -107,6 +110,8 @@ export function LogicPanel({
   // ── ここから Phase-21-7 の作成分 ──
   // Phase-44-3:追記
   const impact = useStageImpact(stage.stage);
+  // Phase-53(完了後の調整):追記
+  const review = useStageReview(stage.stage);
 
   const procedures = toProcedures(stage5Model);
   const candidates = logicCandidates(procedures);
@@ -683,6 +688,8 @@ export function LogicPanel({
                         <td style={{ ...CELL, ...MONO }}>
                           {id}
                           <ImpactBadge mark={impact.mark(elementKey.logic(row.module, row.function))} />
+                          {/* Phase-53(完了後の調整):追記 */}
+                          <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.logic(row.module, row.function))} />
                         </td>
                         <td style={{ ...CELL, ...MONO }}>{row.function}</td>
                         <td style={{ ...CELL, ...MONO }}>{row.module}</td>

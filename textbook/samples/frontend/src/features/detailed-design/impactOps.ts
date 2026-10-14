@@ -1,4 +1,4 @@
-// 作成：Phase-44-1｜更新：Phase-44-4,44(完了後の調整),46-3
+// 作成：Phase-44-1｜更新：Phase-44-4,44(完了後の調整),46-3,53-4
 // Phase-44-4:追記 ── @/features/detailed-design/api/types(MAX_LOGIC_TARGETS, MAX_PROCEDURE_DOC_TARGETS, MAX_PROCEDURE_TARGETS, RegenerationTargetRead)
 import {
   MAX_LOGIC_TARGETS,
@@ -263,6 +263,17 @@ export function resolveFixTarget(
     default:
       return null;
   }
+}
+
+// Phase-53-4:追記
+// 設計レビューの指摘の対象(LLM が書く文字列。「F-03」「テーブル projects」「app/services/x.py」
+// 「M-01-T02」など)から、その要素を載せている段階を推定する(`jumpTo`に渡す)。手順ID(F-01#4)は段階5、
+// それ以外は 単位・横断事項(7)→ モジュール(4)→ テーブル(3)→ 関数(6)→ 処理(1)の順に、表の要素の
+// キーが当たる段階を選ぶ。内容の無い段階・どれにも当たらない対象(要件 ID・画面など)は null。
+export function locateTargetStage(text: string, stages: DesignStageRead[]): number | null {
+  const has = (stage: number) => stages.some((s) => s.stage === stage && s.model !== null);
+  if (/F-\d+#\d+/.test(text) && has(5)) return 5;
+  return [7, 4, 3, 6, 1].find((stage) => has(stage) && resolveFixTarget(stage, text, stages) !== null) ?? null;
 }
 
 // 短い名前が長い名前の一部に当たらないよう、長い順に並べる(重複なし)

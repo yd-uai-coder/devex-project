@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-34-3,35-3,35(完了後の調整)
+// 作成：Phase-3-5｜更新：Phase-34-3,35-3,35(完了後の調整),53(完了後の調整)
 import { apiFetch } from "@/lib/api/client";
 import type { ProjectRead } from "@/features/dashboard/api/projects";
 
@@ -92,8 +92,17 @@ export function markPointNotApplicable(projectId: string, pointKey: string): Pro
 
 // 202 Acceptedを返す(バックグラウンドタスクとして生成をトリガーするのみ)。
 // 完了はGET /api/v1/projects/{id}のstatusをポーリングして検知する(ChatPageContent参照)。
-export function triggerGeneration(projectId: string): Promise<void> {
-  return apiFetch<void>(`/api/v1/projects/${projectId}/generate`, { method: "POST" });
+// Phase-53(完了後の調整)：更新
+// export function triggerGeneration(projectId: string): Promise<void> {
+//   return apiFetch<void>(`/api/v1/projects/${projectId}/generate`, { method: "POST" });
+// }
+// ↓↓
+// startFrom は再生成の起点(その文書から下流を作り直す)。省略で全部(チャットからの生成)。
+export function triggerGeneration(projectId: string, startFrom?: string): Promise<void> {
+  return apiFetch<void>(`/api/v1/projects/${projectId}/generate`, {
+    method: "POST",
+    ...(startFrom ? { body: JSON.stringify({ start_from: startFrom }) } : {}),
+  });
 }
 
 export function getProject(projectId: string): Promise<ProjectRead> {

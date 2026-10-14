@@ -132,6 +132,10 @@ Phase 51 から引き継いだもの:
 
 この Phase で解決したもの: なし(D-NAT-1 は指示で当たるようになったが、聞き直しまでの解決は Phase 54・58)。
 
+## 後続 Phase での改訂
+
+- Phase 53: `start_documents_review` → `start_review(gate=…)`、`latest_documents_review` → `latest(project, gate)`、`DOCUMENTS_GATE` は `app/review/gates.py` へ移し、チャットは指摘の md から件数の一行(`render_notice`)にした。区切り(段階6・7)と採否の API を足した([53-1](../Phase-53/Phase-53-1.md)・[53-2](../Phase-53/Phase-53-2.md))。
+
 ## Phase 完了チェック(#22)
 
 設問は Phase の要点の要約(回答は求めない)。

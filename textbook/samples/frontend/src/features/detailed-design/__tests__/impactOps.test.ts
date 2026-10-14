@@ -1,11 +1,13 @@
-// 作成：Phase-44-1｜更新：Phase-44-4,44(完了後の調整),46-3
+// 作成：Phase-44-1｜更新：Phase-44-4,44(完了後の調整),46-3,53-4
 // Phase-44-4:追記 ── ../impactOps(REGENERATION_LIMITS, regenerationGroups)
 // Phase-44(完了後の調整):追記 ── ../impactOps(stageMarkSummary, visibleMarks)
+// Phase-53-4:追記 ── ../impactOps.locateTargetStage
 import { describe, expect, it } from "vitest";
 import {
   elementKey,
   focusTargetFor,
   hasImpact,
+  locateTargetStage,
   markStatus,
   marksByKey,
   mayHaveImpact,
@@ -123,6 +125,27 @@ describe("impactOps", () => {
     expect(resolveFixTarget(7, "07章 認証", stages)).toBe("cc:認証");
     expect(resolveFixTarget(8, "M-01-T02", stages)).toBe("unit:U-002");
     expect(resolveFixTarget(4, "どこか", stages)).toBeNull();
+  });
+
+  // Phase-53-4:追記
+  it("設計レビューの指摘の対象から、載せている段階を推定する", () => {
+    const stages = makeStages({
+      1: { model: makeFunctionList() },
+      3: { model: makeCrud() },
+      4: { model: makeModuleList() },
+      5: { model: {} },
+      6: { model: makeLogics() },
+      7: { model: makePlan() },
+    });
+    expect(locateTargetStage("M-01-T02", stages)).toBe(7);
+    expect(locateTargetStage("app/api/routes/reservations.py", stages)).toBe(4);
+    expect(locateTargetStage("テーブル reservations", stages)).toBe(3);
+    expect(locateTargetStage("create_reservation", stages)).toBe(6);
+    expect(locateTargetStage("F-01", stages)).toBe(1);
+    expect(locateTargetStage("F-01#4", stages)).toBe(5);
+    expect(locateTargetStage("SCR-004", stages)).toBeNull();
+    // 内容の無い段階には飛ばない
+    expect(locateTargetStage("F-01#4", makeStages({ 1: { model: makeFunctionList() } }))).toBe(1);
   });
 
   it("段階5・6 のタブを開く移動先を要素のキーから導く", () => {

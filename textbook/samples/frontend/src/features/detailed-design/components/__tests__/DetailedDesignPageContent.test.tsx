@@ -1,21 +1,26 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整)
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-44-2:追記 ── ../../test-utils/stageFixtures.makeImpact
 // Phase-46-3:追記 ── ../../test-utils/stageFixtures.makeSimpleImpact, @testing-library/react.within
+// Phase-53-4:追記 ── @/features/design-review/review-store.useReviewStore, @/features/design-review/test-utils/reviewFixtures(finding, gate, run, user)
+// Phase-53-5:追記 ── @testing-library/react.waitFor, ../../test-utils/stageFixtures.makeLogics
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DetailedDesignPageContent } from "../DetailedDesignPageContent";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import { useReviewStore } from "@/features/design-review/review-store";
+import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
 // Phase-28-3：更新
 // import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
 // ↓↓
 import {
   makeFunctionList,
   makeImpact,
+  makeLogics,
   makePlan,
   makeProcedureDoc,
   makeSimpleImpact,
@@ -32,6 +37,15 @@ function renderContent() {
 
 describe("DetailedDesignPageContent", () => {
   beforeEach(() => {
+    // Phase-53-4:追記
+    // レビューのパネルは API を呼ばない(ユーザーが無ければパネルを出さない)
+    useReviewStore.setState({
+      me: null,
+      gates: [],
+      fetchMe: vi.fn().mockResolvedValue(undefined),
+      fetchGates: vi.fn().mockResolvedValue(undefined),
+      runReview: vi.fn().mockResolvedValue(true),
+    });
     useDetailedDesignStore.setState({
       projectId: "p1",
       // Phase-16-6：更新
@@ -269,5 +283,61 @@ describe("DetailedDesignPageContent", () => {
     expect(within(panel).getAllByText("M-01-T02 の手順書").length).toBeGreaterThan(0);
 
     useDetailedDesignStore.setState({ impact: null });
+  });
+
+  // Phase-53-5:追記
+  it("段階6を承認したら、レビューがオンなら承認のダイアログから段階6の区切りのレビューを流せる", async () => {
+    const u = userEvent.setup();
+    useReviewStore.setState({ me: reviewUser() });
+    useDetailedDesignStore.setState({
+      stages: makeStages({
+        6: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: makeLogics() },
+      }),
+      selectedStage: 6,
+      approve: vi.fn().mockResolvedValue(true),
+    });
+    renderContent();
+
+    await u.click(screen.getByRole("button", { name: "承認する" }));
+    expect(await screen.findByText(/段階6-処理ロジックの詳細\(任意\)を承認しました。/)).toBeInTheDocument();
+    await u.click(screen.getByLabelText("段階6の承認の後のレビューをする"));
+
+    expect(useReviewStore.getState().runReview).toHaveBeenCalledWith("p1", "stage6");
+    await waitFor(() => expect(screen.queryByText(/を承認しました。/)).not.toBeInTheDocument());
+  });
+
+  it("レビューがオフなら、承認のダイアログにレビューの操作を出さない", async () => {
+    const u = userEvent.setup();
+    useReviewStore.setState({ me: reviewUser({ review_enabled: false, review_effective: false }) });
+    useDetailedDesignStore.setState({
+      stages: makeStages({
+        6: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: makeLogics() },
+      }),
+      selectedStage: 6,
+      approve: vi.fn().mockResolvedValue(true),
+    });
+    renderContent();
+
+    await u.click(screen.getByRole("button", { name: "承認する" }));
+    expect(await screen.findByText(/段階6-処理ロジックの詳細\(任意\)を承認しました。/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("段階6の承認の後のレビューをする")).not.toBeInTheDocument();
+  });
+
+  // Phase-53-4:追記
+  it("レビューのパネルを置き、指摘の対象から段階の表へ移る", async () => {
+    const u = userEvent.setup();
+    useReviewStore.setState({
+      me: reviewUser(),
+      gates: [gate({ status: "reviewed", run: run({ findings: [finding({ targets: ["F-01", "SCR-004"] })] }) })],
+    });
+    useDetailedDesignStore.setState({ jumpTo: vi.fn() });
+    renderContent();
+
+    expect(useReviewStore.getState().fetchGates).toHaveBeenCalledWith("p1");
+    // Phase-53(完了後の調整):追記
+    await u.click(screen.getByRole("button", { name: "文書の生成の後の指摘を開く" }));
+    await u.click(screen.getByRole("button", { name: "F-01" }));
+    expect(useDetailedDesignStore.getState().jumpTo).toHaveBeenCalledWith(1, "F-01");
+    expect(screen.queryByRole("button", { name: "SCR-004" })).not.toBeInTheDocument();
   });
 });

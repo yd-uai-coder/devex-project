@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整)
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -17,6 +17,8 @@
 # Phase-49-3:追記 ── collections.abc.Mapping, app.documents.revision.changed_rows, external_design_rows, internal_design_rows, requirement_rows
 # Phase-52-4:追記 ── redis.asyncio.Redis, app.core.errors.AppError, app.infrastructure.redis.get_redis_client, app.models.user.User, app.review.review_effective, app.services.review_service.ReviewService, app.repositories.generated_document.DOC_TYPES_BY_MODE
 # Phase-52-4：削除 ── app.repositories.generated_document.DOC_TYPES(DOC_TYPES_BY_MODE と一緒に移した)
+# Phase-53-1:追記 ── app.review.DOCUMENTS_GATE
+# Phase-53(完了後の調整):追記 ── app.services.errors(GenerationStartInvalidError, GenerationUpstreamMissingError), app.services.generation_progress(GenerationProgress, GenerationProgressStore)
 import uuid
 from collections.abc import Mapping
 from datetime import UTC, datetime
@@ -101,7 +103,7 @@ from app.repositories.generated_document import (
 )
 from app.repositories.hearing_point import HearingPointRepository
 from app.repositories.project import ProjectRepository
-from app.review import review_effective
+from app.review import DOCUMENTS_GATE, review_effective
 from app.schemas.document import (
     AssumedRequirementRead,
     DocumentIssueRead,
@@ -112,12 +114,9 @@ from app.schemas.document import (
 )
 from app.services.design_stage_service import DesignStageService
 from app.services.errors import (
-    DocGenerationInProgressError,
-    DocumentNotFoundError,
-    LLMQuotaExceededError,
-    RequirementNotAssumedError,
-    RequirementNotFoundError,
+    DocGenerationInProgressError,    DocumentNotFoundError,    GenerationStartInvalidError,    GenerationUpstreamMissingError,    LLMQuotaExceededError,    RequirementNotAssumedError,    RequirementNotFoundError,
 )
+from app.services.generation_progress import GenerationProgress, GenerationProgressStore
 from app.services.generation_staleness import is_stale
 from app.services.llm_retry import invoke_structured, invoke_with_retry
 from app.services.review_service import ReviewService
@@ -311,9 +310,11 @@ async def generate_documents(
     user_id: uuid.UUID,
     status_before_generation: str | None = None,
     *,
+    # Phase-53(完了後の調整):追記
+    start_from: str | None = None,
     llm=None,
 ) -> None:
-    """`BackgroundTasks`から呼び出すエントリポイント。
+    """`BackgroundTasks`から呼び出すエントリポイント。`start_from`は再生成の起点(省略で全部)。
 
     FastAPI 0.106以降、`yield`を使うDIのセッション(SessionDep)はbackground task実行"前"に
     クローズされるため、background task内でリクエストのセッションをそのまま使うことはできない。
@@ -337,8 +338,17 @@ async def generate_documents(
     redis = get_redis_client()
     try:
         async with AsyncSessionLocal() as session:
+            # Phase-53(完了後の調整)：更新
+            # await DocGeneratorService(session, redis=redis).generate(
+            #     project_id, user_id, status_before_generation=status_before_generation, llm=llm
+            # )
+            # ↓↓
             await DocGeneratorService(session, redis=redis).generate(
-                project_id, user_id, status_before_generation=status_before_generation, llm=llm
+                project_id,
+                user_id,
+                status_before_generation=status_before_generation,
+                start_from=start_from,
+                llm=llm,
             )
     finally:
         await redis.aclose()
@@ -366,14 +376,32 @@ class DocGeneratorService:
         self._hearing_points = HearingPointRepository(session)
         # Phase-43-3:追記
         self._stages = DesignStageService(session)
+        # Phase-53(完了後の調整):追記
+        self._progress = GenerationProgressStore(redis)
     # Phase-15-3:追記 ── 気づき#4・#5: 受け付け時の409と、止まった生成の回収
-    async def request_generation(self, project: Project) -> str:
+    # Phase-53(完了後の調整)：更新
+    # async def request_generation(self, project: Project) -> str:
+    # ↓↓
+    async def request_generation(self, project: Project, *, start_from: str | None = None) -> str:
         """生成の要求を受け付け、`status`を`generating`にしてcommitする。戻り値は受け付ける前の状態
         (失敗したときに戻す先。バックグラウンドの`generate`へ渡す)。
+
+        `start_from`は再生成の起点(その文書から下流を作り直す。省略で全部)。モードに無い起点は
+        `GenerationStartInvalidError`(400)、起点より上流の文書がまだ無ければ
+        `GenerationUpstreamMissingError`(409)。
 
         生成中なら`DocGenerationInProgressError`(409)にする。受け付けと同じリクエストの中で
         `generating`にするのは、バックグラウンドで切り替えると、切り替わる前の二度押しを
         すり抜けさせてしまうため。止まった「生成中」は先に回収する(`recover_if_stale`)。"""
+        # Phase-53(完了後の調整):追記
+        targets = generation_targets(project.mode, start_from)
+        for doc_type in DOC_TYPES_BY_MODE[project.mode]:
+            if doc_type in targets:
+                break
+            if await self._documents.get_current(project_id=project.id, doc_type=doc_type) is None:
+                raise GenerationUpstreamMissingError(
+                    "上流の設計書がまだ無いため、ここから再生成できません。"
+                )
         await self.recover_if_stale(project)
         if project.status == "generating":
             raise DocGenerationInProgressError(
@@ -417,6 +445,8 @@ class DocGeneratorService:
         user_id: uuid.UUID,
         *,
         status_before_generation: str | None = None,
+        # Phase-53(完了後の調整):追記
+        start_from: str | None = None,
         llm=None,
         # Phase-52-4:追記
         review_llm=None,
@@ -444,6 +474,9 @@ class DocGeneratorService:
 
         `status_before_generation`は`request_generation`が受け付けたときの状態。省略したときは
         (受け付けを経ない呼び出し)ここで`generating`へ切り替える。
+        `start_from`(再生成の起点)より上流の文書は作り直さず、表示中の版を下流の入力に使う。
+        生成の間は、作り直す文書・できた文書・今作っている文書を Redis に置く
+        (app/services/generation_progress.py。終わったら消す)。
         """
         project = await self._projects.get_by_id(project_id, user_id=user_id)
         if project is None:
@@ -480,6 +513,10 @@ class DocGeneratorService:
             external: ExternalDesignModel | None = None
             internal: InternalDesignModel | None = None
             doc_types = DOC_TYPES_BY_MODE[project.mode]
+            # Phase-53(完了後の調整):追記
+            targets = generation_targets(project.mode, start_from)
+            progress = GenerationProgress(targets=list(targets))
+            await self._progress.write(project_id, progress)
             # Phase-43-3:追記
             # 詳細設計モードの変更の影響は、生成の前に表示していた版と比べる
             previous_models: dict[str, dict | None] = {}
@@ -490,6 +527,24 @@ class DocGeneratorService:
                 previous_models[doc_type] = current.model if current is not None else None
             new_models: dict[str, dict | None] = {}
             for doc_type in doc_types:
+                # Phase-53(完了後の調整):追記
+                if doc_type not in targets:
+                    # 起点より上流は作り直さず、表示中の版を下流の入力にする
+                    kept = await self._documents.get_current(
+                        project_id=project_id, doc_type=doc_type
+                    )
+                    if kept is None:
+                        raise GenerationUpstreamMissingError(f"{doc_type} not found")
+                    generated[doc_type] = kept.content
+                    if doc_type == "requirements":
+                        requirements = parse_requirements_model(kept.model)
+                    elif doc_type == "external_design":
+                        external = parse_external_design_model(kept.model)
+                    elif doc_type == "internal_design":
+                        internal = parse_internal_design_model(kept.model)
+                    continue
+                progress.current = doc_type
+                await self._progress.write(project_id, progress)
                 # Phase-36-2：更新
                 # content = await self._generate_one(doc_type, transcript, generated, llm=llm)
                 # ↓↓
@@ -548,7 +603,14 @@ class DocGeneratorService:
                 generated[doc_type] = content
                 # Phase-43-3:追記
                 new_models[doc_type] = model
-            for doc_type in doc_types:
+                # Phase-53(完了後の調整):追記
+                progress.done.append(doc_type)
+            progress.current = None
+            await self._progress.write(project_id, progress)
+            # Phase-53(完了後の調整)：更新
+            # for doc_type in doc_types:
+            # ↓↓
+            for doc_type in targets:
                 await self._stages.record_document_change(
                     project, doc_type, previous_models[doc_type], new_models[doc_type]
                 )
@@ -588,6 +650,8 @@ class DocGeneratorService:
         # ↓↓
         except Exception as exc:  # noqa: BLE001 -- どの失敗要因も再試行可能な状態に戻す
             await self._session.rollback()
+            # Phase-53(完了後の調整):追記
+            await self._progress.clear(project_id)
             logger.warning(
                 "documents_generation_failed",
                 project_id=str(project_id),
@@ -616,8 +680,18 @@ class DocGeneratorService:
         # Phase-15-1：更新
         # logger.info("documents_generated", project_id=str(project_id), doc_count=len(DOC_TYPES))
         # ↓↓
+        # Phase-53(完了後の調整):追記
+        await self._progress.clear(project_id)
+        # Phase-53(完了後の調整)：更新
+        # logger.info(
+        #     "documents_generated", project_id=str(project_id), doc_count=len(generated)
+        # )
+        # ↓↓
         logger.info(
-            "documents_generated", project_id=str(project_id), doc_count=len(generated)
+            "documents_generated",
+            project_id=str(project_id),
+            doc_count=len(targets),
+            start_from=start_from,
         )
         # Phase-52-4:追記
         if reviewing and user is not None:
@@ -631,7 +705,10 @@ class DocGeneratorService:
         project_id = project.id
         review = ReviewService(self._session, redis=self._redis, llm=review_llm)
         try:
-            run = await review.start_documents_review(project, user, trigger="auto")
+            # Phase-53-1：更新
+            # run = await review.start_documents_review(project, user, trigger="auto")
+            # ↓↓
+            run = await review.start_review(project, user, gate=DOCUMENTS_GATE, trigger="auto")
         except Exception as exc:  # noqa: BLE001 -- レビューの失敗は生成を失敗にしない
             if not isinstance(exc, AppError):
                 # 想定外の失敗(DB など)だけ戻す。戻すと失効するプロジェクトは読み直す
@@ -914,6 +991,19 @@ class DocGeneratorService:
             return extract_text_content(response.content)
 
         return await invoke_with_retry(_call, messages=messages)
+
+
+# Phase-53(完了後の調整):追記
+def generation_targets(mode: str, start_from: str | None) -> tuple[str, ...]:
+    """再生成で作り直す文書(起点から下流。上流 → 下流の順)。起点が無ければモードの全部。
+    下流は上流を入力にして作るので、起点を作り直したら下流も必ず作り直す(整合を保つため)。
+    モードに無い起点は`GenerationStartInvalidError`(400)。"""
+    doc_types = DOC_TYPES_BY_MODE[mode]
+    if start_from is None:
+        return doc_types
+    if start_from not in doc_types:
+        raise GenerationStartInvalidError("このモードには無い設計書から再生成しようとしました。")
+    return doc_types[doc_types.index(start_from) :]
 
 
 def _render_transcript(history: list[ChatHistory]) -> str:

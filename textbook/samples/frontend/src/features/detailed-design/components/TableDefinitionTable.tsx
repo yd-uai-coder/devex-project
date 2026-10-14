@@ -1,12 +1,15 @@
-// 作成：Phase-18-7｜更新：Phase-44-3
+// 作成：Phase-18-7｜更新：Phase-44-3,53(完了後の調整)
 // 写経レベル: コア ── テーブル定義は ER から組み立てる表示だけにし、編集は ER の属性パネルに寄せる(二重に持たない)。
 "use client";
 
 // Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
+// Phase-53(完了後の調整):追記 ── ReviewFindingBadge(@/features/design-review/components/ReviewFindingBadge), useStageReview(@/features/detailed-design/hooks/useStageReview)
 import { Paragraph, Text, YStack } from "tamagui";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import type { ErSemanticModel } from "@/features/uml/api/types";
 
@@ -20,6 +23,8 @@ const mark = (on: boolean) => (on ? "○" : "");
 export function TableDefinitionTable({ model }: { model: ErSemanticModel | null }) {
   // Phase-44-3:追記
   const impact = useStageImpact(3);
+  // Phase-53(完了後の調整):追記
+  const review = useStageReview(3);
   if (model === null) return null;
 
   return (
@@ -62,6 +67,8 @@ export function TableDefinitionTable({ model }: { model: ErSemanticModel | null 
                     ↓↓ */}
                     {table.description ? `  ${table.description}` : ""}{" "}
                     <ImpactBadge mark={impact.mark(elementKey.table(table.name))} />
+                    {/* Phase-53(完了後の調整):追記 */}
+                    <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.table(table.name))} />
                   </th>
                 </tr>
                 {table.columns.map((column, index) => (

@@ -1,8 +1,9 @@
-// 作成：Phase-18-8｜更新：Phase-44-3
+// 作成：Phase-18-8｜更新：Phase-44-3,53(完了後の調整)
 // 写経レベル: コア ── 下書きのセルと DFD 由来のセルを見た目で区別する。
 "use client";
 
 // Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
+// Phase-53(完了後の調整):追記 ── ReviewFindingBadge(@/features/design-review/components/ReviewFindingBadge), useStageReview(@/features/detailed-design/hooks/useStageReview)
 import type { CSSProperties } from "react";
 import { Paragraph, Text, YStack } from "tamagui";
 import type {
@@ -10,10 +11,12 @@ import type {
   DfdAccess,
   FunctionRow,
 } from "@/features/detailed-design/api/types";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { CELL, HEAD, INPUT, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { accessOf, cellOf, countDrafts, setCellOps } from "@/features/detailed-design/crudOps";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 
 // AI の下書きのまま(人が確定していない)セルの背景
@@ -45,6 +48,8 @@ export function CrudMatrix({
   const drafts = countDrafts(model);
   // Phase-44-3:追記
   const impact = useStageImpact(3);
+  // Phase-53(完了後の調整):追記
+  const review = useStageReview(3);
 
   return (
     <YStack gap="$2">
@@ -114,6 +119,8 @@ export function CrudMatrix({
                         />
                         {/* Phase-44-3:追記 */}
                         <ImpactBadge mark={impact.mark(key)} />
+                        {/* Phase-53(完了後の調整):追記 */}
+                        <ReviewFindingBadge projectId={review.projectId} items={review.findings(key)} />
                       </td>
                     );
                   })}

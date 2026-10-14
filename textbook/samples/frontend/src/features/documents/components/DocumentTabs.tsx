@@ -1,4 +1,4 @@
-// 作成：Phase-3-6
+// 作成：Phase-3-6｜更新：Phase-53-4
 "use client";
 
 import { useState } from "react";
@@ -23,13 +23,30 @@ const DOC_TYPE_ORDER: DocType[] = [
 type DocumentTabsProps = {
   projectId: string;
   documents: GeneratedDocumentRead[];
+  // Phase-53-4:追記
+  // 選んでいる文書を親が持つとき(レビューの指摘から文書のタブへ移るため)。無ければタブが自分で持つ
+  activeType?: DocType | null;
+  onActiveTypeChange?: (type: DocType) => void;
 };
 
-export function DocumentTabs({ projectId, documents }: DocumentTabsProps) {
+// Phase-53-4：更新
+// export function DocumentTabs({ projectId, documents }: DocumentTabsProps) {
+// ↓↓
+export function DocumentTabs({ projectId, documents, activeType, onActiveTypeChange }: DocumentTabsProps) {
   const byType = new Map(documents.map((doc) => [doc.doc_type, doc]));
   const available = DOC_TYPE_ORDER.filter((type) => byType.has(type));
   const labels = available.map((type) => DOC_TYPE_LABELS[type]);
-  const [activeLabel, setActiveLabel] = useState<string | undefined>(labels[0]);
+  // Phase-53-4：更新
+  // const [activeLabel, setActiveLabel] = useState<string | undefined>(labels[0]);
+  // ↓↓
+  const [ownLabel, setOwnLabel] = useState<string | undefined>(labels[0]);
+  const controlled = onActiveTypeChange !== undefined;
+  const activeLabel = controlled ? (activeType && byType.has(activeType) ? DOC_TYPE_LABELS[activeType] : labels[0]) : ownLabel;
+  const setActiveLabel = (label: string) => {
+    if (!controlled) return setOwnLabel(label);
+    const type = available.find((t) => DOC_TYPE_LABELS[t] === label);
+    if (type) onActiveTypeChange(type);
+  };
 
   if (available.length === 0) return null;
 

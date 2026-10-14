@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3,37-3,45-5
+// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3,37-3,45-5,53(完了後の調整)
 // Phase-12-5:追記 ── @/lib/api/download.parseFilename(UML 図の出力と共有するため移した)
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
@@ -82,6 +82,19 @@ export type GeneratedDocumentRead = {
   internal_design?: InternalDesignSummaryRead | null;
   implementation_plan?: ImplementationPlanSummaryRead | null;
 };
+
+// Phase-53(完了後の調整):追記
+// devex-api app/schemas/document.py の GenerationProgressRead に対応する(生成していなければ null)。
+// targets は作り直す文書(上流から)、done はできた文書、current は今作っている文書。
+export type GenerationProgressRead = {
+  targets: DocType[];
+  done: DocType[];
+  current: DocType | null;
+};
+
+export function getGenerationProgress(projectId: string): Promise<GenerationProgressRead | null> {
+  return apiFetch<GenerationProgressRead | null>(`/api/v1/projects/${projectId}/generation-progress`);
+}
 
 export function listDocuments(projectId: string): Promise<GeneratedDocumentRead[]> {
   return apiFetch<GeneratedDocumentRead[]>(`/api/v1/projects/${projectId}/documents`);

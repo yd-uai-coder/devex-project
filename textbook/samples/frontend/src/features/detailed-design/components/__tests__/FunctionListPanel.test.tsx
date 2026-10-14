@@ -1,12 +1,15 @@
-// 作成：Phase-16-6｜更新：Phase-21-7(画面確認後の修正),38-3,44-3
+// 作成：Phase-16-6｜更新：Phase-21-7(画面確認後の修正),38-3,44-3,53(完了後の調整)
 // 写経レベル: コア ── 生成・確認・編集・保存の流れを画面越しに確かめる。
 // Phase-44-3:追記 ── ../../test-utils/stageFixtures(impactWith, makeMark)
+// Phase-53(完了後の調整):追記 ── useReviewStore, @/features/design-review/test-utils/reviewFixtures(finding, gate, run, user)
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { FunctionListPanel } from "../FunctionListPanel";
+import { useReviewStore } from "@/features/design-review/review-store";
+import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import {
   impactWith,
@@ -163,5 +166,33 @@ describe("FunctionListPanel", () => {
     expect(screen.getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
     expect(screen.getByLabelText("F-01 の名称").closest("tr")).toHaveAttribute("aria-current", "true");
     useDetailedDesignStore.setState({ impact: null, highlight: null });
+  });
+
+  // Phase-53(完了後の調整):追記
+  it("AI レビューの指摘の対象の処理に、バッジを出す(レビューがオフ・却下なら出さない)", () => {
+    const stages = makeStages({ 1: { state: "reviewing", version: 1, model: makeFunctionList() } });
+    useDetailedDesignStore.setState({ projectId: "p1", stages });
+    useReviewStore.setState({
+      me: reviewUser(),
+      gates: [
+        gate({
+          gate: "stage6",
+          status: "reviewed",
+          run: run({
+            gate: "stage6",
+            findings: [
+              finding({ id: "f1", targets: ["F-01"] }),
+              finding({ id: "f2", targets: ["F-01"], decision: "rejected" }),
+            ],
+          }),
+        }),
+      ],
+    });
+    renderPanel(stages[0]);
+
+    expect(screen.getByLabelText("F-01 の名称").closest("tr")).toContainElement(
+      screen.getByRole("button", { name: "AI レビューの指摘 1件" }),
+    );
+    useReviewStore.setState({ me: null, gates: [] });
   });
 });

@@ -281,7 +281,8 @@ backend/
 | **POST** | `/api/v1/projects/{id}/chat` | チャットメッセージ送信・AI応答取得（SSE）。本文は`{message, card_answers: [{card_id, option}], continue_optional}`(message と card_answers のどちらか一方は要る。Phase 35。`continue_optional`は必須がそろった後に任意の観点を続けるとき。Phase 35 完了後の調整)。応答は本文`data: {"delta"}`・選択肢カード`event: cards`(`data: {"cards": [...]}`)・`data: [DONE]`の順。途中で失敗したときは`event: error`(`data: {code, detail}`)を送って終える(200を返した後のため。発話は保存しない。Phase 15。古いカード・回答済みのカードへの回答は`INVALID_CARD_ANSWER`) | 必要 |
 | **GET** | `/api/v1/projects/{id}/chat` | 特定プロジェクトのチャット履歴取得 | 必要 |
 | **PUT** | `/api/v1/projects/{id}/hearing-points/{key}` | 観点の表の画面から、未決の観点を「対象外(後で決める)」にする(本文`{status: "not_applicable"}`のみ)。LLM は呼ばず、完了判定をその場で表から作り直し、作り直した観点の表を返す。知らないキーは 404、未決でない観点・生成中は 409(Phase 35 完了後の調整) | 必要 |
-| **POST** | `/api/v1/projects/{id}/generate` | 設計書の自動生成トリガー（非同期。簡易ドキュメントモードは4種、詳細設計モードは要件定義・外部設計の2種。生成中は409 `DOC_GENERATION_IN_PROGRESS`。Phase 15） | 必要 |
+| **POST** | `/api/v1/projects/{id}/generate` | 設計書の自動生成トリガー（非同期。簡易ドキュメントモードは4種、詳細設計モードは要件定義・外部設計の2種。生成中は409 `DOC_GENERATION_IN_PROGRESS`。Phase 15。本文の任意の`{start_from}`で再生成の起点を選ぶと、その文書から下流だけを作り直し、上流は表示中の版を入力に使う。モードに無い起点は400 `GENERATION_START_INVALID`、上流の文書が無ければ409 `GENERATION_UPSTREAM_MISSING`。Phase 53 の完了後の調整） | 必要 |
+| **GET** | `/api/v1/projects/{id}/generation-progress` | 生成の進み具合`{targets, done, current}`(作り直す文書・できた文書・今作っている文書)。生成していなければ null。生成の間だけ Redis の`doc_generation:{project_id}`に置き、終わったら消す(保存は今どおり最後にまとめて行う)。Phase 53 の完了後の調整 | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents` | 生成された設計書一覧(doc_typeごとの現在表示中(`is_current`)の版のみ)・内容の取得 | 必要 |
 | **POST** | `/api/v1/projects/{id}/documents/requirements/rows/{req_id}/adopt` | 要件定義書の現在の版の推測の要件を「採用」にする(LLM は呼ばない。同じ版の model と md を書き換え、版は増やさない)。要件が無い・model の無い版は 404 `REQUIREMENT_NOT_FOUND`、推測でない要件・生成中は 409(Phase 36) | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents/{doc_id}/download` | 指定Markdownドキュメントのダウンロード | 必要 |
@@ -535,9 +536,11 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 [外部設計書](external_design.md) 2.11節の内部の方針(Phase 51で確定)。経緯は[`textbook/Phase-51/Phase-51-2.md`](../textbook/Phase-51/Phase-51-2.md)。テーブル・API・マイグレーションは Phase 52 以降の着手時に決める(未確定事項は[`textbook/Phase-51/Phase-51-5.md`](../textbook/Phase-51/Phase-51-5.md))。
 
 * **LLM の取得を役割で分ける**: 生成は今の`get_gemini_llm()`。レビューは`get_review_llm()`(Claude Sonnet)、狭い判定は`get_judge_llm()`(Claude Haiku)。モデル名は設定で替えられる。`langchain-anthropic`を依存に足し、`ANTHROPIC_API_KEY`を設定に足す。構造化出力は`method="json_schema"`(Sonnet 5.5 はツール呼び出しの強制による構造化出力を推奨しない)。偽 LLM にレビューの応答を足す。
-* **レビューの入力と出力**: 入力は文書の md・観点の表・決定的な検証の指摘(Phase 51 の測定の (d) と同じ組み立て。`appendix/stage8-baseline/review.py`)。出力は指摘の一覧(構造化出力)。プロンプトキャッシュを使う(区切りごとに上流の文書を繰り返し送るため)。
+* **レビューの入力と出力**: 入力は文書の md・観点の表・決定的な検証の指摘(Phase 51 の測定の (d) と同じ組み立て。`appendix/stage8-baseline/review.py`)。出力は指摘の一覧(構造化出力)。プロンプトキャッシュは使わず、回にキャッシュの読み書きのトークンを記録して、Phase 58 の測定で入れるかを決める(Phase 52・53 の着手時の決定)。
 * **データ**: レビューの回(プロジェクト・区切り・対象の文書の版・モデル・状態(成功・失敗)・トークン)と指摘(重要度・原因・対象・観点のキー・問題・引用・理由・改善案・採否)を持つ。ユーザーにレビューの設定(初期値オフ)を持たせ、実効値は`is_superuser and 設定`でサーバーが判定する。
-* **区切り**: 文書の生成(`DocGeneratorService`)の終わりで、実効値がオンならレビュー、オフなら今の自己診断。段階6・7 のレビューは段階の承認済みの写しと文書の表示中の版を渡す API で流す。未レビューは「区切りの文書の版(写し)に結んだ成功したレビューの回が無い」で決める。
+* **区切り**: 文書の生成(`DocGeneratorService`)の終わりで、実効値がオンならレビュー、オフなら今の自己診断。段階6・7 のレビューはボタンで流す(`app/review/gates.py`。Phase 53)。段階の区切りは、要件・外部の表示中の版の md と、詳細設計書の md(段階6は01〜06章、段階7は01〜07章 + 実装計画書の md。詳細設計書の出力と同じ組み立て)を渡し、段階の検証の指摘も既知として渡す。回の`targets`は文書の版と段階の承認した版(`{doc_type: 版, "stage:N": 承認した版}`)。区切りの状態は「文書がまだ無い(段階が承認されていない)/ 未レビュー / 実行中 / レビュー済み / 失敗」で、最新の回の`targets`が今の版と一致しなければ未レビュー(承認し直した・文書を作り直した後)。
+* **指摘の関連文書**(Phase 53 の完了後の調整): 指摘に`documents`(直すときに書き換える文書の種類、上流から)を持たせる。レビューのモデルが返し(構造化出力の必須の欄)、その回に渡した文書だけに絞って保存する(`review_findings.documents` JSON。列を足す前の指摘は null で、画面が対象の書き方から推定する)。
+* **API**(Phase 52・53): `PUT /users/me/review-settings`(superuser 以外は403)・`GET /projects/{id}/reviews`(モードの区切りごとの`{gate, ready, status, run}`)・`GET /projects/{id}/reviews/{gate}`(最新の回、`is_current`付き)・`POST /projects/{id}/reviews/{gate}`(受け付けて202、実行はバックグラウンド。403/409/429/502)・`PUT /projects/{id}/reviews/findings/{finding_id}`(採否`{decision: pending/adopted/rejected/held}`。他のプロジェクトの指摘は404)。チャットには件数の一行の知らせだけを出し、指摘はレビューのパネルで見る。
 * **失敗と上限**: レビューの例外は生成を失敗にしない。失敗の回を記録し、自己診断を出す。1日の回数の上限は既存のレート制限(Redis)の仕組みで数える。
 * **差し戻し**: 採用した設計・不整合の指摘から再生成の指示の文をコードが組み立て、今の再生成(文書・段階の部分再生成)に渡す。採用したヒアリングの指摘は`hearing_points`の観点を`open`に戻し、チャットの最初の問いかけに指摘をまとめる。
 * **テスト仕様書**: model(構造化出力)→ md をコードが組み立てる(要件定義書と同じ)。レビューには渡さない。決定的な検証で、Must の要件にテストが無い・存在しない要件 ID や API を指す・異常系のテストが1件も無い API を指摘する。

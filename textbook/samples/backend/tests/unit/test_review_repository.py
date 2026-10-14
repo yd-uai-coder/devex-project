@@ -1,4 +1,4 @@
-# 作成：Phase-52-3
+# 作成：Phase-52-3｜更新：Phase-53(完了後の調整)
 """設計レビューの回と指摘の永続化(ReviewRunRepository・モデル・users の設定の列)のテスト。
 
 SUT は ReviewRunRepository、ドライバは pytest(`db_session` fixture)。スタブ不要 ── 実 DB
@@ -61,6 +61,8 @@ async def test_finish_saves_findings_in_level_order_with_tokens(db_session: Asyn
     assert [f.level for f in loaded.findings] == ["critical", "major", "minor"]
     assert [f.position for f in loaded.findings] == [0, 1, 2]
     assert loaded.findings[1].point_key == "security"
+    # Phase-53(完了後の調整):追記
+    assert loaded.findings[1].documents == ["requirements", "external_design"]
     assert all(f.decision == "pending" for f in loaded.findings)
 
 

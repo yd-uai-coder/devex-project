@@ -1,10 +1,16 @@
-// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3
+// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3,53(完了後の調整)
+// Phase-53(完了後の調整):追記 ── ApiError(@/lib/api/client), getGenerationProgress・DocType・GenerationProgressRead(@/features/documents/api/documentsApi)
 // Phase-15-7:追記 ── getProject(@/features/hearing/api/hearingApi), ProjectMode(@/features/dashboard/api/projects)
 // Phase-36-3:追記 ── adoptRequirement(@/features/documents/api/documentsApi)
 import { create } from "zustand";
+import { ApiError } from "@/lib/api/client";
 import { isCacheFresh } from "@/lib/api/cache";
-import { adoptRequirement, listDocuments } from "@/features/documents/api/documentsApi";
-import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
+import { adoptRequirement, getGenerationProgress, listDocuments } from "@/features/documents/api/documentsApi";
+import type {
+  DocType,
+  GeneratedDocumentRead,
+  GenerationProgressRead,
+} from "@/features/documents/api/documentsApi";
 // triggerGenerationはPhase 3-5(hearingApi.ts)のものをそのまま再利用する
 // (プロジェクトの生成トリガー自体はヒアリング画面の承認・ドキュメント画面の再生成の
 // どちらでも同じ1エンドポイントであり、機能固有のロジックを持たないため)。
@@ -39,7 +45,15 @@ type DocumentsStore = {
   fetchDocuments: (projectId: string, options?: { force?: boolean }) => Promise<void>;
   // Phase-15-7:追記
   fetchProjectMode: (projectId: string) => Promise<void>;
-  regenerate: (projectId: string) => Promise<void>;
+  // Phase-53(完了後の調整)：更新
+  // regenerate: (projectId: string) => Promise<void>;
+  // ↓↓
+  // startFrom は再生成の起点(その文書から下流を作り直す)。省略で全部
+  regenerate: (projectId: string, startFrom?: DocType) => Promise<void>;
+  // Phase-53(完了後の調整):追記
+  // 再生成の進み具合(生成していなければ null)。再生成中に取り直す
+  progress: GenerationProgressRead | null;
+  fetchProgress: (projectId: string) => Promise<void>;
   // useGenerationPollingのcompletedコールバックから呼ぶ。regeneratingを下ろし、
   // 一覧をforce再取得して新しいバージョンを反映する。
   onRegenerationCompleted: (projectId: string) => void;
@@ -55,6 +69,8 @@ const PROJECT_INITIAL = {
   fetchedAt: null,
   regenerating: false,
   regenerateError: null,
+  // Phase-53(完了後の調整):追記
+  progress: null,
   projectMode: null,
   // Phase-36-3:追記
   adoptingId: null,
@@ -71,6 +87,8 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   regenerating: false,
   // Phase-15-8:追記
   regenerateError: null,
+  // Phase-53(完了後の調整):追記
+  progress: null,
   // Phase-15-7:追記
   projectMode: null,
   // Phase-36-3:追記
@@ -104,7 +122,12 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
       const project = await getProject(projectId);
       // Phase-24:追記
       if (get().projectId !== projectId) return;
-      set({ projectMode: project.mode });
+      // Phase-53(完了後の調整)：更新
+      // set({ projectMode: project.mode });
+      // ↓↓
+      // 生成中なら、再生成中として扱う(読み込み直した後・待つ時間の上限の後も、ボタンを押せなくし、
+      // 完了を待ち直す。押すとサーバーは409を返すため)
+      set({ projectMode: project.mode, ...(project.status === "generating" ? { regenerating: true } : {}) });
     } catch {
       // モードが分からなくても文書の表示は続ける(遷移先のリンクを出さないだけ)
       set({ projectMode: null });
@@ -118,12 +141,21 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   //   await triggerGeneration(projectId);
   // },
   // ↓↓
-  regenerate: async (projectId) => {
+  // Phase-53(完了後の調整)：更新
+  // regenerate: async (projectId) => {
+  //   set({ regenerating: true, regenerateError: null });
+  //   try {
+  //     await triggerGeneration(projectId);
+  // ↓↓
+  regenerate: async (projectId, startFrom) => {
     // 押した時点で regenerating にし、ボタンを無効にする(二度押しの防止。バックエンドも生成中は409)
-    set({ regenerating: true, regenerateError: null });
+    set({ regenerating: true, regenerateError: null, progress: null });
     try {
-      await triggerGeneration(projectId);
+      await triggerGeneration(projectId, startFrom);
     } catch (err) {
+      // Phase-53(完了後の調整):追記
+      // すでに生成中(別のタブ・前の再生成の続き)なら失敗にせず、その完了を待つ
+      if (err instanceof ApiError && err.code === "DOC_GENERATION_IN_PROGRESS") return;
       set({
         regenerating: false,
         regenerateError: err instanceof Error ? err.message : "再生成の開始に失敗しました",
@@ -131,8 +163,22 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
     }
   },
 
+  // Phase-53(完了後の調整):追記
+  fetchProgress: async (projectId) => {
+    try {
+      const progress = await getGenerationProgress(projectId);
+      if (get().projectId !== projectId) return;
+      set({ progress });
+    } catch {
+      // 進み具合が取れなくても、完了の検知(プロジェクトの状態)は続ける
+    }
+  },
+
   onRegenerationCompleted: (projectId) => {
-    set({ regenerating: false });
+    // Phase-53(完了後の調整)：更新
+    // set({ regenerating: false });
+    // ↓↓
+    set({ regenerating: false, progress: null });
     void get().fetchDocuments(projectId, { force: true });
   },
 

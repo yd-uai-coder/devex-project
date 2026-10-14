@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整)
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -418,7 +418,33 @@ class ReviewInProgressError(ConflictError):
     code: ClassVar[str | None] = "REVIEW_IN_PROGRESS"
 
 
+# Phase-53-1:追記
+class ReviewFindingNotFoundError(NotFoundError):
+    """プロジェクトに無い(別のプロジェクトの・存在しない)設計レビューの指摘の採否を変えようとした
+    場合に送出する。"""
+
+    code: ClassVar[str | None] = "REVIEW_FINDING_NOT_FOUND"
+
+
 class ReviewDocumentsNotReadyError(ConflictError):
-    """レビューする文書がまだ無い(生成していない)プロジェクトで、レビューを要求した場合に送出する。"""
+    # Phase-53-1：更新
+    # """レビューする文書がまだ無い(生成していない)プロジェクトで、レビューを要求した場合に送出する。"""
+    # ↓↓
+    """レビューの区切りがそろっていない(文書を生成していない・段階が承認されていない・モードに無い
+    区切り)プロジェクトで、レビューを要求した場合に送出する。"""
 
     code: ClassVar[str | None] = "REVIEW_DOCUMENTS_NOT_READY"
+
+
+# Phase-53(完了後の調整):追記
+class GenerationStartInvalidError(BadRequestError):
+    """設計書の再生成の起点が、プロジェクトのモードに無い文書のときに送出する(詳細設計モードの
+    内部設計書など)。"""
+
+    code: ClassVar[str | None] = "GENERATION_START_INVALID"
+
+
+class GenerationUpstreamMissingError(ConflictError):
+    """設計書の再生成の起点より上流の文書がまだ無いときに送出する(上流を入力にして作るため)。"""
+
+    code: ClassVar[str | None] = "GENERATION_UPSTREAM_MISSING"

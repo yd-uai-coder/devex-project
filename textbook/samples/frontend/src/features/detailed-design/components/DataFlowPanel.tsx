@@ -1,4 +1,4 @@
-// 作成：Phase-17-6｜更新：Phase-17-7,17-8,21-7(画面確認後の修正),44-3
+// 作成：Phase-17-6｜更新：Phase-17-7,17-8,21-7(画面確認後の修正),44-3,53(完了後の調整)
 // 写経レベル: コア ── グループの選択を保存してから生成させること、段階の dirty に DFD の未保存の編集も含めること。
 "use client";
 
@@ -6,6 +6,7 @@
 // Phase-17-7:追記 ── @/features/detailed-design/components/DfdEditorTabs.DfdEditorTabs
 // Phase-17-8:追記 ── @/features/detailed-design/components/DataDictionaryTable.DataDictionaryTable
 // Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
+// Phase-53(完了後の調整):追記 ── ReviewFindingBadge(@/features/design-review/components/ReviewFindingBadge), useStageReview(@/features/detailed-design/hooks/useStageReview)
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -17,6 +18,7 @@ import {
 } from "@/features/detailed-design/api/types";
 import { DataDictionaryTable } from "@/features/detailed-design/components/DataDictionaryTable";
 import { DfdEditorTabs } from "@/features/detailed-design/components/DfdEditorTabs";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
@@ -33,6 +35,7 @@ import { useDetailedDesignStore } from "@/features/detailed-design/detailed-desi
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 
 // Phase-17-8：更新
@@ -63,6 +66,8 @@ export function DataFlowPanel({
   const generate = useDetailedDesignStore((s) => s.generate);
   // Phase-44-3:追記
   const impact = useStageImpact(stage.stage);
+  // Phase-53(完了後の調整):追記
+  const review = useStageReview(stage.stage);
 
   const functionList = toFunctionList(stage1Model);
   const saved = toDataFlow(stage.model);
@@ -216,6 +221,8 @@ export function DataFlowPanel({
                       <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>
                         {fn.id}
                         <ImpactBadge mark={impact.mark(elementKey.summary(fn.id))} />
+                        {/* Phase-53(完了後の調整):追記 */}
+                        <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.summary(fn.id))} />
                       </td>
                       <td style={{ ...CELL, minWidth: 140 }}>{fn.name}</td>
                       <td style={{ ...CELL, whiteSpace: "nowrap" }}>{fn.group}</td>
