@@ -1,20 +1,29 @@
-// 作成：Phase-53-4｜更新：Phase-53(完了後の調整)
+// 作成：Phase-53-4｜更新：Phase-53(完了後の調整),54-1,54-4
 "use client";
 
 // Phase-53(完了後の調整):追記 ── documentLegend(@/features/design-review/model)
+// Phase-54-1:追記 ── @/features/design-review/components/RehearingButton.RehearingButton, @/features/design-review/model.adoptedFindings, @/features/design-review/model.followupCounts, @/features/design-review/model.rehearableFindings
 import { useEffect, useState } from "react";
 import { Button, H3, Paragraph, Text, XStack, YStack } from "tamagui";
 import { CELL, HEAD, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { FindingTable } from "@/features/design-review/components/FindingTable";
+// Phase-54-1:追記
+import { RehearingButton } from "@/features/design-review/components/RehearingButton";
 import type { GateStatus, ReviewGate } from "@/features/design-review/api/reviewApi";
 import {
   GATE_LABEL,
   STATUS_TEXT,
   actionLabel,
+  // Phase-54-1:追記
+  adoptedFindings,
   decisionCounts,
   documentLegend,
+  // Phase-54-1:追記
+  followupCounts,
   gateDocuments,
   isRunning,
+  // Phase-54-1:追記
+  rehearableFindings,
   triggerLabel,
 } from "@/features/design-review/model";
 import type { TargetActionOf } from "@/features/design-review/model";
@@ -181,8 +190,15 @@ export function ReviewPanel({
           </div>
 
           {gates.map((g) => {
-            if (!g.run || g.run.status !== "succeeded") return null;
-            const counts = decisionCounts(g.run.findings);
+            // Phase-54-1：更新
+            // if (!g.run || g.run.status !== "succeeded") return null;
+            // const counts = decisionCounts(g.run.findings);
+            // ↓↓
+            const before = g.adopted_before;
+            if ((!g.run || g.run.status !== "succeeded") && before.length === 0) return null;
+            const findings = g.run?.status === "succeeded" ? g.run.findings : [];
+            const counts = decisionCounts(findings);
+            const follow = followupCounts(adoptedFindings(g));
             // Phase-53(完了後の調整):追記
             const open = openGates.has(g.gate);
             return (
@@ -200,34 +216,77 @@ export function ReviewPanel({
                   >
                     {open ? "▼" : "▶"}
                   </Button>
-                  <Text fontWeight="600">{`${GATE_LABEL[g.gate]}の指摘 ${g.run.findings.length}件`}</Text>
+                  // Phase-54-1：更新
+                  // <Text fontWeight="600">{`${GATE_LABEL[g.gate]}の指摘 ${g.run.findings.length}件`}</Text>
+                  // ↓↓
+                  <Text fontWeight="600">{`${GATE_LABEL[g.gate]}の指摘 ${findings.length}件`}</Text>
+                  {follow.adopted > 0 ? (
+                    <Text fontSize="$2" color={follow.unaddressed > 0 ? "$red10" : "$color10"}>
+                      {`採用 ${follow.adopted}(未対応 ${follow.unaddressed})`}
+                    </Text>
+                  ) : null}
                 </XStack>
-                <Paragraph fontSize="$2" color="$color10">
-                  {`採用 ${counts.adopted} ・ 却下 ${counts.rejected} ・ 保留 ${counts.held} ・ 未判断 ${counts.pending}`}
-                  {g.run.is_current ? "" : " ── 文書・段階が変わる前のレビューです(もう一度レビューすると今の版を見ます)"}
-                </Paragraph>
-                {/* Phase-53(完了後の調整)：更新
-                {g.run.findings.length > 0 ? (
-                ↓↓ */}
-                {open && g.run.findings.length > 0 ? (
+                // Phase-54-1：更新
+                // <Paragraph fontSize="$2" color="$color10">
+                //   {`採用 ${counts.adopted} ・ 却下 ${counts.rejected} ・ 保留 ${counts.held} ・ 未判断 ${counts.pending}`}
+                //   {g.run.is_current ? "" : " ── 文書・段階が変わる前のレビューです(もう一度レビューすると今の版を見ます)"}
+                // </Paragraph>
+                // {open && g.run.findings.length > 0 ? (
+                // ↓↓
+                {g.run?.status === "succeeded" ? (
+                  <Paragraph fontSize="$2" color="$color10">
+                    {`採用 ${counts.adopted} ・ 却下 ${counts.rejected} ・ 保留 ${counts.held} ・ 未判断 ${counts.pending}`}
+                    {g.run.is_current ? "" : " ── 文書・段階が変わる前のレビューです(もう一度レビューすると今の版を見ます)"}
+                  </Paragraph>
+                ) : null}
+                {rehearableFindings(g).length > 0 ? (
+                  <RehearingButton projectId={projectId} findings={rehearableFindings(g)} />
+                ) : null}
+                {open && (findings.length > 0 || before.length > 0) ? (
                   <Text fontSize="$1" color="$color10" aria-label="文書の凡例">
                     {`文書: ${documentLegend(g.gate)
                       .map((d) => `${d.letter} ${d.label}`)
                       .join("　")}`}
                   </Text>
                 ) : null}
-                {!open ? null : g.run.findings.length > 0 ? (
+                // Phase-54-1：更新
+                // {!open ? null : g.run.findings.length > 0 ? (
+                // ↓↓
+                {!open ? null : findings.length > 0 ? (
                   <FindingTable
-                    findings={g.run.findings}
+                    // Phase-54-1：更新
+                    // findings={g.run.findings}
+                    // ↓↓
+                    findings={findings}
                     decidingId={decidingId}
                     targetAction={targetAction}
                     onDecide={(findingId, decision) => void decide(projectId, findingId, decision)}
                   />
-                ) : (
+                // Phase-54-1：更新
+                // ) : (
+                // ↓↓
+                ) : g.run?.status === "succeeded" ? (
                   <Text fontSize="$2" color="$color10">
                     指摘はありません。
                   </Text>
-                )}
+                // Phase-54-1：更新
+                // )}
+                // ↓↓
+                ) : null}
+                {open && before.length > 0 ? (
+                  <YStack gap="$1" aria-label={`${GATE_LABEL[g.gate]}の前の回で採用した指摘`}>
+                    <Text fontSize="$2" fontWeight="600">{`前の回で採用した指摘 ${before.length}件`}</Text>
+                    <Text fontSize="$1" color="$color10">
+                      採用した指摘は、作り直しの後のレビューで回が替わってもここで追います(外すときは保留・却下にします)。
+                    </Text>
+                    <FindingTable
+                      findings={before}
+                      decidingId={decidingId}
+                      targetAction={targetAction}
+                      onDecide={(findingId, decision) => void decide(projectId, findingId, decision)}
+                    />
+                  </YStack>
+                ) : null}
               </YStack>
             );
           })}

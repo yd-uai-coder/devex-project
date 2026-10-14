@@ -1,4 +1,4 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38-3,38(完了後の調整),44-3,53-5,53(完了後の調整)
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38-3,38(完了後の調整),44-3,53-5,53(完了後の調整),54-1
 // 注: Phase 28 で大きく書き直したため、旧コードのコメントアウトは要所だけにした(27-3 の版は Phase-27-3 の教材を参照)。
 "use client";
 
@@ -8,11 +8,15 @@
 // Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
 // Phase-53-5:追記 ── @/features/design-review/model.unreviewedNotice, @/features/design-review/review-store.useReviewStore
 // Phase-53(完了後の調整):追記 ── ReviewFindingBadge(@/features/design-review/components/ReviewFindingBadge), useStageReview(@/features/detailed-design/hooks/useStageReview)
+// Phase-54-1:追記 ── @/features/design-review/model.joinNotices, @/features/design-review/model.unaddressedNotice
 import { useEffect, useState } from "react";
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
-import { unreviewedNotice } from "@/features/design-review/model";
+// Phase-54-1：更新
+// import { unreviewedNotice } from "@/features/design-review/model";
+// ↓↓
+import { joinNotices, unaddressedNotice, unreviewedNotice } from "@/features/design-review/model";
 import { useReviewStore } from "@/features/design-review/review-store";
 import {
   FINDING_LEVELS,
@@ -192,7 +196,10 @@ export function ProcedureDocPanel({
   const [confirming, setConfirming] = useState(false);
   // Phase-28-4:追記
   // Phase-53-5:追記
-  // 生成を始めたときの、未レビューの区切りの知らせ(止めはしない)
+  // Phase-54-1：更新
+  // // 生成を始めたときの、未レビューの区切りの知らせ(止めはしない)
+  // ↓↓
+  // 生成を始めたときの、採用したまま直していない指摘・未レビューの区切りの知らせ(止めはしない)
   const [reviewNotice, setReviewNotice] = useState<string | null>(null);
   const reviewEffective = useReviewStore((s) => s.me?.review_effective ?? false);
   const reviewGates = useReviewStore((s) => s.gates);
@@ -232,7 +239,10 @@ export function ProcedureDocPanel({
   const startGeneration = () => {
     setConfirming(false);
     // Phase-53-5:追記
-    setReviewNotice(reviewEffective ? unreviewedNotice(reviewGates) : null);
+    // Phase-54-1：更新
+    // setReviewNotice(reviewEffective ? unreviewedNotice(reviewGates) : null);
+    // ↓↓
+    setReviewNotice(reviewEffective ? joinNotices(unaddressedNotice(reviewGates), unreviewedNotice(reviewGates)) : null);
     void generate(projectId, stage.stage, undefined, undefined, selection);
   };
   const saveBar = (

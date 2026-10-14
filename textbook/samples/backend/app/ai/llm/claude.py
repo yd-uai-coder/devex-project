@@ -1,4 +1,4 @@
-# 作成：Phase-52-2
+# 作成：Phase-52-2｜更新：Phase-54-5
 from functools import lru_cache
 from typing import Any
 
@@ -31,6 +31,29 @@ def get_review_llm() -> Any:
         api_key=SecretStr(settings.ANTHROPIC_API_KEY),
         max_tokens_to_sample=settings.REVIEW_MAX_TOKENS,
         timeout=settings.REVIEW_TIMEOUT_SECONDS,
+        max_retries=0,
+        stop=None,
+    )
+
+
+# Phase-54-5:追記
+@lru_cache
+def get_judge_llm() -> Any:
+    """狭い判定(採用した指摘は直ったか)の LLM(Claude Haiku。モデル名は`settings.JUDGE_MODEL`)。
+
+    対象と問いが決まった判定なので、レビュー(Sonnet)より安いモデルに任せる
+    (docs/external_design.md 2.11節)。E2E・キーが無いときの扱いと、SDK の再試行を切る理由は
+    `get_review_llm`と同じ。
+    """
+    if settings.E2E_FAKE_LLM:
+        return get_e2e_fake_llm()
+    if not settings.ANTHROPIC_API_KEY:
+        raise ReviewUnavailableError("設計レビューのAPIキーが設定されていません。")
+    return ChatAnthropic(
+        model_name=settings.JUDGE_MODEL,
+        api_key=SecretStr(settings.ANTHROPIC_API_KEY),
+        max_tokens_to_sample=settings.JUDGE_MAX_TOKENS,
+        timeout=settings.JUDGE_TIMEOUT_SECONDS,
         max_retries=0,
         stop=None,
     )

@@ -1,4 +1,4 @@
-# 作成：Phase-53(完了後の調整)
+# 作成：Phase-53(完了後の調整)｜更新：Phase-54-2
 """設計書の再生成の起点(その文書から下流を作り直す)と、生成の進み具合のテスト。
 
 SUT: `generation_targets`(純粋関数)・DocGeneratorService(request_generation / generate)・
@@ -183,7 +183,10 @@ async def test_routes_pass_start_and_read_progress(db_session: AsyncSession) -> 
 
     [task] = tasks.tasks
     assert task.func is generate_documents
-    assert task.kwargs == {"start_from": "implementation_plan"}
+    # Phase-54-2：更新
+    # assert task.kwargs == {"start_from": "implementation_plan"}
+    # ↓↓
+    assert task.kwargs == {"start_from": "implementation_plan", "finding_ids": []}
 
     redis = FakeRedis()
     assert await get_generation_progress(redis, project) is None  # type: ignore[arg-type]

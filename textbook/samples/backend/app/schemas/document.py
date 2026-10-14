@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整)
+# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 import uuid
 from datetime import datetime
@@ -88,9 +88,15 @@ class GeneratedDocumentRead(BaseModel):
 
 # Phase-53(完了後の調整):追記
 class GenerationRequest(BaseModel):
-    """設計書の(再)生成の要求。`start_from`は起点(その文書から下流を作り直す)。省略で全部。"""
+    # Phase-54-2：更新
+    # """設計書の(再)生成の要求。`start_from`は起点(その文書から下流を作り直す)。省略で全部。"""
+    # ↓↓
+    """設計書の(再)生成の要求。`start_from`は起点(その文書から下流を作り直す)。省略で全部。
+    `finding_ids`は再生成の指示に入れる、設計レビューの採用した指摘(設計・不整合)。"""
 
     start_from: DocType | None = None
+    # Phase-54-2:追記
+    finding_ids: list[uuid.UUID] = []
 
 
 class GenerationProgressRead(BaseModel):

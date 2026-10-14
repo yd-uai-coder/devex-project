@@ -1,13 +1,17 @@
-# 作成：Phase-52-5｜更新：Phase-53-1,53-2
+# 作成：Phase-52-5｜更新：Phase-53-1,53-2,54-1,54-4,54-5
 # Phase-53-2:追記 ── app.schemas.review(FindingDecisionUpdate, ReviewFindingRead, ReviewGateSummaryRead), app.services.review_service.GateSummary
+# Phase-54-1:追記 ── app.schemas.hearing.HearingPointsRead, app.schemas.review.FixCheckRead, app.schemas.review.RehearingRequest
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, status
 
 from app.api.deps import CurrentProjectDep, CurrentUserDep, RedisDep, SessionDep
 from app.core.database import AsyncSessionLocal
+from app.schemas.hearing import HearingPointsRead
 from app.schemas.review import (
     FindingDecisionUpdate,
+    FixCheckRead,
+    RehearingRequest,
     ReviewFindingRead,
     ReviewGate,
     ReviewGateSummaryRead,
@@ -27,13 +31,35 @@ async def execute_review(run_id: uuid.UUID) -> None:
 
 
 # Phase-53-2:追記
+# Phase-54-1:追記
+def _annotate(finding: ReviewFindingRead, summary: GateSummary) -> ReviewFindingRead:
+    """指摘に、追跡の状態と、今の版についての「直ったか」の判定を付ける。"""
+    finding.followup = summary.followups.get(finding.id)
+    check = summary.fix_checks.get(finding.id)
+    finding.fix_check = FixCheckRead.model_validate(check) if check is not None else None
+    return finding
+
+
 def _summary_read(summary: GateSummary) -> ReviewGateSummaryRead:
     run = None
     if summary.run is not None:
         run = ReviewRunRead.model_validate(summary.run)
         run.is_current = summary.is_current
+        # Phase-54-1:追記
+        for finding in run.findings:
+            _annotate(finding, summary)
+    adopted_before = [
+        _annotate(ReviewFindingRead.model_validate(f), summary) for f in summary.adopted_before
+    ]
     return ReviewGateSummaryRead(
-        gate=summary.gate, ready=summary.ready, status=summary.status, run=run
+        # Phase-54-1：更新
+        # gate=summary.gate, ready=summary.ready, status=summary.status, run=run
+        # ↓↓
+        gate=summary.gate,
+        ready=summary.ready,
+        status=summary.status,
+        run=run,
+        adopted_before=adopted_before,
     )
 
 
@@ -54,8 +80,24 @@ async def decide_finding(
     current_project: CurrentProjectDep,
 ) -> ReviewFindingRead:
     """指摘の採否(採用・却下・保留・未判断)を変える。プロジェクトに無い指摘は404。"""
-    finding = await ReviewService(session).decide(current_project, finding_id, payload.decision)
-    return ReviewFindingRead.model_validate(finding)
+    # Phase-54-1：更新
+    # finding = await ReviewService(session).decide(current_project, finding_id, payload.decision)
+    # return ReviewFindingRead.model_validate(finding)
+    # ↓↓
+    service = ReviewService(session)
+    finding = await service.decide(current_project, finding_id, payload.decision)
+    read = ReviewFindingRead.model_validate(finding)
+    read.followup = await service.followup_of(current_project, finding)
+    return read
+
+
+@router.post("/rehearing", response_model=HearingPointsRead)
+async def request_rehearing(
+    payload: RehearingRequest, session: SessionDep, current_project: CurrentProjectDep
+) -> HearingPointsRead:
+    """採用したヒアリングの指摘の観点を未決に戻し、チャットで聞き直す(最初の問いかけはコードが
+    組み立てる)。作り直した観点の表を返す。"""
+    return await ReviewService(session).rehearing(current_project, payload.finding_ids)
 
 
 @router.get("/{gate}", response_model=ReviewRunRead | None)

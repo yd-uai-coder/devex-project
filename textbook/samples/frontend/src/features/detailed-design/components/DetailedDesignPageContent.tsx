@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -7,17 +7,23 @@
 // Phase-44-2:追記 ── @/features/detailed-design/components/ChangeImpactPanel.ChangeImpactPanel
 // Phase-53-4:追記 ── @/features/design-review/components/ReviewPanel.ReviewPanel, @/features/design-review/model.TargetActionOf, @/features/detailed-design/impactOps.locateTargetStage
 // Phase-53-5:追記 ── tamagui.Button, @/features/design-review/api/reviewApi.ReviewGate, @/features/design-review/model.GATE_LABEL, @/features/design-review/review-store.useReviewStore
+// Phase-54-1:追記 ── @/features/design-review/model.unaddressedNotice, @/features/detailed-design/components/StageSendbackPanel.StageSendbackPanel
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
 import type { ReviewGate } from "@/features/design-review/api/reviewApi";
-import { GATE_LABEL } from "@/features/design-review/model";
+// Phase-54-1：更新
+// import { GATE_LABEL } from "@/features/design-review/model";
+// ↓↓
+import { GATE_LABEL, unaddressedNotice } from "@/features/design-review/model";
 import type { TargetActionOf } from "@/features/design-review/model";
 import { useReviewStore } from "@/features/design-review/review-store";
 import { ChangeImpactPanel } from "@/features/detailed-design/components/ChangeImpactPanel";
 import { DesignDocumentBar } from "@/features/detailed-design/components/DesignDocumentBar";
+// Phase-54-1:追記
+import { StageSendbackPanel } from "@/features/detailed-design/components/StageSendbackPanel";
 import { StageStepper } from "@/features/detailed-design/components/StageStepper";
 import { StageWorkArea } from "@/features/detailed-design/components/StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
@@ -52,6 +58,8 @@ export function DetailedDesignPageContent({
   // Phase-53-5:追記
   const reviewEffective = useReviewStore((s) => s.me?.review_effective ?? false);
   const runReview = useReviewStore((s) => s.runReview);
+  // Phase-54-1:追記
+  const reviewGates = useReviewStore((s) => s.gates);
   // Phase-18-9:追記
   // 承認を終えた段階(完了のダイアログを出している間だけ値を持つ。Phase 18)
   const [approvedStage, setApprovedStage] = useState<number | null>(null);
@@ -139,6 +147,9 @@ export function DetailedDesignPageContent({
       {stages.length > 0 ? (
         <ReviewPanel projectId={projectId} targetAction={targetAction} refreshKey={stagesKey} />
       ) : null}
+      // Phase-54-1:追記
+      {/* 差し戻し: 段階6・7 の採用した指摘で段階を作り直す(レビューがオンで、採用した指摘があるときだけ) */}
+      {stages.length > 0 && !simple ? <StageSendbackPanel projectId={projectId} /> : null}
 
       {stages.length > 0 ? (
         <XStack gap="$5" alignItems="flex-start" flexWrap="wrap">
@@ -194,6 +205,11 @@ export function DetailedDesignPageContent({
             // 説明は段落の中に出るので、ブロック要素(XStack など)を入れない
             <>
               {`段階${approvedStage}-${STAGE_TITLES[approvedStage] ?? ""}を承認しました。`}
+              // Phase-54-1:追記
+              {/* 段階6・7 の承認では、採用したまま直していない指摘を知らせる(止めはしない) */}
+              {reviewEffective && (approvedStage === 6 || approvedStage === 7) && unaddressedNotice(reviewGates)
+                ? ` ${unaddressedNotice(reviewGates)}`
+                : null}
               {reviewGate !== null ? (
                 <>
                   {reviewGate === "stage6"

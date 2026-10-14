@@ -1,4 +1,4 @@
-# 更新：Phase-4-3,6-5,15-4,52-2
+# 更新：Phase-4-3,6-5,15-4,52-2,54-5
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。本Phaseまで
 # サンプルとして写経対象になったことが無く、今回が初めてのsamples反映(以下は差分のみでなく
 # 全文)。E2E_FAKE_LLM・LLM_TIMEOUT_SECONDS以外はdevex-api/backend/app/core/config.pyの
@@ -79,6 +79,14 @@ class Settings(BaseSettings):
     REVIEW_MAX_TOKENS: int = 16000
     # superuser ごとの1日のレビューの回数の上限(費用を抑えるため)
     REVIEW_RATE_LIMIT_PER_DAY: int = 20
+    # Phase-54-5:追記
+    # 狭い判定(採用した指摘は直ったか)のモデル(Claude Haiku)。入力は指摘と対象の行だけで小さい
+    JUDGE_MODEL: str = "claude-haiku-5-5"
+    JUDGE_TIMEOUT_SECONDS: float = 60.0
+    JUDGE_MAX_TOKENS: int = 1000
+    # 1回の生成・承認の後に判定する指摘の数と、superuser ごとの1日の判定の回数の上限
+    JUDGE_MAX_PER_RUN: int = 10
+    JUDGE_RATE_LIMIT_PER_DAY: int = 200
 
     # Phase-4-3:追記 ── trueの場合、get_gemini_llm()は実際のGemini APIを呼ばず、
     # app/ai/llm/fake.pyの決定論的なE2eFakeLLMを返す(ブラウザE2Eテストを無料・高速・

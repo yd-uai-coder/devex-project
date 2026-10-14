@@ -1,12 +1,20 @@
-# 作成：Phase-52-5｜更新：Phase-53-2,53(完了後の調整)
+# 作成：Phase-52-5｜更新：Phase-53-2,53(完了後の調整),54-1,54-4,54-5
 # Phase-53-2:追記 ── app.review(GateStatus, ReviewGate)(ReviewGate は app/review/gates.py へ移した)
+# Phase-54-1:追記 ── app.review.FixVerdict, app.review.FollowupState
 import uuid
 from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from app.review import GateStatus, ReviewCause, ReviewGate, ReviewLevel
+from app.review import (
+    FixVerdict,
+    FollowupState,
+    GateStatus,
+    ReviewCause,
+    ReviewGate,
+    ReviewLevel,
+)
 
 # Phase-53-2：更新
 # # レビューの区切り(今は文書の生成の後だけ。段階6・7の承認の後は後で足す)
@@ -18,11 +26,29 @@ FindingDecision = Literal["pending", "adopted", "rejected", "held"]
 __all__ = [
     "FindingDecision",
     "FindingDecisionUpdate",
+    # Phase-54-1:追記
+    "FixCheckRead",
+    "FollowupState",
+    "RehearingRequest",
     "ReviewFindingRead",
     "ReviewGate",
     "ReviewGateSummaryRead",
     "ReviewRunRead",
 ]
+
+
+# Phase-54-1:追記
+class FixCheckRead(BaseModel):
+    """採用した指摘が直ったかの判定(app/models/review.py の ReviewFixCheck。シャドーモード)。
+    今の版について判定したものだけを返す。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    verdict: FixVerdict | None
+    reason: str
+    model: str
+    error_code: str | None
+    created_at: datetime
 
 
 class ReviewFindingRead(BaseModel):
@@ -47,6 +73,13 @@ class ReviewFindingRead(BaseModel):
     # decision: str
     # ↓↓
     decision: FindingDecision
+    # Phase-54-1:追記
+    # 採用した指摘の追跡(unaddressed = 関連文書・段階の版が変わっていない / target_unchanged =
+    # 版は変わったが対象の行が変わっていない / changed = 対象が変わった・比べられない)。
+    # 採用していない指摘は null
+    followup: FollowupState | None = None
+    # 今の版についての「直ったか」の判定(判定していなければ null)
+    fix_check: FixCheckRead | None = None
 
 
 class ReviewRunRead(BaseModel):
@@ -74,12 +107,21 @@ class ReviewRunRead(BaseModel):
 class ReviewGateSummaryRead(BaseModel):
     """区切り1つ分の状態(レビューのパネルの区切りの表)。`ready`は区切りの文書がそろっているか、
     `status`は not_ready / unreviewed / running / reviewed / failed、`run`は最新の回
-    (無ければ null)。"""
+    (無ければ null)、`adopted_before`は前の回で採用した指摘。"""
 
     gate: ReviewGate
     ready: bool
     status: GateStatus
     run: ReviewRunRead | None
+    # Phase-54-1:追記
+    # 前の回で採用した指摘(新しい回から。追跡の状態付き)
+    adopted_before: list[ReviewFindingRead] = []
+
+
+class RehearingRequest(BaseModel):
+    """聞き直しの要求。`finding_ids`は採用したヒアリングの指摘。"""
+
+    finding_ids: list[uuid.UUID]
 
 
 class FindingDecisionUpdate(BaseModel):

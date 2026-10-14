@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整)
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 # Phase-52-2:追記 ── app.review.schemas.ReviewFindingOut, app.review.schemas.ReviewOutput
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
@@ -16,6 +16,7 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 # Phase-36-2:追記 ── app.documents.requirements.drafting(GeneratedRequirement, GeneratedUserScene, RequirementsGenerationOutput)
 # Phase-37-2:追記 ── app.documents.external_design.drafting(ExternalDesignGenerationOutput, GeneratedApi, GeneratedScreen)
 # Phase-45-3:追記 ── app.documents.implementation_plan.drafting(plan_doc), app.documents.internal_design.drafting(internal_doc)
+# Phase-54-5:追記 ── app.review.fix_check.FixCheckOut
 from __future__ import annotations
 
 # Phase-10-5:追記 ── app.uml.generation.schemas(UML生成の出力スキーマ一式)
@@ -90,6 +91,7 @@ from app.documents.requirements.drafting import (
     RequirementsGenerationOutput,
 )
 from app.hearing import POINT_DEFS, is_point_key
+from app.review.fix_check import FixCheckOut
 from app.review.schemas import ReviewFindingOut, ReviewOutput
 from app.schemas.hearing import (
     CardOptionOut,
@@ -781,6 +783,10 @@ _REVIEW_OUTPUT = ReviewOutput(
     ]
 )
 
+# Phase-54-5:追記
+# 採用した指摘が直ったかの判定の偽物
+_FIX_CHECK_OUTPUT = FixCheckOut(verdict="fixed", reason="[E2E Fake] 指摘の対象が直っている")
+
 _HEARING_REPLY = "[E2E Fake] 承知しました。次に、想定している主なユーザー層を教えてください。"
 _SELF_DIAGNOSIS_REPLY = "[E2E Fake] 自己診断: 特に致命的な不足点はありません。"
 
@@ -969,6 +975,9 @@ class _FakeStructuredE2e:
         # Phase-52-2:追記
         if self._schema is ReviewOutput:
             return _REVIEW_OUTPUT
+        # Phase-54-5:追記
+        if self._schema is FixCheckOut:
+            return _FIX_CHECK_OUTPUT
         # ヒアリング・UML生成スキーマ以外のスキーマが追加された場合は
         # 「対応漏れ」に気づけるよう黙って汎用値を返さず例外にする。
         raise NotImplementedError(f"E2eFakeLLMが未対応のスキーマ: {self._schema}")

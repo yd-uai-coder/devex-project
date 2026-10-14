@@ -1,13 +1,22 @@
-// 作成：Phase-53-3｜更新：Phase-53-4,53(完了後の調整)
+// 作成：Phase-53-3｜更新：Phase-53-4,53(完了後の調整),54-1,54-2,54-4,54-5
 // AI 設計レビューの画面の意味モデル(純粋関数)。見せ方はデモ /design-review-demo で決めたもの。
 //
 // レビューは別のモデル(Sonnet)が指摘だけを返し、設計は書き換えない。人が指摘ごとに採用・却下・保留を
-// 付ける(採用した指摘を再生成・聞き直しに使うのは Phase 54)。区切りは、文書の生成の後(自動)と、
-// 詳細設計モードの段階6・7の承認の後(ボタン)。
+// Phase-54-1：更新
+// // 付ける(採用した指摘を再生成・聞き直しに使うのは Phase 54)。区切りは、文書の生成の後(自動)と、
+// // 詳細設計モードの段階6・7の承認の後(ボタン)。
+// ↓↓
+// 付け、採用した指摘を再生成の指示・聞き直しに使う。採用した指摘は、直したか(関連文書・段階の版と対象の
+// 行が変わったか)を追う。区切りは、文書の生成の後(自動)と、詳細設計モードの段階6・7の承認の後(ボタン)。
 
+// Phase-54-1:追記 ── @/features/design-review/api/reviewApi.FixCheckRead, @/features/design-review/api/reviewApi.FixVerdict, @/features/design-review/api/reviewApi.FollowupState
 import type { DocType } from "@/features/documents/api/documentsApi";
 import type {
   FindingDecision,
+  // Phase-54-1:追記
+  FixCheckRead,
+  FixVerdict,
+  FollowupState,
   GateStatus,
   ReviewCause,
   ReviewFindingRead,
@@ -124,4 +133,78 @@ export function findingDocuments(finding: ReviewFindingRead): { letters: string[
   if (finding.documents !== null) return { letters: toLetters(finding.documents), inferred: false };
   const guessed = finding.targets.map(documentOfTarget).filter((d): d is DocType => d !== null);
   return { letters: toLetters(guessed), inferred: true };
+}
+
+// Phase-54-1:追記
+// 採用した指摘の追跡の見せ方(未対応 赤・対象が変わっていない 橙・変更あり 灰)
+export const FOLLOWUP_LABEL: Record<FollowupState, string> = {
+  unaddressed: "未対応",
+  target_unchanged: "対象が変わっていない",
+  changed: "変更あり",
+};
+
+// 区切りの採用した指摘(最新の回 + 前の回で採用した指摘)
+export function adoptedFindings(gate: ReviewGateSummaryRead): ReviewFindingRead[] {
+  const latest = gate.run?.status === "succeeded" ? gate.run.findings : [];
+  return [...latest.filter((f) => f.decision === "adopted"), ...gate.adopted_before];
+}
+
+// 採用した指摘の数と、そのうち未対応の数
+export function followupCounts(findings: ReviewFindingRead[]): { adopted: number; unaddressed: number } {
+  const adopted = findings.filter((f) => f.decision === "adopted");
+  return { adopted: adopted.length, unaddressed: adopted.filter((f) => f.followup === "unaddressed").length };
+}
+
+// 手順書の生成・段階6・7 の承認のときの知らせ(止めはしない)。未対応の採用した指摘がある区切りを挙げる
+export function unaddressedNotice(gates: ReviewGateSummaryRead[]): string | null {
+  const parts = gates
+    .map((g) => ({ gate: g.gate, count: followupCounts(adoptedFindings(g)).unaddressed }))
+    .filter((p) => p.count > 0)
+    .map((p) => `${GATE_LABEL[p.gate]} ${p.count}件`);
+  if (parts.length === 0) return null;
+  return `採用したまま直していない指摘があります(${parts.join("・")})。`;
+}
+
+// 指摘の関連文書(レビューが返したもの。無い古い指摘は対象の書き方から推定)
+export function relatedDocuments(finding: ReviewFindingRead): string[] {
+  if (finding.documents !== null) return finding.documents;
+  return finding.targets.map(documentOfTarget).filter((d): d is DocType => d !== null);
+}
+
+// 再生成の指示に入れられる指摘(区切りの採用した指摘のうち、ヒアリングが原因でないもの。ヒアリングの
+// 指摘は聞き直しで直す)
+export function regenerableFindings(gate: ReviewGateSummaryRead): ReviewFindingRead[] {
+  return adoptedFindings(gate).filter((f) => f.cause !== "hearing");
+}
+
+// 聞き直しに使える指摘(区切りの採用した指摘のうち、ヒアリングが原因で観点のキーのあるもの)
+export function rehearableFindings(gate: ReviewGateSummaryRead): ReviewFindingRead[] {
+  return adoptedFindings(gate).filter((f) => f.cause === "hearing" && f.point_key !== null);
+}
+
+// 再生成の起点の初期値: 未対応の採用した指摘の関連文書のうち、最も上流のもの(`docTypes`は上流からの並び)。
+// 当たらなければ null(呼び出し側の既定のまま)
+export function regenerationStartFor(findings: ReviewFindingRead[], docTypes: DocType[]): DocType | null {
+  const related = new Set(
+    findings.filter((f) => f.decision === "adopted" && f.followup === "unaddressed").flatMap(relatedDocuments),
+  );
+  return docTypes.find((d) => related.has(d)) ?? null;
+}
+
+// 知らせをつなぐ(無いものは飛ばす。どれも無ければ null)
+export function joinNotices(...notices: (string | null)[]): string | null {
+  const present = notices.filter((n): n is string => n !== null);
+  return present.length > 0 ? present.join(" ") : null;
+}
+
+// 「直ったか」の判定の見せ方(記録だけのシャドーモードなので、追跡のチップの横に小さく出す)
+export const VERDICT_LABEL: Record<FixVerdict, string> = {
+  fixed: "直った",
+  partial: "一部",
+  not_fixed: "いいえ",
+  unsure: "自信なし",
+};
+
+export function fixCheckText(check: FixCheckRead): string {
+  return check.verdict === null ? "AI: 判定に失敗" : `AI: ${VERDICT_LABEL[check.verdict]}`;
 }

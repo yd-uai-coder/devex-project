@@ -1,4 +1,4 @@
-# 作成：Phase-45-2｜更新：Phase-49-3
+# 作成：Phase-45-2｜更新：Phase-49-3,54-2
 """実装計画書の AI の下書きの入出力(純粋関数)。
 
 AI には要件定義書・内部設計書から、マイルストーンとタスク(実装手順書の作業単位)の行と本文の節を
@@ -9,6 +9,7 @@ AI には要件定義書・内部設計書から、マイルストーンとタ�
 """
 
 # Phase-49-3:追記 ── collections.abc.Sequence, app.documents.implementation_plan.model.ImplementationPlanModel, app.documents.revision.REVISION_RULE, UNCHANGED_DESCRIPTION, changed_rows_text, rows_text
+# Phase-54-2:追記 ── app.documents.revision.instruction_text
 from collections.abc import Sequence
 from typing import Literal
 
@@ -26,6 +27,7 @@ from app.documents.revision import (
     REVISION_RULE,
     UNCHANGED_DESCRIPTION,
     changed_rows_text,
+    instruction_text,
     rows_text,
 )
 
@@ -128,6 +130,8 @@ def build_implementation_plan_messages(
     internal_design_md: str,
     previous: ImplementationPlanModel | None = None,
     changed_upstream: Sequence[str] = (),
+    # Phase-54-2:追記
+    instruction: str = "",
 ) -> list[BaseMessage]:
     # Phase-49-3：更新
     # human = f"## 要件定義書\n{requirements_md}\n\n## 内部設計書\n{internal_design_md}"
@@ -136,6 +140,8 @@ def build_implementation_plan_messages(
     human = (
         f"## 前の版のタスク\n{rows_text(tasks)}\n\n"
         f"## 上流の変わった行\n{changed_rows_text(changed_upstream)}\n\n"
+        # Phase-54-2:追記
+        f"## 修正指示\n{instruction_text(instruction)}\n\n"
         f"## 要件定義書\n{requirements_md}\n\n## 内部設計書\n{internal_design_md}"
     )
     return [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=human)]

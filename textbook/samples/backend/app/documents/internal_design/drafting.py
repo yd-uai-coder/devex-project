@@ -1,4 +1,4 @@
-# 作成：Phase-45-1｜更新：Phase-49-3
+# 作成：Phase-45-1｜更新：Phase-49-3,54-2
 """内部設計書の AI の下書きの入出力(純粋関数)。
 
 AI には要件定義書・外部設計書から、テーブル・API・モジュール・処理別データフローの行と本文の節を
@@ -8,6 +8,7 @@ AI には要件定義書・外部設計書から、テーブル・API・モジ�
 """
 
 # Phase-49-3:追記 ── collections.abc.Sequence, app.documents.internal_design.model.InternalDesignModel, app.documents.revision.REVISION_RULE, UNCHANGED_DESCRIPTION, changed_rows_text, rows_text
+# Phase-54-2:追記 ── app.documents.revision.instruction_text
 from collections.abc import Sequence
 from typing import Literal
 
@@ -29,6 +30,7 @@ from app.documents.revision import (
     REVISION_RULE,
     UNCHANGED_DESCRIPTION,
     changed_rows_text,
+    instruction_text,
     rows_text,
 )
 
@@ -162,6 +164,8 @@ def build_internal_design_messages(
     external_design_md: str,
     previous: InternalDesignModel | None = None,
     changed_upstream: Sequence[str] = (),
+    # Phase-54-2:追記
+    instruction: str = "",
 ) -> list[BaseMessage]:
     # Phase-49-3：更新
     # human = f"## 要件定義書\n{requirements_md}\n\n## 外部設計書\n{external_design_md}"
@@ -173,6 +177,8 @@ def build_internal_design_messages(
         f"## 前の版のモジュール\n{rows_text(prev.modules)}\n\n"
         f"## 前の版の処理別データフロー\n{rows_text(prev.dataflows)}\n\n"
         f"## 上流の変わった行\n{changed_rows_text(changed_upstream)}\n\n"
+        # Phase-54-2:追記
+        f"## 修正指示\n{instruction_text(instruction)}\n\n"
         f"## 要件定義書\n{requirements_md}\n\n## 外部設計書\n{external_design_md}"
     )
     return [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=human)]

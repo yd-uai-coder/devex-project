@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-6,15-7,15-8,24(完了後の調整),36-3,53(完了後の調整)
+// 作成：Phase-3-6｜更新：Phase-6-6,15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDocumentsStore } from "../documents-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
@@ -102,6 +102,15 @@ describe("useDocumentsStore", () => {
 
     expect(JSON.parse(String(stub.requests[0].init?.body))).toEqual({ start_from: "internal_design" });
     expect(stub.requests[1].init?.body).toBeUndefined();
+  });
+
+  // Phase-54-2:追記
+  it("regenerate()に採用した指摘を渡すと本文の finding_ids で送る", async () => {
+    stub.queue({ status: 202, body: null });
+
+    await useDocumentsStore.getState().regenerate("p1", undefined, ["f1", "f2"]);
+
+    expect(JSON.parse(String(stub.requests[0].init?.body))).toEqual({ finding_ids: ["f1", "f2"] });
   });
 
   it("fetchProgress()は進み具合を読み、完了したら消す", async () => {

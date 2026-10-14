@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3,28-3,28-4,29-4,30-5,30-7,44-1
+// 作成：Phase-15-6｜更新：Phase-16-5,18-5,20-4,21-4,22-6,27-3,28-3,28-4,29-4,30-5,30-7,44-1,54-3
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-21-4:追記 ── ./types.LogicTarget
 // Phase-22-6:追記 ── @/lib/api/download(fetchAttachment, parseFilename)
@@ -77,6 +77,8 @@ export function approveDesignStage(
 // }
 // ↓↓
 // 段階8は unitIds で手順書を作る単位を選べる(省略すると、段階7の単位のうち手順書の無いもの。Phase 28)。
+// Phase-54-3:追記
+// findingIds は修正指示に入れる、AI 設計レビューの採用した指摘(設計・不整合)。
 export function generateDesignStage(
   projectId: string,
   stage: number,
@@ -84,19 +86,26 @@ export function generateDesignStage(
   logics?: LogicTarget[],
   // Phase-28-3:追記
   unitIds?: string[],
+  // Phase-54-3:追記
+  findingIds: string[] = [],
 ): Promise<DesignStageRead> {
   const body = {
     ...(functionIds ? { function_ids: functionIds } : {}),
     ...(logics ? { logics } : {}),
     // Phase-28-3:追記
     ...(unitIds ? { unit_ids: unitIds } : {}),
+    // Phase-54-3:追記
+    ...(findingIds.length > 0 ? { finding_ids: findingIds } : {}),
   };
   return apiFetch<DesignStageRead>(`${base(projectId)}/${stage}/generate`, {
     method: "POST",
     // Phase-28-3：更新
     // ...(functionIds || logics ? { body: JSON.stringify(body) } : {}),
     // ↓↓
-    ...(functionIds || logics || unitIds ? { body: JSON.stringify(body) } : {}),
+    // Phase-54-3：更新
+    // ...(functionIds || logics || unitIds ? { body: JSON.stringify(body) } : {}),
+    // ↓↓
+    ...(Object.keys(body).length > 0 ? { body: JSON.stringify(body) } : {}),
   });
 }
 

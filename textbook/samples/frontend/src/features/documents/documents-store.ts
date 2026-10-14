@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3,53(完了後の調整)
+// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2
 // Phase-53(完了後の調整):追記 ── ApiError(@/lib/api/client), getGenerationProgress・DocType・GenerationProgressRead(@/features/documents/api/documentsApi)
 // Phase-15-7:追記 ── getProject(@/features/hearing/api/hearingApi), ProjectMode(@/features/dashboard/api/projects)
 // Phase-36-3:追記 ── adoptRequirement(@/features/documents/api/documentsApi)
@@ -49,7 +49,11 @@ type DocumentsStore = {
   // regenerate: (projectId: string) => Promise<void>;
   // ↓↓
   // startFrom は再生成の起点(その文書から下流を作り直す)。省略で全部
-  regenerate: (projectId: string, startFrom?: DocType) => Promise<void>;
+  // Phase-54-2：更新
+  // regenerate: (projectId: string, startFrom?: DocType) => Promise<void>;
+  // ↓↓
+  // findingIds: 再生成の指示に入れる、AI 設計レビューの採用した指摘
+  regenerate: (projectId: string, startFrom?: DocType, findingIds?: string[]) => Promise<void>;
   // Phase-53(完了後の調整):追記
   // 再生成の進み具合(生成していなければ null)。再生成中に取り直す
   progress: GenerationProgressRead | null;
@@ -147,11 +151,17 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   //   try {
   //     await triggerGeneration(projectId);
   // ↓↓
-  regenerate: async (projectId, startFrom) => {
+  // Phase-54-2：更新
+  // regenerate: async (projectId, startFrom) => {
+  // ↓↓
+  regenerate: async (projectId, startFrom, findingIds = []) => {
     // 押した時点で regenerating にし、ボタンを無効にする(二度押しの防止。バックエンドも生成中は409)
     set({ regenerating: true, regenerateError: null, progress: null });
     try {
-      await triggerGeneration(projectId, startFrom);
+      // Phase-54-2：更新
+      // await triggerGeneration(projectId, startFrom);
+      // ↓↓
+      await triggerGeneration(projectId, startFrom, findingIds);
     } catch (err) {
       // Phase-53(完了後の調整):追記
       // すでに生成中(別のタブ・前の再生成の続き)なら失敗にせず、その完了を待つ

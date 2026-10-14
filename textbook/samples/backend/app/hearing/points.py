@@ -1,4 +1,4 @@
-# 作成：Phase-34-1｜更新：Phase-35(完了後の調整),36-1,39-1,47-1
+# 作成：Phase-34-1｜更新：Phase-35(完了後の調整),36-1,39-1,47-1,54-4
 # Phase-39-1：更新(docstring: 「採用」とチャットで確かめる観点は、利用者の発言が根拠のときだけ取り込む)
 """ヒアリングの観点の表(純粋関数)。
 
@@ -13,8 +13,9 @@ docs/internal_design.md 3.3節「観点の定義はコードに持つ」。観�
 """
 
 # Phase-39-1:追記 ── collections.abc.Collection
+# Phase-54-4:追記 ── dataclasses.replace
 from collections.abc import Collection, Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal, get_args
 
 Scale = Literal["personal", "internal", "public"]
@@ -312,12 +313,20 @@ _DEFS_BY_KEY: dict[str, PointDef] = {d.key: d for d in POINT_DEFS}
 
 @dataclass(frozen=True)
 class PointState:
-    """観点1つの状態。`evidence`は根拠の発言(`chat_histories.id`の文字列)。"""
+    # Phase-54-4：更新
+    # """観点1つの状態。`evidence`は根拠の発言(`chat_histories.id`の文字列)。"""
+    # ↓↓
+    """観点1つの状態。`evidence`は根拠の発言(`chat_histories.id`の文字列)。`reopened_after`は、
+    設計レビューの指摘で未決に戻したときの聞き直しの発言(`chat_histories.id`の文字列)。未決に
+    戻した観点は、それより後の利用者の発言を根拠にしないと決まったことにしない(前の答えで、
+    すぐに決まったことに戻らないように)。"""
 
     key: PointKey
     status: PointStatus
     summary: str
     evidence: tuple[str, ...] = ()
+    # Phase-54-4:追記
+    reopened_after: str | None = None
 
 
 @dataclass(frozen=True)
@@ -419,8 +428,11 @@ def merge_judgement(
     judged: Iterable[JudgedPoint],
     *,
     user_messages: Collection[str],
+    # Phase-54-4:追記
+    after_reopen: Mapping[str, Collection[str]] | None = None,
 ) -> dict[str, PointState]:
-    """判定の LLM の結果を、前の表に取り込む。`user_messages`は利用者の発言(sender='user')の id。
+    """判定の LLM の結果を、前の表に取り込む。`user_messages`は利用者の発言(sender='user')の id、
+    `after_reopen`は未決に戻した観点ごとの、聞き直しより後の利用者の発言の id。
 
     - 知らない観点のキー・状態は捨てる。返らなかった観点は前の状態のまま。
     - 未決以外(決定・採用・対象外)は、根拠の発言が1つ以上あるときだけ取り込む。根拠が無ければ
@@ -429,7 +441,10 @@ def merge_judgement(
       あるときだけ取り込む。初期入力・添付は AI の提案に同意できないので、それだけを根拠にした
       採用は推測と同じ。規模・技術スタックは、初期入力に一部が書いてあっても利用者に確かめる。
     - 未決は根拠が無くても取り込む(利用者が決めたことを取り消した場合)。
+    - 設計レビューの指摘で未決に戻した観点(`reopened_after`)は、聞き直しより後の利用者の発言が
+      根拠にあるときだけ未決以外にする。未決のままなら、戻した印を引き継ぐ。
     """
+    after_reopen = after_reopen or {}
     merged: dict[str, PointState] = initial_states()
     for key, state in previous.items():
         if is_point_key(key):
@@ -444,6 +459,13 @@ def merge_judgement(
         )
         if needs_user and not any(e in user_messages for e in state.evidence):
             continue
+        # Phase-54-4:追記
+        reopened = merged[state.key].reopened_after
+        if reopened is not None:
+            if state.status == "open":
+                state = replace(state, reopened_after=reopened)
+            elif not any(e in after_reopen.get(state.key, ()) for e in state.evidence):
+                continue
         merged[state.key] = state
     return merged
 

@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4,30-5,30-7,31-4,43-4
+# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4,30-5,30-7,31-4,43-4,54-3,54-5
 # 写経レベル: 定型 ── サービスを呼ぶだけの薄いルート。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、実装手順書の zip を作れること)
 # Phase-16-4:追記 ── fastapi.BackgroundTasks, fastapi.status, app.services.design_stage_generation_service.DesignStageGenerationService, app.services.design_stage_generation_service.run_design_stage_generation
@@ -10,13 +10,15 @@
 # Phase-30-5:追記 ── app.schemas.design_stage.UnitAiMarkdownRead
 # Phase-30-7:追記 ── app.services.detailed_design_export_service.BundleFile
 # Phase-43-4:追記 ── app.schemas.design_stage(DesignImpactRead, ImpactReview, StageImpactRead)
+# Phase-54-3:追記 ── app.api.deps.CurrentUserDep, app.review.review_effective, app.services.fix_check_service.run_fix_checks
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Path, status
 from fastapi.responses import Response
 
-from app.api.deps import CurrentProjectDep, SessionDep
+from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
 from app.api.responses import content_disposition
+from app.review import review_effective
 from app.schemas.design_stage import (
     DesignImpactRead,
     DesignStageApprove,
@@ -35,6 +37,7 @@ from app.services.design_stage_generation_service import (
 )
 from app.services.design_stage_service import DesignStageService
 from app.services.detailed_design_export_service import BundleFile, DetailedDesignExportService
+from app.services.fix_check_service import run_fix_checks
 
 # UMLと同じく、プロジェクト配下の独立したサブツリーとしてprefixにproject_idを含める
 router = APIRouter(prefix="/projects/{project_id}/design-stages", tags=["design-stages"])
@@ -161,7 +164,7 @@ async def generate_design_stage(
     段階は「生成中」になり、終わると`completed`/`failed`になる。background taskには値だけを渡す
     (doc生成・UML図の生成と同じ理由)。段階5は、本文の`function_ids`で下書きを作る処理を選べる。
     段階6は、本文の`logics`で下書きを作る関数を選べる。段階8は、本文の`unit_ids`で手順書を作る
-    作業単位を選べる。"""
+    作業単位を選べる。`finding_ids`(設計レビューの採用した指摘)は修正指示にして生成に渡す。"""
     # Phase-20-3：更新
     # accepted = await DesignStageGenerationService(session).request_generation(
     #     current_project, stage=stage
@@ -190,11 +193,21 @@ async def generate_design_stage(
         if payload is not None and payload.logics is not None
         else None
     )
+    # Phase-54-3:追記
+    finding_ids = payload.finding_ids if payload is not None else []
     accepted = await DesignStageGenerationService(session).request_generation(
         # Phase-28-2：更新
         # current_project, stage=stage, function_ids=function_ids, logics=logics
         # ↓↓
-        current_project, stage=stage, function_ids=function_ids, logics=logics, unit_ids=unit_ids
+        # Phase-54-3：更新
+        # current_project, stage=stage, function_ids=function_ids, logics=logics, unit_ids=unit_ids
+        # ↓↓
+        current_project,
+        stage=stage,
+        function_ids=function_ids,
+        logics=logics,
+        unit_ids=unit_ids,
+        finding_ids=finding_ids,
     )
     background_tasks.add_task(
         run_design_stage_generation,
@@ -205,6 +218,7 @@ async def generate_design_stage(
         logics,
         # Phase-28-2:追記
         unit_ids,
+        finding_ids,
     )
     # ── ここから Phase-16-4 の作成分 ──
     return accepted
@@ -229,12 +243,27 @@ async def approve_design_stage(
     payload: DesignStageApprove,
     session: SessionDep,
     current_project: CurrentProjectDep,
+    # Phase-54-5:追記
+    current_user: CurrentUserDep,
+    background_tasks: BackgroundTasks,
 ) -> DesignStageRead:
     """段階を承認する(古い段階は、内容を変えずに承認し直せる)。他の段階・文書の変更から届いた
-    見直しの印が未確認なら409(`DESIGN_STAGE_UNREVIEWED_IMPACT`。Phase 43-4)。"""
-    return await DesignStageService(session).approve(
+    見直しの印が未確認なら409(`DESIGN_STAGE_UNREVIEWED_IMPACT`)。設計レビューがオンなら、
+    承認の後に、採用した指摘が直ったかをバックグラウンドで判定する(シャドーモード)。"""
+    # Phase-54-5：更新
+    # return await DesignStageService(session).approve(
+    #     current_project, stage=stage, expected_version=payload.version
+    # )
+    # ↓↓
+    approved = await DesignStageService(session).approve(
         current_project, stage=stage, expected_version=payload.version
     )
+    # Phase-54-5:追記
+    if review_effective(
+        is_superuser=current_user.is_superuser, review_enabled=current_user.review_enabled
+    ):
+        background_tasks.add_task(run_fix_checks, current_project.id, current_user.id)
+    return approved
 
 
 # Phase-43-4:追記

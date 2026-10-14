@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5,15-3,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,39-1,40-1
+# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5,15-3,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,39-1,40-1,54-4
 # 写経レベル: コア ── MVPコアループ(ヒアリングフロー)そのもの。LangGraphを使わない設計判断も含む。
 # Phase-2-5:追記 ── app.services.llm_retry.invoke_with_retry
 # Phase-6-3:追記 ── app.models.prompt_template.PromptTemplate,
@@ -173,6 +173,10 @@ _POINTS_JUDGE_PROMPT = (
     # Phase-39-1：更新
     # "・summaryは、決めたことを1文で簡潔に書く(openなら空でよい)。\n"
     # ↓↓
+    # Phase-54-4:追記
+    "・規模がpublic(誰でも登録できるサービス)のとき、securityは、誰がどのデータを見られる・"
+    "変えられるか(アクセス制御)が分かるまでdecided・adoptedにしない"
+    "(ログインの方法だけではopenのままにする)。\n"
     "・summaryは、決めたことを1文で簡潔に書く(openなら空でよい)。ただし技術スタック(tech)は、"
     "ユーザーが挙げた言語・フレームワーク・DB・使うAI(LLM)・置き場所などの名前を1つも落とさずに書く"
     "(設計書の生成はこの要約を読むため)。\n"
@@ -722,6 +726,8 @@ class ChatService:
         ids_by_number = {number: message_id for message_id, number in numbers.items()}
         # Phase-39-1:追記
         user_messages = {str(entry.id) for entry in history if entry.sender == "user"}
+        # Phase-54-4:追記
+        after_reopen = _messages_after_reopen(history, previous)
         judged = [
             JudgedPoint(
                 key=point.key,
@@ -736,7 +742,12 @@ class ChatService:
         # Phase-39-1：更新
         # states = merge_judgement(previous, judged)
         # ↓↓
-        states = merge_judgement(previous, judged, user_messages=user_messages)
+        # Phase-54-4：更新
+        # states = merge_judgement(previous, judged, user_messages=user_messages)
+        # ↓↓
+        states = merge_judgement(
+            previous, judged, user_messages=user_messages, after_reopen=after_reopen
+        )
         project.hearing_scale = scale_after(
             # Phase-36-2：更新
             # states, _as_scale(project.hearing_scale), result.scale
@@ -807,6 +818,33 @@ class ChatService:
         await self._hearing_points.save_states(project.id, states.values())
         if key == "scale":
             project.hearing_scale = None  # 規模を対象外にしたら、個人・小規模の列で数える
+        # Phase-54-4:追記
+        if project.status == "completed":
+            project.status = "revising"
+        project.hearing_check = _completion_from(states, project.hearing_scale).model_dump()
+        await self._session.commit()
+        return await self.points_view(project)
+
+    async def reopen_points(
+        self, project: Project, keys: Sequence[str], message: str
+    ) -> HearingPointsRead:
+        """設計レビューの指摘で、観点を未決に戻して聞き直す(LLMは呼ばない)。聞き直しの文を AI の
+        発言としてチャットに残し、戻した観点にその発言を印として付ける(それより後の答えでないと、
+        決まったことに戻さない)。完成したプロジェクトは「修正中」にし、完了判定は表から作り直す
+        (必須の観点が未決になれば、生成のボタンは出ない)。生成中は409。"""
+        if project.status == "generating":
+            raise DocGenerationInProgressError("設計書の生成中は観点を変えられません")
+        states = await self._load_states(project)
+        entry = await self._chat_histories.add(project_id=project.id, sender="ai", message=message)
+        for key in keys:
+            if not is_point_key(key):
+                raise HearingPointNotFoundError("観点が見つかりません")
+            states[key] = PointState(
+                point_def(key).key, "open", "", reopened_after=str(entry.id)
+            )
+        await self._hearing_points.save_states(project.id, states.values())
+        if "scale" in keys:
+            project.hearing_scale = None
         if project.status == "completed":
             project.status = "revising"
         project.hearing_check = _completion_from(states, project.hearing_scale).model_dump()
@@ -1092,6 +1130,25 @@ def _points_table(states: Mapping[str, PointState]) -> str:
         f"{states[d.key].summary}"
         for d in POINT_DEFS
     )
+
+
+# Phase-54-4:追記
+def _messages_after_reopen(
+    history: Sequence[ChatHistory], states: Mapping[str, PointState]
+) -> dict[str, set[str]]:
+    """未決に戻した観点ごとの、聞き直しの発言より後の利用者の発言の id(履歴の順で数える)。"""
+    position = {str(entry.id): i for i, entry in enumerate(history)}
+    result: dict[str, set[str]] = {}
+    for key, state in states.items():
+        if state.reopened_after is None:
+            continue
+        since = position.get(state.reopened_after, -1)
+        result[key] = {
+            str(entry.id)
+            for i, entry in enumerate(history)
+            if i > since and entry.sender == "user"
+        }
+    return result
 
 
 def _completion_from(states: Mapping[str, PointState], scale: str | None) -> HearingCompletionCheck:

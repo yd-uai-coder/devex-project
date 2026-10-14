@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
@@ -436,6 +436,31 @@ class DesignStageService:
         impact = set_reviewed(StageImpact.from_dict(row.impact), keys, reviewed)
         row.impact = impact.to_dict()
         await self._session.commit()
+
+    # Phase-54-1:追記
+    async def elements_since(
+        self, project: Project, snapshots: Mapping[int, dict]
+    ) -> dict[int, tuple[list[Element], list[Element]]]:
+        """段階ごとに、写し(`snapshots`。レビューしたときの段階の内容)の要素と、今の内容の要素
+        (その段階の置き場の要素だけ)。写しの側は、ほかの段階・文書を今のものとして組み立てる
+        (承認の変更の影響と同じ求め方)。"""
+        rows, _, documents = await self._load(project)
+        stages = {s: row.model for s, row in rows.items()}
+        docs = _document_models(documents)
+        er = await self._er_tables(project.id) if project.mode == "detailed" else {}
+        after = build_elements(DesignModels.from_dicts(stages, docs, er))
+        result: dict[int, tuple[list[Element], list[Element]]] = {}
+        for stage, snapshot in snapshots.items():
+            before = build_elements(
+                DesignModels.from_dicts(
+                    {**stages, stage: snapshot}, docs, _snapshot_er(stage, snapshot, er)
+                )
+            )
+            result[stage] = (
+                [e for e in before if e.stage == stage],
+                [e for e in after if e.stage == stage],
+            )
+        return result
 
     async def _er_tables(self, project_id: uuid.UUID) -> dict[str, dict]:
         """段階3の ER のテーブル名 → 定義(列と説明)。ER がまだ無ければ空。"""

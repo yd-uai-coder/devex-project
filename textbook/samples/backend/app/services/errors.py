@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整)
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -448,3 +448,18 @@ class GenerationUpstreamMissingError(ConflictError):
     """設計書の再生成の起点より上流の文書がまだ無いときに送出する(上流を入力にして作るため)。"""
 
     code: ClassVar[str | None] = "GENERATION_UPSTREAM_MISSING"
+
+
+# Phase-54-2:追記
+class SendbackFindingInvalidError(ConflictError):
+    """再生成の指示に、採用していない指摘・ヒアリングが原因の指摘(聞き直しで直す)を渡した場合に
+    送出する。"""
+
+    code: ClassVar[str | None] = "SENDBACK_FINDING_INVALID"
+
+
+class RehearingFindingInvalidError(ConflictError):
+    """聞き直しに、採用していない指摘・ヒアリングが原因でない指摘・観点のキーの無い指摘を渡した
+    場合に送出する。"""
+
+    code: ClassVar[str | None] = "REHEARING_FINDING_INVALID"

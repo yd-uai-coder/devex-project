@@ -1,10 +1,13 @@
-// 作成：Phase-53(完了後の調整)
+// 作成：Phase-53(完了後の調整)｜更新：Phase-54-1
 // 詳細設計の各段階の表に出す、AI 設計レビューの指摘(純粋関数)。
 //
 // 指摘の対象(LLM が書く文字列。「F-03」「テーブル projects」「app/services/x.py」など)ごとに、段階の
 // 要素のキーを `resolveFixTarget`(「段階Nで直す」と同じ推定)で求める。1つの対象が複数の段階に当たれば、
 // それぞれの段階の行に出す。当たらない対象(要件 ID・画面など)は表には出さない(レビューのパネルに出る)。
-// 却下した指摘は出さない。
+// Phase-54-1：更新
+// // 却下した指摘は出さない。
+// ↓↓
+// 却下した指摘は出さない。前の回で採用した指摘(作り直しの後のレビューで回が替わったもの)も出す。
 
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 import { resolveFixTarget } from "@/features/detailed-design/impactOps";
@@ -31,8 +34,18 @@ export function reviewFindingsByKey(
 ): Map<string, StageReviewItem[]> {
   const byKey = new Map<string, StageReviewItem[]>();
   for (const g of gates) {
-    if (!g.run || g.run.status !== "succeeded") continue;
-    for (const finding of g.run.findings) {
+    // Phase-54-1：更新
+    // if (!g.run || g.run.status !== "succeeded") continue;
+    // for (const finding of g.run.findings) {
+    // ↓↓
+    const latest = g.run?.status === "succeeded" ? g.run.findings : [];
+    const isCurrent = g.run?.status === "succeeded" ? g.run.is_current : false;
+    // 前の回で採用した指摘は、その回が今の版をレビューしたものではない
+    const items = [
+      ...latest.map((finding) => ({ finding, isCurrent })),
+      ...g.adopted_before.map((finding) => ({ finding, isCurrent: false })),
+    ];
+    for (const { finding, isCurrent: current } of items) {
       if (finding.decision === "rejected") continue;
       const keys = new Set(
         finding.targets
@@ -40,7 +53,10 @@ export function reviewFindingsByKey(
           .filter((key): key is string => key !== null),
       );
       for (const key of keys) {
-        byKey.set(key, [...(byKey.get(key) ?? []), { finding, gate: g.gate, isCurrent: g.run.is_current }]);
+        // Phase-54-1：更新
+        // byKey.set(key, [...(byKey.get(key) ?? []), { finding, gate: g.gate, isCurrent: g.run.is_current }]);
+        // ↓↓
+        byKey.set(key, [...(byKey.get(key) ?? []), { finding, gate: g.gate, isCurrent: current }]);
       }
     }
   }

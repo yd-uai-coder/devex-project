@@ -1,7 +1,9 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5,31-4,31-7,38-2,43-4
+# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5,31-4,31-7,38-2,43-4,54-3
 # 写経レベル: 定型 ── Pydantic スキーマ。
 # Phase-31-4：更新(docstring: 簡易モードの段階8 ── fix_document・mode・plan・dataflow)
 # Phase-16-3:追記 ── typing.Literal, pydantic.Field
+# Phase-54-3:追記 ── uuid
+import uuid
 from datetime import datetime
 from typing import Any, Literal
 
@@ -114,13 +116,16 @@ class DesignStageGenerate(BaseModel):
     作る処理の処理ID(省略すると、選んだ処理のうちまだ手順の無いもの。Phase 20)。`logics`は段階6
     だけが使う、下書きを作る関数(省略すると、選んだ関数のうちまだ詳細の無いもの。Phase 21)。
     `unit_ids`は段階8だけが使う、手順書を作る作業単位の ID(省略すると、作業単位のうち手順書の
-    無いもの。Phase 28)。"""
+    無いもの。Phase 28)。`finding_ids`は修正指示に入れる、設計レビューの採用した指摘
+    (設計・不整合。Phase 54-3)。"""
 
     function_ids: list[str] | None = None
     # Phase-21-3:追記
     logics: list[LogicTarget] | None = None
     # Phase-28-2:追記
     unit_ids: list[str] | None = None
+    # Phase-54-3:追記
+    finding_ids: list[uuid.UUID] = []
 
 
 # Phase-28-1:追記

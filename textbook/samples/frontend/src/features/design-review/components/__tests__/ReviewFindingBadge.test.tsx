@@ -1,4 +1,4 @@
-// 作成：Phase-53(完了後の調整)
+// 作成：Phase-53(完了後の調整)｜更新：Phase-54-1
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -79,5 +79,18 @@ describe("ReviewFindingBadge", () => {
       </TamaguiProvider>,
     );
     await waitFor(() => expect(screen.queryByText("持ち主の確認が無い")).not.toBeInTheDocument());
+  });
+
+  // Phase-54-1:追記
+  it("採用したまま直していない指摘があれば、数を添えて強調し、ダイアログに追跡を出す", async () => {
+    const u = userEvent.setup();
+    renderBadge([
+      { ...ITEMS[0], finding: { ...ITEMS[0].finding, followup: "unaddressed" } },
+      ITEMS[1],
+    ]);
+    const badge = screen.getByRole("button", { name: "AI レビューの指摘 2件(未対応 1件)" });
+    expect(badge).toHaveTextContent("AI 指摘 2・未対応 1");
+    await u.click(badge);
+    expect(await screen.findByLabelText("追跡: 未対応")).toBeInTheDocument();
   });
 });

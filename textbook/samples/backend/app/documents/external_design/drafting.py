@@ -1,4 +1,4 @@
-# 作成：Phase-37-2｜更新：Phase-40-1,49-3
+# 作成：Phase-37-2｜更新：Phase-40-1,49-3,54-2
 """外部設計書の AI の下書きの入出力(純粋関数)。
 
 AI には要件定義書から、画面・API・外部連携の行(関係する要件ID 付き)と本文の節を書かせる。
@@ -9,6 +9,7 @@ AI には要件定義書から、画面・API・外部連携の行(関係する�
 
 # Phase-40-1:追記 ── app.documents.external_design.model.NO_BODY
 # Phase-49-3:追記 ── collections.abc.Sequence, app.documents.revision.NONE_TEXT, REVISION_RULE, UNCHANGED_DESCRIPTION, changed_rows_text, rows_text
+# Phase-54-2:追記 ── app.documents.revision.instruction_text
 from collections.abc import Sequence
 from typing import Literal
 
@@ -27,6 +28,7 @@ from app.documents.revision import (
     REVISION_RULE,
     UNCHANGED_DESCRIPTION,
     changed_rows_text,
+    instruction_text,
     rows_text,
 )
 
@@ -156,12 +158,16 @@ def build_external_design_messages(
     requirements_md: str,
     previous: ExternalDesignModel | None,
     changed_requirements: Sequence[str] = (),
+    # Phase-54-2:追記
+    instruction: str = "",
 ) -> list[BaseMessage]:
     human = (
         f"## 前の版の画面\n{previous_screens_text(previous)}\n\n"
         # Phase-49-3:追記
         f"## 前の版の API\n{rows_text(previous.apis if previous else [])}\n\n"
         f"## 上流の変わった行\n{changed_rows_text(changed_requirements)}\n\n"
+        # Phase-54-2:追記
+        f"## 修正指示\n{instruction_text(instruction)}\n\n"
         f"## 要件定義書\n{requirements_md}"
     )
     return [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=human)]

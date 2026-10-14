@@ -1,4 +1,4 @@
-// 作成：Phase-53-3
+// 作成：Phase-53-3｜更新：Phase-54-1,54-4
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useReviewStore } from "../review-store";
 import { finding, gate, run, user } from "../test-utils/reviewFixtures";
@@ -74,6 +74,14 @@ describe("useReviewStore", () => {
 
     const findings = useReviewStore.getState().gates[0].run?.findings ?? [];
     expect(findings.map((f) => f.decision)).toEqual(["pending", "rejected"]);
+    // Phase-54-1:追記
+    // 前の回で採用した指摘も置き換える
+    useReviewStore.setState({
+      gates: [gate({ status: "reviewed", run: run(), adopted_before: [finding({ id: "f9", decision: "adopted" })] })],
+    });
+    stub.queue({ status: 200, body: finding({ id: "f9", decision: "held" }) });
+    await useReviewStore.getState().decide("p1", "f9", "held");
+    expect(useReviewStore.getState().gates[0].adopted_before[0].decision).toBe("held");
     expect(useReviewStore.getState().decidingId).toBeNull();
   });
 
@@ -86,5 +94,19 @@ describe("useReviewStore", () => {
     await useReviewStore.getState().setReviewEnabled(true);
     expect(useReviewStore.getState().me?.review_effective).toBe(true);
     expect(useReviewStore.getState().savingSetting).toBe(false);
+  });
+
+  // Phase-54-1:追記
+  it("聞き直しは指摘を送り、失敗はサーバーの文を出す", async () => {
+    useReviewStore.setState({ projectId: "p1" });
+    stub.queue({ status: 200, body: { points: [] } });
+    expect(await useReviewStore.getState().rehear("p1", ["h1"])).toBe(true);
+    expect(stub.requests[0].url).toContain("/projects/p1/reviews/rehearing");
+    expect(JSON.parse(String(stub.requests[0].init?.body))).toEqual({ finding_ids: ["h1"] });
+
+    stub.queue({ status: 409, body: { detail: "聞き直す指摘を選んでください。" } });
+    expect(await useReviewStore.getState().rehear("p1", [])).toBe(false);
+    expect(useReviewStore.getState().actionError).toBe("聞き直す指摘を選んでください。");
+    expect(useReviewStore.getState().rehearing).toBe(false);
   });
 });

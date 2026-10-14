@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整)
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-44-2:追記 ── ../../test-utils/stageFixtures.makeImpact
@@ -304,6 +304,35 @@ describe("DetailedDesignPageContent", () => {
 
     expect(useReviewStore.getState().runReview).toHaveBeenCalledWith("p1", "stage6");
     await waitFor(() => expect(screen.queryByText(/を承認しました。/)).not.toBeInTheDocument());
+  });
+
+  // Phase-54-1:追記
+  it("段階6を承認したとき、採用したまま直していない指摘があれば知らせる", async () => {
+    const u = userEvent.setup();
+    useReviewStore.setState({
+      me: reviewUser(),
+      gates: [
+        gate({
+          gate: "stage6",
+          status: "reviewed",
+          run: run({ gate: "stage6", findings: [finding({ decision: "adopted", followup: "unaddressed" })] }),
+        }),
+      ],
+    });
+    useDetailedDesignStore.setState({
+      stages: makeStages({
+        6: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: makeLogics() },
+      }),
+      selectedStage: 6,
+      approve: vi.fn().mockResolvedValue(true),
+    });
+    renderContent();
+
+    await u.click(screen.getByRole("button", { name: "承認する" }));
+    expect(
+      await screen.findByText(/採用したまま直していない指摘があります\(段階6の承認の後 1件\)。/),
+    ).toBeInTheDocument();
+    useReviewStore.setState({ gates: [] });
   });
 
   it("レビューがオフなら、承認のダイアログにレビューの操作を出さない", async () => {

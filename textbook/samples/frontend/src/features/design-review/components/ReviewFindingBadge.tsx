@@ -1,12 +1,15 @@
-// 作成：Phase-53(完了後の調整)
+// 作成：Phase-53(完了後の調整)｜更新：Phase-54-1,54-5
 "use client";
 
+// Phase-54-1:追記 ── @/features/design-review/components/FindingTable.FixCheckNote, @/features/design-review/components/FindingTable.FollowupChip
 import { useEffect, useState, type CSSProperties } from "react";
 import { Button, Dialog, Text, XStack, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import { BADGE } from "@/features/detailed-design/components/tableStyles";
 import type { StageReviewItem } from "@/features/detailed-design/reviewMarks";
 import type { FindingDecision, ReviewLevel } from "@/features/design-review/api/reviewApi";
+// Phase-54-1:追記
+import { FixCheckNote, FollowupChip } from "@/features/design-review/components/FindingTable";
 import { CAUSE_LABEL, DECISION_LABEL, GATE_LABEL, LEVEL_LABEL } from "@/features/design-review/model";
 import { useReviewStore } from "@/features/design-review/review-store";
 
@@ -21,6 +24,8 @@ const SECTION: CSSProperties = { fontSize: 12, fontWeight: 600, color: "var(--co
 // 段階の表の行に付ける、AI 設計レビューの指摘のバッジ(却下した指摘は数えない。指摘が無ければ出さない)。
 // 押すと、その行の指摘の「問題と根拠」「改善案」「判断」をダイアログで出し、採用・却下・保留を選べる
 // (レビューのパネルと同じ記録)。却下した指摘はその場で外れ、残りが無くなればダイアログを閉じる。
+// Phase-54-1:追記
+// 採用したまま直していない(未対応の)指摘があれば、バッジを太い枠で強調し、数を添える。
 export function ReviewFindingBadge({ projectId, items }: { projectId: string | null; items: StageReviewItem[] }) {
   const [open, setOpen] = useState(false);
   const decide = useReviewStore((s) => s.decide);
@@ -34,17 +39,27 @@ export function ReviewFindingBadge({ projectId, items }: { projectId: string | n
   if (items.length === 0 || projectId === null) return null;
   // items は重要度の順なので、先頭が最も重い
   const top = items[0].finding.level;
+  // Phase-54-1:追記
+  const unaddressed = items.filter((item) => item.finding.followup === "unaddressed").length;
+  const emphasis: CSSProperties = unaddressed > 0 ? { borderWidth: 2, borderColor: "var(--red9)", borderStyle: "solid" } : {};
 
   return (
     <>
       <button
         type="button"
-        style={{ ...BADGE, fontFamily: "inherit", whiteSpace: "nowrap", cursor: "pointer", ...LEVEL_STYLE[top] }}
-        aria-label={`AI レビューの指摘 ${items.length}件`}
+        // Phase-54-1：更新
+        // style={{ ...BADGE, fontFamily: "inherit", whiteSpace: "nowrap", cursor: "pointer", ...LEVEL_STYLE[top] }}
+        // aria-label={`AI レビューの指摘 ${items.length}件`}
+        // ↓↓
+        style={{ ...BADGE, fontFamily: "inherit", whiteSpace: "nowrap", cursor: "pointer", ...LEVEL_STYLE[top], ...emphasis }}
+        aria-label={`AI レビューの指摘 ${items.length}件${unaddressed > 0 ? `(未対応 ${unaddressed}件)` : ""}`}
         title="AI 設計レビューの指摘を見る"
         onClick={() => setOpen(true)}
       >
-        {`AI 指摘 ${items.length}`}
+        // Phase-54-1：更新
+        // {`AI 指摘 ${items.length}`}
+        // ↓↓
+        {`AI 指摘 ${items.length}${unaddressed > 0 ? `・未対応 ${unaddressed}` : ""}`}
       </button>
       <Dialog modal open={open} onOpenChange={setOpen}>
         <Dialog.Portal>
@@ -71,6 +86,9 @@ export function ReviewFindingBadge({ projectId, items }: { projectId: string | n
                     <Text fontSize="$1" color="$color10">
                       {`${GATE_LABEL[gate]}のレビュー${isCurrent ? "" : "(段階・文書が変わる前)"}`}
                     </Text>
+                    // Phase-54-1:追記
+                    {f.followup ? <FollowupChip state={f.followup} /> : null}
+                    {f.fix_check ? <FixCheckNote check={f.fix_check} /> : null}
                   </XStack>
                   <span style={SECTION}>問題と根拠</span>
                   <Text fontSize="$2">{f.problem}</Text>

@@ -1,4 +1,4 @@
-// 作成：Phase-53-3｜更新：Phase-53(完了後の調整)
+// 作成：Phase-53-3｜更新：Phase-53(完了後の調整),54-1,54-5
 import type {
   CurrentUserRead,
   ReviewFindingRead,
@@ -23,6 +23,9 @@ export function finding(overrides: Partial<ReviewFindingRead> = {}): ReviewFindi
     reason: "理由",
     suggestion: "改善案",
     decision: "pending",
+    // Phase-54-1:追記
+    followup: null,
+    fix_check: null,
     ...overrides,
   };
 }
@@ -47,7 +50,10 @@ export function run(overrides: Partial<ReviewRunRead> = {}): ReviewRunRead {
 }
 
 export function gate(overrides: Partial<ReviewGateSummaryRead> = {}): ReviewGateSummaryRead {
-  return { gate: "documents", ready: true, status: "unreviewed", run: null, ...overrides };
+  // Phase-54-1：更新
+  // return { gate: "documents", ready: true, status: "unreviewed", run: null, ...overrides };
+  // ↓↓
+  return { gate: "documents", ready: true, status: "unreviewed", run: null, adopted_before: [], ...overrides };
 }
 
 export function user(overrides: Partial<CurrentUserRead> = {}): CurrentUserRead {

@@ -1,4 +1,5 @@
-# 作成：Phase-52-3｜更新：Phase-53-1,53(完了後の調整)
+# 作成：Phase-52-3｜更新：Phase-53-1,53(完了後の調整),54-1,54-5
+# Phase-54-1:追記 ── app.models.review.ReviewFixCheck
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -7,7 +8,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.models.review import ReviewFinding, ReviewRun
+from app.models.review import ReviewFinding, ReviewFixCheck, ReviewRun
 from app.repositories.base import CRUDRepository
 from app.review import ReviewFindingOut, sort_findings
 
@@ -29,6 +30,8 @@ class ReviewRunRepository(CRUDRepository[ReviewRun]):
         trigger: str,
         model: str,
         status: str = "running",
+        # Phase-54-1:追記
+        snapshots: Mapping[str, dict] | None = None,
     ) -> ReviewRun:
         """回を作る(既定は実行中)。flushまで行う。始めた時刻はアプリで入れる ── 同じ秒に作った
         回どうしも新しい順に並べられるように(SQLiteの now() は秒の単位)。"""
@@ -39,6 +42,8 @@ class ReviewRunRepository(CRUDRepository[ReviewRun]):
             trigger=trigger,
             model=model,
             status=status,
+            # Phase-54-1:追記
+            snapshots=dict(snapshots) if snapshots is not None else None,
             started_at=datetime.now(UTC),
             findings=[],
         )
@@ -57,6 +62,23 @@ class ReviewRunRepository(CRUDRepository[ReviewRun]):
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    # Phase-54-1:追記
+    async def list_with_adopted(self, *, project_id: uuid.UUID, gate: str) -> list[ReviewRun]:
+        """区切りの回のうち、採用した指摘を持つもの(指摘付き、新しい順)。"""
+        adopted = select(ReviewFinding.run_id).where(ReviewFinding.decision == "adopted")
+        stmt = (
+            select(ReviewRun)
+            .where(
+                ReviewRun.project_id == project_id,
+                ReviewRun.gate == gate,
+                ReviewRun.id.in_(adopted),
+            )
+            .order_by(ReviewRun.started_at.desc())
+            .options(*self._default_options())
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
 
     # Phase-53-1:追記
     async def get_finding(
@@ -113,3 +135,31 @@ class ReviewRunRepository(CRUDRepository[ReviewRun]):
         ]
         await self._session.flush()
         return run
+
+
+# Phase-54-1:追記
+class ReviewFixCheckRepository(CRUDRepository[ReviewFixCheck]):
+    """採用した指摘が直ったかの判定の永続化。"""
+
+    model = ReviewFixCheck
+
+    async def add(self, **values: Any) -> ReviewFixCheck:
+        """判定を1件足す(flushまで)。作った時刻はアプリで入れる(同じ秒の判定を新しい順に並べる)。"""
+        check = ReviewFixCheck(created_at=datetime.now(UTC), **values)
+        self._session.add(check)
+        await self._session.flush()
+        return check
+
+    async def latest_for(
+        self, finding_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, ReviewFixCheck]:
+        """指摘ごとの最新の判定(判定の無い指摘は入らない)。"""
+        if not finding_ids:
+            return {}
+        stmt = (
+            select(ReviewFixCheck)
+            .where(ReviewFixCheck.finding_id.in_(finding_ids))
+            .order_by(ReviewFixCheck.created_at.asc())
+        )
+        result = await self._session.execute(stmt)
+        return {check.finding_id: check for check in result.scalars().all()}

@@ -1,5 +1,6 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整)
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2
 // Phase-53-4:追記 ── @testing-library/react.act
+// Phase-54-2:追記 ── @/features/design-review/review-store.useReviewStore, @/features/design-review/test-utils/reviewFixtures.as, @/features/design-review/test-utils/reviewFixtures.finding, @/features/design-review/test-utils/reviewFixtures.gate, @/features/design-review/test-utils/reviewFixtures.reviewUser, @/features/design-review/test-utils/reviewFixtures.run, @/features/design-review/test-utils/reviewFixtures.user
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -7,6 +8,9 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DocumentsPageContent } from "../DocumentsPageContent";
 import { useDocumentsStore } from "@/features/documents/documents-store";
+// Phase-54-2:追記
+import { useReviewStore } from "@/features/design-review/review-store";
+import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
 
 const useGenerationPollingMock = vi.fn();
 vi.mock("@/hooks/useGenerationPolling", () => ({
@@ -69,6 +73,8 @@ describe("DocumentsPageContent", () => {
       progress: null,
       fetchProgress: vi.fn().mockResolvedValue(undefined),
     });
+    // Phase-54-2:追記
+    useReviewStore.setState({ me: null, gates: [] });
   });
 
   // Phase-15-7：更新
@@ -105,7 +111,40 @@ describe("DocumentsPageContent", () => {
     // expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1");
     // ↓↓
     // 既定の起点は最初の文書(全部を作り直す。起点は送らない)
-    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", undefined);
+    // Phase-54-2：更新
+    // expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", undefined);
+    // ↓↓
+    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", undefined, []);
+  });
+
+  it("未対応の採用した指摘を選んだ状態で開き、関連する最も上流の文書を起点にする", async () => {
+    useReviewStore.setState({
+      me: reviewUser(),
+      gates: [
+        gate({
+          status: "reviewed",
+          run: run({
+            findings: [
+              finding({ id: "ext", decision: "adopted", followup: "unaddressed", documents: ["external_design"], problem: "認可が無い" }),
+              finding({ id: "done", decision: "adopted", followup: "changed", documents: ["requirements"], problem: "直した" }),
+              finding({ id: "hear", decision: "adopted", cause: "hearing", followup: "unaddressed", documents: ["requirements"] }),
+            ],
+          }),
+        }),
+      ],
+    });
+    const user = userEvent.setup();
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "再生成する" }));
+    // ヒアリングの指摘は聞き直しで直すので、再生成の指示には出さない
+    expect(screen.getByLabelText(/認可が無い/)).toBeChecked();
+    expect(screen.getByLabelText(/直した/)).not.toBeChecked();
+    expect(screen.getByLabelText(/外部設計以降を再生成/)).toBeChecked();
+    await user.click(screen.getByLabelText(/直した/));
+    await user.click(screen.getByLabelText("再生成する"));
+
+    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", "external_design", ["ext", "done"]);
   });
 
   it("再生成の起点を選ぶと、その文書から下流を作り直す", async () => {
@@ -117,7 +156,10 @@ describe("DocumentsPageContent", () => {
     await user.click(screen.getByLabelText(/内部設計以降を再生成/));
     await user.click(screen.getByLabelText("再生成する"));
 
-    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", "internal_design");
+    // Phase-54-2：更新
+    // expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", "internal_design");
+    // ↓↓
+    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", "internal_design", []);
   });
 
   it("再生成中は文書ごとの進み具合を出し、取り直す", () => {

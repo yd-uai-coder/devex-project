@@ -1,4 +1,4 @@
-// 作成：Phase-53(完了後の調整)
+// 作成：Phase-53(完了後の調整)｜更新：Phase-54-1
 import { describe, expect, it } from "vitest";
 import { reviewFindingsByKey } from "../reviewMarks";
 import { makeFunctionList, makeModuleList, makeStages } from "../test-utils/stageFixtures";
@@ -43,5 +43,20 @@ describe("reviewFindingsByKey", () => {
   it("成功していない回・回の無い区切りは出さない", () => {
     const gates = [gate({ status: "running", run: run({ status: "running", findings: [finding({ targets: ["F-01"] })] }) }), gate({ gate: "stage7" })];
     expect(reviewFindingsByKey(gates, stages, 1).size).toBe(0);
+  });
+
+  // Phase-54-1:追記
+  it("前の回で採用した指摘も出す(今の版のレビューではない)", () => {
+    const gates = [
+      gate({
+        gate: "stage6",
+        status: "failed",
+        run: run({ gate: "stage6", status: "failed" }),
+        adopted_before: [finding({ id: "carried", decision: "adopted", followup: "unaddressed", targets: ["F-01"] })],
+      }),
+    ];
+    expect(reviewFindingsByKey(gates, stages, 1).get("fn:F-01")).toMatchObject([
+      { finding: { id: "carried" }, gate: "stage6", isCurrent: false },
+    ]);
   });
 });

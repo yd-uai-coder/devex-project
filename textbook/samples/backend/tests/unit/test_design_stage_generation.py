@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,24(ゴール3後の調整),28-2,38-2,48-2
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,24(ゴール3後の調整),28-2,38-2,48-2,54-3
 # 写経レベル: コア ── 生成の受け付け → 実行 → 失敗・回収をサービス越しに確かめる。段階2は DFD・データ項目まで1トランザクションで書くこと。
 """段階の下書きの生成(受け付け・実行・回収)と、生成・検証に関わる段階のAPIのテスト。
 
@@ -924,7 +924,10 @@ async def test_stage5_route_generates_pending_procedure_and_can_be_approved(
     # assert tasks.tasks[0].args[-2:] == (None, None)  # 対象の指定なし → 実行時に手順の無い処理を選ぶ
     # ↓↓
     # 対象の指定なし → 実行時に手順の無い処理を選ぶ
-    assert tasks.tasks[0].args[3:] == (None, None, None)
+    # Phase-54-3：更新
+    # assert tasks.tasks[0].args[3:] == (None, None, None)
+    # ↓↓
+    assert tasks.tasks[0].args[3:] == (None, None, None, [])
     # ── ここから Phase-20-3 の作成分 ──
     assert STAGE_GENERATORS[5] is generate_procedures
     assert llm.structured_output_calls == [ProcedureGenerationOutput]
@@ -1105,7 +1108,10 @@ async def test_stage6_route_generates_pending_logic_and_can_be_approved(
     # Phase-28-2：更新
     # assert tasks.tasks[0].args[-2:] == (None, None)
     # ↓↓
-    assert tasks.tasks[0].args[3:] == (None, None, None)
+    # Phase-54-3：更新
+    # assert tasks.tasks[0].args[3:] == (None, None, None)
+    # ↓↓
+    assert tasks.tasks[0].args[3:] == (None, None, None, [])
     assert STAGE_GENERATORS[6] is generate_logics
     assert llm.structured_output_calls == [LogicGenerationOutput]
     [prompt] = prompts

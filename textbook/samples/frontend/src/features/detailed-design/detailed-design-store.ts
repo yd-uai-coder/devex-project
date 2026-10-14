@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3,44-1
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3,44-1,54-3
 // 写経レベル: コア ── 承認の後に全段階を取り直す(後ろの段階が開く・古いが消える)。
 // Phase-16-6:追記 ── @/features/detailed-design/api/designStagesApi.generateDesignStage, @/features/detailed-design/api/designStagesApi.saveDesignStage
 // Phase-18-9:追記 ── @/features/detailed-design/labels.approvalBlockers
@@ -86,7 +86,11 @@ type DetailedDesignStore = {
   // // 段階5は functionIds で下書きを作る処理を選べる(Phase 20)
   // generate: (projectId: string, stage: number, functionIds?: string[]) => Promise<void>;
   // ↓↓
-  // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を、段階8は unitIds で単位を選べる
+  // Phase-54-3：更新
+  // // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を、段階8は unitIds で単位を選べる
+  // ↓↓
+  // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を、段階8は unitIds で単位を選べる。
+  // findingIds は修正指示に入れる、AI 設計レビューの採用した指摘
   // (Phase 20・21・28)
   generate: (
     projectId: string,
@@ -95,6 +99,8 @@ type DetailedDesignStore = {
     logics?: LogicTarget[],
     // Phase-28-3:追記
     unitIds?: string[],
+    // Phase-54-3:追記
+    findingIds?: string[],
   ) => Promise<void>;
   // Phase-44-1:追記
   // 段階の印を確認済み(reviewed=false で未確認)にする。確認できたら true
@@ -308,13 +314,19 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
     // Phase-28-3：更新
     // generate: async (projectId, stage, functionIds, logics) => {
     // ↓↓
-    generate: async (projectId, stage, functionIds, logics, unitIds) => {
+    // Phase-54-3：更新
+    // generate: async (projectId, stage, functionIds, logics, unitIds) => {
+    // ↓↓
+    generate: async (projectId, stage, functionIds, logics, unitIds, findingIds) => {
       set({ requestingGeneration: true, actionError: null });
       try {
         // Phase-28-3：更新
         // await generateDesignStage(projectId, stage, functionIds, logics);
         // ↓↓
-        await generateDesignStage(projectId, stage, functionIds, logics, unitIds);
+        // Phase-54-3：更新
+        // await generateDesignStage(projectId, stage, functionIds, logics, unitIds);
+        // ↓↓
+        await generateDesignStage(projectId, stage, functionIds, logics, unitIds, findingIds);
       // ── ここから Phase-20-4 の作成分 ──
       } catch (err) {
         // 生成の受け付けの 409 DESIGN_STAGE_INVALID(対象の数・選択)は、承認の文言でなくサーバーの理由を出す
