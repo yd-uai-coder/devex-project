@@ -1,12 +1,14 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
+# Phase-52-2:追記 ── app.core.errors.ForbiddenError
 from typing import ClassVar
 
 from app.core.errors import (
     BadGatewayError,
     BadRequestError,
     ConflictError,
+    ForbiddenError,
     NotFoundError,
     TooManyRequestsError,
     UnauthorizedError,
@@ -387,3 +389,36 @@ class RequirementNotAssumedError(ConflictError):
     """推測でない要件を「採用」にしようとした場合に送出する(画面が古いまま押したときに起きうる)。"""
 
     code: ClassVar[str | None] = "REQUIREMENT_NOT_ASSUMED"
+
+
+# Phase-52-2:追記
+class ReviewNotAllowedError(ForbiddenError):
+    """設計レビューを使えないアカウント(superuser 以外・設定がオフ)が、レビューの設定の変更や
+    レビューを要求した場合に送出する。"""
+
+    code: ClassVar[str | None] = "REVIEW_NOT_ALLOWED"
+
+
+class ReviewUnavailableError(BadGatewayError):
+    """設計レビューの LLM を使えない(API キーが無い)場合に送出する。自動のレビューでは失敗として
+    記録し、自己診断に切り替える。"""
+
+    code: ClassVar[str | None] = "REVIEW_UNAVAILABLE"
+
+
+class ReviewRateLimitExceededError(TooManyRequestsError):
+    """superuser ごとの1日のレビューの回数の上限を超えた場合に送出する。"""
+
+    code: ClassVar[str | None] = "REVIEW_LIMIT_EXCEEDED"
+
+
+class ReviewInProgressError(ConflictError):
+    """同じプロジェクトでレビューが実行中のときに、レビューを再度要求した場合に送出する。"""
+
+    code: ClassVar[str | None] = "REVIEW_IN_PROGRESS"
+
+
+class ReviewDocumentsNotReadyError(ConflictError):
+    """レビューする文書がまだ無い(生成していない)プロジェクトで、レビューを要求した場合に送出する。"""
+
+    code: ClassVar[str | None] = "REVIEW_DOCUMENTS_NOT_READY"

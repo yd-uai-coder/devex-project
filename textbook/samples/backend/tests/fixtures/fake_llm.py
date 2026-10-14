@@ -1,4 +1,4 @@
-# 更新：Phase-2-3,2-4,10-5,35-2,36-2
+# 更新：Phase-2-3,2-4,10-5,35-2,36-2,52-2
 """LLM クライアントの挙動を模したテスト用スタブ。
 
 `with_structured_output(schema)` の呼び出しごとに `schema` を `structured_output_calls` に
@@ -76,6 +76,9 @@ class FakeLLM:
         # Phase-35-2:追記
         self._structured_by_schema = structured_by_schema or {}
         self.structured_output_calls: list[type[BaseModel]] = []
+        # Phase-52-2:追記
+        # with_structured_output の method(構造化出力の方式。省略は None)
+        self.structured_output_methods: list[str | None] = []
         self.invoke_messages: list[Any] = []
         # Phase-36-2:追記
         # 構造化出力の呼び出しに渡された messages(呼び出しの順)
@@ -112,11 +115,19 @@ class FakeLLM:
     #     return _FakeStructuredLLM(self._structured, self._structured_sequence)
     # ↓↓
     def with_structured_output(
-        self, schema: type[BaseModel], *, include_raw: bool = False
+        # Phase-52-2：更新
+        # self, schema: type[BaseModel], *, include_raw: bool = False
+        # ↓↓
+        self, schema: type[BaseModel], *, include_raw: bool = False, method: str | None = None
     ) -> _FakeStructuredLLM:
-        """構造化出力用のサブクライアントを返す。呼ばれた schema を記録する。"""
+        # Phase-52-2：更新
+        # """構造化出力用のサブクライアントを返す。呼ばれた schema を記録する。"""
+        # ↓↓
+        """構造化出力用のサブクライアントを返す。呼ばれた schema と method を記録する。"""
         self.structured_output_calls.append(schema)
         # Phase-35-2:追記
+        # Phase-52-2:追記
+        self.structured_output_methods.append(method)
         if schema in self._structured_by_schema:
             # Phase-36-2：更新
             # return _FakeStructuredLLM(self._structured_by_schema[schema], include_raw=include_raw)

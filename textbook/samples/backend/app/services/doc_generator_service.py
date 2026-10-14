@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -15,6 +15,8 @@
 # Phase-45-3:追記 ── app.documents.implementation_plan(ImplementationPlanModel, build_model, render_implementation_plan, row_counts, validate_implementation_plan), app.documents.implementation_plan.drafting(ImplementationPlanGenerationOutput, build_implementation_plan_messages, to_draft), app.schemas.document.DocumentSummaryRead
 # Phase-45-3：削除 ── re(見出しの重なりを直す正規表現は、md を AI に書かせなくなったので消した)
 # Phase-49-3:追記 ── collections.abc.Mapping, app.documents.revision.changed_rows, external_design_rows, internal_design_rows, requirement_rows
+# Phase-52-4:追記 ── redis.asyncio.Redis, app.core.errors.AppError, app.infrastructure.redis.get_redis_client, app.models.user.User, app.review.review_effective, app.services.review_service.ReviewService, app.repositories.generated_document.DOC_TYPES_BY_MODE
+# Phase-52-4：削除 ── app.repositories.generated_document.DOC_TYPES(DOC_TYPES_BY_MODE と一緒に移した)
 import uuid
 from collections.abc import Mapping
 from datetime import UTC, datetime
@@ -22,10 +24,12 @@ from datetime import UTC, datetime
 import structlog
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import ValidationError
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.gemini import extract_text_content, get_gemini_llm
 from app.core.database import AsyncSessionLocal
+from app.core.errors import AppError
 from app.documents.external_design import (
     ExternalDesignModel,
     render_external_design,
@@ -85,13 +89,19 @@ from app.documents.revision import (
     requirement_rows,
 )
 from app.hearing import as_scale
+from app.infrastructure.redis import get_redis_client
 from app.models.chat_history import ChatHistory
 from app.models.generated_document import GeneratedDocument
 from app.models.project import Project
+from app.models.user import User
 from app.repositories.chat_history import ChatHistoryRepository
-from app.repositories.generated_document import DOC_TYPES, GeneratedDocumentRepository
+from app.repositories.generated_document import (
+    DOC_TYPES_BY_MODE,
+    GeneratedDocumentRepository,
+)
 from app.repositories.hearing_point import HearingPointRepository
 from app.repositories.project import ProjectRepository
+from app.review import review_effective
 from app.schemas.document import (
     AssumedRequirementRead,
     DocumentIssueRead,
@@ -110,6 +120,7 @@ from app.services.errors import (
 )
 from app.services.generation_staleness import is_stale
 from app.services.llm_retry import invoke_structured, invoke_with_retry
+from app.services.review_service import ReviewService
 
 logger = structlog.get_logger(__name__)
 
@@ -261,15 +272,16 @@ _DOC_TYPE_INPUTS: dict[str, tuple[str, ...]] = {
 # # 見出しの記号が重なった行(LLM が「### ### 1. …」と書くことがある)。先頭の記号だけを残す
 # _DOUBLED_HEADING = re.compile(r"^(#{1,6})(?:[ \t]+#{1,6})+(?=[ \t])", re.MULTILINE)
 
-# Phase-15-1:追記
-# モード(projects.mode)ごとに生成する文書。詳細設計モードは要件定義・外部設計だけを生成し、
-# 内部設計・実装計画に当たる部分は段階(docs/internal_design.md 3.3節「4. 詳細設計モード」)
-# へ引き継ぐ。
-# 並びは生成の順序で、_DOC_TYPE_INPUTSの前段が必ず先に来る。
-DOC_TYPES_BY_MODE: dict[str, tuple[str, ...]] = {
-    "simple": DOC_TYPES,
-    "detailed": ("requirements", "external_design"),
-}
+# Phase-52-4：削除(app/repositories/generated_document.py へ移した。生成の後のレビューも使うため)
+# # Phase-15-1:追記
+# # モード(projects.mode)ごとに生成する文書。詳細設計モードは要件定義・外部設計だけを生成し、
+# # 内部設計・実装計画に当たる部分は段階(docs/internal_design.md 3.3節「4. 詳細設計モード」)
+# # へ引き継ぐ。
+# # 並びは生成の順序で、_DOC_TYPE_INPUTSの前段が必ず先に来る。
+# DOC_TYPES_BY_MODE: dict[str, tuple[str, ...]] = {
+#     "simple": DOC_TYPES,
+#     "detailed": ("requirements", "external_design"),
+# }
 
 _SELF_DIAGNOSIS_SYSTEM_PROMPT = (
     # Phase-15-1：更新(詳細設計モードでは2種になる)
@@ -313,21 +325,38 @@ async def generate_documents(
     user_idはどちらも値であり、セッションのようにリクエストのライフサイクルに紐づくものではない
     ため、background taskへ渡すこと自体に技術的な制約は無い。
     """
-    async with AsyncSessionLocal() as session:
-        # Phase-15-3：更新
-        # await DocGeneratorService(session).generate(project_id, user_id, llm=llm)
-        # ↓↓
-        await DocGeneratorService(session).generate(
-            project_id, user_id, status_before_generation=status_before_generation, llm=llm
-        )
+    # Phase-52-4：更新
+    # async with AsyncSessionLocal() as session:
+    #     # Phase-15-3：更新
+    #     # await DocGeneratorService(session).generate(project_id, user_id, llm=llm)
+    #     # ↓↓
+    #     await DocGeneratorService(session).generate(
+    #         project_id, user_id, status_before_generation=status_before_generation, llm=llm
+    #     )
+    # ↓↓
+    redis = get_redis_client()
+    try:
+        async with AsyncSessionLocal() as session:
+            await DocGeneratorService(session, redis=redis).generate(
+                project_id, user_id, status_before_generation=status_before_generation, llm=llm
+            )
+    finally:
+        await redis.aclose()
 
 
 class DocGeneratorService:
     """ヒアリング完了後の4種ドキュメント一括生成+自己診断を担当するサービス。"""
 
-    def __init__(self, session: AsyncSession) -> None:
+    # Phase-52-4：更新
+    # def __init__(self, session: AsyncSession) -> None:
+    # ↓↓
+    def __init__(self, session: AsyncSession, *, redis: Redis | None = None) -> None:
         # session: DB操作用の非同期セッション(background task用に独立して開始されたもの)
+        # Phase-52-4:追記
+        # redis: 生成の後の設計レビューの1日の回数を数える
         self._session = session
+        # Phase-52-4:追記
+        self._redis = redis
         self._projects = ProjectRepository(session)
         self._chat_histories = ChatHistoryRepository(session)
         self._documents = GeneratedDocumentRepository(session)
@@ -389,12 +418,18 @@ class DocGeneratorService:
         *,
         status_before_generation: str | None = None,
         llm=None,
+        # Phase-52-4:追記
+        review_llm=None,
     ) -> None:
         # Phase-15-1：更新
         # """チャット全履歴をコンテキストに4種の設計書を生成し、続けて自己診断を行う。
         # ↓↓
         """チャット全履歴をコンテキストに、モードごとの設計書(simpleは4種、detailedは要件定義・
         外部設計の2種。DOC_TYPES_BY_MODE)を生成し、続けて自己診断を行う。
+
+        設計レビューがオン(app/review/policy.py の実効値)のアカウントは、自己診断の代わりに、
+        生成を完了にした後で設計レビューを流す(`_review_after_generation`。生成の完了を
+        レビューの分だけ待たせない)。`review_llm`はテストでレビューの LLM を差し替える。
         プロジェクトが見つからない場合は何もしない(background task内なので例外を送出しても
         呼び出し元には伝播しないため、静かに終了する)。
 
@@ -424,6 +459,11 @@ class DocGeneratorService:
             status_before_generation = project.status
             project.status = "generating"
             await self._session.commit()
+        # Phase-52-4:追記
+        user = await self._session.get(User, user_id)
+        reviewing = user is not None and review_effective(
+            is_superuser=user.is_superuser, review_enabled=user.review_enabled
+        )
 
         try:
             llm = llm or get_gemini_llm()
@@ -513,10 +553,17 @@ class DocGeneratorService:
                     project, doc_type, previous_models[doc_type], new_models[doc_type]
                 )
 
-            diagnosis = await self._self_diagnose(generated, llm=llm)
-            await self._chat_histories.add(
-                project_id=project_id, sender="others", message=diagnosis
-            )
+            # Phase-52-4：更新
+            # diagnosis = await self._self_diagnose(generated, llm=llm)
+            # await self._chat_histories.add(
+            #     project_id=project_id, sender="others", message=diagnosis
+            # )
+            # ↓↓
+            if not reviewing:
+                diagnosis = await self._self_diagnose(generated, llm=llm)
+                await self._chat_histories.add(
+                    project_id=project_id, sender="others", message=diagnosis
+                )
         # Phase-15-3：更新(気づき#3: rollbackしてから状態を戻す。生の例外の文字列は見せない)
         # except LLMQuotaExceededError:
         #     # LLM_QUOTA_EXCEEDEDはdocs/internal_design.md 3.4節が定めるとおり、
@@ -572,6 +619,45 @@ class DocGeneratorService:
         logger.info(
             "documents_generated", project_id=str(project_id), doc_count=len(generated)
         )
+        # Phase-52-4:追記
+        if reviewing and user is not None:
+            await self._review_after_generation(project, user, generated, llm, review_llm)
+
+    async def _review_after_generation(
+        self, project: Project, user: User, generated: dict[str, str], llm, review_llm
+    ) -> None:
+        """生成の後の設計レビュー。受け付けで止まった(上限・キー無し・実行中)ときは失敗の回を
+        残し、実行で失敗したときと同じく、生成と同じモデルの自己診断に切り替える。"""
+        project_id = project.id
+        review = ReviewService(self._session, redis=self._redis, llm=review_llm)
+        try:
+            run = await review.start_documents_review(project, user, trigger="auto")
+        except Exception as exc:  # noqa: BLE001 -- レビューの失敗は生成を失敗にしない
+            if not isinstance(exc, AppError):
+                # 想定外の失敗(DB など)だけ戻す。戻すと失効するプロジェクトは読み直す
+                # (非同期では暗黙に読めない)
+                await self._session.rollback()
+                project = await self._session.get(Project, project_id) or project
+            await review.record_failed_start(project, trigger="auto", exc=exc)
+            await self._fallback_self_diagnose(project_id, generated, llm)
+            return
+        finished = await review.execute(run.id)
+        if finished is None or finished.status != "succeeded":
+            await self._fallback_self_diagnose(project_id, generated, llm)
+
+    async def _fallback_self_diagnose(
+        self, project_id: uuid.UUID, generated: dict[str, str], llm
+    ) -> None:
+        """レビューに失敗したときの自己診断。これも失敗したらログだけ残す(文書は完了のまま)。"""
+        try:
+            diagnosis = await self._self_diagnose(generated, llm=llm)
+        except Exception as exc:  # noqa: BLE001 -- 文書の生成は終わっているため、止めない
+            logger.warning(
+                "self_diagnosis_failed", project_id=str(project_id), error_type=type(exc).__name__
+            )
+            return
+        await self._chat_histories.add(project_id=project_id, sender="others", message=diagnosis)
+        await self._session.commit()
 
     # Phase-8-5:追記 ── ルーターがRepositoryを直接参照しない方針への統一(list_generated_documents用)
     async def list_current_documents(self, project_id: uuid.UUID) -> list[GeneratedDocument]:

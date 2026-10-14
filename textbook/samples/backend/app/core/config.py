@@ -1,4 +1,4 @@
-# 更新：Phase-4-3,6-5,15-4
+# 更新：Phase-4-3,6-5,15-4,52-2
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。本Phaseまで
 # サンプルとして写経対象になったことが無く、今回が初めてのsamples反映(以下は差分のみでなく
 # 全文)。E2E_FAKE_LLM・LLM_TIMEOUT_SECONDS以外はdevex-api/backend/app/core/config.pyの
@@ -67,6 +67,18 @@ class Settings(BaseSettings):
     # LLM_TIMEOUT_SECONDS: float = 60.0
     # ↓↓
     LLM_TIMEOUT_SECONDS: float = 30.0
+
+    # Phase-52-2:追記
+    # 設計レビュー(生成とは別のモデルが指摘だけを返す)。キーが無いときはレビューが失敗し、
+    # 生成と同じモデルの自己診断に切り替わる(app/services/review_service.py)。
+    ANTHROPIC_API_KEY: str | None = None
+    REVIEW_MODEL: str = "claude-sonnet-5-5"
+    # レビューは設計書をまとめて読むため生成の1回より長い(実測 25〜43 秒)。生成の
+    # LLM_TIMEOUT_SECONDS とは分け、約4倍のマージンを見る。
+    REVIEW_TIMEOUT_SECONDS: float = 180.0
+    REVIEW_MAX_TOKENS: int = 16000
+    # superuser ごとの1日のレビューの回数の上限(費用を抑えるため)
+    REVIEW_RATE_LIMIT_PER_DAY: int = 20
 
     # Phase-4-3:追記 ── trueの場合、get_gemini_llm()は実際のGemini APIを呼ばず、
     # app/ai/llm/fake.pyの決定論的なE2eFakeLLMを返す(ブラウザE2Eテストを無料・高速・

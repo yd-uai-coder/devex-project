@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4
 # 写経レベル: コア ── バージョニング(直近3件保持・最古削除)はdocs/internal_design.md 3.2節の
 # ドメイン規則をそのままロジック化した箇所であり、慎重な写経・理解が必要。
 # Phase-6-1: list_versions/get_versionはSCR-006向けの定型的な参照系メソッド(写経レベル: 定型)。
@@ -9,6 +9,17 @@ from app.repositories.base import CRUDRepository
 
 # 生成される4種のドキュメント種別。GeneratedDocument.doc_type の取りうる値と対応する。
 DOC_TYPES = ("requirements", "external_design", "internal_design", "implementation_plan")
+
+# Phase-52-4:追記
+# モード(projects.mode)ごとに生成する文書。詳細設計モードは要件定義・外部設計だけを生成し、
+# 内部設計・実装計画に当たる部分は段階(docs/internal_design.md 3.3節「4. 詳細設計モード」)
+# へ引き継ぐ。
+# 並びは生成の順序で、doc_generator_service の _DOC_TYPE_INPUTS の前段が必ず先に来る。
+# 生成(doc_generator_service)と、生成の後のレビュー(review_service)が使う。
+DOC_TYPES_BY_MODE: dict[str, tuple[str, ...]] = {
+    "simple": DOC_TYPES,
+    "detailed": ("requirements", "external_design"),
+}
 
 # 同一project_id+doc_typeにつき保管する最大バージョン数(docs/internal_design.md 3.2節「バージョニング方針」)。
 MAX_VERSIONS_PER_DOC_TYPE = 3

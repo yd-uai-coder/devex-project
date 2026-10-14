@@ -1,14 +1,15 @@
-# 作成：Phase-2-5｜更新：Phase-4-1,6-5,10-5,15-3,15-4,24(T2同期),35-2,36-2
+# 作成：Phase-2-5｜更新：Phase-4-1,6-5,10-5,15-3,15-4,24(T2同期),35-2,36-2,52-2
 # 写経レベル: コア(Phase 2-5) ── docs/implementation_plan.md 4.4節リスク1(リトライ・クォータ処理)の実装箇所。chat_service.py/doc_generator_service.pyが共有する。
 # Phase-6-5:追記 ── time, structlog, langchain_core.messages.BaseMessage
 # Phase-10-5:追記 ── app.services.errors.LLMTokenLimitError
 # Phase-15-3:追記 ── app.core.errors.AppError
 # Phase-35-2：削除 ── app.core.errors.AppError(as_llm_error の削除で使わなくなった)
 # Phase-36-2:追記 ── pydantic.BaseModel, app.uml.generation.failures.unwrap_structured_result
+# Phase-52-2:追記 ── typing.Any
 import asyncio
 import time
 from collections.abc import Awaitable, Callable, Sequence
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import structlog
 from langchain_core.messages import BaseMessage
@@ -161,8 +162,15 @@ async def invoke_with_retry[T](
 # ↓↓
 def _is_quota_error(exc: Exception) -> bool:
     """例外が外部APIのクォータ超過を示すものかどうかを判定する。Gemini APIの429と、Tavily(検索)の
-    利用上限超過の2つ(Tavilyは汎用チャットのワークフローが使う。Phase 15で汎用チャットの独自の
-    再試行をこの共通の部品へ寄せたときに足した)。"""
+    利用上限超過(Tavilyは汎用チャットのワークフローが使う。Phase 15で汎用チャットの独自の
+    再試行をこの共通の部品へ寄せたときに足した)と、Anthropic APIの429(設計レビュー。Phase 52)。"""
+    # Phase-52-2:追記
+    try:
+        from anthropic import RateLimitError as AnthropicRateLimitError
+    except ImportError:
+        AnthropicRateLimitError = None
+    if AnthropicRateLimitError is not None and isinstance(exc, AnthropicRateLimitError):
+        return True
     try:
         from google.genai.errors import APIError as GoogleAPIError
     except ImportError:
@@ -204,10 +212,32 @@ async def invoke_structured[S: BaseModel](
 ) -> S:
     """構造化出力を呼ぶ(解釈の失敗・クォータ超過は invoke_with_retry の規則で再試行する)。
     詳細設計モードの段階の下書きと、要件定義書の生成が使う。"""
-    structured_llm = llm.with_structured_output(schema, include_raw=True)
+    # Phase-52-2：更新
+    # structured_llm = llm.with_structured_output(schema, include_raw=True)
+    #
+    # async def _call() -> S:
+    #     result = await structured_llm.ainvoke(messages)
+    #     return unwrap_structured_result(result, schema)
+    #
+    # return await invoke_with_retry(_call, messages=messages)
+    # ↓↓
+    parsed, _usage = await invoke_structured_with_usage(llm, schema, messages)
+    return parsed
 
-    async def _call() -> S:
+
+# Phase-52-2:追記
+async def invoke_structured_with_usage[S: BaseModel](
+    llm, schema: type[S], messages: list[BaseMessage], *, method: str | None = None
+) -> tuple[S, dict[str, Any]]:
+    """`invoke_structured`に、生の応答のトークン数(`usage_metadata`。無ければ空)を添えて返す。
+    `method`は構造化出力の方式(Claude は "json_schema"。省略時はクライアントの既定)。
+    設計レビューが、回ごとのトークン数を記録するために使う。"""
+    options = {"method": method} if method is not None else {}
+    structured_llm = llm.with_structured_output(schema, include_raw=True, **options)
+
+    async def _call() -> tuple[S, dict[str, Any]]:
         result = await structured_llm.ainvoke(messages)
-        return unwrap_structured_result(result, schema)
+        usage = getattr(result.get("raw"), "usage_metadata", None) or {}
+        return unwrap_structured_result(result, schema), dict(usage)
 
     return await invoke_with_retry(_call, messages=messages)

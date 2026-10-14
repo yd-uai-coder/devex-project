@@ -1,4 +1,4 @@
-# 作成：Phase-10-5｜更新：Phase-15-3,24(完了後の調整)
+# 作成：Phase-10-5｜更新：Phase-15-3,24(完了後の調整),52-2
 # 写経レベル: コア ── include_rawでトークン上限と出力の揺らぎを見分け、理由コードに分類する設計判断。
 """構造化出力の結果の解釈と、生成失敗の理由の分類(純粋関数)。
 
@@ -95,7 +95,11 @@ def unwrap_structured_result[T: BaseModel](result: dict[str, Any], schema: type[
         return parsed
     raw = result.get("raw")
     metadata = getattr(raw, "response_metadata", None) or {}
-    if metadata.get("finish_reason") == "MAX_TOKENS":
+    # Phase-52-2：更新
+    # if metadata.get("finish_reason") == "MAX_TOKENS":
+    # ↓↓
+    # Gemini は finish_reason、Claude は stop_reason で打ち切りを伝える
+    if metadata.get("finish_reason") == "MAX_TOKENS" or metadata.get("stop_reason") == "max_tokens":
         raise LLMTokenLimitError("AIの出力がトークン数の上限で打ち切られました。")
     raise LLMInvalidOutputError("AIの出力を出力スキーマとして解釈できませんでした。") from (
         result.get("parsing_error")

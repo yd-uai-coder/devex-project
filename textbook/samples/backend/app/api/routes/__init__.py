@@ -1,8 +1,9 @@
-# 更新：Phase-2-3,6-3,8-4,15-2
+# 更新：Phase-2-3,6-3,8-4,15-2,52-5
 # Phase-2-3:追記 ── app.api.routes.projects
 # Phase-6-3:追記 ── app.api.routes.prompt_templates
 # Phase-8-4:追記 ── app.api.routes.uml
 # Phase-15-2:追記 ── app.api.routes.design_stages
+# Phase-52-5:追記 ── app.api.routes.reviews.reviews_router
 from fastapi import APIRouter
 
 from app.api.routes.auth import router as auth_router
@@ -10,6 +11,7 @@ from app.api.routes.chat import router as chat_router
 from app.api.routes.design_stages import router as design_stages_router
 from app.api.routes.projects import router as projects_router
 from app.api.routes.prompt_templates import router as prompt_templates_router
+from app.api.routes.reviews import router as reviews_router
 from app.api.routes.uml import router as uml_router
 from app.api.routes.users import router as users_router
 
@@ -26,3 +28,5 @@ api_router.include_router(prompt_templates_router)
 api_router.include_router(uml_router)
 # Phase-15-2:追記
 api_router.include_router(design_stages_router)
+# Phase-52-5:追記
+api_router.include_router(reviews_router)
