@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2
+# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2,57-2
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 import uuid
 from datetime import datetime
@@ -92,9 +92,11 @@ class GeneratedDocumentRead(BaseModel):
 
 
 # Phase-56-2:追記
+# Phase-57-2：更新(docstring: design_gaps)
 class TestSpecRead(BaseModel):
     """テスト仕様書の今の版と、テストの件数(integration / system)・検証の指摘・古いか。
-    `outdated`は、生成した時点の入力(文書の版・段階の承認した版)が今と違うとき true。"""
+    `outdated`は、生成した時点の入力(文書の版・段階の承認した版)が今と違うとき true。
+    `design_gaps`は「設計に無い」と印を付けたテストの件数。"""
 
     __test__ = False  # pytest に集めさせない(名前が Test で始まるため)
 
@@ -102,6 +104,8 @@ class TestSpecRead(BaseModel):
     counts: dict[str, int]
     issues: list[DocumentIssueRead]
     outdated: bool
+    # Phase-57-2:追記
+    design_gaps: int = 0
 
 
 # Phase-53(完了後の調整):追記

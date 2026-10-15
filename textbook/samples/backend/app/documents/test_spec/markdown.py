@@ -1,4 +1,4 @@
-# 作成：Phase-56-1
+# 作成：Phase-56-1｜更新：Phase-57(完了後の調整)
 """テスト仕様書の model から md を組み立てる(純粋関数)。
 
 章立ては見本(`appendix/design-review-sample/test-spec.md`)と同じ: 1 方針 / 2 結合テスト(API)/
@@ -13,7 +13,12 @@ from app.detailed_design.document.markdown import md_table
 from app.documents.external_design.markdown import ids_cell
 from app.documents.test_spec.model import VIEWPOINTS, SpecCase, TestSpecModel
 
-TITLE = "# テスト仕様書"
+# Phase-57(完了後の調整)：更新
+# TITLE = "# テスト仕様書"
+# ↓↓
+# 扱うのは結合・総合テストだけ(単体テストは実装手順書の作業単位ごとのテスト観点で見る)
+TITLE = "# テスト仕様書(結合・総合)"
+UNIT_TEST_NOTE = "※単体テストのテスト観点は実装手順書で個別に確認"
 _NONE_ROW = "(なし)"
 _NO_TEST = "**テストが無い**"
 
@@ -104,7 +109,10 @@ def _trace(model: TestSpecModel) -> list[str]:
 
 def render_test_spec(model: TestSpecModel) -> str:
     """テスト仕様書の md。"""
-    lines = [TITLE, "", "## 1 テストの方針", "", *_policy(model)]
+    # Phase-57(完了後の調整)：更新
+    # lines = [TITLE, "", "## 1 テストの方針", "", *_policy(model)]
+    # ↓↓
+    lines = [TITLE, "", UNIT_TEST_NOTE, "", "## 1 テストの方針", "", *_policy(model)]
     lines += ["", "## 2 結合テスト(API)", "", *_integration(model.integration)]
     lines += ["", "## 3 総合テスト(画面の流れ・非機能)", "", *_system(model.system)]
     lines += ["", "## 4 要件との対応", "", *_trace(model)]

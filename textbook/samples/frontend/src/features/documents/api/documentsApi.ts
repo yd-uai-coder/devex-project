@@ -1,6 +1,7 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3,37-3,45-5,53(完了後の調整),56-2
+// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3,37-3,45-5,53(完了後の調整),56-2,57-2
 // Phase-12-5:追記 ── @/lib/api/download.parseFilename(UML 図の出力と共有するため移した)
-import { apiFetch } from "@/lib/api/client";
+// Phase-57-2:追記 ── @/lib/api/client.ApiError
+import { ApiError, apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
 import { API_BASE_URL } from "@/lib/api/base-url";
 import { parseFilename } from "@/lib/api/download";
@@ -100,6 +101,28 @@ export type GenerationProgressRead = {
   done: DocType[];
   current: DocType | null;
 };
+
+// Phase-57-2:追記
+// devex-api app/schemas/document.py の TestSpecRead に対応する。counts はテストの件数、issues は
+// 決定的な検証の指摘、outdated は生成した時点の入力(文書の版・段階の承認した版)が今と違うか、
+// design_gaps は「設計に無い」と印を付けたテストの件数。
+export type TestSpecRead = {
+  document: GeneratedDocumentRead;
+  counts: { integration: number; system: number };
+  issues: DocumentIssueRead[];
+  outdated: boolean;
+  design_gaps: number;
+};
+
+// テスト仕様書の今の版。まだ無ければ(404)null。
+export async function getTestSpec(projectId: string): Promise<TestSpecRead | null> {
+  try {
+    return await apiFetch<TestSpecRead>(`/api/v1/projects/${projectId}/test-spec`);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
 
 export function getGenerationProgress(projectId: string): Promise<GenerationProgressRead | null> {
   return apiFetch<GenerationProgressRead | null>(`/api/v1/projects/${projectId}/generation-progress`);

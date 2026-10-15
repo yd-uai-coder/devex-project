@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-6,53-4
+// 作成：Phase-3-6｜更新：Phase-6-6,53-4,57-2,57(完了後の調整)
 // Phase-53-4:追記 ── vitest.vi
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -64,5 +64,27 @@ describe("DocumentTabs", () => {
     expect(screen.getByRole("heading", { name: "外部設計" })).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "要件定義" }));
     expect(onActiveTypeChange).toHaveBeenCalledWith("requirements");
+  });
+
+  // Phase-57-2:追記
+  it("テスト仕様書のタブの中身を渡すと、4文書の後ろに「テスト仕様書(結合・総合)」のタブを足す", async () => {
+    const user = userEvent.setup();
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DocumentTabs projectId="p1" documents={DOCS} testSpecTab={() => <p>テスト仕様書の中身</p>} />
+      </TamaguiProvider>,
+    );
+
+    const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
+    // Phase-57(完了後の調整)：更新
+    // expect(tabs).toEqual(["要件定義", "外部設計", "テスト仕様"]);
+    // ↓↓
+    expect(tabs).toEqual(["要件定義", "外部設計", "テスト仕様書(結合・総合)"]);
+
+    // Phase-57(完了後の調整)：更新
+    // await user.click(screen.getByRole("tab", { name: "テスト仕様" }));
+    // ↓↓
+    await user.click(screen.getByRole("tab", { name: "テスト仕様書(結合・総合)" }));
+    expect(screen.getByText("テスト仕様書の中身")).toBeInTheDocument();
   });
 });

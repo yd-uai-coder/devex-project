@@ -1,10 +1,12 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,6-6,36-3
+// 作成：Phase-3-6｜更新：Phase-6-2,6-6,36-3,57-2
 // Phase-36-3:追記 ── ../documentsApi.adoptRequirement
+// Phase-57-2:追記 ── ../documentsApi.getTestSpec
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   adoptRequirement,
   DownloadError,
   downloadDocument,
+  getTestSpec,
   listDocuments,
   listDocumentVersions,
   restoreDocumentVersion,
@@ -29,6 +31,32 @@ describe("listDocuments", () => {
     await listDocuments("p1");
 
     expect(stub.requests[0].url).toContain("/api/v1/projects/p1/documents");
+  });
+});
+
+// Phase-57-2:追記
+describe("getTestSpec", () => {
+  let stub: ReturnType<typeof stubFetch>;
+
+  beforeEach(() => {
+    stub = stubFetch();
+  });
+
+  afterEach(() => {
+    stub.restore();
+  });
+
+  it("GET /api/v1/projects/{id}/test-specを呼び、まだ無ければ(404)nullを返す", async () => {
+    stub.queue({ status: 404, body: { detail: "test_spec not found", code: "DOCUMENT_NOT_FOUND" } });
+
+    await expect(getTestSpec("p1")).resolves.toBeNull();
+    expect(stub.requests[0].url).toContain("/api/v1/projects/p1/test-spec");
+  });
+
+  it("404以外の失敗はそのまま投げる", async () => {
+    stub.queue({ status: 500, body: { detail: "boom" } });
+
+    await expect(getTestSpec("p1")).rejects.toThrow();
   });
 });
 

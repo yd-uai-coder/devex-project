@@ -1,4 +1,4 @@
-// 作成：Phase-22-6｜更新：Phase-23-6,30-4,30-7,31-5
+// 作成：Phase-22-6｜更新：Phase-23-6,30-4,30-7,31-5,57-3
 // 写経レベル: 定型 ── ダウンロードのボタンと未承認の件数の案内(DiagramSyncBar と同じ形)。
 "use client";
 
@@ -39,6 +39,9 @@ type DownloadItem = {
   // zip の元になる段階。すべて承認済み(古くない)になるまで押せない(サーバーも 409 で断る)
   stages: number[];
   download: (projectId: string) => Promise<DownloadedDocument>;
+  // Phase-57-3:追記
+  // テスト仕様書を(古くなければ)同梱する zip か
+  includesTestSpec?: boolean;
 };
 
 // 詳細設計書(01〜07章)と実装計画は段階1〜7、実装手順書は段階8から作る
@@ -47,6 +50,8 @@ export const DOWNLOADS: DownloadItem[] = [
     label: "詳細設計書・実装計画をダウンロード(.zip)",
     stages: [1, 2, 3, 4, 5, 6, 7],
     download: downloadDetailedDesign,
+    // Phase-57-3:追記
+    includesTestSpec: true,
   },
   {
     label: "実装手順書をダウンロード(.zip)",
@@ -72,12 +77,18 @@ export function availableDownloads(stages: DesignStageRead[]): DownloadItem[] {
 // 元になる段階が承認されるまでボタンを押せなくし(透過表示)、どの段階が未承認かを横に出す。
 // Phase-31-5:追記
 // 簡易モードのプロジェクトは段階8だけを持つので、実装手順書の zip だけを出す。
+// Phase-57-3:追記
+// testSpecNote は、詳細設計書の zip にテスト仕様書が入るか(古くない今の版だけ入る)の注記。
 export function DesignDocumentBar({
   projectId,
   stages,
+  // Phase-57-3:追記
+  testSpecNote = null,
 }: {
   projectId: string;
   stages: DesignStageRead[];
+  // Phase-57-3:追記
+  testSpecNote?: string | null;
 }) {
   // Phase-30-7：更新
   // const [busy, setBusy] = useState(false);
@@ -147,6 +158,12 @@ export function DesignDocumentBar({
                 ? "承認済みです。"
                 : `段階${missing.join("・")}が未承認です。承認するとダウンロードできます。`}
             </Text>
+            {/* Phase-57-3:追記 */}
+            {item.includesTestSpec && testSpecNote ? (
+              <Text color="$color11" fontSize="$2" aria-label="テスト仕様書の同梱">
+                {testSpecNote}
+              </Text>
+            ) : null}
           </XStack>
         );
       })}

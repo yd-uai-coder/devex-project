@@ -1,10 +1,11 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2
 "use client";
 
 // Phase-15-8:追記 ── useState(react), ConfirmDialog
 // Phase-53-4:追記 ── ReviewPanel, documentOfTarget・TargetActionOf(@/features/design-review/model), DocType(@/features/documents/api/documentsApi)
 // Phase-53(完了後の調整):追記 ── @/features/documents/regenerationOps(DOC_LABEL, modeDocTypes, progressText, regenerationTargets, startLabel), POLL_INTERVAL_MS(@/hooks/useGenerationPolling), useInterval(@/hooks/useInterval)
 // Phase-54-2:追記 ── @/features/design-review/model.LEVEL_LABEL, @/features/design-review/model.regenerableFindings, @/features/design-review/model.regenerationStartFor, @/features/design-review/review-store.useReviewStore
+// Phase-57-2:追記 ── @/features/documents/components/TestSpecPanel.TestSpecPanel, @/features/documents/test-spec-store.useTestSpecStore, @/features/documents/regenerationOps.progressDocTypes
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
@@ -18,10 +19,13 @@ import { useReviewStore } from "@/features/design-review/review-store";
 import type { TargetActionOf } from "@/features/design-review/model";
 import type { DocType } from "@/features/documents/api/documentsApi";
 import { DocumentTabs } from "@/features/documents/components/DocumentTabs";
+import { TestSpecPanel } from "@/features/documents/components/TestSpecPanel";
 import { useDocumentsStore } from "@/features/documents/documents-store";
+import { useTestSpecStore } from "@/features/documents/test-spec-store";
 import {
   DOC_LABEL,
   modeDocTypes,
+  progressDocTypes,
   progressText,
   regenerationTargets,
   startLabel,
@@ -49,7 +53,11 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   // Phase-53(完了後の調整):追記
   // 再生成の起点(その文書から下流を作り直す)
-  const docTypes = modeDocTypes(projectMode === "detailed" ? "detailed" : "simple");
+  // Phase-57-2：更新
+  // const docTypes = modeDocTypes(projectMode === "detailed" ? "detailed" : "simple");
+  // ↓↓
+  const mode = projectMode === "detailed" ? "detailed" : "simple";
+  const docTypes = modeDocTypes(mode);
   const [startFrom, setStartFrom] = useState<DocType>("requirements");
   // Phase-53-4:追記
   // 表示中の文書のタブ(レビューの指摘の対象から移る)
@@ -61,6 +69,11 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const documentsGate = reviewGates.find((g) => g.gate === "documents");
   const sendback = reviewEffective && documentsGate ? regenerableFindings(documentsGate) : [];
   const [findingIds, setFindingIds] = useState<string[]>([]);
+  // Phase-57-2:追記
+  // テスト仕様書(簡易モードだけ。4文書に続けて作る。詳細設計モードは詳細設計画面に出す)
+  const testSpec = useTestSpecStore((s) => s.testSpec);
+  const testSpecStatus = useTestSpecStore((s) => s.status);
+  const fetchTestSpec = useTestSpecStore((s) => s.fetchTestSpec);
 
   // Phase-15-7：更新
   // useEffect(() => {
@@ -95,6 +108,28 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   };
   // 文書の版が変わったら(生成・再生成・復元)、レビューの区切りを取り直す
   const versionsKey = documents.map((doc) => `${doc.doc_type}:${doc.version}`).join(",");
+  // Phase-57-2:追記
+  // テスト仕様書は、文書の版が変わったときと、再生成(テスト仕様書だけのときも)が終わったときに取り直す
+  const simple = projectMode === "simple";
+  useEffect(() => {
+    if (simple && !regenerating) void fetchTestSpec(projectId);
+  }, [simple, regenerating, versionsKey, projectId, fetchTestSpec]);
+  const testSpecTab = simple
+    ? function TestSpecTab() {
+        return (
+          <TestSpecPanel
+            projectId={projectId}
+            testSpec={testSpec}
+            loading={testSpecStatus === "loading"}
+            generating={regenerating}
+            generateError={null}
+            readiness={{ ready: true, reason: null }}
+            emptyNotice="このプロジェクトには、まだテスト仕様書がありません(4文書を再生成すると一緒に作られます)。"
+            onGenerate={() => void regenerate(projectId, "test_spec")}
+          />
+        );
+      }
+    : undefined;
 
   return (
     <YStack paddingVertical="$4" gap="$4">
@@ -167,7 +202,10 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
       {/* 文書ごとの進み具合(要件定義：生成完了 外部設計：生成中 …) */}
       {regenerating && progress ? (
         <Text role="status" color="$color11" aria-label="再生成の進み具合">
+          {/* Phase-57-2：更新
           {progressText(docTypes, progress)}
+          ↓↓ */}
+          {progressText(progressDocTypes(mode), progress)}
         </Text>
       ) : null}
       {/* Phase-53(完了後の調整):追記 */}
@@ -200,6 +238,8 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
         documents={documents}
         activeType={activeType}
         onActiveTypeChange={setActiveType}
+        // Phase-57-2:追記
+        testSpecTab={testSpecTab}
       />
 
       {/* Phase-15-8:追記 */}

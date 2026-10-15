@@ -1,4 +1,4 @@
-# 作成：Phase-56-1
+# 作成：Phase-56-1｜更新：Phase-57-2
 """テスト仕様書の決定的な検証(純粋関数)。指摘は警告だけで、生成も保存も止めない。
 
 レビューには渡さず、機械で調べられる3つだけを見る(Phase 51-2 の決定): Must の機能要件にテストが
@@ -17,6 +17,12 @@ from app.documents.test_spec.model import ERROR_VIEWPOINT, TestSpecModel
 def row_counts(model: TestSpecModel) -> dict[str, int]:
     """結合・総合のテストの件数。"""
     return {"integration": len(model.integration), "system": len(model.system)}
+
+
+# Phase-57-2:追記
+def design_gap_count(model: TestSpecModel) -> int:
+    """「設計に無い」と印を付けたテストの件数(テストを書く前に設計を直すもの)。"""
+    return sum(1 for case in model.cases if case.design_gap)
 
 
 def is_outdated(model: TestSpecModel, current_inputs: Mapping[str, int | None]) -> bool:

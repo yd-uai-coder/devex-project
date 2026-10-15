@@ -1,4 +1,4 @@
-// 作成：Phase-22-6｜更新：Phase-23-6,30-4,30-7,31-5
+// 作成：Phase-22-6｜更新：Phase-23-6,30-4,30-7,31-5,57-3
 // 写経レベル: 定型
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -223,5 +223,17 @@ describe("DesignDocumentBar", () => {
       "aria-disabled",
       "true",
     );
+  });
+
+  // Phase-57-3:追記
+  it("テスト仕様書の注記を、詳細設計書の zip の行にだけ出す", () => {
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DesignDocumentBar projectId="p1" stages={makeStages()} testSpecNote="テスト仕様書は古いため、zip には入りません。" />
+      </TamaguiProvider>,
+    );
+
+    expect(screen.getAllByLabelText("テスト仕様書の同梱")).toHaveLength(1);
+    expect(screen.getByLabelText("テスト仕様書の同梱")).toHaveTextContent("古いため");
   });
 });

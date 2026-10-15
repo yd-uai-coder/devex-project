@@ -1,10 +1,13 @@
-# 作成：Phase-56-1
+# 作成：Phase-56-1｜更新：Phase-57-2
+# Phase-57-2：更新(docstring: SUT に design_gap_count)
 """テスト仕様書の決定的な検証のテスト。
 
-SUT は`app/documents/test_spec/validation.py`の`validate_test_spec`・`is_outdated`・`row_counts`、
+SUT は`app/documents/test_spec/validation.py`の`validate_test_spec`・`is_outdated`・`row_counts`・
+`design_gap_count`、
 ドライバはこのテスト。スタブ不要 ── 対象が純粋関数で、model だけから決まるため。
 """
 
+# Phase-57-2:追記 ── app.documents.test_spec.design_gap_count
 from tests.fixtures.spec_documents import (
     DELETE_API,
     LIST_API,
@@ -17,6 +20,7 @@ from app.documents.test_spec import (
     SpecCase,
     TestSpecModel,
     build_model,
+    design_gap_count,
     is_outdated,
     row_counts,
     validate_test_spec,
@@ -78,3 +82,5 @@ def test_is_outdated_and_counts():
     assert is_outdated(model, {"doc:requirements": 2})
     assert not is_outdated(TestSpecModel(), {"doc:requirements": 2})
     assert row_counts(model) == {"integration": 3, "system": 1}
+    # Phase-57-2:追記
+    assert design_gap_count(model) == 1

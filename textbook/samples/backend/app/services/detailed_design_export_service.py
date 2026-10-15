@@ -1,6 +1,7 @@
-# 作成：Phase-22-5｜更新：Phase-23-3,24(完了後の調整),30-4,30-7,31-3,31-4,38-2,45-4
+# 作成：Phase-22-5｜更新：Phase-23-3,24(完了後の調整),30-4,30-7,31-3,31-4,38-2,45-4,57-1
 # 写経レベル: コア ── 承認済みの章の図だけを描いて載せ、出力した図を exported にする。
 # Phase-23-3：更新(docstring: 実装計画と、入力を集める collect を段階7の生成も使うこと)
+# Phase-57-1：更新(docstring: 詳細設計書の zip にテスト仕様書を、古くないときだけ入れる)
 # Phase-30-4：更新(docstring: 段階8の実装手順書を`implementation_procedure/`に入れること)
 # Phase-30-7：更新(docstring: 実装手順書を別の zip に。承認済みになるまで zip を断る。「いつでもダウンロードできる」を削除)
 # Phase-31-4：更新(docstring: 実装手順書の zip は collect を通らず、簡易モードでも作れること)
@@ -17,6 +18,9 @@ docs/internal_design.md 3.3節「4. 詳細設計モード」の「詳細設計�
 - 段階8の実装手順書は別の zip(`implementation_procedure.zip`。`index.md`・単位ごとの md・
   `ai/<単位ID>.md`・HTML 1枚)にする(組み立ては`app.detailed_design.procedure_output`)。
 
+詳細設計書の zip には、テスト仕様書(`test_spec.md`)を、今の版があり古くないときだけ入れる
+(zip は最終成果物なので、入力が変わった後の古い仕様を混ぜない。無い・古いときは入れない)。
+
 zip は、元になる段階が承認済み(古くない)になるまで断る(`DesignDocumentNotReadyError`、409)。
 詳細設計書・実装計画は段階1〜7、実装手順書は段階8。章の「未承認」の書き方は組み立ての側に残す
 (段階7の下書きの入力が、承認済みの章だけの詳細設計書の md を使うため)。
@@ -31,6 +35,7 @@ zip は、元になる段階が承認済み(古くない)になるまで断る(`
 # Phase-30-7:追記 ── collections.abc(Iterable, Mapping), app.services.errors.DesignDocumentNotReadyError
 # Phase-31-3:追記 ── app.detailed_design.procedure_basis.procedure_basis
 # Phase-31-4:追記 ── app.detailed_design.validation.StageSources, app.services.errors.DesignStagesNotAvailableError
+# Phase-57-1:追記 ── app.services.test_spec_state.current_test_spec
 import uuid
 import zipfile
 from collections.abc import Iterable, Mapping
@@ -71,6 +76,7 @@ from app.repositories.data_item import DataItemRepository
 from app.repositories.uml_diagram import UmlDiagramRepository
 from app.services.design_stage_service import DesignStageService
 from app.services.errors import DesignDocumentNotReadyError, DesignStagesNotAvailableError
+from app.services.test_spec_state import current_test_spec
 from app.uml.domain import (
     STATUS_AFTER_EXPORT,
     ErSemanticModel,
@@ -95,6 +101,8 @@ PLAN_MARKDOWN_NAME = "implementation_plan.md"
 # PROCEDURE_HTML_NAME = f"{PROCEDURE_DIR}/implementation_procedure.html"
 # PROCEDURE_AI_DIR = f"{PROCEDURE_DIR}/ai"
 # ↓↓
+# Phase-57-1:追記
+TEST_SPEC_MARKDOWN_NAME = "test_spec.md"
 PROCEDURE_FILENAME = "implementation_procedure.zip"
 PROCEDURE_INDEX_NAME = "index.md"
 PROCEDURE_HTML_NAME = "implementation_procedure.html"
@@ -240,17 +248,20 @@ class DetailedDesignExportService:
     # ↓↓
     # Phase-30-4：更新(docstring: 実装手順書も入れる)
     # Phase-30-7：更新(docstring: 実装手順書を外し、段階1〜7が承認済みでなければ断る)
+    # Phase-57-1：更新(docstring: テスト仕様書の md を古くなければ入れる)
     async def bundle(self, project: Project) -> BundleFile:
         """詳細設計書の HTML・md、実装計画の HTML・md と、載せた図の SVG・draw.io を zip に
-        まとめる。段階1〜7のどれかが承認済みでなければ`DesignDocumentNotReadyError`(409。図も
-        描かず`exported`にしない)、簡易ドキュメントモードのプロジェクトは
-        `DesignStagesNotAvailableError`(409)。"""
+        まとめる。テスト仕様書は、今の版があり古くなければ md を入れる。段階1〜7のどれかが
+        承認済みでなければ`DesignDocumentNotReadyError`(409。図も描かず`exported`にしない)、
+        簡易ドキュメントモードのプロジェクトは`DesignStagesNotAvailableError`(409)。"""
         # Phase-31-4:追記
         _ensure_detailed(project)
         # Phase-30-7:追記
         await self._ensure_approved(project, DOCUMENT_STAGES)
         collected = await self.collect(project, render=True)
         source = collected.source
+        # Phase-57-1:追記
+        test_spec = await current_test_spec(self._session, project)
 
         buffer = BytesIO()
         with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
@@ -262,6 +273,9 @@ class DetailedDesignExportService:
             # Phase-30-7：削除
             # for path, content in procedure_files(collected.procedure).items():
             #     archive.writestr(path, content)
+            # Phase-57-1:追記
+            if test_spec is not None and not test_spec.outdated:
+                archive.writestr(TEST_SPEC_MARKDOWN_NAME, test_spec.document.content)
             for path, content in collected.files.items():
                 archive.writestr(path, content)
 

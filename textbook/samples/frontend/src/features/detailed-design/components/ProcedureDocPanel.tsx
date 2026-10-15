@@ -1,4 +1,4 @@
-// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38-3,38(完了後の調整),44-3,53-5,53(完了後の調整),54-1
+// 作成：Phase-27-3｜更新：Phase-28-3,28-4,30-5,31-5,38-3,38(完了後の調整),44-3,53-5,53(完了後の調整),54-1,57-2
 // 注: Phase 28 で大きく書き直したため、旧コードのコメントアウトは要所だけにした(27-3 の版は Phase-27-3 の教材を参照)。
 "use client";
 
@@ -9,8 +9,10 @@
 // Phase-53-5:追記 ── @/features/design-review/model.unreviewedNotice, @/features/design-review/review-store.useReviewStore
 // Phase-53(完了後の調整):追記 ── ReviewFindingBadge(@/features/design-review/components/ReviewFindingBadge), useStageReview(@/features/detailed-design/hooks/useStageReview)
 // Phase-54-1:追記 ── @/features/design-review/model.joinNotices, @/features/design-review/model.unaddressedNotice
+// Phase-57-2:追記 ── @/features/detailed-design/components/FindingLevelFilter(FindingLevelFilter, FindingFilter), @/features/detailed-design/labels.FINDING_LEVEL_COLORS
+// Phase-57-2：削除 ── tamagui.Button, @/features/detailed-design/api/types.FindingLevel(絞り込みのボタンを FindingLevelFilter へ移した)
 import { useEffect, useState } from "react";
-import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
+import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 // Phase-54-1：更新
@@ -22,10 +24,10 @@ import {
   FINDING_LEVELS,
   MAX_PROCEDURE_DOC_TARGETS,
   type DesignStageRead,
-  type FindingLevel,
   type ProcedureDocModel,
 } from "@/features/detailed-design/api/types";
 // Phase-31-5:追記
+import { FindingLevelFilter, type FindingFilter } from "@/features/detailed-design/components/FindingLevelFilter";
 import { FixTargetButton } from "@/features/detailed-design/components/FixTargetButton";
 import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
@@ -40,6 +42,7 @@ import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact"
 import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import {
+  FINDING_LEVEL_COLORS,
   FINDING_LEVEL_LABELS,
   FINDING_SOURCE_LABELS,
   UNIT_KIND_LABELS,
@@ -73,11 +76,12 @@ const TAB_KEY = "8:unit";
 // 作業単位は段階8の plan(詳細設計モードは段階7、簡易モードは実装計画書の WBS)から読む。簡易モードは
 // 直す先が文書なので、「〇〇書を直す(再生成)」で文書の画面へ移る。
 
-const LEVEL_COLOR: Record<FindingLevel, string> = {
-  critical: "var(--red10)",
-  major: "var(--orange10)",
-  minor: "var(--color10)",
-};
+// Phase-57-2：削除
+// const LEVEL_COLOR: Record<FindingLevel, string> = {
+//   critical: "var(--red10)",
+//   major: "var(--orange10)",
+//   minor: "var(--color10)",
+// };
 const NOWRAP = { ...CELL, whiteSpace: "nowrap" } as const;
 
 function LevelCounts({ findings }: { findings: Finding[] }) {
@@ -86,7 +90,10 @@ function LevelCounts({ findings }: { findings: Finding[] }) {
   return (
     <>
       {FINDING_LEVELS.filter((level) => counts[level] > 0).map((level) => (
-        <span key={level} style={{ color: LEVEL_COLOR[level], marginRight: 6, whiteSpace: "nowrap" }}>
+        // Phase-57-2：更新
+        // <span key={level} style={{ color: LEVEL_COLOR[level], marginRight: 6, whiteSpace: "nowrap" }}>
+        // ↓↓
+        <span key={level} style={{ color: FINDING_LEVEL_COLORS[level], marginRight: 6, whiteSpace: "nowrap" }}>
           {FINDING_LEVEL_LABELS[level]} {counts[level]}
         </span>
       ))}
@@ -124,7 +131,10 @@ function FindingTable({
         <tbody>
           {findings.map((finding, index) => (
             <tr key={`${finding.unit}-${finding.target}-${index}`}>
+              {/* Phase-57-2：更新
               <td style={{ ...NOWRAP, color: LEVEL_COLOR[finding.level] }}>
+              ↓↓ */}
+              <td style={{ ...NOWRAP, color: FINDING_LEVEL_COLORS[finding.level] }}>
                 {FINDING_LEVEL_LABELS[finding.level]}
               </td>
               <td style={NOWRAP}>{FINDING_SOURCE_LABELS[finding.source]}</td>
@@ -182,7 +192,10 @@ export function ProcedureDocPanel({
   // Phase-53(完了後の調整):追記
   const review = useStageReview(stage.stage);
   const setTab = useDetailedDesignStore((s) => s.setTab);
-  const [filter, setFilter] = useState<FindingLevel | "all">("all");
+  // Phase-57-2：更新
+  // const [filter, setFilter] = useState<FindingLevel | "all">("all");
+  // ↓↓
+  const [filter, setFilter] = useState<FindingFilter>("all");
 
   // Phase-28-4：更新(手順書を編集中の下書きとして持つ)
   // const doc = toProcedureDoc(stage.model);
@@ -440,6 +453,7 @@ export function ProcedureDocPanel({
             ? "「検証」は実装計画書・内部設計書の ID・パスの突き合わせ、「AI」は手順書を作った AI の指摘です。手順書の上では決めず、直す先の文書を再生成して直してください(手順が要る単位は、詳細設計モードで詰めることも検討してください)。文書を再生成すると、この段階は「古い」になります。"
             : "「検証」は設計の ID・パスの突き合わせ、「AI」は手順書を作った AI の指摘です。手順書の上では決めず、対象の段階で直してください。直した段階は差し戻され、この段階は「古い」になります。"}
         </Paragraph>
+        {/* Phase-57-2：更新
         <XStack gap="$2" flexWrap="wrap">
           <Button
             size="$2"
@@ -461,6 +475,8 @@ export function ProcedureDocPanel({
             </Button>
           ))}
         </XStack>
+        ↓↓ */}
+        <FindingLevelFilter filter={filter} counts={counts} onChange={setFilter} />
         <FindingTable
           // Phase-31-5:追記
           projectId={projectId}

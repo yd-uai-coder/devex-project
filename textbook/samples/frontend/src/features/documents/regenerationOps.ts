@@ -1,4 +1,4 @@
-// 作成：Phase-53(完了後の調整)｜更新：Phase-56-2
+// 作成：Phase-53(完了後の調整)｜更新：Phase-56-2,57-2
 // プレビューの再生成の起点と進み具合(純粋関数)。
 //
 // 下流の文書は上流を入力にして作るので、ある文書を作り直したら下流も必ず作り直す(整合を保つため)。
@@ -21,6 +21,13 @@ export function modeDocTypes(mode: "simple" | "detailed"): DocType[] {
   return mode === "detailed"
     ? ["requirements", "external_design"]
     : ["requirements", "external_design", "internal_design", "implementation_plan"];
+}
+
+// Phase-57-2:追記
+// 再生成の進み具合に並べる文書(上流から)。簡易モードはテスト仕様書も4文書に続けて作り直す
+// (詳細設計モードは段階7の後に詳細設計画面で作るので、プレビューの再生成では作らない)
+export function progressDocTypes(mode: "simple" | "detailed"): DocType[] {
+  return mode === "simple" ? [...modeDocTypes(mode), "test_spec"] : modeDocTypes(mode);
 }
 
 // 起点から作り直す文書(起点と下流)

@@ -1,13 +1,15 @@
-# 作成：Phase-22-5｜更新：Phase-23-3,24(完了後の調整),30-4,30-7
+# 作成：Phase-22-5｜更新：Phase-23-3,24(完了後の調整),30-4,30-7,57-1
 # 写経レベル: 定型 ── zip の構成・未承認の章・図の exported・ルート・共通化した描画を確かめる。
 # Phase-30-4：更新(docstring: SUT に procedure_files)
 # Phase-30-7：更新(docstring: SUT に bundle_procedure・missing_approvals・download_implementation_procedure)
+# Phase-57-1：更新(docstring: SUT に current_test_spec・spec_inputs)
 """詳細設計書の zip の出力のテスト(サービス・ルート・図の描画の共通化)。
 
 SUT: DetailedDesignExportService.bundle・bundle_procedure と missing_approvals
      (app/services/detailed_design_export_service.py)、
      download_detailed_design・download_implementation_procedure(app/api/routes/design_stages.py)、
      DesignStageService.overview(app/services/design_stage_service.py)、
+     current_test_spec・spec_inputs(app/services/test_spec_state.py)、
      render_diagram / unique_base(app/uml/export/files.py)
 ドライバ: 各テスト関数
 スタブ: なし ── DB はテスト用のインメモリ SQLite(`db_session`)を使い、図はレイアウトエンジンで
@@ -18,6 +20,7 @@ SUT: DetailedDesignExportService.bundle・bundle_procedure と missing_approvals
 # Phase-24：削除 ── app.api.routes.uml.download_bundle
 # Phase-30-4:追記 ── tests.fixtures.detailed_design.procedure_doc_model, app.services.detailed_design_export_service.PROCEDURE_INDEX_NAME
 # Phase-30-7:追記 ── app.api.routes.design_stages.download_implementation_procedure, app.services.detailed_design_export_service(PROCEDURE_FILENAME, missing_approvals), app.services.errors.DesignDocumentNotReadyError
+# Phase-57-1:追記 ── app.documents.test_spec.TestSpecModel, app.models.project.Project, app.repositories.generated_document(TEST_SPEC, GeneratedDocumentRepository), app.services.detailed_design_export_service.TEST_SPEC_MARKDOWN_NAME, app.services.test_spec_state(current_test_spec, spec_inputs)
 import io
 import zipfile
 
@@ -36,16 +39,21 @@ from app.api.routes.design_stages import (
     download_detailed_design,
     download_implementation_procedure,
 )
+from app.documents.test_spec import TestSpecModel
+from app.models.project import Project
+from app.repositories.generated_document import TEST_SPEC, GeneratedDocumentRepository
 from app.repositories.uml_diagram import UmlDiagramRepository
 from app.services.design_stage_service import DesignStageService
 from app.services.detailed_design_export_service import (
     DOCUMENT_FILENAME,
     PROCEDURE_FILENAME,
     PROCEDURE_INDEX_NAME,
+    TEST_SPEC_MARKDOWN_NAME,
     DetailedDesignExportService,
     missing_approvals,
 )
 from app.services.errors import DesignDocumentNotReadyError, DesignStagesNotAvailableError
+from app.services.test_spec_state import current_test_spec, spec_inputs
 from app.uml.domain import SemanticModelAdapter
 from app.uml.export import render_diagram, unique_base
 
@@ -221,6 +229,47 @@ async def test_bundle_requires_stages_1_to_7_and_exports_nothing(db_session: Asy
     # ↓↓
     diagrams = await UmlDiagramRepository(db_session).list_for_project(project.id)
     assert "exported" not in {d.status for d in diagrams}
+
+
+# Phase-57-1:追記
+async def _save_test_spec(
+    session: AsyncSession, project: Project, inputs: dict[str, int | None]
+) -> None:
+    model = TestSpecModel(inputs=inputs)
+    await GeneratedDocumentRepository(session).create_version(
+        project_id=project.id,
+        doc_type=TEST_SPEC,
+        content="# テスト仕様書\n",
+        model=model.model_dump(mode="json"),
+    )
+    await session.commit()
+
+
+async def test_bundle_includes_fresh_test_spec(db_session: AsyncSession) -> None:
+    """テスト仕様書の今の版が古くなければ、md を zip に入れる。"""
+    project = await create_document_project(db_session)
+    await _save_test_spec(db_session, project, await spec_inputs(db_session, project))
+
+    current = await current_test_spec(db_session, project)
+    assert current is not None and current.outdated is False
+    bundle = await DetailedDesignExportService(db_session).bundle(project)
+
+    assert _open(bundle.content).read(TEST_SPEC_MARKDOWN_NAME).decode() == "# テスト仕様書\n"
+
+
+async def test_bundle_leaves_out_missing_or_outdated_test_spec(db_session: AsyncSession) -> None:
+    """テスト仕様書が無い・古いときは入れない(古い仕様を最終成果物に混ぜない)。"""
+    project = await create_document_project(db_session)
+    service = DetailedDesignExportService(db_session)
+    assert await current_test_spec(db_session, project) is None
+    assert TEST_SPEC_MARKDOWN_NAME not in _open((await service.bundle(project)).content).namelist()
+
+    inputs = await spec_inputs(db_session, project)
+    await _save_test_spec(db_session, project, {**inputs, "stage:7": 999})
+
+    current = await current_test_spec(db_session, project)
+    assert current is not None and current.outdated is True
+    assert TEST_SPEC_MARKDOWN_NAME not in _open((await service.bundle(project)).content).namelist()
 
 
 async def test_bundle_rejects_simple_mode_project(db_session: AsyncSession) -> None:

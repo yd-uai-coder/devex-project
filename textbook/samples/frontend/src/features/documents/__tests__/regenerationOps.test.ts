@@ -1,10 +1,12 @@
-// 作成：Phase-53(完了後の調整)｜更新：Phase-56-2
+// 作成：Phase-53(完了後の調整)｜更新：Phase-56-2,57-2
 // Phase-56-2:追記 ── @/features/documents/api/documentsApi.DocType, ../regenerationOps.DOC_LABEL
+// Phase-57-2:追記 ── ../regenerationOps.progressDocTypes
 import { describe, expect, it } from "vitest";
 import type { DocType } from "@/features/documents/api/documentsApi";
 import {
   DOC_LABEL,
   modeDocTypes,
+  progressDocTypes,
   progressStates,
   progressText,
   regenerationTargets,
@@ -41,7 +43,10 @@ describe("regenerationOps", () => {
   });
 
   // Phase-56-2:追記
-  it("テスト仕様書は進み具合の対象に出るが、プレビューの文書の並びには入れない", () => {
+  // Phase-57-2：更新
+  // it("テスト仕様書は進み具合の対象に出るが、プレビューの文書の並びには入れない", () => {
+  // ↓↓
+  it("テスト仕様書は、簡易モードの進み具合にだけ並べる(起点の選択肢には入れない)", () => {
     const read = {
       targets: ["implementation_plan", "test_spec"] as DocType[],
       done: ["implementation_plan"] as DocType[],
@@ -50,5 +55,11 @@ describe("regenerationOps", () => {
     expect(simple).not.toContain("test_spec");
     expect(DOC_LABEL.test_spec).toBe("テスト仕様");
     expect(progressText(simple, read)).toBe("要件定義：対象外　外部設計：対象外　内部設計：対象外　実装計画：生成完了");
+    // Phase-57-2:追記
+    expect(progressDocTypes("simple")).toEqual([...simple, "test_spec"]);
+    expect(progressDocTypes("detailed")).toEqual(modeDocTypes("detailed"));
+    expect(progressText(progressDocTypes("simple"), read)).toBe(
+      "要件定義：対象外　外部設計：対象外　内部設計：対象外　実装計画：生成完了　テスト仕様：生成中",
+    );
   });
 });

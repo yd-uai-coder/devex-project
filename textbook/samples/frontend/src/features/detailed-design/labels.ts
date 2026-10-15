@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3,28-4,29-1,31-5,44(完了後の調整)
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3,28-4,29-1,31-5,44(完了後の調整),57-2
 // 写経レベル: コア ── 状態の言葉と、承認できる条件(古い段階は承認し直せる)。
 // Phase-18-9:追記 ── @/features/detailed-design/api/types.StageIssue
 // Phase-26-5:追記 ── UnitKind
@@ -62,6 +62,13 @@ export const FINDING_LEVEL_LABELS: Record<FindingLevel, string> = {
   critical: "最重要",
   major: "中程度",
   minor: "軽微",
+};
+// Phase-57-2:追記
+// 重要度の文字色(段階8の未定義・要決定とテスト仕様書の検証の結果で共有する)
+export const FINDING_LEVEL_COLORS: Record<FindingLevel, string> = {
+  critical: "var(--red10)",
+  major: "var(--orange10)",
+  minor: "var(--color10)",
 };
 export const FINDING_SOURCE_LABELS: Record<"check" | "ai", string> = { check: "検証", ai: "AI" };
 
