@@ -1,0 +1,305 @@
+{
+  "units": [
+    {
+      "unit_id": "M-01-T01",
+      "unit_key": "U-001",
+      "title": "プロジェクトリポジトリおよびDocker環境の構築",
+      "purpose": "開発の基盤となるプロジェクトリポジトリの構造を定義し、Docker Composeを用いてローカルでの開発・検証環境を起動できるようにする。",
+      "files": [
+        {
+          "path": "Dockerfile",
+          "kind": "config",
+          "responsibility": "バックエンドアプリケーションおよび依存関係を含むコンテナのビルド定義を行う。",
+          "basis": "実装計画書 4.3 開発環境"
+        },
+        {
+          "path": "docker-compose.yml",
+          "kind": "config",
+          "responsibility": "FastAPI、PostgreSQL、Redis、nginxなどの複数コンテナの連携と起動設定を定義する。",
+          "basis": "実装計画書 4.3 開発環境"
+        },
+        {
+          "path": "nginx/conf.d/default.conf",
+          "kind": "config",
+          "responsibility": "リバースプロキシとしてのルーティングおよび静的ファイル配信の設定を行う。",
+          "basis": "実装計画書 4.3 開発環境"
+        }
+      ],
+      "notes": [
+        "基盤構築の単位であるため、処理を持つモジュールやアプリケーションコードの実装は行わない。",
+        "Docker Composeの設定においては、内部設計書で示されているPostgreSQLおよびRedisの接続に必要なネットワークおよび環境変数の土台を含める。"
+      ],
+      "tests": [
+        {
+          "viewpoint": "Docker Compose環境が正常にビルドされ、すべてのコンテナが起動できること",
+          "sut": "docker-compose.yml",
+          "driver": "コマンドライン操作による結合確認",
+          "stub": "スタブ不要 ── インフラストラクチャ層の疎通確認のため"
+        }
+      ],
+      "gwt": [
+        "Given DockerおよびDocker Composeがインストールされていること",
+        "When docker compose up --buildコマンドを実行すること",
+        "Then PostgreSQL、Redis、およびバックエンドのコンテナがエラーなく起動すること"
+      ],
+      "verify": [
+        "docker compose upコマンドを実行し、全コンテナが正常に起動し継続して稼働することを確認する。"
+      ],
+      "findings": []
+    },
+    {
+      "unit_id": "M-02-T01",
+      "unit_key": "U-002",
+      "title": "ログイン認証・サインアップ機能の実装",
+      "purpose": "利用者からのログインおよび新規登録のHTTPリクエストを受け付け、データベースとの連携やトークン発行、レート制限処理を行う。",
+      "files": [
+        {
+          "path": "backend/app/models/db_models.py",
+          "kind": "module",
+          "responsibility": "usersテーブルに対応するSQLAlchemyモデルを定義する。",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/app/core/security.py",
+          "kind": "module",
+          "responsibility": "パスワードのハッシュ化およびハッシュ照合、認証トークンの生成機能を提供する。",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/app/repositories/user_repo.py",
+          "kind": "module",
+          "responsibility": "usersテーブルに対するCRUD操作のカプセル化を提供する。",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/app/api/v1/auth.py",
+          "kind": "module",
+          "responsibility": "新規ユーザー登録およびログイン認証のHTTPエンドポイントを実装する。",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/tests/api/v1/test_auth.py",
+          "kind": "test",
+          "responsibility": "認証および登録関連のエンドポイントに対する結合テストを実施する。",
+          "basis": "段階4"
+        }
+      ],
+      "notes": [
+        "データベースモデルの定義を最初に行い、その後にセキュリティユーティリティとリポジトリ層を順に実装する。",
+        "最後にそれらを統合するルーター層およびテストコードを実装する。"
+      ],
+      "tests": [
+        {
+          "viewpoint": "入力不備を送信すると400エラーが返ること",
+          "sut": "POST /api/v1/auth/register",
+          "driver": "結合テスト(TestClient)",
+          "stub": "スタブ不要 ── 実際のデータベースおよびリポジトリを使用する"
+        },
+        {
+          "viewpoint": "重複するメールアドレスで登録すると409エラーが返ること",
+          "sut": "POST /api/v1/auth/register",
+          "driver": "結合テスト(TestClient)",
+          "stub": "スタブ不要 ── 実際のデータベースおよびリポジトリを使用する"
+        },
+        {
+          "viewpoint": "レート制限を超過すると429エラーが返ること",
+          "sut": "POST /api/v1/auth/register",
+          "driver": "結合テスト(TestClient)",
+          "stub": "Redisレート制限モジュールをモックして超過状態を再現"
+        },
+        {
+          "viewpoint": "無効な認証情報でログインすると401エラーが返ること",
+          "sut": "POST /api/v1/auth/login",
+          "driver": "結合テスト(TestClient)",
+          "stub": "スタブ不要 ── 実際のデータベースおよびリポジトリを使用する"
+        },
+        {
+          "viewpoint": "ログインのレート制限を超過すると429エラーが返ること",
+          "sut": "POST /api/v1/auth/login",
+          "driver": "結合テスト(TestClient)",
+          "stub": "Redisレート制限モジュールをモックして超過状態を再現"
+        }
+      ],
+      "gwt": [
+        "Given 適切な登録情報がある When サインアップエンドポイントにリクエストを送信する Then 新規ユーザーが登録されトークンが返却される",
+        "Given 不正な入力情報がある When サインアップエンドポイントにリクエストを送信する Then 400エラーが返却される",
+        "Given 既に存在するメールアドレスがある When サインアップエンドポイントにリクエストを送信する Then 409エラーが返却される",
+        "Given レート制限を超えたアクセスがある When サインアップエンドポイントにリクエストを送信する Then 429エラーが返却される",
+        "Given 登録済みの有効な認証情報がある When ログインエンドポイントにリクエストを送信する Then 認証成功トークンが返却される",
+        "Given 間違ったパスワードがある When ログインエンドポイントにリクエストを送信する Then 401エラーが返却される",
+        "Given ログイン時のレート制限を超えたアクセスがある When ログインエンドポイントにリクエストを送信する Then 429エラーが返却される"
+      ],
+      "verify": [
+        "pytestを実行し、認証および登録APIのテストケースがすべて成功することを確認する。"
+      ],
+      "findings": []
+    },
+    {
+      "unit_id": "M-03-T01",
+      "unit_key": "U-003",
+      "title": "チャットヒアリングおよび参考資料読み込み機能の実装",
+      "purpose": "チャットセッションの作成・一覧取得・メッセージ履歴取得およびGemini Flash-Liteを用いたメッセージ送受信・参考資料読み込み機能を実装する。",
+      "files": [
+        {
+          "path": "backend/app/repositories/chat_repo.py",
+          "kind": "module",
+          "responsibility": "チャットセッションおよびメッセージデータのPostgreSQLに対するCRUD操作をカプセル化する",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/app/services/ai_service.py",
+          "kind": "module",
+          "responsibility": "LangChainとGemini Flash-Liteを利用してAIの対話応答を生成する",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/app/services/chat_service.py",
+          "kind": "module",
+          "responsibility": "バリデーション、参考資料の制限検証、セッションおよびメッセージの保存制御を行う",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/app/api/v1/chat.py",
+          "kind": "module",
+          "responsibility": "チャットセッション管理およびメッセージ送信のAPIエンドポイントを提供する",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/tests/api/v1/test_chat.py",
+          "kind": "test",
+          "responsibility": "チャット関連APIの正常系および異常系のテストを行う",
+          "basis": "段階4"
+        }
+      ],
+      "notes": [
+        "依存関係に従い、repository -> ai_service -> chat_service -> apiの順に実装する",
+        "SQLAlchemyモデルおよびPydanticスキーマは既存の共通定義を再利用する"
+      ],
+      "tests": [
+        {
+          "viewpoint": "未認証の場合に401未認証エラーが返ること",
+          "sut": "POST /api/v1/chat/sessions",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "スタブ不要 ── 認証ミドルウェアでトークン検証を失敗させる"
+        },
+        {
+          "viewpoint": "他人のセッションを指定した場合に403権限エラーが返ること",
+          "sut": "GET /api/v1/chat/sessions/{id}/messages",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "スタブ不要 ── 所有者検証ロジックを利用"
+        },
+        {
+          "viewpoint": "存在しないセッションを指定した場合に404対象なしが返ること",
+          "sut": "GET /api/v1/chat/sessions/{id}/messages",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "スタブ不要 ── リポジトリ検索結果の空を返す"
+        },
+        {
+          "viewpoint": "空送信や入力不備の場合に400入力不備・空送信が返ること",
+          "sut": "POST /api/v1/chat/messages",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "スタブ不要 ── バリデーションチェック"
+        },
+        {
+          "viewpoint": "レート制限を超過した場合に429レート制限超過が返ること",
+          "sut": "POST /api/v1/chat/messages",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "Redisのモックを用いてレート制限超過状態を再現する"
+        },
+        {
+          "viewpoint": "AI応答生成に失敗した場合に500AI応答失敗が返ること",
+          "sut": "POST /api/v1/chat/messages",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "ai_serviceのLLM呼び出し部分をモックし例外を発生させる"
+        }
+      ],
+      "gwt": [
+        "Given 有効な認証トークンとセッション作成データがある When POST /api/v1/chat/sessions を呼び出す Then 新規セッションが作成されセッションIDが返る",
+        "Given 認証トークンがある When GET /api/v1/chat/sessions を呼び出す Then ユーザーのセッション一覧が返る",
+        "Given 有効なセッションIDがある When GET /api/v1/chat/sessions/{id}/messages を呼び出す Then メッセージ履歴一覧が返る",
+        "Given メッセージと参考資料がある When POST /api/v1/chat/messages を呼び出す Then LLMの応答が保存され返却される"
+      ],
+      "verify": [
+        "pytest backend/tests/api/v1/test_chat.py を実行し、すべてのテストケースが成功することを確認する"
+      ],
+      "findings": []
+    },
+    {
+      "unit_id": "M-04-T01",
+      "unit_key": "U-004",
+      "title": "設計書一括生成・自己診断およびプレビュー機能の実装",
+      "purpose": "4種設計書一括生成、自己診断、保存済み設計書の一覧および個別詳細取得の機能を実装する。",
+      "files": [
+        {
+          "path": "backend/app/repositories/document_repo.py",
+          "kind": "module",
+          "responsibility": "PostgreSQLのdocumentsテーブルに対するCRUD操作をカプセル化する",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/app/services/ai_service.py",
+          "kind": "module",
+          "responsibility": "LangChain/LangGraphおよびGemini Flash-Liteを用いた設計書および自己診断結果の生成を行う",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/app/api/v1/documents.py",
+          "kind": "module",
+          "responsibility": "設計書一括生成、履歴一覧取得、個別詳細取得のリクエストを処理し認証および所有者検証を行う",
+          "basis": "段階4"
+        },
+        {
+          "path": "backend/tests/api/v1/test_documents.py",
+          "kind": "test",
+          "responsibility": "設計書生成、一覧取得、個別詳細取得APIの正常系および異常系のテストを行う",
+          "basis": "段階4"
+        }
+      ],
+      "notes": [
+        "リポジトリ層を作成したのちサービス層を実装し、最後にAPIルート層を実装する順序とする",
+        "データベースのマイグレーションは既存の共通基盤を利用してdocumentsテーブルを作成済みであること前提とする"
+      ],
+      "tests": [
+        {
+          "viewpoint": "未認証の場合に401エラーが返ること",
+          "sut": "POST /api/v1/documents/generate",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "スタブ不要 ── 認証ミドルウェアによる検証"
+        },
+        {
+          "viewpoint": "権限エラーの場合に403エラーが返ること",
+          "sut": "GET /api/v1/documents/{id}",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "スタブ不要 ── 所有者検証ロジック"
+        },
+        {
+          "viewpoint": "対象の文書が存在しない場合に404エラーが返ること",
+          "sut": "GET /api/v1/documents/{id}",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "スタブ不要 ── データベース検索結果なし"
+        },
+        {
+          "viewpoint": "レート制限を超過した場合に429エラーが返ること",
+          "sut": "POST /api/v1/documents/generate",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "Redisモック ── レート制限超過状態の再現"
+        },
+        {
+          "viewpoint": "生成に失敗した場合に500エラーが返ること",
+          "sut": "POST /api/v1/documents/generate",
+          "driver": "結合テスト(FastAPI TestClient)",
+          "stub": "ai_service ── 例外発生のモック"
+        }
+      ],
+      "gwt": [
+        "Given 認証済みユーザーがチャットセッションを指定して設計書生成を要求する When APIを実行する Then 4種設計書と自己診断結果が生成され保存される",
+        "Given 保存済みの設計書が存在する When 一覧取得APIを実行する Then 履歴一覧が返される",
+        "Given 保存済みの文書IDが存在する When 個別詳細取得APIを実行する Then 該当の文書詳細が返される"
+      ],
+      "verify": [
+        "pytestを実行しすべてのテストケースが成功することを確認する"
+      ],
+      "findings": []
+    }
+  ]
+}

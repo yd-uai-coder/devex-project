@@ -1,4 +1,4 @@
-# 作成：Phase-16-1｜更新：Phase-31-2,37-2
+# 作成：Phase-16-1｜更新：Phase-31-2,37-2,59-4
 # 写経レベル: コア ── 表を見出しの名前で読むことと、照合のキー(波括弧の中身をそろえる)。
 """外部設計書の「2.6 API一覧」の表を読み取る純粋関数(docs/external_design.md 2.7節 段階1)。
 
@@ -26,6 +26,9 @@ _TRIGGER = re.compile(rf"^\s*({'|'.join(HTTP_METHODS)})\s+(/[^\s(（]*)", re.IGN
 _PATH_PARAM = re.compile(r"\{[^}]*\}")
 # 表の区切り行(|---|:---:|)
 _SEPARATOR_CELL = re.compile(r"^:?-{3,}:?$")
+# Phase-59-4:追記
+# エラー欄の HTTP ステータス(4xx・5xx)
+_STATUS = re.compile(r"(?<!\d)([45]\d\d)(?!\d)")
 
 
 @dataclass(frozen=True)
@@ -36,10 +39,18 @@ class ApiEndpoint:
     path: str
     summary: str
     screens: tuple[str, ...]
+    # Phase-59-4:追記
+    errors: str = ""  # 「エラー」の列(内部設計書 3.3節の表のように列が無ければ空)
 
     @property
     def key(self) -> str:
         return endpoint_key(self.method, self.path)
+
+
+# Phase-59-4:追記
+def error_statuses(errors: str) -> list[str]:
+    """API の「エラー」欄から HTTP ステータス(4xx・5xx)を、出てきた順・重複なしで取り出す。"""
+    return list(dict.fromkeys(_STATUS.findall(errors)))
 
 
 def normalize_path(path: str) -> str:
@@ -70,12 +81,13 @@ def trigger_key(trigger: str) -> str | None:
 # Phase-31-2：更新
 # def extract_api_endpoints(markdown: str) -> list[ApiEndpoint]:
 # ↓↓
+# Phase-59-4：更新(docstring: 「エラー」の列も読む)
 def extract_api_endpoints(
     markdown: str, section_number: str = API_LIST_SECTION
 ) -> list[ApiEndpoint]:
     """外部設計書の2.6節の表から、APIを表の順に取り出す。節や表が無ければ空。
 
-    列は見出しの名前で探す(「メソッド」「パス」は必須、「概要」「関連画面」は任意)。
+    列は見出しの名前で探す(「メソッド」「パス」は必須、「概要」「関連画面」「エラー」は任意)。
     同じキーのAPIが2行あれば、最初の行だけを残す。`section_number`で別の節も読める
     (内部設計書の 3.3節のAPIエンドポイント一覧。メソッドの列が無い表は読み飛ばす)。"""
     # Phase-31-2：更新
@@ -127,7 +139,16 @@ def is_separator_row(cells: list[str]) -> bool:
 
 def _header_columns(cells: list[str]) -> dict[str, int] | None:
     """見出し行から列の位置を決める。メソッドとパスの列が無い表は対象外(`None`)。"""
-    names = {"method": "メソッド", "path": "パス", "summary": "概要", "screens": "関連画面"}
+    # Phase-59-4：更新
+    # names = {"method": "メソッド", "path": "パス", "summary": "概要", "screens": "関連画面"}
+    # ↓↓
+    names = {
+        "method": "メソッド",
+        "path": "パス",
+        "summary": "概要",
+        "screens": "関連画面",
+        "errors": "エラー",
+    }
     columns = {
         key: index
         for key, label in names.items()
@@ -153,4 +174,9 @@ def _endpoint_from_row(cells: list[str], columns: dict[str, int]) -> ApiEndpoint
         for screen in re.split(r"[/、,]", cell("screens"))
         if screen.strip() and screen.strip() not in ("—", "-", "なし")
     )
-    return ApiEndpoint(method=method, path=path, summary=cell("summary"), screens=screens)
+    # Phase-59-4：更新
+    # return ApiEndpoint(method=method, path=path, summary=cell("summary"), screens=screens)
+    # ↓↓
+    return ApiEndpoint(
+        method=method, path=path, summary=cell("summary"), screens=screens, errors=cell("errors")
+    )

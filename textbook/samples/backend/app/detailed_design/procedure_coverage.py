@@ -1,4 +1,5 @@
-# 作成：Phase-55-1
+# 作成：Phase-55-1｜更新：Phase-59-4
+# Phase-59-4：更新(docstring: 異常系のテスト観点が無い `error_test_gap` を足した)
 """段階8 実装可能性チェックのうち、作業単位が作るファイルの網羅と順序の判定(純粋関数)。
 
 docs/internal_design.md 3.3節「5. 実装手順書」。
@@ -13,11 +14,15 @@ docs/internal_design.md 3.3節「5. 実装手順書」。
 - テーブルを作る単位が無い(`table_coverage`): スキーマのファイル(モデル・マイグレーション)の
   パスと責務に、テーブルの名前が出てこない(名前の出ないスキーマのファイルは、全テーブルを作る
   まとめたファイルとみなす)。
+- 異常系のテスト観点が無い(`error_test_gap`。簡易モードだけ): 単位の API のエラー欄に HTTP
+  ステータスがあるのに、手順書のテスト観点にそのどれも出ず、異常系の言葉も無い。
 
 モードの違い(ファイル → モジュール一覧の行の引き方)は、呼び出し側が`row_of`で渡す。
 検証(validation.py)がこのモジュールを使うので、ここから validation は import しない。
 """
 
+# Phase-59-4:追記 ── re
+import re
 from collections.abc import Callable, Sequence, Set
 from dataclasses import dataclass
 
@@ -233,3 +238,23 @@ def table_coverage(tables: Sequence[str], files: Sequence[UnitFileRef]) -> Table
             t for t in names if not table_mentioned(t, flat)
         ),
     )
+
+
+# Phase-59-4:追記
+# 観点の文が異常系を書いているとみなす言葉(ステータスの番号を書かない観点もあるため)
+_ERROR_WORDS = re.compile(r"エラー|失敗|拒否|異常|不正")
+
+
+def error_test_gap(statuses: Sequence[str], doc: UnitProcedure) -> tuple[str, ...]:
+    """単位の API のエラー欄の HTTP ステータスがあるのに、手順書のテスト観点に異常系が無ければ、
+    そのステータスすべて。異常系があるとみなすのは、観点・SUT・Given / When / Then にステータスの
+    どれかが出るか、観点の文に異常系の言葉(`_ERROR_WORDS`)があるとき(ステータスごとの網羅は
+    テスト仕様書が受け持つ)。"""
+    if not statuses:
+        return ()
+    text = "\n".join([*(f"{t.viewpoint} {t.sut}" for t in doc.tests), *doc.gwt])
+    if any(status in text for status in statuses):
+        return ()
+    if any(_ERROR_WORDS.search(t.viewpoint) for t in doc.tests):
+        return ()
+    return tuple(statuses)

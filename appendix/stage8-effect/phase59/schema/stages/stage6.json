@@ -1,0 +1,197 @@
+{
+  "stage": 6,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "logics": [
+      {
+        "pre": "メールアドレスとパスワードが有効な形式であること",
+        "args": "email: 登録するユーザーのメールアドレス / password: 登録するユーザーのパスワード",
+        "post": "ユーザーが正常に登録され、ユーザー情報が返されること",
+        "module": "app/services/auth.py",
+        "pseudo": [
+          {
+            "sub": [
+              "app/repositories/user.py を使用してメールアドレスを検索する"
+            ],
+            "text": "リクエストされたメールアドレスがすでに users テーブルに存在するか確認する"
+          },
+          {
+            "sub": [
+              "すでに登録済みの場合は ConflictError を送出する"
+            ],
+            "text": "メールアドレスの重複チェックの結果を評価する"
+          },
+          {
+            "sub": [
+              "平文のパスワードを安全な形式に変換する"
+            ],
+            "text": "パスワードのハッシュ化など、ユーザー登録に必要なデータを準備する"
+          },
+          {
+            "sub": [
+              "app/repositories/user.py を使用して新規レコードを作成する"
+            ],
+            "text": "users テーブルに新しいユーザー情報を保存する"
+          },
+          {
+            "sub": [
+              "機密情報を除外したユーザーデータを返却形式に整える"
+            ],
+            "text": "作成されたユーザーの情報を戻り値として構築し、呼び出し元に返す"
+          }
+        ],
+        "raises": "ConflictError: すでに登録済みのメールアドレスの場合、409 Conflict を返す",
+        "returns": "作成されたユーザーの情報",
+        "function": "register_user",
+        "signature": "def register_user(email: str, password: str) -> dict"
+      },
+      {
+        "pre": "認証情報の形式が正しく、users テーブルにアクセス可能なこと",
+        "args": "credentials: 認証情報",
+        "post": "有効なアクセストークンとリフレッシュトークンが発行されること",
+        "module": "app/services/auth.py",
+        "pseudo": [
+          {
+            "sub": [
+              "ユーザーが存在しない場合は例外を送出する"
+            ],
+            "text": "受け取った認証情報をもとに app/repositories/user.py を介してユーザー情報を取得する"
+          },
+          {
+            "sub": [
+              "パスワードが一致しない場合は例外を送出する"
+            ],
+            "text": "取得したユーザー情報のパスワードハッシュと入力されたパスワードを検証する"
+          },
+          {
+            "sub": [
+              "有効期限を設定してトークンを発行する"
+            ],
+            "text": "アクセストークンおよびリフレッシュトークンを生成する"
+          },
+          {
+            "sub": [
+              "保存に失敗した場合は例外を送出する"
+            ],
+            "text": "必要に応じて app/clients/redis.py を介してリフレッシュトークンをキャッシュまたは保存する"
+          },
+          {
+            "sub": [],
+            "text": "生成したアクセストークンとリフレッシュトークンを返す"
+          }
+        ],
+        "raises": "ValueError: 認証失敗時は401エラー相当の例外を送出する",
+        "returns": "アクセストークンおよびリフレッシュトークン",
+        "function": "AuthService.login",
+        "signature": "def login(credentials: AuthCredentials) -> TokenPair"
+      },
+      {
+        "pre": "有効なリフレッシュトークンが提供されていること",
+        "args": "refresh_token: リフレッシュトークン",
+        "post": "新規アクセストークンが発行されること",
+        "module": "app/services/auth.py",
+        "pseudo": [
+          {
+            "sub": [
+              "リフレッシュトークンが有効か確認する",
+              "無効な場合はValueErrorを送出する"
+            ],
+            "text": "リフレッシュトークンの検証を行う"
+          },
+          {
+            "sub": [
+              "リフレッシュトークンからユーザー情報を取得する"
+            ],
+            "text": "ユーザー情報の特定を行う"
+          },
+          {
+            "sub": [
+              "新しいアクセストークンを発行して戻り値として準備する"
+            ],
+            "text": "新規アクセストークンを生成する"
+          }
+        ],
+        "raises": "ValueError: リフレッシュトークンが無効または期限切れの場合",
+        "returns": "新規アクセストークン",
+        "function": "AuthService.refresh_token",
+        "signature": "def refresh_token(self, refresh_token: str) -> dict"
+      },
+      {
+        "pre": "呼び出し元で対象のユーザー情報が正しく取得されていること",
+        "args": "user_info: 新規アクセストークンを再発給する対象のユーザー情報",
+        "post": "新規アクセストークンが生成されて返却されること",
+        "module": "app/services/auth.py",
+        "pseudo": [
+          {
+            "sub": [
+              "秘密鍵や有効期限の環境変数を取得する"
+            ],
+            "text": "アクセストークン生成のための設定情報を読み込む"
+          },
+          {
+            "sub": [
+              "ユーザーIDや関連する識別子を含める",
+              "トークンの有効期限を設定する"
+            ],
+            "text": "ユーザー情報からペイロードを作成する"
+          },
+          {
+            "sub": [
+              "設定されたアルゴリズムで署名を作成する"
+            ],
+            "text": "アクセストークンを暗号化および署名して生成する"
+          }
+        ],
+        "raises": "なし",
+        "returns": "再発給された新規アクセストークン",
+        "function": "AuthService._generate_access_token",
+        "signature": "def _generate_access_token(self, user_info: dict) -> str:"
+      },
+      {
+        "pre": "有効な認証コンテキストが存在すること",
+        "args": "refreshToken: ログアウト対象のリフレッシュトークン",
+        "post": "指定されたリフレッシュトークンが無効化されていること",
+        "module": "app/services/auth.py",
+        "pseudo": [
+          {
+            "sub": [
+              "リフレッシュトークンの形式や署名を検証する"
+            ],
+            "text": "受け取ったリフレッシュトークンの検証を行う"
+          },
+          {
+            "sub": [
+              "データベースまたは Redis から該当するトークン情報を取得する",
+              "トークンが存在しない、または期限切れの場合は例外を送出する"
+            ],
+            "text": "リフレッシュトークンの有効性を確認する"
+          },
+          {
+            "sub": [
+              "該当するトークンを破棄またはブラックリストに追加する"
+            ],
+            "text": "リフレッシュトークンを無効化する"
+          }
+        ],
+        "raises": "リフレッシュトークンが無効または期限切れの場合にエラーを送出する",
+        "returns": "なし",
+        "function": "AuthService.logout",
+        "signature": "def logout(self, refreshToken: str) -> None"
+      }
+    ]
+  },
+  "updated_at": "2026-10-15T06:13:26.480531Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

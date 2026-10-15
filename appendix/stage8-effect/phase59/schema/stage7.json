@@ -1,0 +1,366 @@
+{
+  "risks": [
+    {
+      "risk": "Gemini Flash-LiteのAPI制限や応答遅延により、4種の設計書一括生成およびチャットのSSEストリーミングが想定以上に時間がかかる可能性がある。",
+      "mitigation": "非同期ジョブ機構によるポーリングでの進捗確認を徹底し、タイムアウト対策やプロンプトの最適化を行う。納期が厳しい場合は自己診断の段階数を簡略化する。"
+    },
+    {
+      "risk": "多数の同時リクエストや不正利用によるサーバー負荷、あるいは総当たり攻撃のリスクがある。",
+      "mitigation": "Redisを用いたレート制限を実装し、異常なリクエストに対しては429 Too Many Requestsを返却する。"
+    },
+    {
+      "risk": "AIが生成するMarkdown設計書や自己診断結果のフォーマットが不安定になる可能性がある。",
+      "mitigation": "LangChainの出力構造化機能や厳密なプロンプト設計を行い、パースエラー発生時は再生成を行えるように例外処理とリトライ機構を整備する。"
+    }
+  ],
+  "milestones": [
+    {
+      "goal": "開発環境が立ち上がり、データベースマイグレーションが完了し、JWT認証を使ったユーザー登録・ログインができるようになる。",
+      "name": "環境構築と認証基盤の実装",
+      "tasks": [
+        {
+          "key": "U-013",
+          "kind": "base",
+          "title": "プロジェクトの初期環境構築と横断事項(認証・例外・ログ・Redis)の土台作成",
+          "modules": [
+            "app/models/user.py",
+            "app/models/token.py",
+            "app/models/project.py",
+            "app/models/chat.py",
+            "app/models/message.py",
+            "app/models/generation_job.py",
+            "app/cache/redis.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [],
+          "config_files": [
+            "Dockerfile",
+            "docker-compose.yml"
+          ],
+          "function_ids": []
+        },
+        {
+          "key": "U-002",
+          "kind": "feature",
+          "title": "ユーザー登録する処理の実装",
+          "modules": [
+            "app/models/user.py",
+            "app/repositories/auth.py",
+            "app/services/auth.py",
+            "app/api/routes/auth.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-01-T01"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-01"
+          ]
+        },
+        {
+          "key": "U-003",
+          "kind": "feature",
+          "title": "ログインする処理の実装",
+          "modules": [
+            "app/models/token.py",
+            "app/repositories/auth.py",
+            "app/cache/redis.py",
+            "app/services/auth.py",
+            "app/api/routes/auth.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-01-T02"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-02"
+          ]
+        },
+        {
+          "key": "U-004",
+          "kind": "feature",
+          "title": "トークンをリフレッシュする処理の実装",
+          "modules": [
+            "app/repositories/auth.py",
+            "app/cache/redis.py",
+            "app/services/auth.py",
+            "app/api/routes/auth.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-01-T03"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-03"
+          ]
+        },
+        {
+          "key": "U-005",
+          "kind": "feature",
+          "title": "ログアウトする処理の実装",
+          "modules": [
+            "app/repositories/auth.py",
+            "app/cache/redis.py",
+            "app/services/auth.py",
+            "app/api/routes/auth.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-01-T04"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-04"
+          ]
+        }
+      ],
+      "priority": "Must"
+    },
+    {
+      "goal": "プロジェクトを作成・一覧取得でき、Gemini Flash-Liteを用いたSSEストリーミングによるチャットヒアリングと履歴取得ができるようになる。",
+      "name": "プロジェクト管理とチャットヒアリング機能の実装",
+      "tasks": [
+        {
+          "key": "U-007",
+          "kind": "feature",
+          "title": "プロジェクト一覧を取得する処理の実装",
+          "modules": [
+            "app/repositories/project.py",
+            "app/services/project.py",
+            "app/api/routes/project.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-01-T05"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-05"
+          ]
+        },
+        {
+          "key": "U-006",
+          "kind": "feature",
+          "title": "プロジェクトを作成する処理の実装",
+          "modules": [
+            "app/repositories/project.py",
+            "app/services/project.py",
+            "app/api/routes/project.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-02-T01"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-06"
+          ]
+        },
+        {
+          "key": "U-008",
+          "kind": "feature",
+          "title": "チャット履歴を取得する処理の実装",
+          "modules": [
+            "app/repositories/project.py",
+            "app/repositories/chat.py",
+            "app/services/chat.py",
+            "app/api/routes/chat.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-02-T02"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-07"
+          ]
+        },
+        {
+          "key": "U-009",
+          "kind": "feature",
+          "title": "チャットメッセージを送信する処理の実装",
+          "modules": [
+            "app/repositories/project.py",
+            "app/repositories/chat.py",
+            "app/ai/agent.py",
+            "app/services/chat.py",
+            "app/api/routes/chat.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-02-T03"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-08"
+          ]
+        }
+      ],
+      "priority": "Must"
+    },
+    {
+      "goal": "チャット内容を基に4種のMarkdown設計書とAI自己診断結果を非同期で一括生成し、進捗確認・閲覧ができるようになる。",
+      "name": "設計書一括生成とAI自己診断機能の実装",
+      "tasks": [
+        {
+          "key": "U-010",
+          "kind": "feature",
+          "title": "設計書一括生成およびAI自己診断の非同期ジョブを開始する処理の実装",
+          "modules": [
+            "app/repositories/project.py",
+            "app/repositories/job.py",
+            "app/ai/agent.py",
+            "app/services/generation.py",
+            "app/api/routes/generation.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-02-T04"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-09"
+          ]
+        },
+        {
+          "key": "U-011",
+          "kind": "feature",
+          "title": "設計書生成ジョブの進捗を確認する処理の実装",
+          "modules": [
+            "app/repositories/job.py",
+            "app/services/generation.py",
+            "app/api/routes/generation.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-03-T01"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-10"
+          ]
+        },
+        {
+          "key": "U-012",
+          "kind": "feature",
+          "title": "生成文書および自己診断結果を取得する処理の実装",
+          "modules": [
+            "app/repositories/chat.py",
+            "app/services/generation.py",
+            "app/api/routes/generation.py",
+            "app/main.py"
+          ],
+          "req_ids": [],
+          "depends_on": [
+            "M-03-T02"
+          ],
+          "config_files": [],
+          "function_ids": [
+            "F-11"
+          ]
+        }
+      ],
+      "priority": "Must"
+    }
+  ],
+  "environment": "開発環境はPython 3.13とFastAPIによるバックエンド、Next.js(App Router)とTamaguiによるフロントエンドをDocker Composeで統合する。データベースにはPostgreSQLを使用し、キャッシュとレート制限にはRedisを利用する。CI/CDパイプラインとしてGitHub Actionsを用い、mainブランチへのpush時にVPS上のDocker Compose環境へ自動デプロイする構成とする。",
+  "crosscutting": [
+    {
+      "topic": "例外と HTTP",
+      "policy": "発生した例外は app/main.py の例外変換機構ですべて捕捉し、ValidationError は 400 Bad Request、AuthenticationError や UnauthorizedError は 401 Unauthorized、NotFoundError は 404 Not Found、ConflictError は 409 Conflict、その他の予期せぬ例外は 500 Internal Server Error にマッピングしてクライアントへ返却する。AIの応答に失敗した場合は 500 としメッセージを保存しない。",
+      "modules": [
+        "app/main.py",
+        "app/services/auth.py",
+        "app/services/chat.py",
+        "app/services/generation.py"
+      ],
+      "req_ids": [
+        "FR-010"
+      ]
+    },
+    {
+      "topic": "認証",
+      "policy": "JWTを用いた認証を実装し、アクセストークンの有効期限は30分、リフレッシュトークンの有効期限は14日とする。リフレッシュトークンはHttpOnly Cookieに設定し、ログアウト時やリフレッシュ時にRedisを用いてトークンの失効管理およびトークンローテーションを行う。",
+      "modules": [
+        "app/api/routes/auth.py",
+        "app/services/auth.py",
+        "app/repositories/auth.py",
+        "app/cache/redis.py"
+      ],
+      "req_ids": [
+        "FR-002",
+        "FR-012"
+      ]
+    },
+    {
+      "topic": "トランザクション",
+      "policy": "複数のテーブル更新や外部連携を伴う一連のデータ操作(ユーザー登録、ログイン、プロジェクト作成、チャットメッセージ送信など)は、サービス層から呼び出される永続化処理の範囲で単一のトランザクションとして扱い、エラー発生時はロールバックする。読み取り専用の処理や非同期のバッチジョブ開始については個別に処理する。",
+      "modules": [
+        "app/services/auth.py",
+        "app/services/project.py",
+        "app/services/chat.py",
+        "app/services/generation.py",
+        "app/repositories/auth.py",
+        "app/repositories/project.py",
+        "app/repositories/chat.py",
+        "app/repositories/job.py"
+      ],
+      "req_ids": []
+    },
+    {
+      "topic": "ログ",
+      "policy": "セキュリティ上の理由から、ユーザーが入力した対話内容や機密情報はアプリケーションログに残さないものとする。ログにはエラーの有無、処理時刻、およびトラブルシューティングに必要なシステム状態のみを出力する。",
+      "modules": [
+        "app/main.py",
+        "app/api/routes/chat.py",
+        "app/ai/agent.py"
+      ],
+      "req_ids": [
+        "NFR-006"
+      ]
+    },
+    {
+      "topic": "レート制限",
+      "policy": "ログインの総当たり攻撃や登録の大量作成、およびチャットや設計書生成の不正利用を防ぐため、Redisを用いたレート制限を適用し、制限超過時は Retry-After ヘルパーを含む 429 Too Many Requests を返却する。(要決定: 制限回数やウィンドウ期間)",
+      "modules": [
+        "app/cache/redis.py",
+        "app/api/routes/auth.py",
+        "app/api/routes/chat.py",
+        "app/api/routes/generation.py"
+      ],
+      "req_ids": [
+        "FR-011"
+      ]
+    },
+    {
+      "topic": "非同期処理",
+      "policy": "4種の設計書一括生成およびAI自己診断の処理は時間がかかるため、FastAPIのバックグラウンドタスクまたは非同期ジョブ機構を用いてバックグラウンドで実行し、クライアントへは即座にジョブIDを返却してポーリング等による進捗確認を行う。",
+      "modules": [
+        "app/services/generation.py",
+        "app/repositories/job.py",
+        "app/ai/agent.py",
+        "app/api/routes/generation.py"
+      ],
+      "req_ids": [
+        "FR-005",
+        "FR-006",
+        "NFR-003"
+      ]
+    }
+  ],
+  "next_unit_seq": 14
+}

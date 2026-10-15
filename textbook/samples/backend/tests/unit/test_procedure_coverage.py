@@ -1,10 +1,11 @@
-# 作成：Phase-55-1
+# 作成：Phase-55-1｜更新：Phase-59-1,59-4
 """段階8 実装可能性チェックの、単位が作るファイルの網羅と順序の判定のテスト。
 
 SUT は`app/detailed_design/procedure_coverage.py`の各関数、ドライバはこのテスト。
 スタブ不要 ── 対象が純粋関数で、引数(単位・手順書・モジュール一覧の行)だけから決まるため。
 """
 
+# Phase-59-4:追記 ── app.detailed_design.procedure_coverage.error_test_gap, app.detailed_design.procedure_doc.TestPoint
 import pytest
 
 from app.detailed_design.plan import PlanTask
@@ -12,6 +13,7 @@ from app.detailed_design.procedure_coverage import (
     LateDependency,
     TableCoverage,
     UnitFileRef,
+    error_test_gap,
     has_test_file,
     is_schema_path,
     is_test_path,
@@ -21,6 +23,9 @@ from app.detailed_design.procedure_coverage import (
     unit_files,
 )
 from app.detailed_design.procedure_doc import PlanUnit, UnitFile, UnitProcedure
+
+# Test で始まる名前は pytest がテストのクラスとして集めようとするので、別名にする
+from app.detailed_design.procedure_doc import TestPoint as Point
 from app.detailed_design.structure import ModuleRow
 
 ROUTE = "app/api/routes/auth.py"
@@ -216,3 +221,39 @@ def test_bundled_schema_file_covers_every_table() -> None:
     assert table_coverage(["projects", "documents"], bundled) == TableCoverage(
         ("app/models/orm.py",), ()
     )
+
+
+# Phase-59-1:追記
+def test_migration_only_in_plan_config_files_covers_every_table() -> None:
+    """モジュール一覧にモデルの行が無くても、段階7 の config_files のマイグレーションで
+    テーブルを作る。"""
+    unit = _unit("M-01-T01", modules=[ROUTE], config=["alembic/versions/"])
+
+    files = unit_files(unit, None, _row_of)
+
+    assert table_coverage(["users", "projects"], files) == TableCoverage(
+        ("alembic/versions/",), ()
+    )
+
+
+# Phase-59-4:追記
+def _doc_with_tests(*viewpoints: str, gwt: list[str] | None = None) -> UnitProcedure:
+    tests = [Point(viewpoint=v, sut="POST /api/v1/x") for v in viewpoints]
+    return UnitProcedure(unit_id="M-01-T01", tests=tests, gwt=gwt or [])
+
+
+@pytest.mark.parametrize(
+    ("statuses", "doc", "expected"),
+    [
+        (["400", "404"], _doc_with_tests("登録できる"), ("400", "404")),
+        (["400", "404"], _doc_with_tests("登録できる", "他人の ID で 404"), ()),
+        (["409"], _doc_with_tests("登録できる", gwt=["Then 409 が返る"]), ()),
+        (["409"], _doc_with_tests("登録できる", "重複登録はエラーになる"), ()),
+        (["409"], _doc_with_tests("登録できる", gwt=["Then エラーなく保存される"]), ("409",)),
+        ([], _doc_with_tests("登録できる"), ()),
+    ],
+)
+def test_error_test_gap(statuses: list[str], doc: UnitProcedure, expected: tuple) -> None:
+    """エラー欄のステータスが観点・SUT・GWT のどこにも出ず、観点の文に異常系の言葉も無ければ、
+    そのステータスすべて(GWT の言葉は見ない)。"""
+    assert error_test_gap(statuses, doc) == expected

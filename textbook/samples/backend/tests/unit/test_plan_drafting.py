@@ -1,4 +1,4 @@
-# 作成：Phase-23-4｜更新：Phase-26-2,42-2
+# 作成：Phase-23-4｜更新：Phase-26-2,42-2,59-1
 # 写経レベル: 定型 ── プロンプトの組み立てと変換の確認。
 """段階7の下書きの入出力(プロンプト・出力スキーマ・意味モデルへの変換)のテスト。
 
@@ -188,6 +188,13 @@ def test_system_prompts_name_default_topics_and_end_with_naming_rules():
     # Phase-42-2:追記
     # 横断事項には、担う要件の ID を要件定義書の ID のまま書かせる
     assert "req_ids" in CROSSCUTTING_SYSTEM_PROMPT
+
+
+# Phase-59-1:追記
+def test_plan_prompt_places_schema_task_in_first_milestone():
+    """テーブルを作るタスク(モデル・マイグレーション)を最初のマイルストーンに置かせる。"""
+    assert "テーブルを作るタスク(モデルとマイグレーション)" in PLAN_SYSTEM_PROMPT
+    assert "マイグレーションのファイル(例: alembic/versions/)は config_files" in PLAN_SYSTEM_PROMPT
 
 
 def test_to_crosscutting_normalizes_requirement_ids():

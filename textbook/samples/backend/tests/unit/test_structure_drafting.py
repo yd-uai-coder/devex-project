@@ -1,4 +1,4 @@
-# 作成：Phase-19-2｜更新：Phase-55(完了後の調整)
+# 作成：Phase-19-2｜更新：Phase-55(完了後の調整),59-1
 # 写経レベル: 定型 ── プロンプトに入力が載ることと、出力の変換を確かめる。
 """段階4の下書きの入出力(プロンプト・出力スキーマ・モジュール一覧への変換)のテスト。
 
@@ -112,6 +112,17 @@ def test_module_messages_describe_component_and_crud():
     assert "- api → service" in human
     assert "- F-01 × reservations: C" in human
     assert "## テーブル\n- reservations" in human
+
+
+# Phase-59-1:追記
+def test_module_prompt_places_table_models_with_repositories():
+    """テーブルを定義するモデルのファイルを一覧に置かせる(段階7 がスキーマの単位を置けるように)。"""
+    assert "リポジトリとは別に、【テーブル】のテーブルを定義するモデル(ORM)のファイル" in (
+        MODULE_SYSTEM_PROMPT
+    )
+    assert "責務にはテーブルの名前を書く" in MODULE_SYSTEM_PROMPT
+    # モジュールは構成図のパッケージの下に置くので、構成図にもモデルのパッケージを置かせる
+    assert "モデル(ORM)のパッケージ" in COMPONENT_SYSTEM_PROMPT
 
 
 # --- to_module_drafts ---

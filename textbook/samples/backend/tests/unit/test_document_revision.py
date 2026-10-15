@@ -1,4 +1,4 @@
-# 作成：Phase-49-3
+# 作成：Phase-49-3｜更新：Phase-59-2
 """文書の再生成を前の版の差分にとどめる仕組み(変更なしの行を前の版から写す)のテスト。
 
 SUT: rows_text / changed_rows / changed_rows_text / requirement_rows / external_design_rows /
@@ -91,6 +91,14 @@ def test_rows_text_is_one_json_per_row():
     assert rows_text(model.rows).splitlines()[0].startswith('{"id": "FR-001"')
     assert rows_text([]) == NONE_TEXT
     assert REVISION_RULE in REQUIREMENTS_PROMPT
+
+
+# Phase-59-2:追記
+def test_requirements_prompt_rewrites_rows_whose_point_was_decided_again():
+    """聞き直しで観点の決めたことが具体になったら、その観点の要件は unchanged にしない
+    (観点の表の変化も、変更のきっかけに数える)。"""
+    assert "【観点の表】の決めたことが、前の版の要件と食い違う" in REQUIREMENTS_PROMPT
+    assert "その観点を points に持つ要件は unchanged にせず" in REQUIREMENTS_PROMPT
 
 
 # --- 外部設計書 ---

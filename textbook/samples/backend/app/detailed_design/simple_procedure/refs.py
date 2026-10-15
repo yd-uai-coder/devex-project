@@ -1,4 +1,5 @@
-# 作成：Phase-31-2｜更新：Phase-31-7
+# 作成：Phase-31-2｜更新：Phase-31-7,59-4
+# Phase-59-4：更新(docstring: 2.6 の行にエラー欄を添える)
 """簡易ドキュメントモードの、単位が参照する設計の導出と展開(純粋関数)。
 
 詳細設計モードの`unit_refs`(procedure_doc.py)・`unit_context`(procedure_doc_refs.py)の簡易モード版。
@@ -6,7 +7,8 @@
 展開した中身は保存しない(詳細設計モードと同じく、生成の入力・画面の単位の詳細・AI 向けの出力の
 3か所が同じ関数を使う)。
 
-- DF の参照には、流れの表とデータ項目に加えて、同じ API の内部設計書 3.3・外部設計書 2.6 の行と、
+- DF の参照には、流れの表とデータ項目に加えて、同じ API の内部設計書 3.3・外部設計書 2.6 の行
+  (エラー欄を含む。異常系のテスト観点の手がかり)と、
   流れに出てくる 3.2節のテーブルを添える(作成方針 10章: API の契約・データ)。DF を持たない単位
   (基盤の単位など)には、3.2節のデータモデル全体を添える(`datamodel`)。
 - モジュールは層まで照合する(`module_layer`)。簡易モードのモジュール一覧は層ごとにまとめた行なので、
@@ -18,7 +20,8 @@
 """
 
 # Phase-31-7:追記 ── app.detailed_design.simple_procedure.internal_design.module_layer
-from app.detailed_design.api_list import endpoint_key
+# Phase-59-4:追記 ── app.detailed_design.api_list.error_statuses
+from app.detailed_design.api_list import endpoint_key, error_statuses
 from app.detailed_design.plan import PlanTask
 from app.detailed_design.procedure_doc import DesignRef, PlanUnit
 from app.detailed_design.procedure_doc_refs import ExpandedRef, UnitContext
@@ -121,10 +124,30 @@ def _api_lines(trigger: tuple[str, str] | None, book: SimpleDesignBook) -> list[
     external = book.external_apis.get(key)
     if external is not None:
         screens = "/".join(external.screens) or "—"
+        # Phase-59-4:追記
+        errors = f" / エラー: {external.errors}" if external.errors.strip() else ""
         lines.append(
-            f"- API(外部設計書 2.6): {key} ── {external.summary or '—'}(関連画面: {screens})"
+            # Phase-59-4：更新
+            # f"- API(外部設計書 2.6): {key} ── {external.summary or '—'}(関連画面: {screens})"
+            # ↓↓
+            f"- API(外部設計書 2.6): {key} ── {external.summary or '—'}"
+            f"(関連画面: {screens}){errors}"
         )
     return lines
+
+
+# Phase-59-4:追記
+def unit_error_statuses(task: PlanTask, book: SimpleDesignBook) -> list[str]:
+    """単位の処理(DF)の API の、外部設計書 2.6 の「エラー」欄の HTTP ステータス(出てきた順)。"""
+    statuses: list[str] = []
+    for key in _clean(task.function_ids):
+        flow = book.dataflows.get(key)
+        if flow is None or flow.trigger is None:
+            continue
+        external = book.external_apis.get(endpoint_key(*flow.trigger))
+        if external is not None:
+            statuses += error_statuses(external.errors)
+    return list(dict.fromkeys(statuses))
 
 
 def crosscutting_section(book: SimpleDesignBook) -> str:

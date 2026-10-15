@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,6-6,8-5,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),39-1,40-1
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,6-6,8-5,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),39-1,40-1,59-2
 # Phase-6-6:追記 ── langchain_core.messages.AIMessageChunk, app.services.chat_service._COMPLETION_CHECK_PROMPT
 # Phase-2-3:追記 ── pytest, app.api.routes.projects.get_hearing_completion
 # Phase-6-3:追記 ── app.models.prompt_template.PromptTemplate
@@ -24,6 +24,7 @@
 # Phase-35(完了後の調整):追記 ── app.hearing.is_required, app.services.chat_service._NEXT_QUESTION_TEMPLATE
 # Phase-39-1:追記 ── app.hearing.point_def,
 #   app.services.chat_service(_LATEST_QUESTION_NOTE, _drop_completion_claims)
+# Phase-59-2:追記 ── app.services.chat_service._DELEGATED_NOTE
 import pytest
 import structlog.testing
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -67,6 +68,7 @@ from app.schemas.hearing import (
 )
 from app.services.chat_service import (
     _CODE_CARD_NOTE,
+    _DELEGATED_NOTE,
     _EMPTY_REPLY_WITH_CARDS,
     _HEARING_SYSTEM_PROMPT,
     _LATEST_QUESTION_NOTE,
@@ -641,6 +643,10 @@ async def test_judge_points_shows_numbered_messages_and_current_table(
     assert "purpose|目的・課題|" in human[-1]
     # Phase-39-1:追記
     assert point_def("tech").done_when in human[-1]  # 決まったと言える条件も表で渡す
+    # Phase-59-2:追記
+    # 判断を委ねられても、値の無い提案への同意は決まったことにしない
+    assert "具体的な値・方式(回数・時間・方式の名前など)が無ければopenにする" in human[-1]
+    assert "adoptedなら、同意した提案の具体的な値・方式を書く" in human[-1]
 
 
 async def test_judge_points_names_point_of_latest_ai_card(db_session: AsyncSession) -> None:
@@ -1521,12 +1527,35 @@ async def test_stream_reply_keeps_only_cards_for_targets_and_yields_them_after_t
     assert [c["point_key"] for c in chunks[1].cards] == ["purpose"]
     system_prompt = llm.reply_messages[0][0].content
     assert "問いを1つだけ聞いてください" in system_prompt
+    # Phase-59-2:追記
+    assert "判断を委ねた観点は、自由に答える観点でも必ず選択肢カードにし" in system_prompt
     assert "- purpose: 目的・課題" in system_prompt
     assert "- users:" not in system_prompt
     assert "[まだ確認できていない観点]\n- 目的・課題(例: " in system_prompt
     assert "- 利用者と使う場面(例: " not in system_prompt
     history = await ChatHistoryRepository(db_session).list_for_project(project.id)
     assert history[-1].cards == chunks[1].cards
+
+
+# Phase-59-2:追記
+async def test_stream_reply_asks_delegated_point_with_value_card(db_session: AsyncSession) -> None:
+    """利用者が判断を委ねたら、次に聞く観点を具体的な値のカードで聞くよう、返信の指示の最後に
+    コードが添える(委ねていない発言には添えない)。"""
+    project = await _project_with_scale_decided(db_session)
+    llm = _RecordingLLM()
+
+    async for _ in ChatService(db_session).stream_reply(
+        project, user_message="おすすめでよいです", llm=llm
+    ):
+        pass
+    async for _ in ChatService(db_session).stream_reply(
+        project, user_message="社内の在庫を管理したい", llm=llm
+    ):
+        pass
+
+    delegated, plain = (str(messages[-1].content) for messages in llm.reply_messages)
+    assert delegated == _DELEGATED_NOTE.format(label="目的・課題")
+    assert plain != delegated
 
 
 async def test_stream_reply_asks_scale_with_card_made_by_code(db_session: AsyncSession) -> None:

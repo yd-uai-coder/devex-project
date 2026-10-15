@@ -1,4 +1,4 @@
-# 更新：Phase-53(完了後の調整)
+# 更新：Phase-53(完了後の調整),59-3
 # 注: この Phase で初めて samples に載せた(delete を足した)。delete より前は以前の Phase の作成物。
 """レート制限テスト用の最小 FakeRedis。RateLimiter が使う incr / expire / pipeline / get / set
 だけを実装する(既存 tests/unit/test_auth_service.py の FakeRedis(set/exists/delete)とは別物)。
@@ -66,8 +66,22 @@ class FakeRedis:
         """key の値を返す(無ければ None)。"""
         return self._values.get(key)
 
-    async def set(self, key: str, value: str, *, ex: int | None = None) -> bool:  # noqa: ARG002
-        """key に値を設定する。`ex`(TTL秒)はテストでは失効させないので記録しない。"""
+    # Phase-59-3：更新
+    # async def set(self, key: str, value: str, *, ex: int | None = None) -> bool:  # noqa: ARG002
+    #     """key に値を設定する。`ex`(TTL秒)はテストでは失効させないので記録しない。"""
+    # ↓↓
+    async def set(
+        self,
+        key: str,
+        value: str,
+        *,
+        ex: int | None = None,  # noqa: ARG002
+        nx: bool = False,
+    ) -> bool | None:
+        """key に値を設定する。`ex`(TTL秒)はテストでは失効させないので記録しない。
+        `nx`なら key が無いときだけ設定し、あれば None を返す(redis-py と同じ)。"""
+        if nx and key in self._values:
+            return None
         self._values[key] = value
         return True
 

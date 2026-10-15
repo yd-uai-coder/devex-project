@@ -1,4 +1,4 @@
-# 作成：Phase-28-2｜更新：Phase-31-3,55-2
+# 作成：Phase-28-2｜更新：Phase-31-3,55-2,59-4
 """段階8の下書きの入出力(プロンプト・出力スキーマ・手順書への変換)のテスト。
 
 SUT: build_procedure_doc_messages / to_unit_procedure
@@ -87,6 +87,16 @@ def test_both_prompts_ask_for_test_files_when_tests_are_written() -> None:
     rule = "tests を書いたら、その観点を確かめるテストのファイルを files に kind=test で入れる"
     assert rule in PROCEDURE_DOC_SYSTEM_PROMPT
     assert rule in SIMPLE_PROCEDURE_DOC_SYSTEM_PROMPT
+
+
+# Phase-59-4:追記
+def test_simple_prompt_asks_error_test_per_status() -> None:
+    """簡易モードだけ、API のエラー欄のステータスごとに異常系の観点を書かせる(NO_ERROR_TEST と対)。
+    """
+    rule = "「エラー」にある HTTP ステータスごとに、異常系の観点を1つ"
+    assert "正常系の観点(処理が成功する)に加えて" in SIMPLE_PROCEDURE_DOC_SYSTEM_PROMPT
+    assert rule in SIMPLE_PROCEDURE_DOC_SYSTEM_PROMPT
+    assert rule not in PROCEDURE_DOC_SYSTEM_PROMPT
 
 
 def test_messages_carry_unit_expanded_refs_and_common_sections() -> None:

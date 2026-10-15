@@ -1,0 +1,32 @@
+段階4 生成  → completed(20秒) 
+  図 component (全体) を配置して承認
+段階4 承認(v4)
+段階5 手順を書く処理: ['F-01', 'F-02', 'F-03', 'F-04', 'F-05', 'F-06', 'F-07', 'F-08', 'F-09', 'F-10', 'F-11'](全件)
+段階5 生成 {"function_ids": ["F-01", "F-02", "F-03", "F-04", "F-05"]} → completed(38秒) 
+段階5 生成 {"function_ids": ["F-06", "F-07", "F-08", "F-09", "F-10"]} → completed(41秒) 
+段階5 生成 {"function_ids": ["F-11"]} → completed(10秒) 
+  段階5 の印 11 件を確認済みに: 200
+  検証 warning EMPTY_CALL 手順 F-03#1 の呼ぶ関数が空です(段階6で関数を選べません)。
+  検証 warning CALLEE_NOT_DEPENDENCY 手順 F-09#3 の呼び出し先 app/repositories/project.py が、呼び出し元 app/services/generation.py の依存先(段階4)にありません。
+  検証 warning EMPTY_CALL 手順 F-10#4 の呼ぶ関数が空です(段階6で関数を選べません)。
+段階5 承認(v13)
+段階6 詳細を書く関数: ['app/services/auth.py の register', 'app/services/auth.py の AuthService.authenticate_user', 'app/services/auth.py の AuthService.refresh_token', 'app/services/auth.py の logout', 'app/services/project.py の ProjectService.get_projects']
+段階6 生成 {"logics": [{"module": "app/services/auth.py", "function": "register"}, {"module": "app/services/auth.py", "function": "AuthService.authenticate_user"}, {"module": "app/services/auth.py", "function": "AuthService.refresh_token"}, {"module": "app/services/auth.py", "function": "logout"}, {"module": "app/services/project.py", "function": "ProjectService.get_projects"}]} → completed(30秒) 
+  段階6 の印 5 件を確認済みに: 200
+段階6 承認(v4)
+段階7 生成  → completed(20秒) 
+  段階7 の印 16 件を確認済みに: 200
+段階7 承認(v3)
+詳細設計書・実装計画の zip: 200 57971 bytes
+段階8 手順書を作る単位: ['M-01-T01', 'M-01-T02', 'M-01-T03', 'M-01-T04', 'M-01-T05', 'M-02-T01', 'M-02-T02', 'M-02-T03', 'M-02-T04', 'M-03-T01', 'M-03-T02', 'M-03-T03'](全件)
+段階8 生成 {"unit_ids": ["M-01-T01", "M-01-T02", "M-01-T03", "M-01-T04", "M-01-T05"]} → completed(41秒) 
+段階8 生成 {"unit_ids": ["M-02-T01", "M-02-T02", "M-02-T03", "M-02-T04", "M-03-T01"]} → completed(51秒) 
+段階8 生成 {"unit_ids": ["M-03-T02", "M-03-T03"]} → completed(15秒) 
+  段階8 の印 12 件を確認済みに: 200
+  検証 warning NO_TEST_FILE M-01-T02 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。
+  検証 warning NO_TEST_FILE M-02-T01 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。
+  検証 warning NO_TEST_FILE M-03-T01 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。
+  検証 warning NO_TEST_FILE M-03-T02 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。
+  検証 warning NO_TEST_FILE M-03-T03 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。
+段階8 承認(v7)
+実装手順書の zip: 200 105564 bytes

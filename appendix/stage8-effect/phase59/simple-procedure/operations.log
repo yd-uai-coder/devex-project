@@ -1,0 +1,26 @@
+段階8 手順書を作る単位: ['M-01-T01', 'M-02-T01', 'M-03-T01', 'M-04-T01'](全件)
+段階8 生成 {"unit_ids": ["M-01-T01", "M-02-T01", "M-03-T01", "M-04-T01"]} → completed(15秒) 
+  検証 warning NO_TEST_FILE M-01-T01 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。
+  検証 warning TABLE_WITHOUT_UNIT テーブル chat_sessions を作る単位がありません(スキーマのファイルに名前が出てきません)。
+  検証 warning TABLE_WITHOUT_UNIT テーブル messages を作る単位がありません(スキーマのファイルに名前が出てきません)。
+  検証 warning TABLE_WITHOUT_UNIT テーブル documents を作る単位がありません(スキーマのファイルに名前が出てきません)。
+段階8 承認(v3)
+実装手順書の zip: 200 37075 bytes
+段階8 手順書を作る単位: ['M-01-T01', 'M-02-T01', 'M-03-T01', 'M-04-T01'](全件)
+段階8 生成 {"unit_ids": ["M-01-T01", "M-02-T01", "M-03-T01", "M-04-T01"]} → completed(15秒) 
+  検証 warning NO_TEST_FILE M-01-T01 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。
+  検証 warning NO_TEST_FILE M-04-T01 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。
+  検証 warning TABLE_WITHOUT_UNIT テーブル chat_sessions を作る単位がありません(スキーマのファイルに名前が出てきません)。
+  検証 warning TABLE_WITHOUT_UNIT テーブル messages を作る単位がありません(スキーマのファイルに名前が出てきません)。
+  検証 warning TABLE_WITHOUT_UNIT テーブル documents を作る単位がありません(スキーマのファイルに名前が出てきません)。
+段階8 承認(v4)
+実装手順書の zip: 200 37791 bytes
+段階8 手順書を作る単位: ['M-01-T01', 'M-02-T01', 'M-03-T01', 'M-04-T01'](全件)
+段階8 生成 {"unit_ids": ["M-01-T01", "M-02-T01", "M-03-T01", "M-04-T01"]} → completed(20秒) 
+  検証 warning NO_TEST_FILE M-01-T01 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。
+  検証 warning NO_TEST_FILE M-04-T01 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。
+  検証 warning TABLE_WITHOUT_UNIT テーブル chat_sessions を作る単位がありません(スキーマのファイルに名前が出てきません)。
+  検証 warning TABLE_WITHOUT_UNIT テーブル messages を作る単位がありません(スキーマのファイルに名前が出てきません)。
+  検証 warning TABLE_WITHOUT_UNIT テーブル documents を作る単位がありません(スキーマのファイルに名前が出てきません)。
+段階8 承認(v5)
+実装手順書の zip: 200 37142 bytes

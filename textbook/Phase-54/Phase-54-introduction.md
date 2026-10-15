@@ -145,6 +145,10 @@ Phase 53 から引き継いだもの:
 - **ヒアリングの判定の見直し**(Phase 52 から): [54-4](./Phase-54-4.md) の判定の規則(効果は Phase 58)。
 - **Judge(狭い判定のモデル)の使い道**・`get_judge_llm()`(Phase 52 から): [54-5](./Phase-54-5.md)。
 
+## 後続 Phase での改訂
+
+- Phase 59: `FixCheckService.run_for` が判定の前に (指摘, 版) の予約札を Redis に置く(`claim_key`・`SET NX EX 600`)。承認を続けたときの並行の判定の重複を防ぐ([59-3](../Phase-59/Phase-59-3.md))。
+
 ## Phase 完了チェック(#22)
 
 設問は Phase の要点の要約(回答は求めない)。

@@ -1,4 +1,4 @@
-# 作成：Phase-16-1｜更新：Phase-37-2,45-3
+# 作成：Phase-16-1｜更新：Phase-37-2,45-3,59-4
 # 写経レベル: 定型 ── 表の読み取りとプロンプトの確認。
 """外部設計書の「2.6 API一覧」(プロンプトと表の読み取り)のテスト。
 
@@ -15,10 +15,12 @@ SUT: extract_api_endpoints / parse_trigger / trigger_key / endpoint_key
 # Phase-37-2：削除 ── langchain_core.messages.SystemMessage
 # Phase-45-3:追記 ── app.documents.internal_design.drafting.GeneratedInternalApi
 # Phase-45-3：削除 ── app.services.doc_generator_service._DOC_TYPE_PROMPTS
+# Phase-59-4:追記 ── app.detailed_design.api_list.error_statuses
 from tests.fixtures.external_design import e2e_fake_external_design_md
 
 from app.ai.llm.fake import E2eFakeLLM
 from app.detailed_design import endpoint_key, extract_api_endpoints, parse_trigger, trigger_key
+from app.detailed_design.api_list import error_statuses
 from app.documents.external_design.drafting import GeneratedApi
 from app.documents.internal_design.drafting import GeneratedInternalApi
 
@@ -96,6 +98,21 @@ def test_extract_api_endpoints_reads_only_section_2_6() -> None:
     assert endpoints[0].summary == "プロジェクトを作成する"
     assert endpoints[1].screens == ("SCR-005", "SCR-006")
     assert endpoints[2].screens == ()
+
+
+# Phase-59-4:追記
+def test_extract_api_endpoints_reads_error_column() -> None:
+    """「エラー」の列があれば読む(無ければ空)。HTTP ステータスは`error_statuses`で取り出す。"""
+    markdown = (
+        "## 2.6 API一覧\n| メソッド | パス | 概要 | 関連画面 | エラー |\n|---|---|---|---|---|\n"
+        "| POST | /api/v1/x | 作る | SCR-001 | 400 入力不正 / 409 重複 |\n"
+    )
+
+    [endpoint] = extract_api_endpoints(markdown)
+
+    assert endpoint.errors == "400 入力不正 / 409 重複"
+    assert error_statuses(endpoint.errors) == ["400", "409"]
+    assert extract_api_endpoints(EXTERNAL_DESIGN)[0].errors == ""
 
 
 def test_extract_api_endpoints_without_section_is_empty() -> None:

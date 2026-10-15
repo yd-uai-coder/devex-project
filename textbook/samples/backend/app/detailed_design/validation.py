@@ -1,4 +1,4 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2,45-4,48-1,55-2,55(完了後の調整)
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2,45-4,48-1,55-2,55(完了後の調整),59-4
 # 写経レベル: コア ── 段階ごとの検証の登録(STAGE_VALIDATORS)と、エラーと警告の分け方。
 # Phase-23-1：更新(docstring: 段階7の検証を登録したことと、その入力を書いた)
 # Phase-26-1：更新(docstring: 段階7が段階4のモジュール一覧も使うことを書いた)
@@ -51,6 +51,7 @@ Phase 23、段階8は Phase 27。登録の無い段階は検証なし)。
 # Phase-42-1:追記 ── app.detailed_design.procedure_doc.relabel_units
 # Phase-55-2:追記 ── app.detailed_design.procedure_coverage(RowOf, has_test_file, is_schema_path, late_dependencies, table_coverage, unit_files), app.detailed_design.simple_procedure.module_layer, app.detailed_design.structure.ModuleRow
 # Phase-55(完了後の調整):追記 ── app.detailed_design.structure.resolve_layer
+# Phase-59-4:追記 ── app.detailed_design.procedure_coverage.error_test_gap, app.detailed_design.simple_procedure.unit_error_statuses
 from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -99,6 +100,7 @@ from app.detailed_design.procedure import (
 from app.detailed_design.procedure_basis import ProcedureBasis, procedure_basis
 from app.detailed_design.procedure_coverage import (
     RowOf,
+    error_test_gap,
     has_test_file,
     is_schema_path,
     late_dependencies,
@@ -130,7 +132,7 @@ from app.detailed_design.sequence import (
     sut_participant,
     to_sequence,
 )
-from app.detailed_design.simple_procedure import module_layer
+from app.detailed_design.simple_procedure import module_layer, unit_error_statuses
 from app.detailed_design.stages import ProjectMode
 from app.detailed_design.structure import (
     ModuleListModel,
@@ -981,6 +983,7 @@ def _module_issues(uid: str, modules: list[str], paths: set[str]) -> list[StageI
 
 
 # Phase-27-2:追記
+# Phase-59-4：更新(docstring: NO_ERROR_TEST)
 def validate_procedure_doc(
     model: Mapping[str, Any], sources: StageSources
 ) -> list[StageIssue]:
@@ -1000,6 +1003,8 @@ def validate_procedure_doc(
       挙げている(`STUB_OUTSIDE_SEQUENCE`。手順に無い依存。手順か観点のどちらかが足りない)
     - 単位が作るファイルの網羅と順序(両モード。`_coverage_issues`): 依存先が後の単位で作られる・
       テストのファイルが無い・テーブルを作る単位が無い
+    - 軽微・手順書: 簡易モードの機能の単位で、API のエラー欄のステータスがテスト観点に1つも無い
+      (`NO_ERROR_TEST`。`_error_test_issues`)
     指摘の`target`は、処理ID・手順ID・パス・単位の ID。`unit`は指摘の出た単位の ID。
     """
     try:
@@ -1028,7 +1033,15 @@ def validate_procedure_doc(
         # Phase-55-2：更新
         # return issues + _simple_procedure_issues(basis, sources)
         # ↓↓
-        return issues + _simple_procedure_issues(basis, sources) + _coverage_issues(basis, matched)
+        # Phase-59-4：更新
+        # return issues + _simple_procedure_issues(basis, sources) + _coverage_issues(basis, matched)
+        # ↓↓
+        return (
+            issues
+            + _simple_procedure_issues(basis, sources)
+            + _error_test_issues(basis, matched)
+            + _coverage_issues(basis, matched)
+        )
     index = basis.index
     # Phase-29-5:追記
     function_list = FunctionListModel.model_validate(sources.stages.get(1) or {})
@@ -1048,6 +1061,30 @@ def validate_procedure_doc(
     # return issues
     # ↓↓
     return issues + _coverage_issues(basis, matched)
+
+
+# Phase-59-4:追記
+def _error_test_issues(
+    basis: ProcedureBasis, matched: list[tuple[UnitProcedure, PlanUnit]]
+) -> list[StageIssue]:
+    """簡易モードの、機能の単位の異常系のテスト観点(軽微。直す先は手順書)。
+
+    詳細設計モードは段階5 の手順の分岐を観点に写すので見ない。簡易モードの参照は流れの表だけで、
+    手順書のテスト観点が正常系だけになりやすい(`NO_ERROR_TEST`)。"""
+    issues: list[StageIssue] = []
+    for doc, unit in matched:
+        if unit.task.kind != "feature":
+            continue
+        missing = error_test_gap(unit_error_statuses(unit.task, basis.book), doc)
+        if missing:
+            uid = unit.unit_id
+            message = (
+                f"{uid} のテスト観点に、API のエラー({'・'.join(missing)})を確かめる異常系が"
+                "ありません(手順書を作り直すか、異常系の観点を足します)。"
+            )
+            stage = PROCEDURE_DOC_STAGE
+            issues.append(_finding("NO_ERROR_TEST", message, uid, "minor", stage, uid))
+    return issues
 
 
 def _coverage_issues(

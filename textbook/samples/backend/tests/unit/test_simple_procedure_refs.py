@@ -1,4 +1,4 @@
-# 作成：Phase-31-2｜更新：Phase-31-7
+# 作成：Phase-31-2｜更新：Phase-31-7,59-4
 """簡易モードの、単位が参照する設計の導出と展開(純粋関数)のテスト。
 
 SUT は`app/detailed_design/simple_procedure/refs.py`の純粋関数、ドライバはこのテスト。
@@ -7,6 +7,7 @@ SUT は`app/detailed_design/simple_procedure/refs.py`の純粋関数、ドライ
 """
 
 # Phase-31-7:追記 ── tests.fixtures.simple_procedure.LAYERED_INTERNAL_DESIGN_MD
+# Phase-59-4:追記 ── app.detailed_design.simple_procedure.unit_error_statuses
 from tests.fixtures.simple_procedure import (
     EXTERNAL_DESIGN_MD,
     INTERNAL_DESIGN_MD,
@@ -22,6 +23,7 @@ from app.detailed_design.simple_procedure import (
     simple_ref_label,
     simple_unit_context,
     simple_unit_refs,
+    unit_error_statuses,
 )
 
 BOOK = parse_internal_design(INTERNAL_DESIGN_MD, EXTERNAL_DESIGN_MD)
@@ -63,6 +65,23 @@ def test_dataflow_adds_api_rows_and_tables() -> None:
     assert "- API(内部設計書 3.3): POST /api/v1/reservations ── 予約を登録する" in markdown
     assert "(関連画面: SCR-001)" in markdown
     assert "#### 内部設計書 3.2 テーブル: reservations" in markdown
+
+
+# Phase-59-4:追記
+def test_dataflow_api_row_carries_error_column_and_statuses() -> None:
+    """2.6 の行にエラー欄を添え(異常系の観点の手がかり)、単位の API のステータスを取り出す。"""
+    external = EXTERNAL_DESIGN_MD.replace(
+        "| メソッド | パス | 概要 | 関連画面 |\n|---|---|---|---|",
+        "| メソッド | パス | 概要 | 関連画面 | エラー |\n|---|---|---|---|---|",
+    ).replace("| SCR-001 |", "| SCR-001 | 400 入力不正 / 409 期間の重複 |")
+    book = parse_internal_design(INTERNAL_DESIGN_MD, external)
+
+    markdown = expand_simple_ref(DesignRef("dataflow", "DF-1", True), book)
+
+    assert markdown is not None
+    assert "(関連画面: SCR-001) / エラー: 400 入力不正 / 409 期間の重複" in markdown
+    assert unit_error_statuses(_unit("M-01-T02").task, book) == ["400", "409"]
+    assert unit_error_statuses(_unit("M-01-T02").task, BOOK) == []  # エラー欄が無い
 
 
 # Phase-31-7：更新

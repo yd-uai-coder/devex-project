@@ -1,4 +1,4 @@
-# 作成：Phase-31-1｜更新：Phase-31-2,31-7,45-4
+# 作成：Phase-31-1｜更新：Phase-31-2,31-7,45-4,59-4
 """簡易ドキュメントモードの実装手順書の材料(純粋関数)。
 
 簡易モードには段階1〜7が無いので、実装手順書の作業単位と参照する設計を、生成済みの4文書
@@ -12,6 +12,7 @@
 # Phase-31-2:追記 ── app.detailed_design.simple_procedure.internal_design(DataFlow, SimpleDesignBook, parse_internal_design), app.detailed_design.simple_procedure.refs(expand_simple_ref, simple_ref_label, simple_unit_context, simple_unit_refs)
 # Phase-31-7:追記 ── app.detailed_design.simple_procedure.internal_design.module_layer
 # Phase-45-4:追記 ── app.detailed_design.simple_procedure.internal_design.book_from_model
+# Phase-59-4:追記 ── app.detailed_design.simple_procedure.refs.unit_error_statuses
 from app.detailed_design.simple_procedure.internal_design import (
     DataFlow,
     SimpleDesignBook,
@@ -24,6 +25,7 @@ from app.detailed_design.simple_procedure.refs import (
     simple_ref_label,
     simple_unit_context,
     simple_unit_refs,
+    unit_error_statuses,
 )
 from app.detailed_design.simple_procedure.wbs import (
     ENVIRONMENT_SECTION,
@@ -51,4 +53,6 @@ __all__ = [
     "simple_ref_label",
     "simple_unit_context",
     "simple_unit_refs",
+    # Phase-59-4:追記
+    "unit_error_statuses",
 ]
