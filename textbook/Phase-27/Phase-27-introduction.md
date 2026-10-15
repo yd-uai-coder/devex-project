@@ -138,6 +138,8 @@ Phase 26 から引き継いだもの:
 
 - Phase 28: `procedure_doc.py` に `find_unit`(28-1)と、生成の対象・merge(`MAX_PROCEDURE_DOC_TARGETS`・`documented_unit_ids`・`generation_targets`・`merge_unit_procedure`。28-2)を足した。段階8に生成器を登録したので、`test_design_stage_procedure_doc.py` の「生成は未対応」のテストを消した。`ProcedureDocPanel` の props に `projectId`・`onDirtyChange` を足し、生成・単位の詳細・保存を持たせた([Phase-28-introduction](../Phase-28/Phase-28-introduction.md))。
 
+- Phase 55: `validate_procedure_doc` の最後に、単位が作るファイルの網羅と順序の警告(`DEPENDENCY_BUILT_LATER`・`NO_TEST_FILE`・`NO_SCHEMA_UNIT`・`TABLE_WITHOUT_UNIT`)を両モードで足した。`plan_model()` の基盤の単位の設定にマイグレーションを足した([Phase-55-introduction](../Phase-55/Phase-55-introduction.md))。
+
 ## Phase 完了チェック(#22)
 
 1. 段階8の手順書を、単位の ID だけでなく「作ったときのタスク名」と一緒に保存するのはなぜか。段階7を並べ替えたとき、陳腐化(「古い」)と `UNIT_MISMATCH` がそれぞれ何を知らせるかを説明できるか。

@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,24(ゴール3後の調整),28-2,38-2,48-2,54-3
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,24(ゴール3後の調整),28-2,38-2,48-2,54-3,55(完了後の調整)
 # 写経レベル: コア ── 生成の受け付け → 実行 → 失敗・回収をサービス越しに確かめる。段階2は DFD・データ項目まで1トランザクションで書くこと。
 """段階の下書きの生成(受け付け・実行・回収)と、生成・検証に関わる段階のAPIのテスト。
 
@@ -783,7 +783,10 @@ async def test_stage4_generation_writes_component_and_modules_and_can_be_approve
     assert STAGE_GENERATORS[4] is generate_structure
     assert llm.structured_output_calls == [ComponentGenerationOutput, ModuleListGenerationOutput]
     [module_prompt] = prompts
-    assert "- api/routes(層: api)" in module_prompt
+    # Phase-55(完了後の調整)：更新
+    # assert "- api/routes(層: api)" in module_prompt
+    # ↓↓
+    assert "- 箱「api/routes」 / 層: api" in module_prompt
     assert "- F-01 × reservations: C" in module_prompt
     assert "## テーブル\n- reservations" in module_prompt
     assert stage4.state == "draft"

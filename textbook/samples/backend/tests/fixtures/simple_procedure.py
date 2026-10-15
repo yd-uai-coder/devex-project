@@ -1,4 +1,4 @@
-# 作成：Phase-31-1｜更新：Phase-31-2,31-3,31-4,31-7,38-1,38-2,45-3
+# 作成：Phase-31-1｜更新：Phase-31-2,31-3,31-4,31-7,38-1,38-2,45-3,55-2
 """簡易ドキュメントモードの実装手順書のテスト用の文書(実装計画書・内部設計書の Markdown)。
 
 `app/services/doc_generator_service.py`のプロンプトが指示する書式で書く。内部設計書の DF と
@@ -23,6 +23,7 @@ from app.detailed_design.validation import StageSources, validate_procedure_doc
 from app.models.project import Project
 from app.repositories.generated_document import GeneratedDocumentRepository
 
+# Phase-55-2：更新(M-01-T01 の「環境・設定」に alembic/versions/0001_reservations.py を足した)
 PLAN_MD = """# 4. 実装計画書
 
 ## 4.1 開発フェーズ分割・マイルストーン
@@ -35,7 +36,7 @@ PLAN_MD = """# 4. 実装計画書
   - 処理: なし
   - 依存: なし
   - モジュール: app/main.py
-  - 環境・設定: docker-compose.yml, .env.example
+  - 環境・設定: docker-compose.yml, .env.example, alembic/versions/0001_reservations.py
 - [ ] M-01-T02 [機能] 予約を登録する
   - 処理: DF-1
   - 要件: FR-001
@@ -201,7 +202,13 @@ def simple_procedure_doc_model(*, module: str = "app/api/reservations.py") -> di
                 "unit_id": "M-01-T02",
                 "title": "予約を登録する",
                 "purpose": "予約を登録できるようにする",
-                "files": [{"path": module, "kind": "module", "responsibility": "予約の API"}],
+                # Phase-55-2：更新
+                # "files": [{"path": module, "kind": "module", "responsibility": "予約の API"}],
+                # ↓↓
+                "files": [
+                    {"path": module, "kind": "module", "responsibility": "予約の API"},
+                    {"path": "tests/test_reservations.py", "kind": "test"},
+                ],
                 "tests": [
                     {
                         "viewpoint": "予約を登録できる",
@@ -291,7 +298,14 @@ def simple_procedure_output() -> SimpleProcedureDocGenerationOutput:
                 kind="module",
                 responsibility="予約の API",
                 basis="内部設計書 3.3",
-            )
+            ),
+            # Phase-55-2:追記
+            GeneratedUnitFile(
+                path="tests/test_reservations.py",
+                kind="test",
+                responsibility="予約の API のテスト",
+                basis="テスト観点",
+            ),
         ],
         notes=[],
         tests=[

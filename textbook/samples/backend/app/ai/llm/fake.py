@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 # Phase-52-2:追記 ── app.review.schemas.ReviewFindingOut, app.review.schemas.ReviewOutput
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
@@ -274,7 +274,10 @@ _IMPLEMENTATION_PLAN_OUTPUT = plan_doc.ImplementationPlanGenerationOutput(
                     req_ids=[],
                     depends_on=[],
                     modules=["app/main.py"],
-                    config_files=["docker-compose.yml"],
+                    # Phase-55-2：更新
+                    # config_files=["docker-compose.yml"],
+                    # ↓↓
+                    config_files=["docker-compose.yml", "alembic/versions/0001_reservations.py"],
                 ),
                 plan_doc.GeneratedTask(
                     id="M-01-T02",
@@ -656,7 +659,14 @@ _UML_OUTPUTS[PlanGenerationOutput] = PlanGenerationOutput(
                     function_ids=[],
                     depends_on=[],
                     modules=[],
-                    config_files=["Dockerfile", "docker-compose.yml"],
+                    # Phase-55-2：更新
+                    # config_files=["Dockerfile", "docker-compose.yml"],
+                    # ↓↓
+                    config_files=[
+                        "Dockerfile",
+                        "docker-compose.yml",
+                        "alembic/versions/0001_reservations.py",
+                    ],
                 ),
                 GeneratedTask(
                     kind="feature",
@@ -708,6 +718,13 @@ _UML_OUTPUTS[ProcedureDocGenerationOutput] = ProcedureDocGenerationOutput(
             responsibility="[E2E Fake] 予約の API",
             basis="段階4",
         ),
+        # Phase-55-2:追記
+        GeneratedUnitFile(
+            path="tests/test_reservations.py",
+            kind="test",
+            responsibility="[E2E Fake] 予約の登録と一覧のテスト",
+            basis="テスト観点",
+        ),
     ],
     notes=["[E2E Fake] サービスを先に書き、ルートから呼ぶ"],
     tests=_PROCEDURE_DOC_TESTS,
@@ -736,6 +753,13 @@ _UML_OUTPUTS[SimpleProcedureDocGenerationOutput] = SimpleProcedureDocGenerationO
             kind="module",
             responsibility="[E2E Fake] 予約のルート",
             basis="内部設計書 3.3",
+        ),
+        # Phase-55-2:追記
+        GeneratedUnitFile(
+            path="tests/test_reservations.py",
+            kind="test",
+            responsibility="[E2E Fake] 予約の登録のテスト",
+            basis="テスト観点",
         ),
     ],
     notes=["[E2E Fake] サービスを先に書き、ルートから呼ぶ"],

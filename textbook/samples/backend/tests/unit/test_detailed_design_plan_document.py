@@ -1,4 +1,4 @@
-# 作成：Phase-23-2｜更新：Phase-26-3
+# 作成：Phase-23-2｜更新：Phase-26-3,55-2
 # 写経レベル: 定型 ── 組み立ての出力の確認が大半。07 を段階7の生成の入力から外せることがコア。
 """07 横断事項と実装計画の組み立て(md・HTML)のテスト。
 
@@ -147,7 +147,13 @@ def test_plan_markdown_has_sections_in_order():
     # マイルストーンの処理は単位の処理から導く
     assert "| M-01 | 予約の登録 | Must | 予約を登録できる | F-01 |" in text
     assert "| " + " | ".join(UNIT_HEADERS) + " |" in text
-    assert "| M-01-T01 | 基盤 | 開発環境を用意する | — | — | — | Dockerfile |" in text
+    # Phase-55-2：更新
+    # assert "| M-01-T01 | 基盤 | 開発環境を用意する | — | — | — | Dockerfile |" in text
+    # ↓↓
+    assert (
+        "| M-01-T01 | 基盤 | 開発環境を用意する | — | — | — |"
+        " Dockerfile, alembic/versions/0001_reservations.py |"
+    ) in text
     assert f"| M-01-T02 | 機能 | 予約を登録する | F-01 | M-01-T01 | {ROUTE} | — |" in text
     assert "| F-01 | 予約を登録する | M-01-T02 |" in text
     assert "Python 3.13 と PostgreSQL" in text

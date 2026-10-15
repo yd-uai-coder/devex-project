@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2,29-1,29-2,42-1,43-2,48-1,48-2
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2,29-1,29-2,42-1,43-2,48-1,48-2,55(完了後の調整)
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -22,6 +22,7 @@
 # Phase-43-2:追記 ── app.detailed_design.data_model.er_table_definitions
 # Phase-48-1:追記 ── app.detailed_design.data_model.infer_write_ops
 # Phase-48-2:追記 ── app.detailed_design.procedure.link_branch_refs
+# Phase-55(完了後の調整):追記 ── app.detailed_design.structure.component_element_layers
 from app.detailed_design.api_list import (
     ApiEndpoint,
     endpoint_key,
@@ -178,6 +179,7 @@ from app.detailed_design.structure import (
     ModuleDraft,
     ModuleListModel,
     ModuleRow,
+    component_element_layers,
     component_layers,
     merge_modules,
     module_ref_matches,
@@ -299,6 +301,8 @@ __all__ = [
     # ── ここから Phase-15-2 の作成分 ──
     "can_approve",
     # Phase-19-1:追記
+    # Phase-55(完了後の調整):追記
+    "component_element_layers",
     "component_layers",
     # Phase-18-1:追記
     "confirm_drafts",

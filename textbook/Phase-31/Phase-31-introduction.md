@@ -202,6 +202,8 @@ Phase 30 から引き継いだもの:
 
 - [Phase 45](../Phase-45/Phase-45-introduction.md): 内部設計書・実装計画書を「構造化出力 → model → md」にし、段階8は model を持つ版では md を解析せず model から読む([45-4](../Phase-45/Phase-45-4.md))。`parse_wbs`・`parse_internal_design` は model の無い以前の版のために残し、WBS の依存先の読み替えは `plan.renamed_task_ids` に寄せた([45-2](../Phase-45/Phase-45-2.md))。内部設計書・実装計画書のプロンプト(`_DOC_TYPE_PROMPTS`)は各文書の `drafting.py` に移った。
 
+- Phase 55: 簡易モードの段階8の検証にも、単位が作るファイルの網羅と順序の警告を足した(ファイルは `module_layer` で層の行に引く。直す先は実装計画書・内部設計書・手順書)。`PLAN_MD` の基盤の単位にマイグレーション、手順書のフィクスチャにテストのファイルを足した([Phase-55-introduction](../Phase-55/Phase-55-introduction.md))。
+
 ## Phase 完了チェック(#22)
 
 1. 簡易モードの作業単位を、AI で抽出せずに、決まった書式の WBS を決定的に読んで作るのはなぜか。文書の ID と手順書の ID の関係と、書式の崩れをどこで直すか(実装計画書の再生成)から説明できるか。

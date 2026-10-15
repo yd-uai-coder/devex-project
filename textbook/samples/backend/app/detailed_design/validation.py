@@ -1,4 +1,4 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2,45-4,48-1
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2,45-4,48-1,55-2,55(完了後の調整)
 # 写経レベル: コア ── 段階ごとの検証の登録(STAGE_VALIDATORS)と、エラーと警告の分け方。
 # Phase-23-1：更新(docstring: 段階7の検証を登録したことと、その入力を書いた)
 # Phase-26-1：更新(docstring: 段階7が段階4のモジュール一覧も使うことを書いた)
@@ -49,6 +49,8 @@ Phase 23、段階8は Phase 27。登録の無い段階は検証なし)。
 # Phase-31-3：削除 ── app.detailed_design.plan.PLAN_STAGE, app.detailed_design.procedure_doc(design_index, plan_units)
 # Phase-38-1:追記 ── app.detailed_design.requirement_trace(RequirementIndex, index_from_external_design, index_from_requirements, unit_req_ids)
 # Phase-42-1:追記 ── app.detailed_design.procedure_doc.relabel_units
+# Phase-55-2:追記 ── app.detailed_design.procedure_coverage(RowOf, has_test_file, is_schema_path, late_dependencies, table_coverage, unit_files), app.detailed_design.simple_procedure.module_layer, app.detailed_design.structure.ModuleRow
+# Phase-55(完了後の調整):追記 ── app.detailed_design.structure.resolve_layer
 from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -95,6 +97,14 @@ from app.detailed_design.procedure import (
     step_id,
 )
 from app.detailed_design.procedure_basis import ProcedureBasis, procedure_basis
+from app.detailed_design.procedure_coverage import (
+    RowOf,
+    has_test_file,
+    is_schema_path,
+    late_dependencies,
+    table_coverage,
+    unit_files,
+)
 from app.detailed_design.procedure_doc import (
     PROCEDURE_DOC_STAGE,
     DesignDocument,
@@ -120,8 +130,14 @@ from app.detailed_design.sequence import (
     sut_participant,
     to_sequence,
 )
+from app.detailed_design.simple_procedure import module_layer
 from app.detailed_design.stages import ProjectMode
-from app.detailed_design.structure import ModuleListModel, module_ref_matches
+from app.detailed_design.structure import (
+    ModuleListModel,
+    ModuleRow,
+    module_ref_matches,
+    resolve_layer,
+)
 
 Severity = Literal["error", "warning"]
 
@@ -191,6 +207,9 @@ class ComponentDiagramSummary:
     status: str
     generation_status: str
     layers: tuple[str, ...] = ()
+    # Phase-55(完了後の調整):追記
+    # 箱の名前 → その箱の層(層の欄に箱の名前が書かれたとき、層に読み替える)
+    element_layers: Mapping[str, str] = field(default_factory=dict)
 
 
 # ── ここから Phase-16-2 の作成分 ──
@@ -633,8 +652,17 @@ def validate_structure(model: Mapping[str, Any], sources: StageSources) -> list[
             continue
         if not row.responsibility.strip():
             issues.append(_warning("EMPTY_RESPONSIBILITY", f"{path} の責務が空です。", path))
-        if component is not None and row.layer.strip() not in layers:
-            message = f"{path} の層「{row.layer}」が、構成図の層にありません。"
+        # Phase-55(完了後の調整)：更新
+        # if component is not None and row.layer.strip() not in layers:
+        #     message = f"{path} の層「{row.layer}」が、構成図の層にありません。"
+        #     issues.append(_warning("UNKNOWN_LAYER", message, path))
+        # ↓↓
+        if (
+            component is not None
+            and resolve_layer(row.layer, component.element_layers) not in layers
+        ):
+            known = "、".join(component.layers) or "なし"
+            message = f"{path} の層「{row.layer}」が、構成図の層({known})にありません。"
             issues.append(_warning("UNKNOWN_LAYER", message, path))
         for function_id in row.functions:
             if function_id not in function_ids:
@@ -970,6 +998,8 @@ def validate_procedure_doc(
       別の関数は、段階6が任意なので指摘しない)
     - 軽微・段階5: 手順書のテスト観点のスタブが、手順のシーケンス図で SUT から呼ばれないモジュールを
       挙げている(`STUB_OUTSIDE_SEQUENCE`。手順に無い依存。手順か観点のどちらかが足りない)
+    - 単位が作るファイルの網羅と順序(両モード。`_coverage_issues`): 依存先が後の単位で作られる・
+      テストのファイルが無い・テーブルを作る単位が無い
     指摘の`target`は、処理ID・手順ID・パス・単位の ID。`unit`は指摘の出た単位の ID。
     """
     try:
@@ -995,7 +1025,10 @@ def validate_procedure_doc(
         # Phase-38-1：更新
         # return issues + _simple_procedure_issues(basis)
         # ↓↓
-        return issues + _simple_procedure_issues(basis, sources)
+        # Phase-55-2：更新
+        # return issues + _simple_procedure_issues(basis, sources)
+        # ↓↓
+        return issues + _simple_procedure_issues(basis, sources) + _coverage_issues(basis, matched)
     index = basis.index
     # Phase-29-5:追記
     function_list = FunctionListModel.model_validate(sources.stages.get(1) or {})
@@ -1011,7 +1044,101 @@ def validate_procedure_doc(
         issues += _stub_issues(doc, unit, index, triggers)
     for unit in basis.units:
         issues += _unit_design_issues(unit, index)
+    # Phase-55-2：更新
+    # return issues
+    # ↓↓
+    return issues + _coverage_issues(basis, matched)
+
+
+def _coverage_issues(
+    basis: ProcedureBasis, matched: list[tuple[UnitProcedure, PlanUnit]]
+) -> list[StageIssue]:
+    """単位が作るファイルの網羅と順序(両モード。`procedure_coverage`)。
+
+    - 中程度: 依存先が後の単位で作られる(`DEPENDENCY_BUILT_LATER`。直す先は段階7 / 実装計画書。
+      基盤の単位が作るファイルの依存は見ない)
+    - 軽微: テスト観点があるのに、手順書にテストのファイルが無い(`NO_TEST_FILE`。直す先は手順書)
+    - 最重要: どの単位もスキーマのファイルを作らない(`NO_SCHEMA_UNIT`。全体1件。モジュール一覧に
+      スキーマの行が無ければ段階4 / 内部設計書、あれば段階7 / 実装計画書)
+    - 軽微: スキーマのファイルのパス・責務に名前の出ないテーブル(`TABLE_WITHOUT_UNIT`。
+      上の最重要が出たときは出さない)
+    依存とテーブルは、手順書が無くても段階7・文書の単位から出る。
+    """
+    units = basis.units
+    if not units:
+        # 単位が無ければ、計画そのものの指摘(WBS が無いなど)で足りる
+        return []
+    rows, row_of, tables = _coverage_sources(basis)
+    docs = {unit.unit_id: doc for doc, unit in matched}
+    files = {u.unit_id: unit_files(u, docs.get(u.unit_id), row_of) for u in units}
+    issues: list[StageIssue] = []
+    module_paths = [
+        (u.unit_id, [f.path for f in files[u.unit_id] if f.kind == "module"]) for u in units
+    ]
+    base = {u.unit_id for u in units if u.task.kind == "base"}
+    for late in late_dependencies(module_paths, rows, row_of, base):
+        message = (
+            f"{late.unit} の「{late.path}」の依存先「{late.dependency}」は、後の単位 "
+            f"{late.creator} で作られます(単位の順か、依存先を直します)。"
+        )
+        code = "DEPENDENCY_BUILT_LATER"
+        issues.append(_plan_finding(basis, code, message, late.dependency, "major", late.unit))
+    for doc, unit in matched:
+        if any(t.viewpoint.strip() or t.sut.strip() for t in doc.tests) and not has_test_file(doc):
+            uid = unit.unit_id
+            message = (
+                f"{uid} はテスト観点がありますが、作成・変更するファイルにテストのファイルが"
+                "ありません(手順書を作り直すか、テストのファイルを足します)。"
+            )
+            issues.append(_finding("NO_TEST_FILE", message, uid, "minor", PROCEDURE_DOC_STAGE, uid))
+    coverage = table_coverage(tables, [f for u in units for f in files[u.unit_id]])
+    if not coverage.schema_files and coverage.uncovered:
+        names = "、".join(coverage.uncovered)
+        message = (
+            f"どの単位も、テーブルを作るファイル(モデル・マイグレーション)を作りません"
+            f"(テーブル: {names})。"
+        )
+        if any(is_schema_path(row.path) for row in rows):
+            issues.append(_plan_finding(basis, "NO_SCHEMA_UNIT", message, None, "critical", None))
+        elif basis.mode == "simple":
+            issues.append(_doc_finding("NO_SCHEMA_UNIT", message, None, "critical", _DESIGN))
+        else:
+            issues.append(_finding("NO_SCHEMA_UNIT", message, None, "critical", 4, None))
+    elif coverage.schema_files:
+        for table in coverage.uncovered:
+            message = (
+                f"テーブル {table} を作る単位がありません(スキーマのファイルに名前が出てきません)。"
+            )
+            issues.append(_plan_finding(basis, "TABLE_WITHOUT_UNIT", message, table, "minor", None))
     return issues
+
+
+# Phase-55-2:追記
+def _coverage_sources(basis: ProcedureBasis) -> tuple[list[ModuleRow], RowOf, list[str]]:
+    """モジュール一覧の行・ファイルから行の引き方・テーブル名。詳細設計モードは段階4・3(CRUD 図)、
+    簡易モードは内部設計書のモジュール一覧(層の行。`module_layer`)と 3.2節のテーブル。"""
+    if basis.mode == "simple":
+        book = basis.book
+        return list(book.modules.values()), lambda path: module_layer(path, book), list(book.tables)
+    modules = ModuleListModel.model_validate(basis.stages.get(4) or {}).modules
+    by_path = {row.path.strip(): row for row in modules}
+    crud = CrudModel.model_validate(basis.stages.get(3) or {})
+    tables = list(dict.fromkeys(c.table.strip() for c in crud.cells if c.table.strip()))
+    return modules, lambda path: by_path.get(path.strip()), tables
+
+
+def _plan_finding(
+    basis: ProcedureBasis,
+    code: str,
+    message: str,
+    target: str | None,
+    level: FindingLevel,
+    unit: str | None,
+) -> StageIssue:
+    """直す先が作業単位の計画(段階7 / 簡易モードは実装計画書)の警告。"""
+    if basis.mode == "simple":
+        return _doc_finding(code, message, target, level, _PLAN, unit)
+    return _finding(code, message, target, level, 7, unit)
 
 
 # Phase-31-3:追記

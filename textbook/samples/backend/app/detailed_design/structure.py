@@ -1,4 +1,4 @@
-# 作成：Phase-19-1
+# 作成：Phase-19-1｜更新：Phase-55(完了後の調整)
 # 写経レベル: コア ── 構成図を段階の model に複製せず、モジュール一覧だけを持つ。パスを関与表の鍵として整える。
 """段階4 ソフトウェア構造の意味モデルと、モジュール一覧の組み立て(純粋関数)。
 
@@ -87,6 +87,28 @@ def component_layers(semantic_model: Mapping[str, Any] | None) -> list[str]:
 
 
 # Phase-19-1:追記(画面確認後の修正。依存先の区切り単位の照合)
+# Phase-55(完了後の調整):追記
+def component_element_layers(semantic_model: Mapping[str, Any] | None) -> dict[str, str]:
+    """構成図の箱の名前 → その箱の層(層が空・未設定の箱は除く)。モジュール一覧の層の欄に
+    箱の名前が書かれたとき、層に読み替えるために使う。"""
+    model = ComponentSemanticModel.model_validate(semantic_model or {})
+    found: dict[str, str] = {}
+    for element in model.elements:
+        name, layer = element.name.strip(), (element.layer or "").strip()
+        if name and layer:
+            found.setdefault(name, layer)
+    return found
+
+
+def resolve_layer(layer: str, element_layers: Mapping[str, str]) -> str:
+    """層の欄の値を構成図の層にそろえる。箱の名前(かつ層の名前でないもの)なら、その箱の層。
+    それ以外はそのまま(前後の空白は除く)。"""
+    text = layer.strip()
+    if text in set(element_layers.values()):
+        return text
+    return element_layers.get(text, text)
+
+
 _BRACES = re.compile(r"\{([^{}]*)\}")
 
 
@@ -134,13 +156,20 @@ def module_ref_matches(ref: str, path: str) -> bool:
 
 # ── ここから Phase-19-1 の当初の作成分 ──
 def merge_modules(
-    drafts: Sequence[ModuleDraft], function_list: FunctionListModel
+    # Phase-55(完了後の調整)：更新
+    # drafts: Sequence[ModuleDraft], function_list: FunctionListModel
+    # ↓↓
+    drafts: Sequence[ModuleDraft],
+    function_list: FunctionListModel,
+    element_layers: Mapping[str, str] | None = None,
 ) -> ModuleListModel:
     """AIの下書きから、モジュール一覧を組み立てる(再生成では前の版を使わず置き換える)。
 
     - パスが空の行と、同じパスの2つ目以降の行は捨てる(パスは関与表の列の鍵のため)。
     - 機能一覧に無い処理IDは捨て、残りを機能一覧の順に並べる(重複も除く)。
     - 依存先は前後の空白を除き、空と重複を捨てる。
+    - 層の欄に構成図の箱の名前が書かれていれば、その箱の層に置き換える(`element_layers`。
+      箱の名前を層と取り違えた下書きのため)。
     """
     order = {row.id: index for index, row in enumerate(function_list.functions)}
     rows: list[ModuleRow] = []
@@ -155,7 +184,10 @@ def merge_modules(
         rows.append(
             ModuleRow(
                 path=path,
-                layer=draft.layer.strip(),
+                # Phase-55(完了後の調整)：更新
+                # layer=draft.layer.strip(),
+                # ↓↓
+                layer=resolve_layer(draft.layer, element_layers or {}),
                 responsibility=draft.responsibility.strip(),
                 depends_on=list(dict.fromkeys(d.strip() for d in draft.depends_on if d.strip())),
                 functions=functions,

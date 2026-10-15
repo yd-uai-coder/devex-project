@@ -1,4 +1,4 @@
-# 作成：Phase-31-1｜更新：Phase-31-3,38-1
+# 作成：Phase-31-1｜更新：Phase-31-3,38-1,55-2
 """簡易モードの実装計画書の WBS の解析(純粋関数)のテスト。
 
 SUT は`app/detailed_design/simple_procedure/wbs.py`の`parse_wbs`、ドライバはこのテスト。
@@ -28,7 +28,14 @@ def test_parses_milestones_and_units_in_order() -> None:
     assert unit_ids(plan) == ["M-01-T01", "M-01-T02", "M-02-T01"]
     base, feature = plan.milestones[0].tasks
     assert (base.kind, base.function_ids, base.depends_on) == ("base", [], [])
-    assert base.config_files == ["docker-compose.yml", ".env.example"]
+    # Phase-55-2：更新
+    # assert base.config_files == ["docker-compose.yml", ".env.example"]
+    # ↓↓
+    assert base.config_files == [
+        "docker-compose.yml",
+        ".env.example",
+        "alembic/versions/0001_reservations.py",
+    ]
     assert (feature.kind, feature.title) == ("feature", "予約を登録する")
     assert feature.function_ids == ["DF-1"]
     # Phase-38-1:追記

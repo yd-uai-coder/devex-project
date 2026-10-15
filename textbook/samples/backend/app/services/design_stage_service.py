@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整)
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
@@ -16,6 +16,7 @@
 # Phase-43-3:追記 ── app.detailed_design.er_table_definitions, app.detailed_design.impact(DOCUMENT_STAGE, DesignModels, StageImpact, blocking_marks, build_elements, diff_elements, doc_source, group_by_stage, marks_for, record, set_reviewed, stage_source), app.detailed_design.stages.STAGE_INPUTS, app.services.errors.DesignStageUnreviewedImpactError
 # Phase-43-4:追記 ── dataclasses.asdict, app.detailed_design.impact.REGENERATION_STAGES, app.schemas.design_stage(DesignImpactRead, ElementChangeRead, ImpactMarkRead, RegenerationTargetRead, StageImpactRead)
 # Phase-46-2:追記 ── app.detailed_design.impact(Element, SimpleModels, build_simple_elements)
+# Phase-55(完了後の調整):追記 ── app.detailed_design.component_element_layers
 # Phase-46-2：削除 ── app.detailed_design.stages.STAGE_INPUTS
 import uuid
 from collections.abc import Mapping
@@ -42,6 +43,7 @@ from app.detailed_design import (
     StageView,
     assign_unit_keys,
     can_approve,
+    component_element_layers,
     component_layers,
     confirm_drafts,
     current_inputs,
@@ -999,6 +1001,8 @@ def _component_summary(diagram: UmlDiagram) -> ComponentDiagramSummary:
         status=diagram.status,
         generation_status=diagram.generation_status,
         layers=tuple(component_layers(diagram.semantic_model)),
+        # Phase-55(完了後の調整):追記
+        element_layers=component_element_layers(diagram.semantic_model),
     )
 
 

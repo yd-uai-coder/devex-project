@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整)
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
 # Phase-31-4：更新(docstring: 簡易モードの段階8は、作業単位を WBS、参照を内部設計書から取ること)
@@ -53,6 +53,7 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 # Phase-38-2:追記 ── app.detailed_design.requirement_trace.api_req_ids
 # Phase-42-1:追記 ── app.detailed_design.plan.carry_over_unit_keys, app.detailed_design.procedure_doc.relabel_units
 # Phase-54-3:追記 ── app.review.build_instruction, app.services.review_service.ReviewService, collections.abc.Sequence, langchain_core.messages.BaseMessage
+# Phase-55(完了後の調整):追記 ── app.detailed_design.structure.component_element_layers
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -159,7 +160,12 @@ from app.detailed_design.procedure_drafting import (
 )
 from app.detailed_design.requirement_trace import api_req_ids
 from app.detailed_design.stages import Fingerprint
-from app.detailed_design.structure import STRUCTURE_SUBJECT, ModuleListModel, merge_modules
+from app.detailed_design.structure import (
+    STRUCTURE_SUBJECT,
+    ModuleListModel,
+    component_element_layers,
+    merge_modules,
+)
 from app.detailed_design.structure_drafting import (
     ModuleListGenerationOutput,
     build_component_messages,
@@ -460,7 +466,11 @@ async def generate_structure(context: StageGenerationContext) -> dict:
             tables,
         ),
     )
-    model = merge_modules(to_module_drafts(module_output), function_list)
+    # Phase-55(完了後の調整)：更新
+    # model = merge_modules(to_module_drafts(module_output), function_list)
+    # ↓↓
+    element_layers = component_element_layers(component.model_dump(mode="json"))
+    model = merge_modules(to_module_drafts(module_output), function_list, element_layers)
     return model.model_dump(mode="json")
 
 

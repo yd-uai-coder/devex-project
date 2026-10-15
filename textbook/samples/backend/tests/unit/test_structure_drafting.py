@@ -1,4 +1,4 @@
-# 作成：Phase-19-2
+# 作成：Phase-19-2｜更新：Phase-55(完了後の調整)
 # 写経レベル: 定型 ── プロンプトに入力が載ることと、出力の変換を確かめる。
 """段階4の下書きの入出力(プロンプト・出力スキーマ・モジュール一覧への変換)のテスト。
 
@@ -105,7 +105,10 @@ def test_module_messages_describe_component_and_crud():
     )
     assert messages[0].content == MODULE_SYSTEM_PROMPT
     human = str(messages[1].content)
-    assert "- api(層: api)" in human
+    # Phase-55(完了後の調整)：更新
+    # assert "- api(層: api)" in human
+    # ↓↓
+    assert "- 箱「api」 / 層: api" in human
     assert "- api → service" in human
     assert "- F-01 × reservations: C" in human
     assert "## テーブル\n- reservations" in human
