@@ -1,10 +1,11 @@
-# 作成：Phase-2-4｜更新：Phase-6-1,6-5,6-6,8-5,10-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,45-3,49-3
+# 作成：Phase-2-4｜更新：Phase-6-1,6-5,6-6,8-5,10-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,45-3,49-3,56-2
 # Phase-6-5:追記 ── structlog.testing
 # Phase-36-2:追記 ── tests.fixtures.requirements.requirements_output, app.documents.requirements.RequirementsModel, app.documents.requirements.drafting.RequirementsGenerationOutput, app.hearing.PointState, app.repositories.hearing_point.HearingPointRepository, app.services.doc_generator_service.document_read, app.services.errors(DocGenerationInProgressError, RequirementNotAssumedError, RequirementNotFoundError)
 # Phase-37-2:追記 ── tests.fixtures.external_design(external_design_output, upstream_outputs), app.documents.external_design.ExternalDesignModel, app.documents.external_design.drafting.ExternalDesignGenerationOutput
 # Phase-40-1:追記 ── app.services.doc_generator_service._collapse_doubled_headings
 # Phase-45-3:追記 ── app.documents.implementation_plan.ImplementationPlanModel, app.documents.implementation_plan.drafting.ImplementationPlanGenerationOutput, app.documents.internal_design.InternalDesignModel, app.documents.internal_design.drafting.InternalDesignGenerationOutput, tests.fixtures.simple_documents(implementation_plan_output, internal_design_output)
 # Phase-45-3：削除 ── app.services.doc_generator_service._collapse_doubled_headings
+# Phase-56-2:追記 ── app.documents.test_spec.drafting.TestSpecGenerationOutput
 import uuid
 from typing import Any
 
@@ -24,6 +25,7 @@ from app.documents.internal_design import InternalDesignModel
 from app.documents.internal_design.drafting import InternalDesignGenerationOutput
 from app.documents.requirements import RequirementsModel
 from app.documents.requirements.drafting import RequirementsGenerationOutput
+from app.documents.test_spec.drafting import TestSpecGenerationOutput
 from app.hearing import PointState
 from app.models.chat_history import ChatHistory
 from app.models.project import Project
@@ -170,7 +172,11 @@ async def test_generate_logs_info_on_completion(db_session: AsyncSession) -> Non
     assert len(info_logs) == 1
     assert info_logs[0]["event"] == "documents_generated"
     assert info_logs[0]["project_id"] == str(project.id)
-    assert info_logs[0]["doc_count"] == len(DOC_TYPES)
+    # Phase-56-2：更新
+    # assert info_logs[0]["doc_count"] == len(DOC_TYPES)
+    # ↓↓
+    # 4文書とテスト仕様書
+    assert info_logs[0]["doc_count"] == len(DOC_TYPES) + 1
 
 
 async def test_generate_reverts_status_and_records_failure_on_llm_error(
@@ -428,6 +434,8 @@ async def test_generate_requirements_builds_model_from_points_table(
         ExternalDesignGenerationOutput,
         InternalDesignGenerationOutput,
         ImplementationPlanGenerationOutput,
+        # Phase-56-2:追記
+        TestSpecGenerationOutput,
     ]
     prompt = fake_llm.structured_messages[0][-1].content
     assert "core|コア機能|ユーザーが決定|coreの決定" in prompt

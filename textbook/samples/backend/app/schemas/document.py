@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2
+# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 import uuid
 from datetime import datetime
@@ -6,7 +6,12 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-DocType = Literal["requirements", "external_design", "internal_design", "implementation_plan"]
+# Phase-56-2：更新
+# DocType = Literal["requirements", "external_design", "internal_design", "implementation_plan"]
+# ↓↓
+DocType = Literal[
+    "requirements", "external_design", "internal_design", "implementation_plan", "test_spec"
+]
 
 
 # Phase-36-2:追記
@@ -86,12 +91,26 @@ class GeneratedDocumentRead(BaseModel):
     implementation_plan: DocumentSummaryRead | None = None
 
 
+# Phase-56-2:追記
+class TestSpecRead(BaseModel):
+    """テスト仕様書の今の版と、テストの件数(integration / system)・検証の指摘・古いか。
+    `outdated`は、生成した時点の入力(文書の版・段階の承認した版)が今と違うとき true。"""
+
+    __test__ = False  # pytest に集めさせない(名前が Test で始まるため)
+
+    document: GeneratedDocumentRead
+    counts: dict[str, int]
+    issues: list[DocumentIssueRead]
+    outdated: bool
+
+
 # Phase-53(完了後の調整):追記
 class GenerationRequest(BaseModel):
     # Phase-54-2：更新
     # """設計書の(再)生成の要求。`start_from`は起点(その文書から下流を作り直す)。省略で全部。"""
     # ↓↓
     """設計書の(再)生成の要求。`start_from`は起点(その文書から下流を作り直す)。省略で全部。
+    `test_spec`はテスト仕様書だけを作る(詳細設計モードは、これでだけ作る)。
     `finding_ids`は再生成の指示に入れる、設計レビューの採用した指摘(設計・不整合)。"""
 
     start_from: DocType | None = None

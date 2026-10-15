@@ -1,4 +1,4 @@
-# 作成：Phase-54-2｜更新：Phase-54-3
+# 作成：Phase-54-2｜更新：Phase-54-3,56-2
 """差し戻し(採用した指摘から再生成の指示を組み立てて、文書の生成に渡す)のテスト。
 
 SUT: app/review/sendback.py(純粋関数)・各文書の生成のプロンプトの組み立て(【修正指示】の節)・
@@ -172,9 +172,15 @@ async def test_generate_puts_instruction_into_related_documents(db_session: Asyn
 
     humans = [str(messages[-1].content) for messages in llm.structured_messages]
     # 指摘の関連文書は外部設計書だけ。要件定義書・内部設計書・実装計画書には入れない
+    # Phase-56-2:追記
+    # (最後のテスト仕様書は修正指示を受け取らない)
     assert "## 修正指示\nなし" in humans[0]
     assert f"問題: {design.problem}" in humans[1] and INSTRUCTION_HEAD in humans[1]
-    assert all("## 修正指示\nなし" in h for h in humans[2:])
+    # Phase-56-2：更新
+    # assert all("## 修正指示\nなし" in h for h in humans[2:])
+    # ↓↓
+    assert all("## 修正指示\nなし" in h for h in humans[2:4])
+    assert all("修正指示" not in h for h in humans[4:])
 
 
 # --- 段階の生成へ渡す ---

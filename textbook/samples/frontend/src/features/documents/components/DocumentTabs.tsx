@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-53-4
+// 作成：Phase-3-6｜更新：Phase-53-4,56-2
 "use client";
 
 import { useState } from "react";
@@ -11,6 +11,8 @@ const DOC_TYPE_LABELS: Record<DocType, string> = {
   external_design: "外部設計",
   internal_design: "内部設計",
   implementation_plan: "実装計画",
+  // Phase-56-2:追記
+  test_spec: "テスト仕様",
 };
 
 const DOC_TYPE_ORDER: DocType[] = [

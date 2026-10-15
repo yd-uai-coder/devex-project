@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2
 # 写経レベル: コア ── バージョニング(直近3件保持・最古削除)はdocs/internal_design.md 3.2節の
 # ドメイン規則をそのままロジック化した箇所であり、慎重な写経・理解が必要。
 # Phase-6-1: list_versions/get_versionはSCR-006向けの定型的な参照系メソッド(写経レベル: 定型)。
@@ -20,6 +20,12 @@ DOC_TYPES_BY_MODE: dict[str, tuple[str, ...]] = {
     "simple": DOC_TYPES,
     "detailed": ("requirements", "external_design"),
 }
+
+# Phase-56-2:追記
+# テスト仕様書。両モードで、設計書の後に作る(簡易は4文書に続けて、詳細は段階7の承認の後に
+# `start_from="test_spec"`で)。設計レビュー・自己診断・段階の入力には入れないので、
+# DOC_TYPES_BY_MODE とは別に持つ(doc_generator_service.generation_targets が足す)。
+TEST_SPEC = "test_spec"
 
 # 同一project_id+doc_typeにつき保管する最大バージョン数(docs/internal_design.md 3.2節「バージョニング方針」)。
 MAX_VERSIONS_PER_DOC_TYPE = 3

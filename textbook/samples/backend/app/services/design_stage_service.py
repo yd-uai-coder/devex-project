@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整)
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整),56-2
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
@@ -18,8 +18,9 @@
 # Phase-46-2:追記 ── app.detailed_design.impact(Element, SimpleModels, build_simple_elements)
 # Phase-55(完了後の調整):追記 ── app.detailed_design.component_element_layers
 # Phase-46-2：削除 ── app.detailed_design.stages.STAGE_INPUTS
+# Phase-56-2:追記 ── collections.abc.Sequence
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict
 
 import structlog
@@ -212,6 +213,20 @@ class DesignStageService:
         rows, views, documents = await self._load(project)
         sources = await self._sources(project, rows, views, documents)
         return views, sources
+
+    # Phase-56-2:追記
+    async def approved_stages(
+        self, project: Project, stages: Sequence[int]
+    ) -> dict[int, tuple[int, dict]]:
+        """承認済みで古くない段階の、承認した版と内容(テスト仕様書の入力。承認されていない・古い
+        段階は入れない)。"""
+        rows, views, _ = await self._load(project)
+        approved = _approved_versions(rows, views)
+        return {
+            stage: (version, rows[stage].approved_model or {})
+            for stage in stages
+            if (version := approved.get(stage)) is not None
+        }
 
     # Phase-16-4:追記
     async def current_fingerprint(self, project: Project, stage: int) -> Fingerprint:

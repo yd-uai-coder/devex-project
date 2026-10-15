@@ -1,4 +1,4 @@
-# 作成：Phase-53(完了後の調整)｜更新：Phase-54-2
+# 作成：Phase-53(完了後の調整)｜更新：Phase-54-2,56-2
 """設計書の再生成の起点(その文書から下流を作り直す)と、生成の進み具合のテスト。
 
 SUT: `generation_targets`(純粋関数)・DocGeneratorService(request_generation / generate)・
@@ -78,18 +78,35 @@ async def _versions(session: AsyncSession, project: Project) -> dict[str, int]:
 
 
 def test_generation_targets_are_start_and_downstream() -> None:
+    # Phase-56-2:追記
+    # 簡易モードはテスト仕様書を最後に必ず作り直す
     assert generation_targets("simple", None) == (
         "requirements",
         "external_design",
         "internal_design",
         "implementation_plan",
+        # Phase-56-2:追記
+        "test_spec",
     )
     assert generation_targets("simple", "internal_design") == (
         "internal_design",
         "implementation_plan",
+        # Phase-56-2:追記
+        "test_spec",
     )
-    assert generation_targets("simple", "implementation_plan") == ("implementation_plan",)
+    # Phase-56-2：更新
+    # assert generation_targets("simple", "implementation_plan") == ("implementation_plan",)
+    # ↓↓
+    assert generation_targets("simple", "implementation_plan") == (
+        "implementation_plan",
+        "test_spec",
+    )
+    # 詳細設計モードは、テスト仕様書を起点にしたときだけ作る
+    assert generation_targets("detailed", None) == ("requirements", "external_design")
     assert generation_targets("detailed", "external_design") == ("external_design",)
+    # Phase-56-2:追記
+    assert generation_targets("detailed", "test_spec") == ("test_spec",)
+    assert generation_targets("simple", "test_spec") == ("test_spec",)
     with pytest.raises(GenerationStartInvalidError):
         generation_targets("detailed", "internal_design")
 
@@ -113,8 +130,13 @@ async def test_regenerate_from_internal_design_keeps_upstream(db_session: AsyncS
         "internal_design": 2,
         "implementation_plan": 2,
     }
-    # 作り直したのは内部設計書・実装計画書の2回だけで、上流は表示中の版の本文を入力にした
-    assert len(llm.structured_messages) == 2
+    # Phase-56-2：更新
+    # # 作り直したのは内部設計書・実装計画書の2回だけで、上流は表示中の版の本文を入力にした
+    # assert len(llm.structured_messages) == 2
+    # ↓↓
+    # 作り直したのは内部設計書・実装計画書とテスト仕様書の3回だけで、上流は表示中の版の本文を
+    # 入力にした
+    assert len(llm.structured_messages) == 3
     assert kept.content in str(llm.structured_messages[0][-1].content)
     assert project.status == "completed"
 
@@ -144,7 +166,10 @@ async def test_progress_is_written_per_document_and_cleared(db_session: AsyncSes
         project.id, user.id, start_from="external_design", llm=_llm()
     )
 
-    targets = ["external_design", "internal_design", "implementation_plan"]
+    # Phase-56-2：更新
+    # targets = ["external_design", "internal_design", "implementation_plan"]
+    # ↓↓
+    targets = ["external_design", "internal_design", "implementation_plan", "test_spec"]
     assert redis.writes[0] == {"targets": targets, "done": [], "current": None}
     assert redis.writes[1] == {"targets": targets, "done": [], "current": "external_design"}
     assert redis.writes[2] == {

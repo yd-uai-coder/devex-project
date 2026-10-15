@@ -1,4 +1,4 @@
-// 作成：Phase-53(完了後の調整)
+// 作成：Phase-53(完了後の調整)｜更新：Phase-56-2
 // プレビューの再生成の起点と進み具合(純粋関数)。
 //
 // 下流の文書は上流を入力にして作るので、ある文書を作り直したら下流も必ず作り直す(整合を保つため)。
@@ -12,6 +12,8 @@ export const DOC_LABEL: Record<DocType, string> = {
   external_design: "外部設計",
   internal_design: "内部設計",
   implementation_plan: "実装計画",
+  // Phase-56-2:追記
+  test_spec: "テスト仕様",
 };
 
 // モードの文書(上流から)。詳細設計モードのプレビューは要件定義・外部設計だけ

@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -448,6 +448,15 @@ class GenerationUpstreamMissingError(ConflictError):
     """設計書の再生成の起点より上流の文書がまだ無いときに送出する(上流を入力にして作るため)。"""
 
     code: ClassVar[str | None] = "GENERATION_UPSTREAM_MISSING"
+
+
+# Phase-56-2:追記
+class TestSpecUpstreamNotReadyError(ConflictError):
+    """詳細設計モードで、段階1(処理)・段階7(実装計画)が承認されていない(または古い)のに
+    テスト仕様書を作ろうとしたときに送出する(処理・単位の列をその内容から引くため)。"""
+
+    __test__ = False  # pytest に集めさせない(名前が Test で始まるため)
+    code: ClassVar[str | None] = "TEST_SPEC_UPSTREAM_NOT_READY"
 
 
 # Phase-54-2:追記

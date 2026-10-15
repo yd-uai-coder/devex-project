@@ -1,4 +1,4 @@
-# 作成：Phase-37-2｜更新：Phase-38-2,45-3
+# 作成：Phase-37-2｜更新：Phase-38-2,45-3,56-2
 # Phase-45-3：更新
 # """外部設計書の構造化出力の見本と、上流の2文書の偽の構造化出力(生成のテストで偽の LLM が返す)。"""
 # ↓↓
@@ -6,9 +6,11 @@
 
 # Phase-38-2:追記 ── app.documents.requirements(build_model, render_requirements), app.documents.requirements.drafting(build_requirements_messages, to_draft)
 # Phase-45-3:追記 ── app.documents.implementation_plan.drafting.ImplementationPlanGenerationOutput, app.documents.internal_design.drafting.InternalDesignGenerationOutput, tests.fixtures.simple_documents(implementation_plan_output, internal_design_output)
+# Phase-56-2:追記 ── app.documents.test_spec.drafting.TestSpecGenerationOutput, tests.fixtures.spec_documents.spec_output
 from pydantic import BaseModel
 from tests.fixtures.requirements import requirements_output
 from tests.fixtures.simple_documents import implementation_plan_output, internal_design_output
+from tests.fixtures.spec_documents import spec_output
 
 from app.ai.llm.fake import E2eFakeLLM
 from app.documents.external_design import build_model, render_external_design
@@ -28,6 +30,7 @@ from app.documents.requirements.drafting import (
     build_requirements_messages,
 )
 from app.documents.requirements.drafting import to_draft as to_requirements_draft
+from app.documents.test_spec.drafting import TestSpecGenerationOutput
 
 
 def external_design_output(
@@ -68,18 +71,22 @@ def upstream_outputs(
     # Phase-45-3:追記
     internal_design: InternalDesignGenerationOutput | None = None,
     implementation_plan: ImplementationPlanGenerationOutput | None = None,
+    # Phase-56-2:追記
+    test_spec: TestSpecGenerationOutput | None = None,
 ) -> dict[type[BaseModel], BaseModel]:
     # Phase-45-3：更新
     # """FakeLLM の structured_by_schema に渡す、要件定義書と外部設計書の構造化出力。"""
     # ↓↓
-    """FakeLLM の structured_by_schema に渡す、4文書の構造化出力(詳細設計モードは前の2つだけを
-    使う)。"""
+    """FakeLLM の structured_by_schema に渡す、4文書とテスト仕様書の構造化出力(詳細設計モードは
+    前の2つと、段階7の承認の後のテスト仕様書を使う)。"""
     return {
         RequirementsGenerationOutput: requirements or requirements_output(),
         ExternalDesignGenerationOutput: external_design or external_design_output(),
         # Phase-45-3:追記
         InternalDesignGenerationOutput: internal_design or internal_design_output(),
         ImplementationPlanGenerationOutput: implementation_plan or implementation_plan_output(),
+        # Phase-56-2:追記
+        TestSpecGenerationOutput: test_spec or spec_output(),
     }
 
 

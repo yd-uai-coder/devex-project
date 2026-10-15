@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2,56-2
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 # Phase-52-2:追記 ── app.review.schemas.ReviewFindingOut, app.review.schemas.ReviewOutput
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
@@ -17,6 +17,7 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 # Phase-37-2:追記 ── app.documents.external_design.drafting(ExternalDesignGenerationOutput, GeneratedApi, GeneratedScreen)
 # Phase-45-3:追記 ── app.documents.implementation_plan.drafting(plan_doc), app.documents.internal_design.drafting(internal_doc)
 # Phase-54-5:追記 ── app.review.fix_check.FixCheckOut
+# Phase-56-2:追記 ── app.documents.test_spec.drafting(GeneratedCase, TestSpecGenerationOutput)
 from __future__ import annotations
 
 # Phase-10-5:追記 ── app.uml.generation.schemas(UML生成の出力スキーマ一式)
@@ -90,6 +91,7 @@ from app.documents.requirements.drafting import (
     GeneratedUserScene,
     RequirementsGenerationOutput,
 )
+from app.documents.test_spec.drafting import GeneratedCase, TestSpecGenerationOutput
 from app.hearing import POINT_DEFS, is_point_key
 from app.review.fix_check import FixCheckOut
 from app.review.schemas import ReviewFindingOut, ReviewOutput
@@ -345,6 +347,42 @@ _EXTERNAL_DESIGN_OUTPUT = ExternalDesignGenerationOutput(
             req_ids=["FR-002"],
             response="200 予約の配列",
         ),
+    ],
+)
+
+
+# Phase-56-2:追記
+def _case(
+    level: str, target: str, viewpoint: str, expected: str, req_ids: list[str]
+) -> GeneratedCase:
+    return GeneratedCase.model_validate(
+        {
+            "level": level,
+            "target": target,
+            "viewpoint": viewpoint,
+            "precondition": "",
+            "steps": "[E2E Fake] 手順",
+            "expected": expected,
+            "design_gap": "",
+            "req_ids": req_ids,
+            "screens": ["SCR-001"],
+        }
+    )
+
+
+# テスト仕様書の下書き。_EXTERNAL_DESIGN_OUTPUT の2つの API に正常・異常を1件ずつと、画面の流れを
+# 1件(決定的な検証の指摘が0件になる形)。要件ID は偽の要件定義書の FR-001・FR-002。
+_TEST_SPEC_OUTPUT = TestSpecGenerationOutput(
+    target="[E2E Fake] API 2本と予約画面",
+    out_of_scope="なし",
+    environment="Docker Compose。LLM は偽 LLM",
+    done_criteria="Must の要件すべてにテストがある",
+    cases=[
+        _case("integration", "POST /api/v1/reservations", "正常", "201", ["FR-001"]),
+        _case("integration", "POST /api/v1/reservations", "異常", "409", ["FR-001"]),
+        _case("integration", "GET /api/v1/reservations", "正常", "200", ["FR-002"]),
+        _case("integration", "GET /api/v1/reservations", "異常", "401", ["FR-002"]),
+        _case("system", "SCR-001", "正常", "予約が一覧に出る", ["FR-001", "FR-002"]),
     ],
 )
 
@@ -996,6 +1034,9 @@ class _FakeStructuredE2e:
             return _INTERNAL_DESIGN_OUTPUT
         if self._schema is plan_doc.ImplementationPlanGenerationOutput:
             return _IMPLEMENTATION_PLAN_OUTPUT
+        # Phase-56-2:追記
+        if self._schema is TestSpecGenerationOutput:
+            return _TEST_SPEC_OUTPUT
         # Phase-52-2:追記
         if self._schema is ReviewOutput:
             return _REVIEW_OUTPUT

@@ -1,11 +1,20 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3,37-3,45-5,53(完了後の調整)
+// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3,37-3,45-5,53(完了後の調整),56-2
 // Phase-12-5:追記 ── @/lib/api/download.parseFilename(UML 図の出力と共有するため移した)
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
 import { API_BASE_URL } from "@/lib/api/base-url";
 import { parseFilename } from "@/lib/api/download";
 
-export type DocType = "requirements" | "external_design" | "internal_design" | "implementation_plan";
+// Phase-56-2：更新
+// export type DocType = "requirements" | "external_design" | "internal_design" | "implementation_plan";
+// ↓↓
+// test_spec(テスト仕様書)は生成の進み具合の対象に出る。文書の一覧(GET /documents)には出ない
+export type DocType =
+  | "requirements"
+  | "external_design"
+  | "internal_design"
+  | "implementation_plan"
+  | "test_spec";
 
 // Phase-36-3:追記
 export type RequirementSource = "user" | "adopted" | "assumed";

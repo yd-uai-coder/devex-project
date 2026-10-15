@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -20,19 +20,23 @@
 # Phase-53-1:追記 ── app.review.DOCUMENTS_GATE
 # Phase-53(完了後の調整):追記 ── app.services.errors(GenerationStartInvalidError, GenerationUpstreamMissingError), app.services.generation_progress(GenerationProgress, GenerationProgressStore)
 # Phase-54-2:追記 ── app.review.build_instruction, app.review.findings_for, app.services.fix_check_service.FixCheckService, collections.abc.Sequence
+# Phase-56-2:追記 ── pydantic.BaseModel, app.detailed_design.function_list.FunctionListModel, app.detailed_design.plan(PLAN_STAGE, PlanModel), app.detailed_design.stages(doc_key, stage_key), app.documents.test_spec(TestSpecModel, build_model, detailed_links, is_outdated, render_test_spec, required_tests, row_counts, simple_links, validate_test_spec), app.documents.test_spec.drafting(TestSpecGenerationOutput, build_test_spec_messages, to_draft), app.repositories.generated_document.TEST_SPEC, app.schemas.document.TestSpecRead, app.services.errors.TestSpecUpstreamNotReadyError
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 
 import structlog
 from langchain_core.messages import HumanMessage, SystemMessage
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.gemini import extract_text_content, get_gemini_llm
 from app.core.database import AsyncSessionLocal
 from app.core.errors import AppError
+from app.detailed_design.function_list import FunctionListModel
+from app.detailed_design.plan import PLAN_STAGE, PlanModel
+from app.detailed_design.stages import doc_key, stage_key
 from app.documents.external_design import (
     ExternalDesignModel,
     render_external_design,
@@ -91,6 +95,19 @@ from app.documents.revision import (
     internal_design_rows,
     requirement_rows,
 )
+from app.documents.test_spec import (
+    TestSpecModel,
+    detailed_links,
+    is_outdated,
+    render_test_spec,
+    required_tests,
+    simple_links,
+    validate_test_spec,
+)
+from app.documents.test_spec import build_model as build_test_spec_model
+from app.documents.test_spec import row_counts as test_spec_counts
+from app.documents.test_spec.drafting import TestSpecGenerationOutput, build_test_spec_messages
+from app.documents.test_spec.drafting import to_draft as to_test_spec_draft
 from app.hearing import as_scale
 from app.infrastructure.redis import get_redis_client
 from app.models.chat_history import ChatHistory
@@ -100,6 +117,7 @@ from app.models.user import User
 from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.generated_document import (
     DOC_TYPES_BY_MODE,
+    TEST_SPEC,
     GeneratedDocumentRepository,
 )
 from app.repositories.hearing_point import HearingPointRepository
@@ -117,10 +135,12 @@ from app.schemas.document import (
     ExternalDesignSummaryRead,
     GeneratedDocumentRead,
     RequirementsSummaryRead,
+    TestSpecRead,
 )
 from app.services.design_stage_service import DesignStageService
 from app.services.errors import (
     DocGenerationInProgressError,    DocumentNotFoundError,    GenerationStartInvalidError,    GenerationUpstreamMissingError,    LLMQuotaExceededError,    RequirementNotAssumedError,    RequirementNotFoundError,
+    TestSpecUpstreamNotReadyError,
 )
 from app.services.fix_check_service import FixCheckService
 from app.services.generation_progress import GenerationProgress, GenerationProgressStore
@@ -135,7 +155,14 @@ _DOC_TYPE_LABELS: dict[str, str] = {
     "external_design": "外部設計書",
     "internal_design": "内部設計書",
     "implementation_plan": "実装計画書",
+    # Phase-56-2:追記
+    TEST_SPEC: "テスト仕様書",
 }
+
+# Phase-56-2:追記
+# 詳細設計モードのテスト仕様書が読む段階(処理の一覧と実装計画。処理・単位の列を引く)
+FUNCTION_STAGE = 1
+_TEST_SPEC_STAGES = (FUNCTION_STAGE, PLAN_STAGE)
 
 # Phase-45-3：削除
 # # 4文書に共通する出力上の心がけ。当プロジェクト自身の4文書(docs/requirements.md等)を
@@ -406,7 +433,8 @@ class DocGeneratorService:
 
         `start_from`は再生成の起点(その文書から下流を作り直す。省略で全部)。モードに無い起点は
         `GenerationStartInvalidError`(400)、起点より上流の文書がまだ無ければ
-        `GenerationUpstreamMissingError`(409)。`finding_ids`(再生成の指示に入れる指摘)に
+        `GenerationUpstreamMissingError`(409)。詳細設計モードのテスト仕様書は、段階1・段階7 が
+        承認済みで古くなければ作れる(違えば`TestSpecUpstreamNotReadyError`(409))。`finding_ids`(再生成の指示に入れる指摘)に
         プロジェクトに無い指摘があれば`ReviewFindingNotFoundError`(404)、採用していない・ヒアリングが
         原因の指摘があれば`SendbackFindingInvalidError`(409)。
 
@@ -421,6 +449,13 @@ class DocGeneratorService:
             if await self._documents.get_current(project_id=project.id, doc_type=doc_type) is None:
                 raise GenerationUpstreamMissingError(
                     "上流の設計書がまだ無いため、ここから再生成できません。"
+                )
+        # Phase-56-2:追記
+        if TEST_SPEC in targets and project.mode == "detailed":
+            approved = await self._stages.approved_stages(project, _TEST_SPEC_STAGES)
+            if len(approved) < len(_TEST_SPEC_STAGES):
+                raise TestSpecUpstreamNotReadyError(
+                    "テスト仕様書は、段階1(処理)と段階7(実装計画)を承認してから作れます。"
                 )
         # Phase-54-2:追記
         await ReviewService(self._session).sendback_findings(
@@ -508,6 +543,11 @@ class DocGeneratorService:
 
         `finding_ids`(設計レビューの採用した指摘)は、作り直す文書ごとに、関連する指摘だけを
         修正指示にして生成のプロンプトに入れる(app/review/sendback.py)。
+
+        テスト仕様書(`TEST_SPEC`)は設計書の後に作る(簡易モードは毎回、詳細設計モードは
+        `start_from="test_spec"`のときだけ。`generation_targets`)。設計書と同じトランザクションに
+        入れ、自己診断・設計レビュー・変更の影響の印には渡さない。テスト仕様書だけを作ったときは、
+        自己診断も設計レビューも流さない。
         """
         project = await self._projects.get_by_id(project_id, user_id=user_id)
         if project is None:
@@ -547,6 +587,8 @@ class DocGeneratorService:
             # Phase-45-3:追記
             external: ExternalDesignModel | None = None
             internal: InternalDesignModel | None = None
+            # Phase-56-2:追記
+            plan: ImplementationPlanModel | None = None
             doc_types = DOC_TYPES_BY_MODE[project.mode]
             # Phase-53(完了後の調整):追記
             targets = generation_targets(project.mode, start_from)
@@ -577,6 +619,9 @@ class DocGeneratorService:
                         external = parse_external_design_model(kept.model)
                     elif doc_type == "internal_design":
                         internal = parse_internal_design_model(kept.model)
+                    # Phase-56-2:追記
+                    else:
+                        plan = parse_implementation_plan_model(kept.model)
                     continue
                 progress.current = doc_type
                 await self._progress.write(project_id, progress)
@@ -659,12 +704,30 @@ class DocGeneratorService:
                 new_models[doc_type] = model
                 # Phase-53(完了後の調整):追記
                 progress.done.append(doc_type)
+            # Phase-56-2:追記
+            if TEST_SPEC in targets:
+                progress.current = TEST_SPEC
+                await self._progress.write(project_id, progress)
+                content, test_spec = await self._generate_test_spec(
+                    project, generated, requirements, external, internal, plan, llm=llm
+                )
+                await self._documents.create_version(
+                    project_id=project_id,
+                    doc_type=TEST_SPEC,
+                    content=content,
+                    model=test_spec.model_dump(mode="json"),
+                )
+                progress.done.append(TEST_SPEC)
             progress.current = None
             await self._progress.write(project_id, progress)
             # Phase-53(完了後の調整)：更新
             # for doc_type in doc_types:
             # ↓↓
-            for doc_type in targets:
+            # Phase-56-2：更新
+            # for doc_type in targets:
+            # ↓↓
+            designed = [doc_type for doc_type in targets if doc_type in doc_types]
+            for doc_type in designed:
                 await self._stages.record_document_change(
                     project, doc_type, previous_models[doc_type], new_models[doc_type]
                 )
@@ -675,7 +738,10 @@ class DocGeneratorService:
             #     project_id=project_id, sender="others", message=diagnosis
             # )
             # ↓↓
-            if not reviewing:
+            # Phase-56-2：更新
+            # if not reviewing:
+            # ↓↓
+            if designed and not reviewing:
                 diagnosis = await self._self_diagnose(generated, llm=llm)
                 await self._chat_histories.add(
                     project_id=project_id, sender="others", message=diagnosis
@@ -748,7 +814,10 @@ class DocGeneratorService:
             start_from=start_from,
         )
         # Phase-52-4:追記
-        if reviewing and user is not None:
+        # Phase-56-2：更新
+        # if reviewing and user is not None:
+        # ↓↓
+        if designed and reviewing and user is not None:
             await self._review_after_generation(project, user, generated, llm, review_llm)
             # Phase-54-2:追記
             await self._check_fixes(project_id, user, judge_llm)
@@ -1064,6 +1133,70 @@ class DocGeneratorService:
             requirements=requirements,
         )
         return render_implementation_plan(model), model
+
+    # Phase-56-2:追記
+    async def _generate_test_spec(
+        self,
+        project: Project,
+        generated: Mapping[str, str],
+        requirements: RequirementsModel | None,
+        external: ExternalDesignModel | None,
+        internal: InternalDesignModel | None,
+        plan: ImplementationPlanModel | None,
+        *,
+        llm,
+    ) -> tuple[str, TestSpecModel]:
+        """テスト仕様書を構造化出力で下書きし、model と md を作る(app/documents/test_spec)。
+        入力は要件定義書の md と外部設計書の画面・API の行、コードが決めた必要なテストの一覧。
+        処理・単位は、簡易は内部設計書・実装計画書、詳細は段階1・段階7 から引く。生成した時点の
+        入力の版を model に写す(「古い」の判定)。"""
+        if project.mode == "detailed":
+            approved = await self._stages.approved_stages(project, _TEST_SPEC_STAGES)
+            links = detailed_links(
+                _parse(FunctionListModel, approved.get(FUNCTION_STAGE)),
+                _parse(PlanModel, approved.get(PLAN_STAGE)),
+            )
+        else:
+            links = simple_links(internal, plan)
+        obligations = required_tests(requirements, external or ExternalDesignModel())
+        messages = build_test_spec_messages(generated["requirements"], external, obligations)
+        output = await invoke_structured(llm, TestSpecGenerationOutput, messages)
+        model = build_test_spec_model(
+            to_test_spec_draft(output),
+            requirements=requirements,
+            external=external,
+            links=links,
+            inputs=await self._test_spec_inputs(project),
+        )
+        return render_test_spec(model), model
+
+    async def _test_spec_inputs(self, project: Project) -> dict[str, int | None]:
+        """テスト仕様書の入力の今の版(簡易は4文書、詳細は要件・外部と段階1・段階7 の承認した版。
+        承認されていない・古い段階は None)。"""
+        inputs: dict[str, int | None] = {}
+        for doc_type in DOC_TYPES_BY_MODE[project.mode]:
+            current = await self._documents.get_current(project_id=project.id, doc_type=doc_type)
+            inputs[doc_key(doc_type)] = current.version if current is not None else None
+        if project.mode == "detailed":
+            approved = await self._stages.approved_stages(project, _TEST_SPEC_STAGES)
+            for stage in _TEST_SPEC_STAGES:
+                inputs[stage_key(stage)] = approved[stage][0] if stage in approved else None
+        return inputs
+
+    async def get_test_spec(self, project: Project) -> TestSpecRead:
+        """テスト仕様書の今の版と、件数・検証の指摘・古いか。まだ無ければ`DocumentNotFoundError`。
+        model の無い・壊れた版は件数0・指摘なし・古くない、とする。"""
+        document = await self._documents.get_current(project_id=project.id, doc_type=TEST_SPEC)
+        if document is None:
+            raise DocumentNotFoundError("test_spec not found")
+        model = _parse(TestSpecModel, document.model) or TestSpecModel()
+        return TestSpecRead(
+            document=document_read(document),
+            counts=test_spec_counts(model),
+            issues=_issues_read(validate_test_spec(model)),
+            outdated=is_outdated(model, await self._test_spec_inputs(project)),
+        )
+
     async def _self_diagnose(self, generated: dict[str, str], *, llm) -> str:
         # Phase-2-5：更新
         # """生成済みの4文書をまとめて入力し、不足・不明瞭な点を3段階で自己診断させる。"""
@@ -1101,13 +1234,25 @@ class DocGeneratorService:
 def generation_targets(mode: str, start_from: str | None) -> tuple[str, ...]:
     """再生成で作り直す文書(起点から下流。上流 → 下流の順)。起点が無ければモードの全部。
     下流は上流を入力にして作るので、起点を作り直したら下流も必ず作り直す(整合を保つため)。
-    モードに無い起点は`GenerationStartInvalidError`(400)。"""
+    モードに無い起点は`GenerationStartInvalidError`(400)。
+
+    テスト仕様書は最下流。簡易モードは設計書に続けて必ず作り直し、詳細設計モードは段階7の
+    承認の後に`start_from="test_spec"`でだけ作る(設計書の再生成では作らない)。"""
     doc_types = DOC_TYPES_BY_MODE[mode]
-    if start_from is None:
-        return doc_types
-    if start_from not in doc_types:
+    # Phase-56-2：更新
+    # if start_from is None:
+    #     return doc_types
+    # if start_from not in doc_types:
+    # ↓↓
+    if start_from == TEST_SPEC:
+        return (TEST_SPEC,)
+    if start_from is not None and start_from not in doc_types:
         raise GenerationStartInvalidError("このモードには無い設計書から再生成しようとしました。")
-    return doc_types[doc_types.index(start_from) :]
+    # Phase-56-2：更新
+    # return doc_types[doc_types.index(start_from) :]
+    # ↓↓
+    targets = doc_types if start_from is None else doc_types[doc_types.index(start_from) :]
+    return (*targets, TEST_SPEC) if mode == "simple" else targets
 
 
 def _render_transcript(history: list[ChatHistory]) -> str:
@@ -1155,6 +1300,19 @@ def upstream_changes(
         for upstream in _DOC_TYPE_INPUTS.get(doc_type, ())
         for change in changed_rows(*rows[upstream])
     ]
+
+
+# Phase-56-2:追記
+def _parse[M: BaseModel](model_type: type[M], raw: Mapping | tuple | None) -> M | None:
+    """保存した model を読む。無い・壊れていれば None。段階は(承認した版, 内容)の組も受ける。"""
+    if isinstance(raw, tuple):
+        raw = raw[1]
+    if raw is None:
+        return None
+    try:
+        return model_type.model_validate(raw)
+    except ValidationError:
+        return None
 
 
 # Phase-36-2:追記

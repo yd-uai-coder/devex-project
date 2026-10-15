@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -24,6 +24,7 @@
 # Phase-35(完了後の調整):追記 ── app.schemas.hearing.HearingPointUpdate
 # Phase-36-2:追記 ── app.services.doc_generator_service.document_read
 # Phase-53(完了後の調整):追記 ── app.api.deps.RedisDep, app.schemas.document(GenerationProgressRead, GenerationRequest), app.services.generation_progress.GenerationProgressStore
+# Phase-56-2:追記 ── app.schemas.document.TestSpecRead
 import contextlib
 import json
 import uuid
@@ -41,6 +42,7 @@ from app.schemas.document import (
     GeneratedDocumentRead,
     GenerationProgressRead,
     GenerationRequest,
+    TestSpecRead,
 )
 from app.schemas.generation import HearingCompletionCheck
 from app.schemas.hearing import (
@@ -304,7 +306,8 @@ async def trigger_generation(
     状態(失敗時に戻す先)をbackground taskへ渡す。
 
     本文の`start_from`は再生成の起点(その文書から下流を作り直す。省略で全部)。モードに無い起点は
-    400、起点より上流の文書が無ければ409。`finding_ids`は再生成の指示に入れる採用した指摘
+    400、起点より上流の文書が無ければ409。`test_spec`はテスト仕様書だけを作る(詳細設計モードは
+    段階1・段階7 が承認済みでなければ409)。`finding_ids`は再生成の指示に入れる採用した指摘
     (プロジェクトに無い指摘は404、採用していない・ヒアリングが原因の指摘は409)。
     """
     # Phase-53(完了後の調整)：更新
@@ -368,6 +371,12 @@ async def list_generated_documents(
     # return [GeneratedDocumentRead.model_validate(d) for d in documents]
     # ↓↓
     return [document_read(d) for d in documents]
+
+# Phase-56-2:追記
+@router.get("/{project_id}/test-spec", response_model=TestSpecRead)
+async def get_test_spec(session: SessionDep, current_project: CurrentProjectDep) -> TestSpecRead:
+    """テスト仕様書の今の版と、テストの件数・検証の指摘・古いか。まだ無ければ404。"""
+    return await DocGeneratorService(session).get_test_spec(current_project)
 
 
 # Phase-2-5:追記
