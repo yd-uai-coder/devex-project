@@ -1,0 +1,350 @@
+{
+  "model": "claude-sonnet-5-5",
+  "gate": "documents",
+  "documents": [
+    "requirements",
+    "external_design"
+  ],
+  "input_tokens": 11417,
+  "output_tokens": 5636,
+  "total_tokens": 17053,
+  "input_token_details": {
+    "cache_read": 0,
+    "cache_creation": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "ephemeral_1h_input_tokens": 0
+  },
+  "output_token_details": {
+    "reasoning": 0
+  },
+  "cost_usd": 0.0792,
+  "known_issues": 1,
+  "findings": [
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/projects/{id}/chat",
+        "POST /api/v1/projects/{id}/documents/upload",
+        "POST /api/v1/projects/{id}/summary/approve",
+        "GET /api/v1/projects/{id}/documents",
+        "FR-001"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "プロジェクトIDを取るAPIに、そのプロジェクトが本人のものかを確認する認可の記述がない。他人のプロジェクトのチャット・資料・文書を読み書きできてしまう。また403/404の応答も一覧にない。",
+      "evidence": "| POST | /api/v1/projects/{id}/chat | チャットメッセージ送信 | SCR-003 | FR-002・FR-009・FR-010 | message | 200 OK (AI応答) | 400 文字数超過・空送信エラー, 500 AI応答失敗 |",
+      "reason": "外部設計書2.6でプロジェクト単位のAPIに所有者確認と認証エラー(401/403/404)が書かれておらず、NFRのセキュリティを満たせない。",
+      "suggestion": "プロジェクト配下の全APIに「ログイン本人が所有するプロジェクトのみ操作可」を明記し、401/403/404を応答に追加する。"
+    },
+    {
+      "level": "critical",
+      "cause": "hearing",
+      "targets": [
+        "security",
+        "FR-001"
+      ],
+      "documents": [
+        "requirements",
+        "external_design"
+      ],
+      "point_key": "security",
+      "problem": "セキュリティが「ログインをMVPに入れる」だけで、誰が誰のデータを見られるか(本人以外の閲覧・変更可否)、パスワード規則、トークンの種類・有効期限・失効のタイミングが決まっていない。",
+      "evidence": "| security | セキュリティ | 必須 | AI の提案を採用 | ログインをMVPに入れる |",
+      "reason": "要件FR-001とCON-003のトークン失効用Redisの前提が不明で、認可方針と認証方式を設計できない。",
+      "suggestion": "プロジェクトを作成者本人のみが見られるか、トークンの有効期限、ログアウト時の失効、パスワード要件を利用者に聞き直して要件に追記する。"
+    },
+    {
+      "level": "major",
+      "cause": "hearing",
+      "targets": [
+        "abuse",
+        "NFR-008"
+      ],
+      "documents": [
+        "requirements",
+        "external_design"
+      ],
+      "point_key": "abuse",
+      "problem": "ログインの総当たり、登録の大量作成、チャット・生成の回数上限を設けるとあるが、上限の値・単位(IP/ユーザー/期間)が決まっていない。",
+      "evidence": "ログインの総当たり、登録の大量作成、チャットや生成の回数上限を設けて不正利用を防ぐ",
+      "reason": "NFR-008を満たすAPIやRedisの制御を設計するには具体的な数値が必要で、CON-004のGemini無料枠の上限との整合も確認できない。",
+      "suggestion": "各操作の回数・期間・単位(IP/アカウント)を利用者に聞き、超過時の応答(429)とともに要件に記載する。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "NFR-008",
+        "POST /api/v1/auth/login",
+        "POST /api/v1/auth/register",
+        "POST /api/v1/projects/{id}/chat",
+        "POST /api/v1/projects/{id}/summary/approve"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "回数上限(NFR-008)に対するAPIの応答が外部設計書にない。429等のエラーがどのAPIにも定義されていない。",
+      "evidence": "| POST | /api/v1/auth/login | ログイン | SCR-001 | FR-001 | email, password | 200 OK (トークン返却) | 401 認証失敗 |",
+      "reason": "要件NFR-008は不正利用の制限を求めるが、外部設計書2.6にその制限に当たるエラー応答がない。",
+      "suggestion": "対象APIに429 Too Many Requestsを追加し、画面側での表示も2.3に追記する。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "POST /api/v1/projects/{id}/summary/approve",
+        "FR-005",
+        "FR-006",
+        "NFR-003"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "4文書の逐次生成と自己診断は数分かかる長時間処理だが、承認APIは「200 OK(生成開始)」で、進捗・完了の確認や結果取得の手段(状態取得API、ポーリング等)がない。",
+      "evidence": "| POST | /api/v1/projects/{id}/summary/approve | 構造化サマリ承認と文書生成開始 | SCR-004 / SCR-005 | FR-004・FR-005・FR-006 | — | 200 OK (生成開始) | 500 生成失敗 |",
+      "reason": "NFR-003で数分の待機を想定しながら、SCR-005が生成中・失敗・完了を知る手段が外部設計書2.6にない。",
+      "suggestion": "非同期ジョブとして202で返し、生成状態を取得するAPI(または生成状況をGET /documentsに含める)を追加する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "SCR-005",
+        "FR-009",
+        "FR-005"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "SCR-005に「再生成ボタン」があり、FR-009で生成失敗時の再生成が必須だが、再生成を行うAPIがない(承認APIの再実行かどうかも不明)。",
+      "evidence": "操作ボタン: コピーボタン、ダウンロードボタン、再生成ボタン、版切り替えボタン",
+      "reason": "外部設計書2.6に再生成用のAPIがなく、付録でもFR-009はチャットAPIにしか結び付いていない。",
+      "suggestion": "POST /api/v1/projects/{id}/documents/regenerate(対象文書を指定)を追加するか、承認APIの再実行として定義し、FR-009を対応表に加える。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "SCR-004",
+        "POST /api/v1/projects/{id}/summary/approve"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "SCR-004の構造化サマリを取得するAPIと、「ヒアリング完了」操作のAPI、「修正依頼」ボタンのAPIが外部設計書にない。サマリの生成・表示・修正が実現できない。",
+      "evidence": "表示項目: 構造化されたサマリ内容 / 操作ボタン: 承認して文書生成へ進むボタン、修正依頼ボタン",
+      "reason": "外部設計書2.6にはsummaryの取得・生成・修正APIがなく、approveだけが定義されている。FR-004を満たせない。",
+      "suggestion": "サマリ生成(ヒアリング完了)、サマリ取得、修正依頼のAPIを追加する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "SCR-003",
+        "GET /api/v1/projects/{id}/chat"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "SCR-003はチャット履歴を表示するが、履歴の取得APIがない。再訪時や再読込時に過去のやり取りを表示できない。アップロード済み資料の一覧取得もない。",
+      "evidence": "表示項目: チャット履歴、AIの応答メッセージ",
+      "reason": "外部設計書2.6にチャット履歴・資料一覧のGET APIがない。",
+      "suggestion": "チャット履歴取得と参考資料一覧取得のAPIを追加する。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "NFR-003",
+        "POST /api/v1/projects/{id}/chat"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "「チャットの最初の文字を数秒で出力」というストリーミング要件に対し、チャットAPIは「200 OK(AI応答)」としか書かれておらず、ストリーミング方式(SSE等)が示されていない。",
+      "evidence": "| POST | /api/v1/projects/{id}/chat | チャットメッセージ送信 | SCR-003 | FR-002・FR-009・FR-010 | message | 200 OK (AI応答) |",
+      "reason": "NFR-003の最初の文字を数秒で出す要件を満たす応答形式が外部設計書2.6にない。",
+      "suggestion": "チャットの応答をストリーミング(SSE等)と明記し、途中で失敗した場合の扱いも書く。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "FR-008",
+        "SCR-005",
+        "GET /api/v1/projects/{id}/documents",
+        "FR-011"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "版の履歴の画面はFR-011でShouldの将来拡張だが、SCR-005は版の履歴(直近3件)と版切り替えを持つ。また特定の版を指定して取得する方法がAPIにない。",
+      "evidence": "表示項目: ... 版の履歴（直近3件）/ 操作ボタン: ... 版切り替えボタン",
+      "reason": "FR-008(Must)の範囲と、FR-011の「版の履歴の画面」の将来拡張が重なっている。APIは「生成文書および版一覧取得」のみで版の指定ができない。",
+      "suggestion": "MVPの版の見せ方(最新版のみか切り替えまでか)を決め、版指定のパラメータまたはAPIを定義する。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "FR-005",
+        "SCR-002",
+        "付録 要件との対応"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "FR-005(4種文書の生成)がSCR-002(プロジェクト一覧・作成画面)に結び付けられているが、SCR-002には生成に関する機能がない。",
+      "evidence": "| SCR-002 | プロジェクト一覧・作成画面 | プロジェクトの選択および新規作成を行う | Must | FR-002・FR-005 |",
+      "reason": "要件と画面の対応が実際の機能に合っていない。FR-005を満たすのはSCR-004/SCR-005。",
+      "suggestion": "SCR-002の要件欄と付録の対応表からFR-005を外し、SCR-004を加える。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "POST /api/v1/projects",
+        "GET /api/v1/projects",
+        "FR-002"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "プロジェクト一覧・作成APIにFR-002が結び付けているが、これはプロジェクト管理の機能で、チャットヒアリング機能の要件に当たらない。プロジェクトという概念自体が要件に定義されていない。",
+      "evidence": "| GET | /api/v1/projects | プロジェクト一覧取得 | SCR-002 | FR-002 | — | 200 OK | 401 認証エラー |",
+      "reason": "要件定義書1.4にプロジェクトの作成・一覧の要件がなく、対応が不正確で追跡できない。",
+      "suggestion": "プロジェクトの作成・一覧を要件に追加するか、FR-002に明記して対応を明確にする。"
+    },
+    {
+      "level": "minor",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/projects/{id}/documents/upload",
+        "FR-003",
+        "SCR-003"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "参考資料アップロードのファイルサイズ・ページ数の上限や、PDFのテキスト化失敗時(画像PDF・暗号化PDF)のエラーが定義されていない。",
+      "evidence": "| POST | /api/v1/projects/{id}/documents/upload | 参考資料アップロード | SCR-003 | FR-003 | file | 201 Created | 400 不正なファイル形式 |",
+      "reason": "外部設計書2.5はファイル形式のみ制限し、サイズ超過(413)やテキスト化失敗の応答がない。",
+      "suggestion": "サイズ上限と413、テキスト化失敗時の422などの応答を追加する。"
+    },
+    {
+      "level": "minor",
+      "cause": "design",
+      "targets": [
+        "GET /api/v1/projects",
+        "POST /api/v1/projects",
+        "POST /api/v1/projects/{id}/documents/upload",
+        "POST /api/v1/projects/{id}/summary/approve",
+        "GET /api/v1/projects/{id}/documents"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "認証が必要なAPIの401応答が一部にしか書かれていない。また、存在しないプロジェクトIDの404もない。",
+      "evidence": "| POST | /api/v1/projects/{id}/chat | ... | 400 文字数超過・空送信エラー, 500 AI応答失敗 |",
+      "reason": "外部設計書2.6でエラー応答の記載が揃っていない。",
+      "suggestion": "認証が必要な全APIに401、{id}を取るAPIに404を追記する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "CON-004",
+        "POST /api/v1/projects/{id}/chat",
+        "POST /api/v1/projects/{id}/summary/approve"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "Gemini無料枠の上限超過時の「エラー処理を挟む」が、API一覧では500としか書かれておらず、利用者に何を表示し再試行をどう案内するかがない。",
+      "evidence": "LLMにはGemini Flash-Lite(無料枠)を使用し上限超過時はエラー処理を挟む",
+      "reason": "CON-004とFR-009に対して、外部設計書2.6のエラーは500 AI応答失敗・500 生成失敗のみで、上限超過と通常の失敗が区別されていない。",
+      "suggestion": "上限超過は503または429として区別し、画面に待機の案内を出すことを2.3/2.6に書く。"
+    },
+    {
+      "level": "minor",
+      "cause": "hearing",
+      "targets": [
+        "schedule"
+      ],
+      "documents": [
+        "requirements"
+      ],
+      "point_key": "schedule",
+      "problem": "体制・期間が未決のまま。開発の期間・体制が分からないため、実装計画の規模や優先順位を決められない。",
+      "evidence": "| schedule | 体制・期間 | 任意 | 未決 |  |",
+      "reason": "実装計画書を作る際のタスクの粒度やスコープ判断に要る。",
+      "suggestion": "開発の人数・期間・公開時期を利用者に聞いて要件に追記する。"
+    },
+    {
+      "level": "minor",
+      "cause": "hearing",
+      "targets": [
+        "NFR-007",
+        "logging"
+      ],
+      "documents": [
+        "requirements"
+      ],
+      "point_key": "logging",
+      "problem": "「操作の記録だけを保存」とあるが、記録する操作の種類・項目・保存期間が決まっていない。",
+      "evidence": "入力内容は残さず、操作の記録だけにする",
+      "reason": "AI提案の採用のみで内容が浅く、監査・調査に必要な項目を設計できない。",
+      "suggestion": "記録する操作と項目(ユーザーID・日時・操作種別など)、保存期間を利用者に確認する。"
+    },
+    {
+      "level": "minor",
+      "cause": "inconsistency",
+      "targets": [
+        "NFR-003",
+        "performance"
+      ],
+      "documents": [
+        "requirements"
+      ],
+      "point_key": null,
+      "problem": "ヒアリングでは「4文書の生成は数秒〜数分待てる」だが、要件では「数分以内」となり、数分を超えた場合の扱い(タイムアウト)が決まっていない。",
+      "evidence": "4文書の生成は数秒〜数分待てる",
+      "reason": "NFR-003に具体的な上限時間がなく、生成失敗とみなす基準が定まらない。",
+      "suggestion": "生成のタイムアウト時間(例: 10分)を決め、超過時の扱いを要件に明記する。"
+    },
+    {
+      "level": "minor",
+      "cause": "design",
+      "targets": [
+        "NFR-009",
+        "SCR-001",
+        "SCR-003",
+        "SCR-005"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "スマートフォンは閲覧のみ対応とあるが、どの画面が閲覧のみで、どの操作を無効にするかが画面仕様にない。",
+      "evidence": "PCの最新のChrome・Edge・Firefox・Safariで利用可能とし、スマートフォンは閲覧のみ対応とする",
+      "reason": "外部設計書2.3にスマホ時の画面の扱いがなく、NFR-009を満たす画面を決められない。",
+      "suggestion": "スマホでは文書プレビューのみ閲覧可とし、チャットなどは非対応とするなど画面ごとに明記する。"
+    }
+  ],
+  "seconds": 36.6
+}

@@ -1,4 +1,4 @@
-# 作成：Phase-52-1｜更新：Phase-53(完了後の調整)
+# 作成：Phase-52-1｜更新：Phase-53(完了後の調整),58-5
 """設計レビューの入力・出力・判定(app/review。純粋関数)のテスト。
 
 SUT は app/review の各関数、ドライバは pytest。スタブ不要 ── 対象が純粋(副作用なし)で、
@@ -45,6 +45,9 @@ def test_points_table_has_key_status_and_required_columns() -> None:
     assert table.startswith("規模: 公開サービス")
     assert "| キー | 観点 | 必須 | 状態 | 内容 |" in table
     assert "| security | セキュリティ | 必須 | AI の提案を採用 | ログインをMVPに入れる |" in table
+    # Phase-58-5:追記
+    # 必須でない観点は空欄でなく「任意」と書く(未決のまま落ちていると読めるように)
+    assert "| schedule | 体制・期間 | 任意 | 未決 |  |" in table
 
 
 def test_points_table_without_scale_says_undecided() -> None:
@@ -93,6 +96,15 @@ def test_review_messages_contain_documents_points_and_known_issues() -> None:
     assert human.index("## 要件定義書") < human.index("## 外部設計書")
     assert "# ヒアリングの観点の表" in human and "| security |" in human
     assert human.endswith("# 決定的な検証の指摘(既知)\n\n- なし")
+
+
+# Phase-58-5:追記
+def test_review_prompt_checks_links_constraints_and_does_not_cap_findings() -> None:
+    # 当たりにくかった型: 要件の結び先の誤り・任意の未決の観点・制約条件の反映
+    assert "8. 対応の正しさ" in REVIEW_SYSTEM_PROMPT
+    assert "必須でなくても" in REVIEW_SYSTEM_PROMPT
+    assert "制約条件(外部サービスの上限など)" in REVIEW_SYSTEM_PROMPT
+    assert "件数を絞らない" in REVIEW_SYSTEM_PROMPT
 
 
 def test_review_prompt_asks_for_unwritten_facts_with_point_key() -> None:

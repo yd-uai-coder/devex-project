@@ -1,0 +1,222 @@
+{
+  "model": "claude-sonnet-5-5",
+  "gate": "stage6",
+  "documents": [
+    "requirements",
+    "external_design",
+    "detailed_design"
+  ],
+  "input_tokens": 30839,
+  "output_tokens": 5359,
+  "total_tokens": 36198,
+  "input_token_details": {
+    "cache_read": 0,
+    "cache_creation": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "ephemeral_1h_input_tokens": 0
+  },
+  "output_token_details": {
+    "reasoning": 1466
+  },
+  "cost_usd": 0.1153,
+  "known_issues": 3,
+  "findings": [
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "projects",
+        "POST /api/v1/projects/{id}/chat",
+        "POST /api/v1/projects/{id}/documents/upload",
+        "POST /api/v1/projects/{id}/summary/approve",
+        "GET /api/v1/projects/{id}/documents",
+        "F-03"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "projects テーブルに所有ユーザーを示す列がない。F-03 は find_all_by_user_id で一覧を絞る前提だが絞れない。{id} 付きの全 API でも、そのプロジェクトがログイン中のユーザーのものかを確認する処理がない。",
+      "evidence": "projects: | id | UUID | PK | 不可 | — | プロジェクトID | / | name | VARCHAR(255) | ... / F-03: ProjectRepository.find_all_by_user_id | ユーザーID",
+      "reason": "詳細設計書 03 のデータモデルでは所有関係を保存できず、05 の各手順にも認可がない。トークンさえあれば他人のプロジェクトのチャット・資料・生成文書を読み書きできる。",
+      "suggestion": "projects に user_id(FK users)を追加する。{id} を取る全処理で所有者チェックを入れ、他人のプロジェクトは 403 または 404 とする。API 一覧にも認可エラーを追記する。"
+    },
+    {
+      "level": "major",
+      "cause": "hearing",
+      "targets": [
+        "security",
+        "FR-001",
+        "NFR-008"
+      ],
+      "documents": [
+        "requirements",
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": "security",
+      "problem": "セキュリティが「ログインをMVPに入れる」だけで決まっている。本人以外のプロジェクト閲覧・変更の可否、トークンの有効期間、パスワードの条件が要件にない。不正利用の「回数上限」も値と単位が決まっていない。",
+      "evidence": "security | AI の提案を採用 | ログインをMVPに入れる / abuse: ログインの総当たり、登録の大量作成、チャットや生成の回数上限を設けて不正利用を防ぐ",
+      "reason": "規模は誰でも登録できる公開サービスだが、データの見える範囲やトークン失効、上限値が未決のままでは認可・レート制限の設計を確定できない。聞き直しが必要。",
+      "suggestion": "利用者に、プロジェクトは作成者本人だけが見られるか、トークンの有効期間、パスワードの条件、各上限(回数/時間/IP かユーザーか)を確認し、要件に落とす。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "NFR-008",
+        "app/cache/token.py",
+        "F-01",
+        "F-02",
+        "F-05",
+        "F-07"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "回数上限(ログイン総当たり、登録の大量作成、チャット・生成の上限)を実現する処理も、超過時の応答(429 など)もない。",
+      "evidence": "app/cache/token.py | キャッシュ・トークン管理(cache) | Redisを用いたトークン管理とレート制限処理を行う。 | redis | F-02 / API エラー欄に 429 の記載なし",
+      "reason": "NFR-008 は Must 級のセキュリティ要件だが、05 の手順にも API のエラー欄にもレート制限がない。レート制限モジュールの関わる処理も F-02 だけである。",
+      "suggestion": "各 API に回数制限のチェック手順と 429 応答を追加する。レート制限用モジュールの責務と関わる処理を F-01・F-05・F-07 まで広げる。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "FR-008",
+        "FR-005",
+        "FR-006",
+        "documents",
+        "summaries",
+        "F-07",
+        "F-08"
+      ],
+      "documents": [
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "データモデルに、4種文書の種別、版番号、直近3件の保持、自己診断結果、構造化サマリの内容を持つ列がない。生成文書の保存先が documents(参考資料の content)と共用になっている。",
+      "evidence": "documents: | content | TEXT | — | 不可 | — | 参考資料テキストデータ | / summaries: | approved | BOOLEAN | — | 不可 | DEFAULT false | 構造化サマリ承認データ",
+      "reason": "F-07 手順7は documents に4種文書を保存し、F-08 は直近3件の版履歴を読むが、版・種別・診断結果を区別できない。参考資料と生成文書も区別できず、FR-005・006・008 を満たせない。",
+      "suggestion": "生成文書用のテーブル(project_id、種別、版番号、本文、自己診断結果、作成日時)を分ける。summaries にサマリ本文を追加し、直近3件を残す処理を手順に書く。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "F-07",
+        "POST /api/v1/projects/{id}/summary/approve",
+        "FR-009",
+        "SCR-005"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "文書生成は非同期だが、進捗・完了・失敗を知る手段と、失敗時に再生成する API がない。さらに F-07 の手順では、同期で呼ぶはずの手順 6・7(生成と保存)が手順 8 の応答より前に並んでいる。",
+      "evidence": "| 8 | app/services/summary.py → app/api/routes/summary.py | 戻り | — | 処理受付完了 | / 500 生成失敗 / SCR-005: 再生成ボタン",
+      "reason": "生成は数分かかる(NFR-003)ため、承認 API が 200 を返した後の失敗は 500 で伝えられない。FR-009 の「生成失敗時は再生成できる」を満たせず、状態を持つ列もない。",
+      "suggestion": "生成状態(生成中/成功/失敗)を持たせ、取得 API に含める。再生成用 API を追加する。F-07 の手順を、受付応答と非同期の生成・保存に分けて書き直す。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "SCR-003",
+        "SCR-004",
+        "SCR-005",
+        "FR-004",
+        "FR-008",
+        "API一覧"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "画面の操作に対応する API が足りない。チャット履歴の取得、ヒアリング完了と構造化サマリの作成・取得、サマリの修正依頼、文書の再生成、版の切り替えがない。",
+      "evidence": "SCR-003: ヒアリング完了ボタン / SCR-004: 修正依頼ボタン / SCR-005: 再生成ボタン、版切り替えボタン(API 一覧にいずれの API もない)",
+      "reason": "SCR-004 は構造化サマリを表示する前提だが、サマリを作る処理も取得する API もなく、FR-004 の確認・承認の流れが成り立たない。",
+      "suggestion": "ヒアリング完了(サマリ生成)、サマリ取得・修正依頼、チャット履歴取得、再生成、版指定取得の API を追加する。詳細設計書の処理一覧にも追加する。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "F-05",
+        "FR-009",
+        "FR-010",
+        "NFR-003",
+        "POST /api/v1/projects/{id}/chat"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "F-05 は LLM 呼び出しの前にユーザーのメッセージを保存し、失敗時の扱いがない。LLM には現在のメッセージしか渡さず、会話履歴も参考資料も使わない。応答も全文を返す 200 OK である。",
+      "evidence": "| 3 | ... | ChatRepository.save | プロジェクトID、チャットメッセージ | ... / | 4 | ... | LLMClient.invoke_chat | プロジェクトID、チャットメッセージ | / 注記: 手順3から手順5が1つのトランザクション",
+      "reason": "FR-009 は失敗時にメッセージを送らずに再送を促すとあるが、保存済みのメッセージと response NOT NULL の chats が食い違う。FR-003 の参考資料も FR-005 の生成材料もチャットで使われない。NFR-003 の「最初の文字を数秒で」にはストリーミングが必要。",
+      "suggestion": "LLM 失敗時は保存しないか、保存を応答後にまとめる。invoke_chat にチャット履歴と参考資料を渡す。ストリーミング応答にするか、全文応答でよいか決める。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "tokens",
+        "F-02",
+        "L-04",
+        "app/cache/token.py",
+        "CON-003"
+      ],
+      "documents": [
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "トークンの保管先が Redis か PostgreSQL かが定まっていない。tokens テーブルに有効期限や失効の列がなく、email しか持たない。ログアウトや失効の処理もない。",
+      "evidence": "tokens: | token | VARCHAR(255) | ... | email | VARCHAR(255) | / F-02#4: Redisを使用して認証トークンを発行・保存する | tokens C / L-04: キャッシュまたはtokensテーブルを参照してトークンを検索する",
+      "reason": "CON-003 は Redis をトークン失効用とするが、手順は tokens テーブルへの書き込みになっている。期限切れの判定(L-04#3)の根拠となる列がなく、失効の手段もない。",
+      "suggestion": "トークンは Redis に TTL 付きで持つと決め、tokens テーブルを外すか、有効期限列を足して役割を分ける。ログアウトによる失効の処理を追加する。"
+    },
+    {
+      "level": "minor",
+      "cause": "design",
+      "targets": [
+        "NFR-007",
+        "app/main.py"
+      ],
+      "documents": [
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "「操作の記録だけを保存する」ログの保存先、項目、処理が設計にない。入力内容を残さない点の担保もない。",
+      "evidence": "NFR-007: チャットの入力内容はログに残さず操作の記録だけを保存する(テーブル・処理一覧に操作ログがない)",
+      "reason": "データモデルにも処理にも操作記録がなく、NFR-007 が設計に落ちていない。",
+      "suggestion": "操作ログのテーブルか出力先と記録項目(ユーザー、操作種別、日時)を決める。本文は記録しない旨を処理に明記する。"
+    },
+    {
+      "level": "minor",
+      "cause": "hearing",
+      "targets": [
+        "FR-003",
+        "POST /api/v1/projects/{id}/documents/upload",
+        "F-06"
+      ],
+      "documents": [
+        "requirements",
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": "core",
+      "problem": "参考資料のファイルサイズ上限、PDF のテキスト化失敗時(スキャン画像など)の扱い、1プロジェクトあたりの件数が決まっていない。",
+      "evidence": "FR-003: 参考資料(txt、md、PDF)を読み込みテキスト化して保持する / 2.5: ファイル形式は指定の拡張子のみ許可する。",
+      "reason": "サイズ・件数の上限がないと、公開サービスとして過大なアップロードが可能になる。また、テキストが LLM に入る量の扱いも決められない。",
+      "suggestion": "利用者にサイズ上限、件数、テキスト化できない場合の扱いを確認し、要件とエラー応答に追加する。"
+    }
+  ],
+  "seconds": 39.9
+}

@@ -1,0 +1,298 @@
+{
+  "model": "claude-sonnet-5-5",
+  "gate": "documents",
+  "documents": [
+    "requirements",
+    "external_design",
+    "internal_design",
+    "implementation_plan"
+  ],
+  "input_tokens": 16592,
+  "output_tokens": 4803,
+  "total_tokens": 21395,
+  "input_token_details": {
+    "cache_read": 0,
+    "cache_creation": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "ephemeral_1h_input_tokens": 0
+  },
+  "output_token_details": {
+    "reasoning": 0
+  },
+  "cost_usd": 0.0812,
+  "known_issues": 2,
+  "findings": [
+    {
+      "level": "critical",
+      "cause": "inconsistency",
+      "targets": [
+        "FR-010",
+        "NFR-006",
+        "Out of Scope(Jira・Notion連携)"
+      ],
+      "documents": [
+        "requirements",
+        "external_design",
+        "internal_design",
+        "implementation_plan"
+      ],
+      "point_key": null,
+      "problem": "FR-010は共有リンクでの未ログイン閲覧を求めるが、NFR-006の他人のプロジェクト閲覧不可と矛盾する。共有の認可モデル(リンクの推測困難性・失効・公開範囲)も未定義。",
+      "evidence": "FR-010「生成した設計書を共有リンクで公開し、ログインしていない人も閲覧できるようにする」/ NFR-006「機密性保持のため他人のプロジェクト閲覧を不可とする」",
+      "reason": "ヒアリングの観点の表(scope・security・core)に共有リンクの話はなく、要件の矛盾でもあるため、どちらを正とするか利用者に確認しないと設計できない。",
+      "suggestion": "共有リンクをMVPに含めるか確認し、含めるなら公開範囲・トークン・失効方法を要件化する。含めないならFR-010を削除または優先度を下げる。"
+    },
+    {
+      "level": "critical",
+      "cause": "inconsistency",
+      "targets": [
+        "FR-002",
+        "POST /api/v1/auth/login",
+        "SCR-001",
+        "3.3 APIエンドポイント一覧"
+      ],
+      "documents": [
+        "external_design",
+        "internal_design"
+      ],
+      "point_key": null,
+      "problem": "要件はトークンをHttpOnly Cookieに保存するとしているが、外部設計はトークンを応答本文で返しlocalStorageに保存するとしている。内部設計の一覧はCookie設定と書き、設計書どうしでも食い違う。",
+      "evidence": "外部設計 login: 「アクセストークン・リフレッシュトークンを応答の本文で返し、フロントエンドは localStorage に保存する」/ FR-002「HttpOnly Cookieに保存する」",
+      "reason": "localStorage保存はXSSでトークンが盗まれうる。FR-002とセキュリティ観点の決定に反する。",
+      "suggestion": "外部設計のログイン応答をSet-Cookie(HttpOnly, Secure, SameSite)に直し、フロントエンドのlocalStorage保存の記述を削除する。"
+    },
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "users",
+        "password",
+        "backend/core/security.py",
+        "DF-1",
+        "DF-2"
+      ],
+      "documents": [
+        "internal_design"
+      ],
+      "point_key": null,
+      "problem": "usersテーブルのpasswordが平文保存・平文照合の前提になっている。DF-1ではpasswordがそのままusersに書き込まれ、security.pyのハッシュ化と食い違う。",
+      "evidence": "users.password「パスワード(ログイン時にそのまま照合する)」/ security.py「パスワードのハッシュ化を行う」",
+      "reason": "公開サービスでDB漏洩時に全パスワードが漏れる。3.3のsecurity.pyの責務とも矛盾する。",
+      "suggestion": "カラムをpassword_hashとし、DF-1でsecurity.pyのハッシュ化を経由して保存、DF-2でハッシュ照合にする。"
+    },
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/chat/messages",
+        "POST /api/v1/documents/generate",
+        "POST /api/v1/projects",
+        "NFR-006",
+        "DF-4",
+        "DF-5"
+      ],
+      "documents": [
+        "external_design",
+        "internal_design"
+      ],
+      "point_key": null,
+      "problem": "chat/messagesにはproject_idがなくどのプロジェクトのチャットか特定できない。chat/messagesとdocuments/generateには認証・認可(401/403/404)の記載がなく、他人のproject_idを指定した閲覧・生成を防ぐ設計がない。",
+      "evidence": "chat/messages 本文「message」、エラー「400 空メッセージまたは文字数超過、500 AI応答失敗」/ documents/generate 本文「project_id」、エラー「500 生成失敗(再生成可能)」",
+      "reason": "NFR-006(他人のプロジェクト閲覧不可)を満たす所有者チェックが設計にない。DF-4のproject_idの出所も不明。",
+      "suggestion": "chat APIにproject_idを加え(パスに含める等)、全APIにJWT認証と所有者チェックと401/403/404応答を追記する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "FR-006",
+        "SCR-003",
+        "GET系API"
+      ],
+      "documents": [
+        "external_design",
+        "internal_design"
+      ],
+      "point_key": null,
+      "problem": "設計書本文・自己診断結果・チャット履歴を取得するAPIがなく、SCR-002/003の表示とFR-006のプレビュー・コピー・ダウンロードを満たせない。付録でもFR-006のAPIが「—」。",
+      "evidence": "付録 FR-006 | SCR-003 | —(API一覧にGETの設計書取得APIがない)",
+      "reason": "生成後の閲覧・再訪・ダウンロードにデータ取得APIが必要で、DB保存だけでは画面に届かない。",
+      "suggestion": "プロジェクト一覧、設計書・自己診断・チャット履歴の取得APIを追加し、SCR-003と対応づける。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "POST /api/v1/projects",
+        "FR-003",
+        "SCR-002",
+        "DF-3",
+        "DF-5",
+        "projects.reference_file_paths"
+      ],
+      "documents": [
+        "external_design",
+        "internal_design"
+      ],
+      "point_key": null,
+      "problem": "参考資料はファイルパスだけ保存され、DF-5の生成入力は「チャット履歴・参考資料取得」とあるがchat_messagesのみから取得される。pdfなどのテキスト抽出・保存場所・サイズ上限もない。",
+      "evidence": "DF-5「backend/api/v1/documents.py | project_id | チャット履歴・参考資料取得 | chat_messages」/ DF-3「ファイル保存・パス紐付け」",
+      "reason": "参考資料が生成に使われず、FR-003の目的が果たされない。ファイル内容の扱い(抽出・サイズ・保存先・バックアップ)も未定義。",
+      "suggestion": "DF-3でテキスト抽出と保存方針・サイズ上限を決め、DF-5でprojectsの参考資料を入力として明記する。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "3.4 例外処理・エラーハンドリング・ログ設計",
+        "NFR-007"
+      ],
+      "documents": [
+        "internal_design"
+      ],
+      "point_key": null,
+      "problem": "内部設計はAI応答失敗時にチャット入力とプロンプト全文をログに出すとしており、NFR-007の入力内容を一切ログに残さない方針に反する。",
+      "evidence": "「AI応答失敗時はチャットの入力内容とプロンプト全文をログに出力する方針とする」/ NFR-007「機密情報や入力内容は一切ログに残さず」",
+      "reason": "機密のヒアリング内容がログに残る。要件と内部設計の直接の矛盾。",
+      "suggestion": "失敗時もエラーコード・日時・リクエストIDのみをログ出力する方針に直す。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/documents/generate",
+        "FR-007",
+        "NFR-003",
+        "リスク1"
+      ],
+      "documents": [
+        "external_design",
+        "internal_design",
+        "implementation_plan"
+      ],
+      "point_key": null,
+      "problem": "数分かかる4文書生成を同期の1リクエスト(201応答)で返す設計で、タイムアウト、途中失敗時の保存状態、再生成時の旧documents・diagnosticsの扱いが未定義。実装計画のリスク対策は非同期処理と言うが、API設計に反映がない。",
+      "evidence": "generate「201 設計書生成・自己診断成功 / 500 生成失敗(再生成可能)」、NFR-003「4文書の生成は数分までの待機を許容」",
+      "reason": "nginxやブラウザのタイムアウトで失敗しやすく、生成状況を確認する方法もない。",
+      "suggestion": "ジョブ方式(202+状態取得API)か、タイムアウト値・進捗表示・再生成時の置換またはトランザクション方針を明記する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "NFR-008",
+        "POST /api/v1/chat/messages",
+        "POST /api/v1/documents/generate",
+        "POST /api/v1/projects"
+      ],
+      "documents": [
+        "requirements",
+        "external_design",
+        "internal_design"
+      ],
+      "point_key": "abuse",
+      "problem": "回数制限を掛けるとしているだけで、上限値・単位(IP/ユーザー単位、時間あたり)が未決。chat/generateのAPIに429が無い。",
+      "evidence": "NFR-008「ログインの総当たり、登録の大量作成、チャットと生成の回数制限により不正利用を防ぐ」/ chat・generateのエラーに429の記載なし",
+      "reason": "数値が無く実装できない。公開サービスでLLM費用に直結する。",
+      "suggestion": "各制限の値と単位を利用者に確認して要件化し、chat・generate・projectsに429を追記する。"
+    },
+    {
+      "level": "major",
+      "cause": "hearing",
+      "targets": [
+        "FR-001",
+        "SCR-001",
+        "users",
+        "POST /api/v1/auth/register"
+      ],
+      "documents": [
+        "requirements",
+        "external_design",
+        "internal_design"
+      ],
+      "point_key": "security",
+      "problem": "公開サービスなのに、パスワード規則、メール確認、パスワード再設定、ログアウト・トークン失効、リフレッシュの操作が決まっていない。Redisにトークン失効はあるがAPI・画面がない。",
+      "evidence": "セキュリティ「ログインはメールとパスワードのJWT認証(アクセス30分、リフレッシュ14日・HttpOnly Cookie)」/ API一覧にlogout・refreshが無い",
+      "reason": "誰でも登録できる前提で、アカウント保護の基本事項が未決のまま。ヒアリングで聞き直さないと決められない。",
+      "suggestion": "パスワード要件・メール確認・再設定・ログアウトとリフレッシュの扱いを利用者に確認し、要件とAPIに追加する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "backend/api/v1/auth.py",
+        "backend/api/v1/projects.py",
+        "backend/api/v1/chat.py",
+        "backend/api/v1/documents.py",
+        "backend/core/database.py"
+      ],
+      "documents": [
+        "internal_design"
+      ],
+      "point_key": null,
+      "problem": "モジュールの依存や層が不整合。auth.pyがai_serviceに依存し、リポジトリ層が存在せず、projects.py・documents.py・chat.pyの保存処理の担当が曖昧。security.pyとdatabase.pyが層「モデル」になっている。",
+      "evidence": "auth.py「主な依存先 fastapi, backend/services/ai_service.py」/ 3.3「PostgreSQLとの接続を担うリポジトリ層」だがbackend/にrepositoriesが無い",
+      "reason": "3.3の層構成の説明とモジュール一覧・ディレクトリ構成が食い違い、実装時に配置が迷う。ミドルウェア(レート制限・トークン検証)の置き場もない。",
+      "suggestion": "リポジトリ層・ミドルウェアのモジュールを追加し、auth.pyの依存をsecurityとrepositoryに直し、層の分類を直す。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "M-01-T01",
+        "FR-006",
+        "SCR-001",
+        "SCR-002",
+        "SCR-003",
+        "CON-005",
+        "NFR-002",
+        "NFR-008",
+        "NFR-007"
+      ],
+      "documents": [
+        "implementation_plan"
+      ],
+      "point_key": null,
+      "problem": "実装計画にフロントエンド画面(SCR-001〜003)、nginx・デプロイ、DBバックアップ、レート制限、ログ実装のタスクがなく、M-03-T02の要件にFR-006を入れてもバックエンドのみで画面がない。",
+      "evidence": "M-01-T01「処理: なし / 要件: なし / モジュール: backend/main.py, backend/core/database.py」、M-03-T02「backend/api/v1/documents.py, backend/services/ai_service.py」",
+      "reason": "Mustのフロント・非機能要件に当たるタスクが無く、4.1のMVP範囲(プレビュー・デプロイ)を満たせない。",
+      "suggestion": "フロント画面、nginx・Actionsデプロイ、バックアップ、レート制限、ログのタスクを追加する。"
+    },
+    {
+      "level": "minor",
+      "cause": "inconsistency",
+      "targets": [
+        "要件定義書 1.3 Out of Scope",
+        "In Scope: Jira連携"
+      ],
+      "documents": [
+        "requirements"
+      ],
+      "point_key": null,
+      "problem": "In Scopeに「Jira連携による課題の自動登録」があり、Out of Scopeの「Jira・Notion連携」と矛盾する。ヒアリングのコア機能にもJira連携はない。",
+      "evidence": "In Scope: Jira連携による課題の自動登録 / Out of Scope: Jira・Notion連携",
+      "reason": "範囲が矛盾しており、ヒアリング結果(scope・core)にもJira連携が無い。",
+      "suggestion": "In ScopeのJira連携を削除するか、ヒアリングで確認して範囲を確定する。"
+    },
+    {
+      "level": "minor",
+      "cause": "hearing",
+      "targets": [
+        "NFR-002",
+        "projects",
+        "documents",
+        "chat_messages"
+      ],
+      "documents": [
+        "requirements",
+        "internal_design"
+      ],
+      "point_key": "data_retention",
+      "problem": "データ保持の観点で、削除不要としか決まっておらず、保存期間とバックアップの暗号化、個人情報・機密の扱いが要件にない。ヒアリングの付録でも対応する要件が「—」。",
+      "evidence": "data_retention「プロジェクトの削除やアカウントの退会機能はMVPでは不要」/ 付録 運用・保守性(データの保持・削除) 要件「—」",
+      "reason": "公開サービスで機密性の高い入力を無期限に蓄積する方針が、利用者に確認されていない。",
+      "suggestion": "保持期間、退会せず放置されたデータや運営側の削除対応の方針を利用者に確認する。"
+    }
+  ],
+  "seconds": 33.5
+}

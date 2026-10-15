@@ -1,0 +1,21 @@
+scale=public sufficient=True
+scale 必須 adopted 誰でも登録できるサービスとして提供する
+purpose 必須 decided AIとの対話で要件定義や設計書を自動生成し、ドキュメント作成の工数と属人化を減らす
+users 必須 decided SE、ITコンサルタント、PM、個人開発者、スタートアップ創業者が新規プロジェクト立ち上げ時に利用する
+daily_flow 必須 decided クライアントとの打ち合わせ後に30分ほどでヒアリングを済ませ、その日のうちにドラフトを見直して共有する
+core 必須 decided チャットヒアリングから4種の設計書一括生成、自己診断、プレビュー・ダウンロード、参考資料の初期読み込み、PostgreSQLへのデータ保存を行う
+scope 必須 decided コードの自動生成、Jira・Notion連携、マルチテナントの権限管理、音声入力、複数人の同時編集は最初の版の対象外とする
+exceptions 必須 decided AIの応答が失敗した場合は理由を出しメッセージを保存せずに再送を促し、生成失敗時は再生成を行えるようにし、チャット入力は数千文字までで空送信は不可とする
+future 必須 decided テンプレートの選択、版の履歴の画面、設計図(UML)を後で追加する
+tech 必須 decided フロントはNext.js(App Router)とTamagui、バックエンドはFastAPIとLangChain・LangGraph(Python 3.13)、DBはPostgreSQL、Redis、サーバーはVPSにDocker Composeとnginx、デプロイはGitHub Actions、LLMはGemini Flash-Liteを使用する
+schedule 任意 open 
+availability 必須 decided 夜間の保守停止はかまわず、止まっても半日であれば困らない
+backup 必須 decided データベースを毎日バックアップし7日分を残し、VPSの外にもコピーする
+performance 必須 decided 同時に使うのは数人〜十数人で、チャットの最初の文字が数秒で出ればよい
+operability 必須 adopted エラーの追跡と死活監視はほしいが、MVPの後で導入する
+data_retention 必須 decided プロジェクトやアカウントの削除機能はMVPでは不要とする
+migration 必須 adopted 移行するものはない(ゼロから新規で始める)
+security 必須 adopted メールアドレスとパスワードによるログイン(自分のデータのみ閲覧可能)
+logging 必須 decided ログにプロンプトやチャットの本文を残さない
+abuse 必須 decided ログインの総当たり、登録の大量作成、チャットや生成の回数上限を設けて無料枠を守る
+environment 必須 decided PCの最新のChrome、Edge、Firefox、Safariで利用し、スマートフォンは読めれば十分とする

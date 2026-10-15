@@ -1,0 +1,1325 @@
+[
+  {
+    "gate": "documents",
+    "ready": true,
+    "status": "reviewed",
+    "run": {
+      "id": "680ab8b0-bd04-4d1e-9e51-e6aec8e3a4d7",
+      "gate": "documents",
+      "targets": {
+        "requirements": 2,
+        "external_design": 2
+      },
+      "trigger": "auto",
+      "model": "claude-sonnet-5-5",
+      "status": "succeeded",
+      "error_code": null,
+      "input_tokens": 12325,
+      "output_tokens": 4893,
+      "started_at": "2026-10-15T06:01:56.218176Z",
+      "finished_at": "2026-10-15T06:02:34.004410Z",
+      "findings": [
+        {
+          "id": "1ef7a9e7-8989-419f-9ddd-18575adde54f",
+          "position": 0,
+          "level": "critical",
+          "cause": "hearing",
+          "targets": [
+            "FR-011",
+            "POST /api/v1/auth/login",
+            "POST /api/v1/auth/register",
+            "POST /api/v1/projects/{id}/chat",
+            "POST /api/v1/projects/{id}/generate"
+          ],
+          "documents": [
+            "requirements",
+            "external_design"
+          ],
+          "point_key": "abuse",
+          "problem": "回数制限が「おすすめの回数制限」「おすすめの設定値」とだけ書かれ、上限の値・単位・対象の単位(IPかアカウントか)・ロック時間が決まっていない。429 を返す条件を設計できない。",
+          "evidence": "FR-011「ログインの総当たり攻撃、登録の大量作成を防ぐ仕組みを導入し、チャットと生成にも推奨されるおすすめの回数制限を設定する。」/ abuse「おすすめの設定値を適用する」",
+          "reason": "要件 FR-011 と NFR-003 で、公開サービスなのに、AI 呼び出しの費用や総当たり防御に直結する上限が未決のまま。外部設計書 2.6 の 429 の条件を決められない。",
+          "suggestion": "ログイン失敗・登録・チャット・生成それぞれについて、回数、期間、制限の単位、解除までの時間を利用者に確認して要件に書く。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "3d476169-1e08-4d81-973c-d9e88ee438ce",
+          "position": 1,
+          "level": "major",
+          "cause": "hearing",
+          "targets": [
+            "FR-012",
+            "FR-002",
+            "SCR-001"
+          ],
+          "documents": [
+            "requirements",
+            "external_design"
+          ],
+          "point_key": "security",
+          "problem": "パスワード条件、パスワード再設定の有無、メール確認の有無、CSRF対策、トークンの保管場所が「標準仕様」としか書かれておらず、決まっていない。",
+          "evidence": "FR-012「パスワードは標準的な条件を満たすものとし、パスワード再設定機能やメール確認、トークンローテーション、CSRF対策については推奨される標準仕様を適用する。」",
+          "reason": "セキュリティが AI の提案の採用のまま浅く、普通は決める項目が要件に無い。リフレッシュ用 Cookie を使う POST /api/v1/auth/refresh の CSRF 対策や、アクセストークンの保管場所(SCR-001「アクセストークンを取得」)も未定。",
+          "suggestion": "パスワードの最小長と文字種、再設定機能とメール確認を MVP に含めるか、リフレッシュトークンのローテーション方針、CSRF 対策、アクセストークンの保持方法を利用者に確認して要件に明記する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "e8d9042e-7657-4522-b401-a2fb2766523d",
+          "position": 2,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "FR-012",
+            "2.6 API一覧",
+            "2.2 画面一覧"
+          ],
+          "documents": [
+            "external_design"
+          ],
+          "point_key": null,
+          "problem": "FR-012 がパスワード再設定やメール確認に触れているのに、外部設計書にはそれらの API・画面・メール送信の外部連携が無い。FR-012 に対応づけられているのは register と logout のみで、logout は FR-012 の内容と合っていない。",
+          "evidence": "付録 要件との対応「FR-012 | — | POST /api/v1/auth/register・POST /api/v1/auth/logout」/ 2.4 の外部連携は Gemini Flash-Lite API のみ",
+          "reason": "要件と外部設計がずれている。再設定やメール確認を行うなら、API・画面・メール送信サービスが必要になる。行わないなら FR-012 の記述と矛盾する。",
+          "suggestion": "再設定・メール確認を MVP に含めるか決める。含めるなら API・画面・メール連携を追加し、含めないなら FR-012 からその記述を外す。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "980402f2-1c4c-495e-b7a8-9cb7a9e6a7e0",
+          "position": 3,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "POST /api/v1/projects/{id}/chat",
+            "FR-010"
+          ],
+          "documents": [
+            "external_design"
+          ],
+          "point_key": null,
+          "problem": "チャット API は SSE で 200 を返してストリーミングする設計だが、エラーに「500 AI応答失敗(メッセージ未保存)」とある。ストリーム開始後の失敗は HTTP ステータスでは返せない。ストリームの途中で切れたときの扱いと、ユーザーメッセージを保存するタイミングが決まっていない。",
+          "evidence": "応答「200 OK (SSEストリーミングによるAI応答)」/ エラー「500 AI応答失敗(メッセージ未保存)」",
+          "reason": "FR-010「メッセージを保存せず再送を促す」を満たすには、途中失敗を知らせるイベントの形式と保存の確定条件が要る。SCR-002 と 2.6 が噛み合わない。",
+          "suggestion": "SSE のエラーイベントの形式を決め、ストリームが最後まで成功したときにだけユーザーのメッセージと AI の応答を保存すると書く。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "a95ae867-d331-49ed-affb-853d114117f9",
+          "position": 4,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "POST /api/v1/projects/{id}/generate",
+            "GET /api/v1/projects/{id}/generate/status",
+            "SCR-003",
+            "FR-010"
+          ],
+          "documents": [
+            "external_design"
+          ],
+          "point_key": null,
+          "problem": "生成ジョブの状態(実行中・成功・失敗)と失敗時の内容、再生成時に既存文書を置き換えるタイミング、同じプロジェクトでジョブが実行中のときに再度開始した場合の扱い(409 など)が書かれていない。ジョブ ID を受け取るが status API はジョブ ID を指定しない。",
+          "evidence": "GET .../generate/status「200 OK (ジョブステータスおよび完了時は生成文書・診断結果)」/ generate のエラーに 409 が無い / SCR-003「再生成ボタン（既存文書置き換え）」",
+          "reason": "FR-010「生成失敗時は再生成を行えるようにする」に必要な失敗の状態が定義されていない。二重実行や再生成の失敗で既存文書が消える恐れがあり、NFR-003 の数分かかる生成とも関わる。",
+          "suggestion": "ジョブの状態の一覧、失敗時の理由、実行中の再要求への応答を定義する。再生成は成功してから既存文書を置き換える方針を明記する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "44e4cff3-38b3-45d1-b44c-7688f623d030",
+          "position": 5,
+          "level": "major",
+          "cause": "hearing",
+          "targets": [
+            "FR-008",
+            "POST /api/v1/projects",
+            "2.5 データ入出力仕様"
+          ],
+          "documents": [
+            "requirements",
+            "external_design"
+          ],
+          "point_key": "core",
+          "problem": "参考資料のファイルサイズ上限や PDF の扱い(ページ数、読み取れない場合)が決まっておらず、外部設計書にも「ファイル形式・サイズ制限」と書かれているだけで値が無い。",
+          "evidence": "FR-008「txt、md、pdf形式の参考資料を最大3件まで初期入力で読み込めるようにする。」/ 2.5「バリデーション: ファイル形式・サイズ制限」",
+          "reason": "サイズ上限が不明だと、Gemini に渡す量や 400 を返す条件を設計できない。公開サービスでは容量の悪用にもつながる。",
+          "suggestion": "1ファイルのサイズ上限、PDF の扱い、テキストを抽出できなかったときの挙動を利用者に確認して要件に書き、外部設計書の POST /api/v1/projects のエラーに反映する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "42557c95-9d1b-48bb-bd6e-354acbc2a548",
+          "position": 6,
+          "level": "minor",
+          "cause": "inconsistency",
+          "targets": [
+            "FR-008",
+            "POST /api/v1/projects",
+            "SCR-002"
+          ],
+          "documents": [
+            "external_design"
+          ],
+          "point_key": null,
+          "problem": "付録で FR-008 の API が「—」だが、実際のファイルの受け口は POST /api/v1/projects の files。SCR-002 の「資料添付ボタン」がプロジェクト作成後に使うものか作成時のみか不明で、本文の形式(multipart)も書かれていない。",
+          "evidence": "付録「FR-008 | SCR-002 | —」/ POST /api/v1/projects 本文「name, files」",
+          "reason": "要件と API の対応が付録で欠けており、作成後の追加添付が可能かも読み取れない。",
+          "suggestion": "FR-008 の対応 API に POST /api/v1/projects を入れ、作成後の追加の可否と multipart であることを明記する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "b9ef2322-7308-4e6a-8a3e-78067be3e21d",
+          "position": 7,
+          "level": "minor",
+          "cause": "design",
+          "targets": [
+            "GET /api/v1/projects",
+            "GET /api/v1/projects/{id}/messages",
+            "POST /api/v1/projects/{id}/chat"
+          ],
+          "documents": [
+            "external_design"
+          ],
+          "point_key": null,
+          "problem": "他人のプロジェクトには 403、存在しないプロジェクトには 404 を返す設計で、プロジェクト ID の存在を第三者が推測できる。一覧 API に 403 がある理由も不明。",
+          "evidence": "GET .../messages「403 アクセス権限なし, 404 対象プロジェクトなし」/ GET /api/v1/projects「401 認証エラー, 403 アクセス権限なし」",
+          "reason": "FR-003「自身のプロジェクトおよび関連データのみ閲覧・アクセス可能」の趣旨からは、他人のものと存在しないものを区別させないほうが安全。",
+          "suggestion": "他人のプロジェクトも 404 に統一するか、区別する理由を書く。一覧 API の 403 は削除する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        }
+      ],
+      "is_current": true
+    },
+    "adopted_before": [
+      {
+        "id": "317d90db-93b1-4ca2-bcf7-4fe60296120c",
+        "position": 0,
+        "level": "critical",
+        "cause": "design",
+        "targets": [
+          "POST /api/v1/projects/{id}/chat",
+          "POST /api/v1/projects/{id}/generate",
+          "GET /api/v1/projects/{id}/documents",
+          "SCR-002",
+          "FR-009"
+        ],
+        "documents": [
+          "external_design"
+        ],
+        "point_key": null,
+        "problem": "全 API が {id} のプロジェクトを前提にしているが、プロジェクトを作成する API も一覧を取る API もない。SCR-002 に表示するチャット履歴を取得する API もない。",
+        "evidence": "SCR-001 ──(認証成功)──► SCR-002 (プロジェクト・チャットヒアリング) / 表示項目: チャット履歴一覧 / API一覧に POST /api/v1/projects も GET .../chat(履歴取得)も無い",
+        "reason": "ログイン後に {id} を得る手段がなく、FR-004・FR-009 の保存済みチャットを画面に戻せない。外部設計書 2.6 の API 一覧と付録の対応表が成立しない。",
+        "suggestion": "プロジェクト作成・一覧取得の API と、チャット履歴取得の API(GET /api/v1/projects/{id}/messages など)を API 一覧に追加し、SCR-002 との対応を書く。",
+        "decision": "adopted",
+        "followup": "changed",
+        "fix_check": {
+          "verdict": "fixed",
+          "reason": "プロジェクト作成のPOST /api/v1/projects、一覧のGET /api/v1/projects、チャット履歴のGET /api/v1/projects/{id}/messagesが追加され、SCR-002のui_specにプロジェクト一覧・作成ボタン・チャット履歴表示が書かれており、指摘された欠落は解消されている。",
+          "model": "claude-haiku-5-5",
+          "error_code": null,
+          "created_at": "2026-10-15T06:02:36.875347Z"
+        }
+      },
+      {
+        "id": "bcb185f6-e662-403f-a016-867c6b3cfed8",
+        "position": 1,
+        "level": "major",
+        "cause": "design",
+        "targets": [
+          "POST /api/v1/projects/{id}/chat",
+          "POST /api/v1/projects/{id}/generate",
+          "FR-003"
+        ],
+        "documents": [
+          "external_design"
+        ],
+        "point_key": null,
+        "problem": "FR-003 の本人以外のアクセス拒否が chat・generate の API に書かれておらず、認証が必要な API の 401 の応答もない。ログアウトや Redis のトークン失効を行う API もない。",
+        "evidence": "chat のエラー: 「400 不正リクエスト, 429 レート制限超過, 500 AI応答失敗」/ generate のエラー: 「429 レート制限超過, 500 生成失敗」/ CON-003「レート制限やトークン失効管理等にRedisを使用する」",
+        "reason": "FR-003(Must)の認可が GET documents にしか書かれていないため、他人のプロジェクトにチャット・生成できてしまう設計になりうる。トークン失効に使う API もなく、CON-003 の用途が満たされない。",
+        "suggestion": "認証が必要な全 API に 401・403・404 を追記し、付録の FR-003 の対応も chat・generate に広げる。ログアウト API(リフレッシュトークンの失効)を追加するか、不要なら理由を書く。",
+        "decision": "adopted",
+        "followup": "changed",
+        "fix_check": {
+          "verdict": "fixed",
+          "reason": "chat と generate に 401 認証エラーと 403 アクセス権限なし、generate には 404 も追記された。ログアウト API(POST /api/v1/auth/logout、リフレッシュトークン失効、401)が追加され、chat と generate の req_ids にも FR-003 が入っている。",
+          "model": "claude-haiku-5-5",
+          "error_code": null,
+          "created_at": "2026-10-15T06:02:41.044723Z"
+        }
+      },
+      {
+        "id": "0f355079-2ed7-4c1d-be8c-1b216ae16af0",
+        "position": 2,
+        "level": "major",
+        "cause": "inconsistency",
+        "targets": [
+          "NFR-003",
+          "POST /api/v1/projects/{id}/chat"
+        ],
+        "documents": [
+          "external_design"
+        ],
+        "point_key": null,
+        "problem": "NFR-003 は「チャットの最初の文字が数秒で出る」ことを求めているが、チャット API は完成した応答を 1 回返す形式で、逐次表示(ストリーミング)の仕様がない。",
+        "evidence": "POST /api/v1/projects/{id}/chat ... 応答「200 OK (AI応答メッセージ)」/ NFR-003「チャットの最初の文字が数秒で出ること」",
+        "reason": "応答全体の生成を待つ形式では、最初の文字が数秒で出るという要件を満たせない。NFR-003 と 2.6 が食い違う。",
+        "suggestion": "チャット応答を SSE などのストリーミングにする。途中での失敗時の扱い(FR-010 のメッセージを保存しない動作)も合わせて書く。",
+        "decision": "adopted",
+        "followup": "changed",
+        "fix_check": {
+          "verdict": "fixed",
+          "reason": "今の内容でチャットAPIはSSEストリーミング応答に変わり、SCR-002のui_specにSSEによる逐次表示が明記されている。途中失敗時もAPIのerrorsに「500 AI応答失敗(メッセージ未保存)」、画面に「エラー時は理由を表示しメッセージを保存せず再送を促す」と書かれ、指摘された途中失敗時の扱いも記載されている。",
+          "model": "claude-haiku-5-5",
+          "error_code": null,
+          "created_at": "2026-10-15T06:02:42.956535Z"
+        }
+      },
+      {
+        "id": "13f646ae-51f4-41ee-883a-a18560273fc5",
+        "position": 3,
+        "level": "major",
+        "cause": "design",
+        "targets": [
+          "POST /api/v1/projects/{id}/generate",
+          "SCR-003",
+          "FR-005",
+          "FR-010"
+        ],
+        "documents": [
+          "external_design"
+        ],
+        "point_key": null,
+        "problem": "生成は数分かかるが、API は同期的に 201 でまとめて返す形になっている。進捗の確認・タイムアウト・生成中の再実行・失敗後の再生成の方法も書かれていない。",
+        "evidence": "「201 Created (生成された4種の設計書および自己診断結果)」/ NFR-003「4文書の生成は数分まで待てること」",
+        "reason": "数分かかる処理を 1 回のリクエストで返すと、nginx や FastAPI のタイムアウト、ブラウザの切断で失敗しやすい。FR-010 の再生成も、成功済みの文書が上書きされるのか不明。",
+        "suggestion": "生成を非同期のジョブにし(202 とステータス取得 API)、画面は完了まで進捗を表示する。再生成時に既存文書を置き換えるのかも書く。",
+        "decision": "adopted",
+        "followup": "changed",
+        "fix_check": {
+          "verdict": "partial",
+          "reason": "POST generate は 202 と生成ジョブIDを返し、GET generate/status で進捗を確認でき、SCR-003 も進捗表示とポーリングを持つため、同期返却と進捗確認の問題は解消されている。一方、ジョブのタイムアウト、生成中の再実行の扱い、ジョブ失敗後の再生成手順は今の内容に書かれていない。",
+          "model": "claude-haiku-5-5",
+          "error_code": null,
+          "created_at": "2026-10-15T06:02:49.675093Z"
+        }
+      },
+      {
+        "id": "1530cbfe-9216-4146-aea9-d5e7fd17f42b",
+        "position": 5,
+        "level": "major",
+        "cause": "design",
+        "targets": [
+          "POST /api/v1/auth/register",
+          "POST /api/v1/auth/login",
+          "FR-011"
+        ],
+        "documents": [
+          "external_design"
+        ],
+        "point_key": null,
+        "problem": "FR-011 はログインの総当たりと登録の大量作成を防ぐとあるが、register・login の API に 429 の応答がなく、ロックの扱いも書かれていない。",
+        "evidence": "register のエラー「400 バリデーションエラー, 409 重複登録エラー」/ login のエラー「401 認証失敗」",
+        "reason": "2.5 でレート制限は Redis 管理とされ、chat・generate には 429 があるのに、認証系にはない。FR-011 の API 仕様が不完全。",
+        "suggestion": "register・login に 429(と Retry-After)を追加する。",
+        "decision": "adopted",
+        "followup": "changed",
+        "fix_check": {
+          "verdict": "partial",
+          "reason": "register と login の両方に 429 レート制限超過(Retry-After)が追加され、応答が無いという点は解消されています。一方で、指摘にある「ロックの扱い」(ロックの条件や期間、解除方法)は【今の内容】のどこにも書かれていません。",
+          "model": "claude-haiku-5-5",
+          "error_code": null,
+          "created_at": "2026-10-15T06:02:53.203004Z"
+        }
+      },
+      {
+        "id": "98325b20-0b2e-48e6-abd6-57293f68151f",
+        "position": 6,
+        "level": "major",
+        "cause": "hearing",
+        "targets": [
+          "FR-011",
+          "NFR-003"
+        ],
+        "documents": [
+          "requirements",
+          "external_design"
+        ],
+        "point_key": "abuse",
+        "problem": "レート制限の「回数の上限」が具体値なしのまま決まっている(ログインの失敗回数・登録の頻度・チャットと生成の 1 日または 1 時間あたりの回数・単位・ロック時間)。",
+        "evidence": "FR-011「ログインの総当たり攻撃、登録の大量作成を防ぐ仕組みを導入し、チャットと生成にも回数の上限を設ける。」",
+        "reason": "上限の値・単位(IP かユーザーか)が無いと、Redis のキー設計やテストの基準が決まらない。公開サービスで Gemini の費用にも直結する。",
+        "suggestion": "ログイン失敗・登録・チャット・生成それぞれの回数・期間・単位・超過時の挙動を利用者に聞き直し、FR-011 に追記する。",
+        "decision": "adopted",
+        "followup": "changed",
+        "fix_check": {
+          "verdict": "not_fixed",
+          "reason": "今の内容のFR-011は「推奨されるおすすめの回数制限を設定する」とあるだけで、ログイン失敗回数・登録頻度・チャットと生成の回数・期間・単位・ロック時間の具体値が書かれていない。NFR-003も指摘前から変わっておらず、回数の上限は解消されていない。",
+          "model": "claude-haiku-5-5",
+          "error_code": null,
+          "created_at": "2026-10-15T06:02:56.132081Z"
+        }
+      },
+      {
+        "id": "f04de4b5-4c27-4acb-b734-287b9ac5e542",
+        "position": 7,
+        "level": "major",
+        "cause": "hearing",
+        "targets": [
+          "FR-001",
+          "FR-002",
+          "FR-003"
+        ],
+        "documents": [
+          "requirements",
+          "external_design"
+        ],
+        "point_key": "security",
+        "problem": "認証まわりで普通決める事項が未決。パスワードの条件、パスワード忘れ・変更、メール確認の要否、リフレッシュトークンの更新(ローテーション)方針、Cookie を使う更新への CSRF 対策が書かれていない。",
+        "evidence": "FR-001「メールアドレスとパスワードによるユーザー登録およびログイン機能を提供する。」/ scale「登録されたすべてのユーザーが利用できるサービスとする」",
+        "reason": "公開サービスなのに、パスワードを忘れたときの復旧手段や登録の本人確認の有無が決まっておらず、実装前に聞かないと API・画面が確定しない。",
+        "suggestion": "パスワードの条件、再設定機能の要否(MVP 外にするなら明記)、メール確認の要否、トークンのローテーション方針を利用者に聞き、要件に落とす。",
+        "decision": "adopted",
+        "followup": "target_unchanged",
+        "fix_check": null
+      }
+    ]
+  },
+  {
+    "gate": "stage6",
+    "ready": true,
+    "status": "reviewed",
+    "run": {
+      "id": "49f46d01-c2b4-4b44-8d51-b1851fe68a98",
+      "gate": "stage6",
+      "targets": {
+        "stage:1": 2,
+        "stage:2": 2,
+        "stage:3": 2,
+        "stage:4": 2,
+        "stage:5": 5,
+        "stage:6": 2,
+        "requirements": 2,
+        "external_design": 2
+      },
+      "trigger": "manual",
+      "model": "claude-sonnet-5-5",
+      "status": "succeeded",
+      "error_code": null,
+      "input_tokens": 36107,
+      "output_tokens": 10774,
+      "started_at": "2026-10-15T06:13:41.802357Z",
+      "finished_at": "2026-10-15T06:15:01.028479Z",
+      "findings": [
+        {
+          "id": "d4223b27-0b47-4d07-9095-6953b0e1437f",
+          "position": 0,
+          "level": "major",
+          "cause": "hearing",
+          "targets": [
+            "FR-011",
+            "POST /api/v1/projects/{id}/chat",
+            "POST /api/v1/projects/{id}/generate",
+            "POST /api/v1/auth/login",
+            "POST /api/v1/auth/register"
+          ],
+          "documents": [
+            "requirements",
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": "abuse",
+          "problem": "不正利用対策が「おすすめの回数制限」としか決まっておらず、ログイン・登録・チャット・生成それぞれの上限値、単位(回/分・回/日)、数える単位(IP かユーザーか)が無い。Gemini 側の上限との関係も不明。",
+          "evidence": "FR-011「ログインの総当たり攻撃、登録の大量作成を防ぐ仕組みを導入し、チャットと生成にも推奨されるおすすめの回数制限を設定する。」/ 観点 abuse「おすすめの設定値を適用する」",
+          "reason": "数値が決まっていないと 429 を返す条件を実装できず、テストもできない。要件定義書 FR-011 と外部設計書 2.6 の 429 応答の根拠が空になる。",
+          "suggestion": "利用者に聞き直し、ログイン失敗回数、登録回数、チャット回数、生成回数の上限値・単位・数える単位・ロック時間を FR-011 に明記する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "c0a0ee25-b1c5-4c31-831e-a0e5bc1d8659",
+          "position": 1,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "F-01",
+            "F-02",
+            "F-08",
+            "F-09",
+            "app/services/project.py",
+            "app/clients/redis.py"
+          ],
+          "documents": [
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "外部設計書は register・login・chat・generate に 429 を定義しているが、詳細設計書の手順・例外・モジュール依存のどこにも回数制限の判定処理が無い。",
+          "evidence": "外部設計書 2.6「429 レート制限超過(Retry-After)」/ 詳細設計 04「app/services/project.py … 主な依存先 app/repositories/project.py, app/agents/chat.py, app/agents/generator.py」(Redis への依存なし)/ F-01〜F-09 の手順に 429 の分岐が無い",
+          "reason": "FR-011(Must)と CON-003(Redis をレート制限に使う)が、詳細設計 05・04 で満たされていない。",
+          "suggestion": "F-01・F-02・F-08・F-09 に Redis でのカウント確認の手順と 429 の分岐を追加し、project サービスの依存先に redis クライアントを加える。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "b0488af9-ee72-41d0-aeff-657f6d57670e",
+          "position": 2,
+          "level": "major",
+          "cause": "hearing",
+          "targets": [
+            "FR-012",
+            "FR-001",
+            "FR-002",
+            "F-01",
+            "SCR-001"
+          ],
+          "documents": [
+            "requirements",
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": "security",
+          "problem": "パスワード条件、パスワード再設定・メール確認の有無、トークンローテーション、CSRF 対策が「標準的」「推奨される標準仕様」としか書かれておらず、具体が決まっていない。Cookie 属性(Secure・SameSite・Path)も未定。",
+          "evidence": "FR-012「パスワードは標準的な条件を満たすものとし、パスワード再設定機能やメール確認、トークンローテーション、CSRF対策については推奨される標準仕様を適用する。」",
+          "reason": "パスワード再設定やメール確認を作るのかが分からず、画面・API・メール送信基盤の有無が決まらない。F-01 の検証条件も書けない。",
+          "suggestion": "最小文字数や文字種などのパスワード条件、再設定・メール確認を MVP に入れるか、リフレッシュトークンのローテーション有無、Cookie 属性と CSRF 対策方式を利用者に確認して要件に明記する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "35eb3f52-8143-4529-b25e-477e8fd5f5a6",
+          "position": 3,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "generation_jobs",
+            "F-11",
+            "F-10",
+            "FR-009",
+            "chats"
+          ],
+          "documents": [
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "生成文書の保存先が「確定した4種の文書」として独立しておらず、F-11 は文書を chats テーブルから読むことになっている。文書ごとの種別・版の持ち方も無く、再生成時の「既存文書置き換え」の動作も決まっていない。",
+          "evidence": "F-11 手順4「get_documents_and_diagnosis … 4種のMarkdown設計書とAIの自己診断結果を取得する | chats R」/ generation_jobs「generated_documents TEXT / diagnostic_results TEXT」/ SCR-003「再生成ボタン(既存文書置き換え)」",
+          "reason": "FR-005・FR-006・FR-009 の保存先が不整合で、F-11 は実装すると空の結果を返す。4文書を1つの TEXT に詰めると文書ごとの取得・置き換えもできない。",
+          "suggestion": "documents テーブル(project_id・種別・本文・診断結果・生成日時)を追加し、F-11 の DB 操作を documents R にする。ジョブ完了時に既存文書を置き換える処理を F-09 以降に定義する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "3c770c3f-e034-431a-b83d-36bac68a8d4d",
+          "position": 4,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "F-09",
+            "F-10",
+            "generation_jobs",
+            "app/agents/generator.py",
+            "FR-010"
+          ],
+          "documents": [
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "非同期生成ジョブの進行・結果書き込み・失敗の扱いが設計されていない。status の取りうる値が未定義で、ジョブが失敗・サーバー再起動で途絶えたときの更新手順が無く、同一プロジェクトでの二重実行や生成中の再生成の扱いも決まっていない。",
+          "evidence": "F-09 手順4「GeneratorAgent.run_async … 4種の設計書一括生成と自己診断の非同期ジョブを起動する | 結果 — | DB 操作 — | 分岐・例外 —」/ generation_jobs「status VARCHAR(50) ジョブの進捗ステータス」/ CRUD 図の generation_jobs は F-09 C・F-10 R のみ",
+          "reason": "FR-010「生成失敗時は再生成を行えるように」を満たす失敗状態の記録と画面表示が作れない。generation_jobs を更新する処理が無く、ジョブが完了にならない。F-09 の注記も、非同期起動を DB トランザクションに含めている。",
+          "suggestion": "status の値(queued・running・succeeded・failed)と、エージェントが generation_jobs を更新する手順(U)・失敗理由・タイムアウト・実行中ジョブの重複防止を F-09 に追加し、ジョブ作成のコミット後に起動する順序にする。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "e3eab2ed-de71-4278-ad26-2192bae8e4a6",
+          "position": 5,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "GET /api/v1/projects/{id}/generate/status",
+            "F-10",
+            "F-09"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "進捗確認 API はパスに {id}(プロジェクトID)だけで、ジョブID の渡し方(パス・クエリ)が無い。F-10 の処理は入力にジョブIDを要求している。",
+          "evidence": "外部設計書 2.6「GET /api/v1/projects/{id}/generate/status … 本文 —」/ F-10「指定プロジェクトIDとジョブID」/ F-10 手順4「get_generation_job | プロジェクトID、ジョブID」",
+          "reason": "どのジョブの進捗かを API から特定できない。最新ジョブを返すのかも書かれておらず、F-10 の 4a(ジョブなし 404)とも噛み合わない。",
+          "suggestion": "クエリ(job_id)か「プロジェクトの最新ジョブ」を返す仕様に決め、API 一覧と F-10 を揃える。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "71baae8b-d562-407f-b8ef-688d9c3ab2ce",
+          "position": 6,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "messages",
+            "chats",
+            "F-08",
+            "F-07"
+          ],
+          "documents": [
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "チャット履歴のデータモデルが処理と合わない。messages にはメッセージ本文しかなく、発言者(ユーザー/AI)・順序・日時の列が無い。F-08 は毎回 chats を新規作成し、messages は chat_id ではなく project_id を持つ。",
+          "evidence": "messages「id, project_id, message」/ F-08 手順4「create_chat … チャットセッションを保存する | chats C」/ 手順5「create_messages | チャットID、ユーザーメッセージ、AI応答メッセージ」",
+          "reason": "履歴(F-07)を発言順・発言者つきで画面に出せず、AI へのコンテキスト(手順3)も再構築できない。chats は意味のないレコードを毎回作る。",
+          "suggestion": "messages に role・created_at を追加し、chats は廃止するか chat_id の外部キーを持たせて使い方を決める。F-07 の並び順(created_at 昇順)も明記する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "46d97bfa-01e7-4244-b4b1-fd3374ecbf26",
+          "position": 7,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "F-08",
+            "POST /api/v1/projects/{id}/chat",
+            "FR-010",
+            "app/agents/chat.py"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "SSE ストリーミングなのに、手順は AI 応答を最後まで生成して保存した後に返す順序になっている。ストリーム途中で失敗した場合の扱いも定義されておらず、開始後の失敗は HTTP 500 では返せない。generate_response に渡す「コンテキスト」(履歴・参考資料・ヒアリング観点)の中身も未定義。",
+          "evidence": "F-08 手順3「generate_response | AI応答テキスト」→ 手順5「ユーザー発言とAI応答を一括保存する」→ 手順6「SSEストリーミングによるAIの対話応答を返す」/ 3a「GeminiError → 500エラーを返し処理を中断(メッセージ保存なし)」/ 注記「手順3〜6が1つのトランザクション」",
+          "reason": "NFR-003「チャットの最初の文字が数秒で出る」を満たせない。SSE 開始後の失敗や切断時に、保存するかどうかと画面表示(FR-010)も決まらない。外部 AI 呼び出しを DB トランザクションに含めている。",
+          "suggestion": "ストリームしながらチャンクを送り、完了後に保存する流れに直す。ストリーム途中の失敗は SSE のエラーイベントで通知して保存しないことを明記し、コンテキストの組み立て(履歴件数・参考資料の使い方)を定義する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "ffa6d086-7bc6-4f6a-9668-21a84f181072",
+          "position": 8,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "F-07",
+            "GET /api/v1/projects/{id}/messages",
+            "POST /api/v1/projects/{id}/chat",
+            "F-08",
+            "F-11",
+            "GET /api/v1/projects"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "存在しないプロジェクトと権限なしのエラーの扱いが、API 一覧と詳細設計でそろっていない。F-07 は存在しないも 403 に含め、F-08 は 404 の分岐が無い。F-11 は手順に 403/404 があるが F-11 の他ではまちまち。プロジェクト一覧にも意味のない 403 がある。",
+          "evidence": "F-07 2a「プロジェクトが存在しない、またはアクセス権限がない → ForbiddenError → 403」/ 外部設計書「GET /api/v1/projects/{id}/messages … 403 アクセス権限なし, 404 対象プロジェクトなし」/ F-08 1a「UnauthorizedErrorまたはForbiddenError → 401/403」/ GET /api/v1/projects「403 アクセス権限なし」",
+          "reason": "FR-003(自分のデータのみ)の判定で、他人のプロジェクトの存在が 403 と 404 の違いから分かる状態になる。API と処理で応答がずれ、実装・テストが定まらない。",
+          "suggestion": "他人のプロジェクトも存在しないものと同じ 404 に統一するか、403 と 404 を使い分けるか決め、全 API と手順の分岐をそろえる。プロジェクト一覧の 403 は削除する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "0d721a6b-001e-4a6a-a6c0-2abb33e73c69",
+          "position": 9,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "tokens",
+            "F-02",
+            "F-03",
+            "F-04",
+            "L-02",
+            "L-05",
+            "FR-002"
+          ],
+          "documents": [
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "リフレッシュトークンの管理が不整合。tokens テーブルに有効期限・失効状態の列が無いのに期限切れ判定と状態更新を行う設計で、平文保存のうえ、Redis と DB のどちらが正か決まっていない。F-03 の Redis 手順の DB 操作が tokens R になっている。",
+          "evidence": "tokens「id, user_id, refresh_token」/ F-04 手順4「update_token_status … tokensテーブルのトークン状態を更新する | tokens U」/ L-02 手順4「必要に応じて app/clients/redis.py を介してリフレッシュトークンをキャッシュまたは保存する」/ F-03 手順3「RedisClient.is_revoked | tokens R」/ CRUD 図 F-03「RU*」(手順に U が無い)",
+          "reason": "FR-002 の14日の有効期限と失効を実装できない。DB 漏洩時にトークンがそのまま使える。FR-012 のトークンローテーションも書かれておらず、F-03 は新しいリフレッシュトークンを出さない。",
+          "suggestion": "tokens に expires_at・revoked_at を追加し、保存はトークンのハッシュにする。Redis(失効リスト)と DB の役割を決めて F-02〜F-04 に反映し、ローテーションを行うなら F-03 に追加する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "0c0547ee-602b-4a1f-80d2-96a71d98d1f6",
+          "position": 10,
+          "level": "major",
+          "cause": "hearing",
+          "targets": [
+            "FR-008",
+            "POST /api/v1/projects",
+            "F-06",
+            "projects.reference_materials",
+            "SCR-002"
+          ],
+          "documents": [
+            "requirements",
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": "core",
+          "problem": "参考資料の読み込みの条件が決まっていない。ファイルサイズの上限が「サイズ制限」としか書かれておらず値が無い。pdf のテキスト抽出の方法や、複数ファイルを1つの TEXT 列に入れる形も未定義。画像のみの PDF 等の抽出失敗時の扱いも無い。",
+          "evidence": "外部設計書 2.5「バリデーション: ファイル形式・サイズ制限、…」/ FR-008「txt、md、pdf形式の参考資料を最大3件まで初期入力で読み込めるようにする。」/ projects「reference_materials TEXT 参考資料」/ POST /api/v1/projects「本文 name, files」",
+          "reason": "上限値が無いとバリデーションとエラー応答を決められず、Gemini のコンテキスト上限や DB 容量にも影響する。ファイル別の扱い(ファイル名・件数)も分からない。",
+          "suggestion": "1ファイルの最大サイズ、pdf の扱い(抽出方法・抽出不可時のエラー)、保存形式(別テーブルか TEXT か)を利用者に確認して要件に書き、F-06 に反映する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "b4dfa8a1-f286-48cb-9f26-201a7b79ba14",
+          "position": 11,
+          "level": "minor",
+          "cause": "inconsistency",
+          "targets": [
+            "FR-012",
+            "POST /api/v1/auth/logout",
+            "F-04",
+            "SCR-001"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "FR-012(パスワード条件・再設定・メール確認・CSRF)がログアウト API・F-04 に結び付けられており、内容が合わない。一方 register を使う SCR-001 には FR-012 が無い。",
+          "evidence": "外部設計書 2.6「POST /api/v1/auth/logout … 要件 FR-002・FR-012」/ 付録「FR-012 | — | POST /api/v1/auth/register・POST /api/v1/auth/logout」/ F-04「FR-002, FR-012」",
+          "reason": "ログアウトはパスワード条件を満たす処理ではなく、対応表の根拠にならない。",
+          "suggestion": "logout と F-04 から FR-012 を外し、register 側と SCR-001 に FR-012 を結び付ける。CSRF 対策を logout 等に適用するなら、その旨を別途書く。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "ff2e7e3f-e7e9-464c-a088-f0b5ded8f104",
+          "position": 12,
+          "level": "minor",
+          "cause": "inconsistency",
+          "targets": [
+            "data_retention",
+            "運用・保守性(データの保持・削除)",
+            "projects",
+            "users"
+          ],
+          "documents": [
+            "requirements"
+          ],
+          "point_key": null,
+          "problem": "ヒアリングで利用者が決めた「プロジェクト削除・退会機能は MVP 不要」が要件定義書のどこにも書かれていない。付録の要件欄は「—」のまま。",
+          "evidence": "観点 data_retention「プロジェクトの削除やアカウントの退会機能はMVP不要とする」/ 付録「運用・保守性(データの保持・削除) | ユーザーが決定 | —」/ 1.3 Out of Scope に記載なし",
+          "reason": "範囲の判断が文書に残らず、公開サービスとして後から削除機能の有無が曖昧になる。テーブルの ON DELETE CASCADE もこの決定と対応が分からない。",
+          "suggestion": "1.3 の Out of Scope に「プロジェクト削除・退会機能」を追加するか、非機能要件に保持方針を書く。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "611e7986-c6ae-4fdf-bb51-0bd1b82b1818",
+          "position": 13,
+          "level": "minor",
+          "cause": "inconsistency",
+          "targets": [
+            "L-02",
+            "L-03",
+            "L-05",
+            "F-04",
+            "POST /api/v1/auth/logout",
+            "F-03#1"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "エラー表現がそろっていない。手順は UnauthorizedError → 401 だが、L-02・L-03 は ValueError を送出する。logout は API 一覧が 401、F-04 が 400 になっている。",
+          "evidence": "F-02 3a「UnauthorizedError → 401」/ L-02「例外 ValueError: 認証失敗時は401エラー相当の例外を送出する」/ F-04 1a「ValidationError → 400」/ 外部設計書「POST /api/v1/auth/logout … 401 認証エラー」",
+          "reason": "処理ロジックと主要処理の手順で例外型が違うと、HTTP ステータスへの変換規則が定まらない。",
+          "suggestion": "例外型を UnauthorizedError 等に統一し、logout の無効トークン時の応答(400 か 401)を API 一覧と F-04・L-05 でそろえる。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        }
+      ],
+      "is_current": true
+    },
+    "adopted_before": [
+      {
+        "id": "b960512e-5622-4fb4-be2b-8c991c882945",
+        "position": 5,
+        "level": "major",
+        "cause": "inconsistency",
+        "targets": [
+          "FR-010",
+          "F-08",
+          "POST /api/v1/projects/{id}/chat"
+        ],
+        "documents": [
+          "detailed_design"
+        ],
+        "point_key": null,
+        "problem": "FR-010 は AI の応答失敗時にメッセージを保存しないとしているが、F-08 は AI 呼び出しの前にユーザーメッセージを保存する。失敗時の処理(500、保存の取り消し)の手順もない。",
+        "evidence": "FR-010: 「AIの応答失敗時は理由を表示してメッセージを保存せず再送を促し」/ F-08#4 の create_chat は手順5(Gemini 呼び出し)より前 / 注記: 「手順 3〜6 が1つのトランザクション」",
+        "reason": "失敗時にユーザー発言だけが残り、再送すると重複する。外部 API のストリーミング中にトランザクションを開くのも不自然である。外部設計書の「500 AI応答失敗(メッセージ未保存)」と手順が合わない。",
+        "suggestion": "ストリーム完了後にユーザー発言と AI 応答を1回で保存し、Gemini 失敗時は何も保存せず 500 と理由を返す分岐を F-08 に追加する。トランザクション範囲も見直す。",
+        "decision": "adopted",
+        "followup": "changed",
+        "fix_check": {
+          "verdict": "fixed",
+          "reason": "今の F-08 では、Gemini 呼び出しが失敗した場合に「500エラーを返し処理を中断(メッセージ保存なし)」という分岐が追加され、ユーザー発言は AI 応答と一括で保存する手順になっている。これにより FR-010 の「失敗時は保存しない」と F-08 の手順が一致し、失敗時の手順も記載された。",
+          "model": "claude-haiku-5-5",
+          "error_code": null,
+          "created_at": "2026-10-15T06:13:31.318078Z"
+        }
+      },
+      {
+        "id": "dcfd0ce7-7714-4f24-90db-cb3026707ab7",
+        "position": 9,
+        "level": "major",
+        "cause": "design",
+        "targets": [
+          "F-10",
+          "F-11",
+          "ProjectRepository.get_generation_job",
+          "find_by_id"
+        ],
+        "documents": [
+          "detailed_design"
+        ],
+        "point_key": null,
+        "problem": "F-10 には所有者を確認する手順がなく(権限エラーが入口の 1a にあるのみ)、F-10 と F-11 のリポジトリ呼び出しにユーザーIDを渡していない。他人のプロジェクトの生成物が見えるおそれがある。",
+        "evidence": "F-10#3: 「ProjectRepository.get_generation_job | プロジェクトID、ジョブID」 / F-11#3: 「find_by_id | 指定プロジェクトID」(ユーザーIDなし) / FR-003: 「自身のプロジェクトおよび関連データのみ閲覧・アクセス可能とする。」",
+        "reason": "FR-003 の所有者確認が F-10・F-11 の手順で保証されていない。F-10 は projects の参照も CRUD にない。",
+        "suggestion": "F-10・F-11 でも user_id を渡して projects の所有者を確認する手順を置き、ジョブがそのプロジェクトのものかも検証する。CRUD 図にも projects R を加える。",
+        "decision": "adopted",
+        "followup": "changed",
+        "fix_check": {
+          "verdict": "partial",
+          "reason": "F-10 は user_id を渡して find_by_id で projects の所有者を確認し、get_generation_job もプロジェクトIDとジョブIDで絞り込むようになった。しかし F-11 は service に user_id を渡すものの、find_by_id のデータは「指定プロジェクトID」のみで、所有者確認のためのユーザーIDがリポジトリ呼び出しに渡っていない。",
+          "model": "claude-haiku-5-5",
+          "error_code": null,
+          "created_at": "2026-10-15T06:13:34.806816Z"
+        }
+      }
+    ]
+  },
+  {
+    "gate": "stage7",
+    "ready": true,
+    "status": "reviewed",
+    "run": {
+      "id": "4f1e4013-0436-456d-acd7-b8fc91f3fb95",
+      "gate": "stage7",
+      "targets": {
+        "stage:1": 2,
+        "stage:2": 2,
+        "stage:3": 2,
+        "stage:4": 2,
+        "stage:5": 5,
+        "stage:6": 2,
+        "stage:7": 2,
+        "requirements": 2,
+        "external_design": 2
+      },
+      "trigger": "manual",
+      "model": "claude-sonnet-5-5",
+      "status": "succeeded",
+      "error_code": null,
+      "input_tokens": 39563,
+      "output_tokens": 10148,
+      "started_at": "2026-10-15T06:15:56.577273Z",
+      "finished_at": "2026-10-15T06:17:11.251985Z",
+      "findings": [
+        {
+          "id": "d099331f-420a-4c45-8d3b-8cbf303f7c24",
+          "position": 0,
+          "level": "major",
+          "cause": "hearing",
+          "targets": [
+            "FR-011",
+            "POST /api/v1/auth/login",
+            "POST /api/v1/auth/register",
+            "POST /api/v1/projects/{id}/chat",
+            "POST /api/v1/projects/{id}/generate"
+          ],
+          "documents": [
+            "requirements",
+            "external_design",
+            "detailed_design",
+            "detailed_plan"
+          ],
+          "point_key": "abuse",
+          "problem": "回数制限の値(回数・単位・期間・キー(IP/ユーザー)・ロック時間)がどこにも決まっていない。メッセージ長やプロジェクト数などの上限も未決。",
+          "evidence": "ログインの総当たり攻撃、登録の大量作成を防ぐ仕組みを導入し、チャットと生成にも推奨されるおすすめの回数制限を設定する。",
+          "reason": "FR-011 と観点 abuse が「おすすめの設定値を適用」とするだけで、429 を返す条件と Retry-After の値を実装時に決められない。",
+          "suggestion": "ログイン失敗・登録・チャット・生成それぞれの回数/期間/計測単位と、メッセージ長・プロジェクト数の上限を利用者に聞き直して要件に書く。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "74abdce8-1aad-4983-a83b-2254ad5d5891",
+          "position": 1,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "FR-011",
+            "F-01",
+            "F-02",
+            "F-08",
+            "F-09",
+            "app/clients/redis.py"
+          ],
+          "documents": [
+            "detailed_design",
+            "detailed_plan"
+          ],
+          "point_key": null,
+          "problem": "FR-011 のレート制限が詳細設計の処理手順・モジュール・実装計画のどこにも現れない。Redis クライアントの関わる処理も F-03・F-04 だけ。",
+          "evidence": "| app/clients/redis.py | 外部連携 | Redisとの通信を行いトークン失効管理等を行う | Redis | F-03, F-04 |",
+          "reason": "外部設計は F-01/F-02/F-08/F-09 に 429 を定めているが、手順表に 429 の分岐も制限判定のステップも無く、Must 要件が実装に落ちない。",
+          "suggestion": "F-01・F-02・F-08・F-09 に制限判定のステップと 429 分岐を足し、redis.py の関わる処理に加え、実装計画にレート制限のタスクを立てる。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "1914ee24-3941-43a8-90cc-f9f61412c034",
+          "position": 2,
+          "level": "major",
+          "cause": "hearing",
+          "targets": [
+            "FR-012",
+            "POST /api/v1/auth/register"
+          ],
+          "documents": [
+            "requirements",
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": "security",
+          "problem": "パスワード条件、再設定機能、メール確認、CSRF 対策が「推奨される標準仕様」としか書かれておらず具体が無い。",
+          "evidence": "パスワードは標準的な条件を満たすものとし、パスワード再設定機能やメール確認、トークンローテーション、CSRF対策については推奨される標準仕様を適用する。",
+          "reason": "パスワードの最小長・文字種や、再設定・メール確認を MVP で作るかが決まらず、画面と API(再設定・確認用)の要否を判断できない。",
+          "suggestion": "パスワード条件、再設定とメール確認の要否(MVP 内か外か)を利用者に聞き直して FR-012 に値を書き、必要なら画面と API を足す。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "15193604-3915-4281-9e84-58bb2c539def",
+          "position": 3,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "FR-012",
+            "POST /api/v1/auth/refresh",
+            "F-03",
+            "L-03"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "FR-012 はトークンローテーションと CSRF 対策を適用すると言うが、リフレッシュ処理は新しいアクセストークンしか返さず、リフレッシュトークンの更新も CSRF 対策もない。",
+          "evidence": "| POST | /api/v1/auth/refresh | トークンリフレッシュ | — | FR-002 | — | 200 OK (新規Access Token返却) | 401 無効なリフレッシュトークン |",
+          "reason": "Cookie 送信で動く refresh/logout に CSRF 対策(SameSite・トークン等)の設計が無く、ローテーションも F-03 の手順に無いため FR-012 を満たさない。",
+          "suggestion": "F-03 で旧リフレッシュトークンの失効と新トークンの Cookie 再設定を手順に入れ、SameSite 属性や CSRF トークンなどの方針を横断事項に書く。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "17e5325a-5722-4868-81aa-419ed7dab9e0",
+          "position": 4,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "tokens",
+            "F-02",
+            "F-03",
+            "F-04",
+            "L-05"
+          ],
+          "documents": [
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "tokens テーブルに有効期限・失効状態の列が無いのに、手順は「有効期限切れ」の検証や「トークン状態の更新」を行う。リフレッシュトークンを平文で保存する定義にもなっている。Redis と DB の役割分担も曖昧。",
+          "evidence": "| refresh_token | VARCHAR(512) | — | 不可 | UNIQUE | リフレッシュトークン |",
+          "reason": "F-03#4 の「無効または期限切れ」と F-04#4 の update_token_status が、列の無いテーブルに依存しており実装できない。L-02 は Redis に「必要に応じて」保存とし F-02 の手順と食い違う。",
+          "suggestion": "tokens に expires_at・revoked(または jti)を足し、トークンはハッシュで保存する。真の失効管理を Redis と DB のどちらに置くか決めて F-02〜F-04 を揃える。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "b3e57f9e-3648-43a2-bf3a-7e76fd89789f",
+          "position": 5,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "GET /api/v1/projects/{id}/generate/status",
+            "F-10"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "F-10 はジョブ ID を入力に使うが、外部設計の API にジョブ ID を受け取る場所(パス・クエリ)が無い。",
+          "evidence": "| GET | /api/v1/projects/{id}/generate/status | 設計書生成ジョブの進捗確認 | SCR-003 | FR-003・FR-005・FR-006 | — | 200 OK ... | 401 認証エラー, 403 アクセス権限なし, 404 対象プロジェクトなし |",
+          "reason": "どのジョブの進捗か特定できず、F-10 の get_generation_job(プロジェクトID、ジョブID)と合わない。404 もジョブ不在が無い。",
+          "suggestion": "ジョブ ID をクエリ/パスに足す(または最新ジョブを返す仕様にする)。404 にジョブ不在を足し、F-10 と揃える。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "216f852d-eb1d-442d-8a4d-02f83a7ff378",
+          "position": 6,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "GET /api/v1/projects/{id}/messages",
+            "F-07",
+            "F-11",
+            "POST /api/v1/projects/{id}/chat",
+            "GET /api/v1/projects"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "プロジェクト不在やアクセス権限なしのエラーが、外部設計(404 と 403 を分ける)と F-07・F-08 の手順(403 に統合)で食い違う。GET /projects の 403 は意味が無い。",
+          "evidence": "プロジェクトが存在しない、またはアクセス権限がない | — | — | ForbiddenError → 403",
+          "reason": "外部設計の F-07 は 404 対象プロジェクトなしを定義している。他人のプロジェクト ID と存在しない ID の応答を分けるか(存在の秘匿)も決まっていない。",
+          "suggestion": "他人のプロジェクトと不在を同じ 404 にするなど方針を一つ決め、全 API と手順表を揃える。一覧 API の 403 は削る。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "f6872804-8aa6-4b24-ae44-421287b07041",
+          "position": 7,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "F-11",
+            "generation_jobs",
+            "chats",
+            "CRUD 図"
+          ],
+          "documents": [
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "F-11 は生成文書を chats テーブルから読むことになっているが、文書は generation_jobs.generated_documents に入る。CRUD 図は F-11 で generation_jobs を読まない。",
+          "evidence": "| 4 | app/services/project.py → app/repositories/project.py | 同期 | get_documents_and_diagnosis | 指定プロジェクトID | 確定した4種のMarkdown設計書とAIの自己診断結果を取得する | 4種のMarkdown設計書、自己診断結果 | chats R | — |",
+          "reason": "文書の保存先と読み出し元が合っておらず、データモデルと処理が食い違う。",
+          "suggestion": "F-11 の読み出し先を generation_jobs(または専用の documents テーブル)に直し、CRUD 図も揃える。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "b56bf7e0-4c77-431e-b3fe-3b6b7886dd1e",
+          "position": 8,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "generation_jobs",
+            "FR-005",
+            "FR-009",
+            "SCR-003",
+            "F-11"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "生成文書を generation_jobs の TEXT 1列にまとめて保存しており、4種の文書の区別・診断結果との対応・「確定した」文書の定義・再生成での置き換えが設計されていない。",
+          "evidence": "| generated_documents | TEXT | — | 可 | — | 生成文書 |",
+          "reason": "SCR-003 は再生成で既存文書を置き換え、F-11 は「確定した」文書を返すが、どのジョブの結果を確定とするか(失敗・再生成中の扱い含む)が決まっていない。",
+          "suggestion": "documents テーブル(project_id・文書種別・本文・診断結果・job_id)を設け、成功したジョブのみ置き換える規則を定める。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "a7cb8325-e8e6-46e4-9c8e-ed9fab7b0676",
+          "position": 9,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "F-09",
+            "generation_jobs.status",
+            "GeneratorAgent.run_async",
+            "FR-010"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "非同期生成の失敗の扱いが無い。ステータスの値、失敗理由の保存と表示、タイムアウト、同一プロジェクトの二重実行、再起動時の途中ジョブの扱いが決まっていない。",
+          "evidence": "| 4 | app/services/project.py → app/agents/generator.py | 非同期 | GeneratorAgent.run_async | ジョブID, 指定プロジェクトID | 4種の設計書一括生成と自己診断の非同期ジョブを起動する | — | — | — |",
+          "reason": "FR-010 は生成失敗時に理由表示と再生成を求めるが、failed 状態や理由の列が無い。非同期の起動をトランザクション範囲(手順2〜4)に入れているのも矛盾する。",
+          "suggestion": "status の値(pending/running/succeeded/failed)と error 列を決め、重複起動の防止とタイムアウトを手順に書く。起動はコミット後に行う。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "b4fd65f7-3def-47f9-a809-183579e320c1",
+          "position": 10,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "F-09",
+            "F-08",
+            "app/agents/generator.py",
+            "app/agents/chat.py"
+          ],
+          "documents": [
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "生成ジョブがチャット履歴や参考資料を読む手順・CRUD が無い。チャットの「コンテキスト」の中身(履歴・参考資料)も定義されていない。",
+          "evidence": "| F-09 | 設計書一括生成およびAI自己診断の非同期ジョブを開始する | — | — | — | — | — | C+ |",
+          "reason": "FR-005 はヒアリング内容を基に生成するのに、F-09 の CRUD は generation_jobs の C のみで、messages や projects.reference_materials が使われない。",
+          "suggestion": "generator が messages と reference_materials を読む手順と CRUD を足し、F-08 のコンテキスト(履歴件数・参考資料の入れ方)も定義する。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "c4777f53-7a13-4f3c-8bff-d5d063ae839b",
+          "position": 11,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "messages",
+            "chats",
+            "F-08",
+            "F-07"
+          ],
+          "documents": [
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "messages に発話者(user/AI)・時刻・chat_id の列が無く、F-08 は送信のたびに chats を作る。ユーザー発言と AI 応答を区別・並び替えできない。",
+          "evidence": "| message | TEXT | — | 不可 | — | メッセージ内容 |",
+          "reason": "F-08#5 は「チャットID、ユーザーメッセージ、AI応答メッセージ」を保存するが、messages は project_id のみで chat_id を持たない。F-07 の履歴表示も順序不定になる。",
+          "suggestion": "messages に role・created_at(必要なら chat_id)を足し、chats を廃止するか 1 プロジェクト 1 回の作成に直す。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "edbe7502-02d0-4498-84ea-4a35a8a35b22",
+          "position": 12,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "F-08",
+            "POST /api/v1/projects/{id}/chat",
+            "NFR-003",
+            "FR-010"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "F-08 は AI 応答の全文を生成してから保存し、その後ストリームを返す順序になっている。SSE の途中失敗・切断時の扱いも決まっていない。",
+          "evidence": "| 3 | app/services/project.py → app/agents/chat.py | 同期 | generate_response | メッセージ、コンテキスト | Gemini Flash-Liteを用いたAIの対話応答を生成する | AI応答テキスト | — | 3a へ |",
+          "reason": "NFR-003 の「最初の文字が数秒で出る」を満たせない。ストリーム開始後の失敗は 500 を返せず、FR-010 の「保存せず再送を促す」をどう通知するか不明。",
+          "suggestion": "生成をストリームで流しつつ蓄積し、完了後に保存する手順に直す。途中失敗時は SSE の error イベントで通知し未保存とする。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "43b928a3-2ce0-4618-b0f8-7e0e2354cd4a",
+          "position": 13,
+          "level": "major",
+          "cause": "design",
+          "targets": [
+            "POST /api/v1/projects",
+            "F-06",
+            "FR-008",
+            "projects.reference_materials"
+          ],
+          "documents": [
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "参考資料(txt/md/pdf)のサイズ上限や件数・形式の検証方法が決まっていない。pdf のテキスト抽出と、TEXT 列へ入れる際の長さ制限(Gemini のコンテキスト超過対策)の処理も無い。",
+          "evidence": "バリデーション: ファイル形式・サイズ制限、メールアドレス・パスワード形式チェック、プロジェクトアクセス権限チェック",
+          "reason": "サイズ制限の値が無く、F-06 の手順に抽出・分割・切り詰めのステップとモジュールも無いため、FR-008 を実装できない。",
+          "suggestion": "1ファイルのサイズと文字数上限を決め、F-06 に抽出・検証のステップ(例: app/services/ 内の抽出処理)を足す。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "5aee2c7d-4843-498d-982e-4b25146a3c8e",
+          "position": 14,
+          "level": "major",
+          "cause": "hearing",
+          "targets": [
+            "FR-004",
+            "FR-005",
+            "FR-006",
+            "SCR-002",
+            "SCR-003"
+          ],
+          "documents": [
+            "requirements",
+            "external_design",
+            "detailed_design"
+          ],
+          "point_key": "core",
+          "problem": "コア機能の中身が浅い。AI がどの観点をどの順で聞くか、ヒアリングの終了条件、生成開始の前提条件、3段階診断の基準が要件に無い。",
+          "evidence": "チャットヒアリング、4種設計書の自動一括生成、AIによる不足点の3段階自己診断、Markdownのプレビュー・コピー・ダウンロード、参考資料の初期読み込み、PostgreSQLへのデータ保存機能を提供する",
+          "reason": "ヒアリングを何件・どの観点で行えば生成ボタンを押せるかが決まらず、chat 用エージェントと診断の設計・SCR-002 の操作を決められない。",
+          "suggestion": "ヒアリングの観点と終了条件、生成ボタンの有効条件、診断の最重要/中程度/軽微の基準を利用者に聞き直して要件に書く。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "ac84a334-b27c-4d57-8c9f-4900fb590005",
+          "position": 15,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "M-01",
+            "M-02",
+            "M-03",
+            "SCR-001",
+            "SCR-002",
+            "SCR-003",
+            "CON-001"
+          ],
+          "documents": [
+            "detailed_plan"
+          ],
+          "point_key": null,
+          "problem": "実装計画のタスクはバックエンド処理 F-01〜F-11 のみで、Next.js + Tamagui の画面実装(SCR-001〜003、SSE 受信、ポーリング、プレビュー・コピー・ダウンロード)のタスクが無い。",
+          "evidence": "| M-03-T03 | 機能 | 生成文書および自己診断結果の取得機能の実装 | F-11 | M-03-T02 | app/api/routes/projects.py, app/services/project.py, app/repositories/project.py | — |",
+          "reason": "CON-001 でフロントエンドは Next.js(App Router)と決まっており、全画面が Must なのに計画に当たるタスクが無い。",
+          "suggestion": "画面ごと(または基盤+画面)のフロントエンドタスクを足し、対応する API タスクへの依存を結ぶ。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "7de19ff4-501d-4442-9a55-263c33cb4b5f",
+          "position": 16,
+          "level": "major",
+          "cause": "inconsistency",
+          "targets": [
+            "NFR-002",
+            "CON-005",
+            "NFR-001",
+            "M-01-T01"
+          ],
+          "documents": [
+            "detailed_plan"
+          ],
+          "point_key": null,
+          "problem": "DB の毎日バックアップ(7日分・VPS 外コピー)、nginx(HTTPS 含む)、GitHub Actions による自動デプロイ、Redis 構築のタスクが実装計画に無い。",
+          "evidence": "| M-01-T01 | 基盤 | 開発環境および共通設定・横断事項の土台構築 | — | — | app/core/config.py | Dockerfile, docker-compose.yml |",
+          "reason": "NFR-002 と CON-005 は Must の運用要件だが、リスク表で M-01-T01 に CI/CD の疎通確認を挙げるだけで、タスクとしては存在しない。",
+          "suggestion": "バックアップの自動化と復元確認、nginx/TLS 設定、CI/CD パイプライン、Redis 構築をそれぞれ基盤タスクとして足す。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "2cd10615-4499-4883-85ec-03fd1eafc993",
+          "position": 17,
+          "level": "minor",
+          "cause": "inconsistency",
+          "targets": [
+            "FR-012",
+            "POST /api/v1/auth/logout",
+            "付録 要件との対応"
+          ],
+          "documents": [
+            "external_design"
+          ],
+          "point_key": null,
+          "problem": "FR-012(パスワード条件・再設定・メール確認など)に、関係の薄いログアウト API が結び付き、画面は「—」になっている。",
+          "evidence": "| FR-012 | — | POST /api/v1/auth/register・POST /api/v1/auth/logout |",
+          "reason": "ログアウトは FR-012 の内容(パスワード条件・CSRF・ローテーション)を直接満たさず、対応が曖昧。また生成 API は FR-011 を持つのに SCR-003 の要件欄に FR-011 が無い。",
+          "suggestion": "FR-012 の対応を見直す(register とトークン関連のみにする)。SCR-003 の要件欄に FR-011 を足す。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        },
+        {
+          "id": "1877b958-aa30-4440-9cce-bbebc45a4c1d",
+          "position": 18,
+          "level": "minor",
+          "cause": "inconsistency",
+          "targets": [
+            "F-01",
+            "L-01",
+            "CRUD 図"
+          ],
+          "documents": [
+            "detailed_design"
+          ],
+          "point_key": null,
+          "problem": "L-01 は先に users でメール重複を検索するが、F-01 の手順と CRUD 図は users の C のみで R が無い。",
+          "evidence": "| F-01 | ユーザー登録する | C+ | — | — | — | — | — |",
+          "reason": "L-01 の擬似フロー1「すでに users テーブルに存在するか確認する」と F-01#3 の DB 操作が一致しない。",
+          "suggestion": "CRUD 図の F-01 を R+C にするか、重複判定を UNIQUE 制約違反の捕捉に統一して L-01 を直す。",
+          "decision": "pending",
+          "followup": null,
+          "fix_check": null
+        }
+      ],
+      "is_current": true
+    },
+    "adopted_before": []
+  }
+]

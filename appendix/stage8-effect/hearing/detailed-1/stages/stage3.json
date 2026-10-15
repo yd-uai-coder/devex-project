@@ -1,0 +1,167 @@
+{
+  "stage": 3,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "cells": [
+      {
+        "ops": "C",
+        "draft": false,
+        "table": "users",
+        "function_id": "F-01"
+      },
+      {
+        "ops": "R",
+        "draft": false,
+        "table": "users",
+        "function_id": "F-02"
+      },
+      {
+        "ops": "C",
+        "draft": false,
+        "table": "tokens",
+        "function_id": "F-02"
+      },
+      {
+        "ops": "RU",
+        "draft": false,
+        "table": "tokens",
+        "function_id": "F-03"
+      },
+      {
+        "ops": "U",
+        "draft": false,
+        "table": "tokens",
+        "function_id": "F-04"
+      },
+      {
+        "ops": "R",
+        "draft": false,
+        "table": "projects",
+        "function_id": "F-05"
+      },
+      {
+        "ops": "C",
+        "draft": false,
+        "table": "projects",
+        "function_id": "F-06"
+      },
+      {
+        "ops": "R",
+        "draft": false,
+        "table": "messages",
+        "function_id": "F-07"
+      },
+      {
+        "ops": "R",
+        "draft": false,
+        "table": "projects",
+        "function_id": "F-08"
+      },
+      {
+        "ops": "C",
+        "draft": false,
+        "table": "chats",
+        "function_id": "F-08"
+      },
+      {
+        "ops": "C",
+        "draft": false,
+        "table": "messages",
+        "function_id": "F-08"
+      },
+      {
+        "ops": "C",
+        "draft": false,
+        "table": "generation_jobs",
+        "function_id": "F-09"
+      },
+      {
+        "ops": "R",
+        "draft": false,
+        "table": "generation_jobs",
+        "function_id": "F-10"
+      },
+      {
+        "ops": "R",
+        "draft": false,
+        "table": "chats",
+        "function_id": "F-11"
+      }
+    ]
+  },
+  "updated_at": "2026-10-15T06:08:02.476702Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [],
+  "dfd_accesses": [
+    {
+      "function_id": "F-01",
+      "table": "users",
+      "kind": "write"
+    },
+    {
+      "function_id": "F-02",
+      "table": "tokens",
+      "kind": "write"
+    },
+    {
+      "function_id": "F-02",
+      "table": "users",
+      "kind": "read"
+    },
+    {
+      "function_id": "F-03",
+      "table": "tokens",
+      "kind": "read"
+    },
+    {
+      "function_id": "F-04",
+      "table": "tokens",
+      "kind": "write"
+    },
+    {
+      "function_id": "F-05",
+      "table": "projects",
+      "kind": "read"
+    },
+    {
+      "function_id": "F-06",
+      "table": "projects",
+      "kind": "write"
+    },
+    {
+      "function_id": "F-07",
+      "table": "messages",
+      "kind": "read"
+    },
+    {
+      "function_id": "F-08",
+      "table": "chats",
+      "kind": "write"
+    },
+    {
+      "function_id": "F-08",
+      "table": "projects",
+      "kind": "read"
+    },
+    {
+      "function_id": "F-09",
+      "table": "generation_jobs",
+      "kind": "write"
+    },
+    {
+      "function_id": "F-10",
+      "table": "generation_jobs",
+      "kind": "read"
+    }
+  ],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

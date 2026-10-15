@@ -1,0 +1,238 @@
+{
+  "stage": 1,
+  "mode": "detailed",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "groups": [
+      "auth",
+      "projects",
+      "messages",
+      "chat",
+      "generate",
+      "documents"
+    ],
+    "functions": [
+      {
+        "id": "F-01",
+        "kind": "API",
+        "name": "ユーザー登録する",
+        "group": "auth",
+        "req_ids": [
+          "FR-001",
+          "FR-011",
+          "FR-012"
+        ],
+        "screens": [
+          "SCR-001"
+        ],
+        "summary": "メールアドレスとパスワードを受け取り新規ユーザーを作成する",
+        "trigger": "POST /api/v1/auth/register",
+        "group_initial": "auth"
+      },
+      {
+        "id": "F-02",
+        "kind": "API",
+        "name": "ログインする",
+        "group": "auth",
+        "req_ids": [
+          "FR-001",
+          "FR-002",
+          "FR-011"
+        ],
+        "screens": [
+          "SCR-001"
+        ],
+        "summary": "認証情報を検証しアクセストークンおよびリフレッシュトークンを発行する",
+        "trigger": "POST /api/v1/auth/login",
+        "group_initial": "auth"
+      },
+      {
+        "id": "F-03",
+        "kind": "API",
+        "name": "トークンをリフレッシュする",
+        "group": "auth",
+        "req_ids": [
+          "FR-002"
+        ],
+        "screens": [],
+        "summary": "有効なリフレッシュトークンを使用して新規アクセストークンを再発給する",
+        "trigger": "POST /api/v1/auth/refresh",
+        "group_initial": "auth"
+      },
+      {
+        "id": "F-04",
+        "kind": "API",
+        "name": "ログアウトする",
+        "group": "auth",
+        "req_ids": [
+          "FR-002",
+          "FR-012"
+        ],
+        "screens": [
+          "SCR-001",
+          "SCR-002",
+          "SCR-003"
+        ],
+        "summary": "リフレッシュトークンを無効化してログアウト処理を行う",
+        "trigger": "POST /api/v1/auth/logout",
+        "group_initial": "auth"
+      },
+      {
+        "id": "F-05",
+        "kind": "API",
+        "name": "プロジェクト一覧を取得する",
+        "group": "projects",
+        "req_ids": [
+          "FR-003",
+          "FR-009"
+        ],
+        "screens": [
+          "SCR-002"
+        ],
+        "summary": "ユーザーがアクセス可能なプロジェクトの一覧を返す",
+        "trigger": "GET /api/v1/projects",
+        "group_initial": "projects"
+      },
+      {
+        "id": "F-06",
+        "kind": "API",
+        "name": "プロジェクトを作成する",
+        "group": "projects",
+        "req_ids": [
+          "FR-003",
+          "FR-009"
+        ],
+        "screens": [
+          "SCR-002"
+        ],
+        "summary": "新しいプロジェクト名称と参考資料を受け取りプロジェクトを作成する",
+        "trigger": "POST /api/v1/projects",
+        "group_initial": "projects"
+      },
+      {
+        "id": "F-07",
+        "kind": "API",
+        "name": "チャット履歴を取得する",
+        "group": "messages",
+        "req_ids": [
+          "FR-003",
+          "FR-004",
+          "FR-009"
+        ],
+        "screens": [
+          "SCR-002"
+        ],
+        "summary": "指定プロジェクトの過去のチャットメッセージ一覧を返す",
+        "trigger": "GET /api/v1/projects/{id}/messages",
+        "group_initial": "messages"
+      },
+      {
+        "id": "F-08",
+        "kind": "API",
+        "name": "チャットメッセージを送信する",
+        "group": "chat",
+        "req_ids": [
+          "FR-003",
+          "FR-004",
+          "FR-010",
+          "FR-011"
+        ],
+        "screens": [
+          "SCR-002"
+        ],
+        "summary": "メッセージを受け取りSSEストリーミングによるAIの対話応答を返す",
+        "trigger": "POST /api/v1/projects/{id}/chat",
+        "group_initial": "chat"
+      },
+      {
+        "id": "F-09",
+        "kind": "API+バッチ",
+        "name": "設計書一括生成およびAI自己診断の非同期ジョブを開始する",
+        "group": "generate",
+        "req_ids": [
+          "FR-003",
+          "FR-005",
+          "FR-006",
+          "FR-010",
+          "FR-011"
+        ],
+        "screens": [
+          "SCR-003"
+        ],
+        "summary": "4種の設計書一括生成と自己診断の非同期ジョブを開始しジョブIDを返す",
+        "trigger": "POST /api/v1/projects/{id}/generate",
+        "group_initial": "generate"
+      },
+      {
+        "id": "F-10",
+        "kind": "API",
+        "name": "設計書生成ジョブの進捗を確認する",
+        "group": "generate",
+        "req_ids": [
+          "FR-003",
+          "FR-005",
+          "FR-006"
+        ],
+        "screens": [
+          "SCR-003"
+        ],
+        "summary": "生成ジョブの進捗ステータスや完了時の生成文書・診断結果を返す",
+        "trigger": "GET /api/v1/projects/{id}/generate/status",
+        "group_initial": "generate"
+      },
+      {
+        "id": "F-11",
+        "kind": "API",
+        "name": "生成文書および自己診断結果を取得する",
+        "group": "documents",
+        "req_ids": [
+          "FR-003",
+          "FR-005",
+          "FR-006",
+          "FR-009"
+        ],
+        "screens": [
+          "SCR-003"
+        ],
+        "summary": "確定した4種のMarkdown設計書とAIの自己診断結果を返す",
+        "trigger": "GET /api/v1/projects/{id}/documents",
+        "group_initial": "documents"
+      }
+    ],
+    "next_number": 12
+  },
+  "updated_at": "2026-10-15T06:06:53.535089Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "MUST_REQUIREMENT_UNPROCESSED",
+      "message": "Must の機能要件 FR-007 を担う処理がありません。",
+      "target": "FR-007",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "MUST_REQUIREMENT_UNPROCESSED",
+      "message": "Must の機能要件 FR-008 を担う処理がありません。",
+      "target": "FR-008",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    }
+  ],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0
+}

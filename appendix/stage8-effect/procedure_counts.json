@@ -1,0 +1,312 @@
+[
+  {
+    "project": "d6b22d3f",
+    "mode": "detailed",
+    "updated": "2026-10-08T05:22+00:00",
+    "units": 3,
+    "NO_TEST_FILE": 3,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "232053ad",
+    "mode": "detailed",
+    "updated": "2026-10-08T05:23+00:00",
+    "units": 3,
+    "NO_TEST_FILE": 3,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "ffab7057",
+    "mode": "simple",
+    "updated": "2026-10-08T05:24+00:00",
+    "units": 2,
+    "NO_TEST_FILE": 2,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "f5a0ba0a",
+    "mode": "detailed",
+    "updated": "2026-10-08T23:58+00:00",
+    "units": 15,
+    "NO_TEST_FILE": 14,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "7e11d870",
+    "mode": "simple",
+    "updated": "2026-10-08T23:59+00:00",
+    "units": 12,
+    "NO_TEST_FILE": 6,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "cc4a8df5",
+    "mode": "simple",
+    "updated": "2026-10-11T06:34+00:00",
+    "units": 9,
+    "NO_TEST_FILE": 4,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "1d9f489b",
+    "mode": "detailed",
+    "updated": "2026-10-11T06:52+00:00",
+    "units": 5,
+    "NO_TEST_FILE": 2,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "16e995b3",
+    "mode": "simple",
+    "updated": "2026-10-11T06:53+00:00",
+    "units": 8,
+    "NO_TEST_FILE": 8,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "2605d03f",
+    "mode": "detailed",
+    "updated": "2026-10-11T07:54+00:00",
+    "units": 3,
+    "NO_TEST_FILE": 3,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "bc68e29d",
+    "mode": "simple",
+    "updated": "2026-10-11T07:55+00:00",
+    "units": 2,
+    "NO_TEST_FILE": 2,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "1f2f657e",
+    "mode": "detailed",
+    "updated": "2026-10-11T07:57+00:00",
+    "units": 3,
+    "NO_TEST_FILE": 3,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "8a009d28",
+    "mode": "simple",
+    "updated": "2026-10-11T07:57+00:00",
+    "units": 2,
+    "NO_TEST_FILE": 2,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "7bbddf47",
+    "mode": "detailed",
+    "updated": "2026-10-12T02:51+00:00",
+    "units": 5,
+    "NO_TEST_FILE": 4,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 2
+  },
+  {
+    "project": "c15b8fdf",
+    "mode": "detailed",
+    "updated": "2026-10-12T07:27+00:00",
+    "units": 8,
+    "NO_TEST_FILE": 0,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "9305529c",
+    "mode": "simple",
+    "updated": "2026-10-12T07:28+00:00",
+    "units": 5,
+    "NO_TEST_FILE": 0,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "111b08d1",
+    "mode": "simple",
+    "updated": "2026-10-12T08:04+00:00",
+    "units": 4,
+    "NO_TEST_FILE": 1,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "fd8878ea",
+    "mode": "simple",
+    "updated": "2026-10-12T08:04+00:00",
+    "units": 5,
+    "NO_TEST_FILE": 3,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 2,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "8c03ec88",
+    "mode": "detailed",
+    "updated": "2026-10-12T08:08+00:00",
+    "units": 6,
+    "NO_TEST_FILE": 0,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "86a37228",
+    "mode": "detailed",
+    "updated": "2026-10-12T08:08+00:00",
+    "units": 9,
+    "NO_TEST_FILE": 8,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "a2bcd3ef",
+    "mode": "detailed",
+    "updated": "2026-10-12T08:28+00:00",
+    "units": 3,
+    "NO_TEST_FILE": 3,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "62493fb8",
+    "mode": "simple",
+    "updated": "2026-10-12T08:29+00:00",
+    "units": 2,
+    "NO_TEST_FILE": 2,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "89f215e5",
+    "mode": "detailed",
+    "updated": "2026-10-12T08:31+00:00",
+    "units": 3,
+    "NO_TEST_FILE": 3,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "8a728479",
+    "mode": "detailed",
+    "updated": "2026-10-12T08:32+00:00",
+    "units": 3,
+    "NO_TEST_FILE": 0,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "8092f48a",
+    "mode": "detailed",
+    "updated": "2026-10-12T08:34+00:00",
+    "units": 3,
+    "NO_TEST_FILE": 0,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "08a31280",
+    "mode": "detailed",
+    "updated": "2026-10-12T08:39+00:00",
+    "units": 3,
+    "NO_TEST_FILE": 0,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "04c8497a",
+    "mode": "detailed",
+    "updated": "2026-10-12T08:41+00:00",
+    "units": 3,
+    "NO_TEST_FILE": 0,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "7e82acbd",
+    "mode": "simple",
+    "updated": "2026-10-12T08:41+00:00",
+    "units": 2,
+    "NO_TEST_FILE": 2,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "06f93618",
+    "mode": "detailed",
+    "updated": "2026-10-15T01:23+00:00",
+    "units": 9,
+    "NO_TEST_FILE": 8,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "33fdda56",
+    "mode": "simple",
+    "updated": "2026-10-15T05:20+00:00",
+    "units": 1,
+    "NO_TEST_FILE": 0,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  },
+  {
+    "project": "4437fd9b",
+    "mode": "simple",
+    "updated": "2026-10-15T06:09+00:00",
+    "units": 4,
+    "NO_TEST_FILE": 1,
+    "NO_SCHEMA_UNIT": 0,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 3
+  },
+  {
+    "project": "b2602f06",
+    "mode": "detailed",
+    "updated": "2026-10-15T06:18+00:00",
+    "units": 12,
+    "NO_TEST_FILE": 5,
+    "NO_SCHEMA_UNIT": 1,
+    "DEPENDENCY_BUILT_LATER": 0,
+    "TABLE_WITHOUT_UNIT": 0
+  }
+]

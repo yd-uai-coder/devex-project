@@ -1,0 +1,373 @@
+{
+  "model": "claude-sonnet-5-5",
+  "gate": "stage7",
+  "documents": [
+    "requirements",
+    "external_design",
+    "detailed_design",
+    "detailed_plan"
+  ],
+  "input_tokens": 34627,
+  "output_tokens": 9012,
+  "total_tokens": 43639,
+  "input_token_details": {
+    "cache_read": 0,
+    "cache_creation": 0,
+    "ephemeral_5m_input_tokens": 0,
+    "ephemeral_1h_input_tokens": 0
+  },
+  "output_token_details": {
+    "reasoning": 2308
+  },
+  "cost_usd": 0.1594,
+  "known_issues": 3,
+  "findings": [
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "projects",
+        "F-03",
+        "F-04",
+        "POST /api/v1/projects/{id}/chat",
+        "GET /api/v1/projects/{id}/documents",
+        "users",
+        "tokens"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "projects テーブルに所有者(user_id)の列が無く、プロジェクトとユーザーが結び付かない。F-03 は find_all_by_user_id で一覧を取るが、検索の元になる列が無い。{id} 付きの各 API でも、そのプロジェクトが本人のものかを確かめる手順が無い。",
+      "evidence": "projects テーブル: id, name のみ。F-03#4「ProjectRepository.find_all_by_user_id | ユーザーID」。F-05・F-06・F-07・F-08 は認証トークンの検証だけで、プロジェクトの所有確認が無い。",
+      "reason": "他人のプロジェクトID を指定するだけで、チャット・資料・生成文書を読み書きできてしまう。要件 FR-001 の観点は「セキュリティ」で、詳細設計書 03 データモデルとも整合しない。",
+      "suggestion": "projects に user_id(FK users)を追加し、F-03〜F-08 で「トークンのユーザー = プロジェクト所有者」を確認する手順と、本人以外は 403 または 404 とする分岐を加える。tokens も email ではなく user_id を持たせる。"
+    },
+    {
+      "level": "major",
+      "cause": "hearing",
+      "targets": [
+        "FR-001",
+        "NFR-008",
+        "SCR-001"
+      ],
+      "documents": [
+        "requirements",
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": "security",
+      "problem": "セキュリティが「ログインをMVPに入れる」だけで、誰が誰のデータを見られるか(本人以外の閲覧・変更の可否)、トークンの有効期限・ログアウト・失効、パスワードの規則、メール確認の要否が決まっていない。",
+      "evidence": "観点 security: 「ログインをMVPに入れる」(AI の提案を採用)。07 認証: 「有効期限(要決定)が切れている場合は 401」",
+      "reason": "公開サービスで、他人に見せたくない設計書を扱う。認可の方針と有効期限が決まらないと、認可処理・トークン管理・ログアウト API を設計できない。",
+      "suggestion": "利用者に、プロジェクトは作成者本人のみ閲覧・変更可かどうか、トークンの有効期間とログアウトの要否、パスワード規則、メール確認の要否を聞き直し、要件に追記する。"
+    },
+    {
+      "level": "major",
+      "cause": "hearing",
+      "targets": [
+        "NFR-008",
+        "CON-004"
+      ],
+      "documents": [
+        "requirements",
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": "abuse",
+      "problem": "回数上限の「値」と「単位」が決まっていない。ログイン試行・登録・チャット・生成それぞれの上限、期間、IP 単位かユーザー単位か、無料枠の合計を超える場合の扱いが不明。",
+      "evidence": "NFR-008: 「ログインの総当たり、登録の大量作成、チャットや生成の回数上限を設けて不正利用を防ぐ」。07 レート制限: 「IPアドレスまたはユーザー単位のリクエスト頻度を制限する」",
+      "reason": "数値が無いと実装も試験もできない。Gemini 無料枠の上限にも関わる。",
+      "suggestion": "各操作の上限(回/時間・日)と単位、無料枠を超えそうな場合の方針を利用者に聞いて要件に入れる。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "NFR-008",
+        "API 一覧",
+        "app/cache/token.py",
+        "M-01-T01"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design",
+        "detailed_plan"
+      ],
+      "point_key": null,
+      "problem": "レート制限(NFR-008)が API のエラー定義・処理手順・実装計画のタスクのどこにも落ちていない。429 は 07 横断事項にだけ書かれている。",
+      "evidence": "07 レート制限: 「上限を超過した場合は HTTP 429 Too Many Requests を返却する」。API 一覧のエラー欄に 429 が無い。app/cache/token.py の関わる処理は F-02 のみで、M-01-T01 は「Redisキャッシュの土台」のみ。",
+      "reason": "Must 級の非機能要件 NFR-008 を満たすタスクが無く、実装漏れになる。",
+      "suggestion": "各 API のエラーに 429 を加え、レート制限のミドルウェアまたは手順と、実装計画のタスクを追加する。"
+    },
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "SCR-003",
+        "SCR-004",
+        "FR-004",
+        "summaries",
+        "POST /api/v1/projects/{id}/summary/approve"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design",
+        "detailed_plan"
+      ],
+      "point_key": null,
+      "problem": "構造化サマリを「作る」「取得して見せる」「修正を依頼する」処理と API が無い。summaries テーブルは approved の真偽値しか持たず、サマリの内容を保存できない。",
+      "evidence": "SCR-003「ヒアリング完了ボタン」、SCR-004「構造化されたサマリ内容」「修正依頼ボタン」。API 一覧は summary/approve のみ。summaries: id, project_id, approved。",
+      "reason": "FR-004(構造化サマリを確認して承認)を満たせない。F-07 の生成も、元になるサマリ内容が DB に無く、手順 6 の「構造化サマリデータ」の出どころが不明。",
+      "suggestion": "サマリ生成(ヒアリング完了)・取得・修正依頼の API と処理を追加し、summaries に内容の列を追加する。"
+    },
+    {
+      "level": "critical",
+      "cause": "design",
+      "targets": [
+        "documents",
+        "summaries",
+        "FR-008",
+        "FR-006",
+        "F-07",
+        "F-08",
+        "SCR-005"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "生成した4種文書・版番号・自己診断結果を保存するテーブルが無い。documents は参考資料の本文(content)だけを持ち、文書の種類・版番号・自己診断の列が無い。summaries の説明に「生成文書および版履歴データ」とあるが、列は approved のみ。",
+      "evidence": "documents: id, project_id, content のみ。F-07#7「生成された4種文書をデータベースに保存する(documents C)」。F-08「4種文書と直近3件の版履歴を取得する」。",
+      "reason": "FR-006・FR-007・FR-008 を実現できず、参考資料と生成文書が同じテーブルで区別できない。直近3件に絞る処理も定義されていない。",
+      "suggestion": "生成文書テーブル(文書種別・版番号・本文・自己診断結果・作成日時)を新設し、参考資料と分ける。4文書を保存するときに最新3版だけを残す手順を決める。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "F-07",
+        "SCR-005",
+        "FR-009",
+        "POST /api/v1/projects/{id}/summary/approve"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design",
+        "detailed_plan"
+      ],
+      "point_key": null,
+      "problem": "文書生成はバックグラウンドで動くのに、進捗・完了・失敗を取る API と状態の保存先が無い。失敗後に再生成する API も無い。SCR-005 に再生成ボタンがあるが、対応する API が無い。",
+      "evidence": "実装計画書 4: 「進捗や結果は別APIで取得する設計」。API 一覧には GET .../documents のみ。F-07 エラー「500 生成失敗」。手順 5〜8 は同期のように並んでいる。",
+      "reason": "FR-009 は「生成失敗時は再生成できる」を求める。応答後の非同期の失敗は 500 として返せず、利用者が失敗に気づけない。承認の二重実行で多重生成も起こりうる。",
+      "suggestion": "生成ジョブの状態(実行中・成功・失敗)を保存して取得できる API を追加する。再生成 API と、実行中の二重起動を防ぐ条件も定める。F-07 の手順 8〜9 と手順 5〜7 の順序を整理する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "F-05",
+        "POST /api/v1/projects/{id}/chat",
+        "chats",
+        "SCR-003",
+        "FR-003"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "LLM 呼び出し invoke_chat に過去のやり取りや参考資料が渡されず、直前の1メッセージだけで応答する。また SCR-003 のチャット履歴を取得する API が無い。",
+      "evidence": "F-05#4「LLMClient.invoke_chat | プロジェクトID、チャットメッセージ」。F-06 の documents は F-05 から参照されない(CRUD 図で F-05 は chats のみ)。API 一覧にチャット履歴の取得が無い。",
+      "reason": "ヒアリングが文脈を持てず、FR-003 で保持した参考資料も使われない。画面を開き直すと履歴が見えない。",
+      "suggestion": "invoke_chat にチャット履歴と参考資料テキストを渡す。chats に作成日時を持たせ、履歴取得 API を追加する。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "F-05",
+        "FR-009",
+        "chats"
+      ],
+      "documents": [
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "FR-009 は AI 応答失敗時に「メッセージを送らずに再送を促す」とするが、F-05 は LLM 呼び出しの前に利用者メッセージを保存する。しかも chats の response は NOT NULL。",
+      "evidence": "F-05#3 でメッセージを保存し、#4 で LLM を呼ぶ。注記「手順3から手順5が1つのトランザクション」。chats.response: NOT NULL。",
+      "reason": "LLM 失敗時にロールバックされるなら保存は無駄で、保存されるなら要件と矛盾する。LLM 呼び出し中に DB トランザクションを持ち続ける点も問題。失敗時の 500 の分岐も F-05 の手順表に無い。",
+      "suggestion": "LLM の成功後に1往復分を1レコードとして保存する。F-05 に LLM 失敗(理由付きの 5xx など)の分岐を追加する。"
+    },
+    {
+      "level": "minor",
+      "cause": "inconsistency",
+      "targets": [
+        "NFR-003",
+        "POST /api/v1/projects/{id}/chat",
+        "F-05"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "NFR-003 は「チャットの最初の文字を数秒で出力」としているが、チャット API は全文を一括で返す同期応答で、ストリーミングの定義が無い。",
+      "evidence": "API 一覧: 「200 OK (AI応答)」。F-05#6「HTTP 200 OK」",
+      "reason": "全文の生成を待つと、最初の文字が数秒で出る要件を満たせない可能性がある。",
+      "suggestion": "SSE などのストリーミング応答にするか、全文応答でもよいと要件側で合意する。"
+    },
+    {
+      "level": "major",
+      "cause": "inconsistency",
+      "targets": [
+        "FR-005",
+        "SCR-002",
+        "FR-006",
+        "FR-007",
+        "付録 要件との対応"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "対応表の結び付きが実際の機能と合っていない。FR-005(4文書の生成)がプロジェクト一覧画面 SCR-002 に結ばれている。FR-006(自己診断の提示)の API が approve だけで、診断結果を返す API が無い。FR-007 のコピー・ダウンロードを担う API・処理も無い。",
+      "evidence": "SCR-002 の要件: 「FR-002・FR-005」。付録: 「FR-005 | SCR-002・SCR-005」「FR-006 | SCR-005 | POST .../summary/approve」",
+      "reason": "SCR-002 は文書生成を行わない。診断結果の取得が GET documents のレスポンスに含まれるかも不明で、追跡が正しくない。",
+      "suggestion": "SCR-002 から FR-005 を外す。診断結果の取得を GET documents の応答に含めると明記して FR-006 と結ぶ。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "SCR-005",
+        "FR-008",
+        "GET /api/v1/projects/{id}/documents"
+      ],
+      "documents": [
+        "external_design"
+      ],
+      "point_key": null,
+      "problem": "SCR-005 の「版切り替えボタン」が、どの版の本文を取得するかを指定する手段(版番号の引数や API)を持たない。",
+      "evidence": "SCR-005: 「版切り替えボタン」。GET .../documents の本文は「—」で、版の指定が無い。",
+      "reason": "直近3件の版の本文を取り出せるか不明で、FR-008・FR-007 の動作が決まらない。",
+      "suggestion": "GET の引数に文書種別と版を加えるか、版単位の取得 API を設ける。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "POST /api/v1/projects/{id}/chat",
+        "POST /api/v1/projects/{id}/documents/upload",
+        "POST /api/v1/projects/{id}/summary/approve",
+        "GET /api/v1/projects/{id}/documents",
+        "GET /api/v1/projects",
+        "POST /api/v1/projects"
+      ],
+      "documents": [
+        "external_design",
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "API のエラー・応答が揃っていない。認証必須なのに 401 が chat・upload・approve に無い。{id} のプロジェクトが無い場合の 404 や、権限が無い場合の 403 が未記載。upload の 200/201 の食い違い、ファイルサイズ・ページ数の上限、approve の本文の空欄も未解決。",
+      "evidence": "API 一覧: chat のエラー「400, 500」。upload の応答「201 Created」に対し、F-06#6 は「HTTP 200 OK」。F-06 は 401・404 を定義しているのに API 一覧に無い。",
+      "reason": "外部設計と詳細設計で応答コードが違い、クライアントの実装とテストが定まらない。",
+      "suggestion": "全 API に 401・403/404・429 を加える。upload の応答コードを統一し、ファイルサイズ上限と PDF 解析失敗の応答を明記する。approve の本文は「なし」とするか承認データを定義する。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "F-02",
+        "tokens",
+        "app/cache/token.py",
+        "L-04",
+        "FR-001"
+      ],
+      "documents": [
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "トークンの保存先が Redis と PostgreSQL の tokens テーブルで混在し、期限・失効の扱いが決まっていない。tokens に有効期限の列が無く、失効(ログアウト)の API も無い。",
+      "evidence": "CON-003「レート制限・トークン失効用にRedis」。F-02#4「Redisを使用して…(tokens C)」。L-04「キャッシュまたはtokensテーブルを参照」。tokens: id, token, email のみ。F-02 のログインは認証トークンを返すが、パスワード照合の失敗時の扱いが L-02 に無い。",
+      "reason": "どちらが正になるか曖昧で、期限切れ判定の列が無いため L-04 の手順 3 を実装できない。L-02 は「例外なし」と書かれ、手順表の 401 と食い違う。",
+      "suggestion": "トークンは Redis で TTL 付きとし、tokens テーブルは廃止する。失効・ログアウトの API を足す。L-02 に認証失敗の例外を加える。"
+    },
+    {
+      "level": "minor",
+      "cause": "inconsistency",
+      "targets": [
+        "07 ログ",
+        "NFR-004"
+      ],
+      "documents": [
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "ログの方針が「トレースバックを含む詳細情報を出力し、死活監視や追跡に活用する」としており、エラー追跡・死活監視は MVP の後とした NFR-004 と矛盾する。また NFR-007 の「操作の記録」を保存するテーブル・手順が無い。",
+      "evidence": "07 ログ: 「死活監視や追跡に活用する」。NFR-004: 「エラーの追跡と死活監視はMVPの後に導入する」",
+      "reason": "MVP の範囲が文書によって違う。また、トレースバックにチャット入力が混ざると NFR-007 に反する。",
+      "suggestion": "MVP では操作記録と最小限のエラーログに絞り、入力内容をマスクすると明記する。監視は将来拡張に回す。"
+    },
+    {
+      "level": "major",
+      "cause": "design",
+      "targets": [
+        "実装計画書",
+        "SCR-001",
+        "SCR-002",
+        "SCR-003",
+        "SCR-004",
+        "SCR-005",
+        "NFR-002",
+        "CON-005",
+        "NFR-009"
+      ],
+      "documents": [
+        "detailed_plan"
+      ],
+      "point_key": null,
+      "problem": "実装計画がバックエンド API のタスクのみで、フロントエンドの画面(SCR-001〜005)、nginx・GitHub Actions のデプロイ、DB の毎日バックアップと VPS 外コピー(NFR-002)、自動テスト、DB マイグレーションに当たるタスクが無い。",
+      "evidence": "M-01〜M-04 のタスクはすべて F-01〜F-08 の API。「3 開発環境」にデプロイと pytest の記述はあるがタスクが無い。",
+      "reason": "Must の画面要件と NFR-002、CON-005 を満たす作業が計画から漏れ、実装の抜けになる。",
+      "suggestion": "画面ごとのフロントエンドのタスク、デプロイ・nginx のタスク、バックアップのタスク、レート制限のタスク、テストのタスクを追加し、各要件と結ぶ。"
+    },
+    {
+      "level": "minor",
+      "cause": "hearing",
+      "targets": [
+        "schedule",
+        "実装計画書 4 想定リスク"
+      ],
+      "documents": [
+        "detailed_plan"
+      ],
+      "point_key": "schedule",
+      "problem": "体制・期間が未決のままで、実装計画に体制・期間・優先順の根拠が無い。リスク欄には「納期が厳しい場合」と書かれている。",
+      "evidence": "観点 schedule: 状態「未決」、内容が空欄。リスク欄: 「納期が厳しい場合の代替手段として、一時的なモック応答モードへの切り替えを検討する」",
+      "reason": "マイルストーンの工数や順序を決める前提が不明。",
+      "suggestion": "開発体制・人数・期限を利用者に聞き、実装計画に反映する。"
+    },
+    {
+      "level": "minor",
+      "cause": "design",
+      "targets": [
+        "F-02",
+        "L-02",
+        "F-01",
+        "L-01"
+      ],
+      "documents": [
+        "detailed_design"
+      ],
+      "point_key": null,
+      "problem": "登録・ログインの内部手順が食い違っている。F-01 は形式検証(1a)と重複確認(2a)を手順表で分けるが、L-01 は検証手順が無く、メールの重複確認が事前に走る一方で users の UNIQUE 違反の競合は扱わない。L-02 はトークン発行をせず、F-02 手順 4 が別に行う。",
+      "evidence": "L-01 擬似フロー: 重複確認 → ハッシュ化 → 保存。F-02 注記「手順2〜4が1つのトランザクション」(Redis 発行を含む)",
+      "reason": "Redis の発行は DB トランザクションに含められず、記載が実際の動作と合わない。",
+      "suggestion": "重複は UNIQUE 違反の捕捉で扱い、トランザクション範囲を DB 操作だけに限る。L-02 でトークン発行までを行うか、F-02 側の分担を揃える。"
+    }
+  ],
+  "seconds": 67.1
+}

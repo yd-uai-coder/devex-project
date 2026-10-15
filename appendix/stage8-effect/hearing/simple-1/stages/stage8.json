@@ -1,0 +1,471 @@
+{
+  "stage": 8,
+  "mode": "simple",
+  "state": "approved",
+  "is_open": true,
+  "missing_inputs": [],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "units": [
+      {
+        "unit_id": "M-01-T01",
+        "unit_key": "U-001",
+        "title": "プロジェクトリポジトリおよびDocker環境の構築",
+        "purpose": "プロジェクトのリポジトリ構造を初期化し、Docker Composeを用いてローカルでの開発・検証環境を構築する。",
+        "files": [
+          {
+            "path": "Dockerfile",
+            "kind": "config",
+            "responsibility": "バックエンドアプリケーションを実行するためのコンテナイメージを定義する",
+            "basis": "内部設計書 3.1 技術スタック・アーキテクチャ"
+          },
+          {
+            "path": "docker-compose.yml",
+            "kind": "config",
+            "responsibility": "バックエンド、フロントエンド、データベース等の複数コンテナの起動・連携を定義する",
+            "basis": "実装計画書 4.3 開発環境"
+          },
+          {
+            "path": "nginx/conf.d/default.conf",
+            "kind": "config",
+            "responsibility": "リバースプロキシとしてのnginxルーティング設定を行う",
+            "basis": "内部設計書 3.1 技術スタック・アーキテクチャ"
+          }
+        ],
+        "notes": [
+          "基盤構築の単位であるため、ビジネスロジックの実装やコード上の処理は含まれない",
+          "Docker環境の起動確認用として最低限の接続確認ができるように設定を行う"
+        ],
+        "tests": [
+          {
+            "viewpoint": "Docker Composeによってすべてのサービスが正常に起動すること",
+            "sut": "docker-compose.yml",
+            "driver": "インフラストラクチャテスト・結合確認",
+            "stub": "スタブ不要 ── インフラ構築のため"
+          }
+        ],
+        "gwt": [
+          "Given 必要な環境設定ファイルが用意されている",
+          "When docker compose upコマンドを実行する",
+          "Then 全てのコンテナがエラーなく起動しアクセス可能になる"
+        ],
+        "verify": [
+          "docker compose up --buildコマンドを実行し、ビルドエラーが発生せずコンテナが起動することを確認する",
+          "ブラウザまたはcurlコマンドでnginx経由のアクセスおよび各サービスの死活監視ができることを確認する"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-02-T01",
+        "unit_key": "U-002",
+        "title": "ログイン認証・サインアップ機能の実装",
+        "purpose": "利用者からの新規登録およびログインのリクエストを受け付け、データベースとの連携および認証処理を行う。",
+        "files": [
+          {
+            "path": "backend/app/models/db_models.py",
+            "kind": "module",
+            "responsibility": "usersテーブルのSQLAlchemyモデル定義を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "backend/app/core/security.py",
+            "kind": "module",
+            "responsibility": "パスワードハッシュ化およびハッシュ照合の機能を提供する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "backend/app/repositories/user_repo.py",
+            "kind": "module",
+            "responsibility": "PostgreSQLのusersテーブルに対するCRUD操作のカプセル化を行う。",
+            "basis": "段階4"
+          },
+          {
+            "path": "backend/app/api/v1/auth.py",
+            "kind": "module",
+            "responsibility": "新規ユーザー登録およびログイン認証のHTTPエンドポイントを提供する。",
+            "basis": "段階4"
+          },
+          {
+            "path": "backend/tests/api/v1/test_auth.py",
+            "kind": "test",
+            "responsibility": "登録およびログインAPIの動作を検証する。",
+            "basis": "段階4"
+          }
+        ],
+        "notes": [
+          "データベースモデルの定義を最初に行い、その後にセキュリティユーティリティとリポジトリ層、最後にルーター層の順で実装する。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正しいメールアドレスとパスワードで新規ユーザー登録ができること",
+            "sut": "POST /api/v1/auth/register",
+            "driver": "結合テスト (pytest)",
+            "stub": "スタブ不要 ── 実際のデータベースおよびセキュリティモジュールを使用する"
+          },
+          {
+            "viewpoint": "正しい認証情報でログインし、認証成功トークンが返却されること",
+            "sut": "POST /api/v1/auth/login",
+            "driver": "結合テスト (pytest)",
+            "stub": "スタブ不要 ── 実際のデータベースおよびセキュリティモジュールを使用する"
+          }
+        ],
+        "gwt": [
+          "Given 登録されていないメールアドレスとパスワードがある When 新規ユーザー登録エンドポイントを呼び出す Then ユーザーが作成され登録成功トークンが返される",
+          "Given 登録済みのメールアドレスと正しいパスワードがある When ログイン認証エンドポイントを呼び出す Then 認証成功トークンが返される"
+        ],
+        "verify": [
+          "pytest backend/tests/api/v1/test_auth.py を実行し、すべてのテストが成功することを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-03-T01",
+        "unit_key": "U-003",
+        "title": "チャットヒアリングおよび参考資料読み込み機能の実装",
+        "purpose": "チャットセッションの作成・取得、メッセージ履歴の取得、およびファイル添付を伴うメッセージ送信とLLM連携機能を提供する。",
+        "files": [
+          {
+            "path": "backend/app/repositories/chat_repo.py",
+            "kind": "module",
+            "responsibility": "チャットセッションおよびメッセージデータのPostgreSQLに対するCRUD操作をカプセル化する。",
+            "basis": "内部設計書 3.3"
+          },
+          {
+            "path": "backend/app/services/ai_service.py",
+            "kind": "module",
+            "responsibility": "LangChain/LangGraphを介してGemini Flash-Liteを呼び出し、対話応答を生成する。",
+            "basis": "内部設計書 3.3"
+          },
+          {
+            "path": "backend/app/services/chat_service.py",
+            "kind": "module",
+            "responsibility": "バリデーション、参考資料の制限・抽出制御、セッションとメッセージの保存を制御する。",
+            "basis": "内部設計書 3.3"
+          },
+          {
+            "path": "backend/app/api/v1/chat.py",
+            "kind": "module",
+            "responsibility": "チャット関連のエンドポイントを提供し、認証・認可とリクエスト受け付けを行う。",
+            "basis": "内部設計書 3.3"
+          },
+          {
+            "path": "backend/tests/api/v1/test_chat.py",
+            "kind": "test",
+            "responsibility": "チャット関連APIの正常系・異常系・バリデーションのテストを行う。",
+            "basis": "実装計画書 4.3"
+          }
+        ],
+        "notes": [
+          "リポジトリ層でSQLAlchemyを用いてchat_sessionsおよびmessagesテーブルの操作を実装する。",
+          "ai_serviceでLangChainとGemini Flash-Liteの統合処理を実装する。",
+          "chat_serviceで文字数制限や参考資料の最大3件制限などの検証ロジックを挟む。",
+          "api/v1/chat.pyのルーターで各サービスを呼び出すように上から順に組み立てる。"
+        ],
+        "tests": [
+          {
+            "viewpoint": "チャットセッションが正しく作成されること",
+            "sut": "POST /api/v1/chat/sessions",
+            "driver": "結合テスト(FastAPI TestClient)",
+            "stub": "認証ミドルウェア(固定のテストユーザーを返す)"
+          },
+          {
+            "viewpoint": "チャットセッション一覧が取得できること",
+            "sut": "GET /api/v1/chat/sessions",
+            "driver": "結合テスト(FastAPI TestClient)",
+            "stub": "認証ミドルウェア(固定のテストユーザーを返す)"
+          },
+          {
+            "viewpoint": "セッション内のメッセージ履歴が取得できること",
+            "sut": "GET /api/v1/chat/sessions/{id}/messages",
+            "driver": "結合テスト(FastAPI TestClient)",
+            "stub": "所有者検証スタブ"
+          },
+          {
+            "viewpoint": "メッセージ送信とAI応答が正しく処理されること",
+            "sut": "POST /api/v1/chat/messages",
+            "driver": "結合テスト(FastAPI TestClient)",
+            "stub": "app/services/ai_service.py(モック化されたLLM応答を返す)"
+          }
+        ],
+        "gwt": [
+          "Given 認証済みのユーザーが存在する When 有効なタイトルでセッション作成リクエストを送信する Then 新規セッションが作成されセッションIDが返される",
+          "Given セッションとメッセージ履歴が存在する When メッセージ履歴取得リクエストを送信する Then メッセージ一覧が返される",
+          "Given チャットセッションが存在する When メッセージと参考資料を送信する Then LLMの応答が保存され返却される"
+        ],
+        "verify": [
+          "pytest backend/tests/api/v1/test_chat.pyを実行しすべてのテストケースが成功することを確認する。"
+        ],
+        "findings": []
+      },
+      {
+        "unit_id": "M-04-T01",
+        "unit_key": "U-004",
+        "title": "設計書一括生成・自己診断およびプレビュー機能の実装",
+        "purpose": "4種設計書および自己診断の一括生成、保存済み設計書の履歴一覧取得、個別詳細取得のAPIエンドポイントと関連するサービス・リポジトリ処理を実装する。",
+        "files": [
+          {
+            "path": "backend/app/repositories/document_repo.py",
+            "kind": "module",
+            "responsibility": "PostgreSQLのdocumentsテーブルに対するCRUD操作のカプセル化を行う",
+            "basis": "内部設計書 3.3"
+          },
+          {
+            "path": "backend/app/services/ai_service.py",
+            "kind": "module",
+            "responsibility": "LangChainとLangGraphを用いたGemini Flash-Liteによる4種設計書と自己診断結果の生成処理を行う",
+            "basis": "内部設計書 3.3"
+          },
+          {
+            "path": "backend/app/api/v1/documents.py",
+            "kind": "module",
+            "responsibility": "設計書の生成、履歴一覧取得、個別詳細取得のリクエスト受付、認証および所有者検証を行う",
+            "basis": "内部設計書 3.3"
+          },
+          {
+            "path": "backend/tests/api/v1/test_documents.py",
+            "kind": "test",
+            "responsibility": "設計書の生成、履歴一覧取得、個別詳細取得APIの動作を検証する",
+            "basis": "実装計画書 4.3"
+          }
+        ],
+        "notes": [
+          "リポジトリ層を作成した後にサービス層を実装し、最後にAPIルーター層を実装する順序とする",
+          "既存の認証部品やRedisレート制限ミドルウェアを再利用する"
+        ],
+        "tests": [
+          {
+            "viewpoint": "正常なチャットセッションIDを指定して設計書一括生成が成功すること",
+            "sut": "POST /api/v1/documents/generate",
+            "driver": "結合テスト(FastAPI TestClient)",
+            "stub": "ai_service.pyのGemini Flash-Lite呼び出しをモック化する"
+          },
+          {
+            "viewpoint": "認証トークンを使用して保存済み設計書の履歴一覧が取得できること",
+            "sut": "GET /api/v1/documents",
+            "driver": "結合テスト(FastAPI TestClient)",
+            "stub": "スタブ不要 ── テスト用DBのデータを参照する"
+          },
+          {
+            "viewpoint": "存在する文書IDを指定して個別詳細が取得できること",
+            "sut": "GET /api/v1/documents/{id}",
+            "driver": "結合テスト(FastAPI TestClient)",
+            "stub": "スタブ不要 ── テスト用DBのデータを参照する"
+          }
+        ],
+        "gwt": [
+          "Given: 有効なチャットセッションと認証トークンが存在する",
+          "When: POST /api/v1/documents/generateを呼び出す",
+          "Then: 4種設計書と自己診断結果が生成されデータベースに保存される"
+        ],
+        "verify": [
+          "pytestを実行し、documents関連のテストがすべて成功することを確認する"
+        ],
+        "findings": []
+      }
+    ]
+  },
+  "updated_at": "2026-10-15T06:09:48.966029Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "NO_TEST_FILE",
+      "message": "M-01-T01 はテスト観点がありますが、作成・変更するファイルにテストのファイルがありません(手順書を作り直すか、テストのファイルを足します)。",
+      "target": "M-01-T01",
+      "level": "minor",
+      "fix_stage": 8,
+      "unit": "M-01-T01",
+      "fix_document": null
+    },
+    {
+      "severity": "warning",
+      "code": "TABLE_WITHOUT_UNIT",
+      "message": "テーブル chat_sessions を作る単位がありません(スキーマのファイルに名前が出てきません)。",
+      "target": "chat_sessions",
+      "level": "minor",
+      "fix_stage": 8,
+      "unit": null,
+      "fix_document": "implementation_plan"
+    },
+    {
+      "severity": "warning",
+      "code": "TABLE_WITHOUT_UNIT",
+      "message": "テーブル messages を作る単位がありません(スキーマのファイルに名前が出てきません)。",
+      "target": "messages",
+      "level": "minor",
+      "fix_stage": 8,
+      "unit": null,
+      "fix_document": "implementation_plan"
+    },
+    {
+      "severity": "warning",
+      "code": "TABLE_WITHOUT_UNIT",
+      "message": "テーブル documents を作る単位がありません(スキーマのファイルに名前が出てきません)。",
+      "target": "documents",
+      "level": "minor",
+      "fix_stage": 8,
+      "unit": null,
+      "fix_document": "implementation_plan"
+    }
+  ],
+  "dfd_accesses": [],
+  "plan": {
+    "crosscutting": [],
+    "milestones": [
+      {
+        "name": "M-01: 基盤構築とDocker・インフラ環境整備",
+        "goal": "コンテナ環境、データベース、Redis、リポジトリおよびCI/CD・バックアップ基盤が整うこと。",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-001",
+            "kind": "base",
+            "title": "プロジェクトリポジトリおよびDocker環境の構築",
+            "function_ids": [],
+            "depends_on": [],
+            "modules": [],
+            "config_files": [
+              "Dockerfile",
+              "docker-compose.yml",
+              "nginx/conf.d/default.conf"
+            ],
+            "req_ids": []
+          }
+        ]
+      },
+      {
+        "name": "M-02: 認証機能の実装",
+        "goal": "ユーザーのサインアップおよびログイン機能、Redisレート制限が動作すること。",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-002",
+            "kind": "feature",
+            "title": "ログイン認証・サインアップ機能の実装",
+            "function_ids": [
+              "DF-5",
+              "DF-1"
+            ],
+            "depends_on": [
+              "M-01-T01"
+            ],
+            "modules": [
+              "backend/app/api/v1/auth.py",
+              "backend/app/core/security.py",
+              "backend/app/models/db_models.py",
+              "backend/app/repositories/user_repo.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-001",
+              "FR-006"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "M-03: チャットヒアリングと参考資料読み込み機能の実装",
+        "goal": "セッション管理、メッセージ履歴取得、ファイル添付付きチャットの送受信ができること。",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-003",
+            "kind": "feature",
+            "title": "チャットヒアリングおよび参考資料読み込み機能の実装",
+            "function_ids": [
+              "DF-6",
+              "DF-7",
+              "DF-8",
+              "DF-2"
+            ],
+            "depends_on": [
+              "M-02-T01"
+            ],
+            "modules": [
+              "backend/app/api/v1/chat.py",
+              "backend/app/services/chat_service.py",
+              "backend/app/services/ai_service.py",
+              "backend/app/repositories/chat_repo.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-005",
+              "FR-007",
+              "FR-008",
+              "FR-006"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "M-04: 設計書一括生成・自己診断およびプレビュー機能の実装",
+        "goal": "4種の設計書および自己診断結果の生成・個別詳細・履歴一覧取得ができること。",
+        "priority": "Must",
+        "tasks": [
+          {
+            "key": "U-004",
+            "kind": "feature",
+            "title": "設計書一括生成・自己診断およびプレビュー機能の実装",
+            "function_ids": [
+              "DF-3",
+              "DF-4",
+              "DF-9"
+            ],
+            "depends_on": [
+              "M-03-T01"
+            ],
+            "modules": [
+              "backend/app/api/v1/documents.py",
+              "backend/app/services/ai_service.py",
+              "backend/app/repositories/document_repo.py"
+            ],
+            "config_files": [],
+            "req_ids": [
+              "FR-002",
+              "FR-003",
+              "FR-004",
+              "FR-006",
+              "FR-007"
+            ]
+          }
+        ]
+      }
+    ],
+    "environment": "開発言語はPython 3.13およびNext.js(App Router)を用い、データベースにはPostgreSQLおよびRedisを採用する。サーバー環境としてDocker ComposeとnginxをVPS上に構築し、GitHub Actionsを用いて自動デプロイを実施する。テスト・自動化およびコード品質維持のため、適切なユニットテスト・統合テストを継続的に行う方針とする。",
+    "risks": [
+      {
+        "risk": "Gemini Flash-LiteのAPI制限や応答遅延によるタイムアウト発生",
+        "mitigation": "リトライ機構および適切なエラーハンドリング(500応答・再送要請)を実装し、ユーザーへ明確なフィードバックを提供する。"
+      },
+      {
+        "risk": "チャットの文字数超過や不正利用によるリソース枯渇",
+        "mitigation": "Redisを用いたレート制限ミドルウェアと文字数バリデーションを確実に実装し、無料枠とシステムリソースを保護する。"
+      }
+    ],
+    "next_unit_seq": 5
+  },
+  "unit_req_ids": {
+    "M-01-T01": [],
+    "M-02-T01": [
+      "FR-001",
+      "FR-006"
+    ],
+    "M-03-T01": [
+      "FR-005",
+      "FR-007",
+      "FR-008",
+      "FR-006"
+    ],
+    "M-04-T01": [
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-006",
+      "FR-007"
+    ]
+  },
+  "impact_open": 0,
+  "impact_reviewed": 0
+}
