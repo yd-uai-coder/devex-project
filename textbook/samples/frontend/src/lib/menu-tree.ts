@@ -1,4 +1,4 @@
-// 更新：Phase-3-1,3-2,3-3,3-4,24(完了後の調整),24(T2同期),25-2,33-3,40(完了後の調整),41-3,50-3,51-3
+// 更新：Phase-3-1,3-2,3-3,3-4,24(完了後の調整),24(T2同期),25-2,33-3,40(完了後の調整),41-3,50-3,51-3,60-3
 export type MenuLeaf = { label: string; href: string };
 export type MenuGroup = { label: string; children: MenuLeaf[] };
 
@@ -50,12 +50,12 @@ export const MENU_TREE: MenuGroup[] = [
   //     { label: "変更の影響デモ", href: "/change-impact-demo" },
   //   ],
   // },
-  // Phase-51-3:追記
-  {
-    label: "開発用",
-    children: [
-      // AI 設計レビューの見せ方の提案(仮データ)
-      { label: "AI 設計レビューデモ", href: "/design-review-demo" },
-    ],
-  },
+  // Phase-60-3：削除(デモのページ /design-review-demo は残す。URL を直接開けば見られる)
+  // {
+  //   label: "開発用",
+  //   children: [
+  //     // AI 設計レビューの見せ方の提案(仮データ)
+  //     { label: "AI 設計レビューデモ", href: "/design-review-demo" },
+  //   ],
+  // },
 ];

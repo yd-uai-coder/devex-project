@@ -1,4 +1,4 @@
-// 更新：Phase-51-3
+// 更新：Phase-51-3,60-3
 import { afterEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -64,16 +64,23 @@ describe("Menu", () => {
     );
   });
 
-  // Phase-51-3:追記
-  it("開発用のグループに AI 設計レビューデモへのリンクを置く", async () => {
-    const user = userEvent.setup();
+  // Phase-60-3：更新
+  // it("開発用のグループに AI 設計レビューデモへのリンクを置く", async () => {
+  //   const user = userEvent.setup();
+  //   renderMenu();
+  //
+  //   await user.click(screen.getByRole("button", { name: "開発用" }));
+  //
+  //   expect(screen.getByRole("link", { name: "AI 設計レビューデモ" })).toHaveAttribute(
+  //     "href",
+  //     "/design-review-demo",
+  //   );
+  // });
+  // ↓↓
+  it("開発用のグループを置かない(デモのページは URL を直接開けば見られる)", () => {
     renderMenu();
 
-    await user.click(screen.getByRole("button", { name: "開発用" }));
-
-    expect(screen.getByRole("link", { name: "AI 設計レビューデモ" })).toHaveAttribute(
-      "href",
-      "/design-review-demo",
-    );
+    expect(screen.queryByRole("button", { name: "開発用" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "AI 設計レビューデモ" })).toBeNull();
   });
 });
