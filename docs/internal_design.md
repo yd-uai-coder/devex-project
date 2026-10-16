@@ -51,6 +51,8 @@
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
 
+**(ステージ9)** 表示名の列 `full_name` を `user_name` に改名する(データは残す)。用途ごとのモデルと API キーは別のテーブルに持つ(3.3節「9. 使い勝手とアカウント・モデル設定」)。
+
 #### ② `projects` テーブル
 
 | カラム名 | データ型 | 制約 | 説明 |
@@ -276,7 +278,7 @@ backend/
 | **POST** | `/api/v1/auth/register` | 新規ユーザー登録 | 不要 |
 | **POST** | `/api/v1/auth/login` | ログイン（JWT発行） | 不要 |
 | **POST** | `/api/v1/projects` | 新規プロジェクト作成(初期ヒアリング入力を`intake`として受け取る。ステージ4では`mode`(`simple`/`detailed`、省略時`simple`)も受け取る。添付ファイル最大3件・txt/md/pdfのみを伴う場合は`multipart/form-data`になる。[外部設計書](external_design.md) 2.5節3項・5項参照) | 必要 |
-| **GET** | `/api/v1/projects` | ユーザーのプロジェクト一覧取得 | 必要 |
+| **GET** | `/api/v1/projects` | ユーザーのプロジェクト一覧取得(ステージ9 で`q`・`mode`・`status`・`page`を受け、`{items, total}`を返す。1ページ10件) | 必要 |
 | **GET** | `/api/v1/projects/{id}` | 特定プロジェクトの詳細・状態取得(添付ファイルのサマリ ── ファイル名・形式・`status` ── を含む。`extracted_text`本文は含めない) | 必要 |
 | **POST** | `/api/v1/projects/{id}/chat` | チャットメッセージ送信・AI応答取得（SSE）。本文は`{message, card_answers: [{card_id, option}], continue_optional}`(message と card_answers のどちらか一方は要る。Phase 35。`continue_optional`は必須がそろった後に任意の観点を続けるとき。Phase 35 完了後の調整)。応答は本文`data: {"delta"}`・選択肢カード`event: cards`(`data: {"cards": [...]}`)・`data: [DONE]`の順。途中で失敗したときは`event: error`(`data: {code, detail}`)を送って終える(200を返した後のため。発話は保存しない。Phase 15。古いカード・回答済みのカードへの回答は`INVALID_CARD_ANSWER`) | 必要 |
 | **GET** | `/api/v1/projects/{id}/chat` | 特定プロジェクトのチャット履歴取得 | 必要 |
@@ -318,6 +320,10 @@ backend/
 | **GET** | `/api/v1/projects/{id}/design-stages/procedures/{function_id}/sequence` | （※ステージ5、Phase 29）段階5の処理1つのシーケンス図(`{function_id, svg, issues: [{step_id, code, message}]}`)。保存した手順(下書き・レビュー中を含む)と承認済みの段階4から毎回導き、保存しない。段階5が開いていなければ409 `DESIGN_STAGE_LOCKED`、段階5で選んでいない処理は404。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE` | 必要 |
 | **GET** | `/api/v1/projects/{id}/design-stages/units/{unit_id}/context` | （※ステージ5、Phase 28）段階8の作業単位1つが参照する設計の展開(`{unit_id, refs: [{kind, key, resolved, via, label, markdown, svg}], crosscutting, environment}`。`svg`は段階5の手順の参照のシーケンス図。Phase 29)。承認済みの段階1〜7から毎回導き、保存しない。段階8が開いていなければ409 `DESIGN_STAGE_LOCKED`、段階7に無い単位は404。簡易ドキュメントモードは4文書から導き、`kind`に`dataflow`(内部設計書の処理別データフロー)が加わる(Phase 31) | 必要 |
 | **GET** | `/api/v1/projects/{id}/design-stages/units/{unit_id}/ai-markdown` | （※ステージ5、Phase 30）段階8の作業単位1つの AI 向けの版(`{unit_id, markdown, state, finding_total, critical}`。`state`は段階8の状態、`finding_total`・`critical`はその単位に残る未定義の件数と最重要の件数)。保存済みの手順書と承認済みの段階1〜7から組み立て、保存しない。段階8が承認済みでない・未定義が残るときは md の先頭で警告する。段階8が開いていなければ409 `DESIGN_STAGE_LOCKED`、段階7に無い単位・手順書の無い単位(未生成・段階7と合わない)は404。簡易ドキュメントモードは段階7の代わりに実装計画書の WBS と4文書から組み立てる(Phase 31) | 必要 |
+| **DELETE** | `/api/v1/projects/{id}` | （※ステージ9）プロジェクトの削除(所有者だけ。生成中も可。子の行は CASCADE。3.3節 9項) | 必要 |
+| **PATCH** | `/api/v1/users/me` | （※ステージ9）ユーザーネームの変更。メール・パスワードの変更(今のパスワードで確かめる)の API の形は Phase 66 で決める | 必要 |
+| **GET** / **PUT** | `/api/v1/users/me/models` | （※ステージ9）用途ごとのモデルの取得・保存(カタログに無いモデルは断る)。カタログの取得の API は Phase 67 で決める | 必要 |
+| **PUT** / **DELETE** | `/api/v1/users/me/api-keys/{provider}` | （※ステージ9）provider ごとの API キーの登録(保存のときに確かめる)・削除。暗号の鍵が無いときは503 | 必要 |
 
 > **[Phase 24 で確定 ── 〈簡易モードの設計図の API を削除〉]** 当初〈上の表の`POST /uml/diagrams`(生成)・`/uml/candidates`・`/uml/generation-runs`・`/uml/reflect`・`/uml/embeds`・`/uml/bundle`を提供する〉→ 撤回。理由〈簡易ドキュメントモードの設計図(SCR-007)を削除した([外部設計書](external_design.md) 2.6節の撤回を参照)。残りの`/uml/...`(図の取得・一覧・更新・検証・自動レイアウト・承認・出力、データ辞書)は、詳細設計モードの段階2〜4が使う〉。
 
@@ -535,7 +541,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 
 [外部設計書](external_design.md) 2.11節の内部の方針(Phase 51で確定)。経緯は[`textbook/Phase-51/Phase-51-2.md`](../textbook/Phase-51/Phase-51-2.md)。テーブル・API・マイグレーションは Phase 52 以降の着手時に決める(未確定事項は[`textbook/Phase-51/Phase-51-5.md`](../textbook/Phase-51/Phase-51-5.md))。
 
-* **LLM の取得を役割で分ける**: 生成は今の`get_gemini_llm()`。レビューは`get_review_llm()`(Claude Sonnet)、狭い判定は`get_judge_llm()`(Claude Haiku)。モデル名は設定で替えられる。`langchain-anthropic`を依存に足し、`ANTHROPIC_API_KEY`を設定に足す。構造化出力は`method="json_schema"`(Sonnet 5.5 はツール呼び出しの強制による構造化出力を推奨しない)。偽 LLM にレビューの応答を足す。
+* **LLM の取得を役割で分ける**(ステージ9 で「ユーザーと用途 → LLM」の解決に替える。9項): 生成は今の`get_gemini_llm()`。レビューは`get_review_llm()`(Claude Sonnet)、狭い判定は`get_judge_llm()`(Claude Haiku)。モデル名は設定で替えられる。`langchain-anthropic`を依存に足し、`ANTHROPIC_API_KEY`を設定に足す。構造化出力は`method="json_schema"`(Sonnet 5.5 はツール呼び出しの強制による構造化出力を推奨しない)。偽 LLM にレビューの応答を足す。
 * **レビューの入力と出力**: 入力は文書の md・観点の表・決定的な検証の指摘(Phase 51 の測定の (d) と同じ組み立て。`appendix/stage8-baseline/review.py`)。出力は指摘の一覧(構造化出力)。プロンプトキャッシュは使わず、回にキャッシュの読み書きのトークンを記録して、Phase 58 の測定で入れるかを決める(Phase 52・53 の着手時の決定)。
 * **データ**: レビューの回(プロジェクト・区切り・対象の文書の版・モデル・状態(成功・失敗)・トークン)と指摘(重要度・原因・対象・観点のキー・問題・引用・理由・改善案・採否)を持つ。ユーザーにレビューの設定(初期値オフ)を持たせ、実効値は`is_superuser and 設定`でサーバーが判定する。
 * **区切り**: 文書の生成(`DocGeneratorService`)の終わりで、実効値がオンならレビュー、オフなら今の自己診断。段階6・7 のレビューはボタンで流す(`app/review/gates.py`。Phase 53)。段階の区切りは、要件・外部の表示中の版の md と、詳細設計書の md(段階6は01〜06章、段階7は01〜07章 + 実装計画書の md。詳細設計書の出力と同じ組み立て)を渡し、段階の検証の指摘も既知として渡す。回の`targets`は文書の版と段階の承認した版(`{doc_type: 版, "stage:N": 承認した版}`)。区切りの状態は「文書がまだ無い(段階が承認されていない)/ 未レビュー / 実行中 / レビュー済み / 失敗」で、最新の回の`targets`が今の版と一致しなければ未レビュー(承認し直した・文書を作り直した後)。
@@ -563,6 +569,17 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * `TABLE_WITHOUT_UNIT`(軽微・段階7 / 実装計画書): スキーマのファイルのパス・責務に名前(単数形も)の出ないテーブル(詳細は段階3の CRUD 図、簡易は内部設計書 3.2節)。テーブル名の出ないスキーマのファイル(`orm.py`のようにまとめたもの)があれば全テーブルを作るとみなす。
   * `NO_ERROR_TEST`(軽微・段階8。簡易モードだけ。Phase 59): 機能の単位の処理(DF)の API の外部設計書 2.6 のエラー欄に HTTP ステータスがあるのに、手順書のテスト観点(観点・SUT・Given / When / Then)にどれも出ず、観点の文に異常系の言葉(エラー・失敗・拒否・異常・不正)も無い。簡易の参照の 2.6 の行にエラー欄を添え、生成の指示に「正常系に加えて、エラー欄のステータスごとに異常系の観点を1つ」を足した。
   * **スキーマの単位を置かせる指示**(Phase 59): 段階4 の構成図にモデル(ORM)のパッケージ、モジュール一覧にリポジトリとは別のモデルのファイル(責務にテーブル名)を置かせ、段階7 の計画に「テーブルを作るタスク(モデルとマイグレーション)を最初のマイルストーンに置く。モデルは一覧から modules、マイグレーションは config_files」を足した。
+
+### 9. 使い勝手とアカウント・モデル設定(ステージ9)
+
+[外部設計書](external_design.md) 2.12節の内部の方針(Phase 61で確定)。経緯は[`textbook/Phase-61/Phase-61-1.md`](../textbook/Phase-61/Phase-61-1.md)。テーブル・API の細部は各 Phase の着手時に決める(未確定事項は[`textbook/Phase-61/Phase-61-3.md`](../textbook/Phase-61/Phase-61-3.md))。
+
+* **認証ページの proxy**: refresh cookie は API のオリジン(`path=/api/v1/auth`)にあり、アクセストークンはメモリにしかないため、UI の proxy からはログインの状態が見えない。UI のオリジンにログインの印の cookie(値は意味を持たない印。秘密を入れない)を置き、`src/proxy.ts`(Next.js 16 で `middleware.ts` から改名)で `/login`・`/register` を `/dashboard` へ振り分ける。印は認証の判定に使わない(判定は今のまま API)。
+* **プロジェクトの削除**: `DELETE /projects/{id}`(所有者だけ。他人・無いものは404)。子の行は外部キーの CASCADE で消える。Redis の生成の進み具合の鍵も消す。**生成中も削除できる**ため、バックグラウンドの処理(文書・段階の生成・レビュー・「直ったか」の判定・UML 図の生成)は、入口でプロジェクトが無ければ終え、途中で消えたとき(外部キーの違反・行の無い更新)は失敗として記録せずに終える。
+* **一覧**: `GET /projects?q=&mode=&status=&page=` は`{items, total}`を返す(1ページ10件。**レスポンスの形が配列から変わる**)。`q`はタイトルの部分一致(大文字・小文字を区別しない)。
+* **アカウント**: `users.full_name` を `user_name` に改名する(Alembic の列の改名。データは残す)。`PATCH /users/me`(ユーザーネーム)、メール・パスワードの変更は今のパスワードで確かめる(メールの重複は409)。パスワードを変えたら、その人の refresh(Redis の`refresh_token:{user_id}:*`)を全部失効させる。
+* **モデルと API キー**: 新しいテーブル2つ ── 用途ごとのモデル(ユーザー・用途(`chat`・`generation`・`review`・`judge`)・provider・モデル。`user_id`が null の行がシステムの既定値)と、provider ごとの API キー(ユーザー・provider・暗号文・末尾の数文字。キーは Fernet で暗号化し、鍵は環境変数 `ENCRYPTION_KEY`)。鍵が無いときはキーの登録の API だけ 503 にする。選べるモデルは API 側の静的なカタログ(provider → model ID の表)に置き、カタログに無いモデルは保存で断る。キーは保存のときにモデルの一覧の取得で確かめる(無効なら422)。`scripts/seed.py` は `.env` のモデル(`GEMINI_MODEL`・`REVIEW_MODEL`・`JUDGE_MODEL`)を既定値の行として登録する(値を seed に書かない)。キー自体は既定値として環境変数に残し、DB には入れない。
+* **LLM の解決**: 今の取得関数(`get_gemini_llm()`・`get_review_llm()`・`get_judge_llm()`。`lru_cache`でプロセスに1つ)を「ユーザーと用途 → LLM」の解決に替える。キャッシュの鍵は (provider, モデル, キー)。用途ごとに provider を入れ替えられるので、provider に固有の処理(本文の取り出し・構造化出力の方式・出力の上限・再試行の 429 の判定)を両方の provider で通す。PDF の取り込みは用途にせず、Gemini の解決(自分の Gemini キー、無ければ既定)で読む。レビューの実効値は`is_superuser and 設定`から「(superuser、またはレビューの用途の provider の自分のキーがある)かつ設定」に改める。モデルごとのタイムアウトと、混雑(503・504)を待つ再試行は Phase 68 の着手時に決める(Phase 60 の申し送り「生成のモデルと Gemini の無料枠」)。
 
 ## 3.4 例外処理・エラーハンドリング・ログ設計
 
@@ -593,6 +610,7 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 * `DESIGN_STAGES_NOT_AVAILABLE` / `DESIGN_STAGE_LOCKED` / `DESIGN_STAGE_NOT_APPROVABLE`(409): 詳細設計モードの段階(Phase 15)。段階の版の不一致は`VERSION_CONFLICT`(409、UML図と共通)
 * `DESIGN_STAGE_INVALID` / `DESIGN_STAGE_GENERATION_NOT_SUPPORTED` / `DESIGN_STAGE_GENERATION_IN_PROGRESS`(409): 段階ごとの検証のエラーがある段階の承認 / 生成に対応していない段階の生成 / 生成中の段階の生成・保存・承認(Phase 16)
 * `DESIGN_STAGE_UNREVIEWED_IMPACT`(409): 他の段階・文書の変更から届いた見直しの印が未確認のまま、段階を承認しようとした(ステージ7、Phase 43)
+* ステージ9 で足すコード(プロジェクトの削除・アカウントの変更・API キーの登録。今のパスワードの不一致・メールの重複・カタログに無いモデル・無効なキー・暗号の鍵が無い)は、名前を各 Phase の着手時に決める(3.3節 9項)
 * `INTERNAL_SERVER_ERROR`: `AppError`以外の予期せぬ例外をキャッチする最終防衛ラインのハンドラが返す(スタックトレース等の詳細はレスポンスに含めずサーバーログにのみ記録)
 
 **`UNAUTHORIZED`について**: 認証境界(`app/api/deps.py`の`get_current_user`)は意図的に`AppError`ではなく生の`HTTPException`を使っており(認証失敗の理由を外部に細かく漏らさないため)、`code`フィールドは付与されない。レスポンス形自体は`{"detail": "..."}`のまま変わらない。
