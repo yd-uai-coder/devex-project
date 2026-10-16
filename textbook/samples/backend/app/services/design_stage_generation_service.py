@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整)
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整),64-2
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
 # Phase-31-4：更新(docstring: 簡易モードの段階8は、作業単位を WBS、参照を内部設計書から取ること)
@@ -54,6 +54,7 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 # Phase-42-1:追記 ── app.detailed_design.plan.carry_over_unit_keys, app.detailed_design.procedure_doc.relabel_units
 # Phase-54-3:追記 ── app.review.build_instruction, app.services.review_service.ReviewService, collections.abc.Sequence, langchain_core.messages.BaseMessage
 # Phase-55(完了後の調整):追記 ── app.detailed_design.structure.component_element_layers
+# Phase-64-2:追記 ── app.services.project_deletion(commit_if_live, project_vanished, purge_deleted_projects)
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -190,6 +191,11 @@ from app.services.errors import (
 )
 from app.services.generation_staleness import is_stale
 from app.services.llm_retry import invoke_structured
+from app.services.project_deletion import (
+    commit_if_live,
+    project_vanished,
+    purge_deleted_projects,
+)
 from app.services.review_service import ReviewService
 from app.uml.domain import NOTATION_TO_VIEW, NotationType
 from app.uml.generation.failures import ReasonCode, classify_failure
@@ -954,21 +960,29 @@ async def run_design_stage_generation(
     llm=None,
 ) -> None:
     """`BackgroundTasks`から呼び出すエントリポイント。リクエストのセッションはbackground task
-    実行前にクローズされるため、セッションを自前で開始・終了する(run_uml_generationと同じ形)。"""
-    async with AsyncSessionLocal() as session:
-        await DesignStageGenerationService(session).execute(
-            project_id=project_id,
-            user_id=user_id,
-            stage=stage,
-            function_ids=function_ids,
-            # Phase-21-3:追記
-            logics=logics,
-            # Phase-28-2:追記
-            unit_ids=unit_ids,
-            # Phase-54-3:追記
-            finding_ids=finding_ids,
-            llm=llm,
-        )
+    実行前にクローズされるため、セッションを自前で開始・終了する(run_uml_generationと同じ形)。
+    終わったら、削除の印が付いたプロジェクトの物理削除を試す。"""
+    # Phase-64-2：更新(try/finally で包み、終わったら物理削除を試す)
+    # async with AsyncSessionLocal() as session:
+    #     await DesignStageGenerationService(session).execute(...)
+    # ↓↓
+    try:
+        async with AsyncSessionLocal() as session:
+            await DesignStageGenerationService(session).execute(
+                project_id=project_id,
+                user_id=user_id,
+                stage=stage,
+                function_ids=function_ids,
+                # Phase-21-3:追記
+                logics=logics,
+                # Phase-28-2:追記
+                unit_ids=unit_ids,
+                # Phase-54-3:追記
+                finding_ids=finding_ids,
+                llm=llm,
+            )
+    finally:
+        await purge_deleted_projects()
 
 
 # ── ここから Phase-16-4 の作成分 ──
@@ -1075,7 +1089,8 @@ class DesignStageGenerationService:
         # ── ここから Phase-16-4 の作成分 ──
         """下書きを生成して段階に保存する。失敗したら理由を残して`failed`にする。`finding_ids`
         (設計レビューの採用した指摘)は修正指示にして、段階の生成のプロンプトに足す。
-        プロジェクトや「生成中」の段階が見つからなければ何もしない(回収された後など)。"""
+        プロジェクトや「生成中」の段階が見つからなければ何もしない(回収された後など)。生成の間に
+        プロジェクトが削除されたときは、下書きも失敗も記録しない(app/services/project_deletion.py)。"""
         project = await self._projects.get_by_id(project_id, user_id=user_id)
         if project is None:
             return
@@ -1125,6 +1140,9 @@ class DesignStageGenerationService:
             # 途中の変更(段階2の DFD・データ項目も)を残さず、読み直した行に失敗だけを記録する
             # (rollbackで行は期限切れになる)
             await self._session.rollback()
+            # Phase-64-2:追記
+            if await project_vanished(self._session, project_id, job="design_stage"):
+                return  # 生成中に削除された(外部キーの違反も含む)
             row = await self._rows.get(project_id=project_id, stage=stage)
             if row is None:
                 return
@@ -1138,7 +1156,10 @@ class DesignStageGenerationService:
             )
             row.generation_status = "failed"
             row.generation_error = _MESSAGES[failure.reason_code]
-            await self._session.commit()
+            # Phase-64-2：更新
+            # await self._session.commit()
+            # ↓↓
+            await commit_if_live(self._session, project_id, job="design_stage")
             return
 
         row.model = model
@@ -1147,7 +1168,11 @@ class DesignStageGenerationService:
         row.version += 1
         row.generation_status = "completed"
         row.generation_error = None
-        await self._session.commit()
+        # Phase-64-2：更新
+        # await self._session.commit()
+        # ↓↓
+        if not await commit_if_live(self._session, project_id, job="design_stage"):
+            return
         logger.info("design_stage_generation_completed", project_id=str(project_id), stage=stage)
 
     async def recover_stale(self, project_id: uuid.UUID, *, now: datetime | None = None) -> int:

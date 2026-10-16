@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整)
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -12,8 +12,12 @@
 // Phase-57(完了後の調整):追記 ── @/features/documents/testSpecOps.TEST_SPEC_TITLE
 import { useEffect, useState } from "react";
 import Link from "next/link";
+// Phase-64-4:追記
+import { useRouter } from "next/navigation";
 import { Button, H2, H3, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+// Phase-64-4:追記
+import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
 import type { ReviewGate } from "@/features/design-review/api/reviewApi";
 // Phase-54-1：更新
@@ -58,6 +62,8 @@ export function DetailedDesignPageContent({
 }: {
   projectId: string;
 }) {
+  // Phase-64-4:追記
+  const router = useRouter();
   const stages = useDetailedDesignStore((s) => s.stages);
   const selectedStage = useDetailedDesignStore((s) => s.selectedStage);
   const status = useDetailedDesignStore((s) => s.status);
@@ -163,9 +169,18 @@ export function DetailedDesignPageContent({
            <H2>詳細設計</H2>
            ↓↓ */}
         <H2>{simple ? "実装手順書" : "詳細設計"}</H2>
-        <Link href={`/projects/${projectId}/documents`}>
-          <Text color="$blue10">← ドキュメントに戻る</Text>
-        </Link>
+        // Phase-64-4：更新
+        // <Link href={`/projects/${projectId}/documents`}>
+        //   <Text color="$blue10">← ドキュメントに戻る</Text>
+        // </Link>
+        // ↓↓
+        <XStack gap="$3" alignItems="center">
+          <Link href={`/projects/${projectId}/documents`}>
+            <Text color="$blue10">← ドキュメントに戻る</Text>
+          </Link>
+          {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}
+          <DeleteProjectButton projectId={projectId} onDeleted={() => router.push("/dashboard")} />
+        </XStack>
       </XStack>
 
       {status === "loading" && stages.length === 0 ? (

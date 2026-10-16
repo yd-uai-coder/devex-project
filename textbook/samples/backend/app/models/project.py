@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1,34-1,52-3
+# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1,34-1,52-3,64-1
 # 写経レベル: 定型 ── 既存User/Conversationと同型のORMモデル定義。
 # Phase-34-1:追記 ── app.models.hearing_point.HearingPoint(TYPE_CHECKING)
 # Phase-52-3:追記 ── app.models.review.ReviewRun(TYPE_CHECKING)
@@ -70,6 +70,11 @@ class Project(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
+    # Phase-64-1:追記
+    # deleted_at: 削除の印。付いた行は取得・一覧から外し、ロックが空いたときに子の行ごと物理削除する
+    # (生成中のジョブが持つ外部キーのロックで、削除の要求を待たせないため。
+    # app/services/project_deletion.py)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped["User"] = relationship()
     # cascade="all, delete-orphan": プロジェクト削除時に配下のチャット履歴・生成物も併せて削除する

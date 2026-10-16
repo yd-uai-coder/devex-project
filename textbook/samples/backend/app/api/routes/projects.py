@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -25,6 +25,7 @@
 # Phase-36-2:追記 ── app.services.doc_generator_service.document_read
 # Phase-53(完了後の調整):追記 ── app.api.deps.RedisDep, app.schemas.document(GenerationProgressRead, GenerationRequest), app.services.generation_progress.GenerationProgressStore
 # Phase-56-2:追記 ── app.schemas.document.TestSpecRead
+# Phase-64-1:追記 ── app.services.project_deletion.purge_deleted_projects
 import contextlib
 import json
 import uuid
@@ -61,6 +62,7 @@ from app.services.doc_generator_service import (
 from app.services.errors import GenerationFailedError, LLMQuotaExceededError
 from app.services.generation_progress import GenerationProgressStore
 from app.services.project import ProjectService, UploadedFileInput
+from app.services.project_deletion import purge_deleted_projects
 
 # Phase-15-3:追記
 logger = structlog.get_logger(__name__)
@@ -284,6 +286,21 @@ async def update_hearing_point(
     """観点の表の画面から、未決の観点を「対象外(後で決める)」にし、作り直した表を返す
     (LLMは呼ばない。完了判定もその場で表から作り直す)。"""
     return await ChatService(session).mark_point_not_applicable(current_project, point_key)
+
+
+# Phase-64-1:追記
+@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_project(
+    session: SessionDep,
+    redis: RedisDep,
+    current_project: CurrentProjectDep,
+    background_tasks: BackgroundTasks,
+) -> None:
+    """プロジェクトを削除する(所有者だけ。他人・無いものは404。生成中でも削除できる)。
+    削除の印を付けてすぐに返し、行と子の行の物理削除はバックグラウンドで行う(生成中のジョブが
+    ロックを持つ間は飛ばし、ジョブの終わりにもう一度試す)。"""
+    await ProjectService(session).delete(current_project, redis=redis)
+    background_tasks.add_task(purge_deleted_projects)
 
 
 @router.post("/{project_id}/generate", status_code=status.HTTP_202_ACCEPTED)

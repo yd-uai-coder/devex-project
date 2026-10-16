@@ -1,4 +1,4 @@
-// 作成：Phase-3-3｜更新：Phase-15-6,15-7,62-3
+// 作成：Phase-3-3｜更新：Phase-15-6,15-7,62-3,64-3
 import { apiFetch } from "@/lib/api/client";
 
 export type ProjectStatus = "interviewing" | "generating" | "completed" | "revising";
@@ -33,4 +33,10 @@ export type ProjectRead = {
 
 export function listProjects(): Promise<ProjectRead[]> {
   return apiFetch<ProjectRead[]>("/api/v1/projects");
+}
+
+// Phase-64-3:追記
+// プロジェクトを削除する(204)。生成中でも削除できる。
+export function deleteProject(projectId: string): Promise<void> {
+  return apiFetch<void>(`/api/v1/projects/${projectId}`, { method: "DELETE" });
 }

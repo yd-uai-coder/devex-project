@@ -1,4 +1,4 @@
-# 作成：Phase-52-4｜更新：Phase-53-1,53(完了後の調整),54-1,54-3,54-4,54-5
+# 作成：Phase-52-4｜更新：Phase-53-1,53(完了後の調整),54-1,54-3,54-4,54-5,64-2
 """設計レビュー(生成とは別のモデルが、文書の指摘だけを返す)のユースケース。
 
 docs/internal_design.md 3.3節「8. AI 設計レビュー + テスト設計」。受け付け(`start_review`:
@@ -14,6 +14,7 @@ docs/internal_design.md 3.3節「8. AI 設計レビュー + テスト設計」�
 # Phase-53-1：削除 ── app.review.render_findings(チャットは件数の一行の知らせにした)
 # Phase-53(完了後の調整):追記 ── app.review.only_reviewed_documents
 # Phase-54-1:追記 ── app.detailed_design.stages.stage_key, app.models.review.ReviewFixCheck, app.repositories.review.ReviewFixCheckRepository, app.review.FollowupState, app.review.RowDiff, app.review.SendbackFinding, app.review.can_regenerate, app.review.can_rehear, app.review.document_model_rows, app.review.element_rows, app.review.followup_state, app.review.rehearing_message, app.review.rehearing_points, app.review.version_keys, app.schemas.hearing.HearingPointsRead, app.services.chat_service.ChatService, app.services.errors.RehearingFindingInvalidError, app.services.errors.SendbackFindingInvalidError, collections.abc.Iterable, collections.abc.Mapping, collections.abc.Sequence, dataclasses.field
+# Phase-64-2:追記 ── app.services.project_deletion(commit_if_live, project_vanished)
 import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -90,6 +91,7 @@ from app.services.errors import (
 )
 from app.services.generation_staleness import is_stale
 from app.services.llm_retry import invoke_structured_with_usage
+from app.services.project_deletion import commit_if_live, project_vanished
 from app.services.rate_limit import RateLimit, RateLimiter
 
 logger = structlog.get_logger(__name__)
@@ -237,11 +239,18 @@ class ReviewService:
     async def execute(self, run_id: uuid.UUID) -> ReviewRun | None:
         """実行中の回のレビューを流し、指摘を保存して commit する。失敗は回に記録して返す
         (例外にしない)。結果はチャットにも出す(成功は件数の一行、失敗は「失敗しました」)。
-        回が無い・実行中でないときは None。"""
+        回が無い・実行中でないときは None。プロジェクトが削除された(印が付いた)ときも、結果も失敗も
+        記録せずに None(app/services/project_deletion.py)。"""
         run = await self._runs.find_one(id=run_id)
         if run is None or run.status != "running":
             return None
-        project = await self._session.get(Project, run.project_id)
+        # Phase-64-2：更新
+        # project = await self._session.get(Project, run.project_id)
+        # ↓↓
+        project_id = run.project_id
+        if await project_vanished(self._session, project_id, job="review"):
+            return None
+        project = await self._session.get(Project, project_id)
         if project is None:
             return None
         try:
@@ -281,11 +290,18 @@ class ReviewService:
                 run = await self._runs.find_one(id=run_id)
                 if run is None:
                     return None
+            # Phase-64-2:追記
+            if await project_vanished(self._session, project_id, job="review"):
+                return None  # レビューの間に削除された。失敗として記録しない
             await self._runs.finish(run, status="failed", error_code=failure_code(exc))
             await self._chat_histories.add(
                 project_id=run.project_id, sender="others", message=_FAILED_MESSAGE
             )
-            await self._session.commit()
+            # Phase-64-2：更新
+            # await self._session.commit()
+            # ↓↓
+            if not await commit_if_live(self._session, project_id, job="review"):
+                return None
             logger.warning(
                 "design_review_failed",
                 project_id=str(run.project_id),
@@ -297,15 +313,25 @@ class ReviewService:
         # await self._runs.finish(run, status="succeeded", usage=usage, findings=output.findings)
         # ↓↓
         findings = only_reviewed_documents(output.findings, documents.keys())
-        await self._runs.finish(run, status="succeeded", usage=usage, findings=findings)
+        # Phase-64-2：削除
+        # await self._runs.finish(run, status="succeeded", usage=usage, findings=findings)
         # Phase-53-1：更新
         # await self._chat_histories.add(
         #     project_id=project.id, sender="others", message=render_findings(output.findings)
         # )
         # ↓↓
         notice = render_notice(output.findings, GATE_LABEL[cast(ReviewGate, run.gate)])
-        await self._chat_histories.add(project_id=project.id, sender="others", message=notice)
-        await self._session.commit()
+        # Phase-64-2：更新
+        # await self._chat_histories.add(project_id=project.id, sender="others", message=notice)
+        # await self._session.commit()
+        # ↓↓
+
+        async def _save() -> None:
+            await self._runs.finish(run, status="succeeded", usage=usage, findings=findings)
+            await self._chat_histories.add(project_id=project_id, sender="others", message=notice)
+
+        if not await commit_if_live(self._session, project_id, job="review", write=_save):
+            return None
         logger.info(
             "design_review_succeeded",
             project_id=str(project.id),

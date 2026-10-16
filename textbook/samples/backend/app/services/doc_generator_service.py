@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -24,6 +24,7 @@
 # Phase-57-1:追記 ── app.services.test_spec_state(FUNCTION_STAGE, TEST_SPEC_STAGES, current_test_spec, spec_inputs)
 # Phase-57-1：削除 ── app.detailed_design.stages(doc_key, stage_key), app.documents.test_spec.is_outdated(入力の版と「古い」は test_spec_state へ移した)
 # Phase-57-2:追記 ── app.documents.test_spec.design_gap_count
+# Phase-64-2:追記 ── app.services.project_deletion(commit_if_live, project_vanished, purge_deleted_projects)
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -148,6 +149,11 @@ from app.services.fix_check_service import FixCheckService
 from app.services.generation_progress import GenerationProgress, GenerationProgressStore
 from app.services.generation_staleness import is_stale
 from app.services.llm_retry import invoke_structured, invoke_with_retry
+from app.services.project_deletion import (
+    commit_if_live,
+    project_vanished,
+    purge_deleted_projects,
+)
 from app.services.review_service import ReviewService
 from app.services.test_spec_state import (
     FUNCTION_STAGE,
@@ -369,6 +375,9 @@ async def generate_documents(
     リポジトリに増やすのではなく、既存の所有者スコープ版get_by_idへ統一するため。project_id・
     user_idはどちらも値であり、セッションのようにリクエストのライフサイクルに紐づくものではない
     ため、background taskへ渡すこと自体に技術的な制約は無い。
+
+    終わったら、削除の印が付いたプロジェクトの物理削除を試す(生成中は、このジョブが持つロックで
+    飛ばされているため。app/services/project_deletion.py)。
     """
     # Phase-52-4：更新
     # async with AsyncSessionLocal() as session:
@@ -398,6 +407,8 @@ async def generate_documents(
             )
     finally:
         await redis.aclose()
+        # Phase-64-2:追記
+        await purge_deleted_projects()
 
 
 class DocGeneratorService:
@@ -783,6 +794,9 @@ class DocGeneratorService:
             await self._session.rollback()
             # Phase-53(完了後の調整):追記
             await self._progress.clear(project_id)
+            # Phase-64-2:追記
+            if await project_vanished(self._session, project_id, job="documents"):
+                return  # 生成中に削除された(外部キーの違反も含む)。失敗として記録しない
             logger.warning(
                 "documents_generation_failed",
                 project_id=str(project_id),
@@ -802,17 +816,27 @@ class DocGeneratorService:
                     _QUOTA_MESSAGE if isinstance(exc, LLMQuotaExceededError) else _FAILED_MESSAGE
                 ),
             )
-            await self._session.commit()
+            # Phase-64-2：更新
+            # await self._session.commit()
+            # ↓↓
+            await commit_if_live(self._session, project_id, job="documents")
             return
 
         project.status = "completed"
-        await self._session.commit()
+        # Phase-64-2：更新
+        # await self._session.commit()
+        # ↓↓
+        # 生成中に削除されていたら、作った版ごと捨てる
+        live = await commit_if_live(self._session, project_id, job="documents")
         # Phase-6-5:追記 ── ドキュメント生成完了(主要ライフサイクルイベント、内部設計書3.4節INFO)
         # Phase-15-1：更新
         # logger.info("documents_generated", project_id=str(project_id), doc_count=len(DOC_TYPES))
         # ↓↓
         # Phase-53(完了後の調整):追記
         await self._progress.clear(project_id)
+        # Phase-64-2:追記
+        if not live:
+            return
         # Phase-53(完了後の調整)：更新
         # logger.info(
         #     "documents_generated", project_id=str(project_id), doc_count=len(generated)
@@ -856,6 +880,9 @@ class DocGeneratorService:
         """生成の後の設計レビュー。受け付けで止まった(上限・キー無し・実行中)ときは失敗の回を
         残し、実行で失敗したときと同じく、生成と同じモデルの自己診断に切り替える。"""
         project_id = project.id
+        # Phase-64-2:追記
+        if await project_vanished(self._session, project_id, job="documents_review"):
+            return
         review = ReviewService(self._session, redis=self._redis, llm=review_llm)
         try:
             # Phase-53-1：更新
@@ -867,6 +894,9 @@ class DocGeneratorService:
                 # 想定外の失敗(DB など)だけ戻す。戻すと失効するプロジェクトは読み直す
                 # (非同期では暗黙に読めない)
                 await self._session.rollback()
+                # Phase-64-2:追記
+                if await project_vanished(self._session, project_id, job="documents_review"):
+                    return  # レビューの受け付けの間に削除された
                 project = await self._session.get(Project, project_id) or project
             await review.record_failed_start(project, trigger="auto", exc=exc)
             await self._fallback_self_diagnose(project_id, generated, llm)
@@ -887,7 +917,10 @@ class DocGeneratorService:
             )
             return
         await self._chat_histories.add(project_id=project_id, sender="others", message=diagnosis)
-        await self._session.commit()
+        # Phase-64-2：更新
+        # await self._session.commit()
+        # ↓↓
+        await commit_if_live(self._session, project_id, job="self_diagnosis")
 
     # Phase-8-5:追記 ── ルーターがRepositoryを直接参照しない方針への統一(list_generated_documents用)
     async def list_current_documents(self, project_id: uuid.UUID) -> list[GeneratedDocument]:

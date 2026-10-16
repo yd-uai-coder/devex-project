@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2
+// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2,64-4
 // Phase-53(完了後の調整):追記 ── ApiError(@/lib/api/client), getGenerationProgress・DocType・GenerationProgressRead(@/features/documents/api/documentsApi)
 // Phase-15-7:追記 ── getProject(@/features/hearing/api/hearingApi), ProjectMode(@/features/dashboard/api/projects)
 // Phase-36-3:追記 ── adoptRequirement(@/features/documents/api/documentsApi)
@@ -38,6 +38,9 @@ type DocumentsStore = {
   // 詳細設計(SCR-008)へ進ませる。取得するまでは null。
   projectMode: ProjectMode | null;
   // Phase-36-3:追記
+  // Phase-64-4:追記
+  // プロジェクトの名前(削除の確認・知らせに出す)。取得するまでは null。
+  projectTitle: string | null;
   // 「採用にする」を押している要件ID と、その失敗
   adoptingId: string | null;
   adoptError: string | null;
@@ -77,6 +80,8 @@ const PROJECT_INITIAL = {
   progress: null,
   projectMode: null,
   // Phase-36-3:追記
+  // Phase-64-4:追記
+  projectTitle: null,
   adoptingId: null,
   adoptError: null,
 } as const;
@@ -96,6 +101,8 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   // Phase-15-7:追記
   projectMode: null,
   // Phase-36-3:追記
+  // Phase-64-4:追記
+  projectTitle: null,
   adoptingId: null,
   adoptError: null,
 
@@ -131,10 +138,20 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
       // ↓↓
       // 生成中なら、再生成中として扱う(読み込み直した後・待つ時間の上限の後も、ボタンを押せなくし、
       // 完了を待ち直す。押すとサーバーは409を返すため)
-      set({ projectMode: project.mode, ...(project.status === "generating" ? { regenerating: true } : {}) });
+      // Phase-64-4：更新
+      // set({ projectMode: project.mode, ...(project.status === "generating" ? { regenerating: true } : {}) });
+      // ↓↓
+      set({
+        projectMode: project.mode,
+        projectTitle: project.title,
+        ...(project.status === "generating" ? { regenerating: true } : {}),
+      });
     } catch {
       // モードが分からなくても文書の表示は続ける(遷移先のリンクを出さないだけ)
-      set({ projectMode: null });
+      // Phase-64-4：更新
+      // set({ projectMode: null });
+      // ↓↓
+      set({ projectMode: null, projectTitle: null });
     }
   },
 

@@ -1,4 +1,4 @@
-// 作成：Phase-3-3
+// 作成：Phase-3-3｜更新：Phase-64-3
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useDashboardStore } from "../dashboard-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
@@ -11,6 +11,8 @@ const SAMPLE_PROJECT = {
   id: "p1",
   title: "Project 1",
   status: "interviewing" as const,
+  // Phase-64-3:追記
+  mode: "simple" as const,
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-01T00:00:00Z",
 };
@@ -66,6 +68,17 @@ describe("useDashboardStore", () => {
     await useDashboardStore.getState().fetchProjects();
 
     expect(stub.requests).toHaveLength(2);
+  });
+
+  // Phase-64-3:追記
+  it("removeProject()は削除したプロジェクトだけを一覧から外す(取り直さない)", () => {
+    const other = { ...SAMPLE_PROJECT, id: "p2", title: "Project 2" };
+    useDashboardStore.setState({ projects: [SAMPLE_PROJECT, other], status: "success" });
+
+    useDashboardStore.getState().removeProject("p1");
+
+    expect(useDashboardStore.getState().projects).toEqual([other]);
+    expect(stub.requests).toHaveLength(0);
   });
 
   it("失敗時はstatusをerrorにしメッセージを保持する", async () => {

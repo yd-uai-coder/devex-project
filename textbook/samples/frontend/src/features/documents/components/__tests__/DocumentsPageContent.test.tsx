@@ -1,9 +1,12 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4
 // Phase-53-4:追記 ── @testing-library/react.act
 // Phase-54-2:追記 ── @/features/design-review/review-store.useReviewStore, @/features/design-review/test-utils/reviewFixtures.as, @/features/design-review/test-utils/reviewFixtures.finding, @/features/design-review/test-utils/reviewFixtures.gate, @/features/design-review/test-utils/reviewFixtures.reviewUser, @/features/design-review/test-utils/reviewFixtures.run, @/features/design-review/test-utils/reviewFixtures.user
 // Phase-57-2:追記 ── @/features/documents/test-spec-store.useTestSpecStore
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+// Phase-64-4：更新
+// import { act, render, screen } from "@testing-library/react";
+// ↓↓
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
@@ -13,6 +16,13 @@ import { useDocumentsStore } from "@/features/documents/documents-store";
 import { useTestSpecStore } from "@/features/documents/test-spec-store";
 import { useReviewStore } from "@/features/design-review/review-store";
 import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
+// Phase-64-4:追記
+import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
+
+// 削除した後の遷移(router.push)と、完了の知らせ(toast)を差し替える
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+vi.mock("@tamagui/toast", () => ({ useToastController: () => ({ show: vi.fn() }) }));
 
 const useGenerationPollingMock = vi.fn();
 vi.mock("@/hooks/useGenerationPolling", () => ({
@@ -66,6 +76,8 @@ describe("DocumentsPageContent", () => {
       regenerateError: null,
       // Phase-15-7:追記
       projectMode: "simple",
+      // Phase-64-4:追記
+      projectTitle: "備品予約",
       fetchDocuments: vi.fn().mockResolvedValue(undefined),
       // Phase-15-7:追記
       fetchProjectMode: vi.fn().mockResolvedValue(undefined),
@@ -80,6 +92,24 @@ describe("DocumentsPageContent", () => {
     // Phase-57-2:追記
     useTestSpecStore.setState({ testSpec: null, status: "idle", fetchTestSpec: vi.fn().mockResolvedValue(undefined) });
     tabsProps.mockReset();
+  // Phase-64-4:追記
+  });
+
+  it("並びの右端の「削除」は確認してから削除し、ダッシュボードへ戻る(生成中でも押せる)", async () => {
+    const user = userEvent.setup();
+    const stub = stubFetch();
+    push.mockReset();
+    useDocumentsStore.setState({ regenerating: true });
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "削除" }));
+    expect(screen.getByText(/「備品予約」と、そのチャット・文書/)).toBeInTheDocument();
+    expect(stub.requests).toHaveLength(0);
+    await user.click(screen.getByLabelText("削除する"));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/dashboard"));
+    expect(stub.requests.map((r) => r.init?.method)).toEqual(["DELETE"]);
+    stub.restore();
   });
 
   // Phase-15-7：更新

@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整)
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-44-2:追記 ── ../../test-utils/stageFixtures.makeImpact
@@ -20,6 +20,8 @@ import { finding, gate, run, user as reviewUser } from "@/features/design-review
 // Phase-28-3：更新
 // import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
 // ↓↓
+// Phase-64-4:追記
+import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import {
   makeFunctionList,
   makeImpact,
@@ -29,6 +31,12 @@ import {
   makeSimpleImpact,
   makeStages,
 } from "../../test-utils/stageFixtures";
+
+// Phase-64-4:追記
+// 削除した後の遷移(router.push)と、完了の知らせ(toast)を差し替える
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+vi.mock("@tamagui/toast", () => ({ useToastController: () => ({ show: vi.fn() }) }));
 
 function renderContent() {
   return render(
@@ -90,6 +98,24 @@ describe("DetailedDesignPageContent", () => {
     expect(
       screen.getByRole("link", { name: "← ドキュメントに戻る" }),
     ).toHaveAttribute("href", "/projects/p1/documents");
+  // Phase-64-4:追記
+  });
+
+  it("「ドキュメントに戻る」の右の「削除」は確認してから削除し、ダッシュボードへ戻る", async () => {
+    const user = userEvent.setup();
+    const stub = stubFetch();
+    push.mockReset();
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "削除" }));
+    // この画面はプロジェクトの名前を読み込まないので「このプロジェクト」と書く
+    expect(screen.getByText(/^このプロジェクトと、そのチャット・文書/)).toBeInTheDocument();
+    expect(stub.requests).toHaveLength(0);
+    await user.click(screen.getByLabelText("削除する"));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/dashboard"));
+    expect(stub.requests.map((r) => r.init?.method)).toEqual(["DELETE"]);
+    stub.restore();
   });
 
   // Phase-22-6:追記

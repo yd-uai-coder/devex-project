@@ -1,4 +1,4 @@
-// 作成：Phase-3-3｜更新：24(完了後の調整)
+// 作成：Phase-3-3｜更新：24(完了後の調整),64-4
 import Link from "next/link";
 import { Text, XStack } from "tamagui";
 import { StyledCard } from "@/components/ui/primitives/StyledCard";
@@ -6,6 +6,8 @@ import { StyledCard } from "@/components/ui/primitives/StyledCard";
 // import type { ProjectRead } from "@/features/dashboard/api/projects";
 // ↓↓
 import type { ProjectMode, ProjectRead } from "@/features/dashboard/api/projects";
+// Phase-64-4:追記
+import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 
 const STATUS_LABEL: Record<ProjectRead["status"], string> = {
   interviewing: "ヒアリング中",
@@ -31,11 +33,23 @@ export function projectHref(project: Pick<ProjectRead, "id" | "status">): string
     : `/projects/${project.id}/chat`;
 }
 
+// Phase-64-4:追記
+// カードの中で、遷移のリンク(モードと題名)と削除ボタンを兄弟に置く(リンクの <a> の中に <button> は置けないため)。
+// リンクは残りの幅を占め、カードの大部分を押すと開く。
 export function ProjectListItem({ project }: { project: ProjectRead }) {
   return (
-    <Link href={projectHref(project)} aria-label={`${project.title}(${STATUS_LABEL[project.status]})`}>
-      <StyledCard hoverStyle={{ borderColor: "$color8" }}>
-        <XStack justifyContent="space-between" alignItems="center" gap="$3">
+    // Phase-64-4：更新
+    // <Link href={projectHref(project)} aria-label={`${project.title}(${STATUS_LABEL[project.status]})`}>
+    //   <StyledCard hoverStyle={{ borderColor: "$color8" }}>
+    //     <XStack justifyContent="space-between" alignItems="center" gap="$3">
+    // ↓↓
+    <StyledCard hoverStyle={{ borderColor: "$color8" }}>
+      <XStack justifyContent="space-between" alignItems="center" gap="$3">
+        <Link
+          href={projectHref(project)}
+          aria-label={`${project.title}(${STATUS_LABEL[project.status]})`}
+          style={{ flex: 1, minWidth: 0 }}
+        >
           // Phase-24：更新
           // <Text fontSize="$5" fontWeight="600">
           //   {project.title}
@@ -58,11 +72,20 @@ export function ProjectListItem({ project }: { project: ProjectRead }) {
               {project.title}
             </Text>
           </XStack>
+        // Phase-64-4:追記
+        </Link>
+        <XStack alignItems="center" gap="$2" flexShrink={0}>
           <Text fontSize="$2" color="$color11">
             {STATUS_LABEL[project.status]}
           </Text>
+          // Phase-64-4:追記
+          <DeleteProjectButton projectId={project.id} title={project.title} variant="icon" />
         </XStack>
-      </StyledCard>
-    </Link>
+      // Phase-64-4：更新
+      // </StyledCard>
+      // </Link>
+      // ↓↓
+      </XStack>
+    </StyledCard>
   );
 }

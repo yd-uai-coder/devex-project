@@ -1,4 +1,4 @@
-// 作成：Phase-3-3
+// 作成：Phase-3-3｜更新：Phase-64-3
 import { create } from "zustand";
 import { isCacheFresh } from "@/lib/api/cache";
 import { listProjects } from "@/features/dashboard/api/projects";
@@ -15,6 +15,9 @@ type DashboardStore = {
   fetchProjects: (options?: { force?: boolean }) => Promise<void>;
   // mutation(プロジェクト作成等)の後に呼び、次回のfetchProjects()を強制的に再取得させる。
   invalidate: () => void;
+  // Phase-64-3:追記
+  // 削除したプロジェクトを一覧から外す(取り直さずに、すぐ画面から消すため)。
+  removeProject: (projectId: string) => void;
 };
 
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
@@ -36,4 +39,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     }
   },
   invalidate: () => set({ fetchedAt: null }),
+  // Phase-64-3:追記
+  removeProject: (projectId) =>
+    set((state) => ({ projects: state.projects.filter((p) => p.id !== projectId) })),
 }));

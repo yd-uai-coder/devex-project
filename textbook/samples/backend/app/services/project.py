@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3,24(ゴール3後の調整)
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3,24(ゴール3後の調整),64-1
 # 写経レベル: コア ── 添付ファイルのバリデーション順序・失敗時の非ブロッキング方針など、ドメイン判断を体現する箇所。
 # Phase-6-3:追記 ── app.repositories.prompt_template.PromptTemplateRepository,
 #   app.services.errors.PromptTemplateNotFoundError
@@ -7,10 +7,12 @@
 # Phase-15-1:追記 ── app.schemas.project.ProjectMode
 # Phase-15-3:追記 ── app.services.doc_generator_service.DocGeneratorService
 # Phase-24:追記 ── app.services.errors.InvalidProjectNameError
+# Phase-64-1:追記 ── redis.asyncio.Redis, app.services.generation_progress.GenerationProgressStore
 import uuid
 from dataclasses import dataclass
 
 import structlog
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.project import Project
@@ -27,6 +29,7 @@ from app.services.errors import (
     TooManyFilesError,
     UnsupportedFileTypeError,
 )
+from app.services.generation_progress import GenerationProgressStore
 from app.services.intake_file_processor import ALLOWED_FILE_TYPES, extract_text
 
 logger = structlog.get_logger(__name__)
@@ -116,6 +119,16 @@ class ProjectService:
     async def list_for_user(self, user_id: uuid.UUID) -> list[Project]:
         """指定ユーザーのプロジェクト一覧を取得する。"""
         return await self._projects.list_for_user(user_id)
+
+    # Phase-64-1:追記
+    async def delete(self, project: Project, *, redis: Redis | None = None) -> None:
+        """プロジェクトに削除の印を付け、生成の進み具合を消す。生成中でも削除できる。
+        行と子の行の物理削除は、呼び出し元がバックグラウンドで行う
+        (app/services/project_deletion.py の purge_deleted_projects)。"""
+        await self._projects.mark_deleted(project)
+        await self._session.commit()
+        await GenerationProgressStore(redis).clear(project.id)
+        logger.info("project_deleted", project_id=str(project.id))
 
     # Phase-8-5:追記 ── 同上(get_project用。以前はルーターにIntakeFileRepositoryの呼び出しと
     # ProjectDetailの組み立てが直書きされていた)

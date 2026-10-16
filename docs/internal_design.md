@@ -67,6 +67,7 @@
 | hearing_check | JSONB | NULL可(ゴール3後の調整) | 直近のヒアリング完了判定の結果(`is_sufficient`/`summary`/`missing_points`)。ユーザーの発言のたびに判定し直して保存し、`GET /hearing-completion`はこれを返す。まだ判定していない、または直近の判定に失敗したら NULL(「十分でない」として扱う) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
+| deleted_at | TIMESTAMP | NULL可(※ステージ9、Phase 64) | 削除の印。付いた行は取得・一覧から外し、ロックが空いたときに子の行ごと物理削除する(3.3節 9項「プロジェクトの削除」)。NULL は削除していない |
 
 #### ③ `chat_histories` テーブル
 
@@ -320,7 +321,7 @@ backend/
 | **GET** | `/api/v1/projects/{id}/design-stages/procedures/{function_id}/sequence` | （※ステージ5、Phase 29）段階5の処理1つのシーケンス図(`{function_id, svg, issues: [{step_id, code, message}]}`)。保存した手順(下書き・レビュー中を含む)と承認済みの段階4から毎回導き、保存しない。段階5が開いていなければ409 `DESIGN_STAGE_LOCKED`、段階5で選んでいない処理は404。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE` | 必要 |
 | **GET** | `/api/v1/projects/{id}/design-stages/units/{unit_id}/context` | （※ステージ5、Phase 28）段階8の作業単位1つが参照する設計の展開(`{unit_id, refs: [{kind, key, resolved, via, label, markdown, svg}], crosscutting, environment}`。`svg`は段階5の手順の参照のシーケンス図。Phase 29)。承認済みの段階1〜7から毎回導き、保存しない。段階8が開いていなければ409 `DESIGN_STAGE_LOCKED`、段階7に無い単位は404。簡易ドキュメントモードは4文書から導き、`kind`に`dataflow`(内部設計書の処理別データフロー)が加わる(Phase 31) | 必要 |
 | **GET** | `/api/v1/projects/{id}/design-stages/units/{unit_id}/ai-markdown` | （※ステージ5、Phase 30）段階8の作業単位1つの AI 向けの版(`{unit_id, markdown, state, finding_total, critical}`。`state`は段階8の状態、`finding_total`・`critical`はその単位に残る未定義の件数と最重要の件数)。保存済みの手順書と承認済みの段階1〜7から組み立て、保存しない。段階8が承認済みでない・未定義が残るときは md の先頭で警告する。段階8が開いていなければ409 `DESIGN_STAGE_LOCKED`、段階7に無い単位・手順書の無い単位(未生成・段階7と合わない)は404。簡易ドキュメントモードは段階7の代わりに実装計画書の WBS と4文書から組み立てる(Phase 31) | 必要 |
-| **DELETE** | `/api/v1/projects/{id}` | （※ステージ9）プロジェクトの削除(所有者だけ。生成中も可。子の行は CASCADE。3.3節 9項) | 必要 |
+| **DELETE** | `/api/v1/projects/{id}` | （※ステージ9、Phase 64）プロジェクトの削除(204。所有者だけ。他人・無いものは404 `RESOURCE_NOT_FOUND`。生成中も可)。削除の印を付けてすぐに返し、行と子の行(CASCADE)の物理削除はバックグラウンドで行う(3.3節 9項) | 必要 |
 | **PATCH** | `/api/v1/users/me` | （※ステージ9）ユーザーネームの変更。メール・パスワードの変更(今のパスワードで確かめる)の API の形は Phase 66 で決める | 必要 |
 | **GET** / **PUT** | `/api/v1/users/me/models` | （※ステージ9）用途ごとのモデルの取得・保存(カタログに無いモデルは断る)。カタログの取得の API は Phase 67 で決める | 必要 |
 | **PUT** / **DELETE** | `/api/v1/users/me/api-keys/{provider}` | （※ステージ9）provider ごとの API キーの登録(保存のときに確かめる)・削除。暗号の鍵が無いときは503 | 必要 |
@@ -575,7 +576,10 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 [外部設計書](external_design.md) 2.12節の内部の方針(Phase 61で確定)。経緯は[`textbook/Phase-61/Phase-61-1.md`](../textbook/Phase-61/Phase-61-1.md)。テーブル・API の細部は各 Phase の着手時に決める(未確定事項は[`textbook/Phase-61/Phase-61-3.md`](../textbook/Phase-61/Phase-61-3.md))。
 
 * **認証ページの proxy**: refresh cookie は API のオリジン(`path=/api/v1/auth`)にあり、アクセストークンはメモリにしかないため、UI の proxy からはログインの状態が見えない。UI のオリジンにログインの印の cookie(値は意味を持たない印。秘密を入れない)を置き、`src/proxy.ts`(Next.js 16 で `middleware.ts` から改名)で `/login`・`/register` を `/dashboard` へ振り分ける。印は認証の判定に使わない(判定は今のまま API)。印は `devex_logged_in=1`(`Path=/`・`SameSite=Lax`・https なら `Secure`・寿命は refresh と同じ14日で、login・refresh のたびに付け直す)。付け外しは `auth-store` に集める(`login()`・`refreshTokens()` の成功で付け、`logout()`・`refreshTokens()` の失敗で消す。`apiFetch` の 401 もここを通る)。メニューのログアウト(読み込み直し)は、読み込み直す前に消す。戻り先は `safeRedirectPath`(`//`・`/\` で始まるものを断る)で確かめ、ログインの後の遷移(`LoginForm`)と共有する(Phase 63)。
-* **プロジェクトの削除**: `DELETE /projects/{id}`(所有者だけ。他人・無いものは404)。子の行は外部キーの CASCADE で消える。Redis の生成の進み具合の鍵も消す。**生成中も削除できる**ため、バックグラウンドの処理(文書・段階の生成・レビュー・「直ったか」の判定・UML 図の生成)は、入口でプロジェクトが無ければ終え、途中で消えたとき(外部キーの違反・行の無い更新)は失敗として記録せずに終える。
+* **プロジェクトの削除**(Phase 64 で確定): `DELETE /projects/{id}`(所有者だけ。他人・無いものは404)。**生成中も削除できる**。
+  * **削除の印 → 後で物理削除**: 文書の生成・段階2〜4 の生成・「直ったか」の判定は、LLM を呼ぶ間もトランザクションを開いたままにする。そのため、子の行を書いた後は親の行に外部キーのロック(FOR KEY SHARE)を持ち、物理的な`DELETE FROM projects`はジョブが終わるまで(数分)待たされる。そこで削除の要求は`projects.deleted_at`に印を付けるだけで、すぐに 204 を返す(キーでない列の更新はそのロックとぶつからない)。`ProjectRepository.get_by_id`・`list_for_user`は印の付いた行を返さないので、`/projects/{id}/...`はすべて404になる。Redis の生成の進み具合の鍵(`doc_generation:{id}`)も削除の要求で消す。
+  * **物理削除**(`app/services/project_deletion.py`の`purge_deleted_projects`): 印の付いた行を`FOR UPDATE SKIP LOCKED`で取り、`DELETE`で消す(子・孫の行は DB の CASCADE)。子の行のロックは`lock_timeout`3秒まで待ち、取れなければ次の機会に回す。DELETE の BackgroundTask と、バックグラウンドの処理の4つの入口(`generate_documents`・`execute_review`・`run_fix_checks`・`run_design_stage_generation`)の終わりに試す。消し残った行は印があるので画面には出ない。
+  * **バックグラウンドの処理の規則**: 入口でプロジェクトが無いか印があれば終える。失敗の記録の前(rollback の後)に確かめ、消えていれば失敗の通知も状態の戻しも書かない。成功・失敗の commit は`commit_if_live`を通す(生きていれば書いて commit、消えていれば rollback。書き込み・commit で外部キーの違反・行の無い更新(`IntegrityError`・`StaleDataError`)が出たときも、消えていれば同じ)。記録はログ(`project_deleted_during_job`)だけ。確かめてから commit するまでに印が付いたときは、結果は印の付いたプロジェクトに入り、後の物理削除で消える。
 * **一覧**: `GET /projects?q=&mode=&status=&page=` は`{items, total}`を返す(1ページ10件。**レスポンスの形が配列から変わる**)。`q`はタイトルの部分一致(大文字・小文字を区別しない)。
 * **アカウント**: `users.full_name` を `user_name` に改名する(Alembic の列の改名。データは残す)。`PATCH /users/me`(ユーザーネーム)、メール・パスワードの変更は今のパスワードで確かめる(メールの重複は409)。パスワードを変えたら、その人の refresh(Redis の`refresh_token:{user_id}:*`)を全部失効させる。
 * **モデルと API キー**: 新しいテーブル2つ ── 用途ごとのモデル(ユーザー・用途(`chat`・`generation`・`review`・`judge`)・provider・モデル。`user_id`が null の行がシステムの既定値)と、provider ごとの API キー(ユーザー・provider・暗号文・末尾の数文字。キーは Fernet で暗号化し、鍵は環境変数 `ENCRYPTION_KEY`)。鍵が無いときはキーの登録の API だけ 503 にする。選べるモデルは API 側の静的なカタログ(provider → model ID の表)に置き、カタログに無いモデルは保存で断る。キーは保存のときにモデルの一覧の取得で確かめる(無効なら422)。`scripts/seed.py` は `.env` のモデル(`GEMINI_MODEL`・`REVIEW_MODEL`・`JUDGE_MODEL`)を既定値の行として登録する(値を seed に書かない)。キー自体は既定値として環境変数に残し、DB には入れない。
@@ -610,7 +614,7 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 * `DESIGN_STAGES_NOT_AVAILABLE` / `DESIGN_STAGE_LOCKED` / `DESIGN_STAGE_NOT_APPROVABLE`(409): 詳細設計モードの段階(Phase 15)。段階の版の不一致は`VERSION_CONFLICT`(409、UML図と共通)
 * `DESIGN_STAGE_INVALID` / `DESIGN_STAGE_GENERATION_NOT_SUPPORTED` / `DESIGN_STAGE_GENERATION_IN_PROGRESS`(409): 段階ごとの検証のエラーがある段階の承認 / 生成に対応していない段階の生成 / 生成中の段階の生成・保存・承認(Phase 16)
 * `DESIGN_STAGE_UNREVIEWED_IMPACT`(409): 他の段階・文書の変更から届いた見直しの印が未確認のまま、段階を承認しようとした(ステージ7、Phase 43)
-* ステージ9 で足すコード(プロジェクトの削除・アカウントの変更・API キーの登録。今のパスワードの不一致・メールの重複・カタログに無いモデル・無効なキー・暗号の鍵が無い)は、名前を各 Phase の着手時に決める(3.3節 9項)
+* ステージ9 で足すコード(アカウントの変更・API キーの登録。今のパスワードの不一致・メールの重複・カタログに無いモデル・無効なキー・暗号の鍵が無い)は、名前を各 Phase の着手時に決める(3.3節 9項)。プロジェクトの削除(Phase 64)は新しいコードを足さない(他人・無いものは`RESOURCE_NOT_FOUND`)
 * `INTERNAL_SERVER_ERROR`: `AppError`以外の予期せぬ例外をキャッチする最終防衛ラインのハンドラが返す(スタックトレース等の詳細はレスポンスに含めずサーバーログにのみ記録)
 
 **`UNAUTHORIZED`について**: 認証境界(`app/api/deps.py`の`get_current_user`)は意図的に`AppError`ではなく生の`HTTPException`を使っており(認証失敗の理由を外部に細かく漏らさないため)、`code`フィールドは付与されない。レスポンス形自体は`{"detail": "..."}`のまま変わらない。

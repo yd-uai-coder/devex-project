@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4
 "use client";
 
 // Phase-15-8:追記 ── useState(react), ConfirmDialog
@@ -8,8 +8,12 @@
 // Phase-57-2:追記 ── @/features/documents/components/TestSpecPanel.TestSpecPanel, @/features/documents/test-spec-store.useTestSpecStore, @/features/documents/regenerationOps.progressDocTypes
 import { useEffect, useState } from "react";
 import Link from "next/link";
+// Phase-64-4:追記
+import { useRouter } from "next/navigation";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+// Phase-64-4:追記
+import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
 // Phase-54-2：更新
 // import { documentOfTarget } from "@/features/design-review/model";
@@ -45,6 +49,9 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const onRegenerationCompleted = useDocumentsStore((s) => s.onRegenerationCompleted);
   // Phase-15-7:追記
   const projectMode = useDocumentsStore((s) => s.projectMode);
+  // Phase-64-4:追記
+  const projectTitle = useDocumentsStore((s) => s.projectTitle);
+  const router = useRouter();
   const fetchProjectMode = useDocumentsStore((s) => s.fetchProjectMode);
   // Phase-53(完了後の調整):追記
   const progress = useDocumentsStore((s) => s.progress);
@@ -183,6 +190,13 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           >
             {regenerating ? "再生成中..." : "再生成する"}
           </Button>
+          // Phase-64-4:追記
+          {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}
+          <DeleteProjectButton
+            projectId={projectId}
+            title={projectTitle}
+            onDeleted={() => router.push("/dashboard")}
+          />
         </XStack>
       </XStack>
 

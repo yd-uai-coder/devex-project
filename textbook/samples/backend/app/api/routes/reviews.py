@@ -1,6 +1,7 @@
-# 作成：Phase-52-5｜更新：Phase-53-1,53-2,54-1,54-4,54-5
+# 作成：Phase-52-5｜更新：Phase-53-1,53-2,54-1,54-4,54-5,64-2
 # Phase-53-2:追記 ── app.schemas.review(FindingDecisionUpdate, ReviewFindingRead, ReviewGateSummaryRead), app.services.review_service.GateSummary
 # Phase-54-1:追記 ── app.schemas.hearing.HearingPointsRead, app.schemas.review.FixCheckRead, app.schemas.review.RehearingRequest
+# Phase-64-2:追記 ── app.services.project_deletion.purge_deleted_projects
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, status
@@ -17,6 +18,7 @@ from app.schemas.review import (
     ReviewGateSummaryRead,
     ReviewRunRead,
 )
+from app.services.project_deletion import purge_deleted_projects
 from app.services.review_service import GateSummary, ReviewService
 
 # UML・段階と同じく、プロジェクト配下の独立したサブツリーとしてprefixにproject_idを含める
@@ -25,9 +27,17 @@ router = APIRouter(prefix="/projects/{project_id}/reviews", tags=["reviews"])
 
 async def execute_review(run_id: uuid.UUID) -> None:
     """`BackgroundTasks`から呼ぶレビューの実行(セッションは自前で開く ──
-    doc_generator_service.generate_documents と同じ理由)。"""
-    async with AsyncSessionLocal() as session:
-        await ReviewService(session).execute(run_id)
+    doc_generator_service.generate_documents と同じ理由)。終わったら、削除の印が付いたプロジェクトの
+    物理削除を試す(実行中はロックで飛ばされているため)。"""
+    # Phase-64-2：更新
+    # async with AsyncSessionLocal() as session:
+    #     await ReviewService(session).execute(run_id)
+    # ↓↓
+    try:
+        async with AsyncSessionLocal() as session:
+            await ReviewService(session).execute(run_id)
+    finally:
+        await purge_deleted_projects()
 
 
 # Phase-53-2:追記

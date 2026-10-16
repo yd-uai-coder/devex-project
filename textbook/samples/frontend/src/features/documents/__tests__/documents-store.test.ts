@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-6,15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2
+// 作成：Phase-3-6｜更新：Phase-6-6,15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2,64-4
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDocumentsStore } from "../documents-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
@@ -17,6 +17,8 @@ function resetStore() {
     // Phase-15-7:追記
     projectMode: null,
     // Phase-36-3:追記
+    // Phase-64-4:追記
+    projectTitle: null,
     adoptingId: null,
     adoptError: null,
   });
@@ -139,15 +141,23 @@ describe("useDocumentsStore", () => {
   });
 
   // Phase-15-7:追記
-  it("fetchProjectMode()はプロジェクトのmodeを保持し、失敗時はnullにする", async () => {
-    stub.queue({ status: 200, body: { id: "p1", mode: "detailed" } });
+  // Phase-64-4：更新
+  // it("fetchProjectMode()はプロジェクトのmodeを保持し、失敗時はnullにする", async () => {
+  //   stub.queue({ status: 200, body: { id: "p1", mode: "detailed" } });
+  // ↓↓
+  it("fetchProjectMode()はプロジェクトのmodeと名前を保持し、失敗時はnullにする", async () => {
+    stub.queue({ status: 200, body: { id: "p1", mode: "detailed", title: "備品予約" } });
     await useDocumentsStore.getState().fetchProjectMode("p1");
     expect(useDocumentsStore.getState().projectMode).toBe("detailed");
+    // Phase-64-4:追記
+    expect(useDocumentsStore.getState().projectTitle).toBe("備品予約");
     expect(stub.requests[0].url).toContain("/api/v1/projects/p1");
 
     stub.queue({ status: 500, body: { detail: "error" } });
     await useDocumentsStore.getState().fetchProjectMode("p1");
     expect(useDocumentsStore.getState().projectMode).toBeNull();
+    // Phase-64-4:追記
+    expect(useDocumentsStore.getState().projectTitle).toBeNull();
   });
 
   // Phase-15-8:追記

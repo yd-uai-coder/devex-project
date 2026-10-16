@@ -1,11 +1,19 @@
-// 作成：Phase-3-3｜更新：24(完了後の調整)
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+// 作成：Phase-3-3｜更新：24(完了後の調整),64-4
+// Phase-64-4：更新
+// import { afterEach, beforeEach, describe, expect, it } from "vitest";
+// import { render, screen } from "@testing-library/react";
+// ↓↓
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "../../../../../tamagui.config";
 import { ProjectList } from "../ProjectList";
 import { useDashboardStore } from "@/features/dashboard/dashboard-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
+
+// Phase-64-4:追記
+vi.mock("@tamagui/toast", () => ({ useToastController: () => ({ show: vi.fn() }) }));
 
 function renderList() {
   return render(
@@ -71,6 +79,38 @@ describe("ProjectList", () => {
       "href",
       "/projects/p2/documents",
     );
+  });
+
+  // Phase-64-4:追記
+  it("カードの削除ボタンはリンクの外にあり、確認してから削除してカードを外す", async () => {
+    const user = userEvent.setup();
+    stub.queue({
+      status: 200,
+      body: [
+        {
+          id: "p1",
+          title: "Project 1",
+          status: "generating",
+          mode: "simple",
+          created_at: "2026-01-01T00:00:00Z",
+          updated_at: "2026-01-01T00:00:00Z",
+        },
+      ],
+    });
+    renderList();
+
+    const button = await screen.findByRole("button", { name: "「Project 1」を削除" });
+    expect(screen.getByRole("link", { name: /Project 1/ })).not.toContainElement(button);
+
+    await user.click(button);
+    // 押すと確認のダイアログが開き、まだ削除の API を呼ばない(一覧の取得の1回だけ)
+    expect(screen.getByText("プロジェクトを削除しますか")).toBeInTheDocument();
+    expect(stub.requests).toHaveLength(1);
+
+    await user.click(screen.getByLabelText("削除する"));
+
+    await waitFor(() => expect(screen.queryByText("Project 1")).not.toBeInTheDocument());
+    expect(stub.requests.map((r) => r.init?.method ?? "GET")).toEqual(["GET", "DELETE"]);
   });
 
   it("取得失敗時はエラーメッセージを表示する", async () => {

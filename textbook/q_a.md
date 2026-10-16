@@ -1384,3 +1384,9 @@
 1. Phase 63(着手時。認証ページの proxy)。2026-10-16。
 2. 質問・相談内容: 「Phase 63 を開始する」。Claude は計画モードで [61-3](./Phase-61/Phase-61-3.md) の Phase 63 のスコープと未確定事項から、devex-ui の `auth-store`・`client.ts`・`useLogout`・`RequireAuth`・`LoginForm`(`?redirect=`)と Next.js 16.3.6 の同梱の proxy の文書、devex-api の refresh の寿命(`.env.example` で14日)を調べ、3問を聞いた: 自動実装モード / ログイン済みで `/login?redirect=…` を開いたときの送り先(戻り先を尊重 / 常に `/dashboard`)/ 印の寿命(refresh と同じ14日 / セッション cookie)。cookie の名前・401 で消す場所(ストアに集めて `client.ts` は変えない)・`matcher`・`LoginForm` の戻り先の判定の共有は Claude の判断として計画に書いた。
 3. 回答と対応方針: on・戻り先を尊重・14日(すべて推奨どおり)。61-3 の「7日」は誤りで、[Phase 61 の introduction](./Phase-61/Phase-61-introduction.md) の「後続 Phase での改訂」に記録した。作業中に、`LoginForm` の前の判定が `//evil.example.com` を通すこと(開いたリダイレクト)が分かり、proxy と同じ `safeRedirectPath` に置き換えた。Playwright で振り分け・ログアウト・古い印を確かめた(登録の上限に当たり、dev の Redis のカウンタを消した)。実 LLM は呼んでいない。詳細は [Phase 63 の introduction](./Phase-63/Phase-63-introduction.md)。
+
+### Phase 64 開始時
+
+1. Phase 64(着手時。プロジェクトの削除)。2026-10-16。
+2. 質問・相談内容: 「Phase64を開始する」。Claude は計画モードで [61-3](./Phase-61/Phase-61-3.md) の Phase 64 のスコープと未確定事項から、devex-api の projects のルート・リポジトリ・外部キーの CASCADE・Redis の鍵・4つのバックグラウンドの処理と、devex-ui のカード・`ConfirmDialog`・2つの画面を調べた。その結果、文書の生成・段階2〜4 の生成・「直ったか」の判定は、子の行を書いた後も LLM を呼ぶ間トランザクションを開いたままにすると分かった。この間、親の行のロックで物理削除が数分待たされる。そこで3問を聞いた: 自動実装モード / 削除の方式(削除の印 → 後で物理削除 / 物理削除して待てなければ409 / 物理削除で待つ)/ ダッシュボードのボタンの見た目(文字の「削除」/ ゴミ箱のアイコン)。
+3. 回答と対応方針: on・削除の印 → 後で物理削除(推奨どおり)。あわせて「削除が完了したことを Tamagui の Toast で知らせる」(追加の要望)。**ダッシュボードはゴミ箱のアイコンだけ(推奨は文字。推奨と違う)**、削除の前にアラートダイアログで確かめる。計画の提示に対して「アラートダイアログでの確認は、ダッシュボードに限らず削除の処理に共通する」と差し戻され、確認・API・トーストを1つの部品(`DeleteProjectButton`)にまとめ、3か所すべてで「押してもまだ API を呼ばない」ことをテストする形を計画に明記して承認された。作業中に、トーストの v2 の `Toaster` が tamagui 2.6.0 の web で React の警告を出すため従来の API に替えた。`@tamagui/toast` は 2.6.0 に固定した(`^` では 2.7.7 になり、別の版を引き込んだ)。実 LLM は呼んでいない。詳細は [Phase 64 の introduction](./Phase-64/Phase-64-introduction.md)。
