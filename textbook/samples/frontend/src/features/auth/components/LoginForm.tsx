@@ -1,6 +1,7 @@
-// 作成：Phase-3-2
+// 作成：Phase-3-2｜更新：Phase-63-2
 "use client";
 
+// Phase-63-2:追記 ── @/lib/redirect-path.safeRedirectPath
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +14,7 @@ import { apiFetch, ApiError } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
 import type { AccessTokenResponse } from "@/components/auth/auth-store";
 import { loginSchema } from "@/features/auth/schemas";
+import { safeRedirectPath } from "@/lib/redirect-path";
 import type { LoginValues } from "@/features/auth/schemas";
 
 const DEFAULT_VALUES: LoginValues = { email: "", password: "" };
@@ -51,8 +53,11 @@ export function LoginForm() {
     });
 
   const handleSubmitted = () => {
-    const redirect = searchParams.get("redirect");
-    router.push(redirect && redirect.startsWith("/") ? redirect : "/dashboard");
+    // Phase-63-2：更新
+    // const redirect = searchParams.get("redirect");
+    // router.push(redirect && redirect.startsWith("/") ? redirect : "/dashboard");
+    // ↓↓
+    router.push(safeRedirectPath(searchParams.get("redirect")) ?? "/dashboard");
   };
 
   return (

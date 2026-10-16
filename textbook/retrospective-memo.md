@@ -109,3 +109,10 @@
 - **発生**: ステージ8完了後のロードマップの修正(新ステージ9 の計画。[`appendix/stage9-10-plan.md`](../appendix/stage9-10-plan.md) 1.2節の項目3)。まだ実装していない。
 - **概要**: devex-ui はアクセストークンをメモリ(Zustand)にだけ持ち、refresh cookie は API のオリジンの `path=/api/v1/auth` にある。そのため、Next.js 16 の `src/proxy.ts`(旧 `middleware.ts`)からはログインの状態が見えない。UI のオリジンに、トークンを含まないフラグ cookie を置き(login・refresh で付け、logout・401 で消す)、proxy で `/login`・`/register` を `/dashboard` へ飛ばす。フラグが古い場合は、クライアントの `RequireAuth` が受け止める。
 - **判断理由**: 「ログイン済みなら認証ページを飛ばす」はドメインに依存しない。トークンをメモリに置くテンプレートの方針を保ったまま、サーバー側で遷移を決められる。ユーザーが、汎用の機能としてテンプレートに反映する候補だと明言した。
+- **追記(Phase 63 で実装、[`Phase-63-introduction.md`](./Phase-63/Phase-63-introduction.md))**: 印の付け外しは `auth-store` の `login()`・`refreshTokens()` の成否・`logout()` に集めれば、`client.ts` の 401 も含めて足りる(`src/lib/auth-flag.ts`・`src/proxy.ts`)。matcher のテストの関数は、16.3.6 では文書の `unstable_doesProxyMatch` でなく旧名 `unstable_doesMiddlewareMatch` だった。
+
+## `[テンプレート反映候補]` ログインの後の戻り先(`?redirect=`)の開いたリダイレクト
+
+- **発生**: [`Phase-63-2.md`](./Phase-63/Phase-63-2.md)
+- **概要**: devex-ui のテンプレート由来の `LoginForm` は、戻り先を `redirect.startsWith("/")` だけで確かめていた。`//evil.example.com`(ブラウザは別のオリジンと読む)を通すので、ログインの後に外のサイトへ送れてしまう。Phase 63 で `safeRedirectPath`(`//`・`/\` で始まるものを断る。`src/lib/redirect-path.ts`)に置き換えた。
+- **判断理由**: テンプレートを使う側のアプリにも同じ判定が入る。ドメインに依存しない修正なので、テンプレートの `LoginForm` にそのまま戻せる。

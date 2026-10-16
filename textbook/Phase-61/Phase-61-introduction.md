@@ -101,7 +101,7 @@ Phase 60 から引き継いだもの([61-1](./Phase-61-1.md) で1件ずつ判断
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- [61-3](./Phase-61-3.md) の Phase 63 の未確定事項にある「refresh と同じ7日か」は誤り(refresh は14日)。印の寿命は14日に決めた([Phase 63](../Phase-63/Phase-63-introduction.md))。
 
 ## Phase 完了チェック(#22)
 

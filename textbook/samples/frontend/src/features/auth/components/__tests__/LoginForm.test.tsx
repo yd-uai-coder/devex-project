@@ -1,4 +1,4 @@
-// 作成：Phase-3-2
+// 作成：Phase-3-2｜更新：Phase-63-2
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -75,6 +75,20 @@ describe("LoginForm", () => {
       email: "erin@example.com",
       password: "s3cret-pass",
     });
+  });
+
+  // Phase-63-2:追記
+  it("redirectパラメータが別のオリジンと読まれるパスなら、/dashboardへ遷移する", async () => {
+    stub.queue({ status: 200, body: { access_token: "new-token", token_type: "bearer" } });
+    searchParams = new URLSearchParams("redirect=//evil.example.com");
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("メールアドレス"), "erin@example.com");
+    await user.type(screen.getByLabelText("パスワード"), "s3cret-pass");
+    await user.click(screen.getByRole("button", { name: "ログイン" }));
+
+    await vi.waitFor(() => expect(push).toHaveBeenCalledWith("/dashboard"));
   });
 
   it("失敗時はエラーメッセージを表示し、ログイン状態にしない", async () => {

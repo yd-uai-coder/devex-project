@@ -574,7 +574,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 
 [外部設計書](external_design.md) 2.12節の内部の方針(Phase 61で確定)。経緯は[`textbook/Phase-61/Phase-61-1.md`](../textbook/Phase-61/Phase-61-1.md)。テーブル・API の細部は各 Phase の着手時に決める(未確定事項は[`textbook/Phase-61/Phase-61-3.md`](../textbook/Phase-61/Phase-61-3.md))。
 
-* **認証ページの proxy**: refresh cookie は API のオリジン(`path=/api/v1/auth`)にあり、アクセストークンはメモリにしかないため、UI の proxy からはログインの状態が見えない。UI のオリジンにログインの印の cookie(値は意味を持たない印。秘密を入れない)を置き、`src/proxy.ts`(Next.js 16 で `middleware.ts` から改名)で `/login`・`/register` を `/dashboard` へ振り分ける。印は認証の判定に使わない(判定は今のまま API)。
+* **認証ページの proxy**: refresh cookie は API のオリジン(`path=/api/v1/auth`)にあり、アクセストークンはメモリにしかないため、UI の proxy からはログインの状態が見えない。UI のオリジンにログインの印の cookie(値は意味を持たない印。秘密を入れない)を置き、`src/proxy.ts`(Next.js 16 で `middleware.ts` から改名)で `/login`・`/register` を `/dashboard` へ振り分ける。印は認証の判定に使わない(判定は今のまま API)。印は `devex_logged_in=1`(`Path=/`・`SameSite=Lax`・https なら `Secure`・寿命は refresh と同じ14日で、login・refresh のたびに付け直す)。付け外しは `auth-store` に集める(`login()`・`refreshTokens()` の成功で付け、`logout()`・`refreshTokens()` の失敗で消す。`apiFetch` の 401 もここを通る)。メニューのログアウト(読み込み直し)は、読み込み直す前に消す。戻り先は `safeRedirectPath`(`//`・`/\` で始まるものを断る)で確かめ、ログインの後の遷移(`LoginForm`)と共有する(Phase 63)。
 * **プロジェクトの削除**: `DELETE /projects/{id}`(所有者だけ。他人・無いものは404)。子の行は外部キーの CASCADE で消える。Redis の生成の進み具合の鍵も消す。**生成中も削除できる**ため、バックグラウンドの処理(文書・段階の生成・レビュー・「直ったか」の判定・UML 図の生成)は、入口でプロジェクトが無ければ終え、途中で消えたとき(外部キーの違反・行の無い更新)は失敗として記録せずに終える。
 * **一覧**: `GET /projects?q=&mode=&status=&page=` は`{items, total}`を返す(1ページ10件。**レスポンスの形が配列から変わる**)。`q`はタイトルの部分一致(大文字・小文字を区別しない)。
 * **アカウント**: `users.full_name` を `user_name` に改名する(Alembic の列の改名。データは残す)。`PATCH /users/me`(ユーザーネーム)、メール・パスワードの変更は今のパスワードで確かめる(メールの重複は409)。パスワードを変えたら、その人の refresh(Redis の`refresh_token:{user_id}:*`)を全部失効させる。

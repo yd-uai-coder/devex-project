@@ -1378,3 +1378,9 @@
 1. Phase 62(完了後。ユーザーの画面確認)。2026-10-16。
 2. 質問・相談内容: チャットの専用の領域を確かめた結果として、高さの上限 `calc(100vh - 380px)` は OK、観点の表との並びは OK、「生成済みのドキュメントを見るのリンクがヘッダーに隠れないように調整」。
 3. 回答と対応方針: Claude は計画モードで原因を調べた。固定の見積もりは見出しの下に増える行(リンク・狭い画面の観点の表)を数えず、読み込み後の `scrollIntoView` がその分だけページを動かす。Playwright で再現すると、390×800 でリンクの上端が 11px だった。計画の承認の後、会話の領域の高さを読み込んだときの配置から決める形に改めた(入力欄がページを動かさずに収まる高さ。下限 240px。画面の大きさが変われば決め直す)。3つの画面の大きさで、リンクがヘッダーの下に入らないことを確かめた。詳細は [62-4](./Phase-62/Phase-62-4.md#phase-62-完了後の調整-領域の高さを配置から決める)。
+
+### Phase 63 開始時
+
+1. Phase 63(着手時。認証ページの proxy)。2026-10-16。
+2. 質問・相談内容: 「Phase 63 を開始する」。Claude は計画モードで [61-3](./Phase-61/Phase-61-3.md) の Phase 63 のスコープと未確定事項から、devex-ui の `auth-store`・`client.ts`・`useLogout`・`RequireAuth`・`LoginForm`(`?redirect=`)と Next.js 16.3.6 の同梱の proxy の文書、devex-api の refresh の寿命(`.env.example` で14日)を調べ、3問を聞いた: 自動実装モード / ログイン済みで `/login?redirect=…` を開いたときの送り先(戻り先を尊重 / 常に `/dashboard`)/ 印の寿命(refresh と同じ14日 / セッション cookie)。cookie の名前・401 で消す場所(ストアに集めて `client.ts` は変えない)・`matcher`・`LoginForm` の戻り先の判定の共有は Claude の判断として計画に書いた。
+3. 回答と対応方針: on・戻り先を尊重・14日(すべて推奨どおり)。61-3 の「7日」は誤りで、[Phase 61 の introduction](./Phase-61/Phase-61-introduction.md) の「後続 Phase での改訂」に記録した。作業中に、`LoginForm` の前の判定が `//evil.example.com` を通すこと(開いたリダイレクト)が分かり、proxy と同じ `safeRedirectPath` に置き換えた。Playwright で振り分け・ログアウト・古い印を確かめた(登録の上限に当たり、dev の Redis のカウンタを消した)。実 LLM は呼んでいない。詳細は [Phase 63 の introduction](./Phase-63/Phase-63-introduction.md)。

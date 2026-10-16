@@ -1,9 +1,16 @@
-// 作成：Phase-62-1
+// 作成：Phase-62-1｜更新：Phase-63-1
+// Phase-63-1:追記 ── @/lib/auth-flag.LOGIN_FLAG_COOKIE, @/lib/auth-flag.setLoginFlag
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useAuthStore } from "../auth-store";
 import { useLogout } from "../useLogout";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
+import { LOGIN_FLAG_COOKIE, setLoginFlag } from "@/lib/auth-flag";
+
+// Phase-63-1:追記
+function hasFlag(): boolean {
+  return document.cookie.split("; ").some((c) => c === `${LOGIN_FLAG_COOKIE}=1`);
+}
 
 describe("useLogout", () => {
   let stub: ReturnType<typeof stubFetch>;
@@ -16,6 +23,8 @@ describe("useLogout", () => {
     // jsdom は画面の遷移(location.assign)を実装していないため差し替える
     Object.defineProperty(window, "location", { configurable: true, value: { assign } });
     useAuthStore.setState({ accessToken: "header.payload.sig", status: "success", error: null });
+    // Phase-63-1:追記
+    setLoginFlag();
   });
 
   afterEach(() => {
@@ -35,6 +44,9 @@ describe("useLogout", () => {
     expect(assign).toHaveBeenCalledWith("/");
     // 消すと保護ページがログイン必須ダイアログを一瞬出すため、読み込み直しに任せる
     expect(useAuthStore.getState().accessToken).toBe("header.payload.sig");
+    // Phase-63-1:追記
+    // ログインの印は消す(読み込み直した後の認証ページを proxy が飛ばさないように)
+    expect(hasFlag()).toBe(false);
   });
 
   it("API が失敗しても読み込み直す(ベストエフォート)", async () => {
@@ -44,5 +56,8 @@ describe("useLogout", () => {
     await result.current();
 
     expect(assign).toHaveBeenCalledWith("/");
+    // Phase-63-1:追記
+    // 失効に失敗しても消す(refresh cookie が残っていれば、起動時の復元で付き直す)
+    expect(hasFlag()).toBe(false);
   });
 });
