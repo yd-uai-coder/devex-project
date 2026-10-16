@@ -135,6 +135,7 @@ Phase 51 から引き継いだもの:
 ## 後続 Phase での改訂
 
 - Phase 53: `start_documents_review` → `start_review(gate=…)`、`latest_documents_review` → `latest(project, gate)`、`DOCUMENTS_GATE` は `app/review/gates.py` へ移し、チャットは指摘の md から件数の一行(`render_notice`)にした。区切り(段階6・7)と採否の API を足した([53-1](../Phase-53/Phase-53-1.md)・[53-2](../Phase-53/Phase-53-2.md))。
+- Phase 68: `get_review_llm` を廃止し、レビューは持ち主のレビューの用途で解決する(`app/services/llm_resolver.py`)。`REVIEW_TIMEOUT_SECONDS` はカタログのモデルごとの秒数に。レビューを使えるのは「superuser、またはレビューの用途の AI の自分のキーがある」に広げ(`review_allowed`)、自分のキーの回は1日の上限で数えない([68-1](../Phase-68/Phase-68-1.md)・[68-2](../Phase-68/Phase-68-2.md)・[68-4](../Phase-68/Phase-68-4.md))。
 
 ## Phase 完了チェック(#22)
 

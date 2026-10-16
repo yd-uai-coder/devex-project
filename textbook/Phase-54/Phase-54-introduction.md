@@ -148,6 +148,7 @@ Phase 53 から引き継いだもの:
 ## 後続 Phase での改訂
 
 - Phase 59: `FixCheckService.run_for` が判定の前に (指摘, 版) の予約札を Redis に置く(`claim_key`・`SET NX EX 600`)。承認を続けたときの並行の判定の重複を防ぐ([59-3](../Phase-59/Phase-59-3.md))。
+- Phase 68: `get_judge_llm` を廃止し、判定は利用者の判定の用途で解決する。記録の `model` は解決したモデル、自分のキーの判定は1日の上限で数えない([68-4](../Phase-68/Phase-68-4.md))。
 
 ## Phase 完了チェック(#22)
 

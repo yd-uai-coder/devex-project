@@ -16,7 +16,7 @@
 | --- | --- | --- | --- |
 | [`devex-api/backend/app/core/config.py`](../samples/backend/app/core/config.py) | 更新(初のsamples反映、CLAUDE.md #29) | コア | `E2E_FAKE_LLM`・`LLM_TIMEOUT_SECONDS`を追加。`E2E_FAKE_LLM=true`かつ`ENVIRONMENT=production`の組み合わせを起動時に拒否するバリデーションを追加 |
 | [`devex-api/backend/app/ai/llm/fake.py`](../samples/backend/app/ai/llm/fake.py) | 新規 | コア | `E2eFakeLLM`(ブラウザE2E専用の決定論的LLMスタブ) |
-| [`devex-api/backend/app/ai/llm/gemini.py`](../samples/backend/app/ai/llm/gemini.py) | 更新 | コア | `get_gemini_llm`に`E2E_FAKE_LLM`分岐+実クライアントへの`timeout`明示を追加 |
+| `devex-api/backend/app/ai/llm/gemini.py` | 更新 | コア | `get_gemini_llm`に`E2E_FAKE_LLM`分岐+実クライアントへの`timeout`明示を追加 |
 | [`devex-api/docker-compose.e2e.yml`](../../devex-api/docker-compose.e2e.yml) | 新規(直接反映、下記「samplesに含めない理由」参照) | 定型 | `docker-compose.yml`に重ねて`E2E_FAKE_LLM=true`だけを上書きするオーバーレイ |
 | [`devex-ui/playwright.config.ts`](../samples/frontend/playwright.config.ts) | 新規 | コア | devex-api(docker compose)・devex-ui(`next dev`)の2つを`webServer`として起動し、Chromiumで実行する設定 |
 | [`devex-ui/package.json`](../samples/frontend/package.json) | 更新(初のsamples反映) | 定型 | `@playwright/test`devDependency・`test:e2e`スクリプトを追加 |

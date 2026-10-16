@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4,30-5,30-7,31-4,43-4,54-3,54-5
+# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4,30-5,30-7,31-4,43-4,54-3,54-5,68-4
 # 写経レベル: 定型 ── サービスを呼ぶだけの薄いルート。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、実装手順書の zip を作れること)
 # Phase-16-4:追記 ── fastapi.BackgroundTasks, fastapi.status, app.services.design_stage_generation_service.DesignStageGenerationService, app.services.design_stage_generation_service.run_design_stage_generation
@@ -11,6 +11,8 @@
 # Phase-30-7:追記 ── app.services.detailed_design_export_service.BundleFile
 # Phase-43-4:追記 ── app.schemas.design_stage(DesignImpactRead, ImpactReview, StageImpactRead)
 # Phase-54-3:追記 ── app.api.deps.CurrentUserDep, app.review.review_effective, app.services.fix_check_service.run_fix_checks
+# Phase-68-4：削除 ── app.review.review_effective
+# Phase-68-4:追記 ── app.services.llm_resolver.LlmResolver
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Path, status
@@ -18,7 +20,6 @@ from fastapi.responses import Response
 
 from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
 from app.api.responses import content_disposition
-from app.review import review_effective
 from app.schemas.design_stage import (
     DesignImpactRead,
     DesignStageApprove,
@@ -38,6 +39,7 @@ from app.services.design_stage_generation_service import (
 from app.services.design_stage_service import DesignStageService
 from app.services.detailed_design_export_service import BundleFile, DetailedDesignExportService
 from app.services.fix_check_service import run_fix_checks
+from app.services.llm_resolver import LlmResolver
 
 # UMLと同じく、プロジェクト配下の独立したサブツリーとしてprefixにproject_idを含める
 router = APIRouter(prefix="/projects/{project_id}/design-stages", tags=["design-stages"])
@@ -259,9 +261,12 @@ async def approve_design_stage(
         current_project, stage=stage, expected_version=payload.version
     )
     # Phase-54-5:追記
-    if review_effective(
-        is_superuser=current_user.is_superuser, review_enabled=current_user.review_enabled
-    ):
+    # Phase-68-4：更新
+    # if review_effective(
+    #     is_superuser=current_user.is_superuser, review_enabled=current_user.review_enabled
+    # ):
+    # ↓↓
+    if await LlmResolver(session).review_effective(current_user):
         background_tasks.add_task(run_fix_checks, current_project.id, current_user.id)
     return approved
 

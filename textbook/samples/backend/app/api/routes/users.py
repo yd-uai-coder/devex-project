@@ -1,4 +1,4 @@
-# 更新：Phase-52-5,66-2,67-3
+# 更新：Phase-52-5,66-2,67-3,68-4
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。Phase 52 で初めて samples に載せた
 # (全文。タグの無い部分はテンプレートのまま)。
 # Phase-52-5:追記 ── app.api.deps.SessionDep
@@ -6,6 +6,7 @@
 # Phase-52-5:追記 ── app.services.user.UserService
 # Phase-66-2:追記 ── fastapi.Response, app.api.deps.ClientIpDep, app.api.deps.RedisDep, app.api.refresh_cookie.set_refresh_cookie, app.schemas.auth.AccessToken, app.schemas.user.EmailUpdate, app.schemas.user.PasswordUpdate, app.schemas.user.UserNameUpdate, app.services.auth.AuthService, app.services.auth_rate_limit.AuthRateLimiter
 # Phase-67-3:追記 ── dataclasses.asdict, typing.Annotated, fastapi.Depends, fastapi.status, app.ai.llm.catalog.Provider, app.ai.llm.key_check, app.core.config.settings, app.core.crypto.encryption_available, app.schemas.llm_settings, app.services.llm_settings_service, app.services.rate_limit
+# Phase-68-4:追記 ── app.api.user_read.user_read
 from dataclasses import asdict
 from typing import Annotated
 
@@ -15,6 +16,7 @@ from app.ai.llm.catalog import Provider
 from app.ai.llm.key_check import KeyVerifier, get_key_verifier
 from app.api.deps import ClientIpDep, CurrentUserDep, RedisDep, SessionDep
 from app.api.refresh_cookie import set_refresh_cookie
+from app.api.user_read import user_read
 from app.core.config import settings
 from app.core.crypto import encryption_available
 from app.schemas.auth import AccessToken
@@ -43,9 +45,15 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/me", response_model=UserRead)
-async def read_current_user(current_user: CurrentUserDep) -> UserRead:
+# Phase-68-4：更新
+# async def read_current_user(current_user: CurrentUserDep) -> UserRead:
+# ↓↓
+async def read_current_user(session: SessionDep, current_user: CurrentUserDep) -> UserRead:
     """アクセストークンから解決した、現在ログイン中のユーザー情報を返す。"""
-    return UserRead.model_validate(current_user)
+    # Phase-68-4：更新
+    # return UserRead.model_validate(current_user)
+    # ↓↓
+    return await user_read(session, current_user)
 
 
 # Phase-66-2:追記 ── update_current_user・change_email・change_password
@@ -55,7 +63,10 @@ async def update_current_user(
 ) -> UserRead:
     """ユーザーネームを変える。"""
     user = await UserService(session).update_user_name(current_user, user_name=body.user_name)
-    return UserRead.model_validate(user)
+    # Phase-68-4：更新
+    # return UserRead.model_validate(user)
+    # ↓↓
+    return await user_read(session, user)
 
 
 @router.put("/me/email", response_model=UserRead)
@@ -72,7 +83,10 @@ async def change_email(
     user = await UserService(session).change_email(
         current_user, new_email=body.new_email, current_password=body.current_password
     )
-    return UserRead.model_validate(user)
+    # Phase-68-4：更新
+    # return UserRead.model_validate(user)
+    # ↓↓
+    return await user_read(session, user)
 
 
 @router.put("/me/password", response_model=AccessToken)
@@ -103,11 +117,17 @@ async def change_password(
 async def update_review_settings(
     body: ReviewSettingsUpdate, session: SessionDep, current_user: CurrentUserDep
 ) -> UserRead:
-    """設計レビューのオン・オフを本人が切り替える(superuser 以外は403 REVIEW_NOT_ALLOWED)。"""
+    # Phase-68-4：更新
+    # """設計レビューのオン・オフを本人が切り替える(superuser 以外は403 REVIEW_NOT_ALLOWED)。"""
+    # ↓↓
+    """設計レビューのオン・オフを本人が切り替える(使えないアカウントは403 REVIEW_NOT_ALLOWED)。"""
     user = await UserService(session).update_review_setting(
         current_user, enabled=body.review_enabled
     )
-    return UserRead.model_validate(user)
+    # Phase-68-4：更新
+    # return UserRead.model_validate(user)
+    # ↓↓
+    return await user_read(session, user)
 
 
 # Phase-67-3:追記

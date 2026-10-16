@@ -1,4 +1,4 @@
-// 作成：Phase-53-4｜更新：Phase-53(完了後の調整),54-1,54-4,54-5
+// 作成：Phase-53-4｜更新：Phase-53(完了後の調整),54-1,54-4,54-5,68-4
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -73,13 +73,30 @@ describe("ReviewPanel", () => {
     push.mockReset();
   });
 
-  it("superuser でなければ何も出さない", () => {
-    useReviewStore.setState({ me: user({ is_superuser: false, review_enabled: false, review_effective: false }) });
+  // Phase-68-4：更新
+  // it("superuser でなければ何も出さない", () => {
+  //   useReviewStore.setState({ me: user({ is_superuser: false, review_enabled: false, review_effective: false }) });
+  // ↓↓
+  it("レビューを使えないアカウントには何も出さない", () => {
+    useReviewStore.setState({
+      me: user({ is_superuser: false, review_enabled: false, review_allowed: false, review_effective: false }),
+    });
     renderPanel();
 
     expect(useReviewStore.getState().fetchMe).toHaveBeenCalled();
     expect(screen.queryByLabelText("AI 設計レビュー")).not.toBeInTheDocument();
     expect(screen.queryByText("AI 設計レビューを使う")).not.toBeInTheDocument();
+  // Phase-68-4:追記
+  });
+
+  it("superuser でなくても、自分のキーで使えるなら切り替えを出す", () => {
+    useReviewStore.setState({
+      me: user({ is_superuser: false, review_enabled: false, review_allowed: true, review_effective: false }),
+    });
+    renderPanel();
+
+    expect(screen.getByLabelText("AI 設計レビュー")).toBeInTheDocument();
+    expect(screen.getByLabelText("AI 設計レビューを使う")).not.toBeChecked();
   });
 
   it("オフなら切り替えだけを出し、オンにすると設定を変える", async () => {

@@ -1,11 +1,13 @@
-# 作成：Phase-2-3
+# 作成：Phase-2-3｜更新：Phase-68-3
 # 写経レベル: コア ── PDFのテキスト化方式(Geminiのネイティブファイル理解、ライブラリ不使用)というPhase 2の主要設計判断を体現する箇所。
+# Phase-68-3：削除 ── app.ai.llm.gemini.extract_text_content, app.ai.llm.gemini.get_gemini_llm
+# Phase-68-3:追記 ── app.ai.llm.content.extract_text_content
 import base64
 from typing import Protocol
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from app.ai.llm.gemini import extract_text_content, get_gemini_llm
+from app.ai.llm.content import extract_text_content
 
 # 対応する添付ファイル形式(docs/external_design.md 2.5節5項)。Word/Excel/PowerPointは非対応。
 ALLOWED_FILE_TYPES = ("txt", "md", "pdf")
@@ -41,7 +43,8 @@ async def extract_text(
     IntakeFile.status='failed' として記録する。ヒアリング自体はブロックしない)。
 
     txt/mdはUTF-8テキストとしてそのまま読み込む(LLM呼び出し不要)。pdfはGeminiのネイティブな
-    ファイル理解でテキスト化する(図・レイアウトの解釈を含む)。
+    ファイル理解でテキスト化する(図・レイアウトの解釈を含む)。PDFを読む`llm`は呼び出し側が
+    ユーザーごとに解決して渡す(app/services/llm_resolver.py の resolve_pdf_reader)。
     """
     if file_type in ("txt", "md"):
         try:
@@ -49,8 +52,14 @@ async def extract_text(
         except UnicodeDecodeError:
             return None, "テキストのデコードに失敗しました(UTF-8以外の可能性があります)"
     elif file_type == "pdf":
+        # Phase-68-3:追記
+        if llm is None:
+            return None, "PDFを読むAIを使えませんでした"
         try:
-            text = await _extract_pdf_text(data, llm=llm or get_gemini_llm())
+            # Phase-68-3：更新
+            # text = await _extract_pdf_text(data, llm=llm or get_gemini_llm())
+            # ↓↓
+            text = await _extract_pdf_text(data, llm=llm)
         except Exception as exc:  # noqa: BLE001 -- 失敗要因の種類は問わず「抽出失敗」として扱う
             return None, str(exc)
     else:

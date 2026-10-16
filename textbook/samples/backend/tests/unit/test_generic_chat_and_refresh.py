@@ -1,8 +1,9 @@
-# 作成：Phase-15-4｜更新：Phase-66-2
+# 作成：Phase-15-4｜更新：Phase-66-2,68-3
 # 写経レベル: 定型 ── 共通の部品へ寄せた結果(コード・リトライ回数)と、Cookie の寿命を確かめる。
 """汎用チャットの再試行の共通化(気づき#7)と、refresh の寿命の統一(#8)のテスト。
 
-SUT: app.services.chat.ChatService.send_message / llm_retry._is_quota_error /
+SUT: app.services.chat.ChatService.send_message(LLM の解決と config での受け渡しを含む) /
+     llm_retry._is_quota_error /
      refresh_cookie.set_refresh_cookie
 ドライバ: 各テスト関数
 スタブ: _QuotaWorkflow ── Tavily の利用上限超過を出すワークフロー(LangGraph の代わり)。
@@ -10,6 +11,7 @@ SUT: app.services.chat.ChatService.send_message / llm_retry._is_quota_error /
 """
 
 # Phase-66-2：更新 ── from app.api.routes import auth → from app.api import refresh_cookie(Cookie の付け外しを移したため)
+# Phase-68-3:追記 ── app.ai.llm.factory.DEFAULT_GEMINI_TEMPERATURE
 import uuid
 from typing import Any
 
@@ -18,6 +20,7 @@ from fastapi import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from tavily import UsageLimitExceededError
 
+from app.ai.llm.factory import DEFAULT_GEMINI_TEMPERATURE
 from app.api import refresh_cookie
 from app.core.config import settings
 from app.models.user import User
@@ -29,9 +32,16 @@ from app.services.errors import LLMQuotaExceededError
 class _QuotaWorkflow:
     def __init__(self) -> None:
         self.calls = 0
+        # Phase-68-3:追記
+        self.config: dict[str, Any] | None = None
 
-    async def ainvoke(self, _state: dict[str, Any]) -> dict[str, Any]:
+    # Phase-68-3：更新
+    # async def ainvoke(self, _state: dict[str, Any]) -> dict[str, Any]:
+    # ↓↓
+    async def ainvoke(self, _state: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
         self.calls += 1
+        # Phase-68-3:追記
+        self.config = config
         raise UsageLimitExceededError("usage limit exceeded")
 
 
@@ -57,6 +67,12 @@ async def test_generic_chat_quota_is_llm_quota_exceeded_without_retry(
 
     assert raised.value.code == "LLM_QUOTA_EXCEEDED"
     assert workflow.calls == 1
+    # Phase-68-3:追記
+    # LLM はユーザーのチャットの用途で解決し、実行ごとに渡す(評価は温度0)
+    assert workflow.config is not None
+    configurable = workflow.config["configurable"]
+    assert configurable["llm"].temperature == DEFAULT_GEMINI_TEMPERATURE
+    assert configurable["evaluator_llm"].temperature == 0
 
 
 def test_refresh_cookie_lives_as_long_as_the_token() -> None:

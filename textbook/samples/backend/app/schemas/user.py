@@ -1,9 +1,10 @@
-# 更新：Phase-52-5,66-1,66-2
+# 更新：Phase-52-5,66-1,66-2,68-4
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。Phase 52 で初めて samples に載せた
 # (全文。タグの無い部分はテンプレートのまま)。
 # Phase-52-5:追記 ── pydantic.computed_field
 # Phase-52-5:追記 ── app.review.review_effective
 # Phase-66-2:追記 ── typing.Annotated, pydantic.StringConstraints, pydantic.field_validator, app.core.password_policy.password_violations
+# Phase-68-4：削除 ── pydantic.computed_field, app.review.review_effective
 import uuid
 from datetime import datetime
 from typing import Annotated
@@ -13,12 +14,10 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     StringConstraints,
-    computed_field,
     field_validator,
 )
 
 from app.core.password_policy import password_violations
-from app.review import review_effective
 
 # Phase-66-2:追記
 # ユーザーネームの変更で受ける値(前後の空白を除いて1〜255文字。列の長さと同じ上限)
@@ -63,14 +62,20 @@ class UserRead(UserBase):
     # Phase-52-5:追記
     # 設計レビューの設定(保存値)。使うかどうかは review_effective で見る
     review_enabled: bool = False
-
-    @computed_field
-    @property
-    def review_effective(self) -> bool:
-        """設計レビューの実効値(superuser かつ設定がオン)。画面はこれで出し分ける。"""
-        return review_effective(
-            is_superuser=self.is_superuser, review_enabled=self.review_enabled
-        )
+    # Phase-68-4：更新
+    #
+    # @computed_field
+    # @property
+    # def review_effective(self) -> bool:
+    #     """設計レビューの実効値(superuser かつ設定がオン)。画面はこれで出し分ける。"""
+    #     return review_effective(
+    #         is_superuser=self.is_superuser, review_enabled=self.review_enabled
+    #     )
+    # ↓↓
+    # レビューを使えるアカウントか(superuser、またはレビューの用途の AI の自分のキーがある)と、
+    # 実効値(使えて、設定がオン)。キーの登録を読むので、ルートが app/api/user_read.py で埋める
+    review_allowed: bool = False
+    review_effective: bool = False
 
 
 # Phase-52-5:追記

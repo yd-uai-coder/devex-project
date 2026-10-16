@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -25,6 +25,9 @@
 # Phase-57-1：削除 ── app.detailed_design.stages(doc_key, stage_key), app.documents.test_spec.is_outdated(入力の版と「古い」は test_spec_state へ移した)
 # Phase-57-2:追記 ── app.documents.test_spec.design_gap_count
 # Phase-64-2:追記 ── app.services.project_deletion(commit_if_live, project_vanished, purge_deleted_projects)
+# Phase-68-3：削除 ── app.ai.llm.gemini.extract_text_content, app.ai.llm.gemini.get_gemini_llm
+# Phase-68-3:追記 ── app.ai.llm.catalog.Purpose, app.ai.llm.content.extract_text_content, app.services.llm_resolver.LlmResolver
+# Phase-68-4：削除 ── app.review.review_effective
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -35,7 +38,8 @@ from pydantic import BaseModel, ValidationError
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.llm.gemini import extract_text_content, get_gemini_llm
+from app.ai.llm.catalog import Purpose
+from app.ai.llm.content import extract_text_content
 from app.core.database import AsyncSessionLocal
 from app.core.errors import AppError
 from app.detailed_design.function_list import FunctionListModel
@@ -129,7 +133,6 @@ from app.review import (
     DOCUMENTS_GATE,
     build_instruction,
     findings_for,
-    review_effective,
 )
 from app.schemas.document import (
     AssumedRequirementRead,
@@ -148,6 +151,7 @@ from app.services.errors import (
 from app.services.fix_check_service import FixCheckService
 from app.services.generation_progress import GenerationProgress, GenerationProgressStore
 from app.services.generation_staleness import is_stale
+from app.services.llm_resolver import LlmResolver
 from app.services.llm_retry import invoke_structured, invoke_with_retry
 from app.services.project_deletion import (
     commit_if_live,
@@ -587,12 +591,20 @@ class DocGeneratorService:
             await self._session.commit()
         # Phase-52-4:追記
         user = await self._session.get(User, user_id)
-        reviewing = user is not None and review_effective(
-            is_superuser=user.is_superuser, review_enabled=user.review_enabled
-        )
+        # Phase-68-4：更新
+        # reviewing = user is not None and review_effective(
+        #     is_superuser=user.is_superuser, review_enabled=user.review_enabled
+        # )
+        # ↓↓
+        reviewing = user is not None and await LlmResolver(self._session).review_effective(user)
 
         try:
-            llm = llm or get_gemini_llm()
+            # Phase-68-3：更新
+            # llm = llm or get_gemini_llm()
+            # ↓↓
+            llm = llm or (
+                await LlmResolver(self._session).resolve(user_id, Purpose.GENERATION)
+            ).llm
             # Phase-54-2:追記
             sendback = await ReviewService(self._session).sendback_findings(
                 project_id, finding_ids

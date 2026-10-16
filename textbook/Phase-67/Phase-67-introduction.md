@@ -161,7 +161,7 @@ Phase 66 から引き継いだもの:
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- Phase 68: カタログのモデルに `timeout_seconds` を足した([68-1](../Phase-68/Phase-68-1.md))。`LlmSettingsService` に、自分のキーを復号して返す `decrypted_api_key` を足した(LLM の解決が使う。[68-2](../Phase-68/Phase-68-2.md))。
 
 ## Phase 完了チェック(#22)
 

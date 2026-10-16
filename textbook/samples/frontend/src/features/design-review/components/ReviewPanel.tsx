@@ -1,4 +1,4 @@
-// 作成：Phase-53-4｜更新：Phase-53(完了後の調整),54-1,54-4
+// 作成：Phase-53-4｜更新：Phase-53(完了後の調整),54-1,54-4,68-4
 "use client";
 
 // Phase-53(完了後の調整):追記 ── documentLegend(@/features/design-review/model)
@@ -44,7 +44,11 @@ const STATUS_COLOR: Record<GateStatus, string> = {
 };
 
 // AI 設計レビューのパネル(プレビュー SCR-005・作業領域 SCR-008 で共通。docs/external_design.md 2.11節)。
-// superuser にだけ出す(それ以外は今の自己診断のまま)。見出しで本人がオン・オフを切り替え、オンなら
+// Phase-68-4：更新
+// // superuser にだけ出す(それ以外は今の自己診断のまま)。見出しで本人がオン・オフを切り替え、オンなら
+// ↓↓
+// レビューを使えるアカウント(superuser、またはレビューの用途の AI の自分のキーがある)にだけ出す
+// (それ以外は今の自己診断のまま)。見出しで本人がオン・オフを切り替え、オンなら
 // 区切りの表(状態・レビューする / もう一度レビュー)と、区切りごとの指摘の表(採用・却下・保留)を出す。
 // 実行中の区切りがあれば、区切りを取り直し続ける。`gates`で出す区切りを絞る(プレビューは文書だけ)。
 // `refreshKey`(文書の版・段階の承認した版など)が変わったら取り直す。
@@ -110,7 +114,10 @@ export function ReviewPanel({
     effective && (running || refreshPolls > 0) ? REVIEW_POLL_INTERVAL_MS : null,
   );
 
-  if (!me?.is_superuser) return null;
+  // Phase-68-4：更新
+  // if (!me?.is_superuser) return null;
+  // ↓↓
+  if (!me?.review_allowed) return null;
 
   return (
     <YStack gap="$3" borderWidth={1} borderColor="$borderColor" borderRadius="$4" padding="$3" aria-label="AI 設計レビュー">

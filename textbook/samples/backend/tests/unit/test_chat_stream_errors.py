@@ -1,4 +1,4 @@
-# 作成：Phase-15-3｜更新：Phase-24(ゴール3後の調整),34-2,35-2
+# 作成：Phase-15-3｜更新：Phase-24(ゴール3後の調整),34-2,35-2,68-3
 # 写経レベル: コア ── 200を返した後の失敗がSSEのイベントで届くことを確かめる。
 """ヒアリングチャットのSSE(本文・選択肢カードのイベントと、途中の失敗の`event: error`)のテスト。
 
@@ -87,12 +87,15 @@ _FailingReplyLLM ── 判定は通り、返信の構造化出力だけが失�
 #     assert isinstance(as_llm_error(RuntimeError("x")), GenerationFailedError)
 # ↓↓
 
+# Phase-68-3：削除 ── app.services.chat_service
+# Phase-68-3:追記 ── tests.fixtures.llm_resolver.stub_llm_resolver
 import json
 from typing import Any
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from tests.fixtures.fake_llm import FakeLLM
+from tests.fixtures.llm_resolver import stub_llm_resolver
 from tests.fixtures.uml import create_project
 
 from app.api.routes.projects import send_hearing_message
@@ -103,11 +106,14 @@ from app.schemas.hearing import (
     HearingPointsJudgement,
     HearingReplyOut,
 )
-from app.services import chat_service, llm_retry
+from app.services import llm_retry
 
 
 class _FailingReplyLLM:
-    def with_structured_output(self, schema: Any) -> Any:
+    # Phase-68-3：更新
+    # def with_structured_output(self, schema: Any) -> Any:
+    # ↓↓
+    def with_structured_output(self, schema: Any, **_kwargs: Any) -> Any:
         if schema is HearingReplyOut:
             return FakeLLM(structured_sequence=[RuntimeError("reset")] * 5).with_structured_output(
                 schema
@@ -133,7 +139,10 @@ async def test_reply_text_then_cards_then_done(
         structured=HearingPointsJudgement(),
         structured_by_schema={HearingReplyOut: HearingReplyOut(message="教えてください")},
     )
-    monkeypatch.setattr(chat_service, "get_gemini_llm", lambda: llm)
+    # Phase-68-3：更新
+    # monkeypatch.setattr(chat_service, "get_gemini_llm", lambda: llm)
+    # ↓↓
+    stub_llm_resolver(monkeypatch, llm)
     project = await create_project(db_session)
     await db_session.commit()
 
@@ -152,7 +161,10 @@ async def test_reply_text_then_cards_then_done(
 async def test_reply_failure_is_sent_as_error_event(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(chat_service, "get_gemini_llm", lambda: _FailingReplyLLM())
+    # Phase-68-3：更新
+    # monkeypatch.setattr(chat_service, "get_gemini_llm", lambda: _FailingReplyLLM())
+    # ↓↓
+    stub_llm_resolver(monkeypatch, _FailingReplyLLM())
     monkeypatch.setattr(llm_retry, "RETRY_DELAY_SECONDS", 0)
     project = await create_project(db_session)
     await db_session.commit()
@@ -175,7 +187,10 @@ async def test_reply_failure_is_sent_as_error_event(
 async def test_invalid_card_answer_is_sent_as_error_event(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(chat_service, "get_gemini_llm", lambda: FakeLLM())
+    # Phase-68-3：更新
+    # monkeypatch.setattr(chat_service, "get_gemini_llm", lambda: FakeLLM())
+    # ↓↓
+    stub_llm_resolver(monkeypatch, FakeLLM())
     project = await create_project(db_session)
     await db_session.commit()
 

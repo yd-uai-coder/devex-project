@@ -1,4 +1,4 @@
-// 作成：Phase-53-3｜更新：Phase-53(完了後の調整),54-1,54-5
+// 作成：Phase-53-3｜更新：Phase-53(完了後の調整),54-1,54-5,68-4
 import type {
   CurrentUserRead,
   ReviewFindingRead,
@@ -62,6 +62,8 @@ export function user(overrides: Partial<CurrentUserRead> = {}): CurrentUserRead 
     email: "example-super-user@example.com",
     is_superuser: true,
     review_enabled: true,
+    // Phase-68-4:追記
+    review_allowed: true,
     review_effective: true,
     ...overrides,
   };

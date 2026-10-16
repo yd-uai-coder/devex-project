@@ -17,7 +17,7 @@
 | [`app/services/errors.py`](../samples/backend/app/services/errors.py) | 更新 | レビューの例外5つ(使えない403・キー無し502・上限429・実行中409・文書が無い409) |
 | [`app/uml/generation/failures.py`](../samples/backend/app/uml/generation/failures.py) | 更新 | `unwrap_structured_result` が Claude の `stop_reason == "max_tokens"` もトークン上限にする |
 | [`app/services/llm_retry.py`](../samples/backend/app/services/llm_retry.py) | 更新 | Anthropic の 429 をクォータ超過にする・`invoke_structured_with_usage`(方式の指定とトークン数) |
-| [`app/ai/llm/claude.py`](../samples/backend/app/ai/llm/claude.py) | 新規 | `get_review_llm()` |
+| `app/ai/llm/claude.py` | 新規 | `get_review_llm()` |
 | [`app/ai/llm/fake.py`](../samples/backend/app/ai/llm/fake.py) | 更新 | `ReviewOutput` の偽の応答・`with_structured_output` が `method` を受ける |
 | ── ここからテスト ── | | |
 | [`tests/fixtures/fake_llm.py`](../samples/backend/tests/fixtures/fake_llm.py) | 更新 | `with_structured_output` が `method` を受け、`structured_output_methods` に記録する |

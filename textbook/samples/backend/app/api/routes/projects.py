@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1,65-1
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1,65-1,68-3
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -27,6 +27,7 @@
 # Phase-56-2:追記 ── app.schemas.document.TestSpecRead
 # Phase-64-1:追記 ── app.services.project_deletion.purge_deleted_projects
 # Phase-65-1:追記 ── fastapi.Query, app.schemas.project(ProjectListPage, ProjectStatus)
+# Phase-68-3:追記 ── app.services.errors.LlmUnavailableError
 import contextlib
 import json
 import uuid
@@ -66,7 +67,11 @@ from app.services.doc_generator_service import (
     document_read,
     generate_documents,
 )
-from app.services.errors import GenerationFailedError, LLMQuotaExceededError
+from app.services.errors import (
+    GenerationFailedError,
+    LLMQuotaExceededError,
+    LlmUnavailableError,
+)
 from app.services.generation_progress import GenerationProgressStore
 from app.services.project import ProjectService, UploadedFileInput
 from app.services.project_deletion import purge_deleted_projects
@@ -142,8 +147,13 @@ async def create_project(
     #     # (ユーザーは通常通りチャット欄から発話を始められる)
     #     pass
     # ↓↓
-    with contextlib.suppress(LLMQuotaExceededError, GenerationFailedError):
-        # AIの最初の発話生成に失敗しても、プロジェクト作成自体は成功させる
+    # Phase-68-3：更新
+    # with contextlib.suppress(LLMQuotaExceededError, GenerationFailedError):
+    #     # AIの最初の発話生成に失敗しても、プロジェクト作成自体は成功させる
+    # ↓↓
+    with contextlib.suppress(LLMQuotaExceededError, GenerationFailedError, LlmUnavailableError):
+        # AIの最初の発話生成に失敗しても(キーが無く LLM を使えないときも)、プロジェクト作成
+        # 自体は成功させる
         # (ユーザーは通常通りチャット欄から発話を始められる)
         await ChatService(session).generate_opening_reply(project)
     return ProjectRead.model_validate(project)

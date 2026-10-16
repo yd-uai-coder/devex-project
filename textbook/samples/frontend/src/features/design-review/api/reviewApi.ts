@@ -1,4 +1,4 @@
-// 作成：Phase-53-3｜更新：Phase-53(完了後の調整),54-1,54-4,54-5
+// 作成：Phase-53-3｜更新：Phase-53(完了後の調整),54-1,54-4,54-5,68-4
 import { apiFetch } from "@/lib/api/client";
 
 // devex-api app/schemas/review.py・app/schemas/user.py に対応する(snake_case のまま)。
@@ -79,8 +79,14 @@ export type CurrentUserRead = {
   id: string;
   email: string;
   is_superuser: boolean;
-  // 保存した設定。使うかどうかは review_effective(superuser かつ設定がオン。サーバーで判定)
+  // Phase-68-4：更新
+  // // 保存した設定。使うかどうかは review_effective(superuser かつ設定がオン。サーバーで判定)
+  // ↓↓
+  // 保存した設定。使うかどうかは review_effective(使えるアカウントで設定がオン。サーバーで判定)
   review_enabled: boolean;
+  // Phase-68-4:追記
+  // レビューを使えるアカウントか(superuser、またはレビューの用途の AI の自分のキーがある。サーバーで判定)
+  review_allowed: boolean;
   review_effective: boolean;
 };
 

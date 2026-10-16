@@ -1,7 +1,8 @@
-# 更新：Phase-2-2,15-4,66-1,66-2
+# 更新：Phase-2-2,15-4,66-1,66-2,68-4
 # Phase-2-2:追記 ── app.api.deps.RefreshTokenCookieDep
 # Phase-66-2：削除 ── app.api.deps.REFRESH_TOKEN_COOKIE_NAME, app.core.config.settings
 # Phase-66-2:追記 ── app.api.refresh_cookie.delete_refresh_cookie, app.api.refresh_cookie.set_refresh_cookie
+# Phase-68-4:追記 ── app.api.user_read.user_read
 from fastapi import APIRouter, Response, status
 
 from app.api.deps import (
@@ -11,6 +12,7 @@ from app.api.deps import (
     SessionDep,
 )
 from app.api.refresh_cookie import delete_refresh_cookie, set_refresh_cookie
+from app.api.user_read import user_read
 from app.schemas.auth import AccessToken, LoginRequest
 from app.schemas.user import UserCreate, UserRead
 from app.services.auth import AuthService
@@ -54,7 +56,10 @@ async def register(
         # ↓↓
         email=payload.email, password=payload.password, user_name=payload.user_name
     )
-    return UserRead.model_validate(user)
+    # Phase-68-4：更新
+    # return UserRead.model_validate(user)
+    # ↓↓
+    return await user_read(session, user)
 
 
 # Phase-2-2：更新(refresh_tokenをレスポンスボディで返す代わりにhttpOnly Cookieに設定する)

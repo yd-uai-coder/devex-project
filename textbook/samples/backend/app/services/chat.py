@@ -1,4 +1,4 @@
-# 更新：Phase-15-4
+# 更新：Phase-15-4,68-3
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。今回が初めてのsamples反映
 # (以下は差分のみでなく全文)。独自の再試行を共通の invoke_with_retry に寄せた(気づき#7)。
 # 写経レベル: 定型
@@ -6,16 +6,20 @@
 # Phase-15-4：削除 ── asyncio, collections.abc(Awaitable, Callable), typing.Any,
 #   app.services.errors(GenerationFailedError, RateLimitExceededError)
 #   (importの並びをリンターが崩さないよう、#29の特則どおりタグはブロックの前にまとめた)
+# Phase-68-3:追記 ── langchain_core.runnables.RunnableConfig, app.ai.llm.catalog.Purpose, app.services.llm_resolver.LlmResolver
 import uuid
 
+from langchain_core.runnables import RunnableConfig
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.graph.workflow import get_chat_workflow
+from app.ai.llm.catalog import Purpose
 from app.core.config import settings
 from app.models.conversation import Conversation, Message
 from app.repositories.conversation import ConversationRepository
 from app.services.errors import ConversationNotFoundError
+from app.services.llm_resolver import LlmResolver
 from app.services.llm_retry import invoke_with_retry
 from app.services.rate_limit import RateLimit, RateLimiter
 
@@ -61,6 +65,11 @@ class ChatService:
             conversation_id=conversation.id, role="user", content=message
         )
 
+        # Phase-68-3:追記
+        resolver = LlmResolver(self._session)
+        llm = (await resolver.resolve(user_id, Purpose.CHAT)).llm
+        evaluator_llm = (await resolver.resolve(user_id, Purpose.CHAT, temperature=0)).llm
+        config: RunnableConfig = {"configurable": {"llm": llm, "evaluator_llm": evaluator_llm}}
         workflow = get_chat_workflow()
         # Phase-15-4：更新
         # result = await self._invoke_with_retry(
@@ -87,7 +96,10 @@ class ChatService:
         }
         # 再試行とクォータ超過の判定は、Devexの他のLLM呼び出しと同じ共通の部品に寄せる
         # (クォータ超過はLLM_QUOTA_EXCEEDED、規定回数の失敗はLLM_API_ERRORになる)
-        result = await invoke_with_retry(lambda: workflow.ainvoke(initial_state))
+        # Phase-68-3：更新
+        # result = await invoke_with_retry(lambda: workflow.ainvoke(initial_state))
+        # ↓↓
+        result = await invoke_with_retry(lambda: workflow.ainvoke(initial_state, config))
 
         assistant_message = await self._conversations.add_message(
             conversation_id=conversation.id, role="assistant", content=result["answer"]

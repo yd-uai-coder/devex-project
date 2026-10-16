@@ -1,4 +1,4 @@
-# 更新：Phase-2-3,2-4,10-5,35-2,36-2,52-2
+# 更新：Phase-2-3,2-4,10-5,35-2,36-2,52-2,68-3
 """LLM クライアントの挙動を模したテスト用スタブ。
 
 `with_structured_output(schema)` の呼び出しごとに `schema` を `structured_output_calls` に
@@ -28,7 +28,10 @@ class _FakeChunk:
 
 
 class FakeLLM:
-    """LLM クライアント(`get_gemini_llm` などの戻り値)の挙動を模したスタブ。"""
+    # Phase-68-3：更新
+    # """LLM クライアント(`get_gemini_llm` などの戻り値)の挙動を模したスタブ。"""
+    # ↓↓
+    """LLM クライアント(`build_llm` などの戻り値)の挙動を模したスタブ。"""
 
     # Phase-2-3,2-4：更新
     # def __init__(

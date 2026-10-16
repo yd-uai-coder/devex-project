@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整),64-2
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整),64-2,68-3
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
 # Phase-31-4：更新(docstring: 簡易モードの段階8は、作業単位を WBS、参照を内部設計書から取ること)
@@ -55,6 +55,8 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 # Phase-54-3:追記 ── app.review.build_instruction, app.services.review_service.ReviewService, collections.abc.Sequence, langchain_core.messages.BaseMessage
 # Phase-55(完了後の調整):追記 ── app.detailed_design.structure.component_element_layers
 # Phase-64-2:追記 ── app.services.project_deletion(commit_if_live, project_vanished, purge_deleted_projects)
+# Phase-68-3：削除 ── app.ai.llm.gemini.get_gemini_llm
+# Phase-68-3:追記 ── app.ai.llm.catalog.Purpose, app.services.llm_resolver.LlmResolver
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -66,7 +68,7 @@ from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.llm.gemini import get_gemini_llm
+from app.ai.llm.catalog import Purpose
 from app.core.database import AsyncSessionLocal
 from app.detailed_design.data_flow import (
     MAX_DFD_GROUPS,
@@ -190,6 +192,7 @@ from app.services.errors import (
     DesignStageLockedError,
 )
 from app.services.generation_staleness import is_stale
+from app.services.llm_resolver import LlmResolver
 from app.services.llm_retry import invoke_structured
 from app.services.project_deletion import (
     commit_if_live,
@@ -1119,22 +1122,34 @@ class DesignStageGenerationService:
         # Phase-17-3:追記
         # Phase-54-3:追記
         sendback = await ReviewService(self._session).sendback_findings(project_id, finding_ids)
-        context = StageGenerationContext(
-            llm=llm or get_gemini_llm(),
-            sources=sources,
-            previous=row.model,
-            fingerprint=fingerprint,
-            session=self._session,
-            project_id=project_id,
-            # Phase-20-3:追記
-            targets=targets,
-            # Phase-54-3:追記
-            instruction=build_instruction(sendback),
-        )
+        # Phase-68-3：削除
+        # context = StageGenerationContext(
+        #     llm=llm or get_gemini_llm(),
+        #     sources=sources,
+        #     previous=row.model,
+        #     fingerprint=fingerprint,
+        #     session=self._session,
+        #     project_id=project_id,
+        #     targets=targets,
+        #     instruction=build_instruction(sendback),
+        # )
         try:
             # Phase-17-3：更新
             # model = await generator(llm or get_gemini_llm(), sources, row.model)
             # ↓↓
+            # Phase-68-3:追記
+            if llm is None:
+                llm = (await LlmResolver(self._session).resolve(user_id, Purpose.GENERATION)).llm
+            context = StageGenerationContext(
+                llm=llm,
+                sources=sources,
+                previous=row.model,
+                fingerprint=fingerprint,
+                session=self._session,
+                project_id=project_id,
+                targets=targets,
+                instruction=build_instruction(sendback),
+            )
             model = await generator(context)
         except Exception as exc:
             # 途中の変更(段階2の DFD・データ項目も)を残さず、読み直した行に失敗だけを記録する

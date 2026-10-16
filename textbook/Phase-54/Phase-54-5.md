@@ -13,7 +13,7 @@
 | ファイル | 新規/更新 | 責務 |
 | --- | --- | --- |
 | [`app/core/config.py`](../samples/backend/app/core/config.py) | 更新 | `JUDGE_MODEL`(既定 `claude-haiku-5-5`)・タイムアウト・最大トークン・1回の数・1日の上限 |
-| [`app/ai/llm/claude.py`](../samples/backend/app/ai/llm/claude.py) | 更新 | `get_judge_llm()` |
+| `app/ai/llm/claude.py` | 更新 | `get_judge_llm()` |
 | [`app/review/sendback.py`](../samples/backend/app/review/sendback.py) | 更新 | `SendbackFinding.evidence` |
 | [`app/review/fix_check.py`](../samples/backend/app/review/fix_check.py) | 新規 | `FixCheckOut`・`VERDICT_LABEL`・`target_rows_text`・`changed_rows_text`・`build_fix_check_messages` |
 | [`app/review/__init__.py`](../samples/backend/app/review/__init__.py) | 更新 | 上の re-export |
