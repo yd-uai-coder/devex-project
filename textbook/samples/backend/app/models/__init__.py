@@ -1,4 +1,4 @@
-# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5
+# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2
 # 写経レベル: 定型 ── re-exportの機械的な追記。
 # Phase-2-1:追記 ── ChatHistory, GeneratedDocument, IntakeFile, Project, PromptTemplate
 # Phase-8-2:追記 ── DataItem, UmlDiagram
@@ -7,6 +7,7 @@
 # Phase-34-1:追記 ── app.models.hearing_point.HearingPoint
 # Phase-52-3:追記 ── app.models.review.ReviewFinding, app.models.review.ReviewRun
 # Phase-54-5:追記 ── app.models.review.ReviewFixCheck
+# Phase-67-2:追記 ── app.models.user_api_key.UserApiKey, app.models.user_model_setting.UserModelSetting
 from app.models.chat_history import ChatHistory
 from app.models.conversation import Conversation, Message
 from app.models.data_item import DataItem
@@ -20,6 +21,8 @@ from app.models.review import ReviewFinding, ReviewFixCheck, ReviewRun
 from app.models.uml_diagram import UmlDiagram
 from app.models.uml_generation_run import UmlGenerationRun
 from app.models.user import User
+from app.models.user_api_key import UserApiKey
+from app.models.user_model_setting import UserModelSetting
 
 # Phase-2-1：更新
 # __all__ = ["Conversation", "Message", "User"]
@@ -47,4 +50,7 @@ __all__ = [
     # Phase-10-4:追記
     "UmlGenerationRun",
     "User",
+    # Phase-67-2:追記
+    "UserApiKey",
+    "UserModelSetting",
 ]

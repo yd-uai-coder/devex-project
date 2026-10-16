@@ -1,4 +1,4 @@
-# 更新：Phase-4-3,6-5,15-4,52-2,54-5
+# 更新：Phase-4-3,6-5,15-4,52-2,54-5,67-1
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。本Phaseまで
 # サンプルとして写経対象になったことが無く、今回が初めてのsamples反映(以下は差分のみでなく
 # 全文)。E2E_FAKE_LLM・LLM_TIMEOUT_SECONDS以外はdevex-api/backend/app/core/config.pyの
@@ -87,6 +87,16 @@ class Settings(BaseSettings):
     # 1回の生成・承認の後に判定する指摘の数と、superuser ごとの1日の判定の回数の上限
     JUDGE_MAX_PER_RUN: int = 10
     JUDGE_RATE_LIMIT_PER_DAY: int = 200
+
+    # Phase-67-1:追記
+    # ユーザーが登録する API キーを暗号化する Fernet の鍵(カンマ区切りで複数。先頭で暗号化し、
+    # すべてで復号する。鍵を回すときは新しい鍵を先頭に足し、古い鍵を後ろに残す)。
+    # 無いときはキーの登録だけが 503 になり、既定(上の環境変数)のキーでの利用は続く。
+    ENCRYPTION_KEY: str | None = None
+    # API キーの登録(保存のときの確かめ)の、ユーザーごとの1時間の上限
+    API_KEY_RATE_LIMIT_PER_HOUR: int = 10
+    # キーの確かめ(モデルの一覧の取得)の最大待機秒数
+    API_KEY_CHECK_TIMEOUT_SECONDS: float = 10.0
 
     # Phase-4-3:追記 ── trueの場合、get_gemini_llm()は実際のGemini APIを呼ばず、
     # app/ai/llm/fake.pyの決定論的なE2eFakeLLMを返す(ブラウザE2Eテストを無料・高速・

@@ -1,6 +1,7 @@
-# 更新：Phase-6-3,51-2,66-1
+# 更新：Phase-6-3,51-2,66-1,67-2
 # 写経レベル: 定型 ── 既存のログインテストユーザー作成に、固定シードデータの投入を追加するのみ。
-"""開発用のシードデータ ── `/docs` からログインを試すテストユーザー(一般・superuser)を作る。
+"""開発用のシードデータ ── `/docs` からログインを試すテストユーザー(一般・superuser)を作り、
+用途ごとのモデルのシステムの既定値を `.env` のモデルで書く。
 また、SCR-003(プロンプトテンプレート選択)向けの固定テンプレート2件を投入する。
 
 使い方:
@@ -8,19 +9,24 @@
     # docker:
     docker compose run --rm backend uv run python -m scripts.seed
 
-冪等 ── 既に居れば/あれば何もしない。**dev 専用**(本番 DB では実行しない)。
+冪等 ── 既に居れば何もしない。既定のモデルは実行のたびに `.env` の値で上書きする
+(`.env` が正)。**dev 専用**(本番 DB では実行しない)。
 """
 
 from __future__ import annotations
 
+# Phase-67-2:追記 ── app.core.config.settings, app.repositories.user_model_setting.UserModelSettingRepository, app.services.llm_defaults.env_default_models
 import asyncio
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.models.prompt_template import PromptTemplate
 from app.repositories.prompt_template import PromptTemplateRepository
+from app.repositories.user_model_setting import UserModelSettingRepository
 from app.services.errors import UserAlreadyExistsError
+from app.services.llm_defaults import env_default_models
 from app.services.user import UserService
 
 # Phase-66-1：更新
@@ -86,13 +92,20 @@ async def seed() -> None:
     # Phase-51-2：更新
     # """テストユーザーを1人登録し、固定プロンプトテンプレートを投入する(いずれも既存ならスキップ)。"""
     # ↓↓
-    """テストユーザー(一般・superuser)を登録し、固定プロンプトテンプレートを投入する(いずれも既存ならスキップ)。"""
+    # Phase-67-2：更新
+    # """テストユーザー(一般・superuser)を登録し、固定プロンプトテンプレートを投入する(いずれも既存ならスキップ)。"""
+    # ↓↓
+    """テストユーザー(一般・superuser)を登録し、固定プロンプトテンプレートを投入する
+    (いずれも既存ならスキップ)。
+    用途ごとのモデルの既定値は `.env` の値で書く(既存なら上書き)。"""
     async with AsyncSessionLocal() as session:
         # Phase-51-2：更新
         # await _seed_user(session)
         # ↓↓
         await seed_users(session)
         await seed_prompt_templates(session)
+        # Phase-67-2:追記
+        await seed_default_models(session)
 
 
 # Phase-51-2：更新
@@ -144,6 +157,18 @@ async def seed_prompt_templates(session: AsyncSession) -> None:
         session.add(template)
         await session.flush()
         print(f"created prompt template: {template.name} ({template.id})")
+    await session.commit()
+
+
+# Phase-67-2:追記
+async def seed_default_models(session: AsyncSession) -> None:
+    """用途ごとのモデルのシステムの既定値(user_id が null の行)を、`.env` のモデルで書く。
+    値は seed に書かず、設定から読む。既にある行は上書きする
+    (`.env` を変えて流し直せば反映される)。"""
+    repo = UserModelSettingRepository(session)
+    for purpose, (provider, model) in env_default_models(settings).items():
+        await repo.upsert_default(purpose=purpose, provider=provider, model=model)
+        print(f"default model: {purpose} = {provider}/{model}")
     await session.commit()
 
 

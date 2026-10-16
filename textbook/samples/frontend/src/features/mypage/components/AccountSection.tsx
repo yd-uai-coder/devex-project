@@ -1,8 +1,9 @@
-// 作成：Phase-66-3
+// 作成：Phase-66-3｜更新：Phase-67(完了後の調整)
 "use client";
 
+// Phase-67(完了後の調整):更新 ── tamagui の H3 を外した
 import { useEffect, useState } from "react";
-import { H3, Spinner, Text, YStack } from "tamagui";
+import { Spinner, Text, YStack } from "tamagui";
 import { ApiError } from "@/lib/api/client";
 import { getAccount } from "@/features/mypage/api/accountApi";
 import type { AccountRead } from "@/features/mypage/api/accountApi";
@@ -31,7 +32,8 @@ export function AccountSection() {
 
   return (
     <YStack gap="$4">
-      <H3>アカウント</H3>
+      {/* Phase-67(完了後の調整)：削除
+         <H3>アカウント</H3> */}
       {error ? (
         <Text role="alert" color="$color9">
           {error}

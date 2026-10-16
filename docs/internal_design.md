@@ -229,6 +229,38 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | updated_at | TIMESTAMP | NOT NULL | 更新日時 |
 
 `UNIQUE(project_id, point_key)`。判定のたびに全観点(16行。Phase 47 から20行)をまとめて書き直す。完了は「規模で決まる必須の観点が、すべて`open`以外」をコードが判定する(LLM には判定させない)。規模は`projects.hearing_scale`(VARCHAR(20) NULL。`personal`/`internal`/`public`)に持ち、未決の間は「個人・小規模」の列で必須を数える。`projects.hearing_check`は、表から作った完了判定(`is_sufficient`・`summary`=表から組み立てたまとめ・`missing_points`=未決の必須の名前)を同じ形で保存する。判定に失敗したら`hearing_check`だけを消し、表は前のまま残す(行があって`hearing_check`が無い = 表が直近の発言を反映していない)。行が無く`hearing_check`だけがあるのは以前のプロジェクトで、5条件の判定をそのまま返す(次の発言から観点の表で判定する)。
+
+#### ⑫ `user_model_settings` テーブル(ステージ9、Phase 67で新設)
+
+用途ごとに選んだ provider とモデル([外部設計書](external_design.md) 2.12節「マイページ」)。`user_id` が null の行はシステムの既定値で、`scripts/seed.py` が `.env` のモデル(`GEMINI_MODEL`・`REVIEW_MODEL`・`JUDGE_MODEL`)で書く。ユーザーが選ばない用途は行を持たず、既定値に従う。決定の経緯は [`textbook/Phase-67/Phase-67-2.md`](../textbook/Phase-67/Phase-67-2.md)。
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | |
+| user_id | UUID | FK (`users.id`, ondelete CASCADE), NULL可 | ユーザーID(null はシステムの既定値) |
+| purpose | VARCHAR(20) | NOT NULL | `chat`/`generation`/`review`/`judge` |
+| provider | VARCHAR(20) | NOT NULL | `gemini`/`claude` |
+| model | VARCHAR(100) | NOT NULL | モデル ID(選べるモデルの表 `app/ai/llm/catalog.py` にあるもの) |
+| created_at | TIMESTAMP | NOT NULL | 作成日時 |
+| updated_at | TIMESTAMP | NOT NULL | 更新日時 |
+
+`UNIQUE(user_id, purpose) NULLS NOT DISTINCT`(既定値の行も用途ごとに1行。PostgreSQL 15 以降)。既定値の行がまだ無い DB では、読み出しのときに `.env` の値で補う。
+
+#### ⑬ `user_api_keys` テーブル(ステージ9、Phase 67で新設)
+
+ユーザーが provider ごとに1つ登録する API キー。キーは Fernet で暗号化して持ち(鍵は環境変数 `ENCRYPTION_KEY`)、画面に出すのは末尾の4文字だけ。システムの既定のキーは環境変数に残し、この表には入れない。
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | |
+| user_id | UUID | FK (`users.id`, ondelete CASCADE), NOT NULL | ユーザーID |
+| provider | VARCHAR(20) | NOT NULL | `gemini`/`claude` |
+| encrypted_key | TEXT | NOT NULL | 暗号文(Fernet のトークン) |
+| key_hint | VARCHAR(8) | NOT NULL | 末尾の4文字(平文) |
+| created_at | TIMESTAMP | NOT NULL | 作成日時 |
+| updated_at | TIMESTAMP | NOT NULL | 更新日時 |
+
+`UNIQUE(user_id, provider)`。登録し直すと暗号文と末尾を置き換える。
 ---
 
 ## 3.3 バックエンド処理・モジュール設計
@@ -329,8 +361,10 @@ backend/
 | **PATCH** | `/api/v1/users/me` | （※ステージ9、Phase 66）ユーザーネームの変更(`{user_name}`。前後の空白を除いて1〜255文字。外れれば422) | 必要 |
 | **PUT** | `/api/v1/users/me/email` | （※ステージ9、Phase 66）メールアドレスの変更(`{new_email, current_password}`)。今のパスワードが合わなければ400 `CURRENT_PASSWORD_MISMATCH`、使われているメールは409。即時に変える(確認メールは送らない) | 必要 |
 | **PUT** | `/api/v1/users/me/password` | （※ステージ9、Phase 66）パスワードの変更(`{current_password, new_password}`)。新しいパスワードは登録の画面と同じ規則(外れれば422)、不一致は400 `CURRENT_PASSWORD_MISMATCH`。その人の refresh を全部失効させ、今の端末には新しいアクセストークン(本文)と refresh(Cookie)を返す | 必要 |
-| **GET** / **PUT** | `/api/v1/users/me/models` | （※ステージ9）用途ごとのモデルの取得・保存(カタログに無いモデルは断る)。カタログの取得の API は Phase 67 で決める | 必要 |
-| **PUT** / **DELETE** | `/api/v1/users/me/api-keys/{provider}` | （※ステージ9）provider ごとの API キーの登録(保存のときに確かめる)・削除。暗号の鍵が無いときは503 | 必要 |
+| **GET** | `/api/v1/llm/catalog` | （※ステージ9、Phase 67）選べる provider・モデル(`{provider, model_id, label, note}`)と用途(`{purpose, label, description, recommend_low_cost}`)の表。静的(`app/ai/llm/catalog.py`) | 必要 |
+| **GET** / **PUT** | `/api/v1/users/me/models` | （※ステージ9、Phase 67）用途ごとのモデルの取得・保存。PUT は`{choices: [{purpose, provider, model}]}`で選択の全体を置き換え、含めない用途は既定値に従う。応答は4用途の`{purpose, provider, model, is_default, key_missing, default_provider, default_model, selectable_providers}`。カタログに無いモデルは422 `MODEL_NOT_IN_CATALOG`、選べない provider は422 `MODEL_PROVIDER_KEY_REQUIRED` | 必要 |
+| **GET** | `/api/v1/users/me/api-keys` | （※ステージ9、Phase 67）登録済みのキー(`{provider, key_hint, needs_reregister}`。キー本体は返さない)と`encryption_available` | 必要 |
+| **PUT** / **DELETE** | `/api/v1/users/me/api-keys/{provider}` | （※ステージ9、Phase 67）provider ごとの API キーの登録(`{api_key}`。保存の前にモデルの一覧の取得で確かめる。無効は422 `API_KEY_INVALID`、確かめられないときは502 `API_KEY_CHECK_FAILED`、暗号の鍵が無いときは503 `ENCRYPTION_UNAVAILABLE`。試行はユーザーごとに1時間10回)・削除(204。無くても204。選択の行は残す) | 必要 |
 
 > **[Phase 24 で確定 ── 〈簡易モードの設計図の API を削除〉]** 当初〈上の表の`POST /uml/diagrams`(生成)・`/uml/candidates`・`/uml/generation-runs`・`/uml/reflect`・`/uml/embeds`・`/uml/bundle`を提供する〉→ 撤回。理由〈簡易ドキュメントモードの設計図(SCR-007)を削除した([外部設計書](external_design.md) 2.6節の撤回を参照)。残りの`/uml/...`(図の取得・一覧・更新・検証・自動レイアウト・承認・出力、データ辞書)は、詳細設計モードの段階2〜4が使う〉。
 
@@ -592,6 +626,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 * **アカウント**: `users.full_name` を `user_name` に改名する(Alembic の列の改名。データは残す)。`PATCH /users/me`(ユーザーネーム)、メール・パスワードの変更は今のパスワードで確かめる(メールの重複は409)。パスワードを変えたら、その人の refresh(Redis の`refresh_token:{user_id}:*`)を全部失効させる。
   * **Phase 66 で確定**: API は操作ごとに3つに分ける(`PATCH /users/me`・`PUT /users/me/email`・`PUT /users/me/password`。確かめの要否と副作用が操作ごとに違うため)。今のパスワードの不一致は **400** `CURRENT_PASSWORD_MISMATCH`(401 にすると、画面の`apiFetch`がセッション切れとみなしてログアウトするため)。今のパスワードの試行は、ログインと同じ上限(`AuthRateLimiter.enforce_login`。IP と今のメール)で数える。新しいパスワードの規則(8〜128文字・大文字・小文字・数字・ASCII の記号)は`app/core/password_policy.py`に置き、変更の API だけが課す(登録の API には課さない。既存のアカウントと、規則より前のテストのパスワードを断らないため)。パスワードの変更は、ハッシュを替えて commit → `AuthService.revoke_all_refresh_tokens`(SCAN で鍵を探して消す)→ 今の端末に access と refresh を出し直す(`app/api/refresh_cookie.py`の`set_refresh_cookie`。ログインと共有)。アクセストークン(30分)は失効させない(ほかの端末も、次の refresh で切れる)。同じメールへの変更は何もせずに成功を返す。
 * **モデルと API キー**: 新しいテーブル2つ ── 用途ごとのモデル(ユーザー・用途(`chat`・`generation`・`review`・`judge`)・provider・モデル。`user_id`が null の行がシステムの既定値)と、provider ごとの API キー(ユーザー・provider・暗号文・末尾の数文字。キーは Fernet で暗号化し、鍵は環境変数 `ENCRYPTION_KEY`)。鍵が無いときはキーの登録の API だけ 503 にする。選べるモデルは API 側の静的なカタログ(provider → model ID の表)に置き、カタログに無いモデルは保存で断る。キーは保存のときにモデルの一覧の取得で確かめる(無効なら422)。`scripts/seed.py` は `.env` のモデル(`GEMINI_MODEL`・`REVIEW_MODEL`・`JUDGE_MODEL`)を既定値の行として登録する(値を seed に書かない)。キー自体は既定値として環境変数に残し、DB には入れない。
+  * **Phase 67 で確定**: 用途ごとに1行のテーブル(`user_model_settings`)と provider ごとのキーのテーブル(`user_api_keys`)(3.2節 ⑫⑬)。seed は実行のたびに `.env` の値で既定値の行を上書きする(`.env` が正)。**superuser でないユーザーが既定のキーで選べるのは、既定値と同じ provider だけ**(チャット・生成は Gemini、レビュー・判定は Claude。ただしレビューは決定5のとおり superuser だけ)。それ以外の provider は、今の鍵で復号できる自分のキーがあるときだけ保存できる。superuser は既定のキーで何でも選べる。キーを消しても選択の行は消さず、読み出しで`key_missing`を返す(Phase 68 の解決で既定値に読み替える)。キーの確かめは`httpx`で直接モデルの一覧を1件だけ取り(Gemini は`x-goog-api-key`、Anthropic は`x-api-key`と`anthropic-version`。キーを URL に載せない)、400・401・403 は無効、タイムアウト・429・5xx・接続の失敗は確かめられない(どちらも保存しない)。`E2E_FAKE_LLM`のときは確かめを飛ばす。暗号の鍵は`ENCRYPTION_KEY`にカンマ区切りで複数持て、`MultiFernet`が先頭で暗号化して全部で復号する(鍵を回すときは新しい鍵を先頭に足し、古い鍵を後ろに残す)。どの鍵でも復号できないキーは`needs_reregister`とし、選べる provider の根拠にしない。
 * **LLM の解決**: 今の取得関数(`get_gemini_llm()`・`get_review_llm()`・`get_judge_llm()`。`lru_cache`でプロセスに1つ)を「ユーザーと用途 → LLM」の解決に替える。キャッシュの鍵は (provider, モデル, キー)。用途ごとに provider を入れ替えられるので、provider に固有の処理(本文の取り出し・構造化出力の方式・出力の上限・再試行の 429 の判定)を両方の provider で通す。PDF の取り込みは用途にせず、Gemini の解決(自分の Gemini キー、無ければ既定)で読む。レビューの実効値は`is_superuser and 設定`から「(superuser、またはレビューの用途の provider の自分のキーがある)かつ設定」に改める。モデルごとのタイムアウトと、混雑(503・504)を待つ再試行は Phase 68 の着手時に決める(Phase 60 の申し送り「生成のモデルと Gemini の無料枠」)。
 
 ## 3.4 例外処理・エラーハンドリング・ログ設計
@@ -623,7 +658,8 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 * `DESIGN_STAGES_NOT_AVAILABLE` / `DESIGN_STAGE_LOCKED` / `DESIGN_STAGE_NOT_APPROVABLE`(409): 詳細設計モードの段階(Phase 15)。段階の版の不一致は`VERSION_CONFLICT`(409、UML図と共通)
 * `DESIGN_STAGE_INVALID` / `DESIGN_STAGE_GENERATION_NOT_SUPPORTED` / `DESIGN_STAGE_GENERATION_IN_PROGRESS`(409): 段階ごとの検証のエラーがある段階の承認 / 生成に対応していない段階の生成 / 生成中の段階の生成・保存・承認(Phase 16)
 * `DESIGN_STAGE_UNREVIEWED_IMPACT`(409): 他の段階・文書の変更から届いた見直しの印が未確認のまま、段階を承認しようとした(ステージ7、Phase 43)
-* ステージ9 で足すコード(アカウントの変更・API キーの登録。今のパスワードの不一致・メールの重複・カタログに無いモデル・無効なキー・暗号の鍵が無い)は、名前を各 Phase の着手時に決める(3.3節 9項)。プロジェクトの削除(Phase 64)は新しいコードを足さない(他人・無いものは`RESOURCE_NOT_FOUND`)
+* `CURRENT_PASSWORD_MISMATCH`(400): メール・パスワードの変更で今のパスワードが合わない(ステージ9、Phase 66。メールの重複は既存の409)
+* `MODEL_NOT_IN_CATALOG` / `MODEL_PROVIDER_KEY_REQUIRED` / `API_KEY_INVALID`(422)、`API_KEY_CHECK_FAILED`(502)、`ENCRYPTION_UNAVAILABLE`(503): 用途ごとのモデルと API キーの登録(ステージ9、Phase 67。3.3節 9項)プロジェクトの削除(Phase 64)は新しいコードを足さない(他人・無いものは`RESOURCE_NOT_FOUND`)
 * `INTERNAL_SERVER_ERROR`: `AppError`以外の予期せぬ例外をキャッチする最終防衛ラインのハンドラが返す(スタックトレース等の詳細はレスポンスに含めずサーバーログにのみ記録)
 
 **`UNAUTHORIZED`について**: 認証境界(`app/api/deps.py`の`get_current_user`)は意図的に`AppError`ではなく生の`HTTPException`を使っており(認証失敗の理由を外部に細かく漏らさないため)、`code`フィールドは付与されない。レスポンス形自体は`{"detail": "..."}`のまま変わらない。
