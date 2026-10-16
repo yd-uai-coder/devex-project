@@ -1,4 +1,4 @@
-# 更新：Phase-6-3,51-2
+# 更新：Phase-6-3,51-2,66-1
 # 写経レベル: 定型 ── 既存のログインテストユーザー作成に、固定シードデータの投入を追加するのみ。
 """開発用のシードデータ ── `/docs` からログインを試すテストユーザー(一般・superuser)を作る。
 また、SCR-003(プロンプトテンプレート選択)向けの固定テンプレート2件を投入する。
@@ -23,9 +23,15 @@ from app.repositories.prompt_template import PromptTemplateRepository
 from app.services.errors import UserAlreadyExistsError
 from app.services.user import UserService
 
-# ログインフォームに入れる固定ユーザー(full_name = 表示名。ログインは email + password)
+# Phase-66-1：更新
+# # ログインフォームに入れる固定ユーザー(full_name = 表示名。ログインは email + password)
+# ↓↓
+# ログインフォームに入れる固定ユーザー(user_name = ユーザーネーム。ログインは email + password)
 SEED_USER = {
-    "full_name": "sample-user",
+    # Phase-66-1：更新
+    # "full_name": "sample-user",
+    # ↓↓
+    "user_name": "sample-user",
     "email": "example-user@example.com",
     "password": "Sample-user-0123",
 }
@@ -33,7 +39,10 @@ SEED_USER = {
 # Phase-51-2:追記 ── superuser の固定ユーザー(本番の superuser は登録したアカウントを手で昇格させる)
 # superuser(レビュー機能のオン・オフを切り替えられるアカウント)
 SEED_SUPERUSER = {
-    "full_name": "sample-super-user",
+    # Phase-66-1：更新
+    # "full_name": "sample-super-user",
+    # ↓↓
+    "user_name": "sample-super-user",
     "email": "example-super-user@example.com",
     "password": "Sample-super-user-0123",
 }
@@ -108,7 +117,10 @@ async def seed_users(session: AsyncSession) -> None:
             user = await service.create_user(
                 email=data["email"],
                 password=data["password"],
-                full_name=data["full_name"],
+                # Phase-66-1：更新
+                # full_name=data["full_name"],
+                # ↓↓
+                user_name=data["user_name"],
             )
         except UserAlreadyExistsError:
             print(f"user already exists: {data['email']} (skip)")

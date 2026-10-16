@@ -1,4 +1,4 @@
-# 更新：Phase-2-2
+# 更新：Phase-2-2,66-1
 import pytest
 from httpx import AsyncClient
 
@@ -47,7 +47,10 @@ async def test_register_login_and_access_protected_route(client: AsyncClient) ->
     ため、レスポンスボディにはaccess_tokenのみが含まれることを確認する。"""
     register_response = await client.post(
         "/api/v1/auth/register",
-        json={"email": "erin@example.com", "password": "s3cret-pass", "full_name": "Erin"},
+        # Phase-66-1：更新
+        # json={"email": "erin@example.com", "password": "s3cret-pass", "full_name": "Erin"},
+        # ↓↓
+        json={"email": "erin@example.com", "password": "s3cret-pass", "user_name": "Erin"},
     )
     assert register_response.status_code == 201
 

@@ -1,4 +1,4 @@
-# 作成：Phase-4-1｜更新：Phase-6-6,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,37-2
+# 作成：Phase-4-1｜更新：Phase-6-6,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,37-2,66-1
 # 写経レベル: 定型 ── 個々のロジックはPhase 2の各サービス単体テストで既に検証済み。
 # ここでの狙いは「ルーティング・スキーマ変換・DIの配線」自体の統合的な確認(過去に
 # get_hearing_completionルートの配線漏れが見つかった教訓の横展開、decision-digest.md参照)。
@@ -27,7 +27,10 @@ _PASSWORD = "s3cret-pass"
 async def _register_and_login(client: AsyncClient) -> str:
     await client.post(
         "/api/v1/auth/register",
-        json={"email": _EMAIL, "password": _PASSWORD, "full_name": "Flow Checker"},
+        # Phase-66-1：更新
+        # json={"email": _EMAIL, "password": _PASSWORD, "full_name": "Flow Checker"},
+        # ↓↓
+        json={"email": _EMAIL, "password": _PASSWORD, "user_name": "Flow Checker"},
     )
     login_response = await client.post(
         "/api/v1/auth/login", json={"email": _EMAIL, "password": _PASSWORD}

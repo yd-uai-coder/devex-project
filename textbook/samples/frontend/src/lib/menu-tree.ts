@@ -1,4 +1,4 @@
-// 更新：Phase-3-1,3-2,3-3,3-4,24(完了後の調整),24(T2同期),25-2,33-3,40(完了後の調整),41-3,50-3,51-3,60-3,62-2
+// 更新：Phase-3-1,3-2,3-3,3-4,24(完了後の調整),24(T2同期),25-2,33-3,40(完了後の調整),41-3,50-3,51-3,60-3,62-2,66-3
 // Phase-62-2：更新
 // export type MenuLeaf = { label: string; href: string };
 // export type MenuGroup = { label: string; children: MenuLeaf[] };
@@ -52,6 +52,8 @@ export const MENU_TREE: MenuGroup[] = [
       { kind: "link", label: "ダッシュボード", href: "/dashboard" },
       // mode なしで開くと、作成画面がモード選択ダイアログを出す
       { kind: "link", label: "新規プロジェクト作成", href: "/projects/new" },
+      // Phase-66-3:追記
+      { kind: "link", label: "マイページ", href: "/mypage" },
     ],
   },
   // Phase-24：削除

@@ -123,3 +123,9 @@
 - **発生**: [`Phase-64-3.md`](./Phase-64/Phase-64-3.md)
 - **概要**: devex-ui のテンプレートには、操作の完了を知らせる仕組みが無かった(失敗は画面の中に `role="alert"` で出すだけ)。Phase 64 で `src/components/layout/AppToast.tsx`(`ToastProvider`・`ToastViewport`・表示中のトースト)を `providers.tsx` に置き、`useToastController().show(題名)` で知らせる形にした。tamagui 2.6.0 では `@tamagui/toast/v2` の `Toaster` が `accessibilityLabel` を DOM に渡して React の警告を出すので、従来の API を使う。`@tamagui/toast` は tamagui 本体と同じ版に固定する(`^2.6.0` では新しい版を引き込み、Tamagui の部品が二重になる)。
 - **判断理由**: 「保存しました」「削除しました」の知らせはドメインに依存せず、画面を移っても残る置き場はルートにしか置けない。テンプレートを使うアプリでも同じ作り方になる。
+
+## `[テンプレート反映候補]` パスワードの規則が画面にしか無い・アカウントの変更の API が無い
+
+- **発生**: [`Phase-66-2.md`](./Phase-66/Phase-66-2.md)
+- **概要**: devex-api のテンプレート由来の登録の API(`UserCreate.password: str`)は下限を持たず、パスワードの規則(8〜128文字・大文字・小文字・数字・記号)は devex-ui の登録の画面の zod にだけあった。また、使われていない `UserUpdate`(`full_name`・`password` を任意で受ける)が残り、本人がメール・パスワードを変える API は無かった。Phase 66 で、規則を `app/core/password_policy.py` の純粋な関数に置いて変更の API にだけ課し、変更の API を操作ごとに3つ(今のパスワードの不一致は 400。401 は画面がログアウトに倒すため)に分け、パスワードの変更で refresh を全部失効(`SCAN refresh_token:{user_id}:*`)させて今の端末に出し直す形にした。Cookie の付け方は `app/api/refresh_cookie.py` に移して共有した。
+- **判断理由**: アカウントの変更と、そのときのセッションの扱いはドメインに依存しない。テンプレートを使うアプリでも、規則を API に置くこと(登録の API にも課すかは、既存のアカウントとテストの都合で決める)、ログイン中の操作の失敗を 401 にしないことは同じになる。

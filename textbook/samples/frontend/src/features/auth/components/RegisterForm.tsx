@@ -1,4 +1,4 @@
-// 作成：Phase-3-2｜更新：24(T2同期)
+// 作成：Phase-3-2｜更新：24(T2同期),66-1
 "use client";
 
 import { useState } from "react";
@@ -14,7 +14,10 @@ import { apiFetch, ApiError } from "@/lib/api/client";
 import { registerSchema } from "@/features/auth/schemas";
 import type { RegisterValues } from "@/features/auth/schemas";
 
-const DEFAULT_VALUES: RegisterValues = { fullName: "", email: "", password: "" };
+// Phase-66-1：更新
+// const DEFAULT_VALUES: RegisterValues = { fullName: "", email: "", password: "" };
+// ↓↓
+const DEFAULT_VALUES: RegisterValues = { userName: "", email: "", password: "" };
 
 export function RegisterForm() {
   const router = useRouter();
@@ -38,7 +41,10 @@ export function RegisterForm() {
               body: JSON.stringify({
                 email: values.email,
                 password: values.password,
-                full_name: values.fullName,
+                // Phase-66-1：更新
+                // full_name: values.fullName,
+                // ↓↓
+                user_name: values.userName,
               }),
             });
             resolve(true);
@@ -58,19 +64,31 @@ export function RegisterForm() {
   return (
     <FormGeneral buttonName="登録する" onBeforeSubmit={handleBeforeSubmit} onSubmitted={handleSubmitted}>
       <Controller
-        name="fullName"
+        // Phase-66-1：更新
+        // name="fullName"
+        // ↓↓
+        name="userName"
         control={control}
         render={({ field, fieldState }) => (
           <InputSimpleText
-            label="氏名"
+            // Phase-66-1：更新
+            // label="氏名"
+            // ↓↓
+            label="ユーザーネーム"
             width="100%"
-            name="fullName"
+            // Phase-66-1：更新
+            // name="fullName"
+            // ↓↓
+            name="userName"
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
             errorMessage={fieldState.error?.message}
             // Phase-24(T2同期):追記
-            placeholder="名前を入力"
+            // Phase-66-1：更新
+            // placeholder="名前を入力"
+            // ↓↓
+            placeholder="ユーザーネームを入力"
           />
         )}
       />

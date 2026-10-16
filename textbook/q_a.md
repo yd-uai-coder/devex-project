@@ -1396,3 +1396,9 @@
 1. Phase 65(着手時。一覧の検索・絞込み・ページネーション)。2026-10-16。
 2. 質問・相談内容: 「Phase65を開始する」。Claude は計画モードで [61-3](./Phase-61/Phase-61-3.md) の Phase 65 のスコープと未確定事項から、devex-api の `GET /projects`・`ProjectRepository`・既存のテストと、devex-ui の `dashboard-store`(20秒の cache)・`ProjectList`・既存の `DataFilter`・`DataPagination`・`useFilterSortPagination` を調べた。`useFilterSortPagination` はクライアントで絞って切る仕組み、`DataFilter` は1つのキーしか持てないので使わず、`DataPagination` はそのまま使えると分かった。そこで4問を聞いた: 自動実装モード / 検索の確定(入力ごと300ms / Enter・ボタン)/ 絞込みの組み合わせ(それぞれ1つ / 進行状態は複数)/ 条件とページを URL に持つか。
 3. 回答と対応方針: on・URL に持つ(推奨どおり)。**検索は Enter・検索ボタンで確定(推奨は入力ごと。推奨と違う)**、**進行状態は複数を選べる(推奨は1つ。推奨と違う)**。cache の鍵(条件の文字列で最後の1つ)・ページの途中で削除したときの扱い(外して `total` を減らし、今のページを取り直す。範囲外は最後のページへ置き換える)は Claude が計画で示し、承認された。作業中に、モードを `RadioGroupWithLabel` でなく自前の並びで組んだ(幅が固定で折り返したため)。実 LLM は呼んでいない。詳細は [Phase 65 の introduction](./Phase-65/Phase-65-introduction.md)。
+
+### Phase 66 開始時
+
+1. Phase 66(着手時。マイページのアカウント)。2026-10-16。
+2. 質問・相談内容: 「Phase65を開始する」。Claude は Phase 65 が完了・コミット済み(外側 `3475395`)であることを示し、どれを行うかを聞いた。ユーザーは Phase 66 の開始を選んだ。Claude は計画モードで [61-3](./Phase-61/Phase-61-3.md) の Phase 66 のスコープと未確定事項から、devex-api の `users`・`UserService`・`AuthService`(refresh の Redis の鍵)・登録のルートと、devex-ui の `auth-store`・登録の画面・`MENU_TREE`・E2E の `helpers.ts`(「氏名」の欄)を調べた。パスワードの規則が登録の画面の zod にだけあり、API は下限を持たないと分かった。そこで4問を聞いた: 自動実装モード / 変更の API の形(3つに分ける / 1つの PATCH)/ パスワードの変更の後、今の端末のログイン(保つ / ログアウト)/ 新しいパスワードの規則の置き場(画面と変更の API / 画面だけ / 登録の API にも)。
+3. 回答と対応方針: すべて推奨どおり(on・3つに分ける・今の端末は保つ・画面と変更の API)。今のパスワードの不一致を 400 にすること(401 は画面がログアウトに倒す)、今のパスワードの試行をログインの上限で数えること、登録の欄を「ユーザーネーム」に改め E2E の `helpers.ts` も直すこと、Cookie の付け方を `app/api/refresh_cookie.py` に移すことは Claude が計画で示し、承認された。作業中に、API の規則の文言と記号の集合を画面に揃え、パスワードのフォームに確認の欄を置いた。1度目の全体の integration は、今日の実行の積み重ねで登録の上限に当たって既存の3件が落ち、カウンタが切れてから流し直した。実 LLM は呼んでいない。詳細は [Phase 66 の introduction](./Phase-66/Phase-66-introduction.md)。

@@ -144,6 +144,7 @@ Claude の判断で決めたこと(計画の承認で確定):
 
 - [`Phase-16-3.md`](../Phase-16/Phase-16-3.md): 「段階ごとの検証の登録の仕組みは作らない」を受けて、段階1を最初の消費者として `STAGE_VALIDATORS` を作った([`Phase-16-2.md`](../Phase-16/Phase-16-2.md))。承認の条件に「段階ごとの検証でエラーが無い」が加わった。`design_stages` に生成の状態の列を3つ足した。申し送りの「自動レイアウトの判断は Phase 16」と「下書きの陳腐化」は、段階2を担う Phase 17 へ送った。
 - [Phase 35-2](../Phase-35/Phase-35-2.md): ヒアリングの返信を構造化出力の1回にし、トークンごとに流すのをやめた。15-3 の `as_llm_error`(ストリームの途中の失敗を共通の例外に揃える)は呼び出し元が無くなったので消した。返信の失敗は `invoke_with_retry` が再試行し、SSE の `event: error` で伝える形は変わらない。
+- [Phase 66-2](../Phase-66/Phase-66-2.md): 15-4 の `_set_refresh_cookie`(`routes/auth.py`)を `app/api/refresh_cookie.py` の `set_refresh_cookie` に移した(パスワードの変更のルートも同じ Cookie を出し直すため)。Cookie の寿命のテストは `refresh_cookie` を呼ぶ形にした。
 - Phase 24 完了後の UI 調整([`q_a.md`](../q_a.md)「Phase 24 完了後 ── UI の調整」): `StageStepper.tsx` を、`$md` 以上の幅で `position: sticky`(`top` はヘッダーの高さ+16)にし、スクロールしても段階の一覧が見えるようにした。
 
 ## Phase 完了チェック(#22)

@@ -1,4 +1,4 @@
-// 作成：Phase-24-2｜更新：24(ゴール3後の調整),32-2,40-3,60-2
+// 作成：Phase-24-2｜更新：24(ゴール3後の調整),32-2,40-3,60-2,66-1
 // 写経レベル: 定型 ── 画面の操作の並び(ラベルで探して押す)。
 // Phase-60-2：更新
 // // E2E の spec が共有する操作(登録とログイン、モードを選んだプロジェクトの作成、ヒアリングから
@@ -39,7 +39,10 @@ export async function registerAndLogin(page: Page, prefix: string, name = "E2E T
   const email = uniqueEmail(prefix);
 
   await page.goto("/register");
-  await page.getByLabel("氏名").fill(name);
+  // Phase-66-1：更新
+  // await page.getByLabel("氏名").fill(name);
+  // ↓↓
+  await page.getByLabel("ユーザーネーム").fill(name);
   await page.getByLabel("メールアドレス").fill(email);
   await page.getByLabel("パスワード", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "登録する" }).click();

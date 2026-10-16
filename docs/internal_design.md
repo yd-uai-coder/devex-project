@@ -46,12 +46,16 @@
 | カラム名 | データ型 | 制約 | 説明 |
 | :--- | :--- | :--- | :--- |
 | id | UUID | PK, DEFAULT gen_random_uuid() | ユーザーID |
-| email | VARCHAR(255) | UNIQUE, NOT NULL | メールアドレス |
-| password_hash | VARCHAR(255) | NOT NULL | パスワードハッシュ |
-| created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
-| updated_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新日時 |
+| email | VARCHAR(255) | UNIQUE, NOT NULL | メールアドレス(ログインに使う) |
+| hashed_password | VARCHAR(255) | NOT NULL | パスワードハッシュ |
+| user_name | VARCHAR(255) | NULL | ユーザーネーム(表示名。ステージ9 で `full_name` から改名) |
+| is_active | BOOLEAN | NOT NULL, DEFAULT true | 有効なアカウントか(無効ならログインできない) |
+| is_superuser | BOOLEAN | NOT NULL, DEFAULT false | 管理者か(既定のキーでの設計レビュー。ステージ8) |
+| review_enabled | BOOLEAN | NOT NULL, DEFAULT false | 設計レビューの設定(ステージ8) |
+| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 作成日時 |
+| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 更新日時 |
 
-**(ステージ9)** 表示名の列 `full_name` を `user_name` に改名する(データは残す)。用途ごとのモデルと API キーは別のテーブルに持つ(3.3節「9. 使い勝手とアカウント・モデル設定」)。
+**(ステージ9)** 表示名の列 `full_name` を `user_name` に改名した(Phase 66。Alembic の列の改名でデータは残す)。この表も実際の列に合わせて直した(それまでは `password_hash` と書き、`is_active`・`is_superuser`・`review_enabled` が無かった)。用途ごとのモデルと API キーは別のテーブルに持つ(3.3節「9. 使い勝手とアカウント・モデル設定」)。
 
 #### ② `projects` テーブル
 
@@ -322,7 +326,9 @@ backend/
 | **GET** | `/api/v1/projects/{id}/design-stages/units/{unit_id}/context` | （※ステージ5、Phase 28）段階8の作業単位1つが参照する設計の展開(`{unit_id, refs: [{kind, key, resolved, via, label, markdown, svg}], crosscutting, environment}`。`svg`は段階5の手順の参照のシーケンス図。Phase 29)。承認済みの段階1〜7から毎回導き、保存しない。段階8が開いていなければ409 `DESIGN_STAGE_LOCKED`、段階7に無い単位は404。簡易ドキュメントモードは4文書から導き、`kind`に`dataflow`(内部設計書の処理別データフロー)が加わる(Phase 31) | 必要 |
 | **GET** | `/api/v1/projects/{id}/design-stages/units/{unit_id}/ai-markdown` | （※ステージ5、Phase 30）段階8の作業単位1つの AI 向けの版(`{unit_id, markdown, state, finding_total, critical}`。`state`は段階8の状態、`finding_total`・`critical`はその単位に残る未定義の件数と最重要の件数)。保存済みの手順書と承認済みの段階1〜7から組み立て、保存しない。段階8が承認済みでない・未定義が残るときは md の先頭で警告する。段階8が開いていなければ409 `DESIGN_STAGE_LOCKED`、段階7に無い単位・手順書の無い単位(未生成・段階7と合わない)は404。簡易ドキュメントモードは段階7の代わりに実装計画書の WBS と4文書から組み立てる(Phase 31) | 必要 |
 | **DELETE** | `/api/v1/projects/{id}` | （※ステージ9、Phase 64）プロジェクトの削除(204。所有者だけ。他人・無いものは404 `RESOURCE_NOT_FOUND`。生成中も可)。削除の印を付けてすぐに返し、行と子の行(CASCADE)の物理削除はバックグラウンドで行う(3.3節 9項) | 必要 |
-| **PATCH** | `/api/v1/users/me` | （※ステージ9）ユーザーネームの変更。メール・パスワードの変更(今のパスワードで確かめる)の API の形は Phase 66 で決める | 必要 |
+| **PATCH** | `/api/v1/users/me` | （※ステージ9、Phase 66）ユーザーネームの変更(`{user_name}`。前後の空白を除いて1〜255文字。外れれば422) | 必要 |
+| **PUT** | `/api/v1/users/me/email` | （※ステージ9、Phase 66）メールアドレスの変更(`{new_email, current_password}`)。今のパスワードが合わなければ400 `CURRENT_PASSWORD_MISMATCH`、使われているメールは409。即時に変える(確認メールは送らない) | 必要 |
+| **PUT** | `/api/v1/users/me/password` | （※ステージ9、Phase 66）パスワードの変更(`{current_password, new_password}`)。新しいパスワードは登録の画面と同じ規則(外れれば422)、不一致は400 `CURRENT_PASSWORD_MISMATCH`。その人の refresh を全部失効させ、今の端末には新しいアクセストークン(本文)と refresh(Cookie)を返す | 必要 |
 | **GET** / **PUT** | `/api/v1/users/me/models` | （※ステージ9）用途ごとのモデルの取得・保存(カタログに無いモデルは断る)。カタログの取得の API は Phase 67 で決める | 必要 |
 | **PUT** / **DELETE** | `/api/v1/users/me/api-keys/{provider}` | （※ステージ9）provider ごとの API キーの登録(保存のときに確かめる)・削除。暗号の鍵が無いときは503 | 必要 |
 
@@ -584,6 +590,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * **Phase 65 で確定**: `status`は繰り返して複数を受け、どれかに一致(OR)。条件どうしは AND。`q`は前後の空白を落とし(空なら絞らない)、`ILIKE`の`%`・`_`は文字として扱う(エスケープする)。並びは`updated_at`の降順、同じ時刻は`id`の降順(ページの境目を安定させる)。`total`は条件に合う全件数(別の`count()`)。最後より後の`page`はエラーにせず、空の`items`と本当の`total`を返す。不正な値(知らない`status`・`mode`、`page < 1`、101文字以上の`q`)は 422。`ProjectRepository.list_for_user`は`search_for_user`に置き換えた。
   * **UI**: 条件とページは URL(`/dashboard?q=&mode=&status=&page=`。既定値は書かない)に持ち、`useSearchParams`で読む(ページ側で`Suspense`に包む)。`dashboard-store`の cache(20秒)は、条件の文字列を鍵にして最後の1つだけ持ち、鍵が同じときだけ効く。待つ間に条件が変わった古い応答は捨てる。削除(`removeProject`)はカードを外して`total`を1減らし、cache を切って今のページを取り直す(次のページの先頭が繰り上がる)。取り直してページが最後より後なら、最後のページへ URL を置き換える。
 * **アカウント**: `users.full_name` を `user_name` に改名する(Alembic の列の改名。データは残す)。`PATCH /users/me`(ユーザーネーム)、メール・パスワードの変更は今のパスワードで確かめる(メールの重複は409)。パスワードを変えたら、その人の refresh(Redis の`refresh_token:{user_id}:*`)を全部失効させる。
+  * **Phase 66 で確定**: API は操作ごとに3つに分ける(`PATCH /users/me`・`PUT /users/me/email`・`PUT /users/me/password`。確かめの要否と副作用が操作ごとに違うため)。今のパスワードの不一致は **400** `CURRENT_PASSWORD_MISMATCH`(401 にすると、画面の`apiFetch`がセッション切れとみなしてログアウトするため)。今のパスワードの試行は、ログインと同じ上限(`AuthRateLimiter.enforce_login`。IP と今のメール)で数える。新しいパスワードの規則(8〜128文字・大文字・小文字・数字・ASCII の記号)は`app/core/password_policy.py`に置き、変更の API だけが課す(登録の API には課さない。既存のアカウントと、規則より前のテストのパスワードを断らないため)。パスワードの変更は、ハッシュを替えて commit → `AuthService.revoke_all_refresh_tokens`(SCAN で鍵を探して消す)→ 今の端末に access と refresh を出し直す(`app/api/refresh_cookie.py`の`set_refresh_cookie`。ログインと共有)。アクセストークン(30分)は失効させない(ほかの端末も、次の refresh で切れる)。同じメールへの変更は何もせずに成功を返す。
 * **モデルと API キー**: 新しいテーブル2つ ── 用途ごとのモデル(ユーザー・用途(`chat`・`generation`・`review`・`judge`)・provider・モデル。`user_id`が null の行がシステムの既定値)と、provider ごとの API キー(ユーザー・provider・暗号文・末尾の数文字。キーは Fernet で暗号化し、鍵は環境変数 `ENCRYPTION_KEY`)。鍵が無いときはキーの登録の API だけ 503 にする。選べるモデルは API 側の静的なカタログ(provider → model ID の表)に置き、カタログに無いモデルは保存で断る。キーは保存のときにモデルの一覧の取得で確かめる(無効なら422)。`scripts/seed.py` は `.env` のモデル(`GEMINI_MODEL`・`REVIEW_MODEL`・`JUDGE_MODEL`)を既定値の行として登録する(値を seed に書かない)。キー自体は既定値として環境変数に残し、DB には入れない。
 * **LLM の解決**: 今の取得関数(`get_gemini_llm()`・`get_review_llm()`・`get_judge_llm()`。`lru_cache`でプロセスに1つ)を「ユーザーと用途 → LLM」の解決に替える。キャッシュの鍵は (provider, モデル, キー)。用途ごとに provider を入れ替えられるので、provider に固有の処理(本文の取り出し・構造化出力の方式・出力の上限・再試行の 429 の判定)を両方の provider で通す。PDF の取り込みは用途にせず、Gemini の解決(自分の Gemini キー、無ければ既定)で読む。レビューの実効値は`is_superuser and 設定`から「(superuser、またはレビューの用途の provider の自分のキーがある)かつ設定」に改める。モデルごとのタイムアウトと、混雑(503・504)を待つ再試行は Phase 68 の着手時に決める(Phase 60 の申し送り「生成のモデルと Gemini の無料枠」)。
 
