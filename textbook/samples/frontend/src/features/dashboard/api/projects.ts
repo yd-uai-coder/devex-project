@@ -1,5 +1,8 @@
-// 作成：Phase-3-3｜更新：Phase-15-6,15-7,62-3,64-3
+// 作成：Phase-3-3｜更新：Phase-15-6,15-7,62-3,64-3,65-2
 import { apiFetch } from "@/lib/api/client";
+// Phase-65-2:追記
+import { toSearchParams } from "@/features/dashboard/list-params";
+import type { ProjectListParams } from "@/features/dashboard/list-params";
 
 export type ProjectStatus = "interviewing" | "generating" | "completed" | "revising";
 // Phase-15-6:追記
@@ -31,8 +34,20 @@ export type ProjectRead = {
   updated_at: string;
 };
 
-export function listProjects(): Promise<ProjectRead[]> {
-  return apiFetch<ProjectRead[]>("/api/v1/projects");
+// Phase-65-2：更新
+// export function listProjects(): Promise<ProjectRead[]> {
+//   return apiFetch<ProjectRead[]>("/api/v1/projects");
+// ↓↓
+// devex-api app/schemas/project.py の ProjectListPage に対応する(1ページ分と、条件に合う全件数)。
+export type ProjectListPage = {
+  items: ProjectRead[];
+  total: number;
+};
+
+// 条件(検索語・モード・進行状態・ページ)で絞った一覧の1ページを取る。
+export function listProjects(params: ProjectListParams): Promise<ProjectListPage> {
+  const query = toSearchParams(params).toString();
+  return apiFetch<ProjectListPage>(`/api/v1/projects${query ? `?${query}` : ""}`);
 }
 
 // Phase-64-3:追記

@@ -1,11 +1,15 @@
-// 作成：Phase-15-7｜更新：Phase-62-3,64-3
+// 作成：Phase-15-7｜更新：Phase-62-3,64-3,65-2
 // 写経レベル: 定型
 // Phase-64-3：更新
 // import { describe, expect, it } from "vitest";
 // import { toProjectMode } from "../projects";
 // ↓↓
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { deleteProject, toProjectMode } from "../projects";
+// Phase-65-2：更新
+// import { deleteProject, toProjectMode } from "../projects";
+// ↓↓
+import { deleteProject, listProjects, toProjectMode } from "../projects";
+import { DEFAULT_LIST_PARAMS } from "@/features/dashboard/list-params";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
 describe("toProjectMode", () => {
@@ -44,6 +48,40 @@ describe("deleteProject", () => {
 
     expect(stub.requests.map((r) => [r.init?.method, r.url.replace(/^.*(?=\/api\/)/, "")])).toEqual([
       ["DELETE", "/api/v1/projects/p1"],
+    ]);
+  });
+});
+
+// Phase-65-2:追記
+describe("listProjects", () => {
+  let stub: ReturnType<typeof stubFetch>;
+
+  beforeEach(() => {
+    stub = stubFetch();
+  });
+
+  afterEach(() => {
+    stub.restore();
+  });
+
+  const path = () => stub.requests.map((r) => r.url.replace(/^.*(?=\/api\/)/, ""));
+
+  it("条件が無ければクエリを付けず、{items, total} をそのまま返す", async () => {
+    stub.queue({ status: 200, body: { items: [], total: 0 } });
+
+    const page = await listProjects(DEFAULT_LIST_PARAMS);
+
+    expect(page).toEqual({ items: [], total: 0 });
+    expect(path()).toEqual(["/api/v1/projects"]);
+  });
+
+  it("検索語・モード・複数の進行状態・ページをクエリにする", async () => {
+    stub.queue({ status: 200, body: { items: [], total: 0 } });
+
+    await listProjects({ q: "a", mode: "detailed", statuses: ["interviewing", "completed"], page: 2 });
+
+    expect(path()).toEqual([
+      "/api/v1/projects?q=a&mode=detailed&status=interviewing&status=completed&page=2",
     ]);
   });
 });

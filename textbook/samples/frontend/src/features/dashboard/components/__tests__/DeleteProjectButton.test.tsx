@@ -1,4 +1,4 @@
-// 作成：Phase-64-3
+// 作成：Phase-64-3｜更新：Phase-65-2
 // SUT: DeleteProjectButton(確認のアラートダイアログ → deleteProject → 一覧から外す・トースト・onDeleted)
 // ドライバ: 各テスト(ユーザーの操作)
 // スタブ: fetch(stubFetch。削除の API の応答)と、トーストの useToastController(vi.mock。表示ではなく
@@ -46,7 +46,10 @@ describe("DeleteProjectButton", () => {
   beforeEach(() => {
     stub = stubFetch();
     toastShow.mockClear();
-    useDashboardStore.setState({ projects: [PROJECT], status: "success" });
+    // Phase-65-2：更新
+    // useDashboardStore.setState({ projects: [PROJECT], status: "success" });
+    // ↓↓
+    useDashboardStore.setState({ items: [PROJECT], total: 1, status: "success" });
   });
 
   afterEach(() => {
@@ -80,7 +83,10 @@ describe("DeleteProjectButton", () => {
 
     await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
     expect(stub.requests.map((r) => r.init?.method)).toEqual(["DELETE"]);
-    expect(useDashboardStore.getState().projects).toEqual([]);
+    // Phase-65-2：更新
+    // expect(useDashboardStore.getState().projects).toEqual([]);
+    // ↓↓
+    expect(useDashboardStore.getState().items).toEqual([]);
     expect(toastShow).toHaveBeenCalledWith("「備品予約」を削除しました");
   });
 
@@ -93,7 +99,10 @@ describe("DeleteProjectButton", () => {
     await user.click(screen.getByLabelText("削除する"));
 
     await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
-    expect(useDashboardStore.getState().projects).toEqual([]);
+    // Phase-65-2：更新
+    // expect(useDashboardStore.getState().projects).toEqual([]);
+    // ↓↓
+    expect(useDashboardStore.getState().items).toEqual([]);
     expect(toastShow).toHaveBeenCalledTimes(1);
   });
 
@@ -123,7 +132,10 @@ describe("DeleteProjectButton", () => {
     expect(await screen.findByText("サーバーで問題が起きました")).toBeInTheDocument();
     expect(screen.getByText("プロジェクトを削除しますか")).toBeInTheDocument();
     expect(onDeleted).not.toHaveBeenCalled();
-    expect(useDashboardStore.getState().projects).toEqual([PROJECT]);
+    // Phase-65-2：更新
+    // expect(useDashboardStore.getState().projects).toEqual([PROJECT]);
+    // ↓↓
+    expect(useDashboardStore.getState().items).toEqual([PROJECT]);
     expect(toastShow).not.toHaveBeenCalled();
   });
 });

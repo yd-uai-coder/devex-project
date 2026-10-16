@@ -1,4 +1,4 @@
-// 作成：Phase-3-3｜更新：24(完了後の調整),64-4
+// 作成：Phase-3-3｜更新：24(完了後の調整),64-4,65-3
 import Link from "next/link";
 import { Text, XStack } from "tamagui";
 import { StyledCard } from "@/components/ui/primitives/StyledCard";
@@ -9,7 +9,10 @@ import type { ProjectMode, ProjectRead } from "@/features/dashboard/api/projects
 // Phase-64-4:追記
 import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 
-const STATUS_LABEL: Record<ProjectRead["status"], string> = {
+// Phase-65-3：更新
+// const STATUS_LABEL: Record<ProjectRead["status"], string> = {
+// ↓↓
+export const STATUS_LABEL: Record<ProjectRead["status"], string> = {
   interviewing: "ヒアリング中",
   generating: "生成中",
   completed: "完了",

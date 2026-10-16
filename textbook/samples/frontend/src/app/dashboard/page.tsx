@@ -1,4 +1,4 @@
-// 作成：Phase-3-3｜更新：Phase-15-7
+// 作成：Phase-3-3｜更新：Phase-15-7,65-3
 // Phase-15-7：更新(作成画面へのリンクを、モード選択ダイアログを開くボタンに替えた)
 // "use client";
 //
@@ -37,7 +37,10 @@
 // ↓↓
 "use client";
 
-import { useState } from "react";
+// Phase-65-3：更新
+// import { useState } from "react";
+// ↓↓
+import { Suspense, useState } from "react";
 import { H2, XStack, YStack } from "tamagui";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
@@ -56,7 +59,14 @@ export default function DashboardPage() {
           <H2>ダッシュボード</H2>
           <StyledButton onPress={() => setModeDialogOpen(true)}>新規プロジェクトを作成</StyledButton>
         </XStack>
+        {/* Phase-65-3：更新
         <ProjectList />
+        ↓↓ */}
+        {/* ProjectList は一覧の条件を URL から読む(useSearchParams)ため、Next.js の規約で
+            Suspense 境界が必要になる */}
+        <Suspense fallback={null}>
+          <ProjectList />
+        </Suspense>
       </YStack>
       <ModeSelectDialog open={modeDialogOpen} onClose={() => setModeDialogOpen(false)} />
     </RequireAuth>

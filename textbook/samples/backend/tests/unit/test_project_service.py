@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,24(ゴール3後の調整)
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,24(ゴール3後の調整),65-1
 # Phase-6-3:追記 ── uuid, app.models.prompt_template.PromptTemplate,
 #   app.services.errors.PromptTemplateNotFoundError
 # Phase-6-5:追記 ── structlog.testing
@@ -243,7 +243,10 @@ async def test_create_rejects_unknown_template_id(db_session: AsyncSession) -> N
 
 
 # Phase-8-5:追記 ── ルーターがRepositoryを直接参照しない方針へ統一した際に新設したメソッドのテスト
-async def test_list_for_user_returns_only_that_users_projects(db_session: AsyncSession) -> None:
+# Phase-65-1：更新
+# async def test_list_for_user_returns_only_that_users_projects(db_session: AsyncSession) -> None:
+# ↓↓
+async def test_list_page_returns_only_that_users_projects(db_session: AsyncSession) -> None:
     user = await _create_user(db_session)
     other_user = User(email="other@example.com", hashed_password="x")
     db_session.add(other_user)
@@ -258,13 +261,17 @@ async def test_list_for_user_returns_only_that_users_projects(db_session: AsyncS
         name="他人", user_id=other_user.id, intake={"system_overview": "other"}, files=[]
     )
 
-    result = await service.list_for_user(user.id)
-
-    assert len(result) == 1
-    # Phase-24：更新
-    # assert result[0].title == "s"
+    # Phase-65-1：更新
+    # result = await service.list_for_user(user.id)
     # ↓↓
-    assert result[0].title == "自分"
+    result = await service.list_page(user.id)
+
+    # Phase-65-1：更新
+    # assert len(result) == 1
+    # assert result[0].title == "自分"
+    # ↓↓
+    assert result.total == 1
+    assert result.items[0].title == "自分"
 
 
 async def test_get_detail_includes_intake_files(db_session: AsyncSession) -> None:

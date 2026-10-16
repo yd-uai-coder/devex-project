@@ -1,4 +1,4 @@
-# 作成：Phase-64-1
+# 作成：Phase-64-1｜更新：Phase-65-1
 """プロジェクトの削除を実際の PostgreSQL で確かめる(外部キーの CASCADE とロック)。
 
 SUT: DELETE /api/v1/projects/{id}(ルート → ProjectService.delete → BackgroundTasks の
@@ -25,6 +25,10 @@ from app.models.user import User
 from app.services.project_deletion import purge_deleted_projects
 
 pytestmark = pytest.mark.integration
+
+# Phase-65-1:追記
+# 一覧の応答の形(Phase 65 で配列から {items, total} に変えた)で、何も無いとき
+_EMPTY_PAGE = {"items": [], "total": 0}
 
 async def _login(_client: AsyncClient, email: str) -> tuple[dict[str, str], uuid.UUID]:
     async with AsyncSessionLocal() as session:
@@ -66,7 +70,10 @@ async def test_delete_removes_project_and_children(client: AsyncClient) -> None:
 
     assert response.status_code == 204
     assert (await client.get(f"/api/v1/projects/{project_id}", headers=headers)).status_code == 404
-    assert (await client.get("/api/v1/projects", headers=headers)).json() == []
+    # Phase-65-1：更新
+    # assert (await client.get("/api/v1/projects", headers=headers)).json() == []
+    # ↓↓
+    assert (await client.get("/api/v1/projects", headers=headers)).json() == _EMPTY_PAGE
     assert await _counts(project_id) == (0, 0)  # 子の行は CASCADE で消える
 
 
@@ -95,7 +102,10 @@ async def test_delete_does_not_wait_for_a_job_holding_the_lock(client: AsyncClie
         )
 
         assert response.status_code == 204
-        assert (await client.get("/api/v1/projects", headers=headers)).json() == []
+        # Phase-65-1：更新
+        # assert (await client.get("/api/v1/projects", headers=headers)).json() == []
+        # ↓↓
+        assert (await client.get("/api/v1/projects", headers=headers)).json() == _EMPTY_PAGE
         assert (await _counts(project_id))[0] == 1  # ロック中の行は物理削除を飛ばす
         await job.commit()
 

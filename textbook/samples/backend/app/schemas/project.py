@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,15-1
+# 作成：Phase-2-3｜更新：Phase-6-3,15-1,65-1
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 import uuid
 from datetime import datetime
@@ -12,6 +12,9 @@ IntakeFileStatus = Literal["processed", "failed"]
 # simple: 簡易ドキュメントモード(4文書の一括生成)
 # detailed: 詳細設計モード(docs/external_design.md 2.7節)
 ProjectMode = Literal["simple", "detailed"]
+# Phase-65-1:追記
+# 一覧の1ページの件数(docs/external_design.md 2.12節)
+PROJECT_PAGE_SIZE = 10
 
 
 class IntakeFileRead(BaseModel):
@@ -38,6 +41,14 @@ class ProjectRead(BaseModel):
     mode: ProjectMode
     created_at: datetime
     updated_at: datetime
+
+
+# Phase-65-1:追記
+class ProjectListPage(BaseModel):
+    """一覧の1ページ分と、条件に合う全件数(画面がページの数を出すため)。"""
+
+    items: list[ProjectRead]
+    total: int
 
 
 class ProjectDetail(ProjectRead):

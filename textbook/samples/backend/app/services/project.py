@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3,24(ゴール3後の調整),64-1
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3,24(ゴール3後の調整),64-1,65-1
 # 写経レベル: コア ── 添付ファイルのバリデーション順序・失敗時の非ブロッキング方針など、ドメイン判断を体現する箇所。
 # Phase-6-3:追記 ── app.repositories.prompt_template.PromptTemplateRepository,
 #   app.services.errors.PromptTemplateNotFoundError
@@ -8,7 +8,9 @@
 # Phase-15-3:追記 ── app.services.doc_generator_service.DocGeneratorService
 # Phase-24:追記 ── app.services.errors.InvalidProjectNameError
 # Phase-64-1:追記 ── redis.asyncio.Redis, app.services.generation_progress.GenerationProgressStore
+# Phase-65-1:追記 ── collections.abc.Sequence, app.schemas.project(PROJECT_PAGE_SIZE, ProjectListPage, ProjectRead, ProjectStatus)
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import structlog
@@ -20,7 +22,15 @@ from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.intake_file import IntakeFileRepository
 from app.repositories.project import ProjectRepository
 from app.repositories.prompt_template import PromptTemplateRepository
-from app.schemas.project import IntakeFileRead, ProjectDetail, ProjectMode
+from app.schemas.project import (
+    PROJECT_PAGE_SIZE,
+    IntakeFileRead,
+    ProjectDetail,
+    ProjectListPage,
+    ProjectMode,
+    ProjectRead,
+    ProjectStatus,
+)
 from app.services.doc_generator_service import DocGeneratorService
 from app.services.errors import (
     FileTooLargeError,
@@ -116,9 +126,35 @@ class ProjectService:
         return project
 
     # Phase-8-5:追記 ── ルーターがRepositoryを直接参照しない方針への統一(list_projects用)
-    async def list_for_user(self, user_id: uuid.UUID) -> list[Project]:
-        """指定ユーザーのプロジェクト一覧を取得する。"""
-        return await self._projects.list_for_user(user_id)
+    # Phase-65-1：更新
+    # async def list_for_user(self, user_id: uuid.UUID) -> list[Project]:
+    #     """指定ユーザーのプロジェクト一覧を取得する。"""
+    #     return await self._projects.list_for_user(user_id)
+    # ↓↓
+    async def list_page(
+        self,
+        user_id: uuid.UUID,
+        *,
+        q: str | None = None,
+        mode: ProjectMode | None = None,
+        statuses: Sequence[ProjectStatus] = (),
+        page: int = 1,
+    ) -> ProjectListPage:
+        """指定ユーザーのプロジェクト一覧の1ページ(10件)と、条件に合う全件数を返す。
+        `q`は前後の空白を落とし、空なら絞らない。
+        最後より後のページは、空の items と全件数を返す。"""
+        keyword = q.strip() if q else ""
+        items, total = await self._projects.search_for_user(
+            user_id,
+            q=keyword or None,
+            mode=mode,
+            statuses=statuses,
+            offset=(page - 1) * PROJECT_PAGE_SIZE,
+            limit=PROJECT_PAGE_SIZE,
+        )
+        return ProjectListPage(
+            items=[ProjectRead.model_validate(p) for p in items], total=total
+        )
 
     # Phase-64-1:追記
     async def delete(self, project: Project, *, redis: Redis | None = None) -> None:

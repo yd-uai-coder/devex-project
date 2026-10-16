@@ -1,4 +1,4 @@
-// 作成：Phase-3-3｜更新：Phase-15-7
+// 作成：Phase-3-3｜更新：Phase-15-7,65-3
 // Phase-15-7：更新(ダイアログを開くことを確かめる)
 // import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // import { render, screen } from "@testing-library/react";
@@ -55,9 +55,15 @@ import { useDashboardStore } from "@/features/dashboard/dashboard-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
 const push = vi.fn();
+// Phase-65-3:追記
+const searchParams = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard",
-  useRouter: () => ({ push }),
+  // Phase-65-3：更新
+  // useRouter: () => ({ push }),
+  // ↓↓
+  useRouter: () => ({ push, replace: vi.fn() }),
+  useSearchParams: () => searchParams,
 }));
 
 describe("DashboardPage", () => {
@@ -65,7 +71,17 @@ describe("DashboardPage", () => {
 
   beforeEach(() => {
     useAuthStore.setState({ accessToken: "header.payload.sig", status: "success", error: null });
-    useDashboardStore.setState({ projects: [], status: "idle", error: null, fetchedAt: null });
+    // Phase-65-3：更新
+    // useDashboardStore.setState({ projects: [], status: "idle", error: null, fetchedAt: null });
+    // ↓↓
+    useDashboardStore.setState({
+      items: [],
+      total: 0,
+      status: "idle",
+      error: null,
+      key: null,
+      fetchedAt: null,
+    });
     stub = stubFetch();
   });
 
@@ -74,7 +90,10 @@ describe("DashboardPage", () => {
   });
 
   it("ログイン済みならプロジェクト一覧を表示し、新規作成ボタンでモード選択ダイアログを開く", async () => {
-    stub.queue({ status: 200, body: [] });
+    // Phase-65-3：更新
+    // stub.queue({ status: 200, body: [] });
+    // ↓↓
+    stub.queue({ status: 200, body: { items: [], total: 0 } });
     const user = userEvent.setup();
 
     render(
@@ -84,6 +103,9 @@ describe("DashboardPage", () => {
     );
 
     expect(await screen.findByText(/まだプロジェクトがありません/)).toBeInTheDocument();
+    // Phase-65-3:追記
+    // 一覧は検索・絞込みの部品と一緒に出る(Suspense の中で URL の条件を読む)
+    expect(screen.getByLabelText("タイトルで検索")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "新規プロジェクトを作成" }));
     expect(await screen.findByText("モードを選んでください")).toBeInTheDocument();
   });

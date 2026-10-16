@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1,65-1
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -26,13 +26,14 @@
 # Phase-53(完了後の調整):追記 ── app.api.deps.RedisDep, app.schemas.document(GenerationProgressRead, GenerationRequest), app.services.generation_progress.GenerationProgressStore
 # Phase-56-2:追記 ── app.schemas.document.TestSpecRead
 # Phase-64-1:追記 ── app.services.project_deletion.purge_deleted_projects
+# Phase-65-1:追記 ── fastapi.Query, app.schemas.project(ProjectListPage, ProjectStatus)
 import contextlib
 import json
 import uuid
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, File, Form, Query, UploadFile, status
 from fastapi.responses import Response, StreamingResponse
 
 from app.api.deps import CurrentProjectDep, CurrentUserDep, RedisDep, SessionDep
@@ -52,7 +53,13 @@ from app.schemas.hearing import (
     HearingPointsRead,
     HearingPointUpdate,
 )
-from app.schemas.project import ProjectDetail, ProjectMode, ProjectRead
+from app.schemas.project import (
+    ProjectDetail,
+    ProjectListPage,
+    ProjectMode,
+    ProjectRead,
+    ProjectStatus,
+)
 from app.services.chat_service import ChatService, ReplyCards
 from app.services.doc_generator_service import (
     DocGeneratorService,
@@ -142,14 +149,27 @@ async def create_project(
     return ProjectRead.model_validate(project)
 
 
-@router.get("", response_model=list[ProjectRead])
-async def list_projects(session: SessionDep, current_user: CurrentUserDep) -> list[ProjectRead]:
-    """認証ユーザーのプロジェクト一覧を取得する。"""
-    # Phase-8-5：更新(ルーターがRepositoryを直接参照しない方針へ統一)
-    # projects = await ProjectRepository(session).list_for_user(current_user.id)
-    # ↓↓
-    projects = await ProjectService(session).list_for_user(current_user.id)
-    return [ProjectRead.model_validate(p) for p in projects]
+# Phase-65-1：更新
+# @router.get("", response_model=list[ProjectRead])
+# async def list_projects(session: SessionDep, current_user: CurrentUserDep) -> list[ProjectRead]:
+#     """認証ユーザーのプロジェクト一覧を取得する。"""
+#     projects = await ProjectService(session).list_for_user(current_user.id)
+#     return [ProjectRead.model_validate(p) for p in projects]
+# ↓↓
+@router.get("", response_model=ProjectListPage)
+async def list_projects(
+    session: SessionDep,
+    current_user: CurrentUserDep,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    mode: ProjectMode | None = None,
+    # クエリの名前は status(複数回で OR)。引数名は fastapi.status とぶつかるため statuses にする
+    statuses: Annotated[list[ProjectStatus] | None, Query(alias="status")] = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+) -> ProjectListPage:
+    """認証ユーザーのプロジェクト一覧を、タイトルの部分一致・モード・進行状態で絞り、10件ずつ返す。"""
+    return await ProjectService(session).list_page(
+        current_user.id, q=q, mode=mode, statuses=statuses or (), page=page
+    )
 
 
 @router.get("/{project_id}", response_model=ProjectDetail)
