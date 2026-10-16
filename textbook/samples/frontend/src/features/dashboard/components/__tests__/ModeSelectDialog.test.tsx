@@ -1,4 +1,4 @@
-// 作成：Phase-15-7
+// 作成：Phase-15-7｜更新：Phase-62-3
 // 写経レベル: 定型
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -43,6 +43,33 @@ describe("ModeSelectDialog", () => {
     await user.click(screen.getByLabelText("詳細設計モードで作成する"));
 
     expect(push).toHaveBeenCalledWith("/projects/new?mode=detailed");
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  // Phase-62-3:追記
+  it("キャンセルは onCancel を呼び、onClose を呼ばない(作成画面からはダッシュボードへ戻すため)", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const onCancel = vi.fn();
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <ModeSelectDialog open onClose={onClose} onCancel={onCancel} />
+      </TamaguiProvider>,
+    );
+
+    await user.click(screen.getByText("キャンセル"));
+
+    expect(onCancel).toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("onCancel が無ければ、キャンセルで onClose を呼ぶ(ダッシュボードの使い方)", async () => {
+    const user = userEvent.setup();
+    const onClose = renderDialog();
+
+    await user.click(screen.getByText("キャンセル"));
+
     expect(onClose).toHaveBeenCalled();
   });
 });

@@ -1,10 +1,12 @@
-// 作成：Phase-3-5｜更新：Phase-4-2,15-8,24(ゴール3後の調整),35-3,35(完了後の調整)
+// 作成：Phase-3-5｜更新：Phase-4-2,15-8,24(ゴール3後の調整),35-3,35(完了後の調整),62-4,62(完了後の調整)
+// Phase-62-4:追記 ── act・fireEvent・within(@testing-library/react)
+// Phase-62(完了後の調整):追記 ── fittedHistoryHeight(../ChatPanel)
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
-import { ChatPanel } from "../ChatPanel";
+import { ChatPanel, fittedHistoryHeight } from "../ChatPanel";
 import { useHearingStore } from "@/features/hearing/hearing-store";
 import { ApiError } from "@/lib/api/client";
 
@@ -259,4 +261,145 @@ describe("ChatPanel", () => {
       "本日の利用上限に達しました。 送信したメッセージは保存されていません。",
     );
   });
+
+  // Phase-62-4:追記
+  describe("会話の領域のスクロール", () => {
+    // jsdom はレイアウトを計算しない(scrollHeight などが 0)ため、領域の寸法を差し替える
+    function fakeLayout(el: HTMLElement, size: { scrollHeight: number; clientHeight: number }) {
+      let top = 0;
+      Object.defineProperty(el, "scrollHeight", { configurable: true, get: () => size.scrollHeight });
+      Object.defineProperty(el, "clientHeight", { configurable: true, get: () => size.clientHeight });
+      Object.defineProperty(el, "scrollTop", {
+        configurable: true,
+        get: () => top,
+        set: (v: number) => {
+          top = v;
+        },
+      });
+      return size;
+    }
+
+    it("履歴の読み込みが終わったら、一度だけ最下部へ移す", () => {
+      useHearingStore.setState({ historyStatus: "loading" });
+      renderPanel();
+      const log = screen.getByRole("log", { name: "チャットの履歴" });
+      fakeLayout(log, { scrollHeight: 500, clientHeight: 200 });
+
+      act(() => {
+        useHearingStore.setState({
+          historyStatus: "success",
+          messages: [{ id: "1", sender: "ai", message: "はじめまして", created_at: "" }],
+        });
+      });
+
+      expect(log.scrollTop).toBe(500);
+    });
+
+    it("前に開いたプロジェクトの success のままでは動かない(読み込みの開始を待つ)", () => {
+      useHearingStore.setState({ historyStatus: "success" });
+      renderPanel();
+      const log = screen.getByRole("log", { name: "チャットの履歴" });
+      fakeLayout(log, { scrollHeight: 500, clientHeight: 200 });
+
+      act(() => {
+        useHearingStore.setState({ historyStatus: "success" });
+      });
+
+      expect(log.scrollTop).toBe(0);
+    });
+
+    it("最下部にいれば新しい発言に追従し、遡って読んでいるときは引き戻さない", () => {
+      useHearingStore.setState({ historyStatus: "loading" });
+      renderPanel();
+      const log = screen.getByRole("log", { name: "チャットの履歴" });
+      const size = fakeLayout(log, { scrollHeight: 500, clientHeight: 200 });
+      act(() => {
+        useHearingStore.setState({ historyStatus: "success" });
+      });
+
+      // 最下部にいる → ストリーミングの返信に追従する
+      size.scrollHeight = 700;
+      act(() => {
+        useHearingStore.setState({ streamingReply: "考え中..." });
+      });
+      expect(log.scrollTop).toBe(700);
+
+      // 上へ遡る → 次の発言では動かさない
+      log.scrollTop = 100;
+      fireEvent.scroll(log);
+      size.scrollHeight = 900;
+      act(() => {
+        useHearingStore.setState({ streamingReply: "考え中...続き" });
+      });
+      expect(log.scrollTop).toBe(100);
+    });
+
+    it("完了のバナーと観点の表が後から届いたら合わせ直し、観点の表で終える", () => {
+      useHearingStore.setState({ historyStatus: "loading" });
+      renderPanel();
+      const log = screen.getByRole("log", { name: "チャットの履歴" });
+      const size = fakeLayout(log, { scrollHeight: 500, clientHeight: 200 });
+      act(() => {
+        useHearingStore.setState({ historyStatus: "success" });
+      });
+
+      // 完了のバナーは会話の領域の末尾に出る(入力欄を押し出さない)
+      size.scrollHeight = 800;
+      act(() => {
+        useHearingStore.setState({ completion: { is_sufficient: true, summary: "要約です", missing_points: [] } });
+      });
+      expect(within(log).getByRole("button", { name: "この内容で設計書を生成する" })).toBeInTheDocument();
+      expect(log.scrollTop).toBe(800);
+
+      size.scrollHeight = 900;
+      act(() => {
+        useHearingStore.setState({
+          points: { scale: "personal", legacy: false, stale: false, is_sufficient: true, points: [] },
+        });
+      });
+      expect(log.scrollTop).toBe(900);
+
+      // 終えた後は、観点の表が変わっても(対象外にする等)引き戻さない
+      log.scrollTop = 100;
+      fireEvent.scroll(log);
+      act(() => {
+        useHearingStore.setState({
+          points: { scale: "personal", legacy: false, stale: false, is_sufficient: false, points: [] },
+        });
+      });
+      expect(log.scrollTop).toBe(100);
+    });
+    // Phase-62(完了後の調整):追記
+    it("読み込み後に、入力欄がページを動かさずに収まる高さを領域に当てる", () => {
+      useHearingStore.setState({ historyStatus: "loading" });
+      renderPanel();
+      const log = screen.getByRole("log", { name: "チャットの履歴" });
+      fakeLayout(log, { scrollHeight: 500, clientHeight: 200 });
+      // 領域の上端 200px・入力欄 150px・画面 900px(jsdom はレイアウトを計算しないので差し替える)
+      vi.spyOn(log, "getBoundingClientRect").mockReturnValue({ top: 200 } as DOMRect);
+      const input = screen.getByPlaceholderText("メッセージを入力").closest("div[style]") as HTMLElement;
+      Object.defineProperty(input, "offsetHeight", { configurable: true, get: () => 150 });
+      vi.stubGlobal("innerHeight", 900);
+
+      act(() => {
+        useHearingStore.setState({ historyStatus: "success" });
+      });
+
+      expect(log.style.maxHeight).toBe(`${fittedHistoryHeight(900, 200, 150)}px`);
+      vi.unstubAllGlobals();
+    });
+  });
+
+  // Phase-62(完了後の調整):追記
+  describe("fittedHistoryHeight", () => {
+    it("画面の高さから、領域の上端・間隔・入力欄・フッターの分を引く", () => {
+      // 900 - 200 - 16(間隔)- 150 - (56 + 16)(フッターと余白)
+      expect(fittedHistoryHeight(900, 200, 150)).toBe(462);
+    });
+
+    it("収まらないときは下限の 240px にする(ページのスクロールに任せる)", () => {
+      expect(fittedHistoryHeight(600, 300, 150)).toBe(240);
+    });
+  });
 });
+

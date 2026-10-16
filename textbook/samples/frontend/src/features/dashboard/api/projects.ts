@@ -1,4 +1,4 @@
-// 作成：Phase-3-3｜更新：Phase-15-6,15-7
+// 作成：Phase-3-3｜更新：Phase-15-6,15-7,62-3
 import { apiFetch } from "@/lib/api/client";
 
 export type ProjectStatus = "interviewing" | "generating" | "completed" | "revising";
@@ -8,10 +8,16 @@ export type ProjectStatus = "interviewing" | "generating" | "completed" | "revis
 export type ProjectMode = "simple" | "detailed";
 // Phase-15-7:追記
 
-// クエリ(?mode=)などの文字列をモードにする。無い・不正な値のときは簡易ドキュメントモード
-// (バックエンドの既定)にする。
-export function toProjectMode(raw: string | string[] | undefined): ProjectMode {
-  return raw === "detailed" ? "detailed" : "simple";
+// Phase-62-3：更新
+// // クエリ(?mode=)などの文字列をモードにする。無い・不正な値のときは簡易ドキュメントモード
+// // (バックエンドの既定)にする。
+// export function toProjectMode(raw: string | string[] | undefined): ProjectMode {
+//   return raw === "detailed" ? "detailed" : "simple";
+// ↓↓
+// クエリ(?mode=)などの文字列をモードにする。無い・不正な値のときは null を返す
+// (作成画面はモード選択ダイアログを出して選ばせる)。
+export function toProjectMode(raw: string | string[] | undefined): ProjectMode | null {
+  return raw === "simple" || raw === "detailed" ? raw : null;
 }
 
 // devex-api app/schemas/project.py の ProjectRead に対応する。

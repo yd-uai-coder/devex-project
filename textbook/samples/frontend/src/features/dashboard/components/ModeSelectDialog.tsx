@@ -1,4 +1,4 @@
-// 作成：Phase-15-7
+// 作成：Phase-15-7｜更新：Phase-62-3
 // 写経レベル: コア ── 作成後に変えられないモードを、何が生成されるかの違いとともに選ばせる。
 "use client";
 
@@ -24,12 +24,28 @@ export const MODE_OPTIONS: { mode: ProjectMode; title: string; description: stri
 ];
 
 // SCR-002 の「新規プロジェクトを作成」で開くモード選択ダイアログ。選んだモードを
-// クエリ(?mode=)で作成画面(/projects/new)へ渡す。
-export function ModeSelectDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+// Phase-62-3：更新
+// // クエリ(?mode=)で作成画面(/projects/new)へ渡す。
+// export function ModeSelectDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+// ↓↓
+// クエリ(?mode=)で作成画面(/projects/new)へ渡す。作成画面を mode なしで開いたときにも出す。
+// onCancel はキャンセル・外側の押下で呼ぶ(省略すると onClose)。モードを選んだときは onClose。
+export function ModeSelectDialog({
+  open,
+  onClose,
+  onCancel,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCancel?: () => void;
+}) {
   const router = useRouter();
 
   return (
-    <Dialog modal open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
+    // Phase-62-3：更新
+    // <Dialog modal open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
+    // ↓↓
+    <Dialog modal open={open} onOpenChange={(next) => (next ? undefined : (onCancel ?? onClose)())}>
       <Dialog.Portal>
         <Dialog.Overlay
           key="overlay"
