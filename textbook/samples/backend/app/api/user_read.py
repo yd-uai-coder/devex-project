@@ -1,4 +1,4 @@
-# 作成：Phase-68-4
+# 作成：Phase-68-4｜更新：Phase-74-1
 """ユーザーの応答(UserRead)を、レビューを使えるかの判定を添えて作る。
 
 レビューを使えるかはキーの登録(DB)を読むので、スキーマの計算プロパティでは出せない。ユーザーを
@@ -14,7 +14,11 @@ from app.services.llm_resolver import LlmResolver
 
 
 async def user_read(session: AsyncSession, user: User) -> UserRead:
-    """ユーザーの応答。`review_allowed`・`review_effective` を埋める。"""
+    # Phase-74-1：更新
+    # """ユーザーの応答。`review_allowed`・`review_effective` を埋める。"""
+    # ↓↓
+    """ユーザーの応答。`review_allowed`・`review_effective`・`has_password`・`google_linked` を
+    埋める。"""
     allowed = await LlmResolver(session).review_allowed(user)
     return UserRead.model_validate(user).model_copy(
         update={
@@ -22,5 +26,8 @@ async def user_read(session: AsyncSession, user: User) -> UserRead:
             "review_effective": review_effective(
                 review_allowed=allowed, review_enabled=user.review_enabled
             ),
+            # Phase-74-1:追記
+            "has_password": user.hashed_password is not None,
+            "google_linked": user.google_sub is not None,
         }
     )

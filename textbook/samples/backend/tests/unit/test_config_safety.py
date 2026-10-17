@@ -1,4 +1,4 @@
-# 作成：Phase-1-2｜更新：Phase-6-5
+# 作成：Phase-1-2｜更新：Phase-6-5,74-2
 """`Settings._reject_unsafe_production_settings`(本番設定の安全バリデータ)。
 
 テスト対象 / ドライバ / スタブ:
@@ -33,6 +33,12 @@ def test_weak_jwt_secret_in_production_is_rejected() -> None:
     weak = {**_BASE, "JWT_SECRET_KEY": "change-me-please"}
     with pytest.raises(ValueError, match="JWT_SECRET_KEY"):
         Settings(ENVIRONMENT="production", DEBUG=False, **weak)  # type: ignore[call-arg]
+
+
+# Phase-74-2:追記
+def test_fake_google_in_production_is_rejected() -> None:
+    with pytest.raises(ValueError, match="E2E_FAKE_GOOGLE"):
+        Settings(ENVIRONMENT="production", E2E_FAKE_GOOGLE=True, **_BASE)  # type: ignore[call-arg]
 
 
 def test_unsafe_settings_are_allowed_outside_production() -> None:

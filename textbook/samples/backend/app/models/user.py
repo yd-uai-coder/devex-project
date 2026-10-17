@@ -1,4 +1,4 @@
-# 更新：Phase-52-3,66-1
+# 更新：Phase-52-3,66-1,74-1
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。Phase 52 で初めて samples に載せた
 # (全文。タグの無い部分はテンプレートのまま)。
 # Phase-52-3:追記 ── sqlalchemy.false
@@ -22,7 +22,15 @@ class User(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Phase-74-1：更新
+    # hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    # ↓↓
+    # Google だけで登録した利用者は null(パスワードでのログインはできない)
+    hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # 連携した Google アカウントの識別子(ID トークンの sub)。連携していなければ null
+    google_sub: Mapped[str | None] = mapped_column(
+        String(255), unique=True, index=True, nullable=True
+    )
     # Phase-66-1：更新
     # full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # ↓↓

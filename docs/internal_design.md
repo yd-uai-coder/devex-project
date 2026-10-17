@@ -47,7 +47,8 @@
 | :--- | :--- | :--- | :--- |
 | id | UUID | PK, DEFAULT gen_random_uuid() | ユーザーID |
 | email | VARCHAR(255) | UNIQUE, NOT NULL | メールアドレス(ログインに使う) |
-| hashed_password | VARCHAR(255) | NOT NULL | パスワードハッシュ |
+| hashed_password | VARCHAR(255) | NOT NULL(※ステージ10で NULL可) | パスワードハッシュ。NULL は Google だけで登録してパスワードを設定していない |
+| google_sub | VARCHAR(255) | UNIQUE, NULL可(※ステージ10) | 連携した Google アカウントの識別子(ID トークンの `sub`)。NULL は連携していない |
 | user_name | VARCHAR(255) | NULL | ユーザーネーム(表示名。ステージ9 で `full_name` から改名) |
 | is_active | BOOLEAN | NOT NULL, DEFAULT true | 有効なアカウントか(無効ならログインできない) |
 | is_superuser | BOOLEAN | NOT NULL, DEFAULT false | 管理者か(既定のキーでの設計レビュー。ステージ8) |
@@ -56,6 +57,8 @@
 | updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 更新日時 |
 
 **(ステージ9)** 表示名の列 `full_name` を `user_name` に改名した(Phase 66。Alembic の列の改名でデータは残す)。この表も実際の列に合わせて直した(それまでは `password_hash` と書き、`is_active`・`is_superuser`・`review_enabled` が無かった)。用途ごとのモデルと API キーは別のテーブルに持つ(3.3節「9. 使い勝手とアカウント・モデル設定」)。
+
+**(ステージ10)** `hashed_password` を NULL 可にし、`google_sub` を足す(Phase 74 の Alembic 1本。3.3節「10. Google 認証」)。Google だけのユーザーがいると downgrade で NOT NULL に戻せないので、ロールバックの前に NULL の行の数を確かめる。
 
 #### ② `projects` テーブル
 
@@ -234,7 +237,7 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 
 #### ⑫ `user_model_settings` テーブル(ステージ9、Phase 67で新設)
 
-用途ごとに選んだ provider とモデル([外部設計書](external_design.md) 2.12節「マイページ」)。`user_id` が null の行はシステムの既定値で、`scripts/seed.py` が `.env` のモデル(`GEMINI_MODEL`・`REVIEW_MODEL`・`JUDGE_MODEL`)で書く。ユーザーが選ばない用途は行を持たず、既定値に従う。決定の経緯は [`textbook/Phase-67/Phase-67-2.md`](../textbook/Phase-67/Phase-67-2.md)。
+用途ごとに選んだ provider とモデル([外部設計書](external_design.md) 2.12節「マイページ」)。`user_id` が null の行はシステムの既定値で、`scripts/seed.py` が `.env` のモデル(`GEMINI_MODEL`・`REVIEW_MODEL`・`JUDGE_MODEL`)で書く(dev 専用)。行が無ければ `.env` の値で補うので、本番では既定値の行を入れず、`.env` を唯一の既定値にする(Phase 72 で確定。手順は [`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.6節)。ユーザーが選ばない用途は行を持たず、既定値に従う。決定の経緯は [`textbook/Phase-67/Phase-67-2.md`](../textbook/Phase-67/Phase-67-2.md)。
 
 | カラム名 | データ型 | 制約 | 説明 |
 | :--- | :--- | :--- | :--- |
@@ -366,6 +369,9 @@ backend/
 | **GET** | `/api/v1/llm/catalog` | （※ステージ9、Phase 67）選べる provider・モデル(`{provider, model_id, label, note}`)と用途(`{purpose, label, description, recommend_low_cost}`)の表。静的(`app/ai/llm/catalog.py`) | 必要 |
 | **GET** / **PUT** | `/api/v1/users/me/models` | （※ステージ9、Phase 67）用途ごとのモデルの取得・保存。PUT は`{choices: [{purpose, provider, model}]}`で選択の全体を置き換え、含めない用途は既定値に従う。応答は4用途の`{purpose, provider, model, is_default, key_missing, default_provider, default_model, selectable_providers}`。カタログに無いモデルは422 `MODEL_NOT_IN_CATALOG`、選べない provider は422 `MODEL_PROVIDER_KEY_REQUIRED` | 必要 |
 | **GET** | `/api/v1/users/me/api-keys` | （※ステージ9、Phase 67）登録済みのキー(`{provider, key_hint, needs_reregister}`。キー本体は返さない)と`encryption_available` | 必要 |
+| **POST** | `/api/v1/auth/google` | （※ステージ10、Phase 74）Google の ID トークン(`{credential}`)でログイン・登録。`/auth/login` と同じく access を本文、refresh を Cookie で返す。同じメールの未連携のアカウントがあれば409 `GOOGLE_LINK_REQUIRED`、メールが確認されていなければ400、設定が無ければ503 | 不要 |
+| **POST** | `/api/v1/auth/google/link` | （※ステージ10、Phase 74）連携の確かめ(`{credential, password}`)。ID トークンを確かめ直し、パスワードが合えば `google_sub` を記録してログインする | 不要 |
+| **POST** / **DELETE** | `/api/v1/users/me/google` | （※ステージ10、Phase 75）マイページからの Google の連携(`{credential}`)・解除(パスワードが無ければ断る)。パスワードの設定は Phase 75 の着手時に API の形を決める | 必要 |
 | **PUT** / **DELETE** | `/api/v1/users/me/api-keys/{provider}` | （※ステージ9、Phase 67）provider ごとの API キーの登録(`{api_key}`。保存の前にモデルの一覧の取得で確かめる。無効は422 `API_KEY_INVALID`、確かめられないときは502 `API_KEY_CHECK_FAILED`、暗号の鍵が無いときは503 `ENCRYPTION_UNAVAILABLE`。試行はユーザーごとに1時間10回)・削除(204。無くても204。選択の行は残す) | 必要 |
 
 > **[Phase 24 で確定 ── 〈簡易モードの設計図の API を削除〉]** 当初〈上の表の`POST /uml/diagrams`(生成)・`/uml/candidates`・`/uml/generation-runs`・`/uml/reflect`・`/uml/embeds`・`/uml/bundle`を提供する〉→ 撤回。理由〈簡易ドキュメントモードの設計図(SCR-007)を削除した([外部設計書](external_design.md) 2.6節の撤回を参照)。残りの`/uml/...`(図の取得・一覧・更新・検証・自動レイアウト・承認・出力、データ辞書)は、詳細設計モードの段階2〜4が使う〉。
@@ -635,9 +641,22 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * **Phase 66 で確定**: API は操作ごとに3つに分ける(`PATCH /users/me`・`PUT /users/me/email`・`PUT /users/me/password`。確かめの要否と副作用が操作ごとに違うため)。今のパスワードの不一致は **400** `CURRENT_PASSWORD_MISMATCH`(401 にすると、画面の`apiFetch`がセッション切れとみなしてログアウトするため)。今のパスワードの試行は、ログインと同じ上限(`AuthRateLimiter.enforce_login`。IP と今のメール)で数える。新しいパスワードの規則(8〜128文字・大文字・小文字・数字・ASCII の記号)は`app/core/password_policy.py`に置き、変更の API だけが課す(登録の API には課さない。既存のアカウントと、規則より前のテストのパスワードを断らないため)。パスワードの変更は、ハッシュを替えて commit → `AuthService.revoke_all_refresh_tokens`(SCAN で鍵を探して消す)→ 今の端末に access と refresh を出し直す(`app/api/refresh_cookie.py`の`set_refresh_cookie`。ログインと共有)。アクセストークン(30分)は失効させない(ほかの端末も、次の refresh で切れる)。同じメールへの変更は何もせずに成功を返す。
 * **モデルと API キー**: 新しいテーブル2つ ── 用途ごとのモデル(ユーザー・用途(`chat`・`generation`・`review`・`judge`)・provider・モデル。`user_id`が null の行がシステムの既定値)と、provider ごとの API キー(ユーザー・provider・暗号文・末尾の数文字。キーは Fernet で暗号化し、鍵は環境変数 `ENCRYPTION_KEY`)。鍵が無いときはキーの登録の API だけ 503 にする。選べるモデルは API 側の静的なカタログ(provider → model ID の表)に置き、カタログに無いモデルは保存で断る。キーは保存のときにモデルの一覧の取得で確かめる(無効なら422)。`scripts/seed.py` は `.env` のモデル(`GEMINI_MODEL`・`REVIEW_MODEL`・`JUDGE_MODEL`)を既定値の行として登録する(値を seed に書かない)。キー自体は既定値として環境変数に残し、DB には入れない。
   * **Phase 67 で確定**: 用途ごとに1行のテーブル(`user_model_settings`)と provider ごとのキーのテーブル(`user_api_keys`)(3.2節 ⑫⑬)。seed は実行のたびに `.env` の値で既定値の行を上書きする(`.env` が正)。**superuser でないユーザーが既定のキーで選べるのは、既定値と同じ provider だけ**(チャット・生成は Gemini、レビュー・判定は Claude。ただしレビューは決定5のとおり superuser だけ)。それ以外の provider は、今の鍵で復号できる自分のキーがあるときだけ保存できる。superuser は既定のキーで何でも選べる。キーを消しても選択の行は消さず、読み出しで`key_missing`を返す(Phase 68 の解決で既定値に読み替える)。キーの確かめは`httpx`で直接モデルの一覧を1件だけ取り(Gemini は`x-goog-api-key`、Anthropic は`x-api-key`と`anthropic-version`。キーを URL に載せない)、400・401・403 は無効、タイムアウト・429・5xx・接続の失敗は確かめられない(どちらも保存しない)。`E2E_FAKE_LLM`のときは確かめを飛ばす。暗号の鍵は`ENCRYPTION_KEY`にカンマ区切りで複数持て、`MultiFernet`が先頭で暗号化して全部で復号する(鍵を回すときは新しい鍵を先頭に足し、古い鍵を後ろに残す)。どの鍵でも復号できないキーは`needs_reregister`とし、選べる provider の根拠にしない。
+  * **Phase 72 で確定**: 本番の `ENCRYPTION_KEY` は本番の backend のコンテナで作り、VPS の `.env` とパスワード管理ツールにだけ置く。全行を新しい鍵で暗号化し直すスクリプトは作らず、回した後も古い鍵を後ろに残す(鍵を失ったら、利用者がキーを登録し直すまで既定のモデルで動く)。本番には既定値の行を入れない(`.env` が唯一の既定値)。手順は [`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.6節。
 * **生成の知らせ**(Phase 69 で確定): 設計書・テスト仕様書の生成の失敗は`projects.generation_failure`に記録する(理由のコードは UML 図・段階と同じ`classify_failure`。キーが無くて解決できない`LlmUnavailableError`は`LLM_UNAVAILABLE`に分け、マイページを案内する文言にする。段階の下書きも同じ)。チャットの`sender="others"`の行も今までどおり書く。画面のポーリング(`useGenerationPolling`)は「`generating`でなくなった」ことを終わりとし、読んだプロジェクトの`generation_failure`で成否を見分ける(失敗すると状態は生成の前に戻り、`completed`のこともあるため)。詳細設計モードのテスト仕様書は、`status`が`generating`で進み具合の対象に`test_spec`があれば作っている最中とみなす。差し戻しで作り直した段階は`design_stages.generation_finding_ids`に渡した指摘を記録する。
 * **LLM の解決**: 今の取得関数(`get_gemini_llm()`・`get_review_llm()`・`get_judge_llm()`。`lru_cache`でプロセスに1つ)を「ユーザーと用途 → LLM」の解決に替える。キャッシュの鍵は (provider, モデル, キー)。用途ごとに provider を入れ替えられるので、provider に固有の処理(本文の取り出し・構造化出力の方式・出力の上限・再試行の 429 の判定)を両方の provider で通す。PDF の取り込みは用途にせず、Gemini の解決(自分の Gemini キー、無ければ既定)で読む。レビューの実効値は`is_superuser and 設定`から「(superuser、またはレビューの用途の provider の自分のキーがある)かつ設定」に改める。モデルごとのタイムアウトと、混雑(503・504)を待つ再試行は Phase 68 の着手時に決める(Phase 60 の申し送り「生成のモデルと Gemini の無料枠」)。
   * **Phase 68 で確定**: 取得関数を廃止し、`LlmResolver`(`app/services/llm_resolver.py`)が「ユーザーと用途 → (provider, モデル, キー)」を決める。モデルはユーザーの選択(無ければ既定値。`key_missing`の用途は既定値に読み替え)、キーは今の鍵で復号できる自分のキー、無ければ環境変数の既定のキー。どちらにも無ければレビュー・判定は`ReviewUnavailableError`(502、今までどおり自己診断に切り替え)、チャット・生成は`LlmUnavailableError`(502 `LLM_UNAVAILABLE`)。**解決はLLMを呼ぶ各サービスが自分のセッションで行う**(ユーザー決定。ユーザーは`project.user_id`から。ジョブの入口の引数は変えない。テストの`llm=`の差し替えは残す)。クライアントの組み立ては`build_llm`(`app/ai/llm/factory.py`。`lru_cache`の鍵は (provider, モデル, キー, 用途, 温度)。E2E の偽物の分岐はキャッシュの外)。provider に固有の処理: 構造化出力は両 provider で`json_schema`に揃える(langchain-anthropic の既定は function_calling)/ Claude の出力の上限はチャット 4000・生成 16000・レビューと判定は設定値(Gemini はレビュー・判定だけに付ける)/ SDK の中の再試行は止める(Gemini は1、Claude は0)/ 本文はブロックのリストでも`extract_text_content`で読む / 入力の超過は Gemini の 400(token)に加え、Anthropic の 400「prompt is too long」・413 も`LLMTokenLimitError`。**タイムアウトはカタログのモデルごと**(ユーザー決定。Flash-Lite 30秒・3.6 Flash 120秒・3.8 Flash 240秒・Haiku 60秒・Sonnet 180秒・Opus 240秒・Fable 300秒。`LLM_TIMEOUT_SECONDS`・`REVIEW_TIMEOUT_SECONDS`・`JUDGE_TIMEOUT_SECONDS`は廃止)。**混雑(Gemini の 503・504、Anthropic の 529・503)は試行の間を 5秒 → 15秒 に伸ばす**(ユーザー決定。試行は最大3回のまま、ほかの一時的な失敗は1秒)。PDF の取り込みは Gemini 固定(生成の用途が Gemini ならそのモデル、違えば`GEMINI_MODEL`)。解決できなければ取り込みの失敗として記録する。汎用チャット(`/chat`のグラフ)はチャットの用途で解決し、`RunnableConfig`の`configurable`で LLM を渡す(グラフはプロセスで1つにコンパイルして使い回すため)。**レビューの実効値**は`review_allowed`(superuser、またはレビューの用途の provider の復号できる自分のキーがある)かつ設定。`UserRead`に`review_allowed`を足し、画面はレビューのパネルをこれで出し分ける。**自分のキーで流すレビュー・判定は1日の上限を数えない**(ユーザー決定。既定のキーの回だけ数える。1回の判定の件数の上限10は残す)。レビューの回・判定の記録の`model`は解決したモデル。
+
+### 10. Google 認証(ステージ10)
+
+[外部設計書](external_design.md) 2.13節の内部の方針(Phase 73で確定)。経緯は[`textbook/Phase-73/Phase-73-1.md`](../textbook/Phase-73/Phase-73-1.md)。細部は各 Phase の着手時に決める(未確定事項は[`textbook/Phase-73/Phase-73-3.md`](../textbook/Phase-73/Phase-73-3.md))。
+
+* **フロー**: Google Identity Services の ID トークンを使う(Authorization Code は使わない)。UI(`@react-oauth/google` の `GoogleLogin`)が受け取った credential を `POST /auth/google` に送り、API が検証して、今の `/auth/login` と同じく access(本文)と refresh(Cookie。`app/api/refresh_cookie.py` の `set_refresh_cookie`)を出す。client secret・コールバック・state は持たない。
+* **検証**: `google-auth` の `id_token.verify_oauth2_token`(署名・`iss`・`aud`=`GOOGLE_CLIENT_ID`・`exp`)。同期の処理なので `run_in_threadpool` で呼ぶ(依存の依存から明示の依存にする)。`email_verified` が false なら断る。`GOOGLE_CLIENT_ID` が無ければ 503 で断り、今のログインはそのまま使える。E2E は `E2E_FAKE_GOOGLE`(偽の credential を受け付ける)で流し、`ENVIRONMENT=production` では `E2E_FAKE_LLM` と同じく起動時に弾く。
+* **本人の見分け方**: まず `google_sub` で探す(Google 側のメールが変わってもアプリのメールは変えない)。無ければメールで探し、見つかった人が未連携なら 409 `GOOGLE_LINK_REQUIRED`。UI は credential を保ったままパスワードを聞き、`POST /auth/google/link {credential, password}` で確かめ直してから `google_sub` を記録する(サーバーに連携の状態を持たない。ID トークンの寿命は約1時間)。どちらにも無ければ新しく登録する(メールは ID トークン、`user_name` は `name`、superuser ではない、パスワードは NULL)。
+* **パスワード**: `AuthService.authenticate` は `hashed_password` が NULL の人を、パスワードが違うときと同じ 401 にする。連携の確かめのパスワードの試行は `AuthRateLimiter.enforce_login`(IP とメール)で数え、`/auth/google`・`/auth/google/link` は新しいカウンタ `google_ip` でも数える。
+* **`UserRead`**: `has_password`・`google_linked` を足す(マイページの出し分け)。
+* **開発環境の上限**(ステージ9 の申し送り): 開発用の compose(`docker-compose.yml`・`docker-compose.test.yml`・`docker-compose.e2e.yml`)の env で登録・ログインの上限を上げる。本番は `docker-compose.prod.yml` だけで起動するので、今の値のまま。
+* **Phase 74 で確定**: 検証は `app/services/google_identity.py`(`GoogleIdTokenVerifier`。署名・`aud`・期限の不一致は 401、発行者の不一致も 401、公開鍵を取りに行けなければ 502 `GOOGLE_VERIFY_FAILED`)。ルートは `GoogleTokenVerifierDep` で受け、`E2E_FAKE_GOOGLE` なら偽物(`fake:<sub>:<email>`。名前はメールのローカル部、メールは確認済み)、`GOOGLE_CLIENT_ID` が無ければ 503 `GOOGLE_AUTH_UNAVAILABLE`。本人の決定は `GoogleAuthService`(`app/services/google_auth.py`)。メールが確認されていなければ 400 `GOOGLE_EMAIL_NOT_VERIFIED`。**連携の確かめでパスワードが違うときは、ログインと同じ 401**(ユーザー決定。メールのアカウントが無い・パスワードを持たない・無効な人も同じ 401)。**メールは同じだが、そのアカウントが別の Google と連携済み(または、その Google がほかの人と連携済み)なら 409 `GOOGLE_ACCOUNT_CONFLICT`**(ユーザー決定)。同じ Google での連携のやり直しは成功として扱う。`user_name` は `name` を 255文字で切る。`google_ip` の上限は 30回/時(ユーザー決定。`GOOGLE_RATE_LIMIT_PER_IP_PER_HOUR`)。連携の確かめは `google_ip` を数え、検証した後に `enforce_login`(IP と ID トークンのメール)でも数える。**開発用の上限は `docker-compose.yml` の backend の `environment` で4つ(login_ip・login_email・register_ip・google_ip)を 1000回/時**(ユーザー決定。test・e2e のオーバーレイも引き継ぐ)。`docker-compose.e2e.yml` に `E2E_FAKE_GOOGLE: "true"` を足した。マイグレーションは `c4f8a2e6d1b9`(`google_sub` は一意のインデックス `ix_users_google_sub`)。経緯は [`textbook/Phase-74/Phase-74-introduction.md`](../textbook/Phase-74/Phase-74-introduction.md)。
 
 ## 3.4 例外処理・エラーハンドリング・ログ設計
 
@@ -671,6 +690,8 @@ API全体で一貫したエラーハンドリングを行うため、エラー�
 * `CURRENT_PASSWORD_MISMATCH`(400): メール・パスワードの変更で今のパスワードが合わない(ステージ9、Phase 66。メールの重複は既存の409)
 * `LLM_UNAVAILABLE`(502): チャット・生成で、選んだ AI のキーが自分にも既定にも無く LLM を呼べない(ステージ9、Phase 68。3.3節 9項)。プロジェクトの作成の最初の発話では握りつぶし、作成は成功させる
 * `MODEL_NOT_IN_CATALOG` / `MODEL_PROVIDER_KEY_REQUIRED` / `API_KEY_INVALID`(422)、`API_KEY_CHECK_FAILED`(502)、`ENCRYPTION_UNAVAILABLE`(503): 用途ごとのモデルと API キーの登録(ステージ9、Phase 67。3.3節 9項)プロジェクトの削除(Phase 64)は新しいコードを足さない(他人・無いものは`RESOURCE_NOT_FOUND`)
+* `GOOGLE_LINK_REQUIRED`(409): Google でログインしたが、同じメールの未連携のアカウントがある。パスワードでの連携の確かめに進む(ステージ10、Phase 74。3.3節 10項)
+* `GOOGLE_ACCOUNT_CONFLICT`(409)、`GOOGLE_EMAIL_NOT_VERIFIED`(400)、`GOOGLE_AUTH_UNAVAILABLE`(503)、`GOOGLE_VERIFY_FAILED`(502): 同じメールのアカウントか Google アカウントがほかと連携済み / Google のメールが確認されていない / Google の設定が無い / Google の公開鍵を取得できない(Phase 74 で確定)。ID トークンが不正なとき・連携の確かめでパスワードが違うときは、コードの無い 401
 * `INTERNAL_SERVER_ERROR`: `AppError`以外の予期せぬ例外をキャッチする最終防衛ラインのハンドラが返す(スタックトレース等の詳細はレスポンスに含めずサーバーログにのみ記録)
 
 **`UNAUTHORIZED`について**: 認証境界(`app/api/deps.py`の`get_current_user`)は意図的に`AppError`ではなく生の`HTTPException`を使っており(認証失敗の理由を外部に細かく漏らさないため)、`code`フィールドは付与されない。レスポンス形自体は`{"detail": "..."}`のまま変わらない。

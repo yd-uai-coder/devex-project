@@ -1,4 +1,4 @@
-# 更新：Phase-52-5,66-1,66-2,68-4
+# 更新：Phase-52-5,66-1,66-2,68-4,74-1
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。Phase 52 で初めて samples に載せた
 # (全文。タグの無い部分はテンプレートのまま)。
 # Phase-52-5:追記 ── pydantic.computed_field
@@ -76,6 +76,10 @@ class UserRead(UserBase):
     # 実効値(使えて、設定がオン)。キーの登録を読むので、ルートが app/api/user_read.py で埋める
     review_allowed: bool = False
     review_effective: bool = False
+    # Phase-74-1:追記
+    # パスワードを持つか・Google と連携しているか(マイページの出し分けに使う。値そのものは返さない)
+    has_password: bool = False
+    google_linked: bool = False
 
 
 # Phase-52-5:追記

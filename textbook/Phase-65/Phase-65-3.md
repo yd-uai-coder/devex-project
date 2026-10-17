@@ -52,7 +52,7 @@ function submitSearch() { const q = draft.trim(); if (q !== value.q) change({ q 
 - **同じ検索語なら呼ばない**: 履歴に同じ URL を積まない。
 - **モードは `RadioGroupWithLabel` を使わずに組んだ**: 部品の幅が固定(既定300)で、3つの選択肢が2行に折り返した。進行状態の行と同じ「見出し + 選択肢を横に」をこの部品の中で組んだ。狭い画面で折り返すよう、各段に `flexShrink`・`minWidth` を付け、`RadioGroup` の中の要素には `RadioGroupWithLabel.module.css` の `radioGroupWrap`(Tamagui の View の既定の `flex-shrink: 0` を外す)を当てた(ブラウザで 375px の幅を確かめて直した)。
 - **既存の部品のうち使わなかったもの**: `useFilterSortPagination` は、全件を持ってクライアントで絞って切る仕組み(サーバーで切る今回と合わない)。`DataFilter` は1つのキーの条件しか持てず、適用ボタンの付いたポップオーバー(モードと状態を同時に、すぐ反映するのと合わない)。`DataPagination` はそのまま使えた。
-- **並び(完了後のユーザーの調整)**: 検索欄と「検索」ボタンを左に寄せて1行、その下にモードの行・進行状態の行・「条件をクリア」を縦に積む(`YStack`)。検索欄は `maxWidth="480px"`。「条件をクリア」は緑のボタン(`StyledButton`・`size="$2"`)にした。調整で入った `alignItems="left"` は Tamagui の型に無い値で `tsc` が通らなかったため、同じ意味の `flex-start` にした。
+- **並び(完了後のユーザーの調整)**: 検索欄と「検索」ボタンを左に寄せて1行、その下にモードの行・進行状態の行・「条件をクリア」を縦に積む(`YStack`)。検索欄は `width="100%"`(幅の上限は付けない。ステージ9の振り返りで本体に合わせた)。「条件をクリア」は緑のボタン(`StyledButton`・`size="$2"`)にした。調整で入った `alignItems="left"` は Tamagui の型に無い値で `tsc` が通らなかったため、同じ意味の `flex-start` にした。
 - 進行状態の文言は、カードと同じ `STATUS_LABEL`(`ProjectListItem.tsx` から export)を使う。
 
 ## 2. 一覧(`ProjectList`)

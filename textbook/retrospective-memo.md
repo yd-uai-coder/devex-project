@@ -104,6 +104,9 @@
 - **判断理由**: テンプレートを使う側のアプリでも、統合テストと E2E を続けて流すと同じことが起きる。テストの実行ではカウンタを別の Redis の DB 番号(またはキーの接頭辞)に分けるか、テストの前にカウンタを消す形をテンプレートに持たせておくと、見かけの失敗を防げる。
 - **対象外**: ステージ6では手を入れていない(「統合テストを E2E の直後に流さない」運用で回避した)。
 - **追記(Phase 64、[`Phase-64-1.md`](./Phase-64/Phase-64-1.md))**: 新しい integration のテストで利用者を API で5人登録したところ、スイート全体の1回の実行で登録の上限を超え、既存のテストが429で落ちた。新しいテストは利用者を DB に直接作り、アクセストークンも直接発行する形にした(登録・ログインの API を通さない)。認証の API そのものを確かめるテスト以外は、この形にすればカウンタを使わない。
+- **追記(ステージ9の振り返り、[`overall-retrospective.md`](./appendix/overall-retrospective.md) 14.1 Q3)**: ステージ9では Phase 63・66・67・71・72 の5回、このカウンタに当たった。既存の `test_auth_flow.py`・`test_projects_flow.py`(API で登録する)の流し直し・実 LLM の確かめのスクリプト(1回ごとにログイン)・全 E2E(1回5人)が、同じ 127.0.0.1 のカウンタに入る。ステージ10で `AuthRateLimiter` に Google ログインを足すときに、カウンタを分けることを範囲の候補にした([`stage9-10-plan.md`](../appendix/stage9-10-plan.md) 2.4)。
+- **追記(Phase 73、[`Phase-73-1.md`](./Phase-73/Phase-73-1.md) の決定11)**: カウンタを分けるのではなく、開発用の compose(dev・test・e2e)の env で登録・ログインの上限を上げることにした(Phase 74)。本番は `docker-compose.prod.yml` だけで起動するので値が漏れない。コードを変えずに、integration・E2E・手元の確かめのスクリプトのどれにも効く。テンプレートでも、開発用の compose に上限の env を書いておく形が手軽である。
+- **追記(Phase 74 で実装、[`Phase-74-3.md`](./Phase-74/Phase-74-3.md))**: `docker-compose.yml` の backend に `environment` で4つ(login_ip・login_email・register_ip・google_ip)を 1000回/時にした。`docker compose config` で、test・e2e のオーバーレイに引き継がれ、`docker-compose.prod.yml` には入らないことを確かめた。
 
 ## `[テンプレート反映候補]` ログイン済みのとき認証ページを飛ばす proxy とフラグ cookie
 
@@ -123,9 +126,21 @@
 - **発生**: [`Phase-64-3.md`](./Phase-64/Phase-64-3.md)
 - **概要**: devex-ui のテンプレートには、操作の完了を知らせる仕組みが無かった(失敗は画面の中に `role="alert"` で出すだけ)。Phase 64 で `src/components/layout/AppToast.tsx`(`ToastProvider`・`ToastViewport`・表示中のトースト)を `providers.tsx` に置き、`useToastController().show(題名)` で知らせる形にした。tamagui 2.6.0 では `@tamagui/toast/v2` の `Toaster` が `accessibilityLabel` を DOM に渡して React の警告を出すので、従来の API を使う。`@tamagui/toast` は tamagui 本体と同じ版に固定する(`^2.6.0` では新しい版を引き込み、Tamagui の部品が二重になる)。
 - **判断理由**: 「保存しました」「削除しました」の知らせはドメインに依存せず、画面を移っても残る置き場はルートにしか置けない。テンプレートを使うアプリでも同じ作り方になる。
+- **追記(ステージ9の振り返り、[`overall-retrospective.md`](./appendix/overall-retrospective.md) 14.3)**: Tamagui の版を上げるときに次を見る。(1) `@tamagui/toast/v2` の `Toaster` の警告が直っていれば v2 に寄せてよい (2) 2.6.0 の AlertDialog は、開く前に説明文を探して開発時の警告を出す(誤検知)。ほかに、Phase 65 で `RadioGroupWithLabel` の固定の幅が折り返して自前の並びにしたこと、Phase 67 で `AccordionInner` の `flex={1}` を縦に並べると見出しが重なったことも、テンプレートの部品の落とし穴として残す。
 
 ## `[テンプレート反映候補]` パスワードの規則が画面にしか無い・アカウントの変更の API が無い
 
 - **発生**: [`Phase-66-2.md`](./Phase-66/Phase-66-2.md)
 - **概要**: devex-api のテンプレート由来の登録の API(`UserCreate.password: str`)は下限を持たず、パスワードの規則(8〜128文字・大文字・小文字・数字・記号)は devex-ui の登録の画面の zod にだけあった。また、使われていない `UserUpdate`(`full_name`・`password` を任意で受ける)が残り、本人がメール・パスワードを変える API は無かった。Phase 66 で、規則を `app/core/password_policy.py` の純粋な関数に置いて変更の API にだけ課し、変更の API を操作ごとに3つ(今のパスワードの不一致は 400。401 は画面がログアウトに倒すため)に分け、パスワードの変更で refresh を全部失効(`SCAN refresh_token:{user_id}:*`)させて今の端末に出し直す形にした。Cookie の付け方は `app/api/refresh_cookie.py` に移して共有した。
 - **判断理由**: アカウントの変更と、そのときのセッションの扱いはドメインに依存しない。テンプレートを使うアプリでも、規則を API に置くこと(登録の API にも課すかは、既存のアカウントとテストの都合で決める)、ログイン中の操作の失敗を 401 にしないことは同じになる。
+
+## `[テンプレート反映候補]` 外部の ID でのログインと、同じメールの既存アカウントの連携の確かめ
+
+- **発生**: [`Phase-73-1.md`](./Phase-73/Phase-73-1.md)(決定2〜4)
+- **概要**: devex-api のテンプレートは、登録でメールを確かめない。ここに Google のログインを足すとき、同じメールの既存アカウントに確かめずに紐付けると、乗っ取りの準備(pre-hijacking)が成り立つ。他人が先にそのメールでパスワード登録しておくと、紐付けた後もその人のパスワードで入れてしまう。Phase 73 では、次の形に決めた。
+  - ID トークン(Google Identity Services)を API で検証する。
+  - 同じメールの未連携のアカウントには 409 を返す。UI は ID トークンを保ったままパスワードを聞き、ID トークンとパスワードをもう一度送って紐付ける。
+  - 紐付けた後は、両方の方法でログインできる。
+  - 本人は `sub` で先に探す。
+  - 実装は Phase 74〜77。
+- **判断理由**: メールを確かめない登録と外部の ID のログインを組み合わせると、どのアプリでも同じ穴になる。テンプレートに外部の ID のログインを持たせるなら、この確かめの形も一緒に持たせる。もう1つの選択肢は、登録でメールを確かめる仕組みを先に入れることである。

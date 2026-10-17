@@ -66,7 +66,6 @@ export function ProjectListControls({ value, onChange }: ProjectListControlsProp
             onChangeText={setDraft}
             borderColor="$color7"
             width="100%"
-            maxWidth="480px"
           />
         </form>
         <StyledButton onPress={submitSearch}>検索</StyledButton>

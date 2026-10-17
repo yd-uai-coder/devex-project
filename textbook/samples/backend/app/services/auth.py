@@ -1,4 +1,4 @@
-# 更新：Phase-66-2
+# 更新：Phase-66-2,74-1
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。Phase 66 で初めて samples に載せた
 # (全文。タグの無い部分はテンプレートのまま)。
 import uuid
@@ -33,9 +33,21 @@ class AuthService:
         self._users = UserRepository(session)
 
     async def authenticate(self, *, email: str, password: str) -> User:
-        """メールアドレスとパスワードを検証し、一致すればUserを返す。"""
+        # Phase-74-1：更新
+        # """メールアドレスとパスワードを検証し、一致すればUserを返す。"""
+        # ↓↓
+        """メールアドレスとパスワードを検証し、一致すればUserを返す。パスワードを持たない
+        (Google だけの)利用者も、違うときと同じ 401 にする(どのアカウントが Google だけかを
+        外から見分けさせない)。"""
         user = await self._users.get_by_email(email)
-        if user is None or not verify_password(password, user.hashed_password):
+        # Phase-74-1：更新
+        # if user is None or not verify_password(password, user.hashed_password):
+        # ↓↓
+        if (
+            user is None
+            or user.hashed_password is None
+            or not verify_password(password, user.hashed_password)
+        ):
             raise InvalidCredentialsError("Invalid email or password")
         if not user.is_active:
             raise InvalidCredentialsError("User is inactive")

@@ -1,5 +1,6 @@
-# 更新：Phase-2-2
+# 更新：Phase-2-2,74-3
 # Phase-2-2:追記 ── app.models.project, app.repositories.project, app.services.errors.ProjectNotFoundError
+# Phase-74-3:追記 ── app.services.google_identity.GoogleTokenVerifier, app.services.google_identity.get_google_token_verifier
 import uuid
 from typing import Annotated
 
@@ -16,6 +17,7 @@ from app.models.project import Project
 from app.models.user import User
 from app.repositories.project import ProjectRepository
 from app.services.errors import ProjectNotFoundError
+from app.services.google_identity import GoogleTokenVerifier, get_google_token_verifier
 from app.services.user import UserService
 
 _bearer_scheme = HTTPBearer(auto_error=False)
@@ -38,6 +40,10 @@ def get_client_ip(request: Request) -> str:
 # ClientIpDep = Annotated[str, Depends(get_client_ip)]
 # ↓↓
 type ClientIpDep = Annotated[str, Depends(get_client_ip)]
+
+# Phase-74-3:追記
+# Google の ID トークンの検証(設定が無ければ 503。テストは dependency_overrides で差し替える)
+type GoogleTokenVerifierDep = Annotated[GoogleTokenVerifier, Depends(get_google_token_verifier)]
 
 # Phase-2-2:追記 ── リフレッシュトークンをやり取りするCookie名(routes/auth.pyと共有する定数)
 REFRESH_TOKEN_COOKIE_NAME = "refresh_token"

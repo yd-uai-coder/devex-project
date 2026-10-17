@@ -98,6 +98,22 @@ API(モデル・マイグレーション・トークンの検証・発行)→ UI
 
 ### 2.3 未決事項
 
+> **Phase 73 で決定**: ID トークン(Google Identity Services)のフロー・同じメールの既存アカウントは Google でログインしたときにパスワードで確かめてから紐付ける(紐付けた後は両方でログインできる)・`google-auth` で検証する。経緯は [Phase 73-1](../textbook/Phase-73/Phase-73-1.md)、Phase の分け方は [Phase 73-3](../textbook/Phase-73/Phase-73-3.md)(Phase 74〜79)。
+
 - Authorization Code のフローにするか、ID トークン(Google Identity Services)にするか。
 - 同じメールの既存アカウントと紐付けるか。
 - 使うライブラリ(`google-auth` など。着手時に Context7 で確かめる)。
+
+### 2.4 ステージ9の振り返りから(2026-10-17)
+
+> **Phase 73 で決定**: 下の入力5件はすべて範囲に入れた(開発環境の上限は Phase 74 で開発用の compose の env を上げる。残る4件は Phase 78)。
+
+ステージ9の振り返り([`overall-retrospective.md`](../textbook/appendix/overall-retrospective.md) 14節)で、次のことを決めた。
+
+- **本番への反映はステージ10とまとめる**(CLAUDE.md #37 の運用注記)。ステージ10の最後の Phase で、`OPERATIONS.md` 10.6節(ステージ9)とステージ10の手順を1つにまとめ、確認の表をステージごとに分ける。ステージ9の画面確認と「画面確認で決める」項目も、そこで確かめる([Phase 72 の申し送り](../textbook/Phase-72/Phase-72-introduction.md#未消化の申し送り37))。
+- **ステージ10の入力**(着手時の仕様診断 #28 で、範囲に入れるかを1件ずつ決める):
+  - 開発環境のレート制限: テスト・E2E・手元の確認が、登録・ログインの上限(127.0.0.1・10回/時)に当たる(ステージ9で5回)。`AuthRateLimiter` に Google ログインを足すときに、カウンタを分ける。
+  - 削除したプロジェクトの URL を開いたときの表示。
+  - 新規作成の後の一覧の cache。
+  - 押せないボタンの見た目。
+  - 負荷のときだけ落ちるテスト(チャットの履歴の並び)。

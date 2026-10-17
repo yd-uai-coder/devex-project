@@ -56,7 +56,7 @@ Claude の判断(計画の承認で確定、または作業中):
 - **作業中**: クエリの引数の名前を `status` にすると、ルートのファイルが import している `fastapi.status` を隠すので、引数は `statuses`・クエリの名前は `alias="status"` にした([65-1](./Phase-65-1.md))。
 - **作業中**: テストで `useSearchParams` のモックが描画のたびに新しいオブジェクトを返すと、取り直しが止まらなかった。モックは URL が変わるまで同じオブジェクトを返す(Next.js 本体と同じ)([65-3](./Phase-65-3.md))。
 
-- **完了後の調整(ユーザー)**: `ProjectListControls.tsx` の配置を直した(検索欄を左に寄せて `maxWidth` 480px・モードと進行状態と「条件をクリア」を縦に積む・「条件をクリア」を緑のボタンに)。Claude は `alignItems="left"`(型に無い値で `tsc` が失敗)を `flex-start` に、使われなくなった `Button` の import を外し、samples と [65-3](./Phase-65-3.md) に反映した。
+- **完了後の調整(ユーザー)**: `ProjectListControls.tsx` の配置を直した(検索欄を左に寄せる・モードと進行状態と「条件をクリア」を縦に積む・「条件をクリア」を緑のボタンに)。Claude は `alignItems="left"`(型に無い値で `tsc` が失敗)を `flex-start` に、使われなくなった `Button` の import を外し、samples と [65-3](./Phase-65-3.md) に反映した。検索欄の `maxWidth` 480px は本体のコミットに無く、samples にだけ残っていた。ステージ9の振り返りで本体を正とし、samples から外した([overall-retrospective](../appendix/overall-retrospective.md) 14節)。
 
 推奨と違った選択は2つ(検索の確定・状態の複数選択)。計画の差し戻しは無し。完了後の調整は1回(配置)。#39 の材料。
 

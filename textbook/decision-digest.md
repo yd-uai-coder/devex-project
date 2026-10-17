@@ -1098,3 +1098,108 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 - 推奨そのものの外れは今回も無い。推奨と違った選択は8件で、範囲を広げる・狭める・データで決め直す向きに加え、**画面の配置の好み**(Phase 57 の2件)という新しい向きが出た。
 - 計画の変動は1(Phase 59 の差し込み)、完了後の調整は 10 Phase で6件。どちらも題材が LLM の出力の質を測る仕事で、測るまで範囲が決まらないことによる。本番の指摘は0。
+
+## Phase 61完了 ── ステージ9(使い勝手とアカウント・モデル設定の調整)の要件定義フェーズ
+
+詳細は[`Phase-61-introduction.md`](./Phase-61/Phase-61-introduction.md)参照。ステージの前のロードマップの修正(旧ステージ9・10 の撤回、sarashina は予定から外す)は [`appendix/stage9-10-plan.md`](../appendix/stage9-10-plan.md)。
+
+- `.env` の値はシステムの既定値、ユーザー自身のキーが勝つ。モデルの用途はチャット・生成・レビュー・判定の4つ(判定は推奨と違い、独立した用途)。PDF の読み取りは Gemini 固定。
+- 推奨と違った3つ: 生成中のプロジェクトも削除できる(バックグラウンドの処理は、プロジェクトが消えても壊れないこと)、Phase 60 の申し送り11件をすべて範囲に入れる、`users.full_name` を `user_name` に改名する(データは残す)。
+- カタログは公式の一覧から8モデル。ステージ9は Phase 62〜72 の11 Phase([61-3](./Phase-61/Phase-61-3.md))。
+
+## Phase 62完了 ── 画面の小さな調整
+
+詳細は[`Phase-62-introduction.md`](./Phase-62/Phase-62-introduction.md)参照。
+
+- ヘッダーからトップへ、ログアウト、メニューの階層、作成画面のモード選択。チャットはページ全体でなく**専用のスクロールの領域**(推奨と違う)。
+- ログアウトは失効の API を待ってからトップを読み込み直す(先にストアを消すと、保護ページのダイアログが一瞬出た)。
+- 会話の領域の高さは、固定の見積もりでなく読み込んだときの配置から決める(完了後の調整)。
+
+## Phase 63完了 ── 認証ページの proxy
+
+詳細は[`Phase-63-introduction.md`](./Phase-63/Phase-63-introduction.md)参照。
+
+- アクセストークンはメモリにしか無く proxy から見えないので、UI が付ける印の cookie(`devex_logged_in`、14日)で振り分ける。印は `auth-store` だけが付け外しする。
+- `?redirect=` の戻り先は `safeRedirectPath` で判定し、`LoginForm` の開いたリダイレクト(`//evil`)も同じ関数で塞いだ。
+
+## Phase 64完了 ── プロジェクトの削除
+
+詳細は[`Phase-64-introduction.md`](./Phase-64/Phase-64-introduction.md)参照。
+
+- 削除は `projects.deleted_at` の印を付けてすぐ 204。物理削除は後で(`SKIP LOCKED` + `lock_timeout`)。生成の処理は LLM を呼ぶ間ロックを持つため、待たせない。処理の側は `project_vanished`/`commit_if_live` で、消えたプロジェクトに何も書かない。
+- 確認のダイアログ・API・トーストを `DeleteProjectButton` 1つにまとめ、削除の全経路で使う(計画の差し戻しから)。
+
+## Phase 65完了 ── 一覧の検索・絞込み・ページネーション
+
+詳細は[`Phase-65-introduction.md`](./Phase-65/Phase-65-introduction.md)参照。
+
+- `GET /projects` は `{items, total}`(10件/ページ、進行状態は複数で OR、モードと AND、ILIKE は `%`・`_` をエスケープ)。
+- 条件とページは URL に持つ。検索は Enter・ボタンで確定、進行状態は複数選択(どちらも推奨と違う)。
+
+## Phase 66完了 ── マイページのアカウント
+
+詳細は[`Phase-66-introduction.md`](./Phase-66/Phase-66-introduction.md)参照。
+
+- 変更の API は3つ(`PATCH /users/me`・`PUT /users/me/email`・`PUT /users/me/password`)。今のパスワードの不一致は 400(401 は画面がログアウトに倒す)。
+- パスワードを変えたら、ほかの refresh をすべて失効し、今の端末には新しいトークンを出す。パスワードの規則は画面と変更の API の両方に置く。
+
+## Phase 67完了 ── モデルと API キーの登録
+
+詳細は[`Phase-67-introduction.md`](./Phase-67/Phase-67-introduction.md)参照。
+
+- 選択は用途ごとの行(`user_id` が NULL の行が既定値)。キーは `ENCRYPTION_KEY`(カンマ区切りの MultiFernet)で暗号化し、保存のときに提供元へ確かめる(無効は 422・通信の失敗は 502、どちらも保存しない)。
+- 一般ユーザーは、復号できる自分のキーを持つ provider だけを選べる。
+
+## Phase 68完了 ── LLM の呼び出しをユーザーごとに解決する
+
+詳細は[`Phase-68-introduction.md`](./Phase-68/Phase-68-introduction.md)参照。
+
+- 各サービスが `LlmResolver(session)` で解決し、`build_llm` が作る(テストの `llm=` の差し替えは残す)。構造化出力は両 provider で `json_schema`、タイムアウトはモデルごと、混雑(503・504・529)は 5秒 → 15秒 待って再試行。
+- レビューを使えるのは superuser か、レビューの用途の provider の自分のキーを持つ人。判定は `LlmResolver.review_effective` の1か所。自分のキーの回は1日の上限で数えない。
+
+## Phase 69完了 ── 生成の知らせ
+
+詳細は[`Phase-69-introduction.md`](./Phase-69/Phase-69-introduction.md)参照。
+
+- 生成の失敗は `projects.generation_failure`(理由・文・対象・時刻)に残し、各画面の上に次の生成まで出す。それまでは画面に出ないチャットの行だけだった。
+- 段階の承認ができない理由と、作り直しに渡した指摘の一覧を承認の横に出す(`design_stages.generation_finding_ids`)。
+
+## Phase 70完了 ── ヒアリングとテスト仕様書の質
+
+詳細は[`Phase-70-introduction.md`](./Phase-70/Phase-70-introduction.md)参照。
+
+- 聞き直しの答え(カード)は判定の LLM に通し、要約を空にしない。カードだけで決まったものは `adopted`。
+- テスト仕様書の必要なテストの一覧に、`{id}` の 401・本文のトークン・NFR の上限の表示・制約の外部の上限を足した。再生成のきっかけは、各文書の入力の節から作る(`RevisionInputs`)。
+- 実 Gemini で確かめ($0): 要約は 6/6 残り、詳細の正解例は 33→36/38。
+
+## Phase 71完了 ── 設計の検証
+
+詳細は[`Phase-71-introduction.md`](./Phase-71/Phase-71-introduction.md)参照。
+
+- マイルストーンのゴールとタスクの食い違いは、計画の指示 + 語の表の警告(`GOAL_WITHOUT_TASK`)。DFD の保存先の書き漏れは、CRUD からの逆向きの警告(`DFD_STORE_MISSING`)+ DFD の指示。
+- UI 仕様の本文だけの変更は、同時に変わった要件・API が届く処理に絞って印を付ける。
+- 保存済みの記録で過剰 5→2、実 Gemini で食い違い 1→0・書き漏れ 2→0($0)。
+
+## Phase 72完了 ── 統合/E2E・デプロイでの確認
+
+ステージ9の最後の Phase。詳細は[`Phase-72-introduction.md`](./Phase-72/Phase-72-introduction.md)参照。
+
+- ステージ9の spec を足し、全 E2E 5件が成功。流さない期間(Phase 62〜71)に壊れた既存の E2E は無かった。
+- 本番の `ENCRYPTION_KEY` は本番のコンテナで作り、VPS の `.env` とパスワード管理ツールにだけ置く。既定のモデルの行は本番に入れない(`.env` が唯一の既定値)。
+- 手順は `OPERATIONS.md` 10.6。**本番への反映はステージ10とまとめる**(ユーザーの判断。下の振り返り)。
+
+## ステージ9完了後 ── 振り返り
+
+ステージ9の振り返り(#10)。本番への反映の前に行った。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 14節。
+
+- **本番への反映は次のステージとまとめてよい**(#37 の運用注記に追加)。本番反映と、画面確認で決める項目は、ステージ10の最後の Phase へ送る。
+- 申し送り約35件を棚卸しした: ステージ10の最後の Phase へ9・ステージ10の入力5・生成の質の候補4・閉じる12・持ち越し4・解決1([Phase 72](./Phase-72/Phase-72-introduction.md#未消化の申し送り37))。
+- 開発環境の登録・ログインのレート制限(5回当たった)は、ステージ10で `AuthRateLimiter` を触るときに、カウンタを分けることを範囲の候補にする。
+- Devex の型として、ドメインに依らない基本機能(削除・検索・アカウント設定)の観点の表をヒアリングに置く・失敗を固定の場所に記録して見せる、を残す(14.4)。[handoff v2](../appendix/cl-development-handoff-v2.md) に #32 の運用注記と 5.3・5.8・5.11 を反映した。
+
+## ステージ9完了後 ── AI の提案の精度
+
+#39 の4回目。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 14.5。
+
+- 推奨そのものの外れは今回も無い。推奨と違った選択は7件で、仕様診断の「広げる」3件と、画面の Phase の**操作感・見た目の好み**4件(ステージ8で出た向きが続いた)。P66〜72 はすべて推奨どおり。
+- 計画の変動は0、完了後の調整は 11 Phase で3件。本番の指摘は未実施で、ステージ10の反映の後に埋める。

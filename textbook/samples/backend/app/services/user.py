@@ -1,4 +1,4 @@
-# 更新：Phase-52-5,66-1,66-2,68-4
+# 更新：Phase-52-5,66-1,66-2,68-4,74-1
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。Phase 52 で初めて samples に載せた
 # (全文。タグの無い部分はテンプレートのまま)。
 # Phase-52-5:追記 ── app.services.errors.ReviewNotAllowedError
@@ -103,5 +103,11 @@ class UserService:
 
     @staticmethod
     def _verify_current_password(user: User, current_password: str) -> None:
-        if not verify_password(current_password, user.hashed_password):
+        # Phase-74-1：更新
+        # if not verify_password(current_password, user.hashed_password):
+        # ↓↓
+        # パスワードを持たない(Google だけの)利用者は、何を入れても合わない
+        if user.hashed_password is None or not verify_password(
+            current_password, user.hashed_password
+        ):
             raise CurrentPasswordMismatchError("今のパスワードが正しくありません。")

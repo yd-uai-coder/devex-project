@@ -9,6 +9,9 @@ dependencies = [
     # Phase-67-1:追記
     "cryptography>=50.0.0",
     "fastapi[standard]>=0.141.1",
+    # Phase-74-2:追記 ── google-auth・requests は google-genai の間接依存として入っていたが、
+    # ID トークンの検証(app/services/google_identity.py)で直接使うため直接依存へ格上げする。
+    "google-auth>=2.56.3",
     "google-genai>=2.17.0",
     "httpx>=0.28.1",
     "langchain>=1.3.15",
@@ -22,6 +25,8 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "pyjwt>=2.13.0",
     "redis>=5.0",
+    # Phase-74-2:追記
+    "requests>=2.34.2",
     # Phase-6-5:追記 ── sentry-sdkは以前から間接依存として存在していたが、
     # 明示的に使う(sentry_sdk.init)ため直接依存へ格上げする。
     "sentry-sdk>=2.67.1",
