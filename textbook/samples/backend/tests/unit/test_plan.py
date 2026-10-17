@@ -1,4 +1,4 @@
-# 作成：Phase-23-1｜更新：Phase-26-1,42-1,42-2,49-3
+# 作成：Phase-23-1｜更新：Phase-26-1,42-1,42-2,49-3,71-1
 # 写経レベル: コア ── 検証のエラーと警告の分け方(計画の漏れは警告)を確かめる。
 """段階7 横断事項と実装計画の意味モデルと検証のテスト。
 
@@ -422,6 +422,19 @@ def test_validate_warns_missing_topic_empty_policy_tasks_and_risks():
 
 
 # Phase-42-1:追記
+# Phase-71-1:追記
+def test_validate_warns_goal_without_task_with_milestone_target():
+    model = plan_model()
+    model["milestones"][0]["goal"] = "予約を登録でき、CI/CD が動く"
+    issues = validate_plan(model, _sources())
+    assert [(i.code, i.severity, i.target) for i in issues] == [
+        ("GOAL_WITHOUT_TASK", "warning", "M-01")
+    ]
+    assert "「CI/CD」" in issues[0].message
+    _task(model)["config_files"] = [".github/workflows/ci.yml"]
+    assert validate_plan(model, _sources()) == []
+
+
 # --- 作業単位の安定キー ---
 
 

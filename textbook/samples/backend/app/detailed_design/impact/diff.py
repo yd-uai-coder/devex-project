@@ -1,4 +1,5 @@
-# 作成：Phase-43-2
+# 作成：Phase-43-2｜更新：Phase-71-3
+# Phase-71-3：更新(docstring: ui_spec_only を足した)
 """変わったものの求め方(承認時の写しと今の model の差分。純粋関数)。
 
 docs/external_design.md 2.10節・docs/internal_design.md 3.3節「7. 変更影響分析・変更管理」。
@@ -14,10 +15,14 @@ docs/external_design.md 2.10節・docs/internal_design.md 3.3節「7. 変更影�
 - 改名に合わせて参照の文字列を書き換えただけの内容の変更(依存先のパスを新しい名前にした、など)は、
   変わったものに入れない(改名の直接の参照元として印が付く。内容の変更として処理へ広げないため)
 
+`ui_spec_only`は、画面の変更が UI 仕様の本文(`ui_spec`)だけかを見る(印を絞る`marks_for`が使う)。
+
 `to_trace_changes`は、たどり方(`impact_of`)に渡す変更にする。増えた要素は、まだ誰からも参照されない
 ので影響を求めない。消えた要素は、前のキーで内容の変更として求める(参照元が見直しの対象)。
 """
 
+# Phase-71-3:追記 ── json
+import json
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Literal
@@ -119,3 +124,18 @@ def to_trace_changes(changes: Iterable[ElementChange]) -> list[Change]:
         for c in changes
         if c.change != "added"
     ]
+
+
+# Phase-71-3:追記
+def ui_spec_only(change: ElementChange) -> bool:
+    """画面の内容の変更が、UI 仕様の本文(`ui_spec`)だけか(名前・役割・要件は同じ)。"""
+    if change.change != "content" or not change.key.startswith("screen:"):
+        return False
+    if change.before is None or change.after is None:
+        return False
+    before, after = json.loads(change.before), json.loads(change.after)
+    if not isinstance(before, dict) or not isinstance(after, dict):
+        return False
+    before.pop("ui_spec", None)
+    after.pop("ui_spec", None)
+    return before == after

@@ -1,4 +1,4 @@
-# 作成：Phase-45-2｜更新：Phase-49-3,54-2,70-3
+# 作成：Phase-45-2｜更新：Phase-49-3,54-2,70-3,71-1
 """実装計画書の AI の下書きの入出力(純粋関数)。
 
 AI には要件定義書・内部設計書から、マイルストーンとタスク(実装手順書の作業単位)の行と本文の節を
@@ -12,12 +12,14 @@ AI には要件定義書・内部設計書から、マイルストーンとタ�
 # Phase-54-2:追記 ── app.documents.revision.instruction_text
 # Phase-70-3:追記 ── app.documents.revision(RevisionInputs, revision_rule)
 # Phase-70-3：削除 ── app.documents.revision.REVISION_RULE
+# Phase-71-1:追記 ── app.detailed_design.plan_goal.GOAL_RULE
 from collections.abc import Sequence
 from typing import Literal
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
+from app.detailed_design.plan_goal import GOAL_RULE
 from app.documents.implementation_plan.assemble import (
     ImplementationPlanDraft,
     MilestoneDraft,
@@ -125,6 +127,8 @@ SYSTEM_PROMPT = (
     "- 【要件定義書】の Must の機能要件は、すべていずれかのタスクの要件に入れる。"
     "Won't have の機能はタスクにしない\n"
     "- タスクの依存先は、前に書いたタスクだけを指す\n"
+    # Phase-71-1:追記
+    f"{GOAL_RULE}"
     "- モジュールは【内部設計書】のモジュール一覧のパスを使う\n"
     # Phase-49-3：更新
     # "- 要件定義書・内部設計書に無い技術を創作しない"

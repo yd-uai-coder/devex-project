@@ -1,4 +1,4 @@
-# 作成：Phase-23-4｜更新：Phase-26-2,42-2,59-1
+# 作成：Phase-23-4｜更新：Phase-26-2,42-2,59-1,71-1
 # 写経レベル: コア ── 詳細設計書の md(01〜06章)を入力に、横断事項 → 実装計画の順に2回呼ぶ。
 # Phase-26-2：更新(docstring: モジュールのパスの一覧を入力に足し、依存先の ID の書かせ方を書いた)
 """段階7(横断事項と実装計画)のAIの下書きの入出力(純粋関数。docs/external_design.md 2.7節)。
@@ -20,6 +20,7 @@
 
 # Phase-26-2:追記 ── app.detailed_design.plan.UnitKind(TaskArea は削除)
 # Phase-42-2:追記 ── app.detailed_design.requirement_trace.normalize_req_id
+# Phase-71-1:追記 ── app.detailed_design.plan_goal.GOAL_RULE
 from collections.abc import Sequence
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -36,6 +37,7 @@ from app.detailed_design.plan import (
     Risk,
     UnitKind,
 )
+from app.detailed_design.plan_goal import GOAL_RULE
 from app.detailed_design.prompt_rules import NAMING_RULES
 from app.detailed_design.requirement_trace import normalize_req_id
 
@@ -195,6 +197,8 @@ PLAN_SYSTEM_PROMPT = (
     "置く(kind=base にするか、そのテーブルを最初に使う機能のタスクに含める)。モデルのファイルは"
     "【モジュールのパスの一覧】にあれば modules に、マイグレーションのファイル"
     "(例: alembic/versions/)は config_files に書く\n"
+    # Phase-71-1:追記
+    f"{GOAL_RULE}"
     "- リスクは3〜5件。納期・予算を超えそうなときに削る機能・代替手段も対策に書く" + NAMING_RULES
 )
 

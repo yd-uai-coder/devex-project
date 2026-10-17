@@ -1,0 +1,732 @@
+{
+  "stage": 7,
+  "mode": "detailed",
+  "state": "outdated",
+  "is_open": false,
+  "missing_inputs": [
+    "stage:3",
+    "stage:4",
+    "stage:5",
+    "stage:6"
+  ],
+  "version": 2,
+  "approved_version": 2,
+  "model": {
+    "risks": [
+      {
+        "risk": "Gemini Flash-LiteのAPI応答遅延やレートリミットによるチャット・文書生成の失敗",
+        "mitigation": "FR-010に基づき、AI応答失敗時の理由表示と再送メッセージの仕組み、および生成失敗時の再生成機能を確実に実装する。スケジュールが厳しい場合は、自己診断の段階数を簡略化して対応する。"
+      },
+      {
+        "risk": "LangGraphを利用したマルチステップのチャットおよび文書生成・自己診断の複雑化によるスケジュール遅延",
+        "mitigation": "MVPの段階ではワークフローを最小限の構成に絞り、複雑な条件分岐は後回しにする。必要に応じて文書生成の対象範囲を縮小する。"
+      },
+      {
+        "risk": "VPS上でのDocker Compose環境構築およびGitHub Actionsによる自動デプロイのトラブル",
+        "mitigation": "開発初期段階（M-01-T01）で早期にコンテナ起動とCI/CDパイプラインの疎通確認を行い、リスクを早期に解消する。"
+      },
+      {
+        "risk": "JWTおよびHttpOnly Cookieによる認証・セキュリティ要件の実装不備",
+        "mitigation": "標準的な認証ライブラリを活用し、トークンの有効期限管理やRedisによるリフレッシュトークン無効化のテストを徹底する。"
+      }
+    ],
+    "milestones": [
+      {
+        "goal": "開発環境が整備され、横断事項およびユーザー認証(登録・ログイン・トークンリフレッシュ・ログアウト)が動作する。",
+        "name": "M-01: 環境構築と認証機能",
+        "tasks": [
+          {
+            "key": "U-001",
+            "kind": "base",
+            "title": "開発環境および共通設定・横断事項の土台構築",
+            "modules": [
+              "app/core/config.py"
+            ],
+            "req_ids": [],
+            "depends_on": [],
+            "config_files": [
+              "Dockerfile",
+              "docker-compose.yml"
+            ],
+            "function_ids": []
+          },
+          {
+            "key": "U-002",
+            "kind": "feature",
+            "title": "ユーザー登録機能の実装",
+            "modules": [
+              "app/api/routes/auth.py",
+              "app/services/auth.py",
+              "app/repositories/user.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-01-T01"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-01"
+            ]
+          },
+          {
+            "key": "U-003",
+            "kind": "feature",
+            "title": "ログイン機能の実装",
+            "modules": [
+              "app/api/routes/auth.py",
+              "app/services/auth.py",
+              "app/repositories/user.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-01-T02"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-02"
+            ]
+          },
+          {
+            "key": "U-004",
+            "kind": "feature",
+            "title": "トークンリフレッシュ機能の実装",
+            "modules": [
+              "app/api/routes/auth.py",
+              "app/services/auth.py",
+              "app/repositories/user.py",
+              "app/clients/redis.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-01-T03"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-03"
+            ]
+          },
+          {
+            "key": "U-005",
+            "kind": "feature",
+            "title": "ログアウト機能の実装",
+            "modules": [
+              "app/api/routes/auth.py",
+              "app/services/auth.py",
+              "app/repositories/user.py",
+              "app/clients/redis.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-01-T04"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-04"
+            ]
+          }
+        ],
+        "priority": "Must"
+      },
+      {
+        "goal": "プロジェクトの作成・一覧取得およびGeminiを利用したチャットメッセージ送信と履歴取得ができる。",
+        "name": "M-02: プロジェクト管理とチャット対話機能",
+        "tasks": [
+          {
+            "key": "U-006",
+            "kind": "feature",
+            "title": "プロジェクト作成機能の実装",
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/repositories/project.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-01-T05"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-06"
+            ]
+          },
+          {
+            "key": "U-007",
+            "kind": "feature",
+            "title": "プロジェクト一覧取得機能の実装",
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/repositories/project.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-02-T01"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-05"
+            ]
+          },
+          {
+            "key": "U-008",
+            "kind": "feature",
+            "title": "チャット履歴取得機能の実装",
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/repositories/project.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-02-T02"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-07"
+            ]
+          },
+          {
+            "key": "U-009",
+            "kind": "feature",
+            "title": "チャットメッセージ送信およびAI応答機能の実装",
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/repositories/project.py",
+              "app/agents/chat.py",
+              "app/clients/gemini.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-02-T03"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-08"
+            ]
+          }
+        ],
+        "priority": "Must"
+      },
+      {
+        "goal": "ヒアリング結果に基づく4種設計書の一括生成、自己診断の非同期実行と進捗確認、結果の取得ができる。",
+        "name": "M-03: 設計書一括生成と自己診断機能",
+        "tasks": [
+          {
+            "key": "U-010",
+            "kind": "feature",
+            "title": "設計書一括生成およびAI自己診断の非同期ジョブ開始機能の実装",
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/repositories/project.py",
+              "app/agents/generator.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-02-T04"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-09"
+            ]
+          },
+          {
+            "key": "U-011",
+            "kind": "feature",
+            "title": "設計書生成ジョブの進捗確認機能の実装",
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/repositories/project.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-03-T01"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-10"
+            ]
+          },
+          {
+            "key": "U-012",
+            "kind": "feature",
+            "title": "生成文書および自己診断結果の取得機能の実装",
+            "modules": [
+              "app/api/routes/projects.py",
+              "app/services/project.py",
+              "app/repositories/project.py"
+            ],
+            "req_ids": [],
+            "depends_on": [
+              "M-03-T02"
+            ],
+            "config_files": [],
+            "function_ids": [
+              "F-11"
+            ]
+          }
+        ],
+        "priority": "Must"
+      }
+    ],
+    "environment": "開発環境はPython 3.13、FastAPI、Next.js(App Router)およびTamaguiを使用する。データベースにはPostgreSQL、トークン失効管理にRedisを用いる。インフラはVPS上にDocker Composeとnginxで構築し、GitHub Actionsを用いたmainブランチへのpushによる自動デプロイを行う。自動テストは単体テスト・結合テストを順次導入する方針とする。",
+    "crosscutting": [
+      {
+        "topic": "例外と HTTP",
+        "policy": "APIの処理で例外が発生した場合は、対応するHTTPステータスコードに変換して返却する。入力値の検証エラーは400 Bad Request、認証失敗やトークン無効は401 Unauthorized、アクセス権限がない場合は403 Forbidden、対象が存在しない場合は404 NotFound、一意制約違反などは409 Conflict、AI応答失敗等のサーバー内部エラーは500 Internal Server Errorを返却する。",
+        "modules": [
+          "app/api/routes/auth.py",
+          "app/api/routes/projects.py"
+        ],
+        "req_ids": [
+          "FR-010"
+        ]
+      },
+      {
+        "topic": "認証",
+        "policy": "JWTを用いた認証を実装し、アクセストークンの有効期限は30分、リフレッシュトークンは14日間としHttpOnly Cookieに設定する。ログアウト時やトークン失効時にはRedisを用いてリフレッシュトークンを無効化し、不正利用や総当たり攻撃を防ぐ。",
+        "modules": [
+          "app/services/auth.py",
+          "app/clients/redis.py",
+          "app/repositories/user.py"
+        ],
+        "req_ids": [
+          "FR-002",
+          "FR-011",
+          "FR-012"
+        ]
+      },
+      {
+        "topic": "トランザクション",
+        "policy": "データベースへの書き込みを伴う処理（ユーザー登録、ログインでのトークン保存、プロジェクト作成、チャットメッセージ保存、非同期ジョブ開始など）は、リポジトリ層との連携において1つのトランザクションとして扱い、エラー時はロールバックを行う。読み取り専用の処理では明示的なトランザクションブロックを設定しない。",
+        "modules": [
+          "app/services/auth.py",
+          "app/services/project.py",
+          "app/repositories/user.py",
+          "app/repositories/project.py"
+        ],
+        "req_ids": [
+          "FR-001",
+          "FR-003",
+          "FR-009"
+        ]
+      },
+      {
+        "topic": "ログ",
+        "policy": "セキュリティおよびプライバシーの観点から、ユーザーから入力された内容や機密情報はログに残さず、処理のエラーの有無や発生時刻、ステータスのみをログとして記録する。",
+        "modules": [
+          "app/core/config.py",
+          "app/services/auth.py",
+          "app/services/project.py"
+        ],
+        "req_ids": [
+          "NFR-006"
+        ]
+      }
+    ],
+    "next_unit_seq": 13
+  },
+  "updated_at": "2026-10-15T06:13:26.804151Z",
+  "generation_status": "completed",
+  "generation_error": null,
+  "issues": [
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T01 のモジュール「app/core/config.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T01",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T02 のモジュール「app/api/routes/auth.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T02",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T02 のモジュール「app/services/auth.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T02",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T02 のモジュール「app/repositories/user.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T02",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T03 のモジュール「app/api/routes/auth.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T03",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T03 のモジュール「app/services/auth.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T03",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T03 のモジュール「app/repositories/user.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T03",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T04 のモジュール「app/api/routes/auth.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T04",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T04 のモジュール「app/services/auth.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T04",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T04 のモジュール「app/repositories/user.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T04",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T04 のモジュール「app/clients/redis.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T04",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T05 のモジュール「app/api/routes/auth.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T05",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T05 のモジュール「app/services/auth.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T05",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T05 のモジュール「app/repositories/user.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T05",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-01-T05 のモジュール「app/clients/redis.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-01-T05",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T01 のモジュール「app/api/routes/projects.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T01",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T01 のモジュール「app/services/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T01",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T01 のモジュール「app/repositories/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T01",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T02 のモジュール「app/api/routes/projects.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T02",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T02 のモジュール「app/services/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T02",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T02 のモジュール「app/repositories/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T02",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T03 のモジュール「app/api/routes/projects.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T03",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T03 のモジュール「app/services/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T03",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T03 のモジュール「app/repositories/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T03",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T04 のモジュール「app/api/routes/projects.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T04",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T04 のモジュール「app/services/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T04",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T04 のモジュール「app/repositories/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T04",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T04 のモジュール「app/agents/chat.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T04",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-02-T04 のモジュール「app/clients/gemini.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-02-T04",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-03-T01 のモジュール「app/api/routes/projects.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-03-T01",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-03-T01 のモジュール「app/services/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-03-T01",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-03-T01 のモジュール「app/repositories/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-03-T01",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-03-T01 のモジュール「app/agents/generator.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-03-T01",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-03-T02 のモジュール「app/api/routes/projects.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-03-T02",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-03-T02 のモジュール「app/services/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-03-T02",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-03-T02 のモジュール「app/repositories/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-03-T02",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-03-T03 のモジュール「app/api/routes/projects.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-03-T03",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-03-T03 のモジュール「app/services/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-03-T03",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    },
+    {
+      "severity": "error",
+      "code": "UNKNOWN_MODULE",
+      "message": "M-03-T03 のモジュール「app/repositories/project.py」が、モジュール一覧にありません(環境・設定のファイルなら、その欄に移します)。",
+      "target": "M-03-T03",
+      "level": null,
+      "fix_stage": null,
+      "unit": null,
+      "fix_document": null
+    }
+  ],
+  "dfd_accesses": [],
+  "plan": null,
+  "unit_req_ids": {},
+  "impact_open": 0,
+  "impact_reviewed": 0,
+  "generation_findings": []
+}

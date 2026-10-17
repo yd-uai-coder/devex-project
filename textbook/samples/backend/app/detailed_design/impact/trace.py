@@ -1,4 +1,4 @@
-# 作成：Phase-42-4｜更新：Phase-46-1,49-3
+# 作成：Phase-42-4｜更新：Phase-46-1,49-3,71-3
 """変更の影響のたどり方と理由(純粋関数)。
 
 docs/external_design.md 2.10節・docs/internal_design.md 3.3節「7. 変更影響分析・変更管理」。
@@ -234,6 +234,12 @@ def _is_axis(element: Element | None) -> bool:
     if element.kind in ("function", "dataflow"):
         return True
     return element.kind == "task" and element.stage == DOCUMENT_STAGE
+
+
+# Phase-71-3:追記
+def path_axis(path: Sequence[str], by_key: Mapping[str, Element]) -> str | None:
+    """道の上にある最初の軸(処理・処理別データフロー・文書のタスク)。無ければ None。"""
+    return next((key for key in path if _is_axis(by_key.get(key))), None)
 
 
 def _kind(by_key: Mapping[str, Element], key: str) -> ElementKind | None:

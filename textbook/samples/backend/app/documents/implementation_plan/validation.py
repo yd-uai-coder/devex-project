@@ -1,4 +1,4 @@
-# 作成：Phase-45-2
+# 作成：Phase-45-2｜更新：Phase-71-1
 """実装計画書の検証(純粋関数)。指摘は警告だけで、生成も保存も止めない。
 
 処理別データフローの ID・要件ID は生成した時点の写し(`known_dataflow_ids`・`known_req_ids`・
@@ -8,6 +8,9 @@
 指摘する。こちらは文書のプレビューに出すため、同じ種類の指摘を1件にまとめる。
 """
 
+# Phase-71-1:追記 ── app.detailed_design.plan.milestone_id, app.detailed_design.plan_goal.uncovered_goal_terms
+from app.detailed_design.plan import milestone_id
+from app.detailed_design.plan_goal import uncovered_goal_terms
 from app.detailed_design.procedure_doc import PlanUnit, plan_units
 from app.detailed_design.requirement_trace import unit_req_ids
 from app.documents.implementation_plan.model import ImplementationPlanModel
@@ -116,4 +119,28 @@ def validate_implementation_plan(model: ImplementationPlanModel) -> list[Documen
             "どのタスクにも入っていない内部設計書の処理があります",
             [f for f in model.known_dataflow_ids if f not in set(planned)],
         )
-    return issues + _dependency_issues(units) + _requirement_issues(model, units)
+    # Phase-71-1：更新
+    # return issues + _dependency_issues(units) + _requirement_issues(model, units)
+    # ↓↓
+    return (
+        issues
+        + _dependency_issues(units)
+        + _requirement_issues(model, units)
+        + _goal_issues(model)
+    )
+
+
+def _goal_issues(model: ImplementationPlanModel) -> list[DocumentIssue]:
+    """ゴールが挙げるのに、そのマイルストーンのどのタスクも作らないもの(`plan_goal`)。"""
+    targets = [
+        f"{milestone_id(i)}({'・'.join(terms)})"
+        for i, m in enumerate(model.milestones)
+        if (terms := uncovered_goal_terms(m))
+    ]
+    return _issue(
+        "major",
+        "GOAL_WITHOUT_TASK",
+        "ゴールに書いたものを作るタスクが、そのマイルストーンにありません",
+        targets,
+        "(作るタスクを足すか、ゴールから外してください)",
+    )

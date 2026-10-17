@@ -1,4 +1,4 @@
-# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2,45-4,48-1,55-2,55(完了後の調整),59-4
+# 作成：Phase-16-2｜更新：Phase-17-1,18-1,19-1,20-1,21-1,23-1,24(ゴール3後の調整),26-1,27-2,29-1,29-2,29-5,31-3,31-7,38-1,38(完了後の調整),42-1,42-2,45-4,48-1,55-2,55(完了後の調整),59-4,71-1,71-2
 # 写経レベル: コア ── 段階ごとの検証の登録(STAGE_VALIDATORS)と、エラーと警告の分け方。
 # Phase-23-1：更新(docstring: 段階7の検証を登録したことと、その入力を書いた)
 # Phase-26-1：更新(docstring: 段階7が段階4のモジュール一覧も使うことを書いた)
@@ -52,6 +52,7 @@ Phase 23、段階8は Phase 27。登録の無い段階は検証なし)。
 # Phase-55-2:追記 ── app.detailed_design.procedure_coverage(RowOf, has_test_file, is_schema_path, late_dependencies, table_coverage, unit_files), app.detailed_design.simple_procedure.module_layer, app.detailed_design.structure.ModuleRow
 # Phase-55(完了後の調整):追記 ── app.detailed_design.structure.resolve_layer
 # Phase-59-4:追記 ── app.detailed_design.procedure_coverage.error_test_gap, app.detailed_design.simple_procedure.unit_error_statuses
+# Phase-71-1:追記 ── app.detailed_design.plan_goal.uncovered_goal_terms
 from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -91,6 +92,7 @@ from app.detailed_design.plan import (
     unit_ids,
     unplanned_functions,
 )
+from app.detailed_design.plan_goal import uncovered_goal_terms
 from app.detailed_design.procedure import (
     ProcedureModel,
     is_external_actor,
@@ -492,6 +494,19 @@ def selected_dfd_accesses(sources: StageSources) -> list[DfdAccess]:
     return sorted(accesses)
 
 
+# Phase-71-2:追記
+def selected_dfd_processes(sources: StageSources) -> set[str]:
+    """段階2で DFD を描くと選んだグループの DFD にある処理の ID
+    (`selected_dfd_accesses`と同じ絞り方)。"""
+    data_flow = DataFlowModel.model_validate(sources.stages.get(2) or {})
+    processes: set[str] = set()
+    for group in data_flow.dfd_groups:
+        diagram = sources.dfd_diagrams.get(dfd_subject(group))
+        if diagram is not None:
+            processes.update(diagram.process_ids)
+    return processes
+
+
 # Phase-24：更新(docstring: テーブルの無い ER のエラー)
 def validate_data_model(model: Mapping[str, Any], sources: StageSources) -> list[StageIssue]:
     """段階3(データモデル)の検証。
@@ -501,7 +516,8 @@ def validate_data_model(model: Mapping[str, Any], sources: StageSources) -> list
     操作が空・C,R,U,D の順の形でない /
     DFD に読みの線があるのに R が無い / DFD に書き込みの線があるのに C/U/D が無い。
     警告: 下書きのままのセルがある / DFD の書き込みの線から操作を推定したセル /
-    DFD のデータストアが ER に無い /
+    DFD のデータストアが ER に無い / CRUD 図に C/U/D があるのに、選んだ DFD のその処理に
+    そのデータストアへの書き込みの線が無い(逆向きの照合。DFD に描いていない処理は見ない) /
     どの処理も触れないテーブル / 主キーの無いテーブル。
     """
     try:
@@ -601,6 +617,8 @@ def validate_data_model(model: Mapping[str, Any], sources: StageSources) -> list
                 "読むだけの処理なら、段階2の DFD の線の向きを直してください。"
             )
             issues.append(_warning("DFD_WRITE_INFERRED", message, target))
+    # Phase-71-2:追記
+    issues += _dfd_store_missing(parsed, writes, selected_dfd_processes(sources))
     for table in store_not_in_er:
         message = f"DFD のデータストア「{table}」が、ER のテーブルにありません。"
         issues.append(_warning("STORE_NOT_IN_ER", message, table))
@@ -612,6 +630,34 @@ def validate_data_model(model: Mapping[str, Any], sources: StageSources) -> list
     for name in er.tables_without_pk if er is not None else ():
         message = f"テーブル「{name}」に主キーがありません。"
         issues.append(_warning("TABLE_WITHOUT_PK", message, name))
+    return issues
+
+
+# Phase-71-2:追記
+def _dfd_store_missing(
+    parsed: CrudModel, writes: set[tuple[str, str]], processes: set[str]
+) -> list[StageIssue]:
+    """CRUD 図で C/U/D を持つのに、DFD のその処理からそのデータストアへの線が無いセル(警告)。
+
+    ER は DFD に無いテーブルも足せる(アップロードしたファイル・会話の記録など)ので、CRUD 図に
+    だけ書き込みがあると、DFD のデータの流れから保存先が抜ける。直す先は段階2の DFD。
+    文言は「の書き込みの線があります」(`DFD_WRITE_MISSING`)と違う形にする(照合の向きが逆のため)。
+    """
+    issues: list[StageIssue] = []
+    for cell in parsed.cells:
+        key = (cell.function_id, table_key(cell.table))
+        if cell.function_id not in processes or key in writes:
+            continue
+        if not set(cell.ops) & {"C", "U", "D"}:
+            continue
+        target = f"{cell.function_id} × {cell.table}"
+        message = (
+            f"CRUD 図では {target} が「{cell.ops}」ですが、段階2の DFD に {cell.function_id} から"
+            f"データストア「{cell.table}」への線がありません"
+            "(DFD にデータストアと線を描いてください。書き込まない処理なら、CRUD 図の操作を"
+            "直してください)。"
+        )
+        issues.append(_warning("DFD_STORE_MISSING", message, target))
     return issues
 
 
@@ -820,6 +866,7 @@ def validate_plan(model: Mapping[str, Any], sources: StageSources) -> list[Stage
     環境・設定のファイルの欄と横断事項のファイルの欄は例なので検証しない(環境のファイルは
     モジュール一覧に入らないため)。
     警告: どの単位にも無い処理 / 複数の単位にある処理 / タスクの無いマイルストーン /
+    ゴールに書いたもの(CI/CD など。`plan_goal`)を作るタスクの無いマイルストーン /
     種別と処理の食い違い(機能なのに処理が無い・基盤なのに処理がある) / 処理が多すぎる単位 /
     モジュールの無い機能の単位 / ディレクトリのモジュール(ファイルが決まらない) /
     横断事項の既定の項目(`CROSSCUTTING_TOPICS`)が無い・方針が空 / リスクが0件。
@@ -879,6 +926,13 @@ def validate_plan(model: Mapping[str, Any], sources: StageSources) -> list[Stage
             issues.append(_error("DUPLICATE_MILESTONE", message, target))
         if not milestone.tasks:
             issues.append(_warning("EMPTY_TASKS", f"{label} にタスクがありません。", target))
+        # Phase-71-1:追記
+        elif terms := uncovered_goal_terms(milestone):
+            message = (
+                f"{label} のゴールにある「{'・'.join(terms)}」を作るタスクが、"
+                "このマイルストーンにありません(作るタスクを足すか、ゴールから外してください)。"
+            )
+            issues.append(_warning("GOAL_WITHOUT_TASK", message, target))
         # Phase-26-1：更新
         # check_refs(label, target, milestone.function_ids)
         # for number, task in enumerate(milestone.tasks, start=1):

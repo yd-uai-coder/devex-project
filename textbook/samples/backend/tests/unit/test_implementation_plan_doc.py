@@ -1,4 +1,4 @@
-# 作成：Phase-45-2
+# 作成：Phase-45-2｜更新：Phase-71-1
 """実装計画書の model・組み立て・md・検証・下書きの入出力と、書かれた ID の読み替え(純粋関数)。
 
 SUT: app/documents/implementation_plan の各関数、app/detailed_design/plan.renamed_task_ids。
@@ -173,6 +173,31 @@ def test_validation_reports_gaps() -> None:
     assert issues["UNLINKED_UNIT"].targets == ("M-01-T02",)
     assert issues["UNKNOWN_REQUIREMENT_ID"].targets == ("FR-009",)
     assert row_counts(model) == {"milestones": 1, "tasks": 2, "risks": 1}
+
+
+# Phase-71-1:追記
+def test_validation_reports_goal_without_task() -> None:
+    model = _model(
+        milestones=(
+            MilestoneDraft(
+                "基盤",
+                "Must",
+                "Docker と CI/CD・バックアップが整う",
+                (TaskDraft("M-01-T01", "base", "Docker", (), (), (), (), ("Dockerfile",)),),
+            ),
+            MilestoneDraft(
+                "予約",
+                "Must",
+                "予約できる",
+                (TaskDraft("M-02-T01", "feature", "予約", ("DF-1", "DF-2"), ("FR-001", "FR-002")),),
+            ),
+        )
+    )
+
+    issues = {i.code: i for i in validate_implementation_plan(model)}
+
+    assert issues["GOAL_WITHOUT_TASK"].level == "major"
+    assert issues["GOAL_WITHOUT_TASK"].targets == ("M-01(CI/CD・バックアップ)",)
 
 
 def test_validation_is_quiet_for_a_complete_plan_and_reports_no_tasks() -> None:
