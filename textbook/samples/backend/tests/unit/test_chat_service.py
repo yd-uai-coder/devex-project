@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,6-6,8-5,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),39-1,40-1,59-2,68-3
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,6-6,8-5,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),39-1,40-1,59-2,68-3,70-1
 # Phase-6-6:追記 ── langchain_core.messages.AIMessageChunk, app.services.chat_service._COMPLETION_CHECK_PROMPT
 # Phase-2-3:追記 ── pytest, app.api.routes.projects.get_hearing_completion
 # Phase-6-3:追記 ── app.models.prompt_template.PromptTemplate
@@ -26,6 +26,7 @@
 #   app.services.chat_service(_LATEST_QUESTION_NOTE, _drop_completion_claims)
 # Phase-59-2:追記 ── app.services.chat_service._DELEGATED_NOTE
 # Phase-68-3:追記 ── tests.fixtures.llm_resolver.stub_llm_resolver, app.ai.llm.catalog.Purpose, app.services.errors.LlmUnavailableError
+# Phase-70-1:追記 ── app.hearing.PointStatus, app.review(SendbackFinding, rehearing_message, rehearing_points), app.services.chat_service(_REHEARING_ANSWER_NOTE, _REHEARING_CARD_NOTE)
 import pytest
 import structlog.testing
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -46,6 +47,7 @@ from app.hearing import (
     Card,
     CardOption,
     PointState,
+    PointStatus,
     card_to_dict,
     initial_states,
     is_required,
@@ -58,6 +60,7 @@ from app.models.prompt_template import PromptTemplate
 from app.models.user import User
 from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.hearing_point import HearingPointRepository
+from app.review import SendbackFinding, rehearing_message, rehearing_points
 from app.schemas.generation import HearingCompletionCheck
 from app.schemas.hearing import (
     CardAnswer,
@@ -79,6 +82,8 @@ from app.services.chat_service import (
     _NEXT_QUESTION_TEMPLATE,
     _OPENING_SCALE_CARD_LINE,
     _POINTS_JUDGE_PROMPT,
+    _REHEARING_ANSWER_NOTE,
+    _REHEARING_CARD_NOTE,
     ChatService,
     ReplyCards,
     _build_messages,
@@ -923,7 +928,10 @@ async def test_stream_reply_keeps_table_and_clears_check_when_judgement_fails(
     await HearingPointRepository(db_session).save_states(project.id, states.values())
     project.hearing_check = HearingCompletionCheck(is_sufficient=True, summary="古い").model_dump()
 
-    async def _failing_judge(self, project, *, llm=None):  # noqa: ANN001
+    # Phase-70-1：更新
+    # async def _failing_judge(self, project, *, llm=None):  # noqa: ANN001
+    # ↓↓
+    async def _failing_judge(self, project, *, llm=None, reheard=()):  # noqa: ANN001
         raise GenerationFailedError("失敗")
 
     monkeypatch.setattr(ChatService, "judge_points", _failing_judge)
@@ -1314,7 +1322,10 @@ async def test_generate_opening_reply_survives_judgement_failure(
     """作成時の判定に失敗しても最初の発話は作る。完了判定は無いまま(最初の送信で判定し直す)。"""
     project = await _create_project(db_session)
 
-    async def _failing_judge(self, project, *, llm=None):  # noqa: ANN001
+    # Phase-70-1：更新
+    # async def _failing_judge(self, project, *, llm=None):  # noqa: ANN001
+    # ↓↓
+    async def _failing_judge(self, project, *, llm=None, reheard=()):  # noqa: ANN001
         raise GenerationFailedError("失敗")
 
     monkeypatch.setattr(ChatService, "judge_points", _failing_judge)
@@ -2028,3 +2039,159 @@ async def test_carried_card_is_reasked_without_llm_card(db_session: AsyncSession
     system_prompt = llm.reply_messages[0][0].content
     assert _CODE_CARD_NOTE.format(label="セキュリティ") in system_prompt
     assert "問いを1つだけ聞いてください" not in system_prompt
+
+
+# Phase-70-1:追記
+# ── 聞き直している観点へのカードの答え(判定に通し、前の要約と合わせる) ──
+
+_SECURITY_FINDINGS = (
+    "- 誰が誰のデータを見られるかが決まっていない\n改善案: パスワードの長さと再設定を決める"
+)
+
+
+async def _reheard_project(session: AsyncSession, *, with_card: bool = True) -> Project:
+    """必須がすべて決まった後、設計レビューの指摘で security を聞き直し、そのカードを出した
+    (`with_card`)プロジェクト(security の前の要約は「自分のデータは自分だけ」)。"""
+    project = await _project_missing_only(session)
+    states = await HearingPointRepository(session).load_states(project.id)
+    states["security"] = PointState("security", "decided", "自分のデータは自分だけ", ("x",))
+    await HearingPointRepository(session).save_states(project.id, states.values())
+    finding = SendbackFinding(
+        level="major",
+        cause="hearing",
+        decision="adopted",
+        targets=("FR-012",),
+        documents=("requirements",),
+        problem="誰が誰のデータを見られるかが決まっていない",
+        suggestion="パスワードの長さと再設定を決める",
+        point_key="security",
+    )
+    message = rehearing_message(rehearing_points([finding]))
+    await ChatService(session).reopen_points(project, ["security"], message)
+    if with_card:
+        await _add_ai_with_cards(session, project, _security_card())
+    return project
+
+
+def _security_judgement(status: PointStatus, summary: str, evidence: int) -> HearingPointsJudgement:
+    return HearingPointsJudgement(
+        points=[JudgedPointOut(key="security", status=status, summary=summary, evidence=[evidence])]
+    )
+
+
+async def test_reopen_points_keeps_summary(db_session: AsyncSession) -> None:
+    project = await _reheard_project(db_session)
+    state = (await HearingPointRepository(db_session).load_states(project.id))["security"]
+    assert (state.status, state.summary) == ("open", "自分のデータは自分だけ")
+    assert state.reopened_after is not None
+
+
+async def test_card_answer_to_reheard_point_goes_to_judgement_with_prior_summary(
+    db_session: AsyncSession,
+) -> None:
+    """聞き直している観点のカードの答えは、選択肢の文で上書きせず、判定の LLM に観点・答え・
+    指摘・前の要約を名指しして渡す。判定が前の要約と合わせて書いた決めたことを記録する。"""
+    project = await _reheard_project(db_session)
+    merged = "自分のデータは自分だけ。本人だけが見られる"
+    llm = _RecordingLLM(_security_judgement("adopted", merged, 1))
+
+    async for _ in ChatService(db_session).stream_reply(
+        project, user_message="", card_answers=[CardAnswer(card_id="c-sec", option=0)], llm=llm
+    ):
+        pass
+
+    assert len(llm.judge_messages) == 1
+    prompt = str(llm.judge_messages[0][-1].content)
+    assert prompt.endswith(
+        _REHEARING_ANSWER_NOTE.format(
+            key="security",
+            label="セキュリティ",
+            answer="本人だけ",
+            findings=_SECURITY_FINDINGS,
+            summary="自分のデータは自分だけ",
+        )
+    )
+    state = (await HearingPointRepository(db_session).load_states(project.id))["security"]
+    assert (state.status, state.summary, state.reopened_after) == ("adopted", merged, None)
+
+
+async def test_card_answer_to_reheard_point_stays_open_when_judgement_keeps_it_open(
+    db_session: AsyncSession,
+) -> None:
+    """指摘の論点に値の無いものが残れば、判定は open のまま返し、印と前の要約は残る(次の返信が
+    同じ観点を、指摘を名指しした指示で聞く)。"""
+    project = await _reheard_project(db_session)
+    llm = _RecordingLLM(_security_judgement("open", "", 1))
+
+    async for _ in ChatService(db_session).stream_reply(
+        project, user_message="", card_answers=[CardAnswer(card_id="c-sec", option=0)], llm=llm
+    ):
+        pass
+
+    state = (await HearingPointRepository(db_session).load_states(project.id))["security"]
+    assert (state.status, state.summary) == ("open", "自分のデータは自分だけ")
+    assert state.reopened_after is not None
+    assert str(llm.reply_messages[0][-1].content) == _REHEARING_CARD_NOTE.format(
+        label="セキュリティ", findings=_SECURITY_FINDINGS
+    )
+
+
+async def test_card_answer_to_reheard_point_is_recorded_when_judgement_fails(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """判定に失敗しても答えは失わない(選んだ選択肢を「AIの提案を採用」として記録する)。"""
+    project = await _reheard_project(db_session)
+
+    async def _failing_judge(self, project, *, llm=None, reheard=()):  # noqa: ANN001
+        raise GenerationFailedError("判定に失敗")
+
+    monkeypatch.setattr(ChatService, "judge_points", _failing_judge)
+    async for _ in ChatService(db_session).stream_reply(
+        project,
+        user_message="",
+        card_answers=[CardAnswer(card_id="c-sec", option=0)],
+        llm=_RecordingLLM(),
+    ):
+        pass
+
+    history = await ChatHistoryRepository(db_session).list_for_project(project.id)
+    latest_user = next(e for e in reversed(history) if e.sender == "user")
+    state = (await HearingPointRepository(db_session).load_states(project.id))["security"]
+    assert (state.status, state.summary) == ("adopted", "本人だけ")
+    assert state.evidence == (str(latest_user.id),)
+
+
+async def test_reply_names_rehearing_findings_with_delegation(db_session: AsyncSession) -> None:
+    """聞き直している観点を次に聞くときは、指摘を名指しした指示を足す(委ねた発言なら、委ねた
+    ときの指示の後に続ける)。"""
+    project = await _reheard_project(db_session, with_card=False)
+    llm = _RecordingLLM()
+
+    async for _ in ChatService(db_session).stream_reply(
+        project, user_message="おすすめでよいです", llm=llm
+    ):
+        pass
+
+    assert str(llm.reply_messages[0][-1].content) == "\n".join(
+        [
+            _DELEGATED_NOTE.format(label="セキュリティ"),
+            _REHEARING_CARD_NOTE.format(label="セキュリティ", findings=_SECURITY_FINDINGS),
+        ]
+    )
+
+
+async def test_card_answer_judged_decided_from_card_only_is_recorded_as_adopted(
+    db_session: AsyncSession,
+) -> None:
+    """判定がカードの答えだけを根拠に「決定」と返しても、カードの選択は AI の提案への同意なので
+    「採用」に直す(出どころの上限が上がらないように)。"""
+    project = await _reheard_project(db_session)
+    llm = _RecordingLLM(_security_judgement("decided", "自分のデータは自分だけ。本人だけ", 1))
+
+    async for _ in ChatService(db_session).stream_reply(
+        project, user_message="", card_answers=[CardAnswer(card_id="c-sec", option=0)], llm=llm
+    ):
+        pass
+
+    state = (await HearingPointRepository(db_session).load_states(project.id))["security"]
+    assert state.status == "adopted"

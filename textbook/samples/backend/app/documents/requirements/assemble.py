@@ -1,4 +1,4 @@
-# 作成：Phase-36-1｜更新：Phase-37-1,40-1,47-1,49-3
+# 作成：Phase-36-1｜更新：Phase-37-1,40-1,47-1,49-3,70-3
 """AI の下書きから要件定義書の model を組み立てる(純粋関数)。
 
 AI には要件の中身・出どころ・観点だけを書かせ、ID は書かせない(前の版の同じ要件の ID を
@@ -9,7 +9,8 @@ AI には要件の中身・出どころ・観点だけを書かせ、ID は書�
 - 出どころ: 観点の表の状態を上限にする(`cap_source`)。AI が「ユーザー」と書いても、観点が
   未決なら「推測」にする。Phase 34 の「根拠の無い決定は取り込まない」と同じ考え方。
 - 変更なし(`unchanged`): 前の版の同じ ID・同じ種別の行があれば、その行をそのまま使う
-  (再生成の言い換えで要件が変わらないため。`app.documents.revision`)。
+  (再生成の言い換えで要件が変わらないため。`app.documents.revision`)。出どころだけは今の観点の
+  表で上限をかけ直す(観点が採用から未決に戻ったのに、写した行が「ユーザー」のまま残らないように)。
 """
 
 # Phase-37-1:追記 ── app.documents.ids(carry_over_ids, initial_next_seq)
@@ -190,7 +191,13 @@ def build_model(
         # Phase-49-3:追記
         same = prev_rows.get(req_id)
         if r.unchanged and same is not None and same.kind == kind:
-            rows.append(same)
+            # Phase-70-3：更新
+            # rows.append(same)
+            # ↓↓
+            source = cap_source(same.source, same.points, states, kind=kind)
+            rows.append(
+                same if source == same.source else same.model_copy(update={"source": source})
+            )
             continue
         points = known_points(r.points)
         rows.append(

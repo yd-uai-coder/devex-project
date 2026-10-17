@@ -1,4 +1,4 @@
-# 作成：Phase-45-2｜更新：Phase-49-3,54-2
+# 作成：Phase-45-2｜更新：Phase-49-3,54-2,70-3
 """実装計画書の AI の下書きの入出力(純粋関数)。
 
 AI には要件定義書・内部設計書から、マイルストーンとタスク(実装手順書の作業単位)の行と本文の節を
@@ -10,6 +10,8 @@ AI には要件定義書・内部設計書から、マイルストーンとタ�
 
 # Phase-49-3:追記 ── collections.abc.Sequence, app.documents.implementation_plan.model.ImplementationPlanModel, app.documents.revision.REVISION_RULE, UNCHANGED_DESCRIPTION, changed_rows_text, rows_text
 # Phase-54-2:追記 ── app.documents.revision.instruction_text
+# Phase-70-3:追記 ── app.documents.revision(RevisionInputs, revision_rule)
+# Phase-70-3：削除 ── app.documents.revision.REVISION_RULE
 from collections.abc import Sequence
 from typing import Literal
 
@@ -24,10 +26,11 @@ from app.documents.implementation_plan.assemble import (
 )
 from app.documents.implementation_plan.model import ImplementationPlanModel
 from app.documents.revision import (
-    REVISION_RULE,
     UNCHANGED_DESCRIPTION,
+    RevisionInputs,
     changed_rows_text,
     instruction_text,
+    revision_rule,
     rows_text,
 )
 
@@ -100,6 +103,17 @@ class ImplementationPlanGenerationOutput(BaseModel):
     risks: list[GeneratedRisk] = Field(description="4.4 想定リスクと対策")
 
 
+# Phase-70-3:追記
+# 再生成のプロンプトの節の分け方(前の版・きっかけ・参照)。節を足したら、ここにも分ける
+REVISION = RevisionInputs(
+    previous=("前の版のタスク",),
+    triggers={
+        "上流の変わった行": "要件定義書・内部設計書で変わった行。その行に関係する行を書き直す",
+        "修正指示": "設計レビューの採用した指摘。指示が指す行を書き直す",
+    },
+    context=("要件定義書", "内部設計書"),
+)
+
 SYSTEM_PROMPT = (
     "あなたは経験豊富なプロジェクトマネージャーです。【要件定義書】と【内部設計書】を踏まえ、"
     "開発を安全かつ確実に進めるための実装計画書の中身を、マイルストーンとタスクの行と、説明の節と"
@@ -117,8 +131,11 @@ SYSTEM_PROMPT = (
     # ↓↓
     "- 要件定義書・内部設計書に無い技術を創作しない\n"
     "- 【前の版のタスク】に同じタスクがあれば、その key を prev_key に書く\n"
-    f"{REVISION_RULE}(【前の版】は【前の版のタスク】。【上流の変わった行】は要件定義書・"
-    "内部設計書の行)"
+    # Phase-70-3：更新
+    # f"{REVISION_RULE}(【前の版】は【前の版のタスク】。【上流の変わった行】は要件定義書・"
+    # "内部設計書の行)"
+    # ↓↓
+    f"{revision_rule(REVISION)}"
 )
 
 

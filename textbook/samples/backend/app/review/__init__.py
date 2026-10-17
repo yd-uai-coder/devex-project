@@ -1,4 +1,4 @@
-# 作成：Phase-52-1｜更新：Phase-53-1,53(完了後の調整),54-1,54-2,54-4,54-5,68-2
+# 作成：Phase-52-1｜更新：Phase-53-1,53(完了後の調整),54-1,54-2,54-4,54-5,68-2,70-1
 """設計レビュー(生成とは別のモデルが指摘だけを返す)の入力・出力・判定(純粋関数)。
 
 docs/internal_design.md 3.3節「8. AI 設計レビュー + テスト設計」。
@@ -8,6 +8,7 @@ docs/internal_design.md 3.3節「8. AI 設計レビュー + テスト設計」�
 # Phase-53(完了後の調整):追記 ── app.review.schemas(REVIEW_DOCUMENTS, only_reviewed_documents)
 # Phase-54-1:追記 ── app.review.fix_check.FixCheckOut, app.review.fix_check.FixVerdict, app.review.fix_check.VERDICT_LABEL, app.review.fix_check.build_fix_check_messages, app.review.fix_check.changed_rows_text, app.review.fix_check.target_rows_text, app.review.followup.FollowupState, app.review.followup.Row, app.review.followup.RowDiff, app.review.followup.document_model_rows, app.review.followup.element_rows, app.review.followup.followup_state, app.review.followup.version_keys, app.review.rehearing.REHEARING_HEAD, app.review.rehearing.can_rehear, app.review.rehearing.rehearing_message, app.review.rehearing.rehearing_points, app.review.sendback.INSTRUCTION_HEAD, app.review.sendback.SendbackFinding, app.review.sendback.build_instruction, app.review.sendback.can_regenerate, app.review.sendback.findings_for
 # Phase-68-2:追記 ── app.review.policy.review_allowed
+# Phase-70-1:追記 ── app.review.rehearing.rehearing_findings_text
 from app.review.fix_check import (
     VERDICT_LABEL,
     FixCheckOut,
@@ -49,6 +50,7 @@ from app.review.prompt import (
 from app.review.rehearing import (
     REHEARING_HEAD,
     can_rehear,
+    rehearing_findings_text,
     rehearing_message,
     rehearing_points,
 )
@@ -125,6 +127,8 @@ __all__ = [
     # Phase-53(完了後の調整):追記
     "only_reviewed_documents",
     # Phase-54-1:追記
+    # Phase-70-1:追記
+    "rehearing_findings_text",
     "rehearing_message",
     "rehearing_points",
     "render_findings",

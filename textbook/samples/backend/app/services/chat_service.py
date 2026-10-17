@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5,15-3,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,39-1,40-1,54-4,59-2,68-3
+# 作成：Phase-2-3｜更新：Phase-2-5,6-3,6-5,6-6,8-5,15-3,24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,39-1,40-1,54-4,59-2,68-3,70-1
 # 写経レベル: コア ── MVPコアループ(ヒアリングフロー)そのもの。LangGraphを使わない設計判断も含む。
 # Phase-2-5:追記 ── app.services.llm_retry.invoke_with_retry
 # Phase-6-3:追記 ── app.models.prompt_template.PromptTemplate,
@@ -31,11 +31,12 @@
 # Phase-39-1:追記 ── re(返信の完了の宣言を除く)
 # Phase-68-3：削除 ── app.ai.llm.gemini.get_gemini_llm
 # Phase-68-3:追記 ── app.ai.llm.catalog.Purpose, app.ai.llm.factory.STRUCTURED_METHOD, app.services.llm_resolver.LlmResolver
+# Phase-70-1:追記 ── dataclasses.replace, app.review.rehearing.rehearing_findings_text
 import json
 import re
 import uuid
 from collections.abc import AsyncIterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import structlog
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
@@ -84,6 +85,7 @@ from app.models.prompt_template import PromptTemplate
 from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.hearing_point import HearingPointRepository, states_from_rows
 from app.repositories.prompt_template import PromptTemplateRepository
+from app.review.rehearing import rehearing_findings_text
 from app.schemas.generation import HearingCompletionCheck
 from app.schemas.hearing import (
     CardAnswer,
@@ -307,6 +309,29 @@ _DELEGATED_NOTE = (
     "おすすめを1つ付けます。本文は短い前置きだけにし、おすすめを適用した・決めた、とは書かないで"
     "ください。"
 )
+# Phase-70-1:追記
+# 設計レビューの指摘で聞き直している観点を、カードで聞くときに返信のプロンプトの最後に足す指示。
+# 1枚のカードで指摘の論点の一部しか値にならないこと(「など」で省く)があったため、指摘の本文を
+# 名指しして、論点ごとに値を書かせる
+_REHEARING_CARD_NOTE = (
+    "{label}は、設計レビューの次の指摘で聞き直している観点です。\n{findings}\n"
+    "選択肢カード(cards)で聞くなら、どの選択肢の名前にも、指摘が挙げた対象(例: ログイン失敗・"
+    "登録・チャット・生成)それぞれの具体的な値・方式を書いてください(「など」で省かない。"
+    "1つの選択肢だけに書いて、ほかの選択肢で落とさない)。1枚で聞ききれないときは、まだ値の無い"
+    "対象をこのカードで聞き、残りは次の問いで聞きます。"
+)
+# 聞き直している観点のカードに利用者が答えたときに、判定のプロンプトに足す指示。カードの答えを
+# そのまま決めたことにすると、聞き直しの前の要約が選択肢の文で置き換わり、指摘の論点のうち
+# カードに無かったものも決まったことになるため、判定の LLM に前の要約と合わせて書き直させる
+_REHEARING_ANSWER_NOTE = (
+    "\n観点 {key}({label})は、設計レビューの指摘で聞き直している観点で、最新のユーザーの発言は"
+    "そのカードの答え(「{answer}」)です。\n指摘: {findings}\n聞き直しの前の要約: {summary}\n"
+    "この観点を必ず判定する。まず、指摘が挙げた対象(例: ログイン失敗・登録・チャット・生成)を"
+    "1つずつ見て、答えにも聞き直しの前の要約にも具体的な値・方式が無いものが1つでもあれば open に"
+    "する。すべてに値・方式があれば adopted にする(カードの選択なので decided にしない)。"
+    "summaryは、どちらの場合も、聞き直しの前の要約のうち答えと食い違わない内容を落とさず、答えの"
+    "値と合わせて書く。"
+)
 # Phase-35(完了後の調整):追記 ── 返信に問いもカードも無いときに、コードが足す次の問い
 _NEXT_QUESTION_TEMPLATE = "次に、{label}について教えてください。(例: {question})"
 # Phase-40-1:追記 ── 「？」が無くても、利用者に答えを求める文(依頼・問いの言い切り)なら問いとみなす
@@ -387,7 +412,11 @@ class ChatService:
         結果はprojects.hearing_checkへ保存する。
 
         - カードへの回答は、LLMを呼ばずにコードが「AIの提案を採用」と記録する。選んだ内容と
-          文は1つの発言にまとめ、その発言を根拠にする(app/hearing/cards.py)。
+          文は1つの発言にまとめ、その発言を根拠にする(app/hearing/cards.py)。ただし、設計
+          レビューの指摘で聞き直している観点への回答は、判定の LLM に回し、聞き直しの前の要約と
+          合わせて決めたことを書かせる(`_REHEARING_ANSWER_NOTE`。指摘の論点が残れば open)。
+          聞き直している観点を次に聞くときは、指摘を名指しして論点ごとの値を求める
+          (`_REHEARING_CARD_NOTE`)。
         - 完了は、必須の観点がすべて未決以外かどうかをコードが決める(app/hearing/points.py)。
         - 十分なら、LLMで返信を作らず、観点の表から組み立てたまとめを決まった形で返す(まとめと
           生成ボタンを同じ判定から同時に出すため)。
@@ -469,9 +498,15 @@ class ChatService:
             await self._hearing_points.list_for_project(project.id)
         )
         needs_judge = bool(user_message.strip()) or not judged
-        previous_cards, answered = await self._record_user_turn(
+        # Phase-70-1：更新
+        # previous_cards, answered = await self._record_user_turn(
+        # ↓↓
+        previous_cards, answered, reheard = await self._record_user_turn(
             project, user_message, card_answers, continue_optional=continue_optional
         )
+        # Phase-70-1:追記
+        # 聞き直している観点へのカードの答えは、判定の LLM が前の要約と合わせて決める
+        needs_judge = needs_judge or bool(reheard)
 
         # Phase-68-3：更新
         # # 「or」の理由：テスト時に本物のGemini APIを叩かせないための差し替え(DI)
@@ -482,10 +517,17 @@ class ChatService:
         states: dict[str, PointState] | None
         if needs_judge:
             try:
-                states = await self.judge_points(project, llm=llm)
+                # Phase-70-1：更新
+                # states = await self.judge_points(project, llm=llm)
+                # ↓↓
+                states = await self.judge_points(project, llm=llm, reheard=reheard)
             except GenerationFailedError:
                 logger.warning("hearing_check_failed")
                 states = None
+                # Phase-70-1:追記
+                if reheard:
+                    # 判定に失敗しても答えは失わない(今までどおり、選んだ選択肢を記録する)
+                    await self._record_card_answers(project, reheard)
         else:
             states = await self._load_states(project)
         if states is None:
@@ -527,13 +569,25 @@ class ChatService:
             and targets[0].key != "scale"
             and bool(_DELEGATION.search(user_message))
         )
+        # Phase-70-1:追記
+        notes = [_DELEGATED_NOTE.format(label=targets[0].label)] if delegated else []
+        rehearing = (
+            await self._rehearing_note(project, states, targets[0])
+            if targets and not carried
+            else None
+        )
+        if rehearing is not None:
+            notes.append(rehearing)
         message, cards = await self._compose_reply(
             project,
             questions=describe_points(targets),
             targets=targets,
             code_card=carried[0] if carried else None,
             # Phase-59-2:追記
-            extra_prompt=_DELEGATED_NOTE.format(label=targets[0].label) if delegated else None,
+            # Phase-70-1：更新
+            # extra_prompt=_DELEGATED_NOTE.format(label=targets[0].label) if delegated else None,
+            # ↓↓
+            extra_prompt="\n".join(notes) or None,
             llm=llm,
         )
         # Phase-39-1:追記
@@ -560,12 +614,14 @@ class ChatService:
         card_answers: Sequence[CardAnswer],
         *,
         continue_optional: bool = False,
-    ) -> tuple[list[Card], list[tuple[Card, int]]]:
+    ) -> tuple[list[Card], list[tuple[Card, int]], list[tuple[Card, int]]]:
         """利用者の発言を保存する。カードへの回答があれば、選んだ内容を発言の本文に足し、カードに
-        選択を書き込み、選ばれた観点を「AIの提案を採用」にする(根拠はこの発言)。
+        選択を書き込み、選ばれた観点を「AIの提案を採用」にする(根拠はこの発言)。ただし、設計
+        レビューの指摘で聞き直している観点(`reopened_after`)への回答は記録せず、判定に回す。
 
         選べるのは最新のAIの発言のカードのうち未回答のものだけ(古い画面から送られた回答は拒む)。
-        返り値は(最新のAIの発言のカード、今回の回答)。答えなかったカードの付け直しに使う。
+        返り値は(最新のAIの発言のカード、今回の回答、そのうち判定に回す回答)。前の2つは
+        答えなかったカードの付け直しに使う。
         「任意を続ける」だけの送信は、決まった文を利用者の発言として残す。
         """
         answered: list[tuple[Card, int]] = []
@@ -601,15 +657,63 @@ class ChatService:
             # Phase-35(完了後の調整)：更新
             # return
             # ↓↓
-            return cards, answered
+            # Phase-70-1：更新
+            # return cards, answered
+            # ↓↓
+            return cards, answered, []
         # JSONの列は中身の書き換えを検知しないため、新しいリストを代入する
         latest_ai.cards = [card_to_dict(card) for card in mark_selected(cards, answered)]
-        states = apply_card_answers(await self._load_states(project), answered, str(entry.id))
-        await self._hearing_points.save_states(project.id, states.values())
+        # Phase-70-1：更新
+        # states = apply_card_answers(await self._load_states(project), answered, str(entry.id))
+        # await self._hearing_points.save_states(project.id, states.values())
+        # ↓↓
+        previous = await self._load_states(project)
+        reheard = [
+            (card, option)
+            for card, option in answered
+            if previous[point_def(card.point_key).key].reopened_after is not None
+        ]
+        recorded = [answer for answer in answered if answer not in reheard]
+        if recorded:
+            states = apply_card_answers(previous, recorded, str(entry.id))
+            await self._hearing_points.save_states(project.id, states.values())
         if (scale := scale_of_answer(answered)) is not None:
             project.hearing_scale = scale
         # Phase-35(完了後の調整):追記
-        return cards, answered
+        # Phase-70-1：更新
+        # return cards, answered
+        # ↓↓
+        return cards, answered, reheard
+
+    async def _record_card_answers(
+        self, project: Project, answered: Sequence[tuple[Card, int]]
+    ) -> None:
+        """カードの回答を「AIの提案を採用」として記録する(根拠は最新の利用者の発言)。"""
+        history = await self._chat_histories.list_for_project(project.id)
+        latest_user = next(e for e in reversed(history) if e.sender == "user")
+        states = apply_card_answers(await self._load_states(project), answered, str(latest_user.id))
+        await self._hearing_points.save_states(project.id, states.values())
+
+    async def _rehearing_note(
+        self, project: Project, states: Mapping[str, PointState], target: PointDef
+    ) -> str | None:
+        """次に聞く観点が聞き直しの最中なら、その指摘を名指しした返信の指示。そうでなければ None。
+        """
+        findings = await self._rehearing_findings(project, states, target.key)
+        if not findings:
+            return None
+        return _REHEARING_CARD_NOTE.format(label=target.label, findings=findings)
+
+    async def _rehearing_findings(
+        self, project: Project, states: Mapping[str, PointState], key: str
+    ) -> str:
+        """聞き直している観点の指摘(聞き直しの問いかけから取り出す)。聞き直していなければ空。"""
+        reopened = states[key].reopened_after
+        if reopened is None:
+            return ""
+        history = await self._chat_histories.list_for_project(project.id)
+        message = next((e.message for e in history if str(e.id) == reopened), "")
+        return rehearing_findings_text(message, key)
 
     # Phase-35-2:追記 ── 返信の生成を stream_reply から切り出し、構造化出力の1回にした。
     # 以下の履歴・テンプレートの読み込みと _build_messages は、stream_reply にあったもの
@@ -737,9 +841,14 @@ class ChatService:
         return message, cards
 
     # Phase-34-2:追記
-    async def judge_points(self, project: Project, *, llm=None) -> dict[str, PointState]:
+    async def judge_points(
+        self, project: Project, *, llm=None, reheard: Sequence[tuple[Card, int]] = ()
+    ) -> dict[str, PointState]:
         """これまでの対話から、観点ごとの状態と根拠をLLMに判定させ、観点の表に取り込んで保存する
         (hearing_points・projects.hearing_scale。commitは呼び出し側)。取り込んだ後の表を返す。
+
+        `reheard`は、聞き直している観点へのカードの回答。観点・答え・指摘・聞き直しの前の要約を
+        名指しして、前の要約と合わせた決めたことを書かせる(`_REHEARING_ANSWER_NOTE`)。
 
         LLMには利用者側の発言に番号を付けて見せ、返った番号をchat_historiesのidに直す。根拠の
         無い「決定」は取り込まない(merge_judgement)。完了かどうかはLLMに聞かない。
@@ -761,6 +870,16 @@ class ChatService:
         if asked:
             points = "・".join(f"{key}({point_def(key).label})" for key in asked)
             prompt += _LATEST_QUESTION_NOTE.format(points=points)
+        # Phase-70-1:追記
+        for card, option in reheard:
+            key = point_def(card.point_key).key
+            prompt += _REHEARING_ANSWER_NOTE.format(
+                key=key,
+                label=point_def(key).label,
+                answer=card.options[option].label,
+                findings=await self._rehearing_findings(project, previous, key) or "(不明)",
+                summary=previous[key].summary or "なし",
+            )
         messages = [
             *_build_messages(history, project, template, numbers=numbers),
             # Phase-39-1：更新
@@ -809,6 +928,9 @@ class ChatService:
         states = merge_judgement(
             previous, judged, user_messages=user_messages, after_reopen=after_reopen
         )
+        # Phase-70-1:追記
+        if reheard:
+            states = _adopted_when_only_card(states, reheard, str(history[-1].id))
         project.hearing_scale = scale_after(
             # Phase-36-2：更新
             # states, _as_scale(project.hearing_scale), result.scale
@@ -900,8 +1022,13 @@ class ChatService:
         for key in keys:
             if not is_point_key(key):
                 raise HearingPointNotFoundError("観点が見つかりません")
+            # Phase-70-1:追記
+            # 決めたことは残す(聞き直しの答えを、前の要約と合わせて判定するため)
             states[key] = PointState(
-                point_def(key).key, "open", "", reopened_after=str(entry.id)
+                # Phase-70-1：更新
+                # point_def(key).key, "open", "", reopened_after=str(entry.id)
+                # ↓↓
+                point_def(key).key, "open", states[key].summary, reopened_after=str(entry.id)
             )
         await self._hearing_points.save_states(project.id, states.values())
         if "scale" in keys:
@@ -1194,6 +1321,21 @@ def _points_table(states: Mapping[str, PointState]) -> str:
 
 
 # Phase-54-4:追記
+# Phase-70-1:追記
+def _adopted_when_only_card(
+    states: Mapping[str, PointState], reheard: Sequence[tuple[Card, int]], answer_id: str
+) -> dict[str, PointState]:
+    """聞き直しのカードの答えだけを根拠に「決定」と判定された観点を「採用」に直す(カードの選択は
+    AI の提案への同意。判定の LLM が決定と書くことがあった)。"""
+    result = dict(states)
+    for card, _ in reheard:
+        key = point_def(card.point_key).key
+        state = result[key]
+        if state.status == "decided" and set(state.evidence) <= {answer_id}:
+            result[key] = replace(state, status="adopted")
+    return result
+
+
 def _messages_after_reopen(
     history: Sequence[ChatHistory], states: Mapping[str, PointState]
 ) -> dict[str, set[str]]:

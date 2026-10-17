@@ -1,4 +1,4 @@
-# 作成：Phase-37-2｜更新：Phase-40-1,49-3,54-2
+# 作成：Phase-37-2｜更新：Phase-40-1,49-3,54-2,70-3
 """外部設計書の AI の下書きの入出力(純粋関数)。
 
 AI には要件定義書から、画面・API・外部連携の行(関係する要件ID 付き)と本文の節を書かせる。
@@ -10,6 +10,8 @@ AI には要件定義書から、画面・API・外部連携の行(関係する�
 # Phase-40-1:追記 ── app.documents.external_design.model.NO_BODY
 # Phase-49-3:追記 ── collections.abc.Sequence, app.documents.revision.NONE_TEXT, REVISION_RULE, UNCHANGED_DESCRIPTION, changed_rows_text, rows_text
 # Phase-54-2:追記 ── app.documents.revision.instruction_text
+# Phase-70-3:追記 ── app.documents.revision(RevisionInputs, revision_rule)
+# Phase-70-3：削除 ── app.documents.revision.REVISION_RULE
 from collections.abc import Sequence
 from typing import Literal
 
@@ -25,10 +27,11 @@ from app.documents.external_design.assemble import (
 from app.documents.external_design.model import NO_BODY, ExternalDesignModel
 from app.documents.revision import (
     NONE_TEXT,
-    REVISION_RULE,
     UNCHANGED_DESCRIPTION,
+    RevisionInputs,
     changed_rows_text,
     instruction_text,
+    revision_rule,
     rows_text,
 )
 
@@ -112,6 +115,17 @@ class ExternalDesignGenerationOutput(BaseModel):
     apis: list[GeneratedApi] = Field(description="2.6 本システム自身が提供する API をすべて")
 
 
+# Phase-70-3:追記
+# 再生成のプロンプトの節の分け方(前の版・きっかけ・参照)。節を足したら、ここにも分ける
+REVISION = RevisionInputs(
+    previous=("前の版の画面", "前の版の API"),
+    triggers={
+        "上流の変わった行": "要件定義書の要件で変わった行。その行に関係する行を書き直す",
+        "修正指示": "設計レビューの採用した指摘。指示が指す行を書き直す",
+    },
+    context=("要件定義書",),
+)
+
 SYSTEM_PROMPT = (
     "あなたは優秀なUI/UXデザイナー・システムアーキテクトです。【要件定義書】に基づき、"
     "ユーザー視点・外部仕様に関する外部設計書の中身を、画面・API・外部連携の行として書きます。\n"
@@ -132,8 +146,11 @@ SYSTEM_PROMPT = (
     # "- 要件定義書に無い技術・外部サービスを創作しない"
     # ↓↓
     "- 要件定義書に無い技術・外部サービスを創作しない\n"
-    f"{REVISION_RULE}(【前の版】は【前の版の画面】【前の版の API】。【上流の変わった行】は"
-    "要件定義書の要件)"
+    # Phase-70-3：更新
+    # f"{REVISION_RULE}(【前の版】は【前の版の画面】【前の版の API】。【上流の変わった行】は"
+    # "要件定義書の要件)"
+    # ↓↓
+    f"{revision_rule(REVISION)}"
 )
 
 

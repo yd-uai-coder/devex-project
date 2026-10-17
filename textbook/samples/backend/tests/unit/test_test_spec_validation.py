@@ -1,4 +1,4 @@
-# 作成：Phase-56-1｜更新：Phase-57-2
+# 作成：Phase-56-1｜更新：Phase-57-2,70-2
 # Phase-57-2：更新(docstring: SUT に design_gap_count)
 """テスト仕様書の決定的な検証のテスト。
 
@@ -84,3 +84,23 @@ def test_is_outdated_and_counts():
     assert row_counts(model) == {"integration": 3, "system": 1}
     # Phase-57-2:追記
     assert design_gap_count(model) == 1
+
+
+# Phase-70-2:追記
+def test_shallow_requirement_tests():
+    """要件 ID を持つ総合テストで、期待結果が要件の言い直し(「要件どおり」「提供されること」)なら
+    軽微の指摘。何が見える・残るかを書いたもの・結合テストは指摘しない。"""
+    model = _model()
+    model.system += [
+        SpecCase(id="ST-002", level="system", target="FR-001", viewpoint="正常",
+                 expected="FR-001 の要件どおり予約できること", req_ids=["FR-001"]),
+        SpecCase(id="ST-003", level="system", target="FR-001", viewpoint="正常",
+                 expected="予約の機能が提供されること", req_ids=["FR-001"]),
+        SpecCase(id="ST-004", level="system", target="FR-001", viewpoint="正常",
+                 expected="一覧に 5/1 の予約が出て、DB に1件残る", req_ids=["FR-001"]),
+        SpecCase(id="ST-005", level="system", target="性能", viewpoint="非機能",
+                 expected="正しく動作すること"),
+    ]
+    issues = {i.code: i for i in validate_test_spec(model)}
+    assert issues["SHALLOW_REQUIREMENT_TEST"].targets == ("ST-002", "ST-003")
+    assert issues["SHALLOW_REQUIREMENT_TEST"].level == "minor"

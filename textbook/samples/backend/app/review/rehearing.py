@@ -1,4 +1,4 @@
-# 作成：Phase-54-4
+# 作成：Phase-54-4｜更新：Phase-70-1
 """差し戻し: 採用したヒアリングの指摘から、聞き直す観点と最初の問いかけを組み立てる(純粋関数)。
 
 ヒアリングが原因の指摘(利用者に聞き直さないと決められない)は、再生成では直せない。観点を未決に
@@ -49,3 +49,19 @@ def rehearing_message(points: dict[str, list[SendbackFinding]]) -> str:
         lines.append(f"  例えば: {definition.question}")
     lines.append(REHEARING_TAIL)
     return "\n".join(lines)
+
+
+# Phase-70-1:追記
+def rehearing_findings_text(message: str, key: str) -> str:
+    """聞き直しの問いかけ(`rehearing_message`の出力)から、観点1つの指摘(問題・改善案)を取り出す。
+    無ければ空。ヒアリングの返信・判定に、その観点の指摘を名指しで渡すのに使う。"""
+    heading = f"・「{point_def(key).label}」"
+    lines = message.splitlines()
+    if heading not in lines:
+        return ""
+    block: list[str] = []
+    for line in lines[lines.index(heading) + 1 :]:
+        if line.startswith("・「") or line.startswith("  例えば: ") or line == REHEARING_TAIL:
+            break
+        block.append(line.strip())
+    return "\n".join(block)

@@ -1,4 +1,4 @@
-# 作成：Phase-36-2｜更新：Phase-39-1,49-3,54-2,59-2
+# 作成：Phase-36-2｜更新：Phase-39-1,49-3,54-2,59-2,70-3
 """要件定義書の AI の下書きの入出力(純粋関数)。
 
 AI には会話と観点の表から、要件の中身・出どころ・根拠の観点を書かせる。ID は書かせず、前の版の
@@ -9,6 +9,8 @@ AI には会話と観点の表から、要件の中身・出どころ・根拠�
 
 # Phase-49-3:追記 ── app.documents.revision.NONE_TEXT, REVISION_RULE, UNCHANGED_DESCRIPTION
 # Phase-54-2:追記 ── app.documents.revision.instruction_text
+# Phase-70-3:追記 ── app.documents.revision(RevisionInputs, revision_rule)
+# Phase-70-3：削除 ── app.documents.revision.REVISION_RULE
 from collections.abc import Mapping
 from typing import Literal
 
@@ -23,9 +25,10 @@ from app.documents.requirements.assemble import (
 from app.documents.requirements.model import RequirementsModel
 from app.documents.revision import (
     NONE_TEXT,
-    REVISION_RULE,
     UNCHANGED_DESCRIPTION,
+    RevisionInputs,
     instruction_text,
+    revision_rule,
 )
 from app.hearing import POINT_DEFS, SCALE_LABEL, STATUS_LABEL, PointState, Scale
 
@@ -79,6 +82,20 @@ class RequirementsGenerationOutput(BaseModel):
     )
 
 
+# Phase-70-3:追記
+# 再生成のプロンプトの節の分け方(前の版・きっかけ)。節を足したら、ここにも分ける。観点の表の
+# 状態・規模の変化もきっかけ(聞き直し・対象外への変更の後の再生成)
+REVISION = RevisionInputs(
+    previous=("前の版の要件",),
+    triggers={
+        "観点の表": "決めたこと・状態・規模が前の版の要件と食い違う(値・方式が具体になった・"
+        "変わった、対象外になった・戻った)。その観点を points に持つ要件を書き直し、決めたことの"
+        "値・方式をそのまま書く。対象外になった観点の要件は書かない",
+        "修正指示": "設計レビューの採用した指摘。指示が指す要件を書き直す",
+        "会話": "前の版の後の新しい依頼。関係する要件を書き直す・足す",
+    },
+)
+
 SYSTEM_PROMPT = (
     "あなたは優秀なITコンサルタント・システムアナリストです。【会話】と【観点の表】をもとに、"
     "システム開発の要件定義書の中身を、要件の行として書きます。\n"
@@ -110,10 +127,13 @@ SYSTEM_PROMPT = (
     # Phase-59-2：更新
     # f"{REVISION_RULE}(【前の版】は【前の版の要件】)"
     # ↓↓
-    f"{REVISION_RULE}(【前の版】は【前の版の要件】)\n"
-    "- 【観点の表】の決めたことが、前の版の要件と食い違う(値・方式が具体になった、変わった)なら、"
-    "それも変更のきっかけ。その観点を points に持つ要件は unchanged にせず、決めたことの値・方式を"
-    "そのまま書き直す(聞き直しで観点を決め直した後の再生成)"
+    # Phase-70-3：更新
+    # f"{REVISION_RULE}(【前の版】は【前の版の要件】)\n"
+    # "- 【観点の表】の決めたことが、前の版の要件と食い違う(値・方式が具体になった、変わった)なら、"
+    # "それも変更のきっかけ。その観点を points に持つ要件は unchanged にせず、決めたことの値・方式を"
+    # "そのまま書き直す(聞き直しで観点を決め直した後の再生成)"
+    # ↓↓
+    f"{revision_rule(REVISION)}"
 )
 
 

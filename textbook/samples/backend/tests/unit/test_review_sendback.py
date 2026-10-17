@@ -1,4 +1,4 @@
-# 作成：Phase-54-2｜更新：Phase-54-3,56-2
+# 作成：Phase-54-2｜更新：Phase-54-3,56-2,70-3
 """差し戻し(採用した指摘から再生成の指示を組み立てて、文書の生成に渡す)のテスト。
 
 SUT: app/review/sendback.py(純粋関数)・各文書の生成のプロンプトの組み立て(【修正指示】の節)・
@@ -10,6 +10,7 @@ SUT: app/review/sendback.py(純粋関数)・各文書の生成のプロンプト
      生成は FakeLLM(4文書・段階1の構造化出力。プロンプトを記録する)。DB はインメモリの SQLite。
 """
 
+# Phase-70-3：削除 ── app.documents.revision.REVISION_RULE
 import uuid
 from typing import Any
 
@@ -25,7 +26,7 @@ from app.documents.external_design.drafting import build_external_design_message
 from app.documents.implementation_plan.drafting import build_implementation_plan_messages
 from app.documents.internal_design.drafting import build_internal_design_messages
 from app.documents.requirements.drafting import build_requirements_messages
-from app.documents.revision import NONE_TEXT, REVISION_RULE, instruction_text
+from app.documents.revision import NONE_TEXT, instruction_text
 from app.models.project import Project
 from app.models.user import User
 from app.repositories.chat_history import ChatHistoryRepository
@@ -93,7 +94,10 @@ def test_build_instruction() -> None:
 
 
 def test_builders_put_instruction_section() -> None:
-    assert instruction_text("  ") == NONE_TEXT and "【修正指示】" in REVISION_RULE
+    # Phase-70-3：更新
+    # assert instruction_text("  ") == NONE_TEXT and "【修正指示】" in REVISION_RULE
+    # ↓↓
+    assert instruction_text("  ") == NONE_TEXT
     messages = [
         build_requirements_messages("会話", {}, None, None, "直す"),
         build_external_design_messages("要件", None, (), "直す"),

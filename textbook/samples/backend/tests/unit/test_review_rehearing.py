@@ -1,4 +1,4 @@
-# 作成：Phase-54-4
+# 作成：Phase-54-4｜更新：Phase-70-1
 """差し戻しの聞き直し(採用したヒアリングの指摘で、観点を未決に戻してチャットで聞き直す)のテスト。
 
 SUT: app/review/rehearing.py(純粋関数)・merge_judgement の未決に戻した観点の規則
@@ -9,6 +9,7 @@ SUT: app/review/rehearing.py(純粋関数)・merge_judgement の未決に戻し�
      (判定の構造化出力を返す)。DB はインメモリの SQLite。
 """
 
+# Phase-70-1:追記 ── app.review.rehearing_findings_text
 import uuid
 from typing import Any
 
@@ -28,6 +29,7 @@ from app.review import (
     REHEARING_HEAD,
     SendbackFinding,
     can_rehear,
+    rehearing_findings_text,
     rehearing_message,
     rehearing_points,
 )
@@ -98,6 +100,13 @@ def test_merge_keeps_reopened_point_open_until_answered_after_reopen() -> None:
         previous, [JudgedPoint("security", "open", "", ())], user_messages=set()
     )
     assert still["security"].reopened_after == "ai-9"
+    # Phase-70-1:追記
+    # 判定が要約を空で返しても、聞き直しの前の要約は残す
+    previous["security"] = PointState("security", "open", "ログインだけ", reopened_after="ai-9")
+    kept_summary = merge_judgement(
+        previous, [JudgedPoint("security", "open", "", ())], user_messages=set()
+    )
+    assert kept_summary["security"].summary == "ログインだけ"
     # 聞き直しの後の答えがあれば決まり、印は外れる
     decided = merge_judgement(
         previous, new, user_messages={"m1", "m5"}, after_reopen={"security": {"m5"}}
@@ -140,6 +149,18 @@ async def _project(session: AsyncSession) -> tuple[Project, list]:
     return project, sorted(run.findings, key=lambda f: f.cause)
 
 
+# Phase-70-1:追記
+def test_rehearing_findings_text_takes_block_of_point() -> None:
+    abuse = _finding(point_key="abuse", problem="登録の上限が無い", suggestion="回数を決める")
+    message = rehearing_message(rehearing_points([_finding(), abuse]))
+    assert rehearing_findings_text(message, "security") == (
+        "- 誰が誰のデータを見られるかが決まっていない\n改善案: アクセス制御を決める"
+    )
+    assert rehearing_findings_text(message, "abuse") == "- 登録の上限が無い\n改善案: 回数を決める"
+    assert rehearing_findings_text(message, "logging") == ""
+    assert rehearing_findings_text("ほかの発言", "security") == ""
+
+
 def _judge(evidence: list[int]) -> FakeLLM:
     judgement = HearingPointsJudgement(
         points=[
@@ -158,6 +179,8 @@ async def test_rehearing_reopens_point_and_asks_in_chat(db_session: AsyncSession
 
     states = await HearingPointRepository(db_session).load_states(project.id)
     assert states["security"].status == "open" and states["security"].reopened_after is not None
+    # Phase-70-1:追記
+    assert states["security"].summary == "ログインする"  # 決めたことは残す
     history = await ChatHistoryRepository(db_session).list_for_project(project.id)
     assert history[-1].sender == "ai" and history[-1].message.startswith(REHEARING_HEAD)
     assert "アクセス制御が無い" in history[-1].message
