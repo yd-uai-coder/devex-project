@@ -1,4 +1,4 @@
-# 作成：Phase-10-5｜更新：Phase-15-3,24(完了後の調整),52-2
+# 作成：Phase-10-5｜更新：Phase-15-3,24(完了後の調整),52-2,69-1
 # 写経レベル: コア ── include_rawでトークン上限と出力の揺らぎを見分け、理由コードに分類する設計判断。
 """構造化出力の結果の解釈と、生成失敗の理由の分類(純粋関数)。
 
@@ -11,18 +11,28 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
+# Phase-69-1:追記 ── app.services.errors.LlmUnavailableError
 from app.services.errors import (
     GenerationFailedError,
     LLMInvalidOutputError,
     LLMQuotaExceededError,
     LLMTokenLimitError,
+    LlmUnavailableError,
 )
 
 # Phase-15-3：更新
 # ReasonCode = Literal["QUOTA_EXCEEDED", "TOKEN_LIMIT", "INVALID_OUTPUT", "GENERATION_FAILED"]
 # ↓↓
 ReasonCode = Literal[
-    "QUOTA_EXCEEDED", "TOKEN_LIMIT", "INVALID_OUTPUT", "GENERATION_FAILED", "STALE_GENERATION"
+    # Phase-69-1：更新
+    # "QUOTA_EXCEEDED", "TOKEN_LIMIT", "INVALID_OUTPUT", "GENERATION_FAILED", "STALE_GENERATION"
+    # ↓↓
+    "QUOTA_EXCEEDED",
+    "TOKEN_LIMIT",
+    "INVALID_OUTPUT",
+    "LLM_UNAVAILABLE",
+    "GENERATION_FAILED",
+    "STALE_GENERATION",
 ]
 
 _MESSAGES: dict[ReasonCode, str] = {
@@ -35,6 +45,11 @@ _MESSAGES: dict[ReasonCode, str] = {
         "ER図はテーブルを絞った部分図にするなど対象を小さくして、再度生成を指示してください。"
     ),
     "INVALID_OUTPUT": "AIの出力を設計図として解釈できませんでした。再度生成を指示してください。",
+    # Phase-69-1:追記
+    "LLM_UNAVAILABLE": (
+        "使うAIのAPIキーが設定されていないため、生成できませんでした。"
+        "マイページでモデルかAPIキーを見直してください。"
+    ),
     "GENERATION_FAILED": "設計図の生成に失敗しました。時間をおいて、再度生成を指示してください。",
     # Phase-15-3:追記
     # Phase-24：更新
@@ -71,6 +86,9 @@ def classify_failure(exc: BaseException) -> GenerationFailure:
     reason: ReasonCode
     if isinstance(exc, LLMQuotaExceededError):
         reason = "QUOTA_EXCEEDED"
+    # Phase-69-1:追記
+    elif isinstance(exc, LlmUnavailableError):
+        reason = "LLM_UNAVAILABLE"
     elif isinstance(exc, LLMTokenLimitError):
         reason = "TOKEN_LIMIT"
     elif isinstance(exc, LLMInvalidOutputError) or (

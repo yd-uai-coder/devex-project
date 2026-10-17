@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3,35-3,35(完了後の調整)
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3,35-3,35(完了後の調整),69-3
 // Phase-15-8:追記 ── StreamChatError(@/features/hearing/api/streamChat)
 // Phase-34-3:追記 ── getHearingPoints, HearingPointsView(@/features/hearing/api/hearingApi)
 // Phase-35-3:追記 ── composeAnswerText・latestAiMessage・markSelected・pendingAnswers(@/features/hearing/cards),
@@ -27,6 +27,8 @@ import type {
   HearingPointsView,
 } from "@/features/hearing/api/hearingApi";
 import type { ProjectStatus } from "@/features/dashboard/api/projects";
+// Phase-69-3:追記
+import type { GenerationFailure } from "@/lib/generation-failure";
 import type { AsyncStatus } from "@/lib/api/types";
 
 // Phase-35(完了後の調整):追記
@@ -64,6 +66,10 @@ type HearingStore = {
   generationTriggered: boolean;
   // ダッシュボードの状態表示・チャット画面での「生成済みドキュメントへの常設リンク」表示判定に使う。
   projectStatus: ProjectStatus | null;
+  // Phase-69-3:追記
+  // 直近の生成の失敗(プロジェクトの記録。次の生成を始めるまで出す)。失敗するとサーバーは状態を
+  // 生成の前に戻すので、loadHistory で読み直すと完了のバナーの「生成」をもう一度押せる
+  generationFailure: GenerationFailure | null;
 
   loadHistory: (projectId: string) => Promise<void>;
   // Phase-35-3:追記
@@ -105,6 +111,8 @@ const PROJECT_INITIAL = {
   cardDrafts: {} as Record<string, number>,
   generationTriggered: false,
   projectStatus: null,
+  // Phase-69-3:追記
+  generationFailure: null,
 } as const;
 
 // Phase-34-3:追記
@@ -139,6 +147,8 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   cardDrafts: {},
   generationTriggered: false,
   projectStatus: null,
+  // Phase-69-3:追記
+  generationFailure: null,
 
   loadHistory: async (projectId) => {
     // Phase-24:追記
@@ -155,7 +165,16 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       // 取得中に別のプロジェクトへ移っていたら、古い結果で上書きしない
       if (get().projectId !== projectId) return;
       const generationTriggered = project.status === "generating";
-      set({ messages, historyStatus: "success", generationTriggered, projectStatus: project.status });
+      // Phase-69-3：更新
+      // set({ messages, historyStatus: "success", generationTriggered, projectStatus: project.status });
+      // ↓↓
+      set({
+        messages,
+        historyStatus: "success",
+        generationTriggered,
+        projectStatus: project.status,
+        generationFailure: project.generation_failure ?? null,
+      });
 
       if (project.status === "interviewing" || project.status === "revising") {
         // ヒアリング完了バナーは画面更新・再遷移をまたいでも消えないよう、
@@ -356,7 +375,10 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
     // 残したままだと、生成後にチャットへ戻った際に前回の(承認済みの)バナーが古い状態で再表示される)
     // set({ generationTriggered: true });
     // ↓↓
-    set({ generationTriggered: true, projectStatus: "generating", completion: null });
+    // Phase-69-3：更新
+    // set({ generationTriggered: true, projectStatus: "generating", completion: null });
+    // ↓↓
+    set({ generationTriggered: true, projectStatus: "generating", completion: null, generationFailure: null });
   },
 
   // Phase-15-8：更新

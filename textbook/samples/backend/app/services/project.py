@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3,24(ゴール3後の調整),64-1,65-1,68-3
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3,24(ゴール3後の調整),64-1,65-1,68-3,69-1
 # 写経レベル: コア ── 添付ファイルのバリデーション順序・失敗時の非ブロッキング方針など、ドメイン判断を体現する箇所。
 # Phase-6-3:追記 ── app.repositories.prompt_template.PromptTemplateRepository,
 #   app.services.errors.PromptTemplateNotFoundError
@@ -191,6 +191,8 @@ class ProjectService:
             status=project.status,  # type: ignore[arg-type]
             # Phase-15-1:追記
             mode=project.mode,  # type: ignore[arg-type]
+            # Phase-69-1:追記
+            generation_failure=project.generation_failure,  # type: ignore[arg-type]
             created_at=project.created_at,
             updated_at=project.updated_at,
             intake=project.intake,

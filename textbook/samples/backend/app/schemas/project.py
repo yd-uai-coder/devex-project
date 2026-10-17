@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,15-1,65-1
+# 作成：Phase-2-3｜更新：Phase-6-3,15-1,65-1,69-1
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 import uuid
 from datetime import datetime
@@ -29,6 +29,16 @@ class IntakeFileRead(BaseModel):
     error_message: str | None
 
 
+# Phase-69-1:追記
+class GenerationFailureRead(BaseModel):
+    """直近の生成の失敗(理由のコード・利用者に見せる文言・作り直そうとした文書・日時)。"""
+
+    reason_code: str
+    message: str
+    targets: list[str]
+    failed_at: datetime
+
+
 class ProjectRead(BaseModel):
     """プロジェクトの概要をAPIレスポンスとして返す際のスキーマ。"""
 
@@ -39,6 +49,9 @@ class ProjectRead(BaseModel):
     status: ProjectStatus
     # Phase-15-1:追記
     mode: ProjectMode
+    # Phase-69-1:追記
+    # 直近の生成が失敗していれば、その記録(次の生成を受け付けると消える)
+    generation_failure: GenerationFailureRead | None = None
     created_at: datetime
     updated_at: datetime
 

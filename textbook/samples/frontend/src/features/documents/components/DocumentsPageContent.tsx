@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3
 "use client";
 
 // Phase-15-8:追記 ── useState(react), ConfirmDialog
@@ -11,6 +11,8 @@ import Link from "next/link";
 // Phase-64-4:追記
 import { useRouter } from "next/navigation";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
+// Phase-69-3:追記
+import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 // Phase-64-4:追記
 import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
@@ -36,6 +38,8 @@ import {
 } from "@/features/documents/regenerationOps";
 import { POLL_INTERVAL_MS, useGenerationPolling } from "@/hooks/useGenerationPolling";
 import { useInterval } from "@/hooks/useInterval";
+// Phase-69-3:追記
+import { failureFor } from "@/lib/generation-failure";
 
 export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const documents = useDocumentsStore((s) => s.documents);
@@ -44,6 +48,8 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const regenerating = useDocumentsStore((s) => s.regenerating);
   // Phase-15-8:追記
   const regenerateError = useDocumentsStore((s) => s.regenerateError);
+  // Phase-69-3:追記
+  const generationFailure = useDocumentsStore((s) => s.generationFailure);
   const fetchDocuments = useDocumentsStore((s) => s.fetchDocuments);
   const regenerate = useDocumentsStore((s) => s.regenerate);
   const onRegenerationCompleted = useDocumentsStore((s) => s.onRegenerationCompleted);
@@ -96,8 +102,12 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   // Phase-53(完了後の調整)：更新
   // useGenerationPolling(projectId, regenerating, () => {
   // ↓↓
-  const { timedOut } = useGenerationPolling(projectId, regenerating, () => {
-    onRegenerationCompleted(projectId);
+  // Phase-69-3：更新
+  // const { timedOut } = useGenerationPolling(projectId, regenerating, () => {
+  //   onRegenerationCompleted(projectId);
+  // ↓↓
+  const { timedOut } = useGenerationPolling(projectId, regenerating, (project) => {
+    onRegenerationCompleted(projectId, project);
   });
   // Phase-53(完了後の調整):追記
   // 再生成中は、文書ごとの進み具合も取り直す(初めの1回はすぐ取る)
@@ -200,6 +210,14 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
         </XStack>
       </XStack>
 
+      {/* Phase-69-3:追記 */}
+      {/* 直近の再生成の失敗(次の再生成を始めるまで出す。作れた文書は無く、前の版のまま) */}
+      {regenerating ? null : (
+        <GenerationFailureNotice
+          failure={failureFor(generationFailure)}
+          note={documents.length > 0 ? "下のプレビューは前の版を表示しています。もう一度「再生成する」を押してください。" : undefined}
+        />
+      )}
       {/* Phase-15-8:追記 */}
       {regenerateError ? (
         <Text role="alert" color="$color9">

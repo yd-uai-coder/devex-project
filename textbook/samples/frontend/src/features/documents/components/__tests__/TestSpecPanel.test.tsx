@@ -1,4 +1,4 @@
-// 作成：Phase-57-2｜更新：Phase-57(完了後の調整)
+// 作成：Phase-57-2｜更新：Phase-57(完了後の調整),69-3
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -8,6 +8,8 @@ import { TestSpecPanel } from "../TestSpecPanel";
 import type { TestSpecRead } from "@/features/documents/api/documentsApi";
 import type { Readiness } from "@/features/documents/testSpecOps";
 import { makeTestSpec } from "@/features/documents/test-utils/testSpecFixtures";
+// Phase-69-3:追記
+import type { GenerationFailure } from "@/lib/generation-failure";
 
 // SUT: TestSpecPanel / ドライバ: render と操作 /
 // スタブ: onGenerate(生成の受け付けの代わり)。本文の表示(DocumentMarkdownView)は本物を使う。
@@ -16,11 +18,17 @@ function renderPanel({
   testSpec = makeTestSpec(),
   readiness = { ready: true, reason: null },
   generating = false,
+  // Phase-69-3:追記
+  failure = null,
+  timedOut = false,
   onGenerate = vi.fn(),
 }: {
   testSpec?: TestSpecRead | null;
   readiness?: Readiness;
   generating?: boolean;
+  // Phase-69-3:追記
+  failure?: GenerationFailure | null;
+  timedOut?: boolean;
   onGenerate?: () => void;
 } = {}) {
   render(
@@ -31,6 +39,9 @@ function renderPanel({
         loading={false}
         generating={generating}
         generateError={null}
+        // Phase-69-3:追記
+        failure={failure}
+        timedOut={timedOut}
         readiness={readiness}
         emptyNotice="まだありません"
         onGenerate={onGenerate}
@@ -77,5 +88,22 @@ describe("TestSpecPanel", () => {
 
     expect(screen.getByRole("button", { name: "作っています..." })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText(/テスト仕様書を作っています/)).toBeInTheDocument();
+  });
+
+  // Phase-69-3:追記
+  it("直近の作成の失敗を、前の版がある旨と一緒に出す(作っている間は出さない)", () => {
+    const failure = { reason_code: "GENERATION_FAILED", message: "設計書の生成に失敗しました。", targets: ["test_spec"], failed_at: "2026-10-17T06:00:00Z" };
+    renderPanel({ failure });
+
+    const alert = screen.getByRole("alert", { name: "生成の失敗" });
+    expect(alert).toHaveTextContent("設計書の生成に失敗しました。");
+    expect(alert).toHaveTextContent("下は前の版です。");
+  });
+
+  it("作っている間に上限の時間を過ぎたら、読み込み直しを促す", () => {
+    renderPanel({ generating: true, timedOut: true });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("時間がかかっています");
+    expect(screen.queryByText(/しばらくお待ちください/)).not.toBeInTheDocument();
   });
 });

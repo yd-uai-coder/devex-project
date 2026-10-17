@@ -1,4 +1,4 @@
-# 作成：Phase-15-3｜更新：Phase-36-2,37-2
+# 作成：Phase-15-3｜更新：Phase-36-2,37-2,69-1
 # 写経レベル: コア ── 409・rollback・回収の3つを、DBの状態で確かめる。
 """設計書の生成の二重実行防止(気づき#4)・失敗時の rollback(#3)・止まった生成の回収(#5)のテスト。
 
@@ -91,7 +91,15 @@ async def test_failure_midway_rolls_back_partial_versions(db_session: AsyncSessi
     await db_session.refresh(project)
     assert project.status == "interviewing"
     history = await ChatHistoryRepository(db_session).list_for_project(project.id)
-    assert history[-1].message == "設計書の生成に失敗しました。時間をおいて再度お試しください。"
+    # Phase-69-1：更新
+    # assert history[-1].message == "設計書の生成に失敗しました。時間をおいて再度お試しください。"
+    # ↓↓
+    # 出力を解釈できなかった失敗は、その理由の文言で残す
+    assert history[-1].message == (
+        "AIの出力を設計書として解釈できませんでした。もう一度生成してください。"
+    )
+    assert project.generation_failure is not None
+    assert project.generation_failure["reason_code"] == "INVALID_OUTPUT"
 
 
 async def test_stale_generating_is_recovered_before_new_request(db_session: AsyncSession) -> None:

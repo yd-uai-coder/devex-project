@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,27-1,43-1
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,27-1,43-1,69-2
 # 写経レベル: 定型 ── ORM 定義。stage の範囲の CHECK と (project_id, stage) の一意制約だけが非自明。
 # Phase-16-3:追記 ── sqlalchemy.Text
 import uuid
@@ -77,6 +77,10 @@ class DesignStage(Base):
     # None = まだ生成していない / 'generating' / 'completed' / 'failed'
     generation_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
     generation_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Phase-69-2:追記
+    # 直近の生成の修正指示に入れた、設計レビューの指摘の ID(文字列の配列)。作り直した段階の
+    # 画面に「この作り直しで渡した指摘」を出すため。指摘を渡さない生成では None
+    generation_finding_ids: Mapped[list[str] | None] = mapped_column(PortableJSON, nullable=True)
     # 生成を始めた時刻。止まった生成(15分超)の回収に使う(app/services/generation_staleness.py)
     generation_started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

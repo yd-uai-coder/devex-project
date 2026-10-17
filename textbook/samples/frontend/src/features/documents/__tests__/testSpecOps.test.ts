@@ -1,4 +1,4 @@
-// 作成：Phase-57-2
+// 作成：Phase-57-2｜更新：Phase-69-3
 import { describe, expect, it } from "vitest";
 import {
   countIssues,
@@ -20,6 +20,13 @@ describe("testSpecOps", () => {
     expect(testSpecStatus(null)).toBe("none");
     expect(testSpecStatus(makeTestSpec({ outdated: true }))).toBe("outdated");
     expect(testSpecStatus(makeTestSpec())).toBe("ready");
+  // Phase-69-3:追記
+  });
+
+  it("作っている間・直近の作成の失敗は、版の状態より先に出す", () => {
+    expect(testSpecStatus(makeTestSpec(), { generating: true, failed: true })).toBe("generating");
+    expect(testSpecStatus(makeTestSpec(), { failed: true })).toBe("failed");
+    expect(testSpecStatus(null, { failed: true })).toBe("failed");
   });
 
   it("件数の文は、「設計に無い」があるときだけ後ろに足す", () => {

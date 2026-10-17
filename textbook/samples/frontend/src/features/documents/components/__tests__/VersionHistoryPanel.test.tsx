@@ -1,4 +1,4 @@
-// 作成：Phase-6-2｜更新：Phase-6-6,57-2
+// 作成：Phase-6-2｜更新：Phase-6-6,57-2,69-3
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -124,9 +124,15 @@ describe("VersionHistoryPanel", () => {
 
     await user.click(screen.getByRole("button", { name: "この内容で復元する" }));
 
-    await vi.waitFor(() => expect(stub.requests).toHaveLength(3));
+    // Phase-69-3：更新
+    // await vi.waitFor(() => expect(stub.requests).toHaveLength(3));
+    // ↓↓
+    // テスト仕様書と一緒に、作っているか・直近の失敗を知るためにプロジェクトも読む
+    await vi.waitFor(() => expect(stub.requests).toHaveLength(4));
     expect(stub.requests[1].url).toContain("/documents/test_spec/versions/1/restore");
     expect(stub.requests[2].url).toContain("/test-spec");
+    // Phase-69-3:追記
+    expect(stub.requests[3].url).toMatch(/\/projects\/p1$/);
   });
 
   it("取得失敗時はエラーを表示する", async () => {

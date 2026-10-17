@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,24(完了後の,44-2 UI 調整),27-3,31-7,57-3,57(完了後の調整)
+// 作成：Phase-15-7｜更新：Phase-16-6,24(完了後の,44-2 UI 調整),27-3,31-7,57-3,57(完了後の調整),69-3
 // 写経レベル: 定型 ── 7段階の並びと状態の色。
 "use client";
 
@@ -66,10 +66,16 @@ const TEST_SPEC_STATUS_COLORS: Record<TestSpecStatus, string> = {
   none: "$color10",
   outdated: "$red10",
   ready: "$green10",
+  // Phase-69-3:追記
+  generating: "$orange10",
+  failed: "$red10",
 };
 
 // ステッパーの段階8の下に置く「テスト仕様書」の行(詳細設計モードだけ)。段階ではないので承認は無く、
-// 状態は 未作成・古い・作成済み。
+// Phase-69-3：更新
+// // 状態は 未作成・古い・作成済み。
+// ↓↓
+// 状態は 未作成・古い・作成済みと、作っている間・直近の作成の失敗。
 export type TestSpecStep = {
   status: TestSpecStatus;
   selected: boolean;

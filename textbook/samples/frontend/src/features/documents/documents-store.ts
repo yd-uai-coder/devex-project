@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2,64-4
+// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2,64-4,69-3
 // Phase-53(完了後の調整):追記 ── ApiError(@/lib/api/client), getGenerationProgress・DocType・GenerationProgressRead(@/features/documents/api/documentsApi)
 // Phase-15-7:追記 ── getProject(@/features/hearing/api/hearingApi), ProjectMode(@/features/dashboard/api/projects)
 // Phase-36-3:追記 ── adoptRequirement(@/features/documents/api/documentsApi)
@@ -15,7 +15,11 @@ import type {
 // (プロジェクトの生成トリガー自体はヒアリング画面の承認・ドキュメント画面の再生成の
 // どちらでも同じ1エンドポイントであり、機能固有のロジックを持たないため)。
 import { getProject, triggerGeneration } from "@/features/hearing/api/hearingApi";
-import type { ProjectMode } from "@/features/dashboard/api/projects";
+// Phase-69-3：更新
+// import type { ProjectMode } from "@/features/dashboard/api/projects";
+// ↓↓
+import type { ProjectMode, ProjectRead } from "@/features/dashboard/api/projects";
+import type { GenerationFailure } from "@/lib/generation-failure";
 import type { AsyncStatus } from "@/lib/api/types";
 
 type DocumentsStore = {
@@ -34,6 +38,10 @@ type DocumentsStore = {
   // Phase-24：更新
   // // プロジェクトのモード。詳細設計モードでは、設計図の生成ではなく詳細設計(SCR-008)へ進ませる。
   // ↓↓
+  // Phase-69-3:追記
+  // 直近の生成(再生成・テスト仕様書の作り直し)の失敗。プロジェクトの記録を読み、次の再生成を
+  // 始めるまで出す(開き直しても残る)
+  generationFailure: GenerationFailure | null;
   // プロジェクトのモード。詳細設計モードでは、詳細設計(SCR-008)へのリンクを出す。
   // 詳細設計(SCR-008)へ進ませる。取得するまでは null。
   projectMode: ProjectMode | null;
@@ -61,9 +69,14 @@ type DocumentsStore = {
   // 再生成の進み具合(生成していなければ null)。再生成中に取り直す
   progress: GenerationProgressRead | null;
   fetchProgress: (projectId: string) => Promise<void>;
-  // useGenerationPollingのcompletedコールバックから呼ぶ。regeneratingを下ろし、
-  // 一覧をforce再取得して新しいバージョンを反映する。
-  onRegenerationCompleted: (projectId: string) => void;
+  // Phase-69-3：更新
+  // // useGenerationPollingのcompletedコールバックから呼ぶ。regeneratingを下ろし、
+  // // 一覧をforce再取得して新しいバージョンを反映する。
+  // onRegenerationCompleted: (projectId: string) => void;
+  // ↓↓
+  // useGenerationPollingの終わりのコールバックから呼ぶ。regeneratingを下ろし、読んだプロジェクトの
+  // 失敗の記録を持ち、一覧をforce再取得して新しいバージョンを反映する(失敗なら前の版のまま)。
+  onRegenerationCompleted: (projectId: string, project?: ProjectRead) => void;
   // Phase-36-3:追記
   // 推測の要件を「採用」にし、返った要件定義書で一覧の同じ文書を置き換える
   adoptRequirement: (projectId: string, reqId: string) => Promise<void>;
@@ -77,6 +90,8 @@ const PROJECT_INITIAL = {
   regenerating: false,
   regenerateError: null,
   // Phase-53(完了後の調整):追記
+  // Phase-69-3:追記
+  generationFailure: null,
   progress: null,
   projectMode: null,
   // Phase-36-3:追記
@@ -97,6 +112,8 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   // Phase-15-8:追記
   regenerateError: null,
   // Phase-53(完了後の調整):追記
+  // Phase-69-3:追記
+  generationFailure: null,
   progress: null,
   // Phase-15-7:追記
   projectMode: null,
@@ -144,6 +161,8 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
       set({
         projectMode: project.mode,
         projectTitle: project.title,
+        // Phase-69-3:追記
+        generationFailure: project.generation_failure ?? null,
         ...(project.status === "generating" ? { regenerating: true } : {}),
       });
     } catch {
@@ -173,7 +192,11 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   // ↓↓
   regenerate: async (projectId, startFrom, findingIds = []) => {
     // 押した時点で regenerating にし、ボタンを無効にする(二度押しの防止。バックエンドも生成中は409)
-    set({ regenerating: true, regenerateError: null, progress: null });
+    // Phase-69-3：更新
+    // set({ regenerating: true, regenerateError: null, progress: null });
+    // ↓↓
+    // 前の失敗の知らせは、次の再生成を始めたら消す(サーバーも受け付けで記録を消す)
+    set({ regenerating: true, regenerateError: null, generationFailure: null, progress: null });
     try {
       // Phase-54-2：更新
       // await triggerGeneration(projectId, startFrom);
@@ -201,11 +224,16 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
     }
   },
 
-  onRegenerationCompleted: (projectId) => {
-    // Phase-53(完了後の調整)：更新
-    // set({ regenerating: false });
-    // ↓↓
-    set({ regenerating: false, progress: null });
+  // Phase-69-3：更新
+  // onRegenerationCompleted: (projectId) => {
+  //   set({ regenerating: false, progress: null });
+  // ↓↓
+  onRegenerationCompleted: (projectId, project) => {
+    set({
+      regenerating: false,
+      progress: null,
+      ...(project ? { generationFailure: project.generation_failure ?? null } : {}),
+    });
     void get().fetchDocuments(projectId, { force: true });
   },
 

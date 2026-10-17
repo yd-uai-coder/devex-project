@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1,34-1,52-3,64-1
+# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1,34-1,52-3,64-1,69-1
 # 写経レベル: 定型 ── 既存User/Conversationと同型のORMモデル定義。
 # Phase-34-1:追記 ── app.models.hearing_point.HearingPoint(TYPE_CHECKING)
 # Phase-52-3:追記 ── app.models.review.ReviewRun(TYPE_CHECKING)
@@ -58,6 +58,11 @@ class Project(Base):
     # hearing_scale: ヒアリングで決まった規模('personal'/'internal'/'public')。観点の必須を
     # 切り替える。未決の間はNone(必須は「個人・小規模」の列で数える。app/hearing/points.py)
     hearing_scale: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Phase-69-1:追記
+    # generation_failure: 直近の設計書・テスト仕様書の生成が失敗した記録
+    # ({reason_code, message, targets, failed_at})。画面が失敗を知らせるために返し、次の生成を
+    # 受け付けたら消す(app/services/doc_generator_service.py)。失敗していなければ None
+    generation_failure: Mapped[dict | None] = mapped_column(PortableJSON, nullable=True)
     # Phase-6-3:追記 ── SCR-003で選択したテンプレート(prompt_templates.id)。intake JSONには含めず
     # 専用カラムとして永続化する(ヒアリング再開・再生成時も含めプロジェクトのライフサイクル
     # 全体を通じて参照するため)。

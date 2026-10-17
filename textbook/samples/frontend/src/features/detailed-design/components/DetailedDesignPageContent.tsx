@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4,69-3
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -93,6 +93,8 @@ export function DetailedDesignPageContent({
   const testSpecLoading = useTestSpecStore((s) => s.status === "loading");
   const generatingTestSpec = useTestSpecStore((s) => s.generating);
   const testSpecError = useTestSpecStore((s) => s.generateError);
+  // Phase-69-3:追記
+  const testSpecFailure = useTestSpecStore((s) => s.generationFailure);
   const fetchTestSpec = useTestSpecStore((s) => s.fetchTestSpec);
   const generateTestSpec = useTestSpecStore((s) => s.generate);
   const onTestSpecGenerated = useTestSpecStore((s) => s.onGenerated);
@@ -140,7 +142,12 @@ export function DetailedDesignPageContent({
   useEffect(() => {
     if (detailed) void fetchTestSpec(projectId);
   }, [detailed, stagesKey, projectId, fetchTestSpec]);
-  useGenerationPolling(projectId, generatingTestSpec, () => onTestSpecGenerated(projectId));
+  // Phase-69-3：更新
+  // useGenerationPolling(projectId, generatingTestSpec, () => onTestSpecGenerated(projectId));
+  // ↓↓
+  const { timedOut: testSpecTimedOut } = useGenerationPolling(projectId, generatingTestSpec, (project) =>
+    onTestSpecGenerated(projectId, project),
+  );
 
   // Phase-53-5:追記
   // 段階6・7を承認したら、承認のダイアログから区切りのレビューを流せる(レビューがオンのときだけ)
@@ -234,7 +241,13 @@ export function DetailedDesignPageContent({
             testSpec={
               detailed
                 ? {
-                    status: testSpecStatus(testSpec),
+                    // Phase-69-3：更新
+                    // status: testSpecStatus(testSpec),
+                    // ↓↓
+                    status: testSpecStatus(testSpec, {
+                      generating: generatingTestSpec,
+                      failed: testSpecFailure !== null,
+                    }),
                     selected: showTestSpec,
                     onSelect: () => setShowTestSpec(true),
                   }
@@ -256,6 +269,9 @@ export function DetailedDesignPageContent({
                 loading={testSpecLoading}
                 generating={generatingTestSpec}
                 generateError={testSpecError}
+                // Phase-69-3:追記
+                failure={testSpecFailure}
+                timedOut={testSpecTimedOut}
                 readiness={testSpecReadiness(stages)}
                 emptyNotice="段階1(機能一覧)と段階7(横断事項と実装計画)を承認した後に、要件定義書・外部設計書と段階の処理・単位から、結合テスト(API)と総合テスト(画面の流れ・非機能)の仕様書を作ります。"
                 onGenerate={() => void generateTestSpec(projectId)}

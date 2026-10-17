@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-3-6,34-3,35(完了後の調整)
+// 作成：Phase-3-5｜更新：Phase-3-6,34-3,35(完了後の調整),69-3
 "use client";
 
 // Phase-3-6：更新(ドキュメントプレビュー画面の再生成でも同じポーリングロジックが
@@ -57,8 +57,12 @@ import { ChatPanel } from "@/features/hearing/components/ChatPanel";
 import { HearingPointsPanel } from "@/features/hearing/components/HearingPointsPanel";
 import { useHearingStore } from "@/features/hearing/hearing-store";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
+// Phase-69-3:追記
+import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
 import { HEADER_HEIGHT } from "@/components/layout/layout-constants";
 import { ApiError } from "@/lib/api/client";
+// Phase-69-3:追記
+import { failureFor } from "@/lib/generation-failure";
 
 // POST /generateは202のみ返す(プッシュ通知が無い)ため、生成完了検知は
 // useGenerationPolling(元はここに直接書かれていたが、ドキュメントプレビュー画面の
@@ -68,6 +72,9 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
   const generationTriggered = useHearingStore((s) => s.generationTriggered);
   const projectStatus = useHearingStore((s) => s.projectStatus);
   // Phase-34-3:追記
+  // Phase-69-3:追記
+  const generationFailure = useHearingStore((s) => s.generationFailure);
+  const loadHistory = useHearingStore((s) => s.loadHistory);
   const points = useHearingStore((s) => s.points);
   // Phase-35(完了後の調整):追記
   const skipPoint = useHearingStore((s) => s.skipPoint);
@@ -89,13 +96,25 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
     }
   }
 
-  const { timedOut } = useGenerationPolling(projectId, generationTriggered, () => {
-    router.push(`/projects/${projectId}/documents`);
+  // Phase-69-3：更新
+  // const { timedOut } = useGenerationPolling(projectId, generationTriggered, () => {
+  //   router.push(`/projects/${projectId}/documents`);
+  // ↓↓
+  // 成功したらプレビューへ移る。失敗したら(状態が生成の前に戻る)ここに留まり、読み直して
+  // 失敗の知らせと、もう一度生成できる完了のバナーを出す
+  const { timedOut } = useGenerationPolling(projectId, generationTriggered, (project) => {
+    if (project.status === "completed" && !project.generation_failure) {
+      router.push(`/projects/${projectId}/documents`);
+      return;
+    }
+    void loadHistory(projectId);
   });
 
   return (
     <YStack paddingVertical="$4" gap="$4">
       <H2>ヒアリングチャット</H2>
+      {/* Phase-69-3:追記 */}
+      {generationTriggered ? null : <GenerationFailureNotice failure={failureFor(generationFailure)} />}
       {generationTriggered && !timedOut ? (
         <Text color="$color11">設計書を生成しています。しばらくお待ちください...</Text>
       ) : null}

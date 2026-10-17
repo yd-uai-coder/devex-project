@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,27-3,31-7,44-2,57-3,57(完了後の調整)
+// 作成：Phase-15-7｜更新：Phase-16-6,27-3,31-7,44-2,57-3,57(完了後の調整),69-3
 // 写経レベル: 定型
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -133,5 +133,21 @@ describe("StageStepper", () => {
 
     await user.click(row);
     expect(onSelectTestSpec).toHaveBeenCalled();
+  });
+
+  // Phase-69-3:追記
+  it("テスト仕様書を作っている間は、その状態を行に出す", () => {
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <StageStepper
+          stages={makeStages()}
+          selectedStage={1}
+          onSelect={vi.fn()}
+          testSpec={{ status: "generating", selected: false, onSelect: vi.fn() }}
+        />
+      </TamaguiProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: "テスト仕様書(結合・総合)(作っています)" })).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7,38-3,42-1,42-2,44-1,48-1
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,28-3,28-4,29-1,29-4,29-5,30-5,31-5,31-7,38-3,42-1,42-2,44-1,48-1,69-4
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // devex-api app/schemas/design_stage.py に対応する(詳細設計モードの段階)。
 
@@ -57,6 +57,15 @@ export type StageIssue = {
 };
 
 // Phase-16-5:追記
+// Phase-69-4:追記
+// 段階の直近の生成の修正指示に入れた、設計レビューの指摘1件の要約(devex-api の GenerationFindingRead)
+export type GenerationFinding = {
+  id: string;
+  level: string;
+  targets: string[];
+  problem: string;
+};
+
 // AIの下書きの生成の状態。null はまだ生成していない。
 export type StageGenerationStatus = "generating" | "completed" | "failed";
 
@@ -103,6 +112,9 @@ export type DesignStageRead = {
   // 記録した変更の影響の印のうち、未確認の件数と確認済みの件数(古いバックエンドの応答には無い)
   impact_open?: number;
   impact_reviewed?: number;
+  // Phase-69-4:追記
+  // 直近の生成(差し戻しの作り直し)の修正指示に入れた指摘(渡した順。古いバックエンドの応答には無い)
+  generation_findings?: GenerationFinding[];
 };
 
 // Phase-16-5:追記

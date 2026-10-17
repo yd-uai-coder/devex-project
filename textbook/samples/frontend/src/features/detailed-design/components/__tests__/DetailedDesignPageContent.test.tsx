@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4,69-3
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-44-2:追記 ── ../../test-utils/stageFixtures.makeImpact
@@ -80,6 +80,8 @@ describe("DetailedDesignPageContent", () => {
       status: "success",
       generating: false,
       generateError: null,
+      // Phase-69-3:追記
+      generationFailure: null,
       fetchTestSpec: vi.fn().mockResolvedValue(undefined),
       generate: vi.fn().mockResolvedValue(undefined),
     });
@@ -456,6 +458,25 @@ describe("DetailedDesignPageContent", () => {
     expect(screen.getByLabelText("テストの件数")).toHaveTextContent("結合 12 件・総合 5 件");
     expect(screen.getByRole("table", { name: "テスト仕様書の検証の結果" })).toBeInTheDocument();
     expect(screen.getByLabelText("テスト仕様書の同梱")).toHaveTextContent("test_spec.md");
+  });
+
+  // Phase-69-3:追記
+  it("テスト仕様書の直近の作成が失敗していれば、ステッパーの行とパネルで知らせる", async () => {
+    const user = userEvent.setup();
+    useTestSpecStore.setState({
+      testSpec: makeTestSpec(),
+      generationFailure: {
+        reason_code: "QUOTA_EXCEEDED",
+        message: "本日の利用上限に達しました。時間をおいて再度お試しください。",
+        targets: ["test_spec"],
+        failed_at: "2026-10-17T06:00:00Z",
+      },
+    });
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "テスト仕様書(結合・総合)(前回の作成に失敗)" }));
+
+    expect(screen.getByRole("alert", { name: "生成の失敗" })).toHaveTextContent("本日の利用上限に達しました。");
   });
 
   it("段階7 を承認したダイアログから、テスト仕様書へ移れる", async () => {

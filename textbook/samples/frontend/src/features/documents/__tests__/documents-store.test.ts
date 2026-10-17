@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-6,15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2,64-4
+// 作成：Phase-3-6｜更新：Phase-6-6,15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2,64-4,69-3
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDocumentsStore } from "../documents-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
@@ -15,6 +15,8 @@ function resetStore() {
     // Phase-15-8:追記
     regenerateError: null,
     // Phase-15-7:追記
+    // Phase-69-3:追記
+    generationFailure: null,
     projectMode: null,
     // Phase-36-3:追記
     // Phase-64-4:追記
@@ -23,6 +25,14 @@ function resetStore() {
     adoptError: null,
   });
 }
+
+// Phase-69-3:追記
+const FAILURE = {
+  reason_code: "GENERATION_FAILED",
+  message: "設計書の生成に失敗しました。時間をおいて再度お試しください。",
+  targets: ["requirements", "external_design", "internal_design", "implementation_plan", "test_spec"],
+  failed_at: "2026-10-17T06:00:00Z",
+};
 
 const SAMPLE_DOC = {
   id: "d1",
@@ -198,6 +208,35 @@ describe("useDocumentsStore", () => {
     const state = useDocumentsStore.getState();
     expect(state.regenerating).toBe(true);
     expect(state.regenerateError).toBeNull();
+  });
+
+  // Phase-69-3:追記
+  it("fetchProjectMode()は直近の生成の失敗を持ち、regenerate()を始めると消す", async () => {
+    stub.queue({ status: 200, body: { id: "p1", mode: "simple", status: "completed", generation_failure: FAILURE } });
+    await useDocumentsStore.getState().fetchProjectMode("p1");
+    expect(useDocumentsStore.getState().generationFailure).toEqual(FAILURE);
+
+    stub.queue({ status: 202, body: {} });
+    await useDocumentsStore.getState().regenerate("p1");
+    expect(useDocumentsStore.getState().generationFailure).toBeNull();
+  });
+
+  it("onRegenerationCompleted()は読んだプロジェクトの失敗の記録を持ち、一覧を取り直す", async () => {
+    useDocumentsStore.setState({ projectId: "p1", regenerating: true });
+    stub.queue({ status: 200, body: [SAMPLE_DOC] });
+
+    useDocumentsStore.getState().onRegenerationCompleted("p1", {
+      id: "p1",
+      title: "t",
+      status: "completed",
+      mode: "simple",
+      generation_failure: FAILURE,
+      created_at: "",
+      updated_at: "",
+    });
+
+    expect(useDocumentsStore.getState()).toMatchObject({ regenerating: false, generationFailure: FAILURE });
+    await vi.waitFor(() => expect(useDocumentsStore.getState().documents).toEqual([SAMPLE_DOC]));
   });
 
   it("fetchProjectMode()はプロジェクトが生成中ならregeneratingにする(読み込み直した後も完了を待つ)", async () => {

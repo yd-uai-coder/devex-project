@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7,20-7,21-7,21-7(画面確認後の修正),23-6,44-2,44(完了後の調整)
+// 作成：Phase-15-7｜更新：Phase-16-6,17-6,18-9,19-7,20-7,21-7,21-7(画面確認後の修正),23-6,44-2,44(完了後の調整),69-4
 // 写経レベル: コア ── 状態ごとのボタンと表示。
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-17-6:追記 ── @/features/detailed-design/detailed-design-store.useDetailedDesignStore
@@ -190,6 +190,32 @@ describe("StageWorkArea", () => {
     expect(
       screen.getByRole("button", { name: "このまま承認し直す" }),
     ).toBeEnabled();
+  });
+
+  // Phase-69-4:追記
+  it("差し戻しで作り直した段階にエラーがあれば、承認の横に理由とエラーへのリンク、渡した指摘を出す", () => {
+    const [stage1] = makeStages({
+      1: {
+        state: "regenerated",
+        version: 3,
+        model: makeFunctionList(),
+        issues: [{ severity: "error", code: "DUPLICATE_GROUP", message: "グループが重なっています", target: "g1" }],
+        generation_findings: [
+          { id: "f1", level: "critical", targets: ["F-02"], problem: "予約の取消の処理が無い" },
+        ],
+      },
+    });
+    useDetailedDesignStore.setState({ stages: [stage1] });
+    renderArea(stage1);
+
+    expect(screen.getByRole("button", { name: "承認する" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("status", { name: "承認できない理由" })).toHaveTextContent(
+      "検証のエラーが1件あるため承認できません。",
+    );
+    expect(screen.getByRole("link", { name: "検証の結果へ" })).toHaveAttribute("href", "#stage-issue-list");
+    expect(screen.getByLabelText("この作り直しで渡した指摘")).toHaveTextContent(
+      "[最重要] 対象: F-02 ── 予約の取消の処理が無い",
+    );
   });
 
   it("承認の失敗を表示する", () => {

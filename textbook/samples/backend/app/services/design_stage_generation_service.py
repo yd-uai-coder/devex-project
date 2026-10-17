@@ -1,4 +1,4 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整),64-2,68-3
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整),64-2,68-3,69-1,69-2
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
 # Phase-31-4：更新(docstring: 簡易モードの段階8は、作業単位を WBS、参照を内部設計書から取ること)
@@ -219,6 +219,11 @@ _MESSAGES: dict[ReasonCode, str] = {
         "AIの入力または出力のトークン数が上限を超えたため、下書きを作れませんでした。"
     ),
     "INVALID_OUTPUT": "AIの出力を下書きとして解釈できませんでした。もう一度生成してください。",
+    # Phase-69-1:追記
+    "LLM_UNAVAILABLE": (
+        "使うAIのAPIキーが設定されていないため、下書きを作れませんでした。"
+        "マイページでモデルかAPIキーを見直してください。"
+    ),
     "GENERATION_FAILED": "下書きの生成に失敗しました。時間をおいて、もう一度生成してください。",
     "STALE_GENERATION": (
         "下書きの生成が時間内に終わらなかったため、中断しました。もう一度生成してください。"
@@ -1064,6 +1069,8 @@ class DesignStageGenerationService:
             row = await self._rows.create(project_id=project.id, stage=stage, model=None)
         row.generation_status = "generating"
         row.generation_error = None
+        # Phase-69-2:追記
+        row.generation_finding_ids = [str(i) for i in finding_ids] or None
         row.generation_started_at = datetime.now(UTC)
         await self._session.commit()
         logger.info("design_stage_generation_requested", project_id=str(project.id), stage=stage)

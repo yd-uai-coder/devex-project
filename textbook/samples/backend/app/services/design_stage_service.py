@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整),56-2
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整),56-2,69-2
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
@@ -19,8 +19,9 @@
 # Phase-55(完了後の調整):追記 ── app.detailed_design.component_element_layers
 # Phase-46-2：削除 ── app.detailed_design.stages.STAGE_INPUTS
 # Phase-56-2:追記 ── collections.abc.Sequence
+# Phase-69-2:追記 ── collections.abc.Iterable, app.models.review.ReviewFinding, app.repositories.review.ReviewRunRepository, app.schemas.design_stage.GenerationFindingRead
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict
 
 import structlog
@@ -98,9 +99,11 @@ from app.detailed_design.validation import (
 from app.models.design_stage import DesignStage
 from app.models.generated_document import GeneratedDocument
 from app.models.project import Project
+from app.models.review import ReviewFinding
 from app.models.uml_diagram import UmlDiagram
 from app.repositories.design_stage import DesignStageRepository
 from app.repositories.generated_document import GeneratedDocumentRepository
+from app.repositories.review import ReviewRunRepository
 from app.repositories.uml_diagram import UmlDiagramRepository
 from app.schemas.design_stage import (
     DesignImpactRead,
@@ -108,6 +111,7 @@ from app.schemas.design_stage import (
     DesignStageRead,
     DfdAccessRead,
     ElementChangeRead,
+    GenerationFindingRead,
     ImpactMarkRead,
     RegenerationTargetRead,
     SequenceIssueRead,
@@ -184,7 +188,11 @@ class DesignStageService:
         簡易モードは段階8だけ)。"""
         rows, views, documents = await self._load(project)
         sources = await self._sources(project, rows, views, documents)
-        return [_to_read(views[stage], rows.get(stage), sources) for stage in views]
+        # Phase-69-2：更新
+        # return [_to_read(views[stage], rows.get(stage), sources) for stage in views]
+        # ↓↓
+        findings = await self._generation_findings(project.id, rows.values())
+        return [_to_read(views[stage], rows.get(stage), sources, findings) for stage in views]
 
     async def stage_view(
         self, project: Project, stage: int
@@ -715,7 +723,26 @@ class DesignStageService:
     async def _read_one(self, project: Project, stage: int) -> DesignStageRead:
         rows, views, documents = await self._load(project)
         sources = await self._sources(project, rows, views, documents)
-        return _to_read(views[stage], rows.get(stage), sources)
+        # Phase-69-2：更新
+        # return _to_read(views[stage], rows.get(stage), sources)
+        # ↓↓
+        row = rows.get(stage)
+        findings = await self._generation_findings(project.id, [row] if row is not None else [])
+        return _to_read(views[stage], row, sources, findings)
+
+    async def _generation_findings(
+        self, project_id: uuid.UUID, rows: Iterable[DesignStage]
+    ) -> dict[str, ReviewFinding]:
+        """段階の直近の生成に渡した指摘を、ID の文字列で引けるようにまとめて1回で読む。"""
+        ids = {
+            uuid.UUID(finding_id)
+            for row in rows
+            for finding_id in (row.generation_finding_ids or [])
+        }
+        found = await ReviewRunRepository(self._session).list_findings(
+            project_id=project_id, finding_ids=sorted(ids)
+        )
+        return {str(finding.id): finding for finding in found}
 
     # Phase-17-3:追記
     async def _sources(
@@ -1116,7 +1143,15 @@ def _relabeled(model: dict | None, basis: ProcedureBasis | None) -> dict | None:
     return relabel_units(doc, basis.plan).model_dump(mode="json")
 
 
-def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) -> DesignStageRead:
+# Phase-69-2：更新
+# def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) -> DesignStageRead:
+# ↓↓
+def _to_read(
+    view: StageView,
+    row: DesignStage | None,
+    sources: StageSources,
+    findings: Mapping[str, ReviewFinding] | None = None,
+) -> DesignStageRead:
     # Phase-27-2：更新
     # issues = validate_stage(view.stage, row.model, sources) if row is not None else []
     # ↓↓
@@ -1169,7 +1204,25 @@ def _to_read(view: StageView, row: DesignStage | None, sources: StageSources) ->
         # Phase-43-4:追記
         impact_open=impact.open_count,
         impact_reviewed=impact.reviewed_count,
+        # Phase-69-2:追記
+        generation_findings=_generation_finding_reads(row, findings or {}),
     )
+
+
+# Phase-69-2:追記
+def _generation_finding_reads(
+    row: DesignStage | None, findings: Mapping[str, ReviewFinding]
+) -> list[GenerationFindingRead]:
+    """直近の生成に渡した指摘を、渡した順に(消えた指摘は飛ばす)。"""
+    if row is None:
+        return []
+    return [
+        GenerationFindingRead(
+            id=finding.id, level=finding.level, targets=finding.targets, problem=finding.problem
+        )
+        for finding_id in row.generation_finding_ids or []
+        if (finding := findings.get(finding_id)) is not None
+    ]
 
 
 # Phase-18-3:追記

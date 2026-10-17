@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3
 // Phase-53-4:追記 ── @testing-library/react.act
 // Phase-54-2:追記 ── @/features/design-review/review-store.useReviewStore, @/features/design-review/test-utils/reviewFixtures.as, @/features/design-review/test-utils/reviewFixtures.finding, @/features/design-review/test-utils/reviewFixtures.gate, @/features/design-review/test-utils/reviewFixtures.reviewUser, @/features/design-review/test-utils/reviewFixtures.run, @/features/design-review/test-utils/reviewFixtures.user
 // Phase-57-2:追記 ── @/features/documents/test-spec-store.useTestSpecStore
@@ -75,6 +75,8 @@ describe("DocumentsPageContent", () => {
       // Phase-15-8:追記
       regenerateError: null,
       // Phase-15-7:追記
+      // Phase-69-3:追記
+      generationFailure: null,
       projectMode: "simple",
       // Phase-64-4:追記
       projectTitle: "備品予約",
@@ -110,6 +112,34 @@ describe("DocumentsPageContent", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/dashboard"));
     expect(stub.requests.map((r) => r.init?.method)).toEqual(["DELETE"]);
     stub.restore();
+  // Phase-69-3:追記
+  });
+
+  it("直近の再生成の失敗を、前の版を表示している旨と一緒に出す(再生成中は出さない)", () => {
+    const failure = {
+      reason_code: "GENERATION_FAILED",
+      message: "設計書の生成に失敗しました。時間をおいて再度お試しください。",
+      targets: ["requirements"],
+      failed_at: "2026-10-17T06:00:00Z",
+    };
+    useDocumentsStore.setState({
+      generationFailure: failure,
+      documents: [{ id: "d1", doc_type: "requirements", content: "# 要件", version: 1, created_at: "", is_current: true }],
+      status: "success",
+    });
+
+    const { rerender } = renderContent();
+
+    const alert = screen.getByRole("alert", { name: "生成の失敗" });
+    expect(alert).toHaveTextContent(failure.message);
+    expect(alert).toHaveTextContent("前の版を表示しています");
+    act(() => useDocumentsStore.setState({ regenerating: true }));
+    rerender(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DocumentsPageContent projectId="p1" />
+      </TamaguiProvider>,
+    );
+    expect(screen.queryByRole("alert", { name: "生成の失敗" })).not.toBeInTheDocument();
   });
 
   // Phase-15-7：更新
@@ -237,9 +267,16 @@ describe("DocumentsPageContent", () => {
     renderContent();
 
     expect(useGenerationPollingMock).toHaveBeenCalledWith("p1", true, expect.any(Function));
-    const onCompleted = useGenerationPollingMock.mock.calls[0][2] as () => void;
-    onCompleted();
-    expect(useDocumentsStore.getState().onRegenerationCompleted).toHaveBeenCalledWith("p1");
+    // Phase-69-3：更新
+    // const onCompleted = useGenerationPollingMock.mock.calls[0][2] as () => void;
+    // onCompleted();
+    // expect(useDocumentsStore.getState().onRegenerationCompleted).toHaveBeenCalledWith("p1");
+    // ↓↓
+    // 終わったら、読んだプロジェクト(失敗の記録つき)をストアへ渡す
+    const project = { id: "p1", status: "revising" };
+    const onFinished = useGenerationPollingMock.mock.calls[0][2] as (p: unknown) => void;
+    onFinished(project);
+    expect(useDocumentsStore.getState().onRegenerationCompleted).toHaveBeenCalledWith("p1", project);
   });
 
   // Phase-11-4:追記

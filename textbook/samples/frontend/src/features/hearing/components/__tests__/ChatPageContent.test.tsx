@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-3-6,34-3,35(完了後の調整)
+// 作成：Phase-3-5｜更新：Phase-3-6,34-3,35(完了後の調整),69-3
 // Phase-3-6：更新(ポーリングの詳細な挙動はuseGenerationPolling.test.tsへ移動したため、
 // ここではChatPageContent自身の配線(見出し・状態メッセージの出し分け・フックへ正しい
 // 引数を渡すか)だけを見る形に書き換えた)
@@ -91,6 +91,14 @@ import { useHearingStore } from "@/features/hearing/hearing-store";
 
 const push = vi.fn();
 
+// Phase-69-3:追記
+const FAILURE = {
+  reason_code: "LLM_UNAVAILABLE",
+  message: "使うAIのAPIキーが設定されていないため、設計書を作れませんでした。",
+  targets: ["requirements"],
+  failed_at: "2026-10-17T00:00:00Z",
+};
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }));
@@ -130,7 +138,15 @@ describe("ChatPageContent", () => {
     // Phase-34-3：更新
     // useHearingStore.setState({ generationTriggered: false, projectStatus: null });
     // ↓↓
-    useHearingStore.setState({ generationTriggered: false, projectStatus: null, points: null });
+    // Phase-69-3：更新
+    // useHearingStore.setState({ generationTriggered: false, projectStatus: null, points: null });
+    // ↓↓
+    useHearingStore.setState({
+      generationTriggered: false,
+      projectStatus: null,
+      points: null,
+      generationFailure: null,
+    });
     mediaMock.mockReturnValue({ lg: false });
   });
 
@@ -145,10 +161,42 @@ describe("ChatPageContent", () => {
   it("completed検知時のコールバックはドキュメント画面へ遷移する", () => {
     renderContent();
 
-    const onCompleted = useGenerationPollingMock.mock.calls[0][2] as () => void;
-    onCompleted();
+    // Phase-69-3：更新
+    // const onCompleted = useGenerationPollingMock.mock.calls[0][2] as () => void;
+    // onCompleted();
+    // ↓↓
+    const onFinished = useGenerationPollingMock.mock.calls[0][2] as (p: unknown) => void;
+    onFinished({ id: "p1", status: "completed", generation_failure: null });
 
     expect(push).toHaveBeenCalledWith("/projects/p1/documents");
+  // Phase-69-3:追記
+  });
+
+  it("失敗して状態が戻ったら遷移せず、読み直す(知らせと、もう一度生成できるバナーを出すため)", () => {
+    const loadHistory = vi.fn().mockResolvedValue(undefined);
+    useHearingStore.setState({ loadHistory });
+    renderContent();
+
+    const onFinished = useGenerationPollingMock.mock.calls[0][2] as (p: unknown) => void;
+    onFinished({ id: "p1", status: "interviewing", generation_failure: FAILURE });
+
+    expect(push).not.toHaveBeenCalled();
+    expect(loadHistory).toHaveBeenCalledWith("p1");
+  });
+
+  it("直近の生成の失敗を、理由つきの知らせで出す(生成中は出さない)", () => {
+    useHearingStore.setState({ generationFailure: FAILURE });
+
+    const { rerender } = renderContent();
+
+    expect(screen.getByRole("alert", { name: "生成の失敗" })).toHaveTextContent(FAILURE.message);
+    useHearingStore.setState({ generationTriggered: true });
+    rerender(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <ChatPageContent projectId="p1" />
+      </TamaguiProvider>,
+    );
+    expect(screen.queryByRole("alert", { name: "生成の失敗" })).not.toBeInTheDocument();
   });
 
   it("generationTriggered中は生成中メッセージを表示する", () => {

@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3,35-3,35(完了後の調整)
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3,35-3,35(完了後の調整),69-3
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Phase-35(完了後の調整):追記 ── CONTINUE_OPTIONAL_MESSAGE
 import { CONTINUE_OPTIONAL_MESSAGE, useHearingStore } from "../hearing-store";
@@ -443,6 +443,28 @@ describe("useHearingStore", () => {
   });
 
   // Phase-6-6:追記
+  // Phase-69-3:追記
+  it("loadHistory()は直近の生成の失敗を持ち(生成の前に戻った状態で、もう一度生成できる)、"
+    + "approveAndGenerate()で消す", async () => {
+    const failure = {
+      reason_code: "GENERATION_FAILED",
+      message: "設計書の生成に失敗しました。時間をおいて再度お試しください。",
+      targets: ["requirements"],
+      failed_at: "2026-10-17T06:00:00Z",
+    };
+    stub.queue({ status: 200, body: [] });
+    stub.queue({ status: 200, body: { id: "p1", status: "interviewing", generation_failure: failure } });
+    stub.queue({ status: 200, body: { is_sufficient: true, summary: "要約", missing_points: [] } });
+
+    await useHearingStore.getState().loadHistory("p1");
+
+    expect(useHearingStore.getState()).toMatchObject({ generationFailure: failure, generationTriggered: false });
+    expect(useHearingStore.getState().completion?.is_sufficient).toBe(true);
+    stub.queue({ status: 202, body: null });
+    await useHearingStore.getState().approveAndGenerate("p1");
+    expect(useHearingStore.getState().generationFailure).toBeNull();
+  });
+
   it("approveAndGenerate()は使用済みの完了判定を破棄し、projectStatusをgeneratingにする", async () => {
     useHearingStore.setState({
       projectStatus: "interviewing",

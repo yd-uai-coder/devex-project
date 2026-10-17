@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5,31-4,31-7,38-2,43-4,54-3
+# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5,31-4,31-7,38-2,43-4,54-3,69-2
 # 写経レベル: 定型 ── Pydantic スキーマ。
 # Phase-31-4：更新(docstring: 簡易モードの段階8 ── fix_document・mode・plan・dataflow)
 # Phase-16-3:追記 ── typing.Literal, pydantic.Field
@@ -47,6 +47,16 @@ class DfdAccessRead(BaseModel):
 
 
 # Phase-27-1：更新(docstring: 段階1〜7 → 段階1〜8)
+# Phase-69-2:追記
+class GenerationFindingRead(BaseModel):
+    """段階の直近の生成の修正指示に入れた、設計レビューの指摘1件の要約(画面に並べる分だけ)。"""
+
+    id: uuid.UUID
+    level: str
+    targets: list[str]
+    problem: str
+
+
 class DesignStageRead(BaseModel):
     """段階1つ分の状態。未着手の段階も含めて、モードの全段階を常に返す(詳細設計モードは段階1〜8、
     簡易モードは段階8だけ。行が無ければversion等はNone)。`mode`はプロジェクトのモード。
@@ -62,7 +72,8 @@ class DesignStageRead(BaseModel):
     段階8が開いていなければ None)。`unit_req_ids`は段階8だけが持つ、作業単位ごとの要件ID
     (詳細設計モードは単位の処理の段階1の要件、簡易モードは WBS の「要件」欄)。`impact_open`・
     `impact_reviewed`は、この段階に記録した変更の影響の印のうち、未確認・確認済みの件数(印の中身は
-    変更の影響の取得`DesignImpactRead`で読む)。"""
+    変更の影響の取得`DesignImpactRead`で読む)。`generation_findings`は、直近の生成の修正指示に
+    入れた指摘(差し戻しの作り直しのとき。消えた指摘は入らない。指摘の順は渡した順)。"""
 
     stage: int
     # Phase-31-4:追記
@@ -87,6 +98,8 @@ class DesignStageRead(BaseModel):
     # Phase-43-4:追記
     impact_open: int = 0
     impact_reviewed: int = 0
+    # Phase-69-2:追記
+    generation_findings: list[GenerationFindingRead] = Field(default_factory=list)
 
 
 class DesignStageSave(BaseModel):

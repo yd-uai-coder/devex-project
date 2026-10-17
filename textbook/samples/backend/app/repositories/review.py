@@ -1,4 +1,4 @@
-# 作成：Phase-52-3｜更新：Phase-53-1,53(完了後の調整),54-1,54-5
+# 作成：Phase-52-3｜更新：Phase-53-1,53(完了後の調整),54-1,54-5,69-2
 # Phase-54-1:追記 ── app.models.review.ReviewFixCheck
 import uuid
 from collections.abc import Mapping, Sequence
@@ -92,6 +92,22 @@ class ReviewRunRepository(CRUDRepository[ReviewRun]):
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    # Phase-69-2:追記
+    async def list_findings(
+        self, *, project_id: uuid.UUID, finding_ids: Sequence[uuid.UUID]
+    ) -> list[ReviewFinding]:
+        """プロジェクトの回の指摘のうち、ID が`finding_ids`にあるもの(消えた・別のプロジェクトの
+        指摘は入らない)。"""
+        if not finding_ids:
+            return []
+        stmt = (
+            select(ReviewFinding)
+            .join(ReviewRun, ReviewFinding.run_id == ReviewRun.id)
+            .where(ReviewFinding.id.in_(finding_ids), ReviewRun.project_id == project_id)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
 
     async def list_running(self, project_id: uuid.UUID) -> list[ReviewRun]:
         """プロジェクトの実行中の回。"""

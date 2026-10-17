@@ -1,8 +1,10 @@
-// 作成：Phase-3-3｜更新：Phase-15-6,15-7,62-3,64-3,65-2
+// 作成：Phase-3-3｜更新：Phase-15-6,15-7,62-3,64-3,65-2,69-3
 import { apiFetch } from "@/lib/api/client";
 // Phase-65-2:追記
 import { toSearchParams } from "@/features/dashboard/list-params";
 import type { ProjectListParams } from "@/features/dashboard/list-params";
+// Phase-69-3:追記
+import type { GenerationFailure } from "@/lib/generation-failure";
 
 export type ProjectStatus = "interviewing" | "generating" | "completed" | "revising";
 // Phase-15-6:追記
@@ -30,6 +32,9 @@ export type ProjectRead = {
   status: ProjectStatus;
   // Phase-15-6:追記
   mode: ProjectMode;
+  // Phase-69-3:追記
+  // 直近の生成の失敗(次の生成を受け付けると消える)。古い応答・テストの値には無い
+  generation_failure?: GenerationFailure | null;
   created_at: string;
   updated_at: string;
 };

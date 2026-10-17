@@ -1,4 +1,4 @@
-// 作成：Phase-17-6｜更新：Phase-18-9
+// 作成：Phase-17-6｜更新：Phase-18-9,69-4
 // 写経レベル: 定型
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -22,6 +22,9 @@ describe("StageIssueList", () => {
 
     expect(screen.getByText("エラー: エラーの中身")).toBeInTheDocument();
     expect(screen.getByText("警告: 警告の中身")).toBeInTheDocument();
+    // Phase-69-4:追記
+    // 承認できない理由のリンクの移り先
+    expect(screen.getByLabelText("検証の結果")).toHaveAttribute("id", "stage-issue-list");
 
     rerender(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
