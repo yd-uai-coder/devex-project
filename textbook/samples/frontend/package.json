@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
+    "@react-oauth/google": "^0.13.5",
     "@tamagui/colors": "^2.6.0",
     "@tamagui/config": "^2.6.0",
     "@tamagui/next-theme": "^2.6.0",
