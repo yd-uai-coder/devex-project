@@ -1,4 +1,4 @@
-# 更新：Phase-52-5,66-1,66-2,68-4,74-1
+# 更新：Phase-52-5,66-1,66-2,68-4,74-1,75-1,75-2
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。Phase 52 で初めて samples に載せた
 # (全文。タグの無い部分はテンプレートのまま)。
 # Phase-52-5:追記 ── pydantic.computed_field
@@ -114,7 +114,42 @@ class PasswordUpdate(BaseModel):
     @field_validator("new_password")
     @classmethod
     def _check_policy(cls, value: str) -> str:
-        violations = password_violations(value)
-        if violations:
-            raise ValueError(" / ".join(violations))
-        return value
+        # Phase-75-1：更新
+        # violations = password_violations(value)
+        # if violations:
+        #     raise ValueError(" / ".join(violations))
+        # return value
+        # ↓↓
+        return _require_policy(value)
+
+
+# Phase-75-1:追記
+class PasswordSet(BaseModel):
+    """パスワードの設定(POST /users/me/password)のリクエストボディ。パスワードを持たない
+    (Google だけの)利用者が使う。規則は変更と同じ(合わなければ 422)。"""
+
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def _check_policy(cls, value: str) -> str:
+        return _require_policy(value)
+
+
+# Phase-75-2:追記
+class GoogleLinkCurrentRequest(BaseModel):
+    """マイページからの Google の連携(POST /users/me/google)のリクエストボディ。credential は
+    Google のボタンが返す ID トークン。今のパスワードで本人を確かめる(盗まれたセッションで他人の
+    Google を足させない)。"""
+
+    credential: str
+    current_password: str
+
+
+# Phase-75-1:追記
+def _require_policy(value: str) -> str:
+    """新しいパスワードに登録の画面と同じ規則を課す(変更と設定で共有する)。"""
+    violations = password_violations(value)
+    if violations:
+        raise ValueError(" / ".join(violations))
+    return value

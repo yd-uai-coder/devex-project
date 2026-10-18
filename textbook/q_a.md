@@ -1535,3 +1535,20 @@
    - 偽の credential の形(`fake:<sub>:<email>`)は Claude の判断とした。
 
    詳細は [Phase 74 の introduction](./Phase-74/Phase-74-introduction.md)。
+
+### Phase 75 開始時
+
+1. 疑問が生じた Phase: Phase 75(マイページの API)の着手時。
+2. 質問・相談内容: [73-3](./Phase-73/Phase-73-3.md) の Phase 75 の未確定事項と自動実装モードを、計画モードで1回(4問)聞いた。
+   - 自動実装モード(on / off)
+   - パスワードの設定の API(別の API `POST /users/me/password` / `PUT` の `current_password` を省けるようにする)
+   - マイページの連携の条件(メールは自由・今のパスワードで確かめる / メールは自由・確かめない / 同じメールだけ・今のパスワードで確かめる)
+   - 解除の後の refresh(ほかの端末を切る / 切らない)
+3. 回答と対応方針: 4問すべて推奨どおり。
+   - 自動実装モードは on。
+   - 設定は別の API(Phase 66 の「確かめ方が違う操作は API を分ける」に合わせる)。ほかの端末を切って今の端末に出し直す。
+   - 連携は `{credential, current_password}`。メールが違う Google も連携できる(盗まれたセッションで他人の Google を足させないため、メールの変更と同じく今のパスワードで確かめる。連携していない人は必ずパスワードを持つ)。
+   - 解除の後は、ほかの端末を切る(Google で入った端末を見分けられないため)。
+   - 例外のコード(409 `PASSWORD_ALREADY_SET`・`PASSWORD_NOT_SET`)と、判定の順序は Claude の判断とした。
+
+   詳細は [Phase 75 の introduction](./Phase-75/Phase-75-introduction.md)。
