@@ -1,4 +1,4 @@
-// 更新：Phase-3-1,3-4,6-6,11-2,12-5
+// 更新：Phase-3-1,3-4,6-6,11-2,12-5,78-1
 import { refreshTokens, useAuthStore } from "@/components/auth/auth-store";
 
 // Phase-6-6：更新(NEXT_PUBLIC_API_URLの末尾スラッシュで`//api/...`となりCookieのpathに一致せず、
@@ -53,6 +53,12 @@ export class ApiError extends Error {
     this.status = status;
     this.code = code;
   }
+}
+
+// Phase-78-1:追記
+// 対象が無い(404)失敗か。プロジェクトの画面では、削除された・他人のプロジェクトを開いたときに当たる。
+export function isNotFound(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 404;
 }
 
 // FastAPI/Pydanticのエラーレスポンス({detail: string, code?: string} または 422時の

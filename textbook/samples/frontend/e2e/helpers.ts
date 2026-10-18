@@ -1,4 +1,4 @@
-// 作成：Phase-24-2｜更新：24(ゴール3後の調整),32-2,40-3,60-2,66-1
+// 作成：Phase-24-2｜更新：24(ゴール3後の調整),32-2,40-3,60-2,66-1,79-2
 // 写経レベル: 定型 ── 画面の操作の並び(ラベルで探して押す)。
 // Phase-60-2：更新
 // // E2E の spec が共有する操作(登録とログイン、モードを選んだプロジェクトの作成、ヒアリングから
@@ -22,9 +22,15 @@ const MODE_TITLES: Record<ProjectMode, string> = {
   detailed: "詳細設計モード",
 };
 
-const PASSWORD = "S3cret-pass";
+// Phase-79-2：更新
+// const PASSWORD = "S3cret-pass";
+// ↓↓
+export const PASSWORD = "S3cret-pass";
 
-function uniqueEmail(prefix: string): string {
+// Phase-79-2：更新
+// function uniqueEmail(prefix: string): string {
+// ↓↓
+export function uniqueEmail(prefix: string): string {
   // docker composeのPostgresボリュームは実行間で永続化されるため、再実行のたびに
   // 一意のメールアドレスを使う(UserAlreadyExistsErrorによる登録失敗を避ける)。
   return `${prefix}-${Date.now()}@example.com`;

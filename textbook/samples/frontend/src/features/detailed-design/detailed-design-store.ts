@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3,44-1,54-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3,44-1,54-3,78-1
 // 写経レベル: コア ── 承認の後に全段階を取り直す(後ろの段階が開く・古いが消える)。
 // Phase-16-6:追記 ── @/features/detailed-design/api/designStagesApi.generateDesignStage, @/features/detailed-design/api/designStagesApi.saveDesignStage
 // Phase-18-9:追記 ── @/features/detailed-design/labels.approvalBlockers
@@ -25,7 +25,10 @@ import {
   resolveFixTarget,
 } from "@/features/detailed-design/impactOps";
 import { approvalBlockers } from "@/features/detailed-design/labels";
-import { ApiError } from "@/lib/api/client";
+// Phase-78-1：更新
+// import { ApiError } from "@/lib/api/client";
+// ↓↓
+import { ApiError, isNotFound } from "@/lib/api/client";
 import type { AsyncStatus } from "@/lib/api/types";
 
 // Phase-21-4:追記
@@ -46,6 +49,9 @@ type DetailedDesignStore = {
   selectedStage: number;
   status: AsyncStatus;
   error: string | null;
+  // Phase-78-1:追記
+  // 段階の一覧の取得が404だった(プロジェクトが削除された・無い)。画面は本体の代わりに知らせを出す
+  notFound: boolean;
   // 承認の失敗(409 VERSION_CONFLICT など)。段階の一覧の取得の失敗(error)とは分けて出す。
   actionError: string | null;
   approving: boolean;
@@ -164,6 +170,8 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
     selectedStage: 1,
     status: "idle",
     error: null,
+    // Phase-78-1:追記
+    notFound: false,
     actionError: null,
     approving: false,
     // Phase-16-6:追記
@@ -191,6 +199,8 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
         // Phase-44-1：更新
         // ...(switching ? { projectId, stages: [], tabs: {} } : {}),
         // ↓↓
+        // Phase-78-1:追記
+        notFound: false,
         ...(switching
           ? { projectId, stages: [], tabs: {}, impact: null, highlight: null }
           : {}),
@@ -212,6 +222,8 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
         set({
           status: "error",
           error: messageOf(err, "段階の取得に失敗しました"),
+          // Phase-78-1:追記
+          notFound: isNotFound(err),
         });
         // Phase-44-1:追記
         return;

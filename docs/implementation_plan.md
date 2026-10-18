@@ -166,7 +166,7 @@
   * Phase 71: 設計の検証(手順書のゴールと単位の食い違い・DFD のデータストアの書き漏れ・画面の文の変更の波及) ── **完了**([`textbook/Phase-71/Phase-71-introduction.md`](../textbook/Phase-71/Phase-71-introduction.md))
   * Phase 72: 統合/E2E・デプロイでの確認(ステージ9の流れを足した E2E と既存を含めた全 E2E・マイグレーションの往復・暗号の鍵と既定のモデルの手順を`OPERATIONS.md`へ) ── **完了**([`textbook/Phase-72/Phase-72-introduction.md`](../textbook/Phase-72/Phase-72-introduction.md))
 * **マイルストーン10**: ログイン・ログアウト・メニュー・ダッシュボード(削除・検索・絞込み・ページ)が日常の操作で迷わず使え、一般ユーザーが自分のキーとモデルを登録して、チャット・生成・レビューをそのモデルで流せる。
-* **達成範囲(Phase 72で終了)**: ヘッダーのリンク・メニューの組み直しとログアウト・モード選択・チャットの専用の領域、認証ページの proxy、プロジェクトの削除(生成中も。バックグラウンドの処理は消失に強い)・一覧の検索・絞込み・ページ送り、マイページ(アカウント・用途ごとのモデル・暗号化した API キー)と LLM の呼び出しのユーザーごとの解決(自分のキーで一般ユーザーもレビューを使える)、生成の失敗の知らせ、ヒアリングとテスト仕様書の質の改善、設計の検証(ゴールと単位・DFD の保存先・画面の文の波及)。Phase 72で、一般ユーザーが一覧の検索と削除・自分の Claude キーの登録とモデルの選択でレビューのパネルが出る・ログアウトまでを通す E2E(Playwright)を足して、既存を含めた全 E2E を通した。本番への反映は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.6節の手順による。
+* **達成範囲(Phase 72で終了)**: ヘッダーのリンク・メニューの組み直しとログアウト・モード選択・チャットの専用の領域、認証ページの proxy、プロジェクトの削除(生成中も。バックグラウンドの処理は消失に強い)・一覧の検索・絞込み・ページ送り、マイページ(アカウント・用途ごとのモデル・暗号化した API キー)と LLM の呼び出しのユーザーごとの解決(自分のキーで一般ユーザーもレビューを使える)、生成の失敗の知らせ、ヒアリングとテスト仕様書の質の改善、設計の検証(ゴールと単位・DFD の保存先・画面の文の波及)。Phase 72で、一般ユーザーが一覧の検索と削除・自分の Claude キーの登録とモデルの選択でレビューのパネルが出る・ログアウトまでを通す E2E(Playwright)を足して、既存を含めた全 E2E を通した。本番への反映は、ステージ10とまとめて[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.7節の手順による(10.6節はステージ9で増えるものの参照先)。
 **(ステージ9の振り返りで変更)** 本番への反映はステージ10とまとめ、ステージ10の最後の Phase(Phase 79)で行う。
 
 ### ステージ10：Google 認証 ── 【Could have】
@@ -175,13 +175,15 @@
 * **方針(Phase 73で確定)**: Google Identity Services の ID トークンを API が `google-auth` で検証し、今の JWT と refresh cookie に載せる。同じメールの既存アカウントとは、最初の1度だけパスワードで確かめてから紐付け、その後は両方の方法でログインできる。Google だけのユーザーはパスワードを「設定」でき、連携の解除はパスワードがあるときだけ。E2E は `E2E_FAKE_GOOGLE` の偽の検証で流す([外部設計書](external_design.md) 2.13節、[内部設計書](internal_design.md) 3.3節「10. Google 認証」)。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-73/Phase-73-3.md`](../textbook/Phase-73/Phase-73-3.md)参照):
   * Phase 73: 要件確認フェーズ(仕様診断・ステージ10の入力の判断・docs反映・ステージ10の実装計画) ── **完了**([`textbook/Phase-73/Phase-73-introduction.md`](../textbook/Phase-73/Phase-73-introduction.md))
-  * Phase 74: Google 認証の API(`users` の変更・ID トークンの検証・`/auth/google`・連携の確かめ・レート制限・開発環境の上限)
-  * Phase 75: マイページの API(パスワードの設定・Google の連携と解除)
-  * Phase 76: ログインと登録の画面(Google のボタン・連携の確かめのダイアログ)
-  * Phase 77: マイページの画面(パスワードの変更と設定の出し分け・Google の連携の枠)
-  * Phase 78: 小さな改善(削除したプロジェクトの表示・新規作成の後の一覧・押せないボタンの見た目・チャットの履歴の並び)
-  * Phase 79: 統合/E2E・本番への反映(ステージ9・10。Google の流れの E2E と既存を含めた全 E2E・マイグレーションの往復・`OPERATIONS.md` の手順を1つにまとめる・Google Cloud の OAuth クライアント・本番での確認と画面確認)
+  * Phase 74: Google 認証の API(`users` の変更・ID トークンの検証・`/auth/google`・連携の確かめ・レート制限・開発環境の上限) ── **完了**([`textbook/Phase-74/Phase-74-introduction.md`](../textbook/Phase-74/Phase-74-introduction.md))
+  * Phase 75: マイページの API(パスワードの設定・Google の連携と解除) ── **完了**([`textbook/Phase-75/Phase-75-introduction.md`](../textbook/Phase-75/Phase-75-introduction.md))
+  * Phase 76: ログインと登録の画面(Google のボタン・連携の確かめのダイアログ) ── **完了**([`textbook/Phase-76/Phase-76-introduction.md`](../textbook/Phase-76/Phase-76-introduction.md))
+  * Phase 77: マイページの画面(パスワードの変更と設定の出し分け・Google の連携の枠) ── **完了**([`textbook/Phase-77/Phase-77-introduction.md`](../textbook/Phase-77/Phase-77-introduction.md))
+  * Phase 78: 小さな改善(削除したプロジェクトの表示・新規作成の後の一覧・押せないボタンの見た目・負荷のときだけ落ちるテスト。チャットの履歴の並びは原因が別で撤回) ── **完了**([`textbook/Phase-78/Phase-78-introduction.md`](../textbook/Phase-78/Phase-78-introduction.md))
+  * Phase 79: 統合/E2E・本番への反映(ステージ9・10。Google の流れの E2E と既存を含めた全 E2E・マイグレーションの往復・`OPERATIONS.md` の手順を1つにまとめる・Google Cloud の OAuth クライアント・本番での確認と画面確認。あわせてログインの失敗の文を日本語に) ── **完了**([`textbook/Phase-79/Phase-79-introduction.md`](../textbook/Phase-79/Phase-79-introduction.md))
+* **達成範囲(Phase 79で終了)**: Google でのログイン・登録(初めての Google はそのまま登録)・同じメールの既存アカウントとの連携(最初の1度だけパスワードで確かめる)・マイページでのパスワードの設定と Google の連携・解除、削除したプロジェクトの知らせ・作成の後の一覧・押せないボタンの見た目、ログインの失敗の文の日本語化。Phase 79で、Google の流れの E2E(偽の検証。ログインの画面とマイページ)を足して、既存を含めた全 E2E を2回通した。本番への反映(ステージ9とまとめる)は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.7節の手順でユーザーが行う。
 * **マイルストーン11**: 利用者が Google アカウントだけで登録・ログインでき、既存のアカウントの利用者も、本人の確かめを経て Google と連携し、どちらの方法でも同じプロジェクトを使える。ステージ9 と10 の機能が本番で確かめてある。
+**(ステージ10の振り返り)** 振り返りは本番への反映の前に行った([`textbook/appendix/overall-retrospective.md`](../textbook/appendix/overall-retrospective.md) 15節)。本番での確認の結果は、反映の後にステージ9・10の分をまとめて記録する。
 
 ---
 

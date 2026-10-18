@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4,69-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4,69-3,78-1
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-44-2:追記 ── ../../test-utils/stageFixtures.makeImpact
@@ -68,6 +68,8 @@ describe("DetailedDesignPageContent", () => {
       selectedStage: 1,
       status: "success",
       error: null,
+      // Phase-78-1:追記
+      notFound: false,
       actionError: null,
       approving: false,
       fetchStages: vi.fn().mockResolvedValue(undefined),
@@ -509,5 +511,16 @@ describe("DetailedDesignPageContent", () => {
 
     expect(screen.queryByRole("button", { name: /^テスト仕様書/ })).not.toBeInTheDocument();
     expect(useTestSpecStore.getState().fetchTestSpec).not.toHaveBeenCalled();
+  });
+
+  // Phase-78-1:追記
+  it("段階の一覧が404なら、本体(段階・削除)の代わりに見つからない知らせを出す", () => {
+    useDetailedDesignStore.setState({ status: "error", error: "Project p1 not found", notFound: true });
+    renderContent();
+
+    expect(screen.getByRole("heading", { name: "このプロジェクトは見つかりません" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "ダッシュボードへ戻る →" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.queryByText("Project p1 not found")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "削除" })).not.toBeInTheDocument();
   });
 });

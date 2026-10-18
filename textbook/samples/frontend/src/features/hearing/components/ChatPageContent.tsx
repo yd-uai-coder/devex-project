@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-3-6,34-3,35(完了後の調整),69-3
+// 作成：Phase-3-5｜更新：Phase-3-6,34-3,35(完了後の調整),69-3,78-1
 "use client";
 
 // Phase-3-6：更新(ドキュメントプレビュー画面の再生成でも同じポーリングロジックが
@@ -59,6 +59,8 @@ import { useHearingStore } from "@/features/hearing/hearing-store";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 // Phase-69-3:追記
 import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
+// Phase-78-1:追記
+import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
 import { HEADER_HEIGHT } from "@/components/layout/layout-constants";
 import { ApiError } from "@/lib/api/client";
 // Phase-69-3:追記
@@ -74,6 +76,9 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
   // Phase-34-3:追記
   // Phase-69-3:追記
   const generationFailure = useHearingStore((s) => s.generationFailure);
+  // Phase-78-1:追記
+  // 前に開いた別のプロジェクトの404は見ない(ストアは画面をまたいで残る)
+  const notFound = useHearingStore((s) => s.notFound && s.projectId === projectId);
   const loadHistory = useHearingStore((s) => s.loadHistory);
   const points = useHearingStore((s) => s.points);
   // Phase-35(完了後の調整):追記
@@ -109,6 +114,11 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
     }
     void loadHistory(projectId);
   });
+
+  // Phase-78-1:追記
+  // 削除された・無いプロジェクトは、空のチャットに見せずに知らせを出す(履歴は ChatPanel が
+  // 読み込むので、読み込みが404で終わってから切り替える)
+  if (notFound) return <ProjectNotFoundNotice />;
 
   return (
     <YStack paddingVertical="$4" gap="$4">

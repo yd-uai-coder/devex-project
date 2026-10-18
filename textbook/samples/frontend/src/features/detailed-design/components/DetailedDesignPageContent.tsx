@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4,69-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4,69-3,78-1
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -15,6 +15,8 @@ import Link from "next/link";
 // Phase-64-4:追記
 import { useRouter } from "next/navigation";
 import { Button, H2, H3, Text, XStack, YStack } from "tamagui";
+// Phase-78-1:追記
+import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 // Phase-64-4:追記
 import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
@@ -68,6 +70,9 @@ export function DetailedDesignPageContent({
   const selectedStage = useDetailedDesignStore((s) => s.selectedStage);
   const status = useDetailedDesignStore((s) => s.status);
   const error = useDetailedDesignStore((s) => s.error);
+  // Phase-78-1:追記
+  // 前に開いた別のプロジェクトの404は見ない(ストアは画面をまたいで残る)
+  const notFound = useDetailedDesignStore((s) => s.notFound && s.projectId === projectId);
   const actionError = useDetailedDesignStore((s) => s.actionError);
   const approving = useDetailedDesignStore((s) => s.approving);
   const fetchStages = useDetailedDesignStore((s) => s.fetchStages);
@@ -168,6 +173,10 @@ export function DetailedDesignPageContent({
     if (critical > 0) setCriticalLeft(critical);
     else void approveStage(stage);
   };
+
+  // Phase-78-1:追記
+  // 削除された・無いプロジェクトは、本体(段階・削除のボタンなど)を出さずに知らせだけにする
+  if (notFound) return <ProjectNotFoundNotice />;
 
   return (
     <YStack paddingVertical="$4" gap="$4">

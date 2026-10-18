@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3,78-1
 // Phase-53-4:追記 ── @testing-library/react.act
 // Phase-54-2:追記 ── @/features/design-review/review-store.useReviewStore, @/features/design-review/test-utils/reviewFixtures.as, @/features/design-review/test-utils/reviewFixtures.finding, @/features/design-review/test-utils/reviewFixtures.gate, @/features/design-review/test-utils/reviewFixtures.reviewUser, @/features/design-review/test-utils/reviewFixtures.run, @/features/design-review/test-utils/reviewFixtures.user
 // Phase-57-2:追記 ── @/features/documents/test-spec-store.useTestSpecStore
@@ -67,9 +67,13 @@ describe("DocumentsPageContent", () => {
   beforeEach(() => {
     useGenerationPollingMock.mockReset().mockReturnValue({ timedOut: false });
     useDocumentsStore.setState({
+      // Phase-78-1:追記
+      projectId: "p1",
       documents: [],
       status: "idle",
       error: null,
+      // Phase-78-1:追記
+      notFound: false,
       fetchedAt: null,
       regenerating: false,
       // Phase-15-8:追記
@@ -396,5 +400,17 @@ describe("DocumentsPageContent", () => {
 
     expect(useTestSpecStore.getState().fetchTestSpec).not.toHaveBeenCalled();
     expect(tabsProps.mock.lastCall?.[0]).toMatchObject({ testSpecTab: undefined });
+  });
+
+  // Phase-78-1:追記
+  it("文書の一覧が404なら、本体(削除・再生成)の代わりに見つからない知らせを出す", () => {
+    useDocumentsStore.setState({ status: "error", error: "Project p1 not found", notFound: true });
+    renderContent();
+
+    expect(screen.getByRole("heading", { name: "このプロジェクトは見つかりません" })).toBeInTheDocument();
+    expect(screen.queryByText("Project p1 not found")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "削除" })).not.toBeInTheDocument();
+    // 取得は走る(別のプロジェクトへ移ったときに読み直すため)
+    expect(useDocumentsStore.getState().fetchDocuments).toHaveBeenCalledWith("p1");
   });
 });

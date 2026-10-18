@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3,44-1,54-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3,44-1,54-3,78-1
 // 写経レベル: コア ── 版の競合と、承認後の取り直し。
 // Phase-16-6:追記 ── ../test-utils/stageFixtures.makeFunctionList
 // Phase-44-1:追記 ── ../test-utils/stageFixtures(makeImpact, makeModuleList, makePlan)
@@ -295,6 +295,17 @@ describe("useDetailedDesignStore", () => {
   });
 
   // Phase-44-1:追記
+  // Phase-78-1:追記
+  it("fetchStagesが404ならnotFoundを立て、500では立てない", async () => {
+    stub.queue({ status: 404, body: { detail: "Project p1 not found", code: "RESOURCE_NOT_FOUND" } });
+    await useDetailedDesignStore.getState().fetchStages("p1");
+    expect(useDetailedDesignStore.getState()).toMatchObject({ status: "error", notFound: true });
+
+    stub.queue({ status: 500, body: { detail: "boom" } });
+    await useDetailedDesignStore.getState().fetchStages("p1");
+    expect(useDetailedDesignStore.getState()).toMatchObject({ status: "error", notFound: false });
+  });
+
   it("fetchStagesは印か承認後の編集があるときだけ変更の影響も取る", async () => {
     stub.queue({ status: 200, body: makeStages() });
     await useDetailedDesignStore.getState().fetchStages("p1");

@@ -1,4 +1,4 @@
-// 作成：Phase-3-4｜更新：Phase-6-4,15-7,24(ゴール3後の調整)
+// 作成：Phase-3-4｜更新：Phase-6-4,15-7,24(ゴール3後の調整),78-2
 "use client";
 
 // Phase-24:追記 ── @/components/ui/form/InputSimpleText
@@ -20,6 +20,8 @@ import { FileUploadField } from "@/features/hearing/components/FileUploadField";
 import { TemplateSelectField } from "@/features/hearing/components/TemplateSelectField";
 // Phase-15-7:追記 ── ProjectMode(@/features/dashboard/api/projects)
 import type { ProjectMode } from "@/features/dashboard/api/projects";
+// Phase-78-2:追記
+import { useDashboardStore } from "@/features/dashboard/dashboard-store";
 import { createProject } from "@/features/hearing/api/createProject";
 import { intakeSchema } from "@/features/hearing/schemas";
 import type { IntakeValues } from "@/features/hearing/schemas";
@@ -121,6 +123,9 @@ export function IntakeForm({ mode = "simple" }: { mode?: ProjectMode }) {
             // const project = await createProject(values);
             // ↓↓
             const project = await createProject({ ...values, mode });
+            // Phase-78-2:追記
+            // ダッシュボードの一覧の cache を切る(20秒以内に戻っても、作ったプロジェクトが出るように)
+            useDashboardStore.getState().invalidate();
             createdProjectIdRef.current = project.id;
             resolve(true);
           } catch (err) {

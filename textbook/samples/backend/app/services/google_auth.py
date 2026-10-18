@@ -1,4 +1,4 @@
-# 作成：Phase-74-3｜更新：Phase-75-2
+# 作成：Phase-74-3｜更新：Phase-75-2,79-1
 """Google でのログイン・新規の登録・既存のアカウントとの連携。
 
 本人は `google_sub`(ID トークンの sub)で先に探す。Google 側のメールが後で変わっても、連携した
@@ -9,12 +9,15 @@
 """
 
 # Phase-75-2:追記 ── app.services.errors.CurrentPasswordMismatchError, app.services.user.require_password
+# Phase-79-1:追記 ── app.services.errors.INVALID_CREDENTIALS_MESSAGE, INACTIVE_USER_MESSAGE
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import verify_password
 from app.models.user import User
 from app.repositories.user import UserRepository
 from app.services.errors import (
+    INACTIVE_USER_MESSAGE,
+    INVALID_CREDENTIALS_MESSAGE,
     CurrentPasswordMismatchError,
     GoogleAccountConflictError,
     GoogleEmailNotVerifiedError,
@@ -75,7 +78,10 @@ class GoogleAuthService:
             or user.hashed_password is None
             or not verify_password(password, user.hashed_password)
         ):
-            raise InvalidCredentialsError("Invalid email or password")
+            # Phase-79-1：更新
+            # raise InvalidCredentialsError("Invalid email or password")
+            # ↓↓
+            raise InvalidCredentialsError(INVALID_CREDENTIALS_MESSAGE)
         _require_active(user)
 
         # Phase-75-2：更新(連携済みの判定と記録を _attach に移し、マイページの連携と共有した)
@@ -146,5 +152,8 @@ def _require_verified_email(identity: GoogleIdentity) -> None:
 
 def _require_active(user: User) -> User:
     if not user.is_active:
-        raise InvalidCredentialsError("User is inactive")
+        # Phase-79-1：更新
+        # raise InvalidCredentialsError("User is inactive")
+        # ↓↓
+        raise InvalidCredentialsError(INACTIVE_USER_MESSAGE)
     return user

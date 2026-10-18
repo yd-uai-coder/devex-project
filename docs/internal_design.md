@@ -58,7 +58,7 @@
 
 **(ステージ9)** 表示名の列 `full_name` を `user_name` に改名した(Phase 66。Alembic の列の改名でデータは残す)。この表も実際の列に合わせて直した(それまでは `password_hash` と書き、`is_active`・`is_superuser`・`review_enabled` が無かった)。用途ごとのモデルと API キーは別のテーブルに持つ(3.3節「9. 使い勝手とアカウント・モデル設定」)。
 
-**(ステージ10)** `hashed_password` を NULL 可にし、`google_sub` を足す(Phase 74 の Alembic 1本。3.3節「10. Google 認証」)。Google だけのユーザーがいると downgrade で NOT NULL に戻せないので、ロールバックの前に NULL の行の数を確かめる。
+**(ステージ10)** `hashed_password` を NULL 可にし、`google_sub` を足す(Phase 74 の Alembic 1本。3.3節「10. Google 認証」)。Google だけのユーザーがいると downgrade で NOT NULL に戻せないので、ロールバックの前に NULL の行の数を確かめる。**(Phase 79 で確定)** downgrade は Google の連携(`google_sub`)をすべて消すので、ステージ10だけを戻すときはコードだけを戻し、マイグレーションは残すのを先に考える(ステージ9のコードは余分な列を読まない。手順は [`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.7節)。
 
 #### ② `projects` テーブル
 

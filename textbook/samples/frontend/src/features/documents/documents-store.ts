@@ -1,9 +1,12 @@
-// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2,64-4,69-3
+// 作成：Phase-3-6｜更新：Phase-15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2,64-4,69-3,78-1
 // Phase-53(完了後の調整):追記 ── ApiError(@/lib/api/client), getGenerationProgress・DocType・GenerationProgressRead(@/features/documents/api/documentsApi)
 // Phase-15-7:追記 ── getProject(@/features/hearing/api/hearingApi), ProjectMode(@/features/dashboard/api/projects)
 // Phase-36-3:追記 ── adoptRequirement(@/features/documents/api/documentsApi)
 import { create } from "zustand";
-import { ApiError } from "@/lib/api/client";
+// Phase-78-1：更新
+// import { ApiError } from "@/lib/api/client";
+// ↓↓
+import { ApiError, isNotFound } from "@/lib/api/client";
 import { isCacheFresh } from "@/lib/api/cache";
 import { adoptRequirement, getGenerationProgress, listDocuments } from "@/features/documents/api/documentsApi";
 import type {
@@ -31,6 +34,9 @@ type DocumentsStore = {
   documents: GeneratedDocumentRead[];
   status: AsyncStatus;
   error: string | null;
+  // Phase-78-1:追記
+  // 文書の一覧の取得が404だった(プロジェクトが削除された・無い)。画面は本体の代わりに知らせを出す
+  notFound: boolean;
   fetchedAt: number | null;
   regenerating: boolean;
   // Phase-15-8:追記 ── 再生成の受け付けの失敗(生成中の 409 DOC_GENERATION_IN_PROGRESS など)
@@ -86,6 +92,8 @@ type DocumentsStore = {
 // 別のプロジェクトを開いたときに戻す値
 const PROJECT_INITIAL = {
   documents: [] as GeneratedDocumentRead[],
+  // Phase-78-1:追記
+  notFound: false,
   fetchedAt: null,
   regenerating: false,
   regenerateError: null,
@@ -107,6 +115,8 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   documents: [],
   status: "idle",
   error: null,
+  // Phase-78-1:追記
+  notFound: false,
   fetchedAt: null,
   regenerating: false,
   // Phase-15-8:追記
@@ -127,7 +137,10 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
     // Phase-24:追記
     switchProject(set, get, projectId);
     if (!force && isCacheFresh(get().fetchedAt)) return;
-    set({ status: "loading", error: null });
+    // Phase-78-1：更新
+    // set({ status: "loading", error: null });
+    // ↓↓
+    set({ status: "loading", error: null, notFound: false });
     try {
       const documents = await listDocuments(projectId);
       // Phase-24:追記
@@ -138,6 +151,8 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
       set({
         status: "error",
         error: err instanceof Error ? err.message : "ドキュメントの取得に失敗しました",
+        // Phase-78-1:追記
+        notFound: isNotFound(err),
       });
     }
   },

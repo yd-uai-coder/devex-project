@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3,35-3,35(完了後の調整),69-3
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3,35-3,35(完了後の調整),69-3,78-1
 // Phase-15-8:追記 ── StreamChatError(@/features/hearing/api/streamChat)
 // Phase-34-3:追記 ── getHearingPoints, HearingPointsView(@/features/hearing/api/hearingApi)
 // Phase-35-3:追記 ── composeAnswerText・latestAiMessage・markSelected・pendingAnswers(@/features/hearing/cards),
@@ -29,6 +29,8 @@ import type {
 import type { ProjectStatus } from "@/features/dashboard/api/projects";
 // Phase-69-3:追記
 import type { GenerationFailure } from "@/lib/generation-failure";
+// Phase-78-1:追記
+import { isNotFound } from "@/lib/api/client";
 import type { AsyncStatus } from "@/lib/api/types";
 
 // Phase-35(完了後の調整):追記
@@ -42,6 +44,9 @@ type HearingStore = {
   projectId: string | null;
   messages: ChatHistoryEntry[];
   historyStatus: AsyncStatus;
+  // Phase-78-1:追記
+  // 最初の読み込みが404だった(プロジェクトが削除された・無い)。画面は本体の代わりに知らせを出す
+  notFound: boolean;
   sending: boolean;
   // ストリーミング中のAI応答本文。完了すると`messages`へ確定エントリとして追加され、
   // 空文字に戻る。
@@ -135,6 +140,8 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   projectId: null,
   messages: [],
   historyStatus: "idle",
+  // Phase-78-1:追記
+  notFound: false,
   sending: false,
   streamingReply: "",
   connectionLost: false,
@@ -155,7 +162,10 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
     if (get().projectId !== projectId) {
       set({ projectId, ...PROJECT_INITIAL });
     }
-    set({ historyStatus: "loading" });
+    // Phase-78-1：更新
+    // set({ historyStatus: "loading" });
+    // ↓↓
+    set({ historyStatus: "loading", notFound: false });
     try {
       const [messages, project] = await Promise.all([
         getChatHistory(projectId),
@@ -190,8 +200,12 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       // Phase-34-3:追記
       // 観点の表は生成の後も見られるよう、状態によらず取る
       await loadPoints(projectId, get, set);
-    } catch {
-      set({ historyStatus: "error" });
+    // Phase-78-1：更新
+    // } catch {
+    //   set({ historyStatus: "error" });
+    // ↓↓
+    } catch (err) {
+      set({ historyStatus: "error", notFound: isNotFound(err) });
     }
   },
 

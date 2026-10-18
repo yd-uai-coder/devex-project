@@ -1,4 +1,4 @@
-# 作成：Phase-74-1｜更新：Phase-75-1
+# 作成：Phase-74-1｜更新：Phase-75-1,79-1
 """Google の連携のための `users` の列(google_sub・null 可のパスワード)と、既存の照合の null 対応の
 テスト。
 
@@ -10,6 +10,7 @@ SUT: UserRepository.create / get_by_google_sub、AuthService.authenticate、
 """
 
 # Phase-75-1：更新 ── app.services.errors.CurrentPasswordMismatchError → app.services.errors.PasswordNotSetError
+# Phase-79-1:追記 ── app.services.errors.INVALID_CREDENTIALS_MESSAGE
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from tests.fixtures.fake_redis import FakeRedis
@@ -18,7 +19,11 @@ from app.api.user_read import user_read
 from app.models.user import User
 from app.repositories.user import UserRepository
 from app.services.auth import AuthService
-from app.services.errors import InvalidCredentialsError, PasswordNotSetError
+from app.services.errors import (
+    INVALID_CREDENTIALS_MESSAGE,
+    InvalidCredentialsError,
+    PasswordNotSetError,
+)
 from app.services.user import UserService
 
 _PASSWORD = "Pass-word-01"
@@ -49,7 +54,10 @@ async def test_password_login_of_google_only_user_is_the_same_401(
     with pytest.raises(InvalidCredentialsError) as exc:
         await auth.authenticate(email="gina@example.com", password=_PASSWORD)
 
-    assert str(exc.value) == "Invalid email or password"
+    # Phase-79-1：更新
+    # assert str(exc.value) == "Invalid email or password"
+    # ↓↓
+    assert str(exc.value) == INVALID_CREDENTIALS_MESSAGE
 
 
 # Phase-75-1：更新

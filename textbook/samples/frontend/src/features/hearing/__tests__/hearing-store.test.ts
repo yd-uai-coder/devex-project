@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3,35-3,35(完了後の調整),69-3
+// 作成：Phase-3-5｜更新：Phase-6-6,15-8,24(完了後の調整),34-3,35-3,35(完了後の調整),69-3,78-1
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Phase-35(完了後の調整):追記 ── CONTINUE_OPTIONAL_MESSAGE
 import { CONTINUE_OPTIONAL_MESSAGE, useHearingStore } from "../hearing-store";
@@ -114,6 +114,20 @@ describe("useHearingStore", () => {
     expect(useHearingStore.getState().messages).toHaveLength(1);
     expect(useHearingStore.getState().historyStatus).toBe("success");
   // Phase-24:追記
+  // Phase-78-1:追記
+  });
+
+  it("loadHistory()は404ならnotFoundを立て、500では立てない", async () => {
+    const notFound = { detail: "Project p1 not found", code: "RESOURCE_NOT_FOUND" };
+    stub.queue({ status: 404, body: notFound });
+    stub.queue({ status: 404, body: notFound });
+    await useHearingStore.getState().loadHistory("p1");
+    expect(useHearingStore.getState()).toMatchObject({ historyStatus: "error", notFound: true });
+
+    stub.queue({ status: 500, body: { detail: "error" } });
+    stub.queue({ status: 500, body: { detail: "error" } });
+    await useHearingStore.getState().loadHistory("p1");
+    expect(useHearingStore.getState()).toMatchObject({ historyStatus: "error", notFound: false });
   });
 
   it("loadHistory()は別のプロジェクトを開くと、前の会話と完了判定を捨ててから読む", async () => {

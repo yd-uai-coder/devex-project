@@ -1,4 +1,4 @@
-# 作成：Phase-74-3
+# 作成：Phase-74-3｜更新：Phase-79-1
 """Google でのログイン・新規の登録・既存のアカウントとの連携のテスト。
 
 SUT: GoogleAuthService.login_or_register / link、ルートの関数(auth.google_login・google_link)
@@ -7,6 +7,7 @@ SUT: GoogleAuthService.login_or_register / link、ルートの関数(auth.google
      鍵と試行の回数)。DB はテスト用の SQLite のセッション
 """
 
+# Phase-79-1:追記 ── app.services.errors.INVALID_CREDENTIALS_MESSAGE
 from typing import cast
 
 import pytest
@@ -24,6 +25,7 @@ from app.repositories.user import UserRepository
 from app.schemas.auth import GoogleLinkRequest, GoogleLoginRequest
 from app.services.auth import AuthService
 from app.services.errors import (
+    INVALID_CREDENTIALS_MESSAGE,
     GoogleAccountConflictError,
     GoogleEmailNotVerifiedError,
     GoogleLinkRequiredError,
@@ -131,8 +133,15 @@ async def test_link_with_password_sets_sub_and_keeps_password(db_session: AsyncS
 async def test_link_with_wrong_password_is_401(db_session: AsyncSession, password: str) -> None:
     await _password_user(db_session)
 
-    with pytest.raises(InvalidCredentialsError):
+    # Phase-79-1：更新
+    # with pytest.raises(InvalidCredentialsError):
+    # ↓↓
+    with pytest.raises(InvalidCredentialsError) as exc:
         await GoogleAuthService(db_session).link(_GINA, password=password)
+
+    # Phase-79-1:追記
+    # パスワードでのログインと同じ文(連携のダイアログはこの文をそのまま出す)
+    assert str(exc.value) == INVALID_CREDENTIALS_MESSAGE
 
 
 async def test_link_without_account_or_password_is_the_same_401(db_session: AsyncSession) -> None:

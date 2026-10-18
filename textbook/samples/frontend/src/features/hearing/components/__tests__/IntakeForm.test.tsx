@@ -1,4 +1,4 @@
-// 作成：Phase-3-4｜更新：Phase-6-4,15-7,24(ゴール3後の調整)
+// 作成：Phase-3-4｜更新：Phase-6-4,15-7,24(ゴール3後の調整),78-2
 // Phase-24:追記 ── @/features/hearing/schemas.PROJECT_NAME_MAX_LENGTH
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -6,6 +6,8 @@ import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { IntakeForm } from "../IntakeForm";
+// Phase-78-2:追記
+import { useDashboardStore } from "@/features/dashboard/dashboard-store";
 import { PROJECT_NAME_MAX_LENGTH } from "@/features/hearing/schemas";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
@@ -121,6 +123,27 @@ describe("IntakeForm", () => {
 
     expect(await screen.findByText(/プロジェクト名は40文字/)).toBeInTheDocument();
     expect(stub.requests).toHaveLength(1);
+  }, 15000);
+
+  // Phase-78-2:追記
+  it("作成に成功するとダッシュボードの一覧の cache を切り、失敗では切らない", async () => {
+    stub.queue({ status: 200, body: [] }); // テンプレート一覧(マウント時に取得)
+    stub.queue({ status: 500, body: { detail: "作成できませんでした" } });
+    stub.queue({ status: 201, body: { id: "p3", title: "t", status: "interviewing", mode: "simple" } });
+    useDashboardStore.setState({ fetchedAt: Date.now() });
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("プロジェクト名"), "備品予約");
+    await user.type(screen.getByLabelText("システム概要"), "備品予約");
+    await user.type(screen.getByLabelText("実現したいこと"), "重複を防ぐ");
+    await user.click(screen.getByRole("button", { name: "ヒアリングを始める" }));
+    expect(await screen.findByText("作成できませんでした")).toBeInTheDocument();
+    expect(useDashboardStore.getState().fetchedAt).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "ヒアリングを始める" }));
+    await vi.waitFor(() => expect(push).toHaveBeenCalledWith("/projects/p3/chat"));
+    expect(useDashboardStore.getState().fetchedAt).toBeNull();
   }, 15000);
 
   it("mode=detailedを渡すと、詳細設計モードでプロジェクトを作成する", async () => {

@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3,78-1
 "use client";
 
 // Phase-15-8:追記 ── useState(react), ConfirmDialog
@@ -13,6 +13,8 @@ import { useRouter } from "next/navigation";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
 // Phase-69-3:追記
 import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
+// Phase-78-1:追記
+import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 // Phase-64-4:追記
 import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
@@ -45,6 +47,9 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const documents = useDocumentsStore((s) => s.documents);
   const status = useDocumentsStore((s) => s.status);
   const error = useDocumentsStore((s) => s.error);
+  // Phase-78-1:追記
+  // 前に開いた別のプロジェクトの404は見ない(ストアは画面をまたいで残る)
+  const notFound = useDocumentsStore((s) => s.notFound && s.projectId === projectId);
   const regenerating = useDocumentsStore((s) => s.regenerating);
   // Phase-15-8:追記
   const regenerateError = useDocumentsStore((s) => s.regenerateError);
@@ -147,6 +152,10 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
         );
       }
     : undefined;
+
+  // Phase-78-1:追記
+  // 削除された・無いプロジェクトは、本体(削除・再生成のボタンなど)を出さずに知らせだけにする
+  if (notFound) return <ProjectNotFoundNotice />;
 
   return (
     <YStack paddingVertical="$4" gap="$4">

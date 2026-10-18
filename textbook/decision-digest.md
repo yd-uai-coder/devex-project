@@ -1203,3 +1203,74 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 - 推奨そのものの外れは今回も無い。推奨と違った選択は7件で、仕様診断の「広げる」3件と、画面の Phase の**操作感・見た目の好み**4件(ステージ8で出た向きが続いた)。P66〜72 はすべて推奨どおり。
 - 計画の変動は0、完了後の調整は 11 Phase で3件。本番の指摘は未実施で、ステージ10の反映の後に埋める。
+
+## Phase 73完了 ── ステージ10の要件確認
+
+ステージ10(Google 認証)の要件確認フェーズ。詳細は[`Phase-73-introduction.md`](./Phase-73/Phase-73-introduction.md)参照。
+
+- フローは Google Identity Services の ID トークン。API が `google-auth` で検証し、`/auth/login` と同じ返し方(access は本文、refresh は cookie)に乗せる。
+- 同じメールの既存アカウントは、確かめずには紐付けない。Google での最初のログインのときだけパスワードで確かめて紐付け、その後は両方の方法でログインできる(登録でメールを確かめないため、乗っ取りの準備を防ぐ)。メールが確認されていない ID トークンは断る。
+- ステージ10の入力5件はすべて範囲に入れ、Phase 74〜79 に割り振った([73-3](./Phase-73/Phase-73-3.md))。
+
+## Phase 74完了 ── Google 認証の API
+
+詳細は[`Phase-74-introduction.md`](./Phase-74/Phase-74-introduction.md)参照。
+
+- `users.hashed_password` を null 可にし、`google_sub`(一意)を足した(`c4f8a2e6d1b9`)。探すのは `sub` が先、次にメール。Google だけの利用者のパスワードでのログインは 401。
+- 未連携の同じメールは 409 `GOOGLE_LINK_REQUIRED`、別の Google と連携済みは 409 `GOOGLE_ACCOUNT_CONFLICT`、公開鍵を取れないときは 502 `GOOGLE_VERIFY_FAILED`。Google のログインは新しいカウンタ `google_ip`(30回/時)。
+- 開発用の compose で登録・ログインの上限を 1000回/時にした(本番の compose には入らない)。E2E は `E2E_FAKE_GOOGLE` の偽の credential(`fake:<sub>:<email>`)。
+
+## Phase 75完了 ── マイページの API
+
+詳細は[`Phase-75-introduction.md`](./Phase-75/Phase-75-introduction.md)参照。
+
+- パスワードの設定は別の API(`POST /users/me/password`。パスワードが無いときだけ。ほかの端末を切る)。パスワードが無い人のメール・パスワードの変更と連携・解除は 409 `PASSWORD_NOT_SET`。
+- マイページの連携は `{credential, current_password}` で、メールが違う Google も可。解除はほかの端末を切り、`AccessToken` を返す。
+- 連携の判定は `_attach`、失効と出し直しは `_reissue_tokens` に寄せ、ログインの連携・変更・設定・解除で共有した。
+
+## Phase 76完了 ── ログインと登録の画面
+
+詳細は[`Phase-76-introduction.md`](./Phase-76/Phase-76-introduction.md)参照。
+
+- `@react-oauth/google` の Provider はボタンの部品の中。ボタンはフォームの下(推奨と違う)で、登録の画面にも置く。クライアント ID が無ければボタンを出さない。
+- 409 `GOOGLE_LINK_REQUIRED` では credential を持ったままダイアログでパスワードを聞き、`/auth/google/link` を呼ぶ。そのほかのエラーは API の日本語の `detail` をそのまま出す。
+- E2E 用の偽のボタンは `NEXT_PUBLIC_E2E_FAKE_GOOGLE` のときだけ出す。
+
+## Phase 77完了 ── マイページの画面
+
+詳細は[`Phase-77-introduction.md`](./Phase-77/Phase-77-introduction.md)参照。
+
+- `has_password`・`google_linked` で出し分ける。Google だけの人はパスワードの設定のフォーム(メールの変更・解除は出さない)。
+- 連携は「Google で続行」のボタンの後に、パスワードのダイアログ(76 の `GoogleLinkDialog` を文の差し替えで共有)。解除は確認のダイアログで、ほかの端末が切れることを伝える。
+- 本物の Google での確認は、この Phase の後にユーザーが行い問題なし。
+
+## Phase 78完了 ── 小さな改善
+
+詳細は[`Phase-78-introduction.md`](./Phase-78/Phase-78-introduction.md)参照。
+
+- 削除したプロジェクトの URL は、チャット・文書・詳細設計で共通の知らせ(`ProjectNotFoundNotice`)を出す。ストアは `notFound` を `projectId` と組で見る。
+- 作成の後に一覧の cache を捨てる(`IntakeForm` で `invalidate()`)。`StyledButton` の押せない見た目は不透明度 0.5。
+- 負荷のときだけ落ちるテストの原因はテストの時刻の作り方で、並びの2つ目の鍵は足さなかった(計画を撤回)。
+
+## Phase 79完了 ── 統合/E2E・本番への反映の手順
+
+ステージ10の最後の Phase。詳細は[`Phase-79-introduction.md`](./Phase-79/Phase-79-introduction.md)参照。
+
+- Google の流れの E2E を1本(4件)足し、全 E2E 9件が2回成功。ログインと連携の確かめの失敗の文を日本語にした(`errors.py` の定数)。
+- 本番の OAuth クライアントは手元と分けて作り、同意画面は本番で公開、生成元は Vercel の URL とカスタムドメインの両方(推奨と違う)。
+- ステージ9・10の反映は `OPERATIONS.md` 10.7節。ステージ10だけを戻すときは、マイグレーションを戻さずコードだけを戻す(downgrade は連携を全部消す)。origin にステージ8以降のコミットが無いので、本番の head を見て分岐する。
+
+## ステージ10完了後 ── 振り返り
+
+ステージ10の振り返り(#10)。本番への反映の前に行った(#37 の運用注記の2回目)。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 15節。
+
+- 進行ルールは変えない。origin の食い違いは記録だけ(反映の手順の先頭で `git fetch` と本番の head を確かめる型は残す)。中間の Phase の申し送りは今のまま写す。
+- 開発環境の上限の引き上げ(Phase 74)の後、レート制限に当たった記録は0。`tagmerge.py` の手直しは持ち越し、次のステージの仕様診断で改善を範囲に入れるか決める。
+- Devex の型として、外部の準備を「担当・期限・無いときの代わり」で書く・認証の要件は希望と脅威を対で聞く・データ変更に戻し方と失うものを書く・出した版がリポジトリにあるかを受け入れで確かめる、を残す(15.4)。[handoff v2](../appendix/cl-development-handoff-v2.md) に 5.3・5.8・5.11 を反映した。
+
+## ステージ10完了後 ── AI の提案の精度
+
+#39 の5回目。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 15.5。
+
+- 推奨と違った選択は2件(P76 のボタンの位置〈見た目〉・P79 の生成元〈広げる〉)。73-1 の紐付けは、初めの推奨が希望を満たさず作り直した(脅威の側だけから組み立てた)。
+- 計画の変動は1(P78 の撤回。原因の調査の結果)、完了後の調整は0。本番の指摘は未実施で、反映の後にステージ9の分と一緒に埋める。

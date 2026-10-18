@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-6,15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2,64-4,69-3
+// 作成：Phase-3-6｜更新：Phase-6-6,15-7,15-8,24(完了後の調整),36-3,53(完了後の調整),54-2,64-4,69-3,78-1
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDocumentsStore } from "../documents-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
@@ -62,6 +62,17 @@ describe("useDocumentsStore", () => {
 
     expect(useDocumentsStore.getState().documents).toEqual([SAMPLE_DOC]);
     expect(useDocumentsStore.getState().status).toBe("success");
+  });
+
+  // Phase-78-1:追記
+  it("fetchDocuments()が404ならnotFoundを立て、500では立てない", async () => {
+    stub.queue({ status: 404, body: { detail: "Project p1 not found", code: "RESOURCE_NOT_FOUND" } });
+    await useDocumentsStore.getState().fetchDocuments("p1");
+    expect(useDocumentsStore.getState()).toMatchObject({ status: "error", notFound: true });
+
+    stub.queue({ status: 500, body: { detail: "error" } });
+    await useDocumentsStore.getState().fetchDocuments("p1", { force: true });
+    expect(useDocumentsStore.getState()).toMatchObject({ status: "error", notFound: false });
   });
 
   it("TTL以内であれば再フェッチをスキップし、forceで無視する", async () => {

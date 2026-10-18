@@ -1,6 +1,9 @@
-// 作成：Phase-11-2
+// 作成：Phase-11-2｜更新：Phase-78-1
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ApiError, apiFetch } from "../client";
+// Phase-78-1：更新
+// import { ApiError, apiFetch } from "../client";
+// ↓↓
+import { ApiError, apiFetch, isNotFound } from "../client";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
 describe("apiFetch のエラー", () => {
@@ -42,5 +45,14 @@ describe("apiFetch のエラー", () => {
     const error = await apiFetch("/x").catch((e: unknown) => e);
 
     expect(error).toMatchObject({ status: 422, message: "field required, bad" });
+  });
+});
+
+// Phase-78-1:追記
+describe("isNotFound", () => {
+  it("404 の ApiError だけを対象が無い失敗とみなす", () => {
+    expect(isNotFound(new ApiError(404, "Project p1 not found", "RESOURCE_NOT_FOUND"))).toBe(true);
+    expect(isNotFound(new ApiError(500, "Internal Server Error"))).toBe(false);
+    expect(isNotFound(new Error("network"))).toBe(false);
   });
 });
