@@ -1,4 +1,4 @@
-// 作成：Phase-66-3｜更新：Phase-67-4,67(完了後の調整)
+// 作成：Phase-66-3｜更新：Phase-67-4,67(完了後の調整),77-1
 // Phase-67-4：更新
 // // SUT: マイページ(RequireAuth の中にアカウントの節)
 // ↓↓
@@ -48,7 +48,10 @@ describe("MyPage", () => {
   // ↓↓
   it("ログイン済みなら初めはアカウントだけを開く。1つを開くとほかが閉じ、開いた節を読む", async () => {
     useAuthStore.setState({ accessToken: "header.payload.sig", status: "success", error: null });
-    stub.queue({ body: { id: "u1", email: "gil@example.com", user_name: "Gil" } });
+    // Phase-77-1：更新
+    // stub.queue({ body: { id: "u1", email: "gil@example.com", user_name: "Gil" } });
+    // ↓↓
+    stub.queue({ body: { id: "u1", email: "gil@example.com", user_name: "Gil", has_password: true, google_linked: false } });
     // Phase-67-4:追記
     // Phase-67(完了後の調整)：更新
     // stub.queue({ body: CATALOG });

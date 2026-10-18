@@ -162,7 +162,7 @@ Claude の判断(計画の承認で確定):
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- [Phase 77-2](../Phase-77/Phase-77-2.md): `GoogleButtonText` に `"continue_with"`(マイページの連携の「Google で続行」)を足し、`GoogleLinkDialog` に省略可能な `description`・`submitLabel` を足した(既定値はこの Phase の文言で、ログイン・登録の画面は変わらない)。
 
 ## Phase 完了チェック(#22)
 

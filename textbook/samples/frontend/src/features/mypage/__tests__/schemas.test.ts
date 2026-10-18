@@ -1,10 +1,17 @@
-// 作成：Phase-66-3
-// SUT: マイページのフォームのスキーマ(userNameSchema・emailChangeSchema・passwordChangeSchema)と、
-// 登録と共有する newPasswordSchema
+// 作成：Phase-66-3｜更新：Phase-77-1
+// Phase-77-1：更新
+// // SUT: マイページのフォームのスキーマ(userNameSchema・emailChangeSchema・passwordChangeSchema)と、
+// // 登録と共有する newPasswordSchema
+// ↓↓
+// SUT: マイページのフォームのスキーマ(userNameSchema・emailChangeSchema・passwordChangeSchema・
+// passwordSetSchema)と、登録と共有する newPasswordSchema
 // ドライバ: 各テスト(safeParse を呼ぶ)
 // スタブ不要 ── スキーマは純粋で、外部の依存を呼ばないため
 import { describe, expect, it } from "vitest";
-import { emailChangeSchema, passwordChangeSchema, userNameSchema } from "../schemas";
+// Phase-77-1：更新
+// import { emailChangeSchema, passwordChangeSchema, userNameSchema } from "../schemas";
+// ↓↓
+import { emailChangeSchema, passwordChangeSchema, passwordSetSchema, userNameSchema } from "../schemas";
 
 function firstMessage(result: { success: boolean; error?: { issues: { message: string }[] } }) {
   return result.success ? null : result.error?.issues[0]?.message;
@@ -40,6 +47,18 @@ describe("passwordChangeSchema", () => {
   it("確認の欄が一致しなければ、確認の欄のエラーにする", () => {
     const result = passwordChangeSchema.safeParse({ ...valid, confirmPassword: "New-pass-03" });
     expect(result.success).toBe(false);
+    expect(result.error?.issues[0]).toMatchObject({ path: ["confirmPassword"], message: "新しいパスワードと一致しません" });
+  });
+});
+
+// Phase-77-1:追記
+describe("passwordSetSchema", () => {
+  it("今のパスワードを求めず、新しいパスワードの規則と確認の一致を求める", () => {
+    expect(passwordSetSchema.safeParse({ newPassword: "New-pass-02", confirmPassword: "New-pass-02" }).success).toBe(true);
+    expect(
+      firstMessage(passwordSetSchema.safeParse({ newPassword: "new-pass-02", confirmPassword: "new-pass-02" })),
+    ).toBe("新しいパスワードは大文字を含めてください");
+    const result = passwordSetSchema.safeParse({ newPassword: "New-pass-02", confirmPassword: "New-pass-03" });
     expect(result.error?.issues[0]).toMatchObject({ path: ["confirmPassword"], message: "新しいパスワードと一致しません" });
   });
 });

@@ -1,4 +1,4 @@
-// 作成：Phase-76-1
+// 作成：Phase-76-1｜更新：Phase-77-2
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -87,6 +87,14 @@ describe("GoogleSignInButton", () => {
     expect(screen.getByTestId("google-login")).toBeInTheDocument();
     expect(google.providerClientId).toBe("client-123");
     expect(google.lastLoginProps?.text).toBe("signup_with");
+  });
+
+  // Phase-77-2:追記
+  it("マイページの連携の文言(continue_with)も渡せる", () => {
+    vi.stubEnv("NEXT_PUBLIC_GOOGLE_CLIENT_ID", "client-123");
+    renderButton("continue_with");
+
+    expect(google.lastLoginProps?.text).toBe("continue_with");
   });
 
   it("Google が返した credential を onCredential に渡し、credential が無ければ onError", () => {

@@ -1,4 +1,4 @@
-// 作成：Phase-76-2
+// 作成：Phase-76-2｜更新：Phase-77-2
 "use client";
 
 import { useState } from "react";
@@ -13,12 +13,33 @@ type GoogleLinkDialogProps = {
   submitting: boolean;
   onSubmit: (password: string) => void;
   onCancel: () => void;
+  // Phase-77-2:追記
+  // 文と確かめのボタンの文言。省略するとログインの画面の文言(同じメールのアカウントとの連携)。
+  // マイページの連携は、ログイン中の本人の確かめなので、文言だけを差し替えて使う
+  description?: string;
+  submitLabel?: string;
 };
+
+// Phase-77-2:追記
+const LOGIN_DESCRIPTION =
+  "このメールアドレスのアカウントがあります。パスワードを入れると、Google アカウントと連携します。" +
+  "連携した後は、Google とメールアドレスのどちらでもログインできます。";
 
 // Google でログインしたら、同じメールのアカウントが既にあり、まだ Google と連携していなかったときの
 // ダイアログ。そのアカウントのパスワードで本人を確かめてから連携する(確かめずに紐付けると、
 // 先にそのメールで登録した他人に入られ続けるため)。
-export function GoogleLinkDialog({ open, error, submitting, onSubmit, onCancel }: GoogleLinkDialogProps) {
+// Phase-77-2：更新
+// export function GoogleLinkDialog({ open, error, submitting, onSubmit, onCancel }: GoogleLinkDialogProps) {
+// ↓↓
+export function GoogleLinkDialog({
+  open,
+  error,
+  submitting,
+  onSubmit,
+  onCancel,
+  description = LOGIN_DESCRIPTION,
+  submitLabel = "連携してログイン",
+}: GoogleLinkDialogProps) {
   const [password, setPassword] = useState("");
 
   // 閉じたら入力を残さない(次に開いたとき、前のパスワードが入っていないように)
@@ -49,10 +70,13 @@ export function GoogleLinkDialog({ open, error, submitting, onSubmit, onCancel }
           exitStyle={{ opacity: 0, scale: 0.95, y: 10 }}
         >
           <Dialog.Title size="$6">Google アカウントと連携</Dialog.Title>
-          <Dialog.Description>
-            このメールアドレスのアカウントがあります。パスワードを入れると、Google アカウントと連携します。
-            連携した後は、Google とメールアドレスのどちらでもログインできます。
-          </Dialog.Description>
+          {/* Phase-77-2：更新 */}
+          {/* <Dialog.Description>
+                このメールアドレスのアカウントがあります。パスワードを入れると、Google アカウントと連携します。
+                連携した後は、Google とメールアドレスのどちらでもログインできます。
+              </Dialog.Description> */}
+          {/* ↓↓ */}
+          <Dialog.Description>{description}</Dialog.Description>
           {/* 後ろのフォームの「パスワード」と見分けられるよう、ラベルを変える */}
           <InputPassword
             label="このアカウントのパスワード"
@@ -70,12 +94,16 @@ export function GoogleLinkDialog({ open, error, submitting, onSubmit, onCancel }
             <StyledButton theme="gray" aria-label="キャンセル" onPress={handleCancel}>
               キャンセル
             </StyledButton>
-            <StyledButton
-              aria-label="連携してログイン"
-              disabled={!password || submitting}
-              onPress={() => onSubmit(password)}
-            >
-              連携してログイン
+            {/* Phase-77-2：更新 */}
+            {/* <StyledButton
+                  aria-label="連携してログイン"
+                  disabled={!password || submitting}
+                  onPress={() => onSubmit(password)}
+                >
+                  連携してログイン */}
+            {/* ↓↓ */}
+            <StyledButton aria-label={submitLabel} disabled={!password || submitting} onPress={() => onSubmit(password)}>
+              {submitLabel}
             </StyledButton>
           </XStack>
         </Dialog.Content>

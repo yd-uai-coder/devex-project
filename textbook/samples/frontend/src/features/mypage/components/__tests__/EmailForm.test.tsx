@@ -1,4 +1,4 @@
-// 作成：Phase-66-3
+// 作成：Phase-66-3｜更新：Phase-77-1
 // SUT: EmailForm(今のパスワードで確かめてメールを変える。400・409 を欄のエラーに)
 // ドライバ: 各テスト(ユーザーの操作)
 // スタブ: fetch(stubFetch。PUT /users/me/email の応答)と、トーストの useToastController(vi.mock)
@@ -13,7 +13,10 @@ import { EmailForm } from "../EmailForm";
 const { toastShow } = vi.hoisted(() => ({ toastShow: vi.fn() }));
 vi.mock("@tamagui/toast", () => ({ useToastController: () => ({ show: toastShow }) }));
 
-const ACCOUNT = { id: "u1", email: "gil@example.com", user_name: "Gil" };
+// Phase-77-1：更新
+// const ACCOUNT = { id: "u1", email: "gil@example.com", user_name: "Gil" };
+// ↓↓
+const ACCOUNT = { id: "u1", email: "gil@example.com", user_name: "Gil", has_password: true, google_linked: false };
 
 function renderForm() {
   const onUpdated = vi.fn();

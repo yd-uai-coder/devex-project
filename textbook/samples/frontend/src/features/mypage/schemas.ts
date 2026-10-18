@@ -1,9 +1,12 @@
-// 作成：Phase-66-3
+// 作成：Phase-66-3｜更新：Phase-77-1
 import { z } from "zod";
 import { EMAIL_MAX_LENGTH, USER_NAME_MAX_LENGTH, newPasswordSchema } from "@/features/auth/schemas";
 import { applyRules, maxLength, requiredText, validEmail } from "@/lib/schemas/validation-rules";
 
-// マイページのアカウントの3つのフォーム。サーバーも同じ規則で確かめる(ここは早めの知らせ)。
+// Phase-77-1：更新
+// // マイページのアカウントの3つのフォーム。サーバーも同じ規則で確かめる(ここは早めの知らせ)。
+// ↓↓
+// マイページのアカウントのフォーム。サーバーも同じ規則で確かめる(ここは早めの知らせ)。
 export const userNameSchema = z.object({
   userName: applyRules(
     z.string().trim(),
@@ -36,3 +39,16 @@ export const passwordChangeSchema = z
     message: "新しいパスワードと一致しません",
   });
 export type PasswordChangeValues = z.infer<typeof passwordChangeSchema>;
+
+// Phase-77-1:追記
+// パスワードの設定(Google だけの人)。今のパスワードが無いので、変更から今のパスワードの欄を除いた形
+export const passwordSetSchema = z
+  .object({
+    newPassword: newPasswordSchema("新しいパスワード"),
+    confirmPassword: applyRules(z.string(), requiredText("新しいパスワード(確認)")),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "新しいパスワードと一致しません",
+  });
+export type PasswordSetValues = z.infer<typeof passwordSetSchema>;
