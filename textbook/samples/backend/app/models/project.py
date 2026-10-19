@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1,34-1,52-3,64-1,69-1
+# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1,34-1,52-3,64-1,69-1,81-2
 # 写経レベル: 定型 ── 既存User/Conversationと同型のORMモデル定義。
 # Phase-34-1:追記 ── app.models.hearing_point.HearingPoint(TYPE_CHECKING)
 # Phase-52-3:追記 ── app.models.review.ReviewRun(TYPE_CHECKING)
@@ -13,7 +13,9 @@ from app.core.database import Base, PortableJSON
 
 # Phase-8-2:追記 ── app.models.data_item.DataItem, app.models.uml_diagram.UmlDiagram
 # Phase-15-2:追記 ── app.models.design_stage.DesignStage(TYPE_CHECKING のみ)
+# Phase-81-2:追記 ── app.models.baseline.Baseline(TYPE_CHECKING のみ)
 if TYPE_CHECKING:
+    from app.models.baseline import Baseline
     from app.models.chat_history import ChatHistory
     from app.models.data_item import DataItem
     from app.models.design_stage import DesignStage
@@ -114,4 +116,8 @@ class Project(Base):
     # Phase-52-3:追記
     review_runs: Mapped[list["ReviewRun"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
+    )
+    # Phase-81-2:追記
+    baselines: Mapped[list["Baseline"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", order_by="Baseline.number"
     )

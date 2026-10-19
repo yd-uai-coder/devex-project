@@ -187,6 +187,25 @@
 
 **(プロジェクトの完了)** ステージ10で、計画したステージをすべて終えた。2026-10-18 にプロジェクト全体の振り返りを行い、ステージ11以降は計画しない([`textbook/retrospectives/project-retrospective.md`](../textbook/retrospectives/project-retrospective.md))。再開するときは、同じ文書の8節(期限つきの持ち越し)と6節(取り込んでいない示唆)から読む。
 
+**(再開)** 2026-10-19 に、Devex の位置づけを「クライアントとの合意を、設計から実装・テストまでつなぐ」に改め([`appendix/devex_project_positioning.md`](../appendix/devex_project_positioning.md))、ステージ11 から再開した。振り返りの8節・6節は、Phase 80 の仕様診断で1件ずつ判断した([`textbook/Phase-80/Phase-80-1.md`](../textbook/Phase-80/Phase-80-1.md))。
+
+### ステージ11：合意と変更の一巡 ── 【Could have】
+
+* **目的**: クライアントとの合意を基準に、変更要求(CR)を受付から再検証まで縦に1本通し、「何を・なぜ・誰の合意で・どこに反映したか」を後からたどれるようにする。構想は[`appendix/devex_project_positioning.md`](../appendix/devex_project_positioning.md) 8章・12章、出発点は[`appendix/measurements/stage11-baseline.md`](../appendix/measurements/stage11-baseline.md)。
+* **方針(Phase 80で確定)**: 詳細設計モードで通す。合意済みの版はプロジェクトの束で、合意の時点の内容を別のテーブルに写して凍結する。CR は6つの状態で進み、合意の前に影響を予測し(今のたどり方)、5節の説明書(任意の LLM の要約は人が確かめるまで載らない)を出す。反映はレビューの指摘と同じ経路で再生成に入れ、版に CR と生成したモデルを残す。検証済みは印の確認だけで決まり、レビューは任意([外部設計書](external_design.md) 2.14節、[内部設計書](internal_design.md) 3.3節「11. 合意と変更の一巡」)。
+* **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-80/Phase-80-4.md`](../textbook/Phase-80/Phase-80-4.md)参照):
+  * Phase 80: 要件確認フェーズ(仕様診断・振り返りの残件の判断・ベースライン・docs反映・ステージ11の実装計画) ── **完了**([`textbook/Phase-80/Phase-80-introduction.md`](../textbook/Phase-80/Phase-80-introduction.md))
+  * Phase 81: 合意済みの版(束)の API(写し・合意の記録・文書の版に生成したモデル) ── **完了**([`textbook/Phase-81/Phase-81-introduction.md`](../textbook/Phase-81/Phase-81-introduction.md))
+  * Phase 82: CR の API(項目・6つの状態の遷移と時系列・合意の記録)
+  * Phase 83: CR に結ぶ影響の予測(今の `impact_of` の再利用。文書の側の要素も)
+  * Phase 84: 変更の説明書(5節の md・任意の LLM の要約・照合・確認の関門・古い印)
+  * Phase 85: 反映(`cr_id` を再生成へ。版に CR を残す・予測と実際の比較)
+  * Phase 86: 再検証とたどれる記録(印の確認で検証済み・任意のレビュー・時系列・新しい合意済みの版)
+  * Phase 87: CR の画面
+  * Phase 88: 合意済みの版と説明書の画面・小さな修正(`postgres-init`・モデルのカタログ)
+  * Phase 89: 効果測定・統合/E2E・本番への反映
+* **マイルストーン12**: 決まったシナリオ(N2。Devex 自身を題材にした詳細設計モードの生成物)で、1件の CR が受付から再検証まで通り、「何を・なぜ・誰の合意で・どこに反映したか」を後からたどれる。
+
 ---
 
 ## 4.2 タスク分解（WBS案）

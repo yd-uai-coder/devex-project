@@ -21,11 +21,11 @@ md の見本(samples の対象外):
 | [`src/features/change-impact/demo/impactModel.ts`](../samples/frontend/src/features/change-impact/demo/impactModel.ts) | 要素・参照・変更の型と、影響のたどり方・今の仕組みの「古い」・段階の印・承認し直し・再生成の候補の純粋関数 |
 | [`src/features/change-impact/demo/demoData.ts`](../samples/frontend/src/features/change-impact/demo/demoData.ts) | 仮データ(ベースラインの生成物を縮めた要素と、変更4つ) |
 | [`src/features/change-impact/demo/ChangeImpactDemoPageContent.tsx`](../samples/frontend/src/features/change-impact/demo/ChangeImpactDemoPageContent.tsx) | デモ画面(変更を選ぶ・変わったもの・段階の状態・影響の一覧・再生成の候補・段階の表) |
-| [`src/app/change-impact-demo/page.tsx`](../samples/frontend/src/app/change-impact-demo/page.tsx) | ルート `/change-impact-demo`(本体は `src/app/(pages)/` 配下) |
+| `src/app/change-impact-demo/page.tsx`(2026-10-19 に本体・samples から削除) | ルート `/change-impact-demo`(本体は `src/app/(pages)/` 配下) |
 | [`src/lib/menu-tree.ts`](../samples/frontend/src/lib/menu-tree.ts) | メニューの「開発用」にデモを足す |
 | [`src/features/change-impact/demo/__tests__/impactModel.test.ts`](../samples/frontend/src/features/change-impact/demo/__tests__/impactModel.test.ts) | 純粋関数のテスト |
 | [`src/features/change-impact/demo/__tests__/ChangeImpactDemoPageContent.test.tsx`](../samples/frontend/src/features/change-impact/demo/__tests__/ChangeImpactDemoPageContent.test.tsx) | 画面の操作のテスト |
-| [`src/app/change-impact-demo/__tests__/page.test.tsx`](../samples/frontend/src/app/change-impact-demo/__tests__/page.test.tsx) | ルートのテスト |
+| `src/app/change-impact-demo/__tests__/page.test.tsx`(同上) | ルートのテスト |
 
 あわせて、ステージ6の完了時にユーザーが本体から外したデモのルート(`hearing-points-demo`・`implementation-procedure-demo`)とメニューを、samples からも外した(#21。`menu-tree.ts` は `Phase-40(完了後の調整)：削除` のタグ、ルートのファイルは削除して [Phase 25-2](../Phase-25/Phase-25-2.md)・[33-3](../Phase-33/Phase-33-3.md) のリンクを外した)。本体のメニューは「開発用」の群ごと無くなっていたので、この章でデモ1つだけの群として足し直した。
 

@@ -37,6 +37,7 @@
 * **GeneratedDocument（生成ドキュメント）**: ヒアリング結果を基に生成された4種のMarkdownテキスト（要件定義、外部設計、内部設計、実装計画）およびそのバージョンを管理。
 * **PromptTemplate（プロンプトテンプレート）**: ※Should have要件を見据え、WebアプリやAPI向けなどのテンプレート定義を保持。
 * **IntakeFile（添付ファイル）**: 初期ヒアリング入力時にアップロードされた参考資料(txt/Markdown/PDF、最大3ファイル)から抽出したテキストを管理。
+* **Baseline・ChangeRequest(合意済みの版・変更要求、ステージ11)**: 合意済みの版(プロジェクトの束と、文書・段階の写し)と、変更要求とその状態の遷移・合意の記録を管理(⑭〜⑯、⑭⑮は Phase 81 で新設、⑯は Phase 82 で新設予定。下の 3.3節「11. 合意と変更の一巡」)。
 * **DesignStage（詳細設計の段階、ステージ4）**: 詳細設計モードの段階1〜7ごとの成果物(意味モデル)と承認状態を管理(⑩、Phase 15で新設)。
 
 ### 2. テーブル定義
@@ -98,6 +99,7 @@
 | content | TEXT | NOT NULL | 生成されたMarkdownテキスト |
 | model | JSONB | NULL可 | 意味モデル。要件定義書は要件の行・ID・出どころ・観点、生成した時点の観点の状態(Phase 36)。外部設計書は画面・API・外部連携の行(Phase 37)。内部設計書はテーブル・API・モジュール・処理別データフローの行と説明の節、実装計画書はマイルストーン・タスク(段階7と同じ型)・リスクと説明の節(簡易モード。Phase 45)。`content`はこれから組み立てたmd。modelを持たない以前の版はNULL(mdのまま使う) |
 | version | INT | NOT NULL, DEFAULT 1 | バージョン番号 |
+| generated_model | VARCHAR(100) | NULL可 | 生成したモデル名(Phase 81。合意済みの版の写しにも載る)。この列を足す前の版はNULL |
 | is_current | BOOLEAN | NOT NULL, DEFAULT false | 現在表示中のバージョンか。同一`project_id`+`doc_type`につきちょうど1行のみ`true`(ステージ2追補) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 
@@ -266,6 +268,46 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | updated_at | TIMESTAMP | NOT NULL | 更新日時 |
 
 `UNIQUE(user_id, provider)`。登録し直すと暗号文と末尾を置き換える。
+
+#### ⑭〜⑯ 合意済みの版・変更要求のテーブル(ステージ11。⑭⑮は Phase 81 で新設、⑯は Phase 82 で新設予定)
+
+⑭⑮は Phase 81 で確定した形(経緯は[`textbook/Phase-81/Phase-81-introduction.md`](../textbook/Phase-81/Phase-81-introduction.md))。⑯は Phase 80 で決めた形の見込みで、列・制約は Phase 82 の着手時に決める(未確定事項は[`textbook/Phase-80/Phase-80-4.md`](../textbook/Phase-80/Phase-80-4.md))。
+
+**⑭ `baselines`(合意済みの版。束)**
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | 束ID |
+| project_id | UUID | FK (`projects.id`, ondelete CASCADE), NOT NULL | プロジェクトID |
+| number | INT | NOT NULL | プロジェクトの中の連番(画面では B-1, B-2…) |
+| counterpart | VARCHAR(200) | NULL可 | 合意の相手(自由文。空でもよい) |
+| agreed_at | TIMESTAMP(tz) | NOT NULL | 合意した日時(記録した日時とは別) |
+| memo | TEXT | NOT NULL | 打ち合わせのメモ(空でもよい) |
+| reason | TEXT | NOT NULL | 理由 |
+| recorded_by | UUID | FK (`users.id`, ondelete SET NULL), NULL可 | 記録した開発者 |
+| created_at | TIMESTAMP(tz) | NOT NULL | 記録した日時 |
+
+`UNIQUE(project_id, number)`。束は作った後に直さず消さない(プロジェクトの削除の CASCADE でだけ消える)。記録の誤りは新しい束で直す。
+
+**⑮ `baseline_items`(束の写し)**
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | 写しID |
+| baseline_id | UUID | FK (`baselines.id`, ondelete CASCADE), NOT NULL | 束ID |
+| position | INT | NOT NULL | 並び(文書を上流から → 段階1〜8) |
+| key | VARCHAR(30) | NOT NULL | `requirements`/`external_design`/`test_spec`/`stage:1`〜`stage:8` |
+| included | BOOLEAN | NOT NULL | 束に入っているか(文書はその版があるか、段階は承認の写しがあるか) |
+| state | VARCHAR(20) | NOT NULL | 段階は束を作った時点の状態(`approved`・`reviewing`・`outdated` など)、文書は`present`/`absent` |
+| source_version | INT | NULL可 | 元の版(文書の版の番号、段階の`approved_version`) |
+| content | TEXT | NULL可 | 文書の md(段階はNULL) |
+| model | JSONB | NULL可 | 文書の意味モデル、段階の`approved_model`(段階3は承認したときの ER の写しを含む) |
+| generated_model | VARCHAR(100) | NULL可 | 文書を生成したモデル名 |
+
+`UNIQUE(baseline_id, key)`。入っていない文書・段階も行を作り、そのときの状態を残す。`generated_documents`(直近3版で巡回)・`design_stages`(1行を上書き)から切り離して凍結する。
+
+* **⑯ 変更要求(CR)**: `project_id`・番号・タイトル・内容・背景(出どころの種類・日付・メモ)・対象の要件 ID(JSON)・基準の束・状態(6つ + 取り下げ)・遷移ごとの日時(時系列)・合意の記録(⑭と同じ項目)・予測の一覧・反映した生成の版・結んだレビュー。説明書の要約(本文・照合の結果・確認した人と日時・入力の fingerprint)を持つか、別の表にするかは Phase 84 で決める。
+* **`generated_documents` に足す列**: 反映した CR(`change_request_id`。NULL 可。Phase 85)。生成したモデル名(`generated_model`)は Phase 81 で足した(④)。
 ---
 
 ## 3.3 バックエンド処理・モジュール設計
@@ -373,6 +415,8 @@ backend/
 | **POST** | `/api/v1/auth/google/link` | （※ステージ10、Phase 74）連携の確かめ(`{credential, password}`)。ID トークンを確かめ直し、パスワードが合えば `google_sub` を記録してログインする | 不要 |
 | **POST** | `/api/v1/users/me/password` | （※ステージ10、Phase 75）パスワードの設定(`{new_password}`)。パスワードを持たない(Google だけの)人だけが使い、今のパスワードは求めない(持つ人は409 `PASSWORD_ALREADY_SET`)。規則は変更と同じ(外れれば422)。変更と同じく、その人の refresh を全部失効させ、今の端末に access(本文)と refresh(Cookie)を返す | 必要 |
 | **POST** / **DELETE** | `/api/v1/users/me/google` | （※ステージ10、Phase 75）マイページからの Google の連携(`{credential, current_password}`。メールが違う Google も可。応答は`UserRead`)・解除(応答は`AccessToken`。その人の refresh を全部失効させて今の端末に出し直す)。今のパスワードの不一致は400 `CURRENT_PASSWORD_MISMATCH`、その Google がほかの人と連携済みなら409 `GOOGLE_ACCOUNT_CONFLICT`、パスワードを持たない人は409 `PASSWORD_NOT_SET` | 必要 |
+| **POST** / **GET** | `/api/v1/projects/{id}/baselines` | （※ステージ11、Phase 81）合意済みの版(束)の作成(本文は合意の記録`{counterpart, agreed_at, memo, reason}`。`agreed_at`はタイムゾーン付き、`reason`は必須。201で写しの中身付きの束)・一覧(新しい順。写しは要約だけ)。`GET .../baselines/{number}` で中身(写し)、無ければ404。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`、生成中は409、要件定義書か外部設計書が無ければ409 `BASELINE_DOCUMENTS_MISSING`。直す・消す API は持たない | 必要 |
+| **POST** / **GET** / **PATCH** | `/api/v1/projects/{id}/change-requests` | （※ステージ11、Phase 82〜86 予定）CR の作成・一覧・更新と、状態の遷移(説明済み・合意 / 却下・取り下げ・検証済み)、予測の一覧、説明書の出力と要約、時系列。形は各 Phase で決める | 必要 |
 | **PUT** / **DELETE** | `/api/v1/users/me/api-keys/{provider}` | （※ステージ9、Phase 67）provider ごとの API キーの登録(`{api_key}`。保存の前にモデルの一覧の取得で確かめる。無効は422 `API_KEY_INVALID`、確かめられないときは502 `API_KEY_CHECK_FAILED`、暗号の鍵が無いときは503 `ENCRYPTION_UNAVAILABLE`。試行はユーザーごとに1時間10回)・削除(204。無くても204。選択の行は残す) | 必要 |
 
 > **[Phase 24 で確定 ── 〈簡易モードの設計図の API を削除〉]** 当初〈上の表の`POST /uml/diagrams`(生成)・`/uml/candidates`・`/uml/generation-runs`・`/uml/reflect`・`/uml/embeds`・`/uml/bundle`を提供する〉→ 撤回。理由〈簡易ドキュメントモードの設計図(SCR-007)を削除した([外部設計書](external_design.md) 2.6節の撤回を参照)。残りの`/uml/...`(図の取得・一覧・更新・検証・自動レイアウト・承認・出力、データ辞書)は、詳細設計モードの段階2〜4が使う〉。
@@ -659,6 +703,17 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 * **開発環境の上限**(ステージ9 の申し送り): 開発用の compose(`docker-compose.yml`・`docker-compose.test.yml`・`docker-compose.e2e.yml`)の env で登録・ログインの上限を上げる。本番は `docker-compose.prod.yml` だけで起動するので、今の値のまま。
 * **Phase 74 で確定**: 検証は `app/services/google_identity.py`(`GoogleIdTokenVerifier`。署名・`aud`・期限の不一致は 401、発行者の不一致も 401、公開鍵を取りに行けなければ 502 `GOOGLE_VERIFY_FAILED`)。ルートは `GoogleTokenVerifierDep` で受け、`E2E_FAKE_GOOGLE` なら偽物(`fake:<sub>:<email>`。名前はメールのローカル部、メールは確認済み)、`GOOGLE_CLIENT_ID` が無ければ 503 `GOOGLE_AUTH_UNAVAILABLE`。本人の決定は `GoogleAuthService`(`app/services/google_auth.py`)。メールが確認されていなければ 400 `GOOGLE_EMAIL_NOT_VERIFIED`。**連携の確かめでパスワードが違うときは、ログインと同じ 401**(ユーザー決定。メールのアカウントが無い・パスワードを持たない・無効な人も同じ 401)。**メールは同じだが、そのアカウントが別の Google と連携済み(または、その Google がほかの人と連携済み)なら 409 `GOOGLE_ACCOUNT_CONFLICT`**(ユーザー決定)。同じ Google での連携のやり直しは成功として扱う。`user_name` は `name` を 255文字で切る。`google_ip` の上限は 30回/時(ユーザー決定。`GOOGLE_RATE_LIMIT_PER_IP_PER_HOUR`)。連携の確かめは `google_ip` を数え、検証した後に `enforce_login`(IP と ID トークンのメール)でも数える。**開発用の上限は `docker-compose.yml` の backend の `environment` で4つ(login_ip・login_email・register_ip・google_ip)を 1000回/時**(ユーザー決定。test・e2e のオーバーレイも引き継ぐ)。`docker-compose.e2e.yml` に `E2E_FAKE_GOOGLE: "true"` を足した。マイグレーションは `c4f8a2e6d1b9`(`google_sub` は一意のインデックス `ix_users_google_sub`)。経緯は [`textbook/Phase-74/Phase-74-introduction.md`](../textbook/Phase-74/Phase-74-introduction.md)。
 * **Phase 75 で確定**(マイページ): **パスワードの設定は別の API `POST /users/me/password {new_password}`**(ユーザー決定。Phase 66 の「確かめ方が違う操作は API を分ける」に合わせ、変更の API に確かめを飛ばす分岐を入れない)。パスワードを持つ人は 409 `PASSWORD_ALREADY_SET`。当てる今のパスワードが無いので、ログインの上限では数えない。**パスワードを持たない人のメール・パスワードの変更は 409 `PASSWORD_NOT_SET`**(`app/services/user.py` の `require_password`。それまでの 400 `CURRENT_PASSWORD_MISMATCH` から変えた)。**マイページの連携は `{credential, current_password}` で、メールが違う Google も連携できる**(ユーザー決定。盗まれたセッションで他人の Google を足され、ずっと入られるのを防ぐため、メールの変更と同じく今のパスワードで確かめる)。数え方は `google_ip` → 検証 → `enforce_login`(IP と今のメール)。判定は `GoogleAuthService.link_current`(メールの確認 → パスワードの有無 → 今のパスワード → 連携済みの判定。連携済みの判定と記録は `_attach` でログインの連携と共有)。**解除は `DELETE /users/me/google`、その人の refresh を全部失効させて今の端末に出し直す**(ユーザー決定。Google で入った端末を見分けられないため)。パスワードを持たない人は 409 `PASSWORD_NOT_SET`、連携していなくても成功。設定・変更・解除の失効と出し直しは、ルートの `_reissue_tokens` で共有する。経緯は [`textbook/Phase-75/Phase-75-introduction.md`](../textbook/Phase-75/Phase-75-introduction.md)。
+
+### 11. 合意と変更の一巡(ステージ11)
+
+[外部設計書](external_design.md) 2.14節の内部の方針(Phase 80で確定)。経緯は[`textbook/Phase-80/Phase-80-1.md`](../textbook/Phase-80/Phase-80-1.md)。細部は各 Phase の着手時に決める(未確定事項は[`textbook/Phase-80/Phase-80-4.md`](../textbook/Phase-80/Phase-80-4.md))。
+
+* **凍結**: 合意済みの版は、作る時点の content・model・`approved_model` を⑮に写す。`generated_documents` の巡回(`MAX_VERSIONS_PER_DOC_TYPE`)と `design_stages` の上書きの仕組みは変えない。
+  * **Phase 81 で確定**: `BaselineService`(`app/services/baseline_service.py`)が、詳細設計モード → 生成中でない(文書は`projects.status`、段階は`generation_status`)→ 要件定義書・外部設計書の表示中の版がある、の順に確かめて束を作る(**未承認・古い段階があっても作れる**。ユーザー決定)。段階の行と状態は `DesignStageService.stage_rows` から読む。写しは純粋関数 `document_snapshots`・`stage_snapshots`。文書の版の生成したモデル名は、`generate_documents` が解決した `ResolvedLlm.model` を `create_version` に渡す(注入した LLM は `injected_llm` で `.env` の既定のモデル)。マイグレーションは `9dde45561e02`(列)・`d28026a1521b`(⑭⑮)。
+* **予測**: 基準の束の写しから `build_elements(DesignModels.from_dicts(...))` で要素を作り、対象の要件を `impact_of(elements, Change("req:<ID>"))` に渡す(`app/detailed_design/impact/trace.py`。LLM なし・決定的)。Phase 80 のベースラインで、N2 の予測は正解の6件と一致した。今の再生成の印(`record_document_change` → `marks_for`)は、文書の側の要素(画面・API)に付かない(4件)。
+* **反映**: `POST /projects/{id}/generate` の本文に `cr_id` を足す。`finding_ids` と同じく、文書・段階ごとに CR の内容を修正の指示にしてプロンプトに入れる(`app/review/sendback.py` の `build_instruction` の型)。作った版に `change_request_id` とモデル名を残す。反映の後の印(`impact`)を、CR の予測と並べる。
+* **説明書**: 5節は、CR・束の写し・予測・観点の表(`hearing_points` の open)・要件の出どころ(`assumed`)から決定的に組み立てる。任意の要約は LLM で作り、要件 ID(`FR-`・`NFR-`・`CON-`)と数字を5節と照合する(決定的)。確認した時点の入力の fingerprint を持ち、CR か予測が変わったら「古い」にする(段階の `input_fingerprint` と同じ型)。
+* **検証**: CR に結んだ段階の印(`design_stages.impact` の CR の反映が出どころのもの)がすべて確認済みなら、検証済みにできる。設計レビュー(`review_runs`)は任意で、流したときは CR に結ぶ。
 
 ## 3.4 例外処理・エラーハンドリング・ログ設計
 

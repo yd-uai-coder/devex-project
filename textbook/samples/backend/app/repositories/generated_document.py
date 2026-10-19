@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2,81-1
 # 写経レベル: コア ── バージョニング(直近3件保持・最古削除)はdocs/internal_design.md 3.2節の
 # ドメイン規則をそのままロジック化した箇所であり、慎重な写経・理解が必要。
 # Phase-6-1: list_versions/get_versionはSCR-006向けの定型的な参照系メソッド(写経レベル: 定型)。
@@ -46,8 +46,11 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
         doc_type: str,
         content: str,
         model: dict | None = None,
+        # Phase-81-1:追記
+        generated_model: str | None = None,
     ) -> GeneratedDocument:
-        """新バージョンを追加する(既存行は上書きしない)。`model`は意味モデルを持つ文書だけ。追加後に保管数がMAX_VERSIONS_PER_DOC_TYPEを
+        """新バージョンを追加する(既存行は上書きしない)。`model`は意味モデルを持つ文書だけ。
+        `generated_model`は生成したモデル名。追加後に保管数がMAX_VERSIONS_PER_DOC_TYPEを
         超える場合は、最も古いバージョンから順に削除して上限を維持する。
 
         Phase-6-6:追記 ── 新バージョンは常にis_current=Trueで作成し、既存行のis_currentは全て外す
@@ -68,6 +71,8 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
             content=content,
             # Phase-36-1:追記
             model=model,
+            # Phase-81-1:追記
+            generated_model=generated_model,
             version=next_version,
             is_current=True,  # Phase-6-6:追記
         )

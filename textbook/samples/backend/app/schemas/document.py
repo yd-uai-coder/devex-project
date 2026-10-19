@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2,57-2
+# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2,57-2,81-1
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 import uuid
 from datetime import datetime
@@ -80,6 +80,9 @@ class GeneratedDocumentRead(BaseModel):
     # Phase-6-6:追記 ── 現在表示中のバージョンかどうか(バージョン履歴の「表示中」バッジ用)
     is_current: bool
     # Phase-36-2:追記
+    # Phase-81-1:追記
+    # 生成したモデル名(この列を足す前の版は None)
+    generated_model: str | None = None
     # 要件定義書で model を持つ版だけ(ほかは None)。ルートが requirements_summary で入れる
     requirements: RequirementsSummaryRead | None = None
     # Phase-37-2:追記

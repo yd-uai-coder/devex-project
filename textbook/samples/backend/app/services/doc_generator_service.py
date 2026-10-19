@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -30,6 +30,7 @@
 # Phase-68-4：削除 ── app.review.review_effective
 # Phase-69-1:追記 ── app.uml.generation.failures(ReasonCode, classify_failure)
 # Phase-69-1：削除 ── app.services.errors.LLMQuotaExceededError
+# Phase-81-1:追記 ── app.services.llm_resolver.injected_llm
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -158,7 +159,7 @@ from app.services.errors import (
 from app.services.fix_check_service import FixCheckService
 from app.services.generation_progress import GenerationProgress, GenerationProgressStore
 from app.services.generation_staleness import is_stale
-from app.services.llm_resolver import LlmResolver
+from app.services.llm_resolver import LlmResolver, injected_llm
 from app.services.llm_retry import invoke_structured, invoke_with_retry
 from app.services.project_deletion import (
     commit_if_live,
@@ -656,9 +657,18 @@ class DocGeneratorService:
             # Phase-68-3：更新
             # llm = llm or get_gemini_llm()
             # ↓↓
-            llm = llm or (
-                await LlmResolver(self._session).resolve(user_id, Purpose.GENERATION)
-            ).llm
+            # Phase-81-1：更新
+            # llm = llm or (
+            #     await LlmResolver(self._session).resolve(user_id, Purpose.GENERATION)
+            # ).llm
+            # ↓↓
+            # 版に残すモデル名のため、解決した結果を持つ(渡された LLM は既定のモデルとみなす)
+            resolved = (
+                injected_llm(llm, Purpose.GENERATION)
+                if llm is not None
+                else await LlmResolver(self._session).resolve(user_id, Purpose.GENERATION)
+            )
+            llm = resolved.llm
             # Phase-54-2:追記
             sendback = await ReviewService(self._session).sendback_findings(
                 project_id, finding_ids
@@ -785,7 +795,14 @@ class DocGeneratorService:
                     # Phase-36-2：更新
                     # project_id=project_id, doc_type=doc_type, content=content
                     # ↓↓
-                    project_id=project_id, doc_type=doc_type, content=content, model=model
+                    # Phase-81-1：更新
+                    # project_id=project_id, doc_type=doc_type, content=content, model=model
+                    # ↓↓
+                    project_id=project_id,
+                    doc_type=doc_type,
+                    content=content,
+                    model=model,
+                    generated_model=resolved.model,
                 )
                 generated[doc_type] = content
                 # Phase-43-3:追記
@@ -804,6 +821,8 @@ class DocGeneratorService:
                     doc_type=TEST_SPEC,
                     content=content,
                     model=test_spec.model_dump(mode="json"),
+                    # Phase-81-1:追記
+                    generated_model=resolved.model,
                 )
                 progress.done.append(TEST_SPEC)
             progress.current = None

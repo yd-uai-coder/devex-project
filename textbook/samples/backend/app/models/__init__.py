@@ -1,4 +1,4 @@
-# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2,79(完了後の調整)
+# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2,79(完了後の調整),81-2
 # 写経レベル: 定型 ── re-exportの機械的な追記。
 # Phase-2-1:追記 ── ChatHistory, GeneratedDocument, IntakeFile, Project, PromptTemplate
 # Phase-8-2:追記 ── DataItem, UmlDiagram
@@ -9,6 +9,8 @@
 # Phase-54-5:追記 ── app.models.review.ReviewFixCheck
 # Phase-67-2:追記 ── app.models.user_api_key.UserApiKey, app.models.user_model_setting.UserModelSetting
 # Phase-79(完了後の調整)：削除 ── app.models.conversation(Conversation, Message)
+# Phase-81-2:追記 ── app.models.baseline(Baseline, BaselineItem)
+from app.models.baseline import Baseline, BaselineItem
 from app.models.chat_history import ChatHistory
 from app.models.data_item import DataItem
 from app.models.design_stage import DesignStage
@@ -29,6 +31,9 @@ from app.models.user_model_setting import UserModelSetting
 # ↓↓
 # Phase-8-2:追記 ── DataItem, UmlDiagram
 __all__ = [
+    # Phase-81-2:追記
+    "Baseline",
+    "BaselineItem",
     "ChatHistory",
     # Phase-79(完了後の調整)：削除
     # "Conversation",
