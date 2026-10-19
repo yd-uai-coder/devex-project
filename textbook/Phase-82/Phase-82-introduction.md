@@ -169,7 +169,7 @@ Claude の判断(計画の承認で確定、または作業中):
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- **Phase 83**: CR の対象を、要件 ID の一覧(`target_requirement_ids`)から、要件 ID と変更の種類(内容の変更 / 削除)の組の一覧(`targets`)に変えた。`normalize_targets` は `app/change_requests/targets.py` へ移し、整えるのはスキーマにした。経緯は [83-1](../Phase-83/Phase-83-1.md) と [`q_a.md`](../q_a.md)「Phase 83 開始時」の CR。
 
 ## Phase 完了チェック(#22)
 

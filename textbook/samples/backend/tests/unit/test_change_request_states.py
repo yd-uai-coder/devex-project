@@ -1,7 +1,9 @@
-# 作成：Phase-82-2
+# 作成：Phase-82-2｜更新：Phase-83-1
+# Phase-83-1：更新(docstring: normalize_targets を targets.py のテストへ移した)
+# Phase-83-1：削除 ── app.change_requests.normalize_targets
 """変更要求(CR)の状態と遷移の表のテスト。
 
-SUT: app.change_requests(next_status / allowed_actions / overlaps / normalize_targets と、
+SUT: app.change_requests(next_status / allowed_actions / overlaps と、
      状態・ラベルの表)
 ドライバ: pytest のテスト関数
 スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
@@ -19,7 +21,6 @@ from app.change_requests import (
     Overlap,
     allowed_actions,
     next_status,
-    normalize_targets,
     overlaps,
 )
 
@@ -89,5 +90,6 @@ def test_overlaps_keeps_order_and_skips_disjoint() -> None:
     assert overlaps([], [(1, ["FR-001"])]) == []
 
 
-def test_normalize_targets_strips_and_dedupes() -> None:
-    assert normalize_targets([" FR-002", "FR-001", "FR-002 ", "  "]) == ["FR-002", "FR-001"]
+# Phase-83-1：削除(tests/unit/test_change_request_targets.py へ移した)
+# def test_normalize_targets_strips_and_dedupes() -> None:
+#     assert normalize_targets([" FR-002", "FR-001", "FR-002 ", "  "]) == ["FR-002", "FR-001"]

@@ -318,7 +318,7 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | background_source | VARCHAR(20) | NOT NULL | 背景の出どころの種類(`meeting`/`email`/`document`/`other`) |
 | background_date | DATE | NULL可 | 背景の日付(日の単位) |
 | background_memo | TEXT | NOT NULL | 背景のメモ(空でもよい) |
-| target_requirement_ids | JSONB | NOT NULL | 対象の要件 ID の一覧(基準の束の要件定義書にあるもの) |
+| targets | JSONB | NOT NULL | 対象の一覧`[{requirement_id, kind}]`(要件 ID は基準の束の要件定義書にあるもの。`kind`は`content`(内容の変更)/`delete`(削除))。**(Phase 83)** `target_requirement_ids`(ID の一覧)から変えた。マイグレーション `9f3e279a0210` が既存の行を`content`に写す |
 | adds_requirement | BOOLEAN | NOT NULL | 新しい要件を足す CR か(対象の ID とどちらか一方は要る) |
 | baseline_id | UUID | FK (`baselines.id`, ondelete CASCADE), NOT NULL | 基準の合意済みの版(作成の後は変えない) |
 | status | VARCHAR(20) | NOT NULL | `draft`/`explained`/`agreed`/`rejected`/`applied`/`verified`/`withdrawn` |
@@ -328,10 +328,11 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | decision_memo | TEXT | NULL可 | 打ち合わせのメモ |
 | decision_reason | TEXT | NULL可 | 合意・却下の理由 |
 | decision_recorded_by | UUID | FK (`users.id`, ondelete SET NULL), NULL可 | 判断を記録した開発者 |
+| predicted_impact | JSONB | NULL可 | **(Phase 83)** 判断(合意・却下)の時点の影響の予測(`app/change_requests/prediction.py` の `Prediction.to_dict`。対象・見直しが要る要素・新しい要件が予測に入らない印)。判断の前と取り下げは NULL。マイグレーション `6c43be350866` |
 | created_by | UUID | FK (`users.id`, ondelete SET NULL), NULL可 | 作った開発者 |
 | created_at / updated_at | TIMESTAMP(tz) | NOT NULL | 作成・更新の日時 |
 
-`UNIQUE(project_id, number)`。予測の一覧(Phase 83)・反映した生成の版(Phase 85)・結んだレビュー(Phase 86)の列と、説明書の要約の持ち方(Phase 84)は、その Phase で足す。
+`UNIQUE(project_id, number)`。予測(Phase 83 で `predicted_impact`)・反映した生成の版(Phase 85)・結んだレビュー(Phase 86)の列と、説明書の要約の持ち方(Phase 84)は、その Phase で足す。
 
 **⑰ `change_request_events`(CR の時系列)**
 
@@ -458,9 +459,10 @@ backend/
 | **POST** | `/api/v1/users/me/password` | （※ステージ10、Phase 75）パスワードの設定(`{new_password}`)。パスワードを持たない(Google だけの)人だけが使い、今のパスワードは求めない(持つ人は409 `PASSWORD_ALREADY_SET`)。規則は変更と同じ(外れれば422)。変更と同じく、その人の refresh を全部失効させ、今の端末に access(本文)と refresh(Cookie)を返す | 必要 |
 | **POST** / **DELETE** | `/api/v1/users/me/google` | （※ステージ10、Phase 75）マイページからの Google の連携(`{credential, current_password}`。メールが違う Google も可。応答は`UserRead`)・解除(応答は`AccessToken`。その人の refresh を全部失効させて今の端末に出し直す)。今のパスワードの不一致は400 `CURRENT_PASSWORD_MISMATCH`、その Google がほかの人と連携済みなら409 `GOOGLE_ACCOUNT_CONFLICT`、パスワードを持たない人は409 `PASSWORD_NOT_SET` | 必要 |
 | **POST** / **GET** | `/api/v1/projects/{id}/baselines` | （※ステージ11、Phase 81）合意済みの版(束)の作成(本文は合意の記録`{counterpart, agreed_at, memo, reason}`。`agreed_at`はタイムゾーン付き、`reason`は必須。201で写しの中身付きの束)・一覧(新しい順。写しは要約だけ)。`GET .../baselines/{number}` で中身(写し)、無ければ404。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`、生成中は409、要件定義書か外部設計書が無ければ409 `BASELINE_DOCUMENTS_MISSING`。直す・消す API は持たない | 必要 |
-| **POST** / **GET** | `/api/v1/projects/{id}/change-requests` | （※ステージ11、Phase 82）CR の作成(本文`{title, content, background_source, background_date, background_memo, target_requirement_ids, adds_requirement, baseline_number}`。`background_source`は`meeting`/`email`/`document`/`other`、`baseline_number`を省くと最新の束。201で詳細)・一覧(新しい順。中身と時系列なし)。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`、束が無ければ409 `CR_BASELINE_MISSING`、番号の束が無ければ404、基準の束の要件定義書に無い要件 ID・対象が空で新規の印も無いは422 `CR_TARGET_UNKNOWN` | 必要 |
+| **POST** / **GET** | `/api/v1/projects/{id}/change-requests` | （※ステージ11、Phase 82）CR の作成(本文`{title, content, background_source, background_date, background_memo, targets, adds_requirement, baseline_number}`。`targets`は`[{requirement_id, kind}]`(`kind`は`content`/`delete`、省くと`content`。同じ要件を違う種類で2回は422)。`background_source`は`meeting`/`email`/`document`/`other`、`baseline_number`を省くと最新の束。201で詳細)・一覧(新しい順。中身と時系列なし)。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`、束が無ければ409 `CR_BASELINE_MISSING`、番号の束が無ければ404、基準の束の要件定義書に無い要件 ID・対象が空で新規の印も無いは422 `CR_TARGET_UNKNOWN` | 必要 |
 | **GET** / **PATCH** | `/api/v1/projects/{id}/change-requests/{number}` | （※ステージ11、Phase 82）CR の詳細(中身・合意の記録`decision`・時系列`events`・重なり`overlapping`・写しの元`derived_from_number`と先`derived_numbers`・今できる操作`allowed_actions`。無ければ404)・中身の更新(送った項目だけ。下書き・説明済みだけで、説明済みは下書きに戻る。ほかは409 `CR_INVALID_TRANSITION`) | 必要 |
-| **POST** | `/api/v1/projects/{id}/change-requests/{number}/explain` ・ `/decision` ・ `/withdraw` ・ `/copy` | （※ステージ11、Phase 82）状態の遷移。説明済みにする(下書きから)・合意 / 却下(説明済みから。本文は合意の記録`{decision, decided_at, counterpart, memo, reason}`)・取り下げ(下書き・説明済みから。本文`{reason}`は任意)・却下した CR の写し(新しい番号の下書き。201)。許されない遷移は409 `CR_INVALID_TRANSITION`。反映済み・検証済み・予測・説明書は Phase 83〜86 で足す | 必要 |
+| **POST** | `/api/v1/projects/{id}/change-requests/{number}/explain` ・ `/decision` ・ `/withdraw` ・ `/copy` | （※ステージ11、Phase 82）状態の遷移。説明済みにする(下書きから)・合意 / 却下(説明済みから。本文は合意の記録`{decision, decided_at, counterpart, memo, reason}`)・取り下げ(下書き・説明済みから。本文`{reason}`は任意)・却下した CR の写し(新しい番号の下書き。201)。許されない遷移は409 `CR_INVALID_TRANSITION`。反映済み・検証済み・説明書は Phase 84〜86 で足す | 必要 |
+| **GET** | `/api/v1/projects/{id}/change-requests/{number}/impact` | （※ステージ11、Phase 83）CR の影響の予測。基準の束の写しから、対象の要件ごとに見直しが要る要素をたどり、1つの一覧にまとめる(`targets`(種類・束の文)・`items`(`key`・`kind`・`stage`・`label`・`path`・`reason`・届いた対象`requirement_ids`)・`unpredicted_new_requirement`・束に入っていない文書と段階`excluded`)。判断の後は判断の時点で保存したもの(`saved: true`)。無ければ404 | 必要 |
 | **PUT** / **DELETE** | `/api/v1/users/me/api-keys/{provider}` | （※ステージ9、Phase 67）provider ごとの API キーの登録(`{api_key}`。保存の前にモデルの一覧の取得で確かめる。無効は422 `API_KEY_INVALID`、確かめられないときは502 `API_KEY_CHECK_FAILED`、暗号の鍵が無いときは503 `ENCRYPTION_UNAVAILABLE`。試行はユーザーごとに1時間10回)・削除(204。無くても204。選択の行は残す) | 必要 |
 
 > **[Phase 24 で確定 ── 〈簡易モードの設計図の API を削除〉]** 当初〈上の表の`POST /uml/diagrams`(生成)・`/uml/candidates`・`/uml/generation-runs`・`/uml/reflect`・`/uml/embeds`・`/uml/bundle`を提供する〉→ 撤回。理由〈簡易ドキュメントモードの設計図(SCR-007)を削除した([外部設計書](external_design.md) 2.6節の撤回を参照)。残りの`/uml/...`(図の取得・一覧・更新・検証・自動レイアウト・承認・出力、データ辞書)は、詳細設計モードの段階2〜4が使う〉。
@@ -756,6 +758,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * **Phase 81 で確定**: `BaselineService`(`app/services/baseline_service.py`)が、詳細設計モード → 生成中でない(文書は`projects.status`、段階は`generation_status`)→ 要件定義書・外部設計書の表示中の版がある、の順に確かめて束を作る(**未承認・古い段階があっても作れる**。ユーザー決定)。段階の行と状態は `DesignStageService.stage_rows` から読む。写しは純粋関数 `document_snapshots`・`stage_snapshots`。文書の版の生成したモデル名は、`generate_documents` が解決した `ResolvedLlm.model` を `create_version` に渡す(注入した LLM は `injected_llm` で `.env` の既定のモデル)。マイグレーションは `9dde45561e02`(列)・`d28026a1521b`(⑭⑮)。
 * **CR**: **Phase 82 で確定**: `ChangeRequestService`(`app/services/change_request_service.py`)が、作成(詳細設計モード → 基準の束 → 対象の確かめ)・更新・状態の遷移・却下した CR の写しを行う。遷移の可否は純粋な表 `app/change_requests/states.py`(`TRANSITIONS`・`next_status`・`allowed_actions`)で決め、`ChangeRequestRepository.add_event` が時系列(⑰)に1行足して状態をそろえる。対象の要件 ID は、基準の束の要件定義書の写しの `rows` で確かめる(`baseline_requirement_ids`・`checked_targets`)。重なりは、進行中(`ACTIVE_STATUSES`)のほかの CR と対象を突き合わせる純粋関数 `overlaps`。合意の記録の項目(相手・メモ・理由)は `app/schemas/agreement.py` の `AgreementNotes` を、束の作成(`BaselineCreate`)と CR の判断(`ChangeRequestDecision`)で共有する。マイグレーションは `e1cfb47f1d13`(⑯⑰)。
 * **予測**: 基準の束の写しから `build_elements(DesignModels.from_dicts(...))` で要素を作り、対象の要件を `impact_of(elements, Change("req:<ID>"))` に渡す(`app/detailed_design/impact/trace.py`。LLM なし・決定的)。Phase 80 のベースラインで、N2 の予測は正解の6件と一致した。今の再生成の印(`record_document_change` → `marks_for`)は、文書の側の要素(画面・API)に付かない(4件)。
+  * **Phase 83 で確定**: 純粋関数 `app/change_requests/prediction.py`(`baseline_models` が束の写しの key → model から `DesignModels` を作り、段階3の写しの `ER_SNAPSHOT_KEY` を ER の定義にする。`predict` が対象ごとに `impact_of` を呼び、同じ要素は短い道を残して届いた対象を集める)。変更の種類(`app/change_requests/targets.py`)によらず `Change(kind="content")` でたどる(`to_trace_changes` と同じ規則)。`ChangeRequestService.impact` は保存があればそれ、無ければ基準の束から求め、`decide` が判断と同じトランザクションで `predicted_impact` に書く。`ER_SNAPSHOT_KEY` は `app/services/design_stage_service.py` から `app/detailed_design/data_model.py` へ移した(純粋層の予測が使うため)。
 * **反映**: `POST /projects/{id}/generate` の本文に `cr_id` を足す。`finding_ids` と同じく、文書・段階ごとに CR の内容を修正の指示にしてプロンプトに入れる(`app/review/sendback.py` の `build_instruction` の型)。作った版に `change_request_id` とモデル名を残す。反映の後の印(`impact`)を、CR の予測と並べる。
 * **説明書**: 5節は、CR・束の写し・予測・観点の表(`hearing_points` の open)・要件の出どころ(`assumed`)から決定的に組み立てる。任意の要約は LLM で作り、要件 ID(`FR-`・`NFR-`・`CON-`)と数字を5節と照合する(決定的)。確認した時点の入力の fingerprint を持ち、CR か予測が変わったら「古い」にする(段階の `input_fingerprint` と同じ型)。
 * **検証**: CR に結んだ段階の印(`design_stages.impact` の CR の反映が出どころのもの)がすべて確認済みなら、検証済みにできる。設計レビュー(`review_runs`)は任意で、流したときは CR に結ぶ。

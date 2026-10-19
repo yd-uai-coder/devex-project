@@ -1,16 +1,19 @@
-# 作成：Phase-82-3
+# 作成：Phase-82-3｜更新：Phase-83-3
 from typing import Annotated
 
 from fastapi import APIRouter, Path, status
 
+# Phase-83-3:追記 ── app.schemas.change_request.ChangeRequestImpactRead, app.schemas.change_request.ExcludedItemRead
 from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
 from app.schemas.change_request import (
     ChangeRequestCreate,
     ChangeRequestDecision,
+    ChangeRequestImpactRead,
     ChangeRequestRead,
     ChangeRequestSummaryRead,
     ChangeRequestUpdate,
     ChangeRequestWithdraw,
+    ExcludedItemRead,
 )
 from app.services.change_request_service import ChangeRequestService, ChangeRequestView
 
@@ -60,6 +63,22 @@ async def get_change_request(
 ) -> ChangeRequestRead:
     """CR 1つ(中身・合意の記録・時系列・重なり・写しの元と先)。無ければ404。"""
     return _read(await ChangeRequestService(session).get(current_project, number))
+
+
+# Phase-83-3:追記
+@router.get("/{number}/impact", response_model=ChangeRequestImpactRead)
+async def get_change_request_impact(
+    number: ChangeRequestNumber, session: SessionDep, current_project: CurrentProjectDep
+) -> ChangeRequestImpactRead:
+    """CR の影響の予測(基準の束から、対象の要件ごとに見直しが要る要素)。判断の後は判断の時点で
+    保存したもの。無ければ404。"""
+    view = await ChangeRequestService(session).impact(current_project, number)
+    return ChangeRequestImpactRead.build(
+        view.change_request,
+        view.prediction,
+        saved=view.saved,
+        excluded=[ExcludedItemRead(key=e.key, state=e.state) for e in view.excluded],
+    )
 
 
 @router.patch("/{number}", response_model=ChangeRequestRead)

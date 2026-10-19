@@ -1,4 +1,4 @@
-# 作成：Phase-82-2
+# 作成：Phase-82-2｜更新：Phase-83-1
 """変更要求(CR)の状態と遷移の表(純粋関数。docs/external_design.md 2.14節)。
 
 状態: 下書き → 説明済み → 合意 / 却下 → 反映済み → 検証済み。合意の前(下書き・説明済み)なら
@@ -97,11 +97,12 @@ def overlaps(
     return found
 
 
-def normalize_targets(requirement_ids: Iterable[str]) -> list[str]:
-    """対象の要件 ID の前後の空白を除き、重複を除く(最初に出た順)。空の ID は捨てる。"""
-    seen: dict[str, None] = {}
-    for req_id in requirement_ids:
-        value = req_id.strip()
-        if value:
-            seen.setdefault(value, None)
-    return list(seen)
+# Phase-83-1：削除(app/change_requests/targets.py へ移し、変更の種類を持つ形にした)
+# def normalize_targets(requirement_ids: Iterable[str]) -> list[str]:
+#     """対象の要件 ID の前後の空白を除き、重複を除く(最初に出た順)。空の ID は捨てる。"""
+#     seen: dict[str, None] = {}
+#     for req_id in requirement_ids:
+#         value = req_id.strip()
+#         if value:
+#             seen.setdefault(value, None)
+#     return list(seen)

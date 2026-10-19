@@ -1,4 +1,4 @@
-# 作成：Phase-82-1
+# 作成：Phase-82-1｜更新：Phase-83-1
 import uuid
 from collections.abc import Collection
 from datetime import UTC, date, datetime
@@ -41,7 +41,10 @@ class ChangeRequestRepository(CRUDRepository[ChangeRequest]):
         action: str,
         background_date: date | None = None,
         background_memo: str = "",
-        target_requirement_ids: list[str] | None = None,
+        # Phase-83-1：更新
+        # target_requirement_ids: list[str] | None = None,
+        # ↓↓
+        targets: list[dict] | None = None,
         adds_requirement: bool = False,
         derived_from_id: uuid.UUID | None = None,
         created_by: uuid.UUID | None = None,
@@ -59,7 +62,10 @@ class ChangeRequestRepository(CRUDRepository[ChangeRequest]):
             background_source=background_source,
             background_date=background_date,
             background_memo=background_memo,
-            target_requirement_ids=list(target_requirement_ids or []),
+            # Phase-83-1：更新
+            # target_requirement_ids=list(target_requirement_ids or []),
+            # ↓↓
+            targets=list(targets or []),
             adds_requirement=adds_requirement,
             status=status,
             derived_from_id=derived_from_id,

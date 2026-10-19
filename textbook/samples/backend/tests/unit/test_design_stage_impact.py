@@ -1,4 +1,5 @@
-# 作成：Phase-43-3｜更新：Phase-43-4,46-2
+# 作成：Phase-43-3｜更新：Phase-43-4,46-2,83-2
+# Phase-83-2：更新 ── ER_SNAPSHOT_KEY の import 元を app.services.design_stage_service から app.detailed_design へ
 """変更の影響の記録(段階の承認・文書の版の切り替え)と、確認済み・承認し直しの条件のテスト。
 
 SUT: DesignStageService.approve(印の記録と承認を止める条件)/ record_document_change /
@@ -36,6 +37,7 @@ from app.api.routes.design_stages import (
     list_design_stages,
     review_impact_marks,
 )
+from app.detailed_design import ER_SNAPSHOT_KEY
 from app.detailed_design.impact import Mark, StageImpact, blocking_marks
 from app.models.design_stage import DesignStage
 from app.models.project import Project
@@ -43,7 +45,7 @@ from app.repositories.design_stage import DesignStageRepository
 from app.repositories.generated_document import GeneratedDocumentRepository
 from app.repositories.uml_diagram import UmlDiagramRepository
 from app.schemas.design_stage import ImpactReview
-from app.services.design_stage_service import ER_SNAPSHOT_KEY, DesignStageService
+from app.services.design_stage_service import DesignStageService
 from app.services.doc_generator_service import DocGeneratorService
 from app.services.errors import DesignStageUnreviewedImpactError
 

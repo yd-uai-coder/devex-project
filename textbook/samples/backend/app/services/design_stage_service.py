@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整),56-2,69-2,81-3
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整),56-2,69-2,81-3,83-2
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
@@ -20,6 +20,7 @@
 # Phase-46-2：削除 ── app.detailed_design.stages.STAGE_INPUTS
 # Phase-56-2:追記 ── collections.abc.Sequence
 # Phase-69-2:追記 ── collections.abc.Iterable, app.models.review.ReviewFinding, app.repositories.review.ReviewRunRepository, app.schemas.design_stage.GenerationFindingRead
+# Phase-83-2:追記 ── app.detailed_design.ER_SNAPSHOT_KEY(このファイルの定数を app/detailed_design/data_model.py へ移した)
 import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict
@@ -30,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.detailed_design import (
     DATA_MODEL_STAGE,
+    ER_SNAPSHOT_KEY,
     ER_SUBJECT,
     PLAN_STAGE,
     PROCEDURE_DOC_STAGE,
@@ -150,9 +152,10 @@ IMPACT_DOCUMENTS: dict[str, tuple[str, ...]] = {
     "detailed": ("requirements", "external_design"),
     "simple": ("requirements", "external_design", "internal_design", "implementation_plan"),
 }
-# 段階3の写しに添える ER のテーブル定義の欄(ER は段階の model の外の図にあるため、承認したときの
-# 定義を写しに残し、テーブルの内容(列の追加など)の差分を取れるようにする)
-ER_SNAPSHOT_KEY = "er_snapshot"
+# Phase-83-2：削除(app/detailed_design/data_model.py へ移した。予測の純粋関数も使うため)
+# # 段階3の写しに添える ER のテーブル定義の欄(ER は段階の model の外の図にあるため、承認したときの
+# # 定義を写しに残し、テーブルの内容(列の追加など)の差分を取れるようにする)
+# ER_SNAPSHOT_KEY = "er_snapshot"
 
 
 class DesignStageService:
