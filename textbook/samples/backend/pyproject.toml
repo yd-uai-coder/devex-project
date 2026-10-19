@@ -1,7 +1,10 @@
 [project]
 name = "backend"
 version = "0.1.0"
-description = "FastAPI + LangChain + LangGraph backend"
+# Phase-79(完了後の調整)：更新
+# description = "FastAPI + LangChain + LangGraph backend"
+# ↓↓
+description = "Devex backend (FastAPI + LangChain)"
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.19.1",
@@ -18,8 +21,9 @@ dependencies = [
     # Phase-52-2:追記
     "langchain-anthropic>=1.7.6",
     "langchain-google-genai>=4.3.3",
-    "langchain-tavily>=0.2.18",
-    "langgraph>=1.2.11",
+    # Phase-79(完了後の調整)：削除
+    # "langchain-tavily>=0.2.18",
+    # "langgraph>=1.2.11",
     "pwdlib[argon2]>=0.3.1",
     "pydantic[email]>=2.13.4",
     "pydantic-settings>=2.15.0",
@@ -33,7 +37,8 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0",
     # Phase-6-5:追記
     "structlog>=25.1.0",
-    "tavily-python>=0.7.27",
+    # Phase-79(完了後の調整)：削除
+    # "tavily-python>=0.7.27",
     "uvicorn[standard]>=0.52.1",
 ]
 
@@ -111,18 +116,22 @@ typeCheckingMode = "standard"
 # ]
 # ↓↓
 # 既知の型債務。新規コードは standard で厳格に保ちつつ、下記は当面診断を抑制する。
-#   - app/ai/graph/nodes.py            : LangGraph の GraphState を部分辞書で構築する箇所
-#   - tests/unit/test_ai_graph_nodes.py: 同上(ノードをテストから直接呼ぶため部分辞書を渡す)
-#   - app/repositories/conversation.py : owner スコープの get_by_id override(設計上の割り切り)
-#   - app/repositories/project.py      : 同上(Phase 2-1、Projectも所有者スコープでget_by_idを上書き)
+# Phase-79(完了後の調整)：更新
+# #   - app/ai/graph/nodes.py            : LangGraph の GraphState を部分辞書で構築する箇所
+# #   - tests/unit/test_ai_graph_nodes.py: 同上(ノードをテストから直接呼ぶため部分辞書を渡す)
+# #   - app/repositories/conversation.py : owner スコープの get_by_id override(設計上の割り切り)
+# #   - app/repositories/project.py      : 同上
+# ↓↓
+#   - app/repositories/project.py      : owner スコープの get_by_id override(設計上の割り切り)
 #   - app/repositories/data_item.py    : 同上(Phase 8、project_idスコープ)
 #   - app/repositories/uml_diagram.py  : 同上(Phase 8、project_idスコープ)
 #   - app/repositories/uml_generation_run.py : 同上(Phase 10、project_idスコープ)
 #   - tests/unit/test_auth_service.py  : テスト用 FakeRedis の型付け未整備
 ignore = [
-    "app/ai/graph/nodes.py",
-    "tests/unit/test_ai_graph_nodes.py",
-    "app/repositories/conversation.py",
+    # Phase-79(完了後の調整)：削除
+    # "app/ai/graph/nodes.py",
+    # "tests/unit/test_ai_graph_nodes.py",
+    # "app/repositories/conversation.py",
     "app/repositories/project.py",
     # Phase-8-2:追記(Phase 8時点でsamplesへの反映が漏れていたものをPhase 10で補完)
     "app/repositories/data_item.py",

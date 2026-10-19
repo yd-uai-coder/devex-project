@@ -16,7 +16,7 @@ import tamaguiConfig from "../../tamagui.config";
 // after the page's HTML (including this app's colors) has already painted
 // once in the light-mode default. That's what caused the brief flash of
 // light mode on every reload even after Header stopped depending on React
-// state for its colors (see theme-gradients.ts). useServerInsertedHTML
+// state for its colors (Header reads them from CSS variables). useServerInsertedHTML
 // (the mechanism Next's own CSS-in-JS guide uses for styled-jsx/
 // styled-components) injects raw HTML directly into the stream instead of
 // going through React's tree reconciliation, so this genuinely runs as a

@@ -1,4 +1,4 @@
-# 更新：Phase-4-3,6-5,15-4,52-2,54-5,67-1,68-1,74-2
+# 更新：Phase-4-3,6-5,15-4,52-2,54-5,67-1,68-1,74-2,79(完了後の調整)
 # CL開発以前のスターターテンプレート由来のファイル(CLAUDE.md #29)。本Phaseまで
 # サンプルとして写経対象になったことが無く、今回が初めてのsamples反映(以下は差分のみでなく
 # 全文)。E2E_FAKE_LLM・LLM_TIMEOUT_SECONDS以外はdevex-api/backend/app/core/config.pyの
@@ -51,7 +51,8 @@ class Settings(BaseSettings):
 
     # AI
     GOOGLE_API_KEY: str | None = None
-    TAVILY_API_KEY: str | None = None
+    # Phase-79(完了後の調整)：削除
+    # TAVILY_API_KEY: str | None = None
     # Phase-5-2：更新(実GOOGLE_API_KEYでの動作確認で、gemini-2.5-flash-liteが新規利用不可
     # (404 NOT_FOUND)と判明。APIエラーメッセージが後継としてgemini-3.5-flash-liteを案内)
     # GEMINI_MODEL: str = "gemini-2.5-flash"

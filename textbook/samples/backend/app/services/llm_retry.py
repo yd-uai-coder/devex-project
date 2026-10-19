@@ -1,4 +1,4 @@
-# 作成：Phase-2-5｜更新：Phase-4-1,6-5,10-5,15-3,15-4,24(T2同期),35-2,36-2,52-2,68-1
+# 作成：Phase-2-5｜更新：Phase-4-1,6-5,10-5,15-3,15-4,24(T2同期),35-2,36-2,52-2,68-1,79(完了後の調整)
 # 写経レベル: コア(Phase 2-5) ── docs/implementation_plan.md 4.4節リスク1(リトライ・クォータ処理)の実装箇所。chat_service.py/doc_generator_service.pyが共有する。
 # Phase-6-5:追記 ── time, structlog, langchain_core.messages.BaseMessage
 # Phase-10-5:追記 ── app.services.errors.LLMTokenLimitError
@@ -28,7 +28,10 @@ logger = structlog.get_logger(__name__)
 # Phase-15-4：更新
 # # app/services/chat.py(既存の汎用デモ)の_invoke_with_retryと同じ値を踏襲する。
 # ↓↓
-# 汎用チャット(app/services/chat.py)も含め、全てのLLM呼び出しがこの値を使う。
+# Phase-79(完了後の調整)：更新
+# # 汎用チャット(app/services/chat.py)も含め、全てのLLM呼び出しがこの値を使う。
+# ↓↓
+# 全てのLLM呼び出しがこの値を使う。
 MAX_GENERATION_ATTEMPTS = 3
 RETRY_DELAY_SECONDS = 1.0
 
@@ -204,9 +207,9 @@ def _is_overloaded_error(exc: Exception) -> bool:
 # # Phase-10-5:追記
 # ↓↓
 def _is_quota_error(exc: Exception) -> bool:
-    """例外が外部APIのクォータ超過を示すものかどうかを判定する。Gemini APIの429と、Tavily(検索)の
-    利用上限超過(Tavilyは汎用チャットのワークフローが使う。Phase 15で汎用チャットの独自の
-    再試行をこの共通の部品へ寄せたときに足した)と、Anthropic APIの429(設計レビュー。Phase 52)。"""
+    """例外が外部APIのクォータ超過を示すものかどうかを判定する。Gemini APIの429と、
+    Anthropic APIの429(設計レビュー。Phase 52)。Tavily(検索)の利用上限超過の判定は、汎用チャットを
+    削除したときに外した(Phase 79 の完了後の調整)。"""
     # Phase-52-2:追記
     try:
         from anthropic import RateLimitError as AnthropicRateLimitError
@@ -219,21 +222,31 @@ def _is_quota_error(exc: Exception) -> bool:
     except ImportError:
         # google-genaiが未インストールの環境向けフォールバック
         GoogleAPIError = None
-    try:
-        from tavily import UsageLimitExceededError as TavilyUsageLimitExceededError
-    except ImportError:
-        # tavily-pythonが未インストールの環境向けフォールバック
-        TavilyUsageLimitExceededError = None
+    # Phase-79(完了後の調整)：削除
+    # try:
+    #     from tavily import UsageLimitExceededError as TavilyUsageLimitExceededError
+    # except ImportError:
+    #     # tavily-pythonが未インストールの環境向けフォールバック
+    #     TavilyUsageLimitExceededError = None
 
-    if (
+    # Phase-79(完了後の調整)：更新
+    # if (
+    #     GoogleAPIError is not None
+    #     and isinstance(exc, GoogleAPIError)
+    #     and getattr(exc, "code", None) == 429
+    # ):
+    #     return True
+    # return TavilyUsageLimitExceededError is not None and isinstance(
+    #     exc, TavilyUsageLimitExceededError
+    # )
+    # ↓↓
+    return (
         GoogleAPIError is not None
         and isinstance(exc, GoogleAPIError)
         and getattr(exc, "code", None) == 429
-    ):
-        return True
-    return TavilyUsageLimitExceededError is not None and isinstance(
-        exc, TavilyUsageLimitExceededError
     )
+
+
 def _is_input_token_limit_error(exc: Exception) -> bool:
     """例外が「入力トークン数が上限を超えた」を示すものかどうかを判定する。
     Gemini APIはこの場合に専用のエラーコードを持たず、400とメッセージで伝えるため、

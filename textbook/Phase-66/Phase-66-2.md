@@ -21,7 +21,7 @@
 | [`tests/fixtures/fake_redis.py`](../samples/backend/tests/fixtures/fake_redis.py) | 更新 | `exists`・`scan_iter`・複数の鍵の `delete` |
 | [`tests/unit/test_password_policy.py`](../samples/backend/tests/unit/test_password_policy.py) | 新規 | 規則と `PasswordUpdate` の 422 |
 | [`tests/unit/test_account.py`](../samples/backend/tests/unit/test_account.py) | 新規 | サービス・失効・ルート |
-| [`tests/unit/test_generic_chat_and_refresh.py`](../samples/backend/tests/unit/test_generic_chat_and_refresh.py) | 更新 | Cookie の寿命のテストを `refresh_cookie` に |
+| `tests/unit/test_generic_chat_and_refresh.py` | 更新 | Cookie の寿命のテストを `refresh_cookie` に |
 | [`tests/integration/test_account_flow.py`](../samples/backend/tests/integration/test_account_flow.py) | 新規 | 実際の Postgres と Redis で変更と失効 |
 
 ## 1. API の形(3つに分ける)

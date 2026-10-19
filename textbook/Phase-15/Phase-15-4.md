@@ -17,10 +17,10 @@
 | [`app/core/config.py`](../samples/backend/app/core/config.py) | 更新 | 定型 | `REFRESH_TOKEN_EXPIRE_DAYS = 14` |
 | [`app/api/routes/auth.py`](../samples/backend/app/api/routes/auth.py) | 更新 | 定型 | Cookie の `max_age` を設定から導く |
 | [`app/services/llm_retry.py`](../samples/backend/app/services/llm_retry.py) | 更新 | 定型 | `_is_quota_error` に Tavily の利用上限超過を足す |
-| [`app/services/chat.py`](../samples/backend/app/services/chat.py) | 更新 | 定型 | 独自の再試行を削除し、`invoke_with_retry` を使う(samples へは初めて載せた) |
+| `app/services/chat.py` | 更新 | 定型 | 独自の再試行を削除し、`invoke_with_retry` を使う(samples へは初めて載せた) |
 | `app/infrastructure/http.py` | 削除 | ── | samples には元から無い |
 | ── ここからテスト ── | | | |
-| [`tests/unit/test_generic_chat_and_refresh.py`](../samples/backend/tests/unit/test_generic_chat_and_refresh.py) | 新規 | 定型 | Tavily の上限超過の判定、汎用チャットのクォータ超過、Cookie の寿命 |
+| `tests/unit/test_generic_chat_and_refresh.py` | 新規 | 定型 | Tavily の上限超過の判定、汎用チャットのクォータ超過、Cookie の寿命 |
 
 本体ではあわせて次の2つも直した。
 

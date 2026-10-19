@@ -1,11 +1,12 @@
-# 更新：Phase-2-3
+# 更新：Phase-2-3,79(完了後の調整)
 from pydantic import BaseModel, Field
-
-
-class FinalAnswer(BaseModel):
-    """LLMに最終回答を構造化出力させるためのスキーマ。"""
-
-    answer: str = Field(description="ユーザーの質問に対する最終的な回答本文")
+# Phase-79(完了後の調整)：削除
+#
+#
+# class FinalAnswer(BaseModel):
+#     """LLMに最終回答を構造化出力させるためのスキーマ。"""
+#
+#     answer: str = Field(description="ユーザーの質問に対する最終的な回答本文")
 
 
 # Phase-2-3:追記

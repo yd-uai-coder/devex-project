@@ -16,7 +16,7 @@
 | [devex-api](https://github.com/yd-uai-coder/devex-api)                  | バックエンド(FastAPI + LangChain + PostgreSQL + Redis)     |
 | [devex-ui](https://github.com/yd-uai-coder/devex-ui)                    | フロントエンド(Next.js + Tamagui)                           |
 
-`devex-api`・`devex-ui` は、汎用のテンプレートから作り始めたため、テンプレート由来のデモの部分も残っています(各 README を参照)。
+`devex-api`・`devex-ui` は、自作の汎用テンプレートから作り始めました。Devex で使わないテンプレートのデモ(汎用チャット・UI のデモ集・DB)は削除しています(各 README の「出自」を参照)。
 
 ## 何を解決するか
 
@@ -103,7 +103,7 @@ flowchart LR
 | [devex-api](https://github.com/yd-uai-coder/devex-api)                  | バックエンド(FastAPI + LangChain + PostgreSQL + Redis)     |
 | [devex-ui](https://github.com/yd-uai-coder/devex-ui)                    | フロントエンド(Next.js + Tamagui)                           |
 
-`devex-api`・`devex-ui` は、汎用のテンプレートから作り始めたため、テンプレート由来のデモの部分も残っています(各 README を参照)。
+`devex-api`・`devex-ui` は、自作の汎用テンプレートから作り始めました。Devex で使わないテンプレートのデモ(汎用チャット・UI のデモ集・DB)は削除しています(各 README の「出自」を参照)。
 
 ## 技術スタック
 
@@ -123,11 +123,11 @@ flowchart LR
 | 項目              | 数                                             |
 | --------------- | --------------------------------------------- |
 | バックエンドのコード      | Python 約3.4万行(テストを除く)                         |
-| バックエンドのテスト      | 177 ファイル・約1,400 ケース                           |
-| フロントエンドのコード     | TypeScript 約3.1万行(テストを除く。うち Devex の画面 約2.3万行) |
-| フロントエンドのテスト     | 166 ファイル・約1,000 ケース                           |
-| E2E(Playwright) | 4 シナリオ・9 テスト                                  |
-| DB マイグレーション     | 29                                            |
+| バックエンドのテスト | 176 ファイル・約1,500 ケース |
+| フロントエンドのコード | TypeScript 約2.6万行(テストを除く。うち Devex の画面 約2.3万行) |
+| フロントエンドのテスト | 161 ファイル・約1,000 ケース |
+| E2E(Playwright) | 4 ファイル・9 テスト |
+| DB マイグレーション | 30 |
 | コミット            | 3リポジトリで計 約220                                 |
 
 ## 本人の役割と AI の使い方

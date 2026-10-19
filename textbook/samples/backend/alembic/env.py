@@ -1,4 +1,4 @@
-# 更新：Phase-2-1,8-2
+# 更新：Phase-2-1,8-2,79(完了後の調整)
 # 写経レベル: 定型 ── モデルをBase.metadataに登録するためのimport追記のみ。
 import asyncio
 from logging.config import fileConfig
@@ -16,13 +16,12 @@ from app.core.database import Base
 # from app.models import Conversation, Message, User  # noqa: F401
 # ↓↓
 # Phase-8-2:追記 ── DataItem, UmlDiagram
+# Phase-79(完了後の調整)：削除 ── Conversation, Message
 from app.models import (  # noqa: F401
     ChatHistory,
-    Conversation,
     DataItem,
     GeneratedDocument,
     IntakeFile,
-    Message,
     Project,
     PromptTemplate,
     UmlDiagram,

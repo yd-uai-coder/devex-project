@@ -14,7 +14,6 @@
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
     "@react-oauth/google": "^0.13.5",
-    "@tamagui/colors": "^2.6.0",
     "@tamagui/config": "^2.6.0",
     "@tamagui/next-theme": "^2.6.0",
     "@tamagui/themes": "^2.6.0",
@@ -29,7 +28,6 @@
     "react-native-web": "^0.21.2",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
-    "server-only": "^0.0.1",
     "tamagui": "^2.6.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"

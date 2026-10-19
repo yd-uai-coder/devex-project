@@ -1,4 +1,4 @@
-# 作成：Phase-1-1｜更新：Phase-6-5
+# 作成：Phase-1-1｜更新：Phase-6-5,79(完了後の調整)
 import os
 
 # 重要：ここでの環境変数設定は、app.core.databaseなど設定値を読むモジュールがimportされるより
@@ -11,7 +11,8 @@ os.environ.setdefault(
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/1")
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-at-least-32-bytes-long")
 os.environ.setdefault("GOOGLE_API_KEY", "test-google-api-key")
-os.environ.setdefault("TAVILY_API_KEY", "test-tavily-api-key")
+# Phase-79(完了後の調整)：削除
+# os.environ.setdefault("TAVILY_API_KEY", "test-tavily-api-key")
 os.environ.setdefault("ENVIRONMENT", "test")
 
 from collections.abc import AsyncGenerator, Generator  # noqa: E402

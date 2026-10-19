@@ -17,14 +17,14 @@
 | [`app/services/design_stage_generation_service.py`](../samples/backend/app/services/design_stage_generation_service.py) | 更新 | 生成の用途で解決(失敗の記録の `try` の中で) |
 | [`app/services/project.py`](../samples/backend/app/services/project.py) | 更新 | `_ingest_file` に `user_id`。PDF は `resolve_pdf_reader` |
 | [`app/api/routes/projects.py`](../samples/backend/app/api/routes/projects.py) | 更新 | 最初の発話で `LlmUnavailableError` も握りつぶす |
-| [`app/ai/graph/nodes.py`](../samples/backend/app/ai/graph/nodes.py) | 更新 | `llm_from(config)`。LLM を `RunnableConfig` から受け取る |
-| [`app/ai/graph/workflow.py`](../samples/backend/app/ai/graph/workflow.py) | 更新 | docstring だけ |
-| [`app/services/chat.py`](../samples/backend/app/services/chat.py) | 更新 | チャットの用途で解決し、`config` で渡す |
+| `app/ai/graph/nodes.py` | 更新 | `llm_from(config)`。LLM を `RunnableConfig` から受け取る |
+| `app/ai/graph/workflow.py` | 更新 | docstring だけ |
+| `app/services/chat.py` | 更新 | チャットの用途で解決し、`config` で渡す |
 | `app/ai/llm/gemini.py` | 削除 | 呼び出しが無くなった(`extract_text_content` は 68-1 で `content.py` へ) |
 | [`tests/fixtures/fake_llm.py`](../samples/backend/tests/fixtures/fake_llm.py) | 更新 | コメントだけ |
 | [`tests/fixtures/llm_resolver.py`](../samples/backend/tests/fixtures/llm_resolver.py) | 新規 | `stub_llm_resolver`(解決をフェイクに差し替え、呼ばれたユーザーと用途を記録) |
 | [`tests/unit/test_llm_call_sites.py`](../samples/backend/tests/unit/test_llm_call_sites.py) | 新規 | 呼び出し箇所が持ち主と用途で解決する(統合スモーク) |
-| [`tests/unit/test_ai_graph_nodes.py`](../samples/backend/tests/unit/test_ai_graph_nodes.py)・[`tests/unit/test_generic_chat_and_refresh.py`](../samples/backend/tests/unit/test_generic_chat_and_refresh.py) | 更新 | 汎用チャットの config |
+| `tests/unit/test_ai_graph_nodes.py`・`tests/unit/test_generic_chat_and_refresh.py` | 更新 | 汎用チャットの config |
 | [`tests/unit/test_chat_service.py`](../samples/backend/tests/unit/test_chat_service.py)・[`tests/unit/test_chat_stream_errors.py`](../samples/backend/tests/unit/test_chat_stream_errors.py)・[`tests/integration/test_projects_flow.py`](../samples/backend/tests/integration/test_projects_flow.py) | 更新 | `get_gemini_llm` の差し替えを `stub_llm_resolver` に |
 
 `nodes.py`・`workflow.py`・`test_ai_graph_nodes.py` は CL 開発の前のテンプレート由来で、この章で初めて samples に載せた(全文。タグの無い部分はテンプレートのまま)。

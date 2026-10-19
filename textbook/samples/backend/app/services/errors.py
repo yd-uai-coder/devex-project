@@ -94,7 +94,7 @@ class RateLimitExceededError(TooManyRequestsError):
 # Phase-2-5:追記
 class LLMQuotaExceededError(TooManyRequestsError):
     """外部LLMプロバイダー(Gemini Flash-Lite無料枠)のトークン上限超過等で呼び出しが失敗した場合に送出する。
-    app/services/chat.pyの既存の_is_quota_error判定と同じ基準をapp/services/llm_retry.pyに集約し、
+    判定(_is_quota_error)はapp/services/llm_retry.pyに集約し、
     chat_service.py/doc_generator_service.pyの双方から利用する。"""
 
     code: ClassVar[str | None] = "LLM_QUOTA_EXCEEDED"
