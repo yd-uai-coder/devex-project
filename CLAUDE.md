@@ -15,7 +15,7 @@ There is no root-level `package.json`, build script, or CI config tying the two 
 
 The root `README.md` is the portfolio-facing overview of Devex — a system that interviews users through AI chat and builds requirements, design, implementation procedures and tests as structured design information linked by IDs. The detailed Japanese spec is split across four files under `docs/`: `docs/requirements.md`, `docs/external_design.md`, `docs/internal_design.md`, `docs/implementation_plan.md` — mirroring the four document types Devex itself generates.
 
-Both subrepos implement this spec through stage 10 (all stages complete and deployed as of 2026-10-18; production: https://devex.uandi-tech.com/). When changing Devex features, treat `docs/*.md` as the spec and keep it in sync with the code; the stage history is in `docs/implementation_plan.md` 4.1 and `textbook/`.
+Both subrepos implement this spec through stage 10 (stages 1–10 deployed as of 2026-10-18; production: https://devex.uandi-tech.com/). The project was reopened on 2026-10-19 and stage 11 (Phase 80〜89) is in progress; the plan for stages 11〜15 is in [`appendix/devex_project_positioning.md`](appendix/devex_project_positioning.md) 12章. When changing Devex features, treat `docs/*.md` as the spec and keep it in sync with the code; the stage history is in `docs/implementation_plan.md` 4.1 and `textbook/`.
 
 ## Working across the two repos
 
@@ -166,10 +166,15 @@ Both subrepos implement this spec through stage 10 (all stages complete and depl
 
 **#39. AI の提案の精度の振り返り**(ステージ6完了後に確立)。ステージ完了時の振り返り(#10)で、AI の提案の精度を記録から分析し、[`overall-retrospective.md`](textbook/retrospectives/overall-retrospective.md) の当該ステージの節に書く。見るもの: 着手時の相談で推奨と違った選択(件数と向き)/ 計画の変動(分割・撤回・番号送り)/ 完了後の調整の回数と原因 / 本番確認の指摘。前のステージと比べて変化の理由を記録から裏付け、採否だけでは区別できない要因(ユーザーが推奨に寄った可能性など)を、採否と独立な指標(本番確認・効果測定など)で確かめる。記録の書式は決めず、数字は AI が記録を読んで数える概算でよい。初回はステージ3〜6 の横断分析(同ファイル 11節)。
 
+**#40. 仕様の変更は CR の形で残す**(ステージ11 の Phase 80〜81 で確立)。Phase の計画を承認した後に仕様(`docs/*.md`)を変えるときは、docs を合意済みの版とみなし、先に [`textbook/q_a.md`](textbook/q_a.md)(#8)に CR の形(内容・背景・対象・影響・判断)で残してから、docs と計画に反映する。#38 と同じく、問題ではなく通常の工程として扱う。
+
 ### プロジェクトのゴール
 
 > 2026-10-18 のプロジェクト完了の振り返りで、3つとも達成と判定した([`textbook/retrospectives/project-retrospective.md`](textbook/retrospectives/project-retrospective.md) 2節)。
+>
+> 2026-10-19 に新しい位置付け([`appendix/devex_project_positioning.md`](appendix/devex_project_positioning.md))でプロジェクトを再開し、ゴール4 を足した。
 
 1. **プロダクト目標**: `docs/implementation_plan.md` ステージ1(MVP)が定義する Must 要件(チャットヒアリング → 要件定義 / 外部設計 / 内部設計 / 実装計画の4種 Markdown 自動生成)を満たし、ステージ1のマイルストーン1・2の受け入れ基準を満たす。
 2. **手法目標**: v1 の #1〜17 を土台に #18〜28(本節)を実プロジェクトで運用し、自動実装モード(#21)の off・on をそれぞれ少なくとも1 Phase で実施した上で(実績: off = Phase 1〜6、on = Phase 7〜24)、所感5.1 / 5.2 / 5.5 / 5.6 各提案の採否とその根拠を振り返り(`textbook/retrospectives/*-retrospective.md`)に記録する。プロジェクト完了時、次プロジェクトに引き継げる改訂版 handoff ドキュメント相当を作成可能な状態にする(実績: [`appendix/cl-development-handoff-v2.md`](./appendix/cl-development-handoff-v2.md) を最終版にした)。
 3. **再帰検証目標**: Devex が生成すべき4文書の「質の良さ」の基準を、本プロジェクト自身が書く CL 教材(introduction / チェックリスト / 振り返り)の質を通じて具体化し、逆に Devex の生成物の構造を CL 教材テンプレートに転用できるかを #25 の振り返りで検証する。最低1回、Devex の実際の生成文書と `Phase-<N>-introduction.md` を突き合わせ、共通化できるテンプレート要素を最低1つ具体的に特定する(実績: [`textbook/retrospectives/goal3-comparison.md`](textbook/retrospectives/goal3-comparison.md)。共通要素 = 作業単位の表)。
+4. **合意と変更の目標**(2026-10-19 の再開で追加): [位置付け](appendix/devex_project_positioning.md) 12章のステージ11〜15 の完了の判断基準を満たす。最初はステージ11 のマイルストーン12(`docs/implementation_plan.md`)。ステージ15 は、ステージ14 までの運用で必要性を確かめてから着手を決める。

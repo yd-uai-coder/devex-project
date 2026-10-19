@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -602,3 +602,32 @@ class BaselineNotFoundError(NotFoundError):
     """指定した番号の合意済みの版が、そのプロジェクトに無い場合に送出する。"""
 
     code: ClassVar[str | None] = "RESOURCE_NOT_FOUND"
+
+
+# Phase-82-2:追記
+# 変更要求(ステージ11)
+class ChangeRequestNotFoundError(NotFoundError):
+    """指定した番号の変更要求(CR)が、そのプロジェクトに無い場合に送出する。"""
+
+    code: ClassVar[str | None] = "RESOURCE_NOT_FOUND"
+
+
+class ChangeRequestBaselineMissingError(ConflictError):
+    """合意済みの版(束)が1つも無いプロジェクトで CR を作ろうとした場合に送出する。CR は合意済みの
+    版からの差分なので、基準の束が要る。"""
+
+    code: ClassVar[str | None] = "CR_BASELINE_MISSING"
+
+
+class ChangeRequestTargetUnknownError(UnprocessableEntityError):
+    """CR の対象の要件 ID が基準の束の要件定義書に無い場合と、対象が空で新しい要件を足す印も無い
+    場合に送出する。"""
+
+    code: ClassVar[str | None] = "CR_TARGET_UNKNOWN"
+
+
+class ChangeRequestInvalidTransitionError(ConflictError):
+    """CR の今の状態では許されない操作(合意の後の編集・却下の後の説明など)をしようとした場合に
+    送出する(画面が古いまま押したときに起きうる)。"""
+
+    code: ClassVar[str | None] = "CR_INVALID_TRANSITION"

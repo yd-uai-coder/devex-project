@@ -138,7 +138,7 @@ Claude の判断(計画の承認で確定、または作業中):
 - `tagmerge.py` の手直し(ステージ10 の振り返り)。この Phase でも、import 文・docstring・ファイル冒頭のヘッダー・タグの位置(既存のタグの後ろに追記が入り、既存のタグが別の行を指す形になった `routes/__init__.py`)を手で直した。
 
 **ユーザーが決めるもの**:
-- **CLAUDE.md の更新の案**(別のセッションで。#18): 中身は [Phase 80 の申し送り](../Phase-80/Phase-80-introduction.md#未消化の申し送り37)のとおり(ゴールの追加・CR の手順・「all stages complete」の直し)。
+- ~~CLAUDE.md の更新~~ → 2026-10-19 の別のセッションで反映した(「Spec vs. implementation」節の再開の記述、ゴール4、ルール #40。経緯は [`q_a.md`](../q_a.md)「Phase 81(完了報告の後) ── CLAUDE.md の更新案の確認」)。
 - **開発環境の後始末**: 確認用の利用者・プロジェクト、DB の事故の後の複製(振り返り 8節)。
 - **この Phase の未コミット**: 外側のリポジトリ(Phase 80 の分を含む)と devex-api の変更。コミットはユーザーが行う(#35)。devex-api のタグは `phase-81`。
 
@@ -154,7 +154,7 @@ Claude の判断(計画の承認で確定、または作業中):
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- **Phase 82-2**: `BaselineCreate` の相手・メモ・理由(と空白の検証)を、共有のスキーマ `AgreementNotes`(`app/schemas/agreement.py`)に抜き出し、`BaselineCreate` はそれを継ぐ形にした(CR の合意・却下と共有するため。#17)。束の API の本文と検証は変わらない([82-2](../Phase-82/Phase-82-2.md) の2節)。
 
 ## Phase 完了チェック(#22)
 
