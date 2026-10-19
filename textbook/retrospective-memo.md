@@ -150,3 +150,10 @@
 - **発生**: [`Phase-79-1.md`](./Phase-79/Phase-79-1.md)
 - **概要**: devex-api のテンプレートの `AuthService.authenticate` は、パスワードが違うとき・無効な利用者のとき、英語の文(`Invalid email or password`・`User is inactive`)を `detail` に入れて 401 を返す。devex-ui のテンプレートの作りでは、画面が `ApiError.message` をそのまま出すので、ログインの画面に英語の文が出ていた。Phase 79 で、2つの文を `app/services/errors.py` の定数(日本語)にし、パスワードのログインと Google との連携の確かめで同じ文を使うようにした。refresh の失敗の文は画面に出ないので英語のまま。
 - **判断理由**: テンプレートの画面は日本語で、API の文をそのまま出す前提なので、利用者に見える文はテンプレートの時点で日本語にしておくほうが、clone した先で同じ直しをせずに済む。
+
+## `[テンプレート反映候補]` CSS Module で Tamagui の部品の display を上書きすると本番だけ崩れる
+
+- **発生**: [`Phase-79-introduction.md`](./Phase-79/Phase-79-introduction.md)「本番確認後の調整」
+- **概要**: devex-ui のテンプレートの `LayoutGrid`(と `ListCard`)は、Tamagui の `YStack` に CSS Module の `.grid { display: grid }` を付けていた。本番ビルドでは Tamagui の `.is_View { display: flex }` の `<style>` が CSS Module の `<link>` より後ろに入り、同じ詳細度なので負けて縦1列になった。開発サーバーでは順が逆で再現しない。`LayoutGrid` の入れ物を素の `div` にして直した。`ListCard` はアプリで使っていないので残した。
+- **判断理由**: テンプレートの部品そのものの不具合で、clone した先でも本番で初めて気づく。テンプレートで直しておけば、同じ食い違いを踏まない。`devex-ui/CLAUDE.md` のハマりどころにも書いた。
+

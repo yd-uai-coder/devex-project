@@ -183,7 +183,9 @@
   * Phase 79: 統合/E2E・本番への反映(ステージ9・10。Google の流れの E2E と既存を含めた全 E2E・マイグレーションの往復・`OPERATIONS.md` の手順を1つにまとめる・Google Cloud の OAuth クライアント・本番での確認と画面確認。あわせてログインの失敗の文を日本語に) ── **完了**([`textbook/Phase-79/Phase-79-introduction.md`](../textbook/Phase-79/Phase-79-introduction.md))
 * **達成範囲(Phase 79で終了)**: Google でのログイン・登録(初めての Google はそのまま登録)・同じメールの既存アカウントとの連携(最初の1度だけパスワードで確かめる)・マイページでのパスワードの設定と Google の連携・解除、削除したプロジェクトの知らせ・作成の後の一覧・押せないボタンの見た目、ログインの失敗の文の日本語化。Phase 79で、Google の流れの E2E(偽の検証。ログインの画面とマイページ)を足して、既存を含めた全 E2E を2回通した。本番への反映(ステージ9とまとめる)は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.7節の手順でユーザーが行う。
 * **マイルストーン11**: 利用者が Google アカウントだけで登録・ログインでき、既存のアカウントの利用者も、本人の確かめを経て Google と連携し、どちらの方法でも同じプロジェクトを使える。ステージ9 と10 の機能が本番で確かめてある。
-**(ステージ10の振り返り)** 振り返りは本番への反映の前に行った([`textbook/appendix/overall-retrospective.md`](../textbook/appendix/overall-retrospective.md) 15節)。本番での確認の結果は、反映の後にステージ9・10の分をまとめて記録する。
+**(ステージ10の振り返り)** 振り返りは本番への反映の前に行った([`textbook/appendix/overall-retrospective.md`](../textbook/appendix/overall-retrospective.md) 15節)。2026-10-18 にステージ9・10をまとめて本番へ反映し、本番での確認は問題なし(トップページのカードの並びの1件は反映の後に直した。[`textbook/Phase-79/Phase-79-introduction.md`](../textbook/Phase-79/Phase-79-introduction.md)「本番での確認の記録」)。
+
+**(プロジェクトの完了)** ステージ10で、計画したステージをすべて終えた。2026-10-18 にプロジェクト全体の振り返りを行い、ステージ11以降は計画しない([`textbook/appendix/project-retrospective.md`](../textbook/appendix/project-retrospective.md))。再開するときは、同じ文書の8節(期限つきの持ち越し)と6節(取り込んでいない示唆)から読む。
 
 ---
 

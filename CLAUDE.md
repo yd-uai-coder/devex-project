@@ -4,23 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository structure
 
-This directory is a container for two **independent git repositories**, not a monorepo with shared tooling and not git submodules (they're currently untracked in the outer repo's `git status`):
+This directory is itself a git repository (`devex-project`: specs, CL textbook, records) and also contains two **independent git repositories**, not a monorepo with shared tooling and not git submodules (they're untracked in the outer repo's `git status`):
 
-- `devex-api/` — its own git repo. FastAPI + LangChain + LangGraph backend template (Python 3.13, `uv`, PostgreSQL, Redis). See `devex-api/CLAUDE.md` and `devex-api/README.md`.
-- `devex-ui/` — its own git repo. Next.js (App Router) + Tamagui frontend template/demo collection (`next-tamagui-templates`). See `devex-ui/CLAUDE.md`, `devex-ui/AGENTS.md`, and `devex-ui/README.md`.
+- `devex-api/` — its own git repo. The Devex backend: FastAPI + LangChain (Gemini / Claude) + PostgreSQL + Redis (Python 3.13, `uv`). It started from a reusable backend template, and some template leftovers remain (the generic `POST /chat` + LangGraph workflow under `app/ai/graph/`). See `devex-api/CLAUDE.md` and `devex-api/README.md`.
+- `devex-ui/` — its own git repo. The Devex frontend: Next.js (App Router) + Tamagui. Devex screens live under `src/features/` and `src/app/(pages)/(protected)/`; the UI component/demo gallery it started from (`next-tamagui-templates`, `src/components/ui/` and the `(sample)` pages) remains. See `devex-ui/CLAUDE.md`, `devex-ui/AGENTS.md`, and `devex-ui/README.md`.
 
 There is no root-level `package.json`, build script, or CI config tying the two together. All commands (dev server, lint, test, migrations) must be run from inside the respective subdirectory — always `cd devex-api` or `cd devex-ui` first, and consult that subrepo's own `CLAUDE.md` for the authoritative command list and architecture notes rather than duplicating them here.
 
-## Important: spec vs. current implementation
+## Spec vs. implementation
 
-The root `README.md` is a short overview of an aspirational product called "Devex" — an AI-driven chat interface that interviews users and auto-generates 要件定義/外部設計/内部設計/実装計画 Markdown documents, backed by `projects`, `chat_histories`, `generated_documents`, and `prompt_templates` tables. The detailed Japanese 要件定義書/設計書 (requirements + design doc) is split across four files under `docs/`: `docs/requirements.md`, `docs/external_design.md`, `docs/internal_design.md`, `docs/implementation_plan.md` — mirroring the four document types Devex itself is meant to generate.
+The root `README.md` is the portfolio-facing overview of Devex — a system that interviews users through AI chat and builds requirements, design, implementation procedures and tests as structured design information linked by IDs. The detailed Japanese spec is split across four files under `docs/`: `docs/requirements.md`, `docs/external_design.md`, `docs/internal_design.md`, `docs/implementation_plan.md` — mirroring the four document types Devex itself generates.
 
-**Neither subrepo currently implements this domain.** As of now:
-
-- `devex-api` only has generic `auth`, `users`, and `chat` routes (JWT auth + a single LangGraph `User → Gemini → Tavily → 評価 → Gemini → 最終回答` chat workflow). There are no `projects`/`documents`/`generate` endpoints or the tables the spec describes — it's a reusable backend starter template, not the Devex product.
-- `devex-ui` (`next-tamagui-templates`) is a UI component/demo gallery meant to be cloned as a starting point for future FastAPI-backed apps; it has no Devex-specific screens (dashboard, chat hearing screen, document preview, etc.).
-
-When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the target spec and both subrepos as the generic starting scaffolding — don't assume the domain models, routes, or screens it describes already exist anywhere in the code.
+Both subrepos implement this spec through stage 10 (all stages complete and deployed as of 2026-10-18; production: https://devex.uandi-tech.com/). When changing Devex features, treat `docs/*.md` as the spec and keep it in sync with the code; the stage history is in `docs/implementation_plan.md` 4.1 and `textbook/`.
 
 ## Working across the two repos
 
@@ -127,7 +122,7 @@ When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the tar
 
 **#26. md ファイル間の相互参照はリンクで明記する**(本プロジェクト固有)。教材・記録用に作成する `.md` ファイルが他の `.md` ファイルの内容を参照・前提とする場合、ファイル名を地の文で書くだけでなく Markdown リンク(`[表示名](相対パス)`)を張る。対象は `textbook/` 配下の教材・ログ・記録ファイル全般(`Phase-<N>-introduction.md`、`Phase-<N>-M.md`、`decision-digest.md`、`q_a.md`、`*-retrospective.md`)、および `CLAUDE.md`「進行のルール」節から `textbook/` 配下のファイルを参照する場合を含む。狙い: 参照先を辿るコストを下げ(#3・#11 の「参照して確認する」運用と整合)、ファイル移動・リネーム時にリンク切れとして検出できるようにするため。
 
-**#27. Phase 0 の役割定義**(共通ルール候補 ── 特定プロジェクトに依存しない一般化を想定し、将来の handoff v2 に引き継ぐ候補として明記する)。Phase 0 は「要件・設計の確認」から「Phase 1 以降の実装ロードマップの具体化」までを行うフェーズとする。本プロジェクトでは、`README.md` および `docs/` 配下の詳細仕様書(`requirements.md`/`external_design.md`/`internal_design.md`/`implementation_plan.md`)を入力として実装ロードマップ(Phase 1〜N の区切りと各 Phase のスコープ)を作成する。Devex 完成後は、Devex 自身が生成するドキュメントを入力に切り替える運用を想定するが、その具体的な移行方法(何を入力に、どの粒度で読み替えるか)は今は確定せず、Devex 完成後の振り返り(#10・#25)で具体化する。
+**#27. Phase 0 の役割定義**(共通ルール候補 ── 特定プロジェクトに依存しない一般化を想定し、将来の handoff v2 に引き継ぐ候補として明記する)。Phase 0 は「要件・設計の確認」から「Phase 1 以降の実装ロードマップの具体化」までを行うフェーズとする。本プロジェクトでは、`README.md` および `docs/` 配下の詳細仕様書(`requirements.md`/`external_design.md`/`internal_design.md`/`implementation_plan.md`)を入力として実装ロードマップ(Phase 1〜N の区切りと各 Phase のスコープ)を作成する。Devex 完成後は、Devex 自身が生成するドキュメントを入力に切り替える運用を想定するが、その具体的な移行方法(何を入力に、どの粒度で読み替えるか)は今は確定せず、Devex 完成後の振り返り(#10・#25)で具体化する(→ 具体化した案は [`textbook/appendix/project-retrospective.md`](./textbook/appendix/project-retrospective.md) 5節)。
 
 **#28. 実装着手前の仕様診断**(共通ルール候補 ── 特定プロジェクトに依存しない一般化を想定し、将来の handoff v2 に引き継ぐ候補として明記する)。Phase 0 の最後、Phase 1 のトリガー(#5)を受ける前に、要件定義〜実装計画の各文書(`docs/requirements.md`/`docs/external_design.md`/`docs/internal_design.md`/`docs/implementation_plan.md`)を対象に、不足・不明瞭な点の診断を AI が主体的に行う。診断結果は次の3段階に分類して提示する: (1) **最重要** ── 次の Phase のタスクに直結し着手前に解決すべきもの、(2) **中程度** ── 後続 Phase の設計事項だが今のうちに認識合わせしておきたいもの、(3) **軽微・運用面** ── 対応してもしなくても大きな影響が無いもの。ユーザーは各項目について「決定を下す」か「AI に提案を求める」かを選べる。AI への提案依頼があった項目は、トレードオフ比較や既存コードベース調査に基づいて具体案を提示し、ユーザーの選択を仰ぐ。全項目の決定が出揃ったら該当する `docs/*.md` に反映し、その回の対応を Phase 0 の1章(`textbook/Phase-0/Phase-0-<N>.md`)として記録する。この診断は、Devex 完成後に Devex が生成する要件定義書等でも「AI が不足点を指摘し、ユーザーが承認する」という同種のフローが期待される(#25 再帰検証ルールとも関連)ため、本プロジェクトの実施を通じてこのルール自体の実用性を検証する。
 
@@ -173,6 +168,8 @@ When asked to build "Devex" features, treat `README.md` + `docs/*.md` as the tar
 
 ### プロジェクトのゴール
 
+> 2026-10-18 のプロジェクト完了の振り返りで、3つとも達成と判定した([`textbook/appendix/project-retrospective.md`](./textbook/appendix/project-retrospective.md) 2節)。
+
 1. **プロダクト目標**: `docs/implementation_plan.md` ステージ1(MVP)が定義する Must 要件(チャットヒアリング → 要件定義 / 外部設計 / 内部設計 / 実装計画の4種 Markdown 自動生成)を満たし、ステージ1のマイルストーン1・2の受け入れ基準を満たす。
-2. **手法目標**: `appendix/cl-development-handoff.md` の #1〜17 を土台に #18〜28(本節)を実プロジェクトで運用し、自動実装モード(#21)の off・on をそれぞれ少なくとも1 Phase で実施した上で(実績: off = Phase 1〜6、on = Phase 7〜24)、所感5.1 / 5.2 / 5.5 / 5.6 各提案の採否とその根拠を振り返り(`textbook/appendix/*-retrospective.md`)に記録する。プロジェクト完了時、次プロジェクトに引き継げる改訂版 handoff ドキュメント相当を作成可能な状態にする。
+2. **手法目標**: `appendix/cl-development-handoff.md` の #1〜17 を土台に #18〜28(本節)を実プロジェクトで運用し、自動実装モード(#21)の off・on をそれぞれ少なくとも1 Phase で実施した上で(実績: off = Phase 1〜6、on = Phase 7〜24)、所感5.1 / 5.2 / 5.5 / 5.6 各提案の採否とその根拠を振り返り(`textbook/appendix/*-retrospective.md`)に記録する。プロジェクト完了時、次プロジェクトに引き継げる改訂版 handoff ドキュメント相当を作成可能な状態にする(実績: [`appendix/cl-development-handoff-v2.md`](./appendix/cl-development-handoff-v2.md) を最終版にした)。
 3. **再帰検証目標**: Devex が生成すべき4文書の「質の良さ」の基準を、本プロジェクト自身が書く CL 教材(introduction / チェックリスト / 振り返り)の質を通じて具体化し、逆に Devex の生成物の構造を CL 教材テンプレートに転用できるかを #25 の振り返りで検証する。最低1回、Devex の実際の生成文書と `Phase-<N>-introduction.md` を突き合わせ、共通化できるテンプレート要素を最低1つ具体的に特定する(実績: [`textbook/appendix/goal3-comparison.md`](./textbook/appendix/goal3-comparison.md)。共通要素 = 作業単位の表)。

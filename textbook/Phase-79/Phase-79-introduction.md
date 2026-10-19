@@ -118,12 +118,12 @@ Claude の判断(計画の承認で確定、または作業中):
 
 [Phase 78](../Phase-78/Phase-78-introduction.md#未消化の申し送り37) から引き継いだもの。
 
-ユーザーが行うもの(**この Phase の後**。ステージ10の振り返りは、ユーザーの判断で反映の前に行った):
+**本番への反映と本番での確認は 2026-10-18 に済んだ**(下の「本番での確認の記録」)。ユーザーが行うものとして積んでいた次の項目は、すべて解決した:
 
 - **本番への反映と本番での確認**: [`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.7節の手順で行う。結果と Anthropic の費用(見込み 約 $0.15・最大 約 $0.3)は、反映の後に、この節と [72-2](../Phase-72/Phase-72-2.md) から辿れるように記録する。#39 の「本番での確認の指摘」(ステージ9・10の両方)も、そのときに [`overall-retrospective.md`](../appendix/overall-retrospective.md) の 14.5・15.5 と 11.1 の表に埋める。
 - **origin の状態と手元の記録の食い違い**(Phase 72 から。この Phase で中身が分かった): devex-api・devex-ui とも origin の `main` はステージ7の版で、ステージ8のコミットも origin に無い。10.7節の 2 で本番の head(`7c3e9ab5f4d6` か `e5f6a7b8c9d1` か)と、VPS が動かしているコミットを確かめてから進む。
 - **画面確認**(#37 の運用注記): 10.7節の 8 の2つの表(ステージ9: Phase 62〜66・69・78 の画面と操作感 / ステージ10: Phase 76・77 のボタン・ダイアログ・枠、ダーク・375px)。
-- 画面確認で決めるもの(本番を見てから。直すときは次の Phase か、反映の後の調整):
+- 画面確認で決めるもの(本番を見て、**3件とも今のままでよい**とユーザーが決めた):
   - **レビューを使えることの案内**(Phase 68 から)
   - **一覧の失敗の記録**(Phase 69 から)
   - **ダッシュボードの見出しの折り返し**(Phase 65 から)
@@ -140,6 +140,7 @@ Claude の判断(計画の承認で確定、または作業中):
 - **`DfdEditorTabs` のテストのまれな失敗**(Phase 77 から): この Phase では Jest の全体を流していないので、出ていない。次に同じ失敗が出たら原因を調べる。
 - **モデルのカタログの見直し**: `gemini-3.1-flash-lite` は 2027-05-07 以降に終了する。
 - **公開鍵の取得**(Phase 74 から): `verify_oauth2_token` は呼ぶたびに Google の公開鍵を取りに行く。遅さが気になったら `CacheControl` のセッションでキャッシュする(今は入れない)。
+- **`ListCard` の入れ物**(本番確認後の調整から): `LayoutGrid` と同じく `YStack` に CSS Module の `display: grid` を付けているので、本番では縦1列になる。アプリのどの画面も使っていないので直していない。使うときに `LayoutGrid` と同じく素の `div` にする(下の「本番確認後の調整」)。
 - **英語のままの refresh の文**(この Phase から): `Invalid or expired refresh token` など。画面には出ないので変えていない([79-1](./Phase-79-1.md))。
 - **`tagmerge.py` の手直し**(ステージ10の振り返りから): on の Phase 75〜79 で毎回、ヘッダー・import のタグ・JSX のタグ・移した行を手で直した。次のステージの仕様診断(#28)で、改善を範囲に入れるかを決める([`overall-retrospective.md`](../appendix/overall-retrospective.md) 15.1 の Q6)。
 
@@ -161,6 +162,35 @@ Claude の判断(計画の承認で確定、または作業中):
 
 - `samples_check.py`(`--api-since HEAD --ui-since HEAD`): 一致 804 / 並び順のみ差 8 / 例外 5 / 本体のみ 0。「samples のみ」2件は、以前からの `change-impact-demo` のルート(Phase 72・78 と同じ)。Phase 78 の 802 から、`e2e/google-auth-flow.spec.ts` と `tests/unit/test_auth_service.py` の2件が増えた。
 - `link_check.py`: リンク 6984 件 / 切れ 0 件。
+
+## 本番での確認の記録
+
+2026-10-18、[`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.7節の手順で、ステージ9・10をまとめて本番へ反映した(ユーザー)。
+
+- **反映**: devex-api は PR #9(`stage8-10` → `main`、`bbbff94`)。origin にステージ8以降が無かった件は、この PR で解消した。1回目の自動デプロイは、VPS の `.env` の1行目に余計な `]` が入っていて、`docker compose` が `.env` を読めず build の段で止まった(マイグレーションは走らず、古いコンテナのまま)。1文字を消して流し直し、成功した。
+- **暗号の鍵**: 最初に作った本番の `ENCRYPTION_KEY` の値がチャットに出たので、使わずに作り直した(暗号化した行はまだ無かったので、失うものは無い)。
+- **本番での確認**(10.7節の 8): ステージ9・10の2つの表と Claude の確認(一般の利用者の自分のキーの Haiku・superuser の Sonnet のレビュー)は**問題なし**。Anthropic の費用は見込み(約 $0.15・最大 約 $0.3)の範囲内。画面確認で決める3件(レビューの案内・一覧の失敗の記録・見出しの折り返し)は、すべて今のままでよい。
+- **指摘**: 1件(トップページのカードが本番だけ縦1列)。下の「本番確認後の調整」で直し、再デプロイの後に問題なし。
+
+## 本番確認後の調整
+
+ステージ9・10の本番への反映の後、ユーザーの確認で見つかったもの(#38)。
+
+### トップページの「はじめる」のカードが本番で縦に並ぶ
+
+- **事象**: トップページの3枚のカード(CONTENTS・Authentication・Guide)が、開発では横3列、本番(Vercel)では縦1列になった。開発に合わせる(ユーザーの指示)。
+- **原因**: `LayoutGrid` はグリッドの入れ物を Tamagui の `YStack` にし、CSS Module の `.grid` で `display: grid` を付けていた。本番ビルドの HTML では、Tamagui の `.is_View { display: flex; flex-direction: column; … }` が `<style>` で CSS Module の `<link>` より後ろに入り、同じ詳細度なので `display: flex` が勝つ。開発サーバーでは CSS Module が後から差し込まれるので再現しない。トップページは [Phase 62](../Phase-62/Phase-62-introduction.md) から `LayoutGrid` を使っており、本番では今回初めて出た。
+- **直し**: 入れ物を素の `<div>` にした(Tamagui のクラスが付かず、順に左右されない)。効いていなかった `gap="$1"` は落とした。同じ部品の `Gallery` も直る。
+
+| ファイル | 内容 |
+| --- | --- |
+| [`src/components/ui/layout-blocks/LayoutGrid.tsx`](../samples/frontend/src/components/ui/layout-blocks/LayoutGrid.tsx) | 入れ物を `YStack` から `div` に(テンプレート由来で、samples に初めて載せた) |
+| [`src/components/ui/layout-blocks/__tests__/LayoutGrid.test.tsx`](../samples/frontend/src/components/ui/layout-blocks/__tests__/LayoutGrid.test.tsx) | 新規。入れ物が `div` で `is_View` を持たない / 列数の CSS 変数(既定 2・4、`columns` の指定)/ 子ごとのセル |
+
+テスト観点(`LayoutGrid.test.tsx`。SUT は `LayoutGrid`、ドライバは描画、スタブ不要 ── 対象が純粋な描画で外部依存を呼ばないため): 1つ目のテストは、直す前の `YStack` の版で落ちることを確かめた。
+
+- **検証**: 部分テスト(`layout-blocks`・`media`・トップページ)9件成功、`npx tsc --noEmit` 0件、`npm run lint` エラー0、`npm run build` 成功。ビルドした HTML でグリッドの要素のクラスが CSS Module のものだけであること、`next start`(3100 番)を Playwright で開いて、幅 1280px で3列(`display: grid`、3つの上端が同じ)、375px で1列になることを確かめた。`samples_check.py`: 一致 806 / 本体のみ 0、`link_check.py`: 切れ 0。
+- 同じ型の `ListCard` は使われていないので残した(上の申し送り)。テンプレートの落とし穴として [`devex-ui/CLAUDE.md`](../../devex-ui/CLAUDE.md) と [`retrospective-memo.md`](../retrospective-memo.md) に書いた。
 
 ## 後続 Phase での改訂
 
