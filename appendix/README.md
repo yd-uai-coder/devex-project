@@ -4,6 +4,7 @@
 
 | 資料 | 内容 |
 |---|---|
+| [`devex_project_positioning.md`](./devex_project_positioning.md) | これからの Devex の方針の正本。位置付け・コンセプト・3つの柱・仕様変更への対応フロー・AI と人の役割・優先事項・ステージ配分(ステージ11〜15) |
 | [`concept-history.md`](./concept-history.md) | 構想の経緯。ロードマップ(ステージ5〜10 の構想と順序)、UML 製図システムの要件定義書、ステージ3の要件整理、詳細設計モードの構想、実装手順書の作成方針、ステージ9・10 の計画を1本にまとめたもの。今の仕様は `docs/` が正 |
 | [`cl-development-handoff-v2.md`](./cl-development-handoff-v2.md) | CL(Curriculum Loop)開発の手法の最終版。次のプロジェクトに引き継ぐ進行のルール(#1〜#34)と、2つのプロジェクトで分かった課題 |
 | [`measurements/`](./measurements/) | 効果測定の結果。改良の前(ベースライン)と後(効果測定)を、実際の LLM と決まった題材・規則で比べた記録 |
