@@ -54,7 +54,7 @@ Claude の判断で決めたこと(計画の承認で確定):
   - [`Phase-17-introduction.md`](../Phase-17/Phase-17-introduction.md)「後続 Phase への申し送り」: 本 Phase が回収する2点(CRUD の R/W に DFD の線が要る・段階3の入力は段階2のデータストアとデータ辞書)。
   - [`Phase-17-1.md`](../Phase-17/Phase-17-1.md)・[`Phase-17-3.md`](../Phase-17/Phase-17-3.md)・[`Phase-17-4.md`](../Phase-17/Phase-17-4.md): 段階の外に正本を持つ図の扱い(要約で検証に渡す・1トランザクションの生成・図の編集で段階を差し戻す)。段階3は同じ形を ER で繰り返す。
   - [`Phase-17-7.md`](../Phase-17/Phase-17-7.md): SCR-007 のエディタの埋め込み(`UmlDiagramEditor`)。
-  - [`appendix/detailed-design-devex/content.py`](../../appendix/detailed-design-devex/content.py) の `TABLES`・`TABLE_NOTES`・`CRUD` と、`build.py` の `crud_cells`: 段階3の見本(テーブル定義の制約・説明、DFD の線と CRUD 図の突き合わせ)。
+  - `appendix/detailed-design-devex/content.py` の `TABLES`・`TABLE_NOTES`・`CRUD` と、`build.py` の `crud_cells`: 段階3の見本(テーブル定義の制約・説明、DFD の線と CRUD 図の突き合わせ)。
 - **本 Phase 開始時点の状態**:
   - 段階3の作業領域は「準備中」の表示だけだった。生成の対応表と検証の対応表には段階1・2しか無かった。
   - `StageSources.dfd_diagrams` は DFD の状態と処理IDだけで、線(R/W)を持っていなかった。
@@ -64,7 +64,7 @@ Claude の判断で決めたこと(計画の承認で確定):
 
 自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
 
-> 旧ルール(学習モード / 納期モード)では、18-5 を納期モード、他を学習モードとした。旧・納期モードの章は、#14 の SUT/ドライバ/スタブの言語化を省いている。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
+> 旧ルール(学習モード / 納期モード)では、18-5 を納期モード、他を学習モードとした。旧・納期モードの章は、#14 の SUT/ドライバ/スタブの言語化を省いている。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) を参照。
 
 ## 章一覧
 

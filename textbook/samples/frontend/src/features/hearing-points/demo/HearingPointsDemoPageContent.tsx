@@ -141,8 +141,7 @@ export function HearingPointsDemoPageContent() {
       <YStack gap="$2">
         <H2>ヒアリングの観点の表デモ</H2>
         <Paragraph color="$color10">
-          ステージ6で作るヒアリングの見せ方を、仮データで確かめるページです。題材は Devex 自身で、appendix/structured-requirements-sample/
-          の見本と同じ中身です。サーバーとは通信しません。
+          ステージ6で作るヒアリングの見せ方を、仮データで確かめるページです。題材は Devex 自身です。サーバーとは通信しません。
         </Paragraph>
       </YStack>
 

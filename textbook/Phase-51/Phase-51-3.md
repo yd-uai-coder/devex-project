@@ -2,7 +2,7 @@
 
 ## この章の目的
 
-[51-2](./Phase-51-2.md) で決めた形(区切りごとのレビュー・自動とボタン・未レビューの印・指摘の採否・採用した指摘からの再生成の指示・観点を未決に戻す再ヒアリング・オン・オフと失敗時の自己診断)を、実装の前に見本で確かめる。md の見本はレビュー結果とテスト仕様書の中身を、画面のデモは操作の流れ(区切りを流す → 指摘を採否 → 差し戻し)を示す。新しい種類の画面なので、操作の流れを先に見せる([総括の振り返り](../appendix/overall-retrospective.md) 11.6 の所見。[41-3](../Phase-41/Phase-41-3.md) と同じ)。
+[51-2](./Phase-51-2.md) で決めた形(区切りごとのレビュー・自動とボタン・未レビューの印・指摘の採否・採用した指摘からの再生成の指示・観点を未決に戻す再ヒアリング・オン・オフと失敗時の自己診断)を、実装の前に見本で確かめる。md の見本はレビュー結果とテスト仕様書の中身を、画面のデモは操作の流れ(区切りを流す → 指摘を採否 → 差し戻し)を示す。新しい種類の画面なので、操作の流れを先に見せる([総括の振り返り](../retrospectives/overall-retrospective.md) 11.6 の所見。[41-3](../Phase-41/Phase-41-3.md) と同じ)。
 
 自動実装モード: on([introduction](./Phase-51-introduction.md) 参照)。
 
@@ -12,8 +12,8 @@ md の見本(samples の対象外):
 
 | パス | 中身 |
 |---|---|
-| [`appendix/design-review-sample/README.md`](../../appendix/design-review-sample/README.md) | 示し方の規則と、例4つ(詳細の要件・外部の後 / 段階6の後 / 簡易の4文書の後 / オフ・失敗のとき) |
-| [`appendix/design-review-sample/test-spec.md`](../../appendix/design-review-sample/test-spec.md) | テスト仕様書の見本(方針・結合テスト14件・総合テスト6件・要件との対応) |
+| `appendix/design-review-sample/README.md` | 示し方の規則と、例4つ(詳細の要件・外部の後 / 段階6の後 / 簡易の4文書の後 / オフ・失敗のとき) |
+| `appendix/design-review-sample/test-spec.md` | テスト仕様書の見本(方針・結合テスト14件・総合テスト6件・要件との対応) |
 
 画面のデモ(devex-ui 本体と samples に同じ内容。#30 の依存順):
 

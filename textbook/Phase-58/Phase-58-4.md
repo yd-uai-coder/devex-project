@@ -12,11 +12,11 @@ samples の対象外(正解例と比べた結果。#13・#15 の対象外)。指
 
 | パス | 中身 |
 |---|---|
-| [`appendix/stage8-effect/test-spec/truth-simple.md`](../../appendix/stage8-effect/test-spec/truth-simple.md) | 簡易 33fdda56 の正解例(17件) |
-| [`appendix/stage8-effect/test-spec/truth-detailed.md`](../../appendix/stage8-effect/test-spec/truth-detailed.md) | 詳細 86a37228 の正解例(38件) |
+| `appendix/stage8-effect/test-spec/truth-simple.md` | 簡易 33fdda56 の正解例(17件) |
+| `appendix/stage8-effect/test-spec/truth-detailed.md` | 詳細 86a37228 の正解例(38件) |
 | `appendix/stage8-effect/test-spec/inputs/` | 正解例を書くのに読んだ入力の版(要件・外部・内部・計画 / 段階1・7) |
 | `appendix/stage8-effect/test-spec/spec-*.{json,md}` | 比べたテスト仕様書 |
-| [`appendix/stage8-effect/test-spec/results.md`](../../appendix/stage8-effect/test-spec/results.md) | 判定と集計 |
+| `appendix/stage8-effect/test-spec/results.md` | 判定と集計 |
 
 ## 結果
 

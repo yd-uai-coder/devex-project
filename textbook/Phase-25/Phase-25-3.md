@@ -15,7 +15,7 @@
 | [`docs/internal_design.md`](../../docs/internal_design.md) | 3.2節⑩: `stage` を 1〜8 にする予定を追記。3.3節4.「段階7」: 層の横割り・ファイルは例、を改める blockquote(実装は Phase 26)。3.3節「5. 実装手順書(ステージ5)」を新設(段階8・正本と参照・2層のチェック・生成・シーケンス図・出力・簡易モード) |
 | [`docs/implementation_plan.md`](../../docs/implementation_plan.md) | 4.1節: 「4ステージ」→「5ステージ」。「ステージ5」を新設(目的・方針・暫定の Phase 25〜32・マイルストーン6)。Phase ごとの詳細は [`Phase-25-4.md`](./Phase-25-4.md) |
 | [`README.md`](../../README.md) | ステージ表のステージ5の状態を「着手(Phase 25〜32 予定)」に。ステージ5を実装計画書に書き写したことを追記 |
-| [`appendix/devex_implementation_procedure_guideline.md`](../../appendix/devex_implementation_procedure_guideline.md) | 21章(未決事項)に、Phase 25 で決定済みの印と決定の要約 |
+| [`appendix/devex_implementation_procedure_guideline.md`](../../appendix/concept-history.md#procedure-guideline) | 21章(未決事項)に、Phase 25 で決定済みの印と決定の要約 |
 
 ## 設計判断
 

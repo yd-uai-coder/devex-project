@@ -8,17 +8,17 @@
 
 ## この章で作成・更新したファイル
 
-すべて [`appendix/stage8-baseline/`](../../appendix/stage8-baseline/README.md) の中(使い捨ての測定。samples の対象外。本体は変えない)。
+すべて [`appendix/measurements/stage8-baseline.md`](../../appendix/measurements/stage8-baseline.md) の中(使い捨ての測定。samples の対象外。本体は変えない)。
 
 | パス | 中身 |
 |---|---|
-| [`README.md`](../../appendix/stage8-baseline/README.md) | 題材・方式・実行の仕方 |
-| [`truth.md`](../../appendix/stage8-baseline/truth.md) | 正解表(S 18件・D 10件)。どの方式も流す前に書いた |
-| [`truth-e.md`](../../appendix/stage8-baseline/truth-e.md) | 追加測定 (e) の正解表(詳細設計書 12件・実装計画書 5件・実装手順書 8件)。(e) を流す前に書いた |
+| [`README.md`](../../appendix/measurements/stage8-baseline.md) | 題材・方式・実行の仕方 |
+| `truth.md` | 正解表(S 18件・D 10件)。どの方式も流す前に書いた |
+| `truth-e.md` | 追加測定 (e) の正解表(詳細設計書 12件・実装計画書 5件・実装手順書 8件)。(e) を流す前に書いた |
 | `subjects/` | 題材(S = simple-2 の4文書 + 仕込み5件、D = detailed-3 の要件・外部、detailed-full・simple-procedure = (e) の全文書) |
 | `review.py` | 方式を流して `runs/<方式>/<題材>/r<n>.md`・`.json`(トークン・費用・時間)を残す |
 | `runs/` | 出力(手で書き換えない) |
-| [`results.md`](../../appendix/stage8-baseline/results.md) | 判定と集計、費用の試算 |
+| `results.md` | 判定と集計、費用の試算 |
 
 ## 調べて分かったこと(今の自己診断)
 
@@ -28,7 +28,7 @@
 
 ## 測り方
 
-- **題材**: [stage7-effect](../../appendix/stage7-effect/README.md) の生成物。S(簡易モード simple-2 の4文書)には欠陥を5件仕込んだ(In Scope と Out of Scope の矛盾・共有リンクで未ログインでも見られる Must・トークンを localStorage に置く・平文のパスワード・入力をログに出す)。D(詳細設計モード detailed-3 の要件・外部)は仕込まない。
+- **題材**: [stage7-effect](../../appendix/measurements/stage7-effect.md) の生成物。S(簡易モード simple-2 の4文書)には欠陥を5件仕込んだ(In Scope と Out of Scope の矛盾・共有リンクで未ログインでも見られる Must・トークンを localStorage に置く・平文のパスワード・入力をログに出す)。D(詳細設計モード detailed-3 の要件・外部)は仕込まない。
 - **正解表**: 元からある欠陥も含めて、流す前に書いた。各項目に重要度・原因(ヒアリング / 設計 / 不整合)・決定的な検証で出るか(L0)・当たりの目安を付けた。L0 と同じ中身の指摘は当たりにしない。
 - **方式**(1つずつ変える):
 
@@ -62,7 +62,7 @@
 | 実装計画書 | 5 | 2.7 | 2.7 | ― |
 | 実装手順書(簡易) | 8 | 1.3 | 1.0 | ― |
 
-読み取れること(詳細は [`results.md`](../../appendix/stage8-baseline/results.md)):
+読み取れること(詳細は `results.md`):
 
 1. **見落としの原因はモデルの格**: 指示と入力を足しても flash-lite は増えず、細かくするほど言う数が減った((d)(d'))。同じ指示・入力で Sonnet は S 16.7・D 9.0。Haiku は flash-lite と Sonnet の間で、文書をまたぐ矛盾(Jira の In/Out Scope・共有リンクと NFR-006)は flash-lite と同じく一度も当たらなかった。
 2. **段階式の振り分けは得にならない**: 入力は S 約 14k トークン(Claude の数え方)で、Sonnet でも1回 $0.05〜0.13。安いモデルに振り分けさせると、文書をまたぐ矛盾を「問題なし」として黙って落とす。

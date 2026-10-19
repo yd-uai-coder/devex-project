@@ -16,11 +16,11 @@ samples の対象外(生成物と測定のスクリプト。#13・#15 の対象�
 | `appendix/stage7-effect/input/` | 初期入力(stage6-effect と同じ) |
 | `appendix/stage7-effect/hearing/{detailed-1,simple-1}/` | 発言・チャット履歴・観点の表・文書・段階・手順書・`metrics.json` |
 | `appendix/stage7-effect/hearing/*/regen/` | 再生成の測定(正解・変更の発言・版2 の文書・`impact.json`・`result.md`) |
-| `appendix/stage7-effect/stage35.py`・[`stage35.md`](../../appendix/stage7-effect/stage35.md) | 段階3・5 の件数 |
+| `appendix/stage7-effect/stage35.py`・`stage35.md` | 段階3・5 の件数 |
 | `appendix/stage7-effect/regen.py` | 再生成の印を、意図した変更の分と揺れの分に分けて数える |
-| [`appendix/stage7-effect/hearing/tally-run1.md`](../../appendix/stage7-effect/hearing/tally-run1.md) | ヒアリング1回目の数え上げ |
+| `appendix/stage7-effect/hearing/tally-run1.md` | ヒアリング1回目の数え上げ |
 
-規則・人の操作は [README](../../appendix/stage7-effect/README.md)。
+規則・人の操作は [README](../../appendix/measurements/stage7-effect.md)。
 
 ## 結果 1: ヒアリング(Phase 47 の効果)
 
@@ -46,7 +46,7 @@ samples の対象外(生成物と測定のスクリプト。#13・#15 の対象�
 | 分岐の行(処理あたり) | 12 / 7処理(**1.71**) | 23 / 14(1.64)/ — |
 
 - 基準(`DFD_WRITE_MISSING` 0・`MISSING_BRANCH_TARGET` 0・分岐の行が半分未満に減らない)を満たした。
-- 分岐の行は、どれも直前の手順(その分岐を書いた手順)の直後にあり、分岐の欄の「1a へ」と一致した(一覧は [`stage35.md`](../../appendix/stage7-effect/stage35.md))。
+- 分岐の行は、どれも直前の手順(その分岐を書いた手順)の直後にあり、分岐の欄の「1a へ」と一致した(一覧は `stage35.md`)。
 - **読むだけの処理に書き込みの線は無かった**(ログインの F-02 は users を読むだけ)。補ったセルは0件なので、補いの文字が正しいかは確かめられていない。
 - **気づいたこと: DFD のデータストアの書き漏れ**。F-03 の `reference_files`・F-04 の `chat_messages`・F-05 の `documents` は CRUD 図に C があるのに、DFD にはデータストアも線も無い。今の検証は「DFD に書き込みの線があるのに CRUD に C/U/D が無い」だけを見るので、逆向き(CRUD にあって DFD に無い)は指摘しない。Phase 48 の「読むだけの処理に書き込みの線を描かない」規則で減ったのか、前からかは、この1回では分からない(stage6-effect は図を書き出していない)。申し送り。
 

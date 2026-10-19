@@ -51,7 +51,7 @@ def build_group_dfd_messages(group, functions, summaries, requirements, data_ite
 
 ### DFD の処理の箱を処理IDにする
 
-詳細設計書の02章で、図の箱と01章の行を同じIDで対応させるため(出力見本 [`content.py`](../../appendix/detailed-design-devex/content.py) の `DFDS` と同じ形)。段階3の CRUD 図は「処理 × テーブル」の格子で、R/W を DFD の線の向きから作る。箱が処理IDなら、線の端からそのまま格子の行が決まる。
+詳細設計書の02章で、図の箱と01章の行を同じIDで対応させるため(出力見本 `content.py` の `DFDS` と同じ形)。段階3の CRUD 図は「処理 × テーブル」の格子で、R/W を DFD の線の向きから作る。箱が処理IDなら、線の端からそのまま格子の行が決まる。
 
 AI に箱の名前まで書かせると、機能一覧の名称と食い違う。そこで `function_id` だけを書かせ、名前は機能一覧から決める(段階1で処理IDを AI に書かせなかったのと同じ考え方。[Phase-16-2](../Phase-16/Phase-16-2.md))。
 

@@ -12,11 +12,11 @@ md の見本(samples の対象外):
 
 | パス | 中身 |
 |---|---|
-| [`appendix/structured-requirements-sample/README.md`](../../appendix/structured-requirements-sample/README.md) | 見本の読み方と、CL 教材との対応 |
-| [`appendix/structured-requirements-sample/hearing-points.md`](../../appendix/structured-requirements-sample/hearing-points.md) | 観点の定義(規模ごとの必須)・状態・題材の観点の表・選択肢カードの例 |
-| [`appendix/structured-requirements-sample/requirements.md`](../../appendix/structured-requirements-sample/requirements.md) | FR/NFR/CON の ID・出どころ・観点の付いた要件定義書 |
-| [`appendix/structured-requirements-sample/external_design.md`](../../appendix/structured-requirements-sample/external_design.md) | 画面・API・外部連携の一覧に要件ID を付けたもの |
-| [`appendix/structured-requirements-sample/traceability.md`](../../appendix/structured-requirements-sample/traceability.md) | 要件 → 処理 → 作業単位と、WBS の「要件」欄 |
+| `appendix/structured-requirements-sample/README.md` | 見本の読み方と、CL 教材との対応 |
+| `appendix/structured-requirements-sample/hearing-points.md` | 観点の定義(規模ごとの必須)・状態・題材の観点の表・選択肢カードの例 |
+| `appendix/structured-requirements-sample/requirements.md` | FR/NFR/CON の ID・出どころ・観点の付いた要件定義書 |
+| `appendix/structured-requirements-sample/external_design.md` | 画面・API・外部連携の一覧に要件ID を付けたもの |
+| `appendix/structured-requirements-sample/traceability.md` | 要件 → 処理 → 作業単位と、WBS の「要件」欄 |
 
 画面のデモ(devex-ui 本体と samples に同じ内容。#30 の依存順):
 

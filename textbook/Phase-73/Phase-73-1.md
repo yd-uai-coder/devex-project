@@ -2,7 +2,7 @@
 
 ## この章の目的
 
-ステージ10(Google 認証)の構想([ロードマップ](../../appendix/devex_roadmap.md) ステージ10)と影響調査([`stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 2節)を出発点に、未決の点を診断し、ユーザーに決めてもらう。あわせて、[Phase 72 の「未消化の申し送り」](../Phase-72/Phase-72-introduction.md#未消化の申し送り37)にある「ステージ10の入力」5件を1件ずつ判断する。
+ステージ10(Google 認証)の構想([ロードマップ](../../appendix/concept-history.md#roadmap) ステージ10)と影響調査([`stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 2節)を出発点に、未決の点を診断し、ユーザーに決めてもらう。あわせて、[Phase 72 の「未消化の申し送り」](../Phase-72/Phase-72-introduction.md#未消化の申し送り37)にある「ステージ10の入力」5件を1件ずつ判断する。
 
 自動実装モード: on([introduction](./Phase-73-introduction.md) 参照)。
 
@@ -12,7 +12,7 @@
 
 ## スコープ(構想から)
 
-[`stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 2.1節の影響調査は、次の4つの領域に分かれる。
+[`stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 2.1節の影響調査は、次の4つの領域に分かれる。
 
 - **API**: `users` の変更(Google の識別子・パスワードを null 可に)と、`POST /auth/google`(ID トークンを検証し、自前の JWT と refresh cookie を出す)。
 - **UI**: ログインと登録の画面のボタン、マイページの出し分け。

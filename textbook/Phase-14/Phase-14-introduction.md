@@ -2,7 +2,7 @@
 
 ## 目的
 
-Phase 13 の完了後、コンポーネント図の粒度が粗い(`api-service-model` 程度)という指摘から、「詳細設計モード」の構想が出た([`appendix/detailed-design-mode-organization.md`](../../appendix/detailed-design-mode-organization.md))。Phase 14 は、その構想を**ステージ4**として切り出し、実装に入る前の要件定義フェーズとして次を行う。
+Phase 13 の完了後、コンポーネント図の粒度が粗い(`api-service-model` 程度)という指摘から、「詳細設計モード」の構想が出た([`appendix/detailed-design-mode-organization.md`](../../appendix/concept-history.md#detailed-design-mode))。Phase 14 は、その構想を**ステージ4**として切り出し、実装に入る前の要件定義フェーズとして次を行う。
 
 - 構想メモ8章の未決事項1〜9の仕様診断(#28)と決定([14-1](./Phase-14-1.md))
 - 05章(主要処理の手順)・06章(処理ロジックの詳細)の見せ方と、詳細設計書の出力形式の確定([14-2](./Phase-14-2.md)。devex-ui のデモページで確かめた)
@@ -16,7 +16,7 @@ Phase 13 の完了後、コンポーネント図の粒度が粗い(`api-service-
 
 - **ステージ3は Phase 13 で終了した**。Phase 13b(M9b: 図の手直しを散文へ戻す AI 修正案)と旧 Phase 14(アクティビティ図・統合/E2E/デプロイ確認)は未達のまま撤回した。「Phase 14」の番号は、ステージ4の要件定義フェーズに充てる(ユーザー指示)。撤回の記録は [`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.1節ほか([14-3](./Phase-14-3.md))。
 - 前提として読むもの:
-  - [`appendix/detailed-design-mode-organization.md`](../../appendix/detailed-design-mode-organization.md)(構想・実務の資料・段階表・未決事項)
+  - [`appendix/detailed-design-mode-organization.md`](../../appendix/concept-history.md#detailed-design-mode)(構想・実務の資料・段階表・未決事項)
   - [`textbook/q_a.md`](../q_a.md)「Phase 13完了後 ── コンポーネント図の粒度から、詳細設計モードの構想へ」
   - 見本ページ(仮データ「備品予約システム」): <https://claude.ai/artifact/WjWw4WtGwjQSzzj26pm9fH>
 - ユーザーが示した前提(構想メモ3章): 実務にできるだけ準拠する。自動コーディングの水準は理想形であり、要件ではない。シーケンス図に当たるものは、まず番号付きの手順から始める。
@@ -31,7 +31,7 @@ Phase 13 の完了後、コンポーネント図の粒度が粗い(`api-service-
 
 自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
 
-> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
+> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) を参照。
 
 ## 章一覧
 
@@ -79,7 +79,7 @@ Phase 13 の完了後、コンポーネント図の粒度が粗い(`api-service-
 - **Phase 15 で行うこと**: モード選択ダイアログと `projects.mode`、モードごとの生成、`design_stages` のカラムの詳細、段階を進める画面(SCR-008)の骨格、簡易ドキュメントモードの内部設計書へのモジュール一覧表、出力見本の気づき#1〜#10の修正(#10 は自動レイアウトのアルゴリズムの検討)。対応方針は [14-5](./Phase-14-5.md) を参照。
 - **ロードマップ(Phase 15〜20)は暫定**である([`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.1節ステージ4)。Phase ごとの成果物・依存関係・未確定事項は [14-4](./Phase-14-4.md) にまとめた。各 Phase の着手時に見直す。
 - **05・06章の本実装**: 出力(HTML・md)の組み立てはバックエンドへ移す。デモの `procedureModel.ts` の関数(`buildReverseIndex`・`buildInvolvement`・`findDanglingLogicRefs`・`toMarkdown`・`toHtml`)が仕様の見本になる。レビュー画面はデモの見せ方を採用する。
-- **出力見本(Devex 自身が題材)**: [`appendix/detailed-design-devex/`](../../appendix/detailed-design-devex/README.md) に、詳細設計書の見本(HTML・md・図)を作った。書式と Devex の処理ロジックを確かめる材料。付録の「気づき」10件(`template_id` が保存されない、文書生成の失敗時に rollback しない、自動レイアウトの所要時間など)は、Phase 15 以降の着手時にどう扱うかを決める。
+- **出力見本(Devex 自身が題材)**: `appendix/detailed-design-devex/` に、詳細設計書の見本(HTML・md・図)を作った。書式と Devex の処理ロジックを確かめる材料。付録の「気づき」10件(`template_id` が保存されない、文書生成の失敗時に rollback しない、自動レイアウトの所要時間など)は、Phase 15 以降の着手時にどう扱うかを決める。
 - **シーケンス図**: 当面は作らない。ステージ4の運用の後に、05の番号付き手順で足りるかを判断する。
 - **ステージ3から持ち越す未検証事項**: 統合/E2E とデプロイでの確認(旧 Phase 14 の一部)は、ステージ4の実装(Phase 20)と合わせて行う。[`Phase-13-introduction.md`](../Phase-13/Phase-13-introduction.md)「検証していないこと」も参照。
 - **decision digest**: Phase 13・14 の要点の追記は、#24 に従い別セッションで行う。

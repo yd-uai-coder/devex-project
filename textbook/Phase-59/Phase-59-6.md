@@ -8,7 +8,7 @@
 
 ## この章で作成・更新したファイル
 
-samples の対象外(測定のスクリプトと出力。#13・#15 の対象外)。記録は [`appendix/stage8-effect/phase59/`](../../appendix/stage8-effect/phase59/README.md)。
+samples の対象外(測定のスクリプトと出力。#13・#15 の対象外)。記録は `appendix/stage8-effect/phase59/`。
 
 | パス | 中身 |
 |---|---|
@@ -16,7 +16,7 @@ samples の対象外(測定のスクリプトと出力。#13・#15 の対象外)
 | `appendix/stage8-effect/phase59/schema_run.py` | 段階4 を作り直し、変更の影響の印を確認済みにしながら段階5〜8 を進める |
 | `appendix/stage8-effect/phase59/concurrent_fix_checks.py` | 「直ったか」の判定を3つ並行に流す |
 | `appendix/stage8-effect/phase59/error_test_counts.py` | dev の DB の簡易の手順書に `NO_ERROR_TEST` を流して数える |
-| [`appendix/stage8-effect/phase59/README.md`](../../appendix/stage8-effect/phase59/README.md) | 結果と費用 |
+| `appendix/stage8-effect/phase59/README.md` | 結果と費用 |
 
 ## 結果
 

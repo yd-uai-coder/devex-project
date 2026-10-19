@@ -17,7 +17,7 @@
 | [`docs/internal_design.md`](../../docs/internal_design.md) | 3.3節に「8. AI 設計レビュー + テスト設計」を足した(LLM の取得を役割で分ける・入力と出力・データ・区切り・失敗と上限・差し戻し・テスト仕様書・手順書の決定的な検証) |
 | [`docs/implementation_plan.md`](../../docs/implementation_plan.md) | 4.1節にステージ8(目的・出発点・方針・対象 Phase 51〜59・マイルストーン9)を書き写した |
 | [`README.md`](../../README.md) | ステージ8の状態を「着手(Phase 51〜)」にし、4.1節への書き写しの注記を更新した |
-| [`appendix/devex_roadmap.md`](../../appendix/devex_roadmap.md) | ステージ7を「完了」に、ステージ8を「着手」にした(見出し・3.1・3.2)。ステージ8の構想の前に、Phase 51 の決定への注記(別の会社のモデル・段階式を採らなかった理由)を置いた |
+| [`appendix/devex_roadmap.md`](../../appendix/concept-history.md#roadmap) | ステージ7を「完了」に、ステージ8を「着手」にした(見出し・3.1・3.2)。ステージ8の構想の前に、Phase 51 の決定への注記(別の会社のモデル・段階式を採らなかった理由)を置いた |
 
 ## 反映の要点
 

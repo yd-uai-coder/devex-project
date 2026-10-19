@@ -2,7 +2,7 @@
 
 ## この章の目的
 
-ステージ6(Phase 34〜38)の後の Devex を、[ベースライン](../../appendix/stage6-baseline/README.md)と同じペルソナ・規則で、実際の LLM で両モード段階8まで流す。3指標(分類 A の件数・聞けた潜在の事実・要件の推測の割合)でベースラインと比べ、基準(厳しめ)に届かない原因を探す。原因は [39-2](./Phase-39-2.md) で直す。
+ステージ6(Phase 34〜38)の後の Devex を、[ベースライン](../../appendix/measurements/stage6-baseline.md)と同じペルソナ・規則で、実際の LLM で両モード段階8まで流す。3指標(分類 A の件数・聞けた潜在の事実・要件の推測の割合)でベースラインと比べ、基準(厳しめ)に届かない原因を探す。原因は [39-2](./Phase-39-2.md) で直す。
 
 自動実装モード: on([introduction](./Phase-39-introduction.md) 参照)。
 
@@ -12,13 +12,13 @@ samples の対象外(生成物と、それを作った使い捨てのスクリ�
 
 | パス | 中身 |
 |---|---|
-| [`appendix/stage6-effect/README.md`](../../appendix/stage6-effect/README.md) | 実行の条件・規則の差分・人の操作・数字 |
+| [`appendix/measurements/stage6-effect.md`](../../appendix/measurements/stage6-effect.md) | 実行の条件・規則の差分・人の操作・数字 |
 | `appendix/stage6-effect/drive.py` | ベースラインの `drive.py` を複製し、カードへの回答・観点の表・指標の書き出しを足したもの |
 | `appendix/stage6-effect/{detailed,simple}/` | 発言・チャット履歴・観点の表・文書・段階の状態・手順書を展開したもの・`metrics.json` |
 
 ## やり方
 
-- **ペルソナ**: ベースラインの [`persona.md`](../../appendix/stage6-baseline/persona.md) をそのまま使った。変えたのは答え方の規則だけ(上限を8回 → 20回、カードの選び方、規模は「誰でも登録できるサービス」、「対象外」は使わない)。差分は [README](../../appendix/stage6-effect/README.md)「規則の差分」。
+- **ペルソナ**: ベースラインの `persona.md` をそのまま使った。変えたのは答え方の規則だけ(上限を8回 → 20回、カードの選び方、規模は「誰でも登録できるサービス」、「対象外」は使わない)。差分は [README](../../appendix/measurements/stage6-effect.md)「規則の差分」。
 - **`drive.py` の足し分**: `say <mode> <file|-> card_id:option` で `card_answers` を送り、SSE の `event: cards` を表示する。`points` で観点の表を、`metrics` で要件定義書・外部設計書の要約(出どころの件数・指摘)と段階の指摘のコード別件数を書き出す。段階の規則(`design`・`procedure`)はベースラインと同じ。
 - **数え方**: 33-1 と同じ。分類 A〜D は手で分け、C(設計段階の不足)は除いて数える。
 

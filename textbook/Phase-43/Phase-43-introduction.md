@@ -110,7 +110,7 @@ devex-ui は変えていない。
 
 - devex-api: 部分テスト(各章の「テスト観点」のコマンド)成功、`ruff check` 成功(`ruff format` は使わない)、pyright(`app/detailed_design/impact`・サービス2つ・スキーマ)0件。
 - マイグレーションの往復: 開発 DB で `upgrade head` → `downgrade -1` → `upgrade head` 成功。98 行のうち、承認済みで未編集の 85 行すべてに写しが入った(承認の後に編集した行・下書きの行は写し無し)。
-- ベースラインの生成物での確かめ: [`appendix/stage6-effect/detailed/stages/`](../../appendix/stage6-effect/README.md) の段階1〜8 で、S5(段階1の処理の変更)と S7(段階4のモジュールの改名)を「写し → 編集 → 承認」の形で流し、記録される印が `impact_of` を直接呼んだ結果と一致した(S5 12件・S7 6件。[42-4](../Phase-42/Phase-42-4.md) の数字と同じ)。S7 は、参照だけの書き換えを変わったものから外す前は、使う処理の全部に印が付いていた(43-2)。スクリプトは残していない。
+- ベースラインの生成物での確かめ: [`appendix/stage6-effect/detailed/stages/`](../../appendix/measurements/stage6-effect.md) の段階1〜8 で、S5(段階1の処理の変更)と S7(段階4のモジュールの改名)を「写し → 編集 → 承認」の形で流し、記録される印が `impact_of` を直接呼んだ結果と一致した(S5 12件・S7 6件。[42-4](../Phase-42/Phase-42-4.md) の数字と同じ)。S7 は、参照だけの書き換えを変わったものから外す前は、使う処理の全部に印が付いていた(43-2)。スクリプトは残していない。
 - Phase 完了時の全体テスト(#18): devex-api 1003 件成功(Phase 42 の 970 件 + この Phase の 33 件)。devex-ui は変えていないので流していない。
 - `samples_check.py`(`--api-since HEAD`): 不一致 0 件・作り忘れ 0 件(一致 534 / 並び順のみ差 8 / 例外 5)。`link_check.py`: 切れ 0 件。
 

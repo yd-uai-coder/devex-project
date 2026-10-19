@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from app.uml.domain.base import UmlElement, UmlRelation
 
-# ER関係の多重度。appendix/stage3-requirements-organization.md 品質指標
+# ER関係の多重度。appendix/concept-history.md 3節 品質指標
 # 「ERのテーブル、カラム、PK/FK、多重度」が図・要素表から読み取れることを要求している。
 ErRelationType = Literal["one_to_one", "one_to_many", "many_to_many"]
 

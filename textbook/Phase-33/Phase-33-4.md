@@ -17,7 +17,7 @@
 | [`docs/internal_design.md`](../../docs/internal_design.md) | 3.2節に ⑪ `hearing_points` テーブル(Phase 34 で新設予定)。3.3節に「6. ヒアリングと上流の構造化」 |
 | [`docs/implementation_plan.md`](../../docs/implementation_plan.md) | 4.1節を6ステージにし、ステージ6(目的・出発点・方針・Phase 33〜40・マイルストーン7)を足した。ステージ5の本番反映を「完了」に |
 | [`README.md`](../../README.md) | ステージの表: ステージ5を完了、ステージ6を着手(Phase 33〜40 予定) |
-| [`appendix/devex_roadmap.md`](../../appendix/devex_roadmap.md) | ステージ5・6の見出しと表の状態。ステージ6の見出しの下に、Phase 33 で書き写したことの注記(本文は着手前の構想として残す) |
+| [`appendix/devex_roadmap.md`](../../appendix/concept-history.md#roadmap) | ステージ5・6の見出しと表の状態。ステージ6の見出しの下に、Phase 33 で書き写したことの注記(本文は着手前の構想として残す) |
 
 ## 書き方の判断
 

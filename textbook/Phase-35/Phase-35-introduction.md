@@ -21,7 +21,7 @@ Phase 36 要件定義書のモデル化(観点の表の「採用」を、要件�
 
 - 前提として読むもの:
   - [Phase 34 の introduction](../Phase-34/Phase-34-introduction.md)(観点の表・判定の流れ・`hearing_check`)
-  - [見本の選択肢カード](../../appendix/structured-requirements-sample/hearing-points.md) の4節(可用性・セキュリティのカードの例)
+  - 見本の選択肢カード の4節(可用性・セキュリティのカードの例)
   - [外部設計書](../../docs/external_design.md) 2.9節「選択肢カード」と、[内部設計書](../../docs/internal_design.md) 3.3節「6. ヒアリングと上流の構造化」
 
 ## モード宣言(#21)・E2E の宣言(#36)

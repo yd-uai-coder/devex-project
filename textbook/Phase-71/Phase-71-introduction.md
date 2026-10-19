@@ -71,7 +71,7 @@ Claude の判断(計画の承認で確定、または作業中):
 | [`Phase-71-1.md`](./Phase-71-1.md) | マイルストーンのゴールと単位(PR-7) | あり(本体 5 + テスト 3。新規 2) | なし |
 | [`Phase-71-2.md`](./Phase-71-2.md) | DFD のデータストアの書き漏れ(逆向きの照合) | あり(本体 2 + テスト 2) | なし(`validation.py` は 71-1 と同じファイル) |
 | [`Phase-71-3.md`](./Phase-71-3.md) | 画面の文の変更の波及を絞る | あり(本体 3 + テスト 1) | なし |
-| [`Phase-71-4.md`](./Phase-71-4.md) | 効果の確認(保存済みの記録と実際の LLM) | なし(測定。記録は [`appendix/stage8-effect/phase71/`](../../appendix/stage8-effect/phase71/README.md)) | 71-1〜71-3 |
+| [`Phase-71-4.md`](./Phase-71-4.md) | 効果の確認(保存済みの記録と実際の LLM) | なし(測定。記録は `appendix/stage8-effect/phase71/`) | 71-1〜71-3 |
 
 ## サンプルコード一覧
 

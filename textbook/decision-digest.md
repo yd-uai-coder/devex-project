@@ -225,7 +225,7 @@ Phase 4の生成にあたり、事前にユーザーへE2Eテストの実装粒�
 - **`E2eFakeLLM`の設計を実機検証で2度修正**: 当初の設計(ヒアリング完了判定を「HumanMessageが2件以上」、doc_type判別を「ラベル文字列の部分一致」)には、実際にdocker composeで起動したdevex-apiへcurlでアクセスして検証したところ2件の不具合があった((1)完了判定プロンプト自身のHumanMessageを数えてしまい実発話0件でも完了扱いになる、(2)doc_type間の相互参照文言により外部設計書・内部設計書の生成内容が要件定義書と誤判定される)。両方を修正し、当初「Playwrightのみで検証する、追加の単体テストは不要」としていた判断を撤回して`tests/unit/test_fake_llm_e2e.py`を追加した。詳細は[`Phase-04-3.md`](./Phase-04/Phase-04-3.md)「実機検証で発見した2件の不具合」参照。
 - **検討したが見送った項目**: `ApiError`(devex-ui `client.ts`)へのバックエンド`code`フィールド読み取り追加。rule #17の判定基準(「今この共通化を駆動している実在の消費者は何か」)に照らし、現状どの画面も`code`で挙動分岐しておらず、Phase 4-1のメッセージ日本語化で`message`のみでも十分ユーザーに伝わるため、追加しないことにした。詳細は[`Phase-04-2.md`](./Phase-04/Phase-04-2.md)参照。
 - **`GOOGLE_API_KEY`に関する既往の記録の訂正**: Phase 2〜Phase 4-4まで一貫して「`GOOGLE_API_KEY`未設定のため実LLM未検証」と記録してきたが、本Phaseの実機検証中に`devex-api/.env`へ実際の値が既に設定されていることが判明した(設定時期は本Phaseの範囲では特定していない)。本Phase自体は意図的に`E2E_FAKE_LLM=true`で検証する方針のため、この鍵を使った実際の動作確認は行っていない。詳細は[`Phase-04-5.md`](./Phase-04/Phase-04-5.md)参照。
-- **申し送り**: `textbook/appendix/*-retrospective.md`(rule #10)がPhase 0〜3のいずれについても未作成であることが本Phase準備中に判明した。rule #18のセッション分離に従い、振り返り・decision digestの整理(本entryが「Phase完了時にまとめて1回」の実施分)は本Phase生成と同一セッションで行い、**振り返り自体は別セッションで行う**方針にした。詳細は[`Phase-04-introduction.md`](./Phase-04/Phase-04-introduction.md)「申し送り」節参照。
+- **申し送り**: `textbook/retrospectives/*-retrospective.md`(rule #10)がPhase 0〜3のいずれについても未作成であることが本Phase準備中に判明した。rule #18のセッション分離に従い、振り返り・decision digestの整理(本entryが「Phase完了時にまとめて1回」の実施分)は本Phase生成と同一セッションで行い、**振り返り自体は別セッションで行う**方針にした。詳細は[`Phase-04-introduction.md`](./Phase-04/Phase-04-introduction.md)「申し送り」節参照。
 
 ## Phase 4完了後 ── 統合テスト用DBの分離
 
@@ -289,7 +289,7 @@ Phase 5の生成にあたり、事前にユーザーへスコープ(WBS区分5�
 - **証明書取得(certbot)は「手順設計まで」に意図的に留めた**: 実ドメインが無いローカル環境では実際のLet's Encrypt発行を検証できないため、`docker-compose.prod.yml`に`profiles: ["certbot"]`のワンショットサービスを追加して手順を実行可能な形にしつつ、実行自体(証明書の実発行)はユーザーが実VPS上で行う運用とした。ローカル検証は一時的な自己署名証明書で代用した。手順は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md)にまとめた。
 - **`devex-api`直下のインフラ設定ファイルは引き続きsamplesへミラーせず直接反映**: [`Phase-01-introduction.md`](./Phase-01/Phase-01-introduction.md)が確立した前例をそのまま踏襲(`docker-compose.prod.yml`・`nginx/*.conf`・`backend/Dockerfile`・`OPERATIONS.md`・`devex-api/README.md`・`devex-ui/README.md`・`.env`/`.env.example`)。samplesへ反映したのは`app/core/config.py`(Phase 4-3以降既にsamples対象)の値変更のみ。
 - **`devex-ui/CLAUDE.md`の陳腐化は対象外のまま**: `src/features/{dashboard,hearing,documents}`等のDevex機能層を反映していない既知の課題([[feedback_direct_impl_scope]]と同種の「実プロジェクトへの直接反映」の話ではなく、単純な文書債務)だが、運用マニュアル整備とは別の作業としてスコープ確定時に対象外と合意した。次にこのファイルへ手を入れる機会があれば解消を検討する。
-- **申し送り**: [`Phase-04-introduction.md`](./Phase-04/Phase-04-introduction.md)が申し送った「`textbook/appendix/*-retrospective.md`(rule #10)がPhase 0〜4のいずれについても未作成」という既知の負債は、本Phase完了時点でも解消していない。rule #18に従い本Phaseでも着手せず、**別セッションでPhase 0〜5の振り返り・decision digestの整理・`q_a.md`の追記をまとめて行う**ことを推奨する。詳細は[`Phase-05-introduction.md`](./Phase-05/Phase-05-introduction.md)「申し送り」節参照。
+- **申し送り**: [`Phase-04-introduction.md`](./Phase-04/Phase-04-introduction.md)が申し送った「`textbook/retrospectives/*-retrospective.md`(rule #10)がPhase 0〜4のいずれについても未作成」という既知の負債は、本Phase完了時点でも解消していない。rule #18に従い本Phaseでも着手せず、**別セッションでPhase 0〜5の振り返り・decision digestの整理・`q_a.md`の追記をまとめて行う**ことを推奨する。詳細は[`Phase-05-introduction.md`](./Phase-05/Phase-05-introduction.md)「申し送り」節参照。
 
 ## Phase 6着手 ── ステージ2の仕様診断(#28)
 
@@ -302,7 +302,7 @@ Phase 5(実VPSデプロイまで)完了後、ステージ2(Should have要件: �
 
 ## Phase 7完了 ── ステージ3(UML設計図パイプライン)着手: 設計フェーズ
 
-Phase 5完了後の要件整理([`appendix/stage3-requirements-organization.md`](../appendix/stage3-requirements-organization.md)、決定事項D1〜D8)を受け、Phase 7として設計フェーズ(仕様診断・D5確定・スパイク・`docs/`反映)を実施した。詳細は[`Phase-07-introduction.md`](./Phase-07/Phase-07-introduction.md)参照。
+Phase 5完了後の要件整理([`appendix/stage3-requirements-organization.md`](../appendix/concept-history.md#stage3)、決定事項D1〜D8)を受け、Phase 7として設計フェーズ(仕様診断・D5確定・スパイク・`docs/`反映)を実施した。詳細は[`Phase-07-introduction.md`](./Phase-07/Phase-07-introduction.md)参照。
 
 - **本Stage固有の進行特例**: ユーザー指示により、Stage 3に限りコードを`devex-api`/`devex-ui`本体へ直接反映する(通常のsamples-onlyから変更)。ただし教材・samplesは通常どおり作成し、samples側の#29 Phaseタグは本体コードには一切書かない。ユーザーはPhaseごとにテストを実行し確認後、次Phaseへ進む指示を出す。
 - **ブランチ運用の確定**: `devex-api`は`stage2-phase6`をmainへマージ済み(PR#1)・`stage3`ブランチで以降のPhaseを進行する。`devex-ui`とこのリポジトリ(`devex`本体)はいずれもブランチを切らず`main`直下で継続する(Phase 0〜6と同じ運用。事前の検討メモにあった「3リポジトリ共通でブランチを切る」という想定は、ユーザー確認の結果このプロジェクトでは不採用になった)。
@@ -491,7 +491,7 @@ Phase 10完了後、ユーザーから2つの質問を受けた。1つは「`app
 
 ## Phase 13完了後 ── コンポーネント図の粒度から、詳細設計モードの構想へ
 
-Phase 13 の完了後、ユーザーが「コンポーネント図の粒度が粗い(`api-service-model`程度)。ファイル単位の責務を知りたい」と指摘した。詳細は[`q_a.md`](./q_a.md)「Phase 13完了後」、構想は[`appendix/detailed-design-mode-organization.md`](../appendix/detailed-design-mode-organization.md)。
+Phase 13 の完了後、ユーザーが「コンポーネント図の粒度が粗い(`api-service-model`程度)。ファイル単位の責務を知りたい」と指摘した。詳細は[`q_a.md`](./q_a.md)「Phase 13完了後」、構想は[`appendix/detailed-design-mode-organization.md`](../appendix/concept-history.md#detailed-design-mode)。
 
 - **原因は入力の側**: 内部設計書のプロンプトがファイル単位の責務を求めておらず、図の生成はディレクトリ構成を拾っていた。
 - **実務に照らして再検討した**: いったん「機能ごとのコンポーネント部分図」などを選んだが、ユーザーが保留にした。公開資料(C4・arc42・日本の詳細設計)を調べ、構造は「図+責務表(ファイル単位は表)」、振る舞いは実行時のビュー、CRUD 図は定番、重要な部分だけ書く、が分かった。**機能ごとの部分図は撤回した**(実務の裏付けが無いまま勧めていた)。
@@ -514,7 +514,7 @@ Phase 13 の完了後、ユーザーが「コンポーネント図の粒度が�
 - **出力見本へのフィードバック**([`Phase-14-5.md`](./Phase-14/Phase-14-5.md)):
   - モードはプロジェクトの作成時に選び、後から変えない(`projects.mode`)。「概要モード」を「簡易ドキュメントモード」に改称した。
   - 詳細設計モードはヒアリングの後に要件定義・外部設計だけを生成し、段階1〜7を「下書き → レビュー・編集 → 承認」で進める。
-  - 出力見本(Devex 自身が題材。[`appendix/detailed-design-devex/`](../appendix/detailed-design-devex/README.md))で見つかった気づき10件は、すべて Phase 15 で直す。
+  - 出力見本(Devex 自身が題材。`appendix/detailed-design-devex/`)で見つかった気づき10件は、すべて Phase 15 で直す。
   - コードは本体へ直接反映し、samples も並行して作る。
 - **ロードマップ**: Phase 15〜20 は暫定とし、各 Phase の着手時に見直す([`Phase-14-4.md`](./Phase-14/Phase-14-4.md))。実際には Phase 16・20・22 で分割し、ステージ4は Phase 14〜24 になった。
 
@@ -680,7 +680,7 @@ Phase 14 の決定を受け、モードの選択・段階の土台・気づき10
 
 ## ステージ4完了後 ── 進行ルールの改訂(自動実装モード ほか)
 
-ステージ4のデプロイ後の振り返りで、進行上の課題(T1〜T9)を整理し、進行ルールを改訂した。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) を参照。Phase 13〜24 の digest は、別のセッションでこの節の前に追記した。
+ステージ4のデプロイ後の振り返りで、進行上の課題(T1〜T9)を整理し、進行ルールを改訂した。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) を参照。Phase 13〜24 の digest は、別のセッションでこの節の前に追記した。
 
 - **#21 を自動実装モード(on/off)に改定**:
   - 旧「学習モード / 納期モード」は廃止した。モードは Phase 単位で introduction に宣言する。
@@ -697,7 +697,7 @@ Phase 14 の決定を受け、モードの選択・段階の土台・気づき10
 
 ## T2(ステージ4完了後)── 本体・samples・教材の三重管理
 
-[`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) で保留にした T2 を、別のセッションで決めた。進め方は「実測 → 案の比較 → ユーザーの決定 → 反映」。
+[`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) で保留にした T2 を、別のセッションで決めた。進め方は「実測 → 案の比較 → ユーザーの決定 → 反映」。
 
 - **実測(samples 426 ファイル ↔ devex-api `stage4`・devex-ui `main`)**:
   - コードが一致 367、並び順だけの差 6、コードの差 37、samples のみ 13。
@@ -724,7 +724,7 @@ Phase 14 の決定を受け、モードの選択・段階の土台・気づき10
 
 ## ステージ4完了後 ── samples の作成を自動実装モードで変えない(T2 の改訂)
 
-T2 の決定のうち「on の Phase では新規ファイルを samples に作らない」を、ユーザーの判断で改めた。経緯は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md)「T2 の改訂」。
+T2 の決定のうち「on の Phase では新規ファイルを samples に作らない」を、ユーザーの判断で改めた。経緯は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md)「T2 の改訂」。
 
 - **決定**: samples は自動実装モードの on/off で内容を変えない。on の Phase でも、AI が本体と並行して samples を作成・追記する(新規ファイルも作る。#29 の形式)。教材の抜粋・「作成・更新したファイル」表は、off と同じく samples へのリンクで示す。
 - **理由**: 教材の中身は on/off で変えない(#21)。samples はその教材のコードであり、教材を実装手順書のサンプルにする構想にも合う。
@@ -735,7 +735,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ4完了後 ── ゴール3と、生成で見つかった不具合の修正
 
-ゴール3(Devex の生成文書と introduction の突き合わせ)を行った。記録は [`appendix/goal3-comparison.md`](./appendix/goal3-comparison.md)、生成物は [`appendix/goal3-generated/`](../appendix/goal3-generated/README.md)。新しい Phase・章は作らず、本体と samples に直接反映した(Phase 24 完了後の調整と同じ扱い。samples のヘッダーは `24(ゴール3後の調整)`)。経緯は [`q_a.md`](./q_a.md)「ゴール3」の2件。
+ゴール3(Devex の生成文書と introduction の突き合わせ)を行った。記録は [`appendix/goal3-comparison.md`](retrospectives/goal3-comparison.md)、生成物は [`appendix/goal3-generated/`](../appendix/goal3-generated/README.md)。新しい Phase・章は作らず、本体と samples に直接反映した(Phase 24 完了後の調整と同じ扱い。samples のヘッダーは `24(ゴール3後の調整)`)。経緯は [`q_a.md`](./q_a.md)「ゴール3」の2件。
 
 - **共通化できる要素**: 「作業単位の表」(作業単位・対象の処理ID・作成・変更するファイル(依存順)・役割1行・確認方法)。実装前チェックリストと段階7のタスク表を同じ形にそろえられる。次のステージの実装手順書のひな形の候補。
 - **足りない列への判断**(ユーザー): 生成側の確認方法(テスト観点)は、テスト設計の生成として今後の機能追加で検討する。教材側の処理ID は今のままでよい。マイルストーンの依存は取り下げた(並び順で足りる)。
@@ -819,7 +819,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ5完了後 ── 振り返り
 
-ステージ5の振り返り(#10)。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 9節。
+ステージ5の振り返り(#10)。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 9節。
 
 - **画面確認は溜めてよい**: Phase ごとに済ませず、#37 の申し送りに積んで、統合/E2E・本番確認の Phase でまとめて行ってよい(#37 の運用注記)。ステージ5では Phase 27〜31 の分を本番で一度に確かめ、問題は無かった。
 - **E2E は #36 のまま**: 壊れは統合の Phase で拾えた。CI で流すかは [`retrospective-memo.md`](./retrospective-memo.md) の候補のまま。
@@ -830,7 +830,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ステージ6の要件定義フェーズ。ベースライン・仕様診断(#28)・見本・docs への反映・Phase の区切りを行った。詳細は[`Phase-33-introduction.md`](./Phase-33/Phase-33-introduction.md)参照。
 
-- **ベースライン**([33-1](./Phase-33/Phase-33-1.md)、[`appendix/stage6-baseline/`](../appendix/stage6-baseline/README.md)): 実 LLM とペルソナで両モード段階8まで流した。3発言で完了し、潜在の事実 L1〜L14 はほぼ聞かれず、技術スタックを AI が創作し、要件 1.5/1.6 の6〜7割が利用者の言っていない記述だった。未定義のうちヒアリング原因(分類 A)は件数だけでは測れない ── 効果は3指標(A の件数・聞けた潜在の事実・推測の割合)で測る。
+- **ベースライン**([33-1](./Phase-33/Phase-33-1.md)、[`appendix/measurements/stage6-baseline.md`](../appendix/measurements/stage6-baseline.md)): 実 LLM とペルソナで両モード段階8まで流した。3発言で完了し、潜在の事実 L1〜L14 はほぼ聞かれず、技術スタックを AI が創作し、要件 1.5/1.6 の6〜7割が利用者の言っていない記述だった。未定義のうちヒアリング原因(分類 A)は件数だけでは測れない ── 効果は3指標(A の件数・聞けた潜在の事実・推測の割合)で測る。
 - **観点の表**(新テーブル `hearing_points`。ユーザーは推奨より大きい方を選んだ): 機能面10 + IPA 6大項目、規模(個人/社内/公開)で必須を切り替え、技術スタックは常に必須。**完了はコードが判定**(必須がすべて未決以外。対象外も可)。
 - **要件定義書と外部設計書の両方を意味モデル化**(構造化出力 → model → md、後続は md を読む)。要件 ID は種別ごと(FR-/NFR-/CON-)、出どころは user/adopted/assumed。既存データは移さない。
 - **選択肢カード**: 選ぶ = 採用、自由回答 = 決定。選択はコードが記録する。
@@ -892,7 +892,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ6完了後 ── 振り返り
 
-ステージ6の振り返り(#10)。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 10節。
+ステージ6の振り返り(#10)。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 10節。
 
 - **#22 を「要約」と位置づけ直した**: Phase 完了チェックの設問は、完了の判定でなく、Phase の要点を問いの形で示す読み物。回答は求めない。
 - **完了後の調整の往復は通常の工程(#38)**: 対話の UI(Phase 35)は使ってみて直す往復が4回要ったが、ルールは変えない。見た目の確認は溜めて本番でまとめてよい(#37 の運用注記)まま。
@@ -901,7 +901,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ6完了後 ── AI の提案の精度
 
-ステージ3〜6 を通した分析(#39 の初回)。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 11節。
+ステージ3〜6 を通した分析(#39 の初回)。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 11節。
 
 - **#39 を新設した**: ステージ完了時の振り返りで、AI の提案の精度を記録から分析する。見るものは、推奨と違った選択(件数と向き)・計画の変動・完了後の調整・本番確認の指摘。書式は自由で、数字は概算でよい。
 - **効いているもの**: 未確定事項の先出し(仕様診断 + Phase ごとの表)と、既存の型の上に足すこと。ステージ5・6 では計画の変動が0だった。
@@ -983,7 +983,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ7完了後 ── 振り返り
 
-ステージ7の振り返り(#10)。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 12節。
+ステージ7の振り返り(#10)。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 12節。
 
 - **未消化の申し送りはステージ完了時に棚卸しする**: 23件を「解決 / 閉じる / 次のステージの入力 / 持ち越し」に分け、残りは次のステージの入力7件・持ち越し3件([Phase 50](./Phase-50/Phase-50-introduction.md#未消化の申し送り37))。
 - **新しい種類の画面は、見本で流れを先に決めると往復が減る**: Phase 44 は 41-3 のデモで置き場と流れを決め、完了後の調整は2件(Phase 35 は4回)。
@@ -992,7 +992,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ7完了後 ── AI の提案の精度
 
-#39 の2回目。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 12.5。
+#39 の2回目。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 12.5。
 
 - 計画の変動0・本番の指摘0 がステージ5から3回続いた。完了後の調整は 10 Phase で2件(Phase あたり 0.2。ステージ6は 0.6〜1.0)。
 - 推奨と違った選択は約8件で、すべて「範囲を狭める・広げる・基準を厳しくする」向き(推奨そのものの外れではない)。比較を求めて再提案した2件(Phase 47・48)は、比較表を見てから推奨を選んだ。
@@ -1002,7 +1002,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 詳細は[`Phase-51-introduction.md`](./Phase-51/Phase-51-introduction.md)参照。
 
 - **生成(Gemini flash-lite)は変えず、自己診断を構造化レビュー(level・targets・problem・reason・suggestion・cause・fix、版に結ぶ)に置き換える**。差し戻しは人が指摘を選ぶ(自動のループにしない)。cause がヒアリング不足なら観点を open に戻して聞き直す。
-- 測定([`appendix/stage8-baseline/`](../appendix/stage8-baseline/README.md)、正解表は流す前に書いた): flash-lite のまま構造化しても指摘は縮む(指示・入力の量で縮む)→ レビューは Sonnet 級。Haiku は文書をまたぐ矛盾を 0/6 で、見落としはモデルの格による。
+- 測定([`appendix/measurements/stage8-baseline.md`](../appendix/measurements/stage8-baseline.md)、正解表は流す前に書いた): flash-lite のまま構造化しても指摘は縮む(指示・入力の量で縮む)→ レビューは Sonnet 級。Haiku は文書をまたぐ矛盾を 0/6 で、見落としはモデルの格による。
 - 仕様診断([51-2](./Phase-51/Phase-51-2.md)): Sonnet と Haiku の振り分け・1日の回数上限・失敗時は自己診断に切り替え(推奨と違う)。いつ流すかは追加測定 (e) を見て「簡易 = 4文書の後に自動、詳細 = 要件・外部の後に自動、段階6・7 はボタン + 未レビューの印」。実装手順書とテスト仕様書はレビューせず決定的な検証を強める。
 - レビューのオン・オフは superuser だけ切り替えられる(実効値 = is_superuser and review_enabled、初期値オフ)。
 - 生成のモデルを 3.8 Flash にする案は、無料枠(RPD 20)と呼び出しの長さで見送り(範囲の外)。
@@ -1085,7 +1085,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ8完了後 ── 振り返り
 
-ステージ8の振り返り(#10)。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 13節。
+ステージ8の振り返り(#10)。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 13節。
 
 - **申し送りを棚卸しした**: 次のステージの入力11件・持ち越し3件が残る([Phase 60](./Phase-60/Phase-60-introduction.md#未消化の申し送り37))。ステージ7から2ステージ持ち越した2件は閉じた。
 - **測定型の Phase の後は、直しの Phase が出やすい**(Phase 58 → 59。ステージ7の Phase 49 も2セッション目で直した)。
@@ -1094,14 +1094,14 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ8完了後 ── AI の提案の精度
 
-#39 の3回目。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 13.5。
+#39 の3回目。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 13.5。
 
 - 推奨そのものの外れは今回も無い。推奨と違った選択は8件で、範囲を広げる・狭める・データで決め直す向きに加え、**画面の配置の好み**(Phase 57 の2件)という新しい向きが出た。
 - 計画の変動は1(Phase 59 の差し込み)、完了後の調整は 10 Phase で6件。どちらも題材が LLM の出力の質を測る仕事で、測るまで範囲が決まらないことによる。本番の指摘は0。
 
 ## Phase 61完了 ── ステージ9(使い勝手とアカウント・モデル設定の調整)の要件定義フェーズ
 
-詳細は[`Phase-61-introduction.md`](./Phase-61/Phase-61-introduction.md)参照。ステージの前のロードマップの修正(旧ステージ9・10 の撤回、sarashina は予定から外す)は [`appendix/stage9-10-plan.md`](../appendix/stage9-10-plan.md)。
+詳細は[`Phase-61-introduction.md`](./Phase-61/Phase-61-introduction.md)参照。ステージの前のロードマップの修正(旧ステージ9・10 の撤回、sarashina は予定から外す)は [`appendix/stage9-10-plan.md`](../appendix/concept-history.md#stage9-10)。
 
 - `.env` の値はシステムの既定値、ユーザー自身のキーが勝つ。モデルの用途はチャット・生成・レビュー・判定の4つ(判定は推奨と違い、独立した用途)。PDF の読み取りは Gemini 固定。
 - 推奨と違った3つ: 生成中のプロジェクトも削除できる(バックグラウンドの処理は、プロジェクトが消えても壊れないこと)、Phase 60 の申し送り11件をすべて範囲に入れる、`users.full_name` を `user_name` に改名する(データは残す)。
@@ -1190,7 +1190,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ9完了後 ── 振り返り
 
-ステージ9の振り返り(#10)。本番への反映の前に行った。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 14節。
+ステージ9の振り返り(#10)。本番への反映の前に行った。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 14節。
 
 - **本番への反映は次のステージとまとめてよい**(#37 の運用注記に追加)。本番反映と、画面確認で決める項目は、ステージ10の最後の Phase へ送る。
 - 申し送り約35件を棚卸しした: ステージ10の最後の Phase へ9・ステージ10の入力5・生成の質の候補4・閉じる12・持ち越し4・解決1([Phase 72](./Phase-72/Phase-72-introduction.md#未消化の申し送り37))。
@@ -1199,7 +1199,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ9完了後 ── AI の提案の精度
 
-#39 の4回目。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 14.5。
+#39 の4回目。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 14.5。
 
 - 推奨そのものの外れは今回も無い。推奨と違った選択は7件で、仕様診断の「広げる」3件と、画面の Phase の**操作感・見た目の好み**4件(ステージ8で出た向きが続いた)。P66〜72 はすべて推奨どおり。
 - 計画の変動は0、完了後の調整は 11 Phase で3件。本番の指摘は未実施で、ステージ10の反映の後に埋める。
@@ -1262,7 +1262,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ10完了後 ── 振り返り
 
-ステージ10の振り返り(#10)。本番への反映の前に行った(#37 の運用注記の2回目)。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 15節。
+ステージ10の振り返り(#10)。本番への反映の前に行った(#37 の運用注記の2回目)。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 15節。
 
 - 進行ルールは変えない。origin の食い違いは記録だけ(反映の手順の先頭で `git fetch` と本番の head を確かめる型は残す)。中間の Phase の申し送りは今のまま写す。
 - 開発環境の上限の引き上げ(Phase 74)の後、レート制限に当たった記録は0。`tagmerge.py` の手直しは持ち越し、次のステージの仕様診断で改善を範囲に入れるか決める。
@@ -1270,7 +1270,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## ステージ10完了後 ── AI の提案の精度
 
-#39 の5回目。詳細は [`appendix/overall-retrospective.md`](./appendix/overall-retrospective.md) 15.5。
+#39 の5回目。詳細は [`appendix/overall-retrospective.md`](retrospectives/overall-retrospective.md) 15.5。
 
 - 推奨と違った選択は2件(P76 のボタンの位置〈見た目〉・P79 の生成元〈広げる〉)。73-1 の紐付けは、初めの推奨が希望を満たさず作り直した(脅威の側だけから組み立てた)。
 - 計画の変動は1(P78 の撤回。原因の調査の結果)、完了後の調整は0。本番の指摘は未実施で、反映の後にステージ9の分と一緒に埋める。
@@ -1286,7 +1286,7 @@ T2 の決定のうち「on の Phase では新規ファイルを samples に作�
 
 ## プロジェクト完了 ── 振り返り
 
-2026-10-18。詳細は [`project-retrospective.md`](./appendix/project-retrospective.md)、相談は [q_a](./q_a.md)「プロジェクト完了の振り返り」。
+2026-10-18。詳細は [`project-retrospective.md`](retrospectives/project-retrospective.md)、相談は [q_a](./q_a.md)「プロジェクト完了の振り返り」。
 
 - ゴール1〜3 はすべて達成と判定した(同 2節)。ステージ1の Must 要件とマイルストーン1・2 は Phase 2〜5 の記録で裏付けた。
 - #27 で保留していた「Devex の生成文書を Phase 0 の入力にする方法」を案として具体化した(同 5節): マイルストーン = Phase、実装手順書の単位 = 章、未定義・要決定 = 着手時の相談、リスク = 申し送りの初期値、実装可能性チェックの結果 = 仕様診断の出発点。試していないので、次のプロジェクトの Phase 0 で確かめる。

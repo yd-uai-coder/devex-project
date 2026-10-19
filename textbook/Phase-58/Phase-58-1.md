@@ -14,7 +14,7 @@ samples の対象外(測定のスクリプトと出力。#13・#15 の対象外)
 |---|---|
 | `appendix/stage8-effect/review_body.py` | 51-1 の `review.py` の題材の読み込み・L0 を import し、指示・出力・LLM は本体の `build_review_messages`・`ReviewOutput`・`get_review_llm` で流す。段階の区切りは詳細設計書を「07 横断事項」の前で切る(stage6)/ 実装計画書を足す(stage7) |
 | `appendix/stage8-effect/runs/` | 出力(手で書き換えない) |
-| [`appendix/stage8-effect/results.md`](../../appendix/stage8-effect/results.md) | 判定と集計 |
+| `appendix/stage8-effect/results.md` | 判定と集計 |
 
 ## 結果 1: Phase 57 までの指示
 

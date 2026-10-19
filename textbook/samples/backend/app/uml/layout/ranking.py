@@ -5,7 +5,7 @@
 移植元の図生成エンジンはlane/rowを人手で指定する前提で、自動割り当て機構を持たない。
 devexの図はAI/ユーザー生成の意味モデルから組み立てるため、
 lane(レーン)・row(行)をこちらで算出する必要がある
-(appendix/stage3-requirements-organization.md 診断3)。
+(appendix/concept-history.md 3節 診断3)。
 
 - lane: 要素の`layer`属性(component/dfdの一部要素が持つ)。未設定の要素は共有の
   フォールバックレーンにまとめる。ER図は`layer`を持たないため常に単一レーン。

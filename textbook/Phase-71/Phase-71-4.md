@@ -11,7 +11,7 @@
 
 ## この章で作成・更新したファイル
 
-samples の対象外(測定のスクリプトと出力。#13・#15 の対象外)。記録は [`appendix/stage8-effect/phase71/`](../../appendix/stage8-effect/phase71/README.md) に置いた。
+samples の対象外(測定のスクリプトと出力。#13・#15 の対象外)。記録は `appendix/stage8-effect/phase71/` に置いた。
 
 - `count.py`: 新しい警告を保存済みの実行に当てて数える。
 - `drive71.py`: 複製したプロジェクトで実装計画書・段階2と3・段階7を作り直す。レビューの設定を一時的にオフにする。

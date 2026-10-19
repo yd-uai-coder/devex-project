@@ -2,7 +2,7 @@
 
 ## この章の目的
 
-出力見本([`appendix/detailed-design-devex/`](../../appendix/detailed-design-devex/README.md))を見たユーザーの指摘と決定を記録する。内容は次の4つで、実装は Phase 15 で行う。
+出力見本(`appendix/detailed-design-devex/`)を見たユーザーの指摘と決定を記録する。内容は次の4つで、実装は Phase 15 で行う。
 
 - モードをプロジェクトの作成時に選ぶこと。
 - 「概要モード」を「簡易ドキュメントモード」に改称すること。
@@ -19,9 +19,9 @@
 | [`docs/external_design.md`](../../docs/external_design.md) | 2.2節: SCR-002 にモード選択ダイアログを追加し、遷移の図を更新。2.7節: 2つのモードを作成時の選択に書き換え、「段階の進め方」(フローの図)を追加 |
 | [`docs/internal_design.md`](../../docs/internal_design.md) | ②`projects` に `mode` 列、`POST /projects` に `mode`、`doc_generator_service` にモードごとの生成、⑩の注記を更新 |
 | [`docs/implementation_plan.md`](../../docs/implementation_plan.md) | Phase 15 の範囲に、モード選択と気づき#1〜#10の修正を追加 |
-| `docs/*`・`textbook/Phase-14/*`・[構想メモ](../../appendix/detailed-design-mode-organization.md) | 「概要モード」を「簡易ドキュメントモード」に改称(`q_a.md` の過去の記録は書き換えない) |
+| `docs/*`・`textbook/Phase-14/*`・[構想メモ](../../appendix/concept-history.md#detailed-design-mode) | 「概要モード」を「簡易ドキュメントモード」に改称(`q_a.md` の過去の記録は書き換えない) |
 | [`Phase-14-4.md`](./Phase-14-4.md) | Phase 15 の行と成果物を更新 |
-| 見本の [`content.py`](../../appendix/detailed-design-devex/content.py) | 付録の気づきに「対応方針」の列を追加し、再生成 |
+| 見本の `content.py` | 付録の気づきに「対応方針」の列を追加し、再生成 |
 
 文書の更新だけなので、#13・#15・#30 の対象外。
 

@@ -2,9 +2,9 @@
 
 ## 目的
 
-ステージ7(Phase 42〜48: 要素のグラフ・承認時の写しと印・影響の画面・簡易モードの model と影響・ヒアリングの側面・段階3・5 の書き落とし)が効いたかを、[ベースライン](../../appendix/stage7-baseline/README.md)([Phase 41-1](../Phase-41/Phase-41-1.md))と同じシナリオと、実際の LLM で数字にする。基準に届かなければ、原因を直して再測定する([Phase 39](../Phase-39/Phase-39-introduction.md) と同じ形)。
+ステージ7(Phase 42〜48: 要素のグラフ・承認時の写しと印・影響の画面・簡易モードの model と影響・ヒアリングの側面・段階3・5 の書き落とし)が効いたかを、[ベースライン](../../appendix/measurements/stage7-baseline.md)([Phase 41-1](../Phase-41/Phase-41-1.md))と同じシナリオと、実際の LLM で数字にする。基準に届かなければ、原因を直して再測定する([Phase 39](../Phase-39/Phase-39-introduction.md) と同じ形)。
 
-計画は [41-5](../Phase-41/Phase-41-5.md) の Phase 49。測定の生成物は [`appendix/stage7-effect/`](../../appendix/stage7-effect/README.md)。
+計画は [41-5](../Phase-41/Phase-41-5.md) の Phase 49。測定の生成物は [`appendix/measurements/stage7-effect.md`](../../appendix/measurements/stage7-effect.md)。
 
 **この Phase は2セッションで行った**(着手時の決定)。1つ目のセッションで 49-1・49-2(測る)、2つ目のセッションで 49-3・49-4(直して測り直す)。
 
@@ -27,7 +27,7 @@ Phase 50 統合/E2E・デプロイ
 - 前提として読むもの:
   - [41-1](../Phase-41/Phase-41-1.md)(ベースラインの方式・正解の付け方)・[41-2](../Phase-41/Phase-41-2.md)(処理を軸の決定)
   - [Phase 42](../Phase-42/Phase-42-introduction.md)(要素と辺・たどり方)・[Phase 43](../Phase-43/Phase-43-introduction.md)(写しとの差分・印)・[Phase 45](../Phase-45/Phase-45-introduction.md)(簡易モードの文書の model)・[Phase 46](../Phase-46/Phase-46-introduction.md)(簡易モード)
-  - [Phase 47](../Phase-47/Phase-47-introduction.md)(側面と [`tally.py`](../../appendix/stage7-hearing/README.md))・[Phase 48](../Phase-48/Phase-48-introduction.md)(段階3・5)
+  - [Phase 47](../Phase-47/Phase-47-introduction.md)(側面と [`tally.py`](../../appendix/measurements/stage7-hearing.md))・[Phase 48](../Phase-48/Phase-48-introduction.md)(段階3・5)
 - **この Phase を始めた時点の状態**: Phase 48 は3つのリポジトリともコミット済み。Phase 48 の完了後の調整は無かった。
 
 ## モード宣言(#21)・E2E の宣言(#36)
@@ -113,7 +113,7 @@ Claude の判断(1つ目のセッション。計画の承認で確定):
 
 1つ目のセッション:
 
-- 49-1: `measure.py` がベースラインの4方式の数字をそのまま再現した(過剰 87%・31%・71%・43% など。[`results-49-1.md`](../../appendix/stage7-effect/impact/results-49-1.md))。
+- 49-1: `measure.py` がベースラインの4方式の数字をそのまま再現した(過剰 87%・31%・71%・43% など。`results-49-1.md`)。
 - 49-2: `drive.py` の全コマンドが今の API で通った。段階の承認で 409(未確認の印)は出なかった。本体は変えていないので、全体テストは流していない(#18)。
 
 2つ目のセッション:

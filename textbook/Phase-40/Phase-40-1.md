@@ -2,7 +2,7 @@
 
 ## この章の目的
 
-[Phase 39](../Phase-39/Phase-39-introduction.md) の効果測定で見つけ、「この Phase で生まれたもの」に積んだ小さな不具合のうち、ユーザーが選んだ4つを直す ── 返信の問いの二重、規模の制約(CON)の出どころ、`API_BODY_MISSING` の誤検知、実装計画書の見出しの記号の重なり。どれも測定の生成物([`appendix/stage6-effect/`](../../appendix/stage6-effect/README.md))で実際に出たもので、本番に出す前に片づける。
+[Phase 39](../Phase-39/Phase-39-introduction.md) の効果測定で見つけ、「この Phase で生まれたもの」に積んだ小さな不具合のうち、ユーザーが選んだ4つを直す ── 返信の問いの二重、規模の制約(CON)の出どころ、`API_BODY_MISSING` の誤検知、実装計画書の見出しの記号の重なり。どれも測定の生成物([`appendix/measurements/stage6-effect.md`](../../appendix/measurements/stage6-effect.md))で実際に出たもので、本番に出す前に片づける。
 
 自動実装モード: on([introduction](./Phase-40-introduction.md) 参照)。
 

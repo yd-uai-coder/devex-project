@@ -2,7 +2,7 @@
 
 ## 目的
 
-ステージ7(変更影響分析・変更管理、Phase 41〜50)の完了後、次のステージとして「AI設計レビュー + テスト設計」を始める。構想は [ロードマップ](../../appendix/devex_roadmap.md) のステージ8にある。Phase 51 は、[Phase 41](../Phase-41/Phase-41-introduction.md) と同じく、実装に入る前の要件定義フェーズとして次を行う。
+ステージ7(変更影響分析・変更管理、Phase 41〜50)の完了後、次のステージとして「AI設計レビュー + テスト設計」を始める。構想は [ロードマップ](../../appendix/concept-history.md#roadmap) のステージ8にある。Phase 51 は、[Phase 41](../Phase-41/Phase-41-introduction.md) と同じく、実装に入る前の要件定義フェーズとして次を行う。
 
 - 今の自己診断とレビューの方式を、欠陥を仕込んだ生成物で測る(ベースライン。モデルの選定を含む。[51-1](./Phase-51-1.md))
 - スコープの確認と仕様診断(#28)・決定と、Phase 50 の申し送りの1件ずつの判断([51-2](./Phase-51-2.md))
@@ -29,8 +29,8 @@
 ```
 
 - **前提として読むもの**:
-  - [`appendix/devex_roadmap.md`](../../appendix/devex_roadmap.md) のステージ8(生成とレビューのモデルを分ける・再ヒアリング・テスト設計・品質評価)
-  - [総括の振り返り](../appendix/overall-retrospective.md) 12節(ステージ7の振り返り。12.3 の申し送りの棚卸し)
+  - [`appendix/devex_roadmap.md`](../../appendix/concept-history.md#roadmap) のステージ8(生成とレビューのモデルを分ける・再ヒアリング・テスト設計・品質評価)
+  - [総括の振り返り](../retrospectives/overall-retrospective.md) 12節(ステージ7の振り返り。12.3 の申し送りの棚卸し)
   - [Phase 50](../Phase-50/Phase-50-introduction.md)「未消化の申し送り」(次のステージの入力7件)
 - **今の仕組み**: 生成の後の自己診断は `devex-api/backend/app/services/doc_generator_service.py` の `_self_diagnose`(生成と同じ LLM・4行の指示・自由文をチャットに出す)。決定的な検証は `app/documents/*/validation.py`(文書)と `app/detailed_design/validation.py`(段階・手順書)。詳細は [51-1](./Phase-51-1.md)「調べて分かったこと」。
 - **この Phase を始めた時点の状態**: ステージ7の振り返り(外側のリポジトリ)は未コミット。この Phase はその上に重ねた。devex-api の `.env` には `GOOGLE_API_KEY` だけがあり、測定の途中でユーザーが `ANTHROPIC_API_KEY` を足した。
@@ -64,7 +64,7 @@ Claude の判断(計画の承認で確定、または作業中):
 
 | 章 | トピック | ファイル作成 | 依存 |
 |---|---|---|---|
-| [`Phase-51-1.md`](./Phase-51-1.md) | ベースライン: 今の自己診断とレビューの方式を測る(モデルの選定・区切りごとの効果を含む) | あり(`appendix/stage8-baseline/`。使い捨てのスクリプトと結果。samples の対象外) | なし |
+| [`Phase-51-1.md`](./Phase-51-1.md) | ベースライン: 今の自己診断とレビューの方式を測る(モデルの選定・区切りごとの効果を含む) | あり(`appendix/measurements/stage8-baseline.md`。使い捨てのスクリプトと結果。samples の対象外) | なし |
 | [`Phase-51-2.md`](./Phase-51-2.md) | スコープの確認と仕様診断(#28)・決定・申し送りの判断。seed の superuser | あり(devex-api の seed とそのテスト) | 51-1 |
 | [`Phase-51-3.md`](./Phase-51-3.md) | レビュー結果・テスト仕様書の見本(md)と画面のデモ `/design-review-demo` | あり(md の見本・devex-ui 本体と samples) | 51-2 |
 | [`Phase-51-4.md`](./Phase-51-4.md) | `docs/*.md`・README・ロードマップへの反映 | `docs/` 配下ほか(文書のため #13/#15/#30 の対象外) | 51-2, 51-3 |
@@ -82,13 +82,13 @@ Claude の判断(計画の承認で確定、または作業中):
   - `app/design-review-demo/page.tsx`(ルート)、`lib/menu-tree.ts`(メニューへの追加)
   - 上記の `__tests__/` 配下のテストと、`components/layout/__tests__/Menu.test.tsx`(メニューのテストの追加)
 
-md の見本は [`appendix/design-review-sample/`](../../appendix/design-review-sample/README.md)、ベースラインは [`appendix/stage8-baseline/`](../../appendix/stage8-baseline/README.md)(どちらも samples の対象外)。
+md の見本は `appendix/design-review-sample/`、ベースラインは [`appendix/measurements/stage8-baseline.md`](../../appendix/measurements/stage8-baseline.md)(どちらも samples の対象外)。
 
 ## 実装前チェックリスト(#11、設計レベルの疑問に限定 #20)
 
 | 章 | 主なファイル | 役割1行 | テスト観点 |
 |---|---|---|---|
-| [51-1](./Phase-51-1.md) | `appendix/stage8-baseline/`(`review.py`・`truth.md`・`truth-e.md`) | 題材にレビューの方式を流し、正解表と比べて当たり・見落とし・費用を数える | なし(使い捨ての測定) |
+| [51-1](./Phase-51-1.md) | `appendix/measurements/stage8-baseline.md`(`review.py`・`truth.md`・`truth-e.md`) | 題材にレビューの方式を流し、正解表と比べて当たり・見落とし・費用を数える | なし(使い捨ての測定) |
 | [51-2](./Phase-51-2.md) | `scripts/seed.py`・`tests/unit/test_seed_users.py` | 一般ユーザーと superuser を冪等に作る | 2人とも作られ superuser だけ昇格する・2回流しても2人のまま(`uv run pytest tests/unit/test_seed_users.py`) |
 | [51-3](./Phase-51-3.md) | `reviewModel.ts`・`demoData.ts`・`DesignReviewDemoPageContent.tsx`・`page.tsx`・`menu-tree.ts` | レビューの区切り・指摘の採否・差し戻し(再生成の指示と再ヒアリング)・オン・オフの見せ方の見本 | オンの判定・区切りの状態と知らせ・指摘の並びと数・再生成の指示に入る指摘・観点を未決に戻す・画面の操作(`npx vitest run src/features/design-review "src/app/(pages)/design-review-demo" src/components/layout`) |
 | [51-4](./Phase-51-4.md) | `docs/*.md`・`README.md`・ロードマップ | 決定事項の反映 | なし(文書の目視レビュー) |

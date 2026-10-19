@@ -10,10 +10,10 @@
 
 | ファイル | 内容 |
 |---|---|
-| [`appendix/stage7-baseline/measure.py`](../../appendix/stage7-baseline/measure.py) | 要素のグラフを作り、シナリオごとに4つの方式を正解と比べる(使い捨てのスクリプト。samples の対象外) |
-| [`appendix/stage7-baseline/scenarios.py`](../../appendix/stage7-baseline/scenarios.py) | 変更シナリオ12件と正解 |
-| [`appendix/stage7-baseline/results.md`](../../appendix/stage7-baseline/results.md)・`results.json` | 出力 |
-| [`appendix/stage7-baseline/README.md`](../../appendix/stage7-baseline/README.md) | 実行方法・方式・シナリオ・結果の要約 |
+| `appendix/stage7-baseline/measure.py` | 要素のグラフを作り、シナリオごとに4つの方式を正解と比べる(使い捨てのスクリプト。samples の対象外) |
+| `appendix/stage7-baseline/scenarios.py` | 変更シナリオ12件と正解 |
+| `appendix/stage7-baseline/results.md`・`results.json` | 出力 |
+| [`appendix/measurements/stage7-baseline.md`](../../appendix/measurements/stage7-baseline.md) | 実行方法・方式・シナリオ・結果の要約 |
 
 ## 調べて分かったこと(今の陳腐化の仕組み)
 
@@ -25,9 +25,9 @@
 
 ## 測り方
 
-材料は [`appendix/stage6-effect/`](../../appendix/stage6-effect/README.md) の1回目の生成物(詳細設計モードの段階1〜8 の JSON・要件定義書・外部設計書、簡易モードの段階8と実装計画書)。中身は書き換えない。
+材料は [`appendix/measurements/stage6-effect.md`](../../appendix/measurements/stage6-effect.md) の1回目の生成物(詳細設計モードの段階1〜8 の JSON・要件定義書・外部設計書、簡易モードの段階8と実装計画書)。中身は書き換えない。
 
-- **要素と辺**: 要件・画面・API・処理・段階2〜8 の行を節にし、JSON と文書の表にある ID だけから「A が B を参照する」辺を作る(本文の文字列からは作らない)。一覧は [README](../../appendix/stage7-baseline/README.md)「4つの方式」。
+- **要素と辺**: 要件・画面・API・処理・段階2〜8 の行を節にし、JSON と文書の表にある ID だけから「A が B を参照する」辺を作る(本文の文字列からは作らない)。一覧は [README](../../appendix/measurements/stage7-baseline.md)「4つの方式」。
 - **4つの方式**:
   1. 今の仕組み: 本体の `derive_states` をそのまま呼び、「古い」になった段階のすべての要素
   2. グラフ(直接): 辺を逆に1段
@@ -59,4 +59,4 @@
 
 ## テスト観点
 
-なし(使い捨ての測定スクリプト。本体と samples の対象外)。実行は README のコマンド、lint は `uv run --project devex-api/backend ruff check appendix/stage7-baseline/`。
+なし(使い捨ての測定スクリプト。本体と samples の対象外)。実行は README のコマンド、lint は `uv run --project devex-api/backend ruff check appendix/measurements/stage7-baseline.md`。

@@ -44,8 +44,8 @@ AI がコードや文書を大量に作ることは目的にしていません�
 ### 上流工程・設計
 
 - 日本の SI の文書体系(要件定義書・外部設計書・内部設計書・実装計画書)と、実務の詳細設計(C4・arc42・日本の詳細設計の成果物)に合わせた構成
-- 非機能要求グレードに基づくヒアリングの観点。効果測定では、聞けた潜在の事実が 0〜1/14 から 10/14 に増え、AI による非機能・制約の推測が 6〜7割から 0 になった([測定の記録](appendix/stage6-effect/README.md))
-- **Devex 自身の仕様を、Devex が生成する4文書と同じ形で書いた**([`docs/`](docs/))。そのうえで、Devex が生成した文書と自分の開発記録を突き合わせて比べた([比較](textbook/appendix/goal3-comparison.md))
+- 非機能要求グレードに基づくヒアリングの観点。効果測定では、聞けた潜在の事実が 0〜1/14 から 10/14 に増え、AI による非機能・制約の推測が 6〜7割から 0 になった([測定の記録](appendix/measurements/stage6-effect.md))
+- **Devex 自身の仕様を、Devex が生成する4文書と同じ形で書いた**([`docs/`](docs/))。そのうえで、Devex が生成した文書と自分の開発記録を突き合わせて比べた([比較](textbook/retrospectives/goal3-comparison.md))
 
 ### AI・LLM アプリケーション
 
@@ -138,7 +138,7 @@ flowchart LR
 - **AI が担ったこと**: 最初の MVP と品質向上の段階(約1週間)は、AI が書いた教材とサンプルを見ながら自分で手で実装しました。その後は、AI が実装とテストを書き、自分が設計とレビューに専念する形に切り替えました。切り替えた理由と結果は振り返りに記録しています。
 - **進め方そのものを設計した**: 「AI が学習教材と手順を書き、人が判断し、詰まった点を教材に戻す」という開発の進め方を作り、40 近いルールとして運用しながら改めました。各段階で、AI の推奨と自分の選択が違った件数・計画の変動・本番で見つかった不具合を数え、AI の提案の精度の変化を分析しています(本番の確認で見つかった不具合は、後半の7段階で1件)。
 
-→ [プロジェクト全体の振り返り](textbook/appendix/project-retrospective.md) ・ [決定の記録](textbook/decision-digest.md) ・ [開発の進め方(handoff)](appendix/cl-development-handoff-v2.md)
+→ [プロジェクト全体の振り返り](textbook/retrospectives/project-retrospective.md) ・ [決定の記録](textbook/decision-digest.md) ・ [開発の進め方(handoff)](appendix/cl-development-handoff-v2.md)
 
 ## デモの触り方
 
@@ -154,8 +154,8 @@ flowchart LR
 | Devex の仕様       | [要件定義書](docs/requirements.md) ・ [外部設計書](docs/external_design.md) ・ [内部設計書](docs/internal_design.md) ・ [実装計画書](docs/implementation_plan.md)                   |
 | バックエンドの構成・設計の理由 | [devex-api の README](devex-api/README.md) ・ [CLAUDE.md](devex-api/CLAUDE.md) ・ [OPERATIONS.md](devex-api/OPERATIONS.md)                                      |
 | フロントエンドの構成      | [devex-ui の README](devex-ui/README.md) ・ [CLAUDE.md](devex-ui/CLAUDE.md)                                                                                    |
-| 開発の振り返り・決定の経緯   | [プロジェクト全体の振り返り](textbook/appendix/project-retrospective.md) ・ [段階ごとの振り返り](textbook/appendix/overall-retrospective.md) ・ [決定の記録](textbook/decision-digest.md) |
-| 今後の方針           | [ロードマップ](appendix/devex_roadmap.md)                                                                                                                          |
+| 開発の振り返り・決定の経緯   | [プロジェクト全体の振り返り](textbook/retrospectives/project-retrospective.md) ・ [段階ごとの振り返り](textbook/retrospectives/overall-retrospective.md) ・ [決定の記録](textbook/decision-digest.md) |
+| 構想の経緯・効果測定・CL 開発の手法 | [appendix の一覧](appendix/README.md) ・ [構想の経緯](appendix/concept-history.md) ・ [効果測定](appendix/README.md#効果測定の一覧) |
 
 <details>
 <summary>開発の経緯(10段階。すべて完了・本番に反映済み)</summary>

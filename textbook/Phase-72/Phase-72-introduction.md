@@ -113,7 +113,7 @@ Claude の判断(計画の承認で確定、または作業中):
 
 ## 未消化の申し送り(#37)
 
-ステージ9の振り返りで、Phase 71 から引き継いだ分とこの Phase で生まれた分を1件ずつ棚卸しした([`overall-retrospective.md`](../appendix/overall-retrospective.md) 14.3)。**本番への反映はステージ10とまとめる**(ユーザーの判断。CLAUDE.md #37 の運用注記)。残ったのは次のとおり。次のステージの着手時はここから読む。
+ステージ9の振り返りで、Phase 71 から引き継いだ分とこの Phase で生まれた分を1件ずつ棚卸しした([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 14.3)。**本番への反映はステージ10とまとめる**(ユーザーの判断。CLAUDE.md #37 の運用注記)。残ったのは次のとおり。次のステージの着手時はここから読む。
 
 ステージ10の最後の Phase へ(本番への反映と一緒に確かめる):
 
@@ -190,4 +190,4 @@ Claude の判断(計画の承認で確定、または作業中):
 
 ステージ9はこの Phase で終わる。本番への反映と確認は、ユーザーが [`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.6節の手順で行う(結果は [72-2](./Phase-72-2.md) に記録する)。その後、ステージ9の振り返り(#10・#25・#39)と decision digest(#24)を、別のセッションで行う(#18)。
 
-**ステージ9の振り返りで変更(2026-10-17)**: 本番への反映はステージ10とまとめる(ユーザーの判断)。振り返りと decision digest は反映の前に行った([`overall-retrospective.md`](../appendix/overall-retrospective.md) 14節)。10.6節の手順は、ステージ10の最後の Phase でステージ10の分と1つにまとめる。次はステージ10(Google 認証)の構想(新しいセッション。入力は上の「未消化の申し送り」)。
+**ステージ9の振り返りで変更(2026-10-17)**: 本番への反映はステージ10とまとめる(ユーザーの判断)。振り返りと decision digest は反映の前に行った([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 14節)。10.6節の手順は、ステージ10の最後の Phase でステージ10の分と1つにまとめる。次はステージ10(Google 認証)の構想(新しいセッション。入力は上の「未消化の申し送り」)。

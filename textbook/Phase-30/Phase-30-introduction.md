@@ -2,7 +2,7 @@
 
 ## 目的
 
-ステージ5(実装手順書 + 実装可能性チェック)の5つ目の実装 Phase。Phase 26〜29 で段階8の model・検証・生成・シーケンス図までできたが、手順書を外へ出す手段がまだ無かった。[25-1](../Phase-25/Phase-25-1.md) の決定6(AI 向けの出力は zip と画面の両方)・決定12(同じ zip に html+md)と、[作成方針](../../appendix/devex_implementation_procedure_guideline.md) 15・17・18章のとおりに出力を作る。
+ステージ5(実装手順書 + 実装可能性チェック)の5つ目の実装 Phase。Phase 26〜29 で段階8の model・検証・生成・シーケンス図までできたが、手順書を外へ出す手段がまだ無かった。[25-1](../Phase-25/Phase-25-1.md) の決定6(AI 向けの出力は zip と画面の両方)・決定12(同じ zip に html+md)と、[作成方針](../../appendix/concept-history.md#procedure-guideline) 15・17・18章のとおりに出力を作る。
 
 - **zip**: 詳細設計書・実装計画の zip に `implementation_procedure/` を加える。中身は `index.md`(概要・前提・単位の一覧・未定義の一覧・完了条件)、単位ごとの md(人向け)、`ai/<単位ID>.md`(AI 向けの版)、自己完結の HTML 1枚。
 - **画面**: 段階8の単位の詳細に「AI 向けにコピー」を置く。中身は zip の AI 向けの版と同じ組み立て。

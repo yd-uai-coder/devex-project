@@ -67,7 +67,7 @@ export function ChangeImpactDemoPageContent() {
       <YStack gap="$2">
         <H2>変更の影響デモ</H2>
         <Paragraph color="$color10">
-          ステージ7で作る変更の影響範囲の見せ方を、仮データで確かめるページです。題材は Devex 自身で、appendix/stage7-baseline/
+          ステージ7で作る変更の影響範囲の見せ方を、仮データで確かめるページです。題材は Devex 自身で、appendix/measurements/stage7-baseline.md
           のベースラインと同じ生成物を縮めたものです。サーバーとは通信しません。
         </Paragraph>
       </YStack>

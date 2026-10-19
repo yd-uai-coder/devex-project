@@ -4,7 +4,7 @@
 
 要件定義書を、LLM が自由に書く Markdown から「構造化出力 → 意味モデル(model)→ md を組み立てる」形に変える。要件を FR(機能)・NFR(非機能)・CON(制約)の行にし、要件ID(`FR-001`)・出どころ(**ユーザー** = 利用者が決めた / **採用** = AI の提案を利用者が採用した / **推測** = AI が補った)・根拠の観点を持たせる。生成の入力に観点の表(Phase 34)を渡し、出どころは観点の状態を上限にコードが直す。ベースライン([33-1](../Phase-33/Phase-33-1.md))で要件定義書の非機能・制約の6〜7割が「利用者の言っていない記述」だった問題を、「推測」として見えるようにし、プレビューで確かめられるようにする。
 
-方針は [Phase 33-2](../Phase-33/Phase-33-2.md) 決定2・8・12、計画は [33-5](../Phase-33/Phase-33-5.md) の Phase 36。形の見本は [`appendix/structured-requirements-sample/requirements.md`](../../appendix/structured-requirements-sample/requirements.md)。
+方針は [Phase 33-2](../Phase-33/Phase-33-2.md) 決定2・8・12、計画は [33-5](../Phase-33/Phase-33-5.md) の Phase 36。形の見本は `appendix/structured-requirements-sample/requirements.md`。
 
 ## パイプライン上の位置づけ・前提
 
@@ -22,7 +22,7 @@ Phase 37 外部設計書のモデル化(画面・API の行に要件ID を付け
 
 - 前提として読むもの:
   - [Phase 34 の introduction](../Phase-34/Phase-34-introduction.md)(観点の表・状態・規模)と [Phase 35 の introduction](../Phase-35/Phase-35-introduction.md)(カードの選択 = 「AI の提案を採用」)
-  - [見本の要件定義書](../../appendix/structured-requirements-sample/requirements.md)(1.1〜1.6 と付録の形)
+  - 見本の要件定義書(1.1〜1.6 と付録の形)
   - [外部設計書](../../docs/external_design.md) 2.9節「要件定義書(両モード)」と、[内部設計書](../../docs/internal_design.md) 3.3節「6. ヒアリングと上流の構造化」
 - 段階の下書きの「構造化出力 → model」(ステージ4)と同じ考え方: AI には中身だけを書かせ、ID のように揺れると困る値はコードが決める(段階1の処理ID と同じ)。
 

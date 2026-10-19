@@ -2,7 +2,7 @@
 
 ## 目的
 
-ステージ6(ヒアリング改良 + 上流の構造化、Phase 33〜40)の完了後、次のステージとして「変更影響分析・変更管理」を始める。構想は [ロードマップ](../../appendix/devex_roadmap.md) のステージ7にある。Phase 41 は、[Phase 25](../Phase-25/Phase-25-introduction.md)・[Phase 33](../Phase-33/Phase-33-introduction.md) と同じく、実装に入る前の要件定義フェーズとして次を行う。
+ステージ6(ヒアリング改良 + 上流の構造化、Phase 33〜40)の完了後、次のステージとして「変更影響分析・変更管理」を始める。構想は [ロードマップ](../../appendix/concept-history.md#roadmap) のステージ7にある。Phase 41 は、[Phase 25](../Phase-25/Phase-25-introduction.md)・[Phase 33](../Phase-33/Phase-33-introduction.md) と同じく、実装に入る前の要件定義フェーズとして次を行う。
 
 - 今の陳腐化(段階単位)を、決まった変更シナリオで測る(ベースライン。[41-1](./Phase-41-1.md))
 - スコープの確認と仕様診断(#28)・決定と、Phase 40 の申し送りの1件ずつの判断([41-2](./Phase-41-2.md))
@@ -28,8 +28,8 @@
 ```
 
 - **前提として読むもの**:
-  - [`appendix/devex_roadmap.md`](../../appendix/devex_roadmap.md) のステージ7(要素のグラフ・要素単位の陳腐化・再生成の候補)
-  - [総括の振り返り](../appendix/overall-retrospective.md) 10節(ステージ6の振り返り。10.4 の AI 所見「次のステージの入力を1件ずつ決める」)と 11節(AI の提案の精度。11.6「新しい種類の UI は操作の流れを先に見せる」)
+  - [`appendix/devex_roadmap.md`](../../appendix/concept-history.md#roadmap) のステージ7(要素のグラフ・要素単位の陳腐化・再生成の候補)
+  - [総括の振り返り](../retrospectives/overall-retrospective.md) 10節(ステージ6の振り返り。10.4 の AI 所見「次のステージの入力を1件ずつ決める」)と 11節(AI の提案の精度。11.6「新しい種類の UI は操作の流れを先に見せる」)
   - [Phase 40](../Phase-40/Phase-40-introduction.md)「未消化の申し送り」
 - **今の仕組み**: 陳腐化は `devex-api/backend/app/detailed_design/stages.py`(`STAGE_INPUTS`・`derive_states`)の段階単位・版数の比較。詳細は [41-1](./Phase-41-1.md)「調べて分かったこと」。
 - **この Phase を始めた時点の状態**: ステージ6の振り返りと #39 の分析の変更(外側のリポジトリ)は未コミット。この Phase はその上に重ねた。devex-ui の本体からは、ステージ6の完了時にユーザーがデモのルートとメニューを外していた。
@@ -62,7 +62,7 @@ Claude の判断(計画の承認で確定、または作業中):
 
 | 章 | トピック | ファイル作成 | 依存 |
 |---|---|---|---|
-| [`Phase-41-1.md`](./Phase-41-1.md) | ベースライン: 変更シナリオで今の陳腐化を測る(ものさし) | あり(`appendix/stage7-baseline/`。使い捨てのスクリプトと結果。samples の対象外) | なし |
+| [`Phase-41-1.md`](./Phase-41-1.md) | ベースライン: 変更シナリオで今の陳腐化を測る(ものさし) | あり(`appendix/measurements/stage7-baseline.md`。使い捨てのスクリプトと結果。samples の対象外) | なし |
 | [`Phase-41-2.md`](./Phase-41-2.md) | スコープの確認と仕様診断(#28)・決定・申し送りの判断 | なし(設計討議) | 41-1 |
 | [`Phase-41-3.md`](./Phase-41-3.md) | 変更の影響の見本(md)と画面のデモ `/change-impact-demo` | あり(md の見本・devex-ui 本体と samples) | 41-2 |
 | [`Phase-41-4.md`](./Phase-41-4.md) | `docs/*.md`・README・ロードマップへの反映 | `docs/` 配下ほか(文書のため #13/#15/#30 の対象外) | 41-2, 41-3 |
@@ -80,13 +80,13 @@ Claude の判断(計画の承認で確定、または作業中):
 - `app/change-impact-demo/page.tsx`(ルート)、`lib/menu-tree.ts`(メニューへの追加。ステージ6の完了時に外したデモの削除の記録も)
 - 上記の `__tests__/` 配下のテスト
 
-md の見本は [`appendix/change-impact-sample/`](../../appendix/change-impact-sample/README.md)、ベースラインは [`appendix/stage7-baseline/`](../../appendix/stage7-baseline/README.md)(どちらも samples の対象外)。
+md の見本は `appendix/change-impact-sample/`、ベースラインは [`appendix/measurements/stage7-baseline.md`](../../appendix/measurements/stage7-baseline.md)(どちらも samples の対象外)。
 
 ## 実装前チェックリスト(#11、設計レベルの疑問に限定 #20)
 
 | 章 | 主なファイル | 役割1行 | テスト観点 |
 |---|---|---|---|
-| [41-1](./Phase-41-1.md) | `appendix/stage7-baseline/`(`measure.py`・`scenarios.py`) | 今の陳腐化と ID のグラフが示す範囲を、変更シナリオの正解と比べて数える | なし(使い捨ての測定) |
+| [41-1](./Phase-41-1.md) | `appendix/measurements/stage7-baseline.md`(`measure.py`・`scenarios.py`) | 今の陳腐化と ID のグラフが示す範囲を、変更シナリオの正解と比べて数える | なし(使い捨ての測定) |
 | [41-2](./Phase-41-2.md) | なし | スコープと作り方の決定、申し送りの判断 | なし(設計討議) |
 | [41-3](./Phase-41-3.md) | `impactModel.ts`・`demoData.ts`・`ChangeImpactDemoPageContent.tsx`・`page.tsx`・`menu-tree.ts` | 影響のたどり方・段階の印・承認し直し・再生成の候補の見せ方の見本 | 処理を軸のたどり方(別の処理へ広げない)・改名は直接だけ・横断事項・テーブル・段階の印と承認し直し・画面の操作(`npx vitest run src/features/change-impact "src/app/(pages)/change-impact-demo" src/components/layout`) |
 | [41-4](./Phase-41-4.md) | `docs/*.md`・`README.md`・ロードマップ | 決定事項の反映 | なし(文書の目視レビュー) |

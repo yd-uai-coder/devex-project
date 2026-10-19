@@ -21,7 +21,7 @@
                                      └── オフ: 今の自己診断(生成と同じモデル)のまま
 ```
 
-- **前提として読むもの**: [51-2](../Phase-51/Phase-51-2.md) の決定(特に1〜3・6・10・11 と、アカウントごとのオン・オフ)、[`docs/internal_design.md`](../../docs/internal_design.md) 3.3節「8. AI 設計レビュー + テスト設計」、[`docs/external_design.md`](../../docs/external_design.md) 2.11節、ベースライン [`appendix/stage8-baseline/`](../../appendix/stage8-baseline/README.md)(`review.py` の (d) の組み立てを本体へ移した)。
+- **前提として読むもの**: [51-2](../Phase-51/Phase-51-2.md) の決定(特に1〜3・6・10・11 と、アカウントごとのオン・オフ)、[`docs/internal_design.md`](../../docs/internal_design.md) 3.3節「8. AI 設計レビュー + テスト設計」、[`docs/external_design.md`](../../docs/external_design.md) 2.11節、ベースライン [`appendix/measurements/stage8-baseline.md`](../../appendix/measurements/stage8-baseline.md)(`review.py` の (d) の組み立てを本体へ移した)。
 - **今の仕組み**: 自己診断は `DocGeneratorService._self_diagnose`(生成と同じ LLM・自由文・チャット)。生成は `BackgroundTasks` で動き、バックグラウンドの中でセッションを自前で開く。レート制限は Redis の `RateLimiter`。
 - **この Phase を始めた時点の状態**: Phase 51 までコミット済み(外側のリポジトリには、ユーザーが外した `stage8-baseline` の測定ファイルの削除が未コミットで残っていた。この Phase では触っていない)。devex-api の `.env` には `ANTHROPIC_API_KEY` がある。dev の DB には seed の superuser がまだ無かった(この Phase で seed を流した)。
 

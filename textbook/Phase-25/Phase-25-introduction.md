@@ -2,7 +2,7 @@
 
 ## 目的
 
-ステージ4(詳細設計モード、Phase 14〜24)の完了後、次のステージとして「実装手順書 + 実装可能性チェック」を始める。構想は [ロードマップ](../../appendix/devex_roadmap.md) のステージ5と、[作成方針](../../appendix/devex_implementation_procedure_guideline.md) にある。Phase 25 は、[Phase 14](../Phase-14/Phase-14-introduction.md) と同じく、実装に入る前の要件定義フェーズとして次を行う。
+ステージ4(詳細設計モード、Phase 14〜24)の完了後、次のステージとして「実装手順書 + 実装可能性チェック」を始める。構想は [ロードマップ](../../appendix/concept-history.md#roadmap) のステージ5と、[作成方針](../../appendix/concept-history.md#procedure-guideline) にある。Phase 25 は、[Phase 14](../Phase-14/Phase-14-introduction.md) と同じく、実装に入る前の要件定義フェーズとして次を行う。
 
 - スコープの確認と、作成方針21章の未決事項1〜8・コードを調べて見つけた不足の仕様診断(#28)と決定([25-1](./Phase-25-1.md))
 - 実装手順書の見本(md)と、画面のデモ([25-2](./Phase-25-2.md))
@@ -15,10 +15,10 @@
 ## パイプライン上の位置づけ・前提
 
 - 前提として読むもの:
-  - [`appendix/devex_implementation_procedure_guideline.md`](../../appendix/devex_implementation_procedure_guideline.md)(作成方針。手順書の構成・テンプレート・チェック・未決事項)
-  - [`appendix/devex_roadmap.md`](../../appendix/devex_roadmap.md)(ステージ5〜10 の構想と順序)
-  - [`textbook/appendix/goal3-comparison.md`](../appendix/goal3-comparison.md)(手順書のひな形の候補「作業単位の表」)
-  - [`textbook/appendix/overall-retrospective.md`](../appendix/overall-retrospective.md)(教材を手順書のサンプルにする構想、手順書の中身を実装者で変えない)
+  - [`appendix/devex_implementation_procedure_guideline.md`](../../appendix/concept-history.md#procedure-guideline)(作成方針。手順書の構成・テンプレート・チェック・未決事項)
+  - [`appendix/devex_roadmap.md`](../../appendix/concept-history.md#roadmap)(ステージ5〜10 の構想と順序)
+  - [`textbook/retrospectives/goal3-comparison.md`](../retrospectives/goal3-comparison.md)(手順書のひな形の候補「作業単位の表」)
+  - [`textbook/retrospectives/overall-retrospective.md`](../retrospectives/overall-retrospective.md)(教材を手順書のサンプルにする構想、手順書の中身を実装者で変えない)
 - ステージ4の資産(段階の承認・陳腐化・生成の状態・段階ごとの検証・部分生成・zip の出力・作業領域の部品)は、段階8として再利用する([25-1](./Phase-25-1.md) 決定2)。
 - 手順書は設計を書き写さず、ID で参照する。手順書に固有なのは、ファイル・順序・確かめ方・未定義の4つ(作成方針4章)。
 

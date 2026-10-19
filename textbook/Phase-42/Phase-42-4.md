@@ -72,7 +72,7 @@ def regeneration_targets(elements, items) -> list[ImpactItem]:
 
 ## ベースラインの生成物での確かめ(使い捨て)
 
-[`appendix/stage6-effect/detailed/stages/`](../../appendix/stage6-effect/README.md) の段階1〜8 の JSON を `DesignModels.from_dicts` に入れ、段階から始まるシナリオ(S5・S6・S7・N1)を流した(文書の model は生成物に無いので、文書から始まるシナリオは Phase 49 で測る)。スクリプトは残していない。
+[`appendix/stage6-effect/detailed/stages/`](../../appendix/measurements/stage6-effect.md) の段階1〜8 の JSON を `DesignModels.from_dicts` に入れ、段階から始まるシナリオ(S5・S6・S7・N1)を流した(文書の model は生成物に無いので、文書から始まるシナリオは Phase 49 で測る)。スクリプトは残していない。
 
 | シナリオ | 試案(41-1)示した / 当たり / 過剰 / 見落とし | 実装 |
 |---|---|---|

@@ -12,9 +12,9 @@
 
 | ファイル | 新規/更新 | 責務 |
 | --- | --- | --- |
-| [`appendix/stage7-hearing/tally.py`](../../appendix/stage7-hearing/tally.py) | 新規 | 実行フォルダを読み、回ごとに潜在の事実の観点・自由回答の採用・発言の数を数えて Markdown の表にする |
-| [`appendix/stage7-hearing/README.md`](../../appendix/stage7-hearing/README.md) | 新規 | 数え方と、Phase 49 での流し方(各モード3回・発言の上限24回) |
-| [`appendix/stage7-hearing/stage6-runs.md`](../../appendix/stage7-hearing/stage6-runs.md) | 新規 | ステージ6の4回を数えた結果(出力。手で書き換えない) |
+| `appendix/stage7-hearing/tally.py` | 新規 | 実行フォルダを読み、回ごとに潜在の事実の観点・自由回答の採用・発言の数を数えて Markdown の表にする |
+| [`appendix/measurements/stage7-hearing.md`](../../appendix/measurements/stage7-hearing.md) | 新規 | 数え方と、Phase 49 での流し方(各モード3回・発言の上限24回) |
+| `appendix/stage7-hearing/stage6-runs.md` | 新規 | ステージ6の4回を数えた結果(出力。手で書き換えない) |
 
 ## 要点の抜粋
 
@@ -26,7 +26,7 @@ def is_card_answer(message: str, label: str) -> bool:
     return any(line.startswith(f"【{label}】") for line in message.splitlines())
 ```
 
-- **入力**は [`stage6-effect/drive.py`](../../appendix/stage6-effect/README.md) が書き出すもの(`metrics.json` の観点の表と根拠のラベル「発言N」、`chat_history.txt` の `--- user` の本文)。外部の API・LLM は呼ばない。
+- **入力**は [`stage6-effect/drive.py`](../../appendix/measurements/stage6-effect.md) が書き出すもの(`metrics.json` の観点の表と根拠のラベル「発言N」、`chat_history.txt` の `--- user` の本文)。外部の API・LLM は呼ばない。
 - **聞けた**: 潜在の事実を聞く観点が、利用者の発言を根拠に未決以外になった。観点の状態で数えるので、中身が事実と合うかは人が読んで確かめる(ステージ6の1回目の簡易で、環境の観点に技術スタックが入ったなど)。
 - **自由回答の採用**: 状態が「採用」なのに、根拠の発言にその観点のカードの回答の行(`compose_answer_message` が作る `【ラベル】選んだ選択肢`)が無い。
 - **発言**: 生成の前の利用者の発言の数(`--- others` 以降は数えない)。

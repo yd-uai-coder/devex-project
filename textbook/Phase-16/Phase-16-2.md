@@ -74,7 +74,7 @@ def validate_stage(stage, model, sources) -> list[StageIssue]:
 
 初期値を AI に提案させると、同じ入力でも生成のたびに揺れる。人は初期値を基準に確定するので、基準が揺れると確定の手間が増える。パスの先頭のリソース名(親の個別の対象に属するものは子のリソース名)なら、毎回同じになる。
 
-出力見本([`content.py`](../../appendix/detailed-design-devex/content.py))では、`/projects/{id}/chat` の初期値を `projects` にしていた。今回の規則では `chat` になる。見本は手で作ったもので規則が書かれておらず、docs の「プロジェクト配下は `/projects/{id}/<リソース>`」に合わせた。どちらにしても人が確定する前提の初期値である。
+出力見本(`content.py`)では、`/projects/{id}/chat` の初期値を `projects` にしていた。今回の規則では `chat` になる。見本は手で作ったもので規則が書かれておらず、docs の「プロジェクト配下は `/projects/{id}/<リソース>`」に合わせた。どちらにしても人が確定する前提の初期値である。
 
 ### 画面の中で完結する処理も載せる(種別「画面」)
 

@@ -120,7 +120,7 @@ Claude の判断(計画の承認で確定、または作業中):
 
 **本番への反映と本番での確認は 2026-10-18 に済んだ**(下の「本番での確認の記録」)。ユーザーが行うものとして積んでいた次の項目は、すべて解決した:
 
-- **本番への反映と本番での確認**: [`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.7節の手順で行う。結果と Anthropic の費用(見込み 約 $0.15・最大 約 $0.3)は、反映の後に、この節と [72-2](../Phase-72/Phase-72-2.md) から辿れるように記録する。#39 の「本番での確認の指摘」(ステージ9・10の両方)も、そのときに [`overall-retrospective.md`](../appendix/overall-retrospective.md) の 14.5・15.5 と 11.1 の表に埋める。
+- **本番への反映と本番での確認**: [`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.7節の手順で行う。結果と Anthropic の費用(見込み 約 $0.15・最大 約 $0.3)は、反映の後に、この節と [72-2](../Phase-72/Phase-72-2.md) から辿れるように記録する。#39 の「本番での確認の指摘」(ステージ9・10の両方)も、そのときに [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) の 14.5・15.5 と 11.1 の表に埋める。
 - **origin の状態と手元の記録の食い違い**(Phase 72 から。この Phase で中身が分かった): devex-api・devex-ui とも origin の `main` はステージ7の版で、ステージ8のコミットも origin に無い。10.7節の 2 で本番の head(`7c3e9ab5f4d6` か `e5f6a7b8c9d1` か)と、VPS が動かしているコミットを確かめてから進む。
 - **画面確認**(#37 の運用注記): 10.7節の 8 の2つの表(ステージ9: Phase 62〜66・69・78 の画面と操作感 / ステージ10: Phase 76・77 のボタン・ダイアログ・枠、ダーク・375px)。
 - 画面確認で決めるもの(本番を見て、**3件とも今のままでよい**とユーザーが決めた):
@@ -142,7 +142,7 @@ Claude の判断(計画の承認で確定、または作業中):
 - **公開鍵の取得**(Phase 74 から): `verify_oauth2_token` は呼ぶたびに Google の公開鍵を取りに行く。遅さが気になったら `CacheControl` のセッションでキャッシュする(今は入れない)。
 - **`ListCard` の入れ物**(本番確認後の調整から): `LayoutGrid` と同じく `YStack` に CSS Module の `display: grid` を付けているので、本番では縦1列になる。アプリのどの画面も使っていないので直していない。使うときに `LayoutGrid` と同じく素の `div` にする(下の「本番確認後の調整」)。
 - **英語のままの refresh の文**(この Phase から): `Invalid or expired refresh token` など。画面には出ないので変えていない([79-1](./Phase-79-1.md))。
-- **`tagmerge.py` の手直し**(ステージ10の振り返りから): on の Phase 75〜79 で毎回、ヘッダー・import のタグ・JSX のタグ・移した行を手で直した。次のステージの仕様診断(#28)で、改善を範囲に入れるかを決める([`overall-retrospective.md`](../appendix/overall-retrospective.md) 15.1 の Q6)。
+- **`tagmerge.py` の手直し**(ステージ10の振り返りから): on の Phase 75〜79 で毎回、ヘッダー・import のタグ・JSX のタグ・移した行を手で直した。次のステージの仕様診断(#28)で、改善を範囲に入れるかを決める([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 15.1 の Q6)。
 
 この Phase で生まれたもの:
 
@@ -151,7 +151,7 @@ Claude の判断(計画の承認で確定、または作業中):
 
 この Phase で解決したもの:
 
-- **ステージ10の振り返り**(#10・#25・#39): 別セッションで、本番への反映の前に行った([`overall-retrospective.md`](../appendix/overall-retrospective.md) 15節)。
+- **ステージ10の振り返り**(#10・#25・#39): 別セッションで、本番への反映の前に行った([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 15節)。
 - **ログインの失敗の文が英語**(Phase 76 から): [79-1](./Phase-79-1.md)。「画面確認で決める」から前倒しした。
 - **Google のログインの E2E の spec**(Phase 76・77 から): [79-2](./Phase-79-2.md)。
 - **全 E2E**(#36): [79-2](./Phase-79-2.md)。

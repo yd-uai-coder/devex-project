@@ -37,7 +37,7 @@
 | [`tests/unit/test_document_revision.py`](../samples/backend/tests/unit/test_document_revision.py) | 新規 | 4文書の変更なし・`prev_key`・メッセージ・`upstream_changes` |
 | [`tests/unit/test_doc_generator_service.py`](../samples/backend/tests/unit/test_doc_generator_service.py) | 更新 | 前の版の画面のプロンプトの形(1行1つの JSON) |
 
-測定(samples の対象外): [`appendix/stage7-effect/impact/measure.py`](../../appendix/stage7-effect/README.md)(比較の方式を「実装 + A」だけにし、S2 を除いた合計を足した)・[`results.md`](../../appendix/stage7-effect/impact/results.md)(直した後)・[`results-49-1.md`](../../appendix/stage7-effect/impact/results-49-1.md)(49-1 の時点の出力)。
+測定(samples の対象外): [`appendix/stage7-effect/impact/measure.py`](../../appendix/measurements/stage7-effect.md)(比較の方式を「実装 + A」だけにし、S2 を除いた合計を足した)・`results.md`(直した後)・`results-49-1.md`(49-1 の時点の出力)。
 
 ## 要点の抜粋
 

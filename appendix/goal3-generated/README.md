@@ -2,8 +2,8 @@
 
 CLAUDE.md「プロジェクトのゴール」3 の突き合わせに使った、Devex の**実際の生成物**です。2026-10-06 に、ローカルの devex-api(`stage4` ブランチ、97375db)を実際の LLM(`.env` の `GEMINI_MODEL=gemini-3.5-flash-lite`)で動かし、題材を Devex 自身にして、簡易ドキュメントモードと詳細設計モードの両方で生成しました。
 
-- 突き合わせの結果: [`textbook/appendix/goal3-comparison.md`](../../textbook/appendix/goal3-comparison.md)
-- 手で起こした見本([`detailed-design-devex/`](../detailed-design-devex/README.md))とは違い、ここにある文書・段階の model はすべて AI の出力です。人(AI のエージェントが利用者の役をした)が加えたものは、下の「人が入力・操作したもの」にすべて書きました。
+- 突き合わせの結果: [`textbook/retrospectives/goal3-comparison.md`](../../textbook/retrospectives/goal3-comparison.md)
+- 手で起こした見本(`detailed-design-devex/`)とは違い、ここにある文書・段階の model はすべて AI の出力です。人(AI のエージェントが利用者の役をした)が加えたものは、下の「人が入力・操作したもの」にすべて書きました。
 
 ## ファイル
 
@@ -58,7 +58,7 @@ CLAUDE.md「プロジェクトのゴール」3 の突き合わせに使った、
 
 ## 調査の結果と対応
 
-生成の過程で気づいた Devex の挙動を調べ、ユーザーの判断で本体を直した(2026-10-06)。要約は [`goal3-comparison.md`](../../textbook/appendix/goal3-comparison.md) 8節。
+生成の過程で気づいた Devex の挙動を調べ、ユーザーの判断で本体を直した(2026-10-06)。要約は [`goal3-comparison.md`](../../textbook/retrospectives/goal3-comparison.md) 8節。
 
 ### ヒアリングの AI と、生成のボタンのずれ
 

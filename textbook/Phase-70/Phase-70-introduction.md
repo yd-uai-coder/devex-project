@@ -63,7 +63,7 @@ Claude の判断(計画の承認で確定、または作業中):
 | [`Phase-70-1.md`](./Phase-70-1.md) | 聞き直しの答えを判定に通す | あり(本体 4 + テスト 2) | なし(Phase 54 の聞き直し・Phase 59 の注記) |
 | [`Phase-70-2.md`](./Phase-70-2.md) | テスト仕様書の要件ごとのテストと落ちる型 | あり(本体 3 + テスト 3) | なし |
 | [`Phase-70-3.md`](./Phase-70-3.md) | 再生成のきっかけを入力の節から作る | あり(本体 6 + テスト 2) | なし |
-| [`Phase-70-4.md`](./Phase-70-4.md) | 効果の確認(実際の LLM) | なし(測定。記録は [`appendix/stage8-effect/phase70/`](../../appendix/stage8-effect/phase70/README.md)) | 70-1〜70-3 |
+| [`Phase-70-4.md`](./Phase-70-4.md) | 効果の確認(実際の LLM) | なし(測定。記録は `appendix/stage8-effect/phase70/`) | 70-1〜70-3 |
 
 ## サンプルコード一覧
 

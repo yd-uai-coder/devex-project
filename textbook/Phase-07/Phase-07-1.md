@@ -2,7 +2,7 @@
 
 ## この章の目的
 
-Stage 3の要件整理([`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md))で唯一Phase 7に持ち越されていたD5(UML図記法↔文書セクションの対応表)を確定し、Stage 3の要件(Must/Should/Could)を`docs/requirements.md`等へ反映する前段の整理を行う。
+Stage 3の要件整理([`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3))で唯一Phase 7に持ち越されていたD5(UML図記法↔文書セクションの対応表)を確定し、Stage 3の要件(Must/Should/Could)を`docs/requirements.md`等へ反映する前段の整理を行う。
 
 自動実装モード: on([introduction](./Phase-07-introduction.md) 参照)。
 
@@ -10,8 +10,8 @@ Stage 3の要件整理([`appendix/stage3-requirements-organization.md`](../../ap
 
 ### 対立していた2つの叩き台
 
-- [`appendix/requirements-design-uml-mcp-summary.md`](../../appendix/requirements-design-uml-mcp-summary.md)の一般的な工程対応表は、コンポーネント図を「外部設計書」に割り当てる。これは個人開発向けの一般的な設計工程を想定した記述であり、devex固有の文書構成を踏まえたものではない。
-- [`appendix/uml-review-drawio-requirements-external-design.md`](../../appendix/uml-review-drawio-requirements-external-design.md) 4.3節の叩き台と、[`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md)の診断2は、コンポーネント図・ER図を`internal_design`3.2/3.3節に寄せる案を示していた。
+- `appendix/requirements-design-uml-mcp-summary.md`の一般的な工程対応表は、コンポーネント図を「外部設計書」に割り当てる。これは個人開発向けの一般的な設計工程を想定した記述であり、devex固有の文書構成を踏まえたものではない。
+- [`appendix/uml-review-drawio-requirements-external-design.md`](../../appendix/concept-history.md#uml-document) 4.3節の叩き台と、[`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3)の診断2は、コンポーネント図・ER図を`internal_design`3.2/3.3節に寄せる案を示していた。
 
 ### 確定: internal_designへの一本化
 
@@ -28,7 +28,7 @@ devexの実際の文書構成を確認すると、[`docs/external_design.md`](..
 
 ## Stage 3要件の整理(Must/Should/Could)
 
-[`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md) 4節のM1〜M9bを、devexの`docs/requirements.md`が使うMoSCoW区分に合わせて整理し直した。Stage1=Must have、Stage2=Should haveという既存の「Stage番号=優先度階層」の慣例([`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.1節見出し)に倣い、Stage3全体は`docs/requirements.md`上では**Could have**階層に位置づける。これはStage3内部でのMust/Should/Could(M1〜M9b)とは別軸であることに注意する ── 内部Mustは「Stage3自身のスコープ内での優先度」、`docs/requirements.md`のCould haveは「devex全体から見た優先度」を表す。
+[`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3) 4節のM1〜M9bを、devexの`docs/requirements.md`が使うMoSCoW区分に合わせて整理し直した。Stage1=Must have、Stage2=Should haveという既存の「Stage番号=優先度階層」の慣例([`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.1節見出し)に倣い、Stage3全体は`docs/requirements.md`上では**Could have**階層に位置づける。これはStage3内部でのMust/Should/Could(M1〜M9b)とは別軸であることに注意する ── 内部Mustは「Stage3自身のスコープ内での優先度」、`docs/requirements.md`のCould haveは「devex全体から見た優先度」を表す。
 
 - Stage3内部Must(M1〜M9a): 意味モデル生成・永続化・バリデーション・レビューUI・自動レイアウト・状態遷移・draw.io/SVG出力・内部設計書への図による補完
 - Stage3内部Should: アクティビティ図・undo/redo・楽観ロック・M9b(手直しの反映)

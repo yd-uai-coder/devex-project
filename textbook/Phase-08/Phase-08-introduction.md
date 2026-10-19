@@ -2,7 +2,7 @@
 
 ## 目的
 
-[`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.1節 ステージ3(UML設計図パイプライン)の最初の実装Phase。[`Phase-07-introduction.md`](../Phase-07/Phase-07-introduction.md)「次のフェーズ」・[`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md) 7節の章立て案が定める「意味モデル(Pydantic)・データ辞書(`DataItem`)・`uml_diagrams`・CRUD/validate API(component/ER/DFD)」を実装する。M1(生成トリガーのプレースホルダー)・M2/M2b(意味モデル・データ辞書)・M3(永続化)・M4のうち境界フロー一致を除く4規則、を対象とする。M1の実AI生成(構造化出力)はPhase 10、レイアウト(`/layout`)はPhase 9、承認・エクスポートはPhase 12が対象。
+[`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.1節 ステージ3(UML設計図パイプライン)の最初の実装Phase。[`Phase-07-introduction.md`](../Phase-07/Phase-07-introduction.md)「次のフェーズ」・[`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3) 7節の章立て案が定める「意味モデル(Pydantic)・データ辞書(`DataItem`)・`uml_diagrams`・CRUD/validate API(component/ER/DFD)」を実装する。M1(生成トリガーのプレースホルダー)・M2/M2b(意味モデル・データ辞書)・M3(永続化)・M4のうち境界フロー一致を除く4規則、を対象とする。M1の実AI生成(構造化出力)はPhase 10、レイアウト(`/layout`)はPhase 9、承認・エクスポートはPhase 12が対象。
 
 ## 実装前の設計判断(このセッションで確定)
 
@@ -14,7 +14,7 @@
 
 ## パイプライン上の位置づけ・前提
 
-- 前提として読むべきもの: [`docs/internal_design.md`](../../docs/internal_design.md) 3.2節⑦(`uml_diagrams`テーブル定義)・3.3節①②③(ディレクトリ構成・APIエンドポイント一覧・図↔文書対応)、[`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md) 4節(M1〜M9b)・5節診断3/診断8、[`devex-api/CLAUDE.md`](../../devex-api/CLAUDE.md)(レイヤー構成・エラーハンドリング・リポジトリ層の既存方針)。
+- 前提として読むべきもの: [`docs/internal_design.md`](../../docs/internal_design.md) 3.2節⑦(`uml_diagrams`テーブル定義)・3.3節①②③(ディレクトリ構成・APIエンドポイント一覧・図↔文書対応)、[`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3) 4節(M1〜M9b)・5節診断3/診断8、[`devex-api/CLAUDE.md`](../../devex-api/CLAUDE.md)(レイヤー構成・エラーハンドリング・リポジトリ層の既存方針)。
 - 本Phase開始時点の既知の状態: `devex-api`に`app/uml/`パッケージ・`data_items`/`uml_diagrams`テーブルは一切存在しない。既存の`app/repositories/base.py`の`CRUDRepository[ModelType]`・`app/api/deps.py`の`CurrentProjectDep`(所有権スコープの404化)・`app/core/errors.py`の`AppError`体系をそのまま踏襲する。
 - 既存コードベースに前例が無い新規パターンが2つある: (1) 型付きPydanticモデルをJSONBカラムのAPIスキーマとしてそのまま再利用する(既存の`project.intake`等は生`dict`)、(2) 楽観ロック(`version`不一致で409)。`generated_documents.version`は「再生成のたびに増える版数」であり意味が異なる。
 
@@ -22,7 +22,7 @@
 
 自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
 
-> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
+> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) を参照。
 
 ## 章一覧
 

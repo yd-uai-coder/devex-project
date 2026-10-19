@@ -2,7 +2,7 @@
 
 ## この章の目的
 
-ステージ5「実装手順書 + 実装可能性チェック」に着手するにあたり、スコープと進め方を確かめる。そのうえで、[作成方針](../../appendix/devex_implementation_procedure_guideline.md) 21章の未決事項1〜8と、コード・生成物を調べて見つけた不足を、[CLAUDE.md](../../CLAUDE.md) #28 の3段階(最重要/中程度/軽微)に分けて診断する。Claude が推奨案を示し、ユーザーが決定した。
+ステージ5「実装手順書 + 実装可能性チェック」に着手するにあたり、スコープと進め方を確かめる。そのうえで、[作成方針](../../appendix/concept-history.md#procedure-guideline) 21章の未決事項1〜8と、コード・生成物を調べて見つけた不足を、[CLAUDE.md](../../CLAUDE.md) #28 の3段階(最重要/中程度/軽微)に分けて診断する。Claude が推奨案を示し、ユーザーが決定した。
 
 自動実装モード: on([introduction](./Phase-25-introduction.md) 参照)。
 
@@ -22,7 +22,7 @@
 ## 調べて分かったこと(診断の材料)
 
 - **段階7のタスクは層の横割り**である(`devex-api/backend/app/detailed_design/plan.py` の `PlanTask.area` = 準備/バックエンド/フロントエンド/テスト/デプロイ)。タスクに ID は無い。`modules` は「作成・変更するファイルの例」で、検証しない([Phase 23](../Phase-23/Phase-23-introduction.md) の画面確認後の決定)。
-- ゴール3で Devex 自身を題材に生成した段階7([`stage7.json`](../../appendix/goal3-generated/detailed/stages/stage7.json))では、M-01〜M-04 のどれも「バックエンド/フロントエンド/テスト」の3行に同じ処理ID が並ぶ。テストの行は `modules` が空で、フロントエンドの行は `frontend` というディレクトリ名だけである。[ゴール3の比較](../appendix/goal3-comparison.md)で見つけた「生成側に確認方法が無い」は、この形から生まれている。
+- ゴール3で Devex 自身を題材に生成した段階7([`stage7.json`](../../appendix/goal3-generated/detailed/stages/stage7.json))では、M-01〜M-04 のどれも「バックエンド/フロントエンド/テスト」の3行に同じ処理ID が並ぶ。テストの行は `modules` が空で、フロントエンドの行は `frontend` というディレクトリ名だけである。[ゴール3の比較](../retrospectives/goal3-comparison.md)で見つけた「生成側に確認方法が無い」は、この形から生まれている。
 - 段階の仕組み(`app/detailed_design/stages.py`)は段階1〜7の固定である。承認・陳腐化(`input_fingerprint` と「等しくない」での判定)・生成の状態・段階ごとの検証は、どの段階にも共通に効く。
 
 ## 診断と決定

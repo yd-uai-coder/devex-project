@@ -9,7 +9,7 @@
 - **AI の下書きの生成**: 1回の生成で、構成図(LLM 1回)→ その構成図のパッケージをファイルに分けたモジュール一覧(LLM 1回)を作る。1つのトランザクションで書く。
 - **段階4の差し戻し**: 構成図を直したら、承認済みの段階4を「レビュー中」に戻す。
 
-実務との対応: 構成図は arc42 の Level 1(ビルディングブロックの全体図)、モジュール一覧は Level 2(ファイル単位の責務表)に当たる。日本の詳細設計では「方式設計」の構成図とモジュール一覧である([`appendix/detailed-design-mode-organization.md`](../../appendix/detailed-design-mode-organization.md) 2章)。
+実務との対応: 構成図は arc42 の Level 1(ビルディングブロックの全体図)、モジュール一覧は Level 2(ファイル単位の責務表)に当たる。日本の詳細設計では「方式設計」の構成図とモジュール一覧である([`appendix/detailed-design-mode-organization.md`](../../appendix/concept-history.md#detailed-design-mode) 2章)。
 
 [Phase 14-4](../Phase-14/Phase-14-4.md) の Phase 19 の行(BE「構成図(層)とモジュール一覧(パス/層/責務/主な依存先/関わる処理)の生成」、FE「モジュール一覧のレビュー」、再利用「component の意味モデル・生成・レイアウト(Phase 8〜12)」)に沿う。表に無いものとして、構成図の編集による段階4の差し戻し(19-4)と、ER の埋め込みの共通化(19-7)を足した。
 
@@ -50,7 +50,7 @@ Claude の判断で決めたこと(計画の承認で確定):
 - **前提として読むもの**:
   - [`Phase-18-introduction.md`](../Phase-18/Phase-18-introduction.md)「後続 Phase への申し送り」: 本 Phase が回収する1点(モジュール一覧の入力に、段階3の CRUD 図と ER を使う)。
   - [`Phase-18-1.md`](../Phase-18/Phase-18-1.md)・[`Phase-18-3.md`](../Phase-18/Phase-18-3.md)・[`Phase-18-4.md`](../Phase-18/Phase-18-4.md)・[`Phase-18-9.md`](../Phase-18/Phase-18-9.md): 段階の外に正本を持つ図の扱い(要約で検証に渡す・2回の LLM を1トランザクションで書く・図の編集で段階を差し戻す・図の埋め込み)。段階4は同じ形を構成図で繰り返す。
-  - [`appendix/detailed-design-devex/content.py`](../../appendix/detailed-design-devex/content.py) の `COMPONENTS`・`COMPONENT_DEPS`・`MODULES`: 段階4の見本(パッケージ単位の構成図と、ファイル単位のモジュール一覧。「全処理」の行)。
+  - `appendix/detailed-design-devex/content.py` の `COMPONENTS`・`COMPONENT_DEPS`・`MODULES`: 段階4の見本(パッケージ単位の構成図と、ファイル単位のモジュール一覧。「全処理」の行)。
 - **本 Phase 開始時点の状態**:
   - 段階4の作業領域は「準備中」の表示だけだった。生成の対応表と検証の対応表には段階1〜3しか無かった。
   - component 図はステージ3(簡易ドキュメントモード)で使っていたが、詳細設計モードには無かった。`ComponentElement.layer` は自動レイアウトのレーンになる(Phase 9)。
@@ -59,7 +59,7 @@ Claude の判断で決めたこと(計画の承認で確定):
 
 自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
 
-> 旧ルール(学習モード / 納期モード)では、19-5 を納期モード、他を学習モードとした。旧・納期モードの章は、#14 の SUT/ドライバ/スタブの言語化を省いている。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
+> 旧ルール(学習モード / 納期モード)では、19-5 を納期モード、他を学習モードとした。旧・納期モードの章は、#14 の SUT/ドライバ/スタブの言語化を省いている。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) を参照。
 
 ## 章一覧
 

@@ -134,7 +134,7 @@ Phase 39 から引き継いだもの:
 - **ベースラインで見つけた、ステージ6の範囲の外の課題**([Phase 33](../Phase-33/Phase-33-introduction.md)): 段階3の CRUD 図の下書きと DFD の書き込みの線の食い違い、段階5の分岐の行の書き落とし、簡易モードの内部設計書の書き落とし。
 - **判定の LLM の入力の大きさ**: 会話が長くなると入力が増えるので、問題になれば測る。
 - **既存のプロジェクトの会話の順**(Phase 35 から): 調整より前に作ったプロジェクトは、同じ送信の発言と返信が同じ時刻のまま残る。直さない(10.3節に記載)。
-- **聞かれない潜在の事実**(Phase 39 から): L2(バックアップ)・L5(ログに本文を残さない)・L6(不正利用)・L14(削除)は、どの回も聞かれなかった。観点1つに問いが1つで、可用性・セキュリティの2つ目の側面に届かない。観点の条件に足すか、追いの問いを足すかは、**次のステージの入力**として申し送る(ステージ6の振り返りで決定。[`overall-retrospective.md`](../appendix/overall-retrospective.md) 10節)。
+- **聞かれない潜在の事実**(Phase 39 から): L2(バックアップ)・L5(ログに本文を残さない)・L6(不正利用)・L14(削除)は、どの回も聞かれなかった。観点1つに問いが1つで、可用性・セキュリティの2つ目の側面に届かない。観点の条件に足すか、追いの問いを足すかは、**次のステージの入力**として申し送る(ステージ6の振り返りで決定。[`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 10節)。
 - **判定のゆらぎ**(Phase 39 から): 直前の問いを添えても、自由回答を「採用」にすることが残る。LLM の一時的な出力の乱れも1回あった。
 - **セッションの区切りの記録**: Phase 40 は1セッションで行った(計画モードで質問4問 → 40-1 の直し → 40-2 の契約テスト → 40-3 の全 E2E(直す前に1回、直した後に簡易だけ1回、全部を1回)→ 40-4 のマイグレーションの往復 → docs → 教材 → 全体テスト)。
 
@@ -170,6 +170,6 @@ Phase 39 から引き継いだもの:
 
 ## 次のフェーズ
 
-ステージ6はこの Phase で終わる。次は、ステージ6の完了として、振り返り(#10、`textbook/appendix/*-retrospective.md`。#25 の「→ Devex 仕様への示唆」を含む)と decision digest(#24)をまとめる。#18 により、別のセッションで行う。本番への反映と確認は、ユーザーが [`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.3節の手順で行う。
+ステージ6はこの Phase で終わる。次は、ステージ6の完了として、振り返り(#10、`textbook/retrospectives/*-retrospective.md`。#25 の「→ Devex 仕様への示唆」を含む)と decision digest(#24)をまとめる。#18 により、別のセッションで行う。本番への反映と確認は、ユーザーが [`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.3節の手順で行う。
 
-→ 本番への反映と確認(すべて問題なし)、振り返り([`overall-retrospective.md`](../appendix/overall-retrospective.md) 10節)と decision digest([「Phase 33完了」〜「ステージ6完了後」](../decision-digest.md))は、2026-10-11 に済んだ。
+→ 本番への反映と確認(すべて問題なし)、振り返り([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 10節)と decision digest([「Phase 33完了」〜「ステージ6完了後」](../decision-digest.md))は、2026-10-11 に済んだ。

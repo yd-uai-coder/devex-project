@@ -12,7 +12,7 @@
 
 ## Phase の一覧
 
-[`stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 1.4節の案(8つ)に、申し送りから入れた3つ(69〜71)を、最後の E2E・本番の前に差し込んだ(61-1 の決定11)。
+[`stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 1.4節の案(8つ)に、申し送りから入れた3つ(69〜71)を、最後の E2E・本番の前に差し込んだ(61-1 の決定11)。
 
 | Phase | スコープ | 主な成果物 | 依存 |
 |---|---|---|---|
@@ -31,7 +31,7 @@
 - **E2E**(#36): Phase 72 で既存を含めた全 E2E を流す。`e2e/helpers.ts` が使う文言(「新規プロジェクトを作成」)と aria-label(「…で作成する」)を残せば、62・65 で壊れない見込み。65 のレスポンスの形の変更・66 の改名は E2E の登録の手順に効くかを各 Phase で確かめる。
 - **画面確認**(#37 の運用注記): 62〜67 の画面確認は「未消化の申し送り」に積み、Phase 72 の本番確認でまとめて行ってよい。ただし 67 のマイページは新しい種類の画面なので、操作感は Phase の直後にユーザーが確かめる。
 - **実 LLM の費用**: 67 のキーの確かめは費用がかからない。68 の Claude・Gemini の切り替えの確認と、70・71 の効果の確かめで実 LLM を呼ぶ。Sonnet を回す Phase は、着手時に見込みの費用の表を出す。
-- **壊れるテスト**([`stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 1.6節): devex-ui は `Menu.test.tsx`(62)・login と register のページ(63)・dashboard のページ・`ProjectList`・`dashboard-store`・`projects.test.ts`(64・65)・`ChatPanel.test.tsx`(62)。devex-api は `test_project_*`(64・65)・`test_review_routes`・`test_gemini`・`test_review_llm`・`test_llm_retry`(68)・`test_seed_*`(67)。
+- **壊れるテスト**([`stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 1.6節): devex-ui は `Menu.test.tsx`(62)・login と register のページ(63)・dashboard のページ・`ProjectList`・`dashboard-store`・`projects.test.ts`(64・65)・`ChatPanel.test.tsx`(62)。devex-api は `test_project_*`(64・65)・`test_review_routes`・`test_gemini`・`test_review_llm`・`test_llm_retry`(68)・`test_seed_*`(67)。
 
 ## 未確定事項(着手時に決める)
 

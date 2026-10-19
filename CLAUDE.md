@@ -25,9 +25,9 @@ Both subrepos implement this spec through stage 10 (all stages complete and depl
 
 ## 進行のルール
 
-このプロジェクトは、`appendix/cl-development-handoff.md` にまとめられた「CL(Curriculum Loop)開発」手法(AI が Phase 単位で学習教材・サンプルコードを著述し、人間が手で実装コードを書き、実装で当たった摩擦を教材に還流する開発・学習手法)を土台に開発を進める。教材は `textbook/` に置く。人間が手で実装するか、AI が本体まで実装するかは、Phase ごとに #21 の自動実装モード(on/off)で決める。
+このプロジェクトは、`appendix/cl-development-handoff.md`(v1。プロジェクトの完了後に削除し、最終版の [`appendix/cl-development-handoff-v2.md`](appendix/cl-development-handoff-v2.md) が #1〜17 をそのまま含む)にまとめられた「CL(Curriculum Loop)開発」手法(AI が Phase 単位で学習教材・サンプルコードを著述し、人間が手で実装コードを書き、実装で当たった摩擦を教材に還流する開発・学習手法)を土台に開発を進める。教材は `textbook/` に置く。人間が手で実装するか、AI が本体まで実装するかは、Phase ごとに #21 の自動実装モード(on/off)で決める。
 
-以下の #1〜#17 は `appendix/cl-development-handoff.md` からの転記(番号・内容とも変更なし)。#18 以降がこのプロジェクト固有の追加ルールである。ドメイン・アーキテクチャの決定(採用する言語・フレームワーク・レイヤー構成など)はこの節ではなく、このファイルの「Repository structure」節や各サブリポジトリの `CLAUDE.md` に書く。
+以下の #1〜#17 は v1 からの転記(番号・内容とも変更なし)。#18 以降がこのプロジェクト固有の追加ルールである。ドメイン・アーキテクチャの決定(採用する言語・フレームワーク・レイヤー構成など)はこの節ではなく、このファイルの「Repository structure」節や各サブリポジトリの `CLAUDE.md` に書く。
 
 **用語注記(解消済み)**: 当初「Phase」は CL 教材の単位と README.md の製品マイルストーン(旧称「フェーズ1/フェーズ2」)の両方で使われる別軸の概念だった。#27 の実装ロードマップ具体化にあたり混同リスクが無視できないと判断し、README.md 側を「ステージ1/ステージ2」にリネームした(経緯は `textbook/decision-digest.md` 参照)。以後「Phase」は CL 開発の実装単位(`Phase-<N>`)専用の語である。
 
@@ -89,9 +89,9 @@ Both subrepos implement this spec through stage 10 (all stages complete and depl
 
 **#8.** ユーザーが AI に行った質問・相談とその回答を専用ログファイル `textbook/q_a.md` に追記する(保存専用・作業中は参照しない)。各エントリは (1) 疑問が生じた Phase (2) 質問・相談内容 (3) 回答と対応方針。進行方針にかかわる決定・設計判断は decision digest にも要約を残す(こちらが参照用)。
 
-**#10.** プロジェクトの進行方法について気づいた点(特徴・メリット / 課題 / 課題解決への提案)を振り返りファイル `textbook/appendix/*-retrospective.md` に追記する。課題には可能な限り「提案」を対で書く。提案をプロジェクトに組み込むかはユーザーが個別に判断する(AI は勝手に適用しない)。
+**#10.** プロジェクトの進行方法について気づいた点(特徴・メリット / 課題 / 課題解決への提案)を振り返りファイル `textbook/retrospectives/*-retrospective.md` に追記する。課題には可能な限り「提案」を対で書く。提案をプロジェクトに組み込むかはユーザーが個別に判断する(AI は勝手に適用しない)。
 
-> **運用注記(#10・#24)**: 振り返りと decision digest の追記は、Phase ごとでなく**ステージ完了時にまとめて吟味してよい**(ステージ4完了後の振り返りで決定。CL 開発の方針としてまとめて吟味するため)。ステージの途中で後の Phase に効く事項は、#37 の「未消化の申し送り」節に残して見失わないようにする。経緯は [`textbook/appendix/overall-retrospective.md`](./textbook/appendix/overall-retrospective.md)。
+> **運用注記(#10・#24)**: 振り返りと decision digest の追記は、Phase ごとでなく**ステージ完了時にまとめて吟味してよい**(ステージ4完了後の振り返りで決定。CL 開発の方針としてまとめて吟味するため)。ステージの途中で後の Phase に効く事項は、#37 の「未消化の申し送り」節に残して見失わないようにする。経緯は [`textbook/retrospectives/overall-retrospective.md`](textbook/retrospectives/overall-retrospective.md)。
 
 ### 本プロジェクト固有の追加ルール(#18〜)
 
@@ -110,19 +110,19 @@ Both subrepos implement this spec through stage 10 (all stages complete and depl
   - Phase の版は本体の git タグ `phase-<N>` で示す(ユーザーがコミット時に付ける。AI は #35 のコミット案にタグ名も含める)。変更履歴は本体のコミットで追う。
   - Phase 完了時に [`textbook/tools/`](./textbook/tools/README.md) の `samples_check.py`(samples と本体の一致、samples への作り忘れ)と `link_check.py`(リンク切れ)を流し、どちらも 0 件にする。
 - **共通**: リポジトリ直下のインフラ・設定ファイル(compose・CI・デプロイ設定など)は samples にミラーせず、AI が直接書く(Phase 1・5 からの前例を明文化)。
-- **経緯**: 旧ルールでは納期モードでも工程をあまり省けず、一方でテスト観点が教材から省かれた。また、手で実装しても設計理解は思ったほど実感できなかったため、Phase 7(ステージ3)から自動実装で先に完成させ、完成品から仕様を追う方針に切り替えた。旧モードとの対応: Phase 1〜6 = off、Phase 7〜24 = on(Phase 0 は設計フェーズで対象外)。詳細は [`textbook/appendix/overall-retrospective.md`](./textbook/appendix/overall-retrospective.md)。
+- **経緯**: 旧ルールでは納期モードでも工程をあまり省けず、一方でテスト観点が教材から省かれた。また、手で実装しても設計理解は思ったほど実感できなかったため、Phase 7(ステージ3)から自動実装で先に完成させ、完成品から仕様を追う方針に切り替えた。旧モードとの対応: Phase 1〜6 = off、Phase 7〜24 = on(Phase 0 は設計フェーズで対象外)。詳細は [`textbook/retrospectives/overall-retrospective.md`](textbook/retrospectives/overall-retrospective.md)。
 
-**#22. Phase 完了チェック**(所感5.1-⑥対応)。各 `Phase-<N>-introduction.md` に「Phase 完了チェック」として概念理解を問う設問を 3〜5 問用意する。実装前チェックリスト(#11、着手前)と対をなし、Phase の要点を問いの形で示す要約(読み物)とする。回答は求めず、完了の判定には使わない(ステージ6完了後に位置づけ直した。ステージ4以降、設問に答えた記録が無いため。経緯は [`textbook/appendix/overall-retrospective.md`](./textbook/appendix/overall-retrospective.md) 10節)。
+**#22. Phase 完了チェック**(所感5.1-⑥対応)。各 `Phase-<N>-introduction.md` に「Phase 完了チェック」として概念理解を問う設問を 3〜5 問用意する。実装前チェックリスト(#11、着手前)と対をなし、Phase の要点を問いの形で示す要約(読み物)とする。回答は求めず、完了の判定には使わない(ステージ6完了後に位置づけ直した。ステージ4以降、設問に答えた記録が無いため。経緯は [`textbook/retrospectives/overall-retrospective.md`](textbook/retrospectives/overall-retrospective.md) 10節)。
 
 **#23. 写経順序の明記 + 実 import 監査の毎回実施**(所感5.6対応)。各 introduction ファイルに「写経順序」を明記する(章番号順と一致する場合も「章番号順」と明記する)。実 import 監査(#15)は Phase 生成の都度、全 import 文を読む形で行う。章単位のオーバーレイ再構築(章 N までを都度クリーンな環境に重ねて検証する方式)は、所感5.6の見送り推奨のとおり導入しない。
 
 **#24. decision digest の更新タイミングと置き場**(所感5.2対応)。decision digest は `textbook/decision-digest.md` に置く。`q_a.md`(#8、保存専用・非参照)とは異なり、decision digest は**進行中に能動的に参照する**ファイルである。追記は Phase 完了時(またはステージ完了時。#10 の運用注記)にまとめて行う(生成セッション中に都度追記しない)。これは #18 のセッション分離と整合させる。**decision digest は Devex というこのアプリケーション自身で完結する決定・知見に限定する**(Devex の外側、他リポジトリに関わる事項は書かない)。他リポジトリに関わる事項は #32 の `retrospective-memo.md` へ。
 
-**#25. 再帰検証ルール**(本プロジェクト固有)。各 Phase(またはステージ)の振り返り(#10、`textbook/appendix/*-retrospective.md`)に、通常の CL 手法向け所感とは別に「→ Devex 仕様への示唆」という小節を設ける。問い: 「この Phase の introduction / チェックリスト / 振り返りの構造・粒度のうち、Devex が自動生成すべき要件定義 / 外部設計 / 内部設計 / 実装計画のテンプレートやヒアリング項目に転用できるものは何か」。ここで得た知見は `docs/internal_design.md` の `prompt_templates` 設計や `docs/external_design.md` のヒアリングフロー設計の入力として明示的に参照する(感想で終わらせない)。
+**#25. 再帰検証ルール**(本プロジェクト固有)。各 Phase(またはステージ)の振り返り(#10、`textbook/retrospectives/*-retrospective.md`)に、通常の CL 手法向け所感とは別に「→ Devex 仕様への示唆」という小節を設ける。問い: 「この Phase の introduction / チェックリスト / 振り返りの構造・粒度のうち、Devex が自動生成すべき要件定義 / 外部設計 / 内部設計 / 実装計画のテンプレートやヒアリング項目に転用できるものは何か」。ここで得た知見は `docs/internal_design.md` の `prompt_templates` 設計や `docs/external_design.md` のヒアリングフロー設計の入力として明示的に参照する(感想で終わらせない)。
 
 **#26. md ファイル間の相互参照はリンクで明記する**(本プロジェクト固有)。教材・記録用に作成する `.md` ファイルが他の `.md` ファイルの内容を参照・前提とする場合、ファイル名を地の文で書くだけでなく Markdown リンク(`[表示名](相対パス)`)を張る。対象は `textbook/` 配下の教材・ログ・記録ファイル全般(`Phase-<N>-introduction.md`、`Phase-<N>-M.md`、`decision-digest.md`、`q_a.md`、`*-retrospective.md`)、および `CLAUDE.md`「進行のルール」節から `textbook/` 配下のファイルを参照する場合を含む。狙い: 参照先を辿るコストを下げ(#3・#11 の「参照して確認する」運用と整合)、ファイル移動・リネーム時にリンク切れとして検出できるようにするため。
 
-**#27. Phase 0 の役割定義**(共通ルール候補 ── 特定プロジェクトに依存しない一般化を想定し、将来の handoff v2 に引き継ぐ候補として明記する)。Phase 0 は「要件・設計の確認」から「Phase 1 以降の実装ロードマップの具体化」までを行うフェーズとする。本プロジェクトでは、`README.md` および `docs/` 配下の詳細仕様書(`requirements.md`/`external_design.md`/`internal_design.md`/`implementation_plan.md`)を入力として実装ロードマップ(Phase 1〜N の区切りと各 Phase のスコープ)を作成する。Devex 完成後は、Devex 自身が生成するドキュメントを入力に切り替える運用を想定するが、その具体的な移行方法(何を入力に、どの粒度で読み替えるか)は今は確定せず、Devex 完成後の振り返り(#10・#25)で具体化する(→ 具体化した案は [`textbook/appendix/project-retrospective.md`](./textbook/appendix/project-retrospective.md) 5節)。
+**#27. Phase 0 の役割定義**(共通ルール候補 ── 特定プロジェクトに依存しない一般化を想定し、将来の handoff v2 に引き継ぐ候補として明記する)。Phase 0 は「要件・設計の確認」から「Phase 1 以降の実装ロードマップの具体化」までを行うフェーズとする。本プロジェクトでは、`README.md` および `docs/` 配下の詳細仕様書(`requirements.md`/`external_design.md`/`internal_design.md`/`implementation_plan.md`)を入力として実装ロードマップ(Phase 1〜N の区切りと各 Phase のスコープ)を作成する。Devex 完成後は、Devex 自身が生成するドキュメントを入力に切り替える運用を想定するが、その具体的な移行方法(何を入力に、どの粒度で読み替えるか)は今は確定せず、Devex 完成後の振り返り(#10・#25)で具体化する(→ 具体化した案は [`textbook/retrospectives/project-retrospective.md`](textbook/retrospectives/project-retrospective.md) 5節)。
 
 **#28. 実装着手前の仕様診断**(共通ルール候補 ── 特定プロジェクトに依存しない一般化を想定し、将来の handoff v2 に引き継ぐ候補として明記する)。Phase 0 の最後、Phase 1 のトリガー(#5)を受ける前に、要件定義〜実装計画の各文書(`docs/requirements.md`/`docs/external_design.md`/`docs/internal_design.md`/`docs/implementation_plan.md`)を対象に、不足・不明瞭な点の診断を AI が主体的に行う。診断結果は次の3段階に分類して提示する: (1) **最重要** ── 次の Phase のタスクに直結し着手前に解決すべきもの、(2) **中程度** ── 後続 Phase の設計事項だが今のうちに認識合わせしておきたいもの、(3) **軽微・運用面** ── 対応してもしなくても大きな影響が無いもの。ユーザーは各項目について「決定を下す」か「AI に提案を求める」かを選べる。AI への提案依頼があった項目は、トレードオフ比較や既存コードベース調査に基づいて具体案を提示し、ユーザーの選択を仰ぐ。全項目の決定が出揃ったら該当する `docs/*.md` に反映し、その回の対応を Phase 0 の1章(`textbook/Phase-00/Phase-0-<N>.md`)として記録する。この診断は、Devex 完成後に Devex が生成する要件定義書等でも「AI が不足点を指摘し、ユーザーが承認する」という同種のフローが期待される(#25 再帰検証ルールとも関連)ため、本プロジェクトの実施を通じてこのルール自体の実用性を検証する。
 
@@ -158,18 +158,18 @@ Both subrepos implement this spec through stage 10 (all stages complete and depl
 
 **#37. 未消化の申し送り節**(ステージ4完了後の振り返りで確立)。各 `Phase-<N>-introduction.md` に「未消化の申し送り」節を置く。前の Phase の同じ節から未解決の項目をそのまま引き継ぎ、この Phase で生まれた分を足す。この Phase で解決した項目は消し、どこで解決したか(章・リンク)を1行で書く。後続 Phase の着手時はこの節から読む。
 
-> **運用注記(#37 ── ステージ5完了後)**: 画面確認は Phase ごとに済ませず、この節に積んで、統合/E2E・本番確認の Phase でまとめて行ってよい(ステージ5では Phase 27〜31 の分を本番で一度に確かめた)。#18 の見直しの材料として、セッションの区切り(1 Phase を何セッションで行ったか)もこの節に記録し続ける。経緯は [`textbook/appendix/overall-retrospective.md`](./textbook/appendix/overall-retrospective.md) 9節。
+> **運用注記(#37 ── ステージ5完了後)**: 画面確認は Phase ごとに済ませず、この節に積んで、統合/E2E・本番確認の Phase でまとめて行ってよい(ステージ5では Phase 27〜31 の分を本番で一度に確かめた)。#18 の見直しの材料として、セッションの区切り(1 Phase を何セッションで行ったか)もこの節に記録し続ける。経緯は [`textbook/retrospectives/overall-retrospective.md`](textbook/retrospectives/overall-retrospective.md) 9節。
 
-> **運用注記(#37 ── ステージ9完了後)**: 本番への反映は、次のステージとまとめてよい。その場合は、申し送りの「本番への反映と本番での確認」と、画面確認で決める項目を、次のステージの最後の Phase へ引き継ぐ。反映の手順は、2つのステージの分を1つにまとめる。振り返りは本番での確認の前に行ってよい。#39 の「本番での確認の指摘」は、反映の後の振り返りで、前のステージの分も埋める。経緯は [`textbook/appendix/overall-retrospective.md`](./textbook/appendix/overall-retrospective.md) 14節。
+> **運用注記(#37 ── ステージ9完了後)**: 本番への反映は、次のステージとまとめてよい。その場合は、申し送りの「本番への反映と本番での確認」と、画面確認で決める項目を、次のステージの最後の Phase へ引き継ぐ。反映の手順は、2つのステージの分を1つにまとめる。振り返りは本番での確認の前に行ってよい。#39 の「本番での確認の指摘」は、反映の後の振り返りで、前のステージの分も埋める。経緯は [`textbook/retrospectives/overall-retrospective.md`](textbook/retrospectives/overall-retrospective.md) 14節。
 
 **#38. AI の提案と最終決定**(ステージ4完了後の振り返りで確立)。AI が書くコード・設計・計画は提案であり、採用するか変更するかはユーザーが最終的に決める。画面確認の後の修正や、Phase の分割・撤回・番号の付け直しは、問題ではなく通常の工程として扱う。経緯は q_a(#8)と、introduction の「後続 Phase での改訂」(#12)に残す。
 
-**#39. AI の提案の精度の振り返り**(ステージ6完了後に確立)。ステージ完了時の振り返り(#10)で、AI の提案の精度を記録から分析し、[`overall-retrospective.md`](./textbook/appendix/overall-retrospective.md) の当該ステージの節に書く。見るもの: 着手時の相談で推奨と違った選択(件数と向き)/ 計画の変動(分割・撤回・番号送り)/ 完了後の調整の回数と原因 / 本番確認の指摘。前のステージと比べて変化の理由を記録から裏付け、採否だけでは区別できない要因(ユーザーが推奨に寄った可能性など)を、採否と独立な指標(本番確認・効果測定など)で確かめる。記録の書式は決めず、数字は AI が記録を読んで数える概算でよい。初回はステージ3〜6 の横断分析(同ファイル 11節)。
+**#39. AI の提案の精度の振り返り**(ステージ6完了後に確立)。ステージ完了時の振り返り(#10)で、AI の提案の精度を記録から分析し、[`overall-retrospective.md`](textbook/retrospectives/overall-retrospective.md) の当該ステージの節に書く。見るもの: 着手時の相談で推奨と違った選択(件数と向き)/ 計画の変動(分割・撤回・番号送り)/ 完了後の調整の回数と原因 / 本番確認の指摘。前のステージと比べて変化の理由を記録から裏付け、採否だけでは区別できない要因(ユーザーが推奨に寄った可能性など)を、採否と独立な指標(本番確認・効果測定など)で確かめる。記録の書式は決めず、数字は AI が記録を読んで数える概算でよい。初回はステージ3〜6 の横断分析(同ファイル 11節)。
 
 ### プロジェクトのゴール
 
-> 2026-10-18 のプロジェクト完了の振り返りで、3つとも達成と判定した([`textbook/appendix/project-retrospective.md`](./textbook/appendix/project-retrospective.md) 2節)。
+> 2026-10-18 のプロジェクト完了の振り返りで、3つとも達成と判定した([`textbook/retrospectives/project-retrospective.md`](textbook/retrospectives/project-retrospective.md) 2節)。
 
 1. **プロダクト目標**: `docs/implementation_plan.md` ステージ1(MVP)が定義する Must 要件(チャットヒアリング → 要件定義 / 外部設計 / 内部設計 / 実装計画の4種 Markdown 自動生成)を満たし、ステージ1のマイルストーン1・2の受け入れ基準を満たす。
-2. **手法目標**: `appendix/cl-development-handoff.md` の #1〜17 を土台に #18〜28(本節)を実プロジェクトで運用し、自動実装モード(#21)の off・on をそれぞれ少なくとも1 Phase で実施した上で(実績: off = Phase 1〜6、on = Phase 7〜24)、所感5.1 / 5.2 / 5.5 / 5.6 各提案の採否とその根拠を振り返り(`textbook/appendix/*-retrospective.md`)に記録する。プロジェクト完了時、次プロジェクトに引き継げる改訂版 handoff ドキュメント相当を作成可能な状態にする(実績: [`appendix/cl-development-handoff-v2.md`](./appendix/cl-development-handoff-v2.md) を最終版にした)。
-3. **再帰検証目標**: Devex が生成すべき4文書の「質の良さ」の基準を、本プロジェクト自身が書く CL 教材(introduction / チェックリスト / 振り返り)の質を通じて具体化し、逆に Devex の生成物の構造を CL 教材テンプレートに転用できるかを #25 の振り返りで検証する。最低1回、Devex の実際の生成文書と `Phase-<N>-introduction.md` を突き合わせ、共通化できるテンプレート要素を最低1つ具体的に特定する(実績: [`textbook/appendix/goal3-comparison.md`](./textbook/appendix/goal3-comparison.md)。共通要素 = 作業単位の表)。
+2. **手法目標**: v1 の #1〜17 を土台に #18〜28(本節)を実プロジェクトで運用し、自動実装モード(#21)の off・on をそれぞれ少なくとも1 Phase で実施した上で(実績: off = Phase 1〜6、on = Phase 7〜24)、所感5.1 / 5.2 / 5.5 / 5.6 各提案の採否とその根拠を振り返り(`textbook/retrospectives/*-retrospective.md`)に記録する。プロジェクト完了時、次プロジェクトに引き継げる改訂版 handoff ドキュメント相当を作成可能な状態にする(実績: [`appendix/cl-development-handoff-v2.md`](./appendix/cl-development-handoff-v2.md) を最終版にした)。
+3. **再帰検証目標**: Devex が生成すべき4文書の「質の良さ」の基準を、本プロジェクト自身が書く CL 教材(introduction / チェックリスト / 振り返り)の質を通じて具体化し、逆に Devex の生成物の構造を CL 教材テンプレートに転用できるかを #25 の振り返りで検証する。最低1回、Devex の実際の生成文書と `Phase-<N>-introduction.md` を突き合わせ、共通化できるテンプレート要素を最低1つ具体的に特定する(実績: [`textbook/retrospectives/goal3-comparison.md`](textbook/retrospectives/goal3-comparison.md)。共通要素 = 作業単位の表)。

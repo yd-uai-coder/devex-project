@@ -47,7 +47,7 @@ export function placeMissingNodes(model, layout | null): LayoutModel {
 
 ### なぜ変換を非対称にしたか
 
-appendix の設計([`uml-review-drawio-requirements-external-design.md`](../../appendix/uml-review-drawio-requirements-external-design.md) 2.7節)は `toReactFlow()` と `fromReactFlow()` の対を想定していた。本 Phase では、逆方向を「位置だけ」に絞った。
+appendix の設計([`uml-review-drawio-requirements-external-design.md`](../../appendix/concept-history.md#uml-document) 2.7節)は `toReactFlow()` と `fromReactFlow()` の対を想定していた。本 Phase では、逆方向を「位置だけ」に絞った。
 
 - React Flow の nodes/edges を正本にして編集結果を丸ごと意味モデルへ戻すと、`data` に載せた要素を React Flow の中で書き換えることになる。React Flow の変更通知(`applyNodeChanges`)と意味モデルの整合を、毎回取り直す必要が出る。
 - 意味モデルを正本にし、表示は毎回作り直すことにすれば、変更の流れは「意味モデル → 表示」の一方向になる。React Flow から来るのは、ドラッグで確定した位置だけである。

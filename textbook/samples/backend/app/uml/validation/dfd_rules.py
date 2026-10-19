@@ -18,7 +18,7 @@ def validate_dfd_rules(
     data_item_ids: set[uuid.UUID],
     referenced_elsewhere: set[uuid.UUID] | frozenset[uuid.UUID] = frozenset(),
 ) -> tuple[list[ValidationIssue], list[ValidationIssue]]:
-    """診断8(appendix/stage3-requirements-organization.md)のDFD規則を検証する。
+    """診断8(appendix/concept-history.md 3節)のDFD規則を検証する。
 
     診断8の5点目「上位図と下位図の境界フローが一致する」は撤回した。Phase 10でDFDを
     「APIエンドポイント/バッチごとに1枚」のフラットな構成に確定し、上位図・下位図という

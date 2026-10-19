@@ -49,7 +49,7 @@ Claude の判断で決めたこと(計画の承認で確定):
   - [`Phase-16-introduction.md`](../Phase-16/Phase-16-introduction.md)「後続 Phase への申し送り」: 本 Phase が回収する3点(DFD の入力の切り替え・`STAGE_GENERATORS`/`STAGE_VALIDATORS` への登録・自動レイアウトの上限と案C)。
   - [`Phase-16-3.md`](../Phase-16/Phase-16-3.md)・[`Phase-16-4.md`](../Phase-16/Phase-16-4.md): 段階の検証の登録と、下書きの生成の受け付け・実行。段階2はここに登録する。
   - [`Phase-10-introduction.md`](../Phase-10/Phase-10-introduction.md): DFD の出力スキーマ・データ項目の名前の解決。段階2はこれを再利用する。
-  - [`appendix/detailed-design-devex/content.py`](../../appendix/detailed-design-devex/content.py) の `DFDS`・`DATA_ITEMS`・`SUMMARY`: 段階2の見本(処理の箱が処理ID、グループごとの DFD、処理概要表)。
+  - `appendix/detailed-design-devex/content.py` の `DFDS`・`DATA_ITEMS`・`SUMMARY`: 段階2の見本(処理の箱が処理ID、グループごとの DFD、処理概要表)。
 - **本 Phase 開始時点の状態**:
   - 段階2の作業領域は「準備中」の表示だけだった。生成の対応表と検証の対応表には段階1しか無かった。
   - DFD の生成は、内部設計書の `#### DF-n` 節を対象にしていた(詳細設計モードには内部設計書が無い)。
@@ -59,7 +59,7 @@ Claude の判断で決めたこと(計画の承認で確定):
 
 自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
 
-> 旧ルール(学習モード / 納期モード)では、17-5 を納期モード、他を学習モードとした。旧・納期モードの章は、#14 の SUT/ドライバ/スタブの言語化を省いている。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
+> 旧ルール(学習モード / 納期モード)では、17-5 を納期モード、他を学習モードとした。旧・納期モードの章は、#14 の SUT/ドライバ/スタブの言語化を省いている。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) を参照。
 
 ## 章一覧
 

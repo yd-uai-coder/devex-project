@@ -2,7 +2,7 @@
 
 ## 目的
 
-ステージ5(実装手順書 + 実装可能性チェック)の6つ目の実装 Phase。Phase 26〜30 で、詳細設計モードの段階8(model・検証・生成・シーケンス図・出力)ができた。[25-1](../Phase-25/Phase-25-1.md) の決定2・8 のとおり、同じ形の手順書を簡易ドキュメントモードでも作れるようにする。[作成方針](../../appendix/devex_implementation_procedure_guideline.md)の3・7・10・18章が示す形である。
+ステージ5(実装手順書 + 実装可能性チェック)の6つ目の実装 Phase。Phase 26〜30 で、詳細設計モードの段階8(model・検証・生成・シーケンス図・出力)ができた。[25-1](../Phase-25/Phase-25-1.md) の決定2・8 のとおり、同じ形の手順書を簡易ドキュメントモードでも作れるようにする。[作成方針](../../appendix/concept-history.md#procedure-guideline)の3・7・10・18章が示す形である。
 
 - **作業単位**: 実装計画書のプロンプトを変え、4.2 の WBS を段階7と同じ縦割り・ID 付きの決まった書式で書かせる。サーバーがそれを段階7と同じ形に決定的に読む。
 - **段階8だけを開く**: 簡易モードのプロジェクトは段階8だけを持ち、入力は4文書。参照は内部設計書(処理別データフロー `DF-<n>`・モジュール一覧・API 一覧・3.4節)から引く。
@@ -10,7 +10,7 @@
 
 ## パイプライン上の位置づけ・前提
 
-- 前提として読むもの: [Phase 25-1](../Phase-25/Phase-25-1.md)(決定2・8)、[Phase 25-4](../Phase-25/Phase-25-4.md)(Phase 31 の範囲と未確定事項)、[作成方針](../../appendix/devex_implementation_procedure_guideline.md) 3章(モードの比較)・10章(簡易モードの参照先)。
+- 前提として読むもの: [Phase 25-1](../Phase-25/Phase-25-1.md)(決定2・8)、[Phase 25-4](../Phase-25/Phase-25-4.md)(Phase 31 の範囲と未確定事項)、[作成方針](../../appendix/concept-history.md#procedure-guideline) 3章(モードの比較)・10章(簡易モードの参照先)。
 - 段階8の部品は Phase 27〜30。`procedure_doc`(model・`unit_refs`)、`procedure_doc_refs`(`unit_context`)、`validation.validate_procedure_doc`、`procedure_doc_drafting`、`procedure_output/`、`DesignStageService`・`DesignStageGenerationService`・`DetailedDesignExportService` を使う。
 - 簡易モードの4文書は `doc_generator_service`(Phase 2〜。内部設計書のモジュール一覧は Phase 15、処理別データフローは Phase 10 で足した)。
 

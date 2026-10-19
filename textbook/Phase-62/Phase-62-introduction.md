@@ -19,7 +19,7 @@
 チャット(SCR-004)─[62-4 会話の領域 + 読み込み後に最下部 + 追従]
 ```
 
-- **前提として読むもの**: [61-3](../Phase-61/Phase-61-3.md)(Phase 62 のスコープと未確定事項)、[外部設計書](../../docs/external_design.md) 2.12節(ヘッダーとメニュー・モード選択・チャットの表示)、[`stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 1.2節(影響調査)。
+- **前提として読むもの**: [61-3](../Phase-61/Phase-61-3.md)(Phase 62 のスコープと未確定事項)、[外部設計書](../../docs/external_design.md) 2.12節(ヘッダーとメニュー・モード選択・チャットの表示)、[`stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 1.2節(影響調査)。
 - **今の仕組み**: ログインの状態はストア(`useAuthStore`。アクセストークンはメモリだけ)にあり、初期値は `loading`、起動時の復元(`AuthBootstrap`)で `success` か `idle` になる。`RequireAuth` は `loading` の間は何も出さず、トークンが無ければログイン必須ダイアログを出す。`MENU_TREE` はサイドメニュー・トップページ・404 の3か所が読む。
 - **この Phase を始めた時点の状態**: devex-ui・devex-api は Phase 60 までコミット済み(devex-ui の HEAD は `c4d701b`)。外側のリポジトリは、ステージ8の振り返り・ロードマップの修正・Phase 61 が未コミット。
 

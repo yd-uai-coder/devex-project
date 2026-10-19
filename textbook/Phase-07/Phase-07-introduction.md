@@ -2,7 +2,7 @@
 
 ## 目的
 
-[`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.1節 ステージ3(UML設計図パイプライン)に着手する。Phase 7はその最初のPhaseであり、[`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md) 7節の章立て案が定める「設計フェーズ: 仕様診断(#28)・図↔文書対応表(D5)の確定・スパイク(React Flow×Tamagui、レイアウトエンジン移植の見通し)・`docs/`反映」を行う。実装ファイルを作らない[CLAUDE.md](../../CLAUDE.md)「進行のルール」#2の規定に沿う設計フェーズであり、本体機能の実装(意味モデル・CRUD API等)はPhase 8以降で行う。
+[`docs/implementation_plan.md`](../../docs/implementation_plan.md) 4.1節 ステージ3(UML設計図パイプライン)に着手する。Phase 7はその最初のPhaseであり、[`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3) 7節の章立て案が定める「設計フェーズ: 仕様診断(#28)・図↔文書対応表(D5)の確定・スパイク(React Flow×Tamagui、レイアウトエンジン移植の見通し)・`docs/`反映」を行う。実装ファイルを作らない[CLAUDE.md](../../CLAUDE.md)「進行のルール」#2の規定に沿う設計フェーズであり、本体機能の実装(意味モデル・CRUD API等)はPhase 8以降で行う。
 
 ## 本Phase固有の進行上の特例
 
@@ -20,7 +20,7 @@
 
 ## パイプライン上の位置づけ・前提
 
-- 前提として読むべきもの: [`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md)(要件整理・決定事項D1〜D8・章立て案)、[`appendix/uml-review-drawio-requirements-external-design.md`](../../appendix/uml-review-drawio-requirements-external-design.md)(UML文書本体)、[`appendix/requirements-design-uml-mcp-summary.md`](../../appendix/requirements-design-uml-mcp-summary.md)(参考資料)、[`docs/internal_design.md`](../../docs/internal_design.md) 3.2節・3.3節(本Phaseで更新)。
+- 前提として読むべきもの: [`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3)(要件整理・決定事項D1〜D8・章立て案)、[`appendix/uml-review-drawio-requirements-external-design.md`](../../appendix/concept-history.md#uml-document)(UML文書本体)、`appendix/requirements-design-uml-mcp-summary.md`(参考資料)、[`docs/internal_design.md`](../../docs/internal_design.md) 3.2節・3.3節(本Phaseで更新)。
 - 決定済み事項(D1〜D8)はすべて前提とし、本Phaseで再検討しない。D5(図↔文書対応表)のみ本Phaseで確定する。
 - 別プロジェクトの自作図生成エンジン(`engine.py`)が、Phase 9で移植予定のレイアウトエンジン。
 
@@ -28,7 +28,7 @@
 
 自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
 
-> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
+> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) を参照。
 
 ## 章一覧
 

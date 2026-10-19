@@ -23,16 +23,16 @@
 
 ### SCR-007への画面遷移
 
-既存のSCR-005(ドキュメントプレビュー)から「設計図を生成する」操作でSCR-007へ遷移する導線を追加した。既存のSCR-004→SCR-005の「ヒアリング完了→承認→生成」という操作パターンと一貫させている([`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md) 4.4節2番の未決定事項への回答)。
+既存のSCR-005(ドキュメントプレビュー)から「設計図を生成する」操作でSCR-007へ遷移する導線を追加した。既存のSCR-004→SCR-005の「ヒアリング完了→承認→生成」という操作パターンと一貫させている([`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3) 4.4節2番の未決定事項への回答)。
 
 ### `uml_diagrams`のカラム設計
 
-[`appendix/uml-review-drawio-requirements-external-design.md`](../../appendix/uml-review-drawio-requirements-external-design.md) 4.3節の推奨モジュール構成と、[`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md)のM3・診断7(陳腐化の双方向化)を踏まえ、`source_doc_versions`(生成元の`generated_documents`バージョン)を追加し、文書側が再生成された場合の陳腐化検知の基礎とした(実際の検知ロジックはPhase 13)。
+[`appendix/uml-review-drawio-requirements-external-design.md`](../../appendix/concept-history.md#uml-document) 4.3節の推奨モジュール構成と、[`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3)のM3・診断7(陳腐化の双方向化)を踏まえ、`source_doc_versions`(生成元の`generated_documents`バージョン)を追加し、文書側が再生成された場合の陳腐化検知の基礎とした(実際の検知ロジックはPhase 13)。
 
 ### APIパスの設計
 
-[`appendix/uml-review-drawio-requirements-external-design.md`](../../appendix/uml-review-drawio-requirements-external-design.md) 2.6節の`/api/uml/diagrams`を、devex既存のプロジェクトスコープ(`/api/v1/projects/{id}/...`)配下へ変更し、既存の`CurrentProjectDep`をそのまま再利用できるようにした(4.3節の推奨方針どおり)。
+[`appendix/uml-review-drawio-requirements-external-design.md`](../../appendix/concept-history.md#uml-document) 2.6節の`/api/uml/diagrams`を、devex既存のプロジェクトスコープ(`/api/v1/projects/{id}/...`)配下へ変更し、既存の`CurrentProjectDep`をそのまま再利用できるようにした(4.3節の推奨方針どおり)。
 
 ## テスト観点
 
-スタブ不要 ── 本章の成果物はMarkdown文書のみで、実行可能なコード・外部依存を一切持たないため(SUT/ドライバ/スタブという区分自体が適用対象外)。整合性の確認は、D5対応表が[`appendix/uml-review-drawio-requirements-external-design.md`](../../appendix/uml-review-drawio-requirements-external-design.md)・[`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md)の内容と矛盾しないかを目視で突き合わせることで行う。
+スタブ不要 ── 本章の成果物はMarkdown文書のみで、実行可能なコード・外部依存を一切持たないため(SUT/ドライバ/スタブという区分自体が適用対象外)。整合性の確認は、D5対応表が[`appendix/uml-review-drawio-requirements-external-design.md`](../../appendix/concept-history.md#uml-document)・[`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3)の内容と矛盾しないかを目視で突き合わせることで行う。

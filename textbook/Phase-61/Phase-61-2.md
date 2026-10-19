@@ -17,8 +17,8 @@
 | [`docs/internal_design.md`](../../docs/internal_design.md) | 3.2節 `users` に改名の注記、3.3節2の API 一覧に `DELETE /projects/{id}`・`PATCH /users/me`・モデルと API キーの API を足し、`GET /projects` のパラメータとレスポンスの形を改めた。3.3節8の LLM の取得に注記を足し、**3.3節「9. 使い勝手とアカウント・モデル設定(ステージ9)」を新設**(proxy・削除と消失への強さ・一覧・アカウント・テーブル2つと暗号化・カタログ・seed・LLM の解決)。3.4節にステージ9 のエラーコードは各 Phase で名付ける旨を足した |
 | [`docs/implementation_plan.md`](../../docs/implementation_plan.md) | 4.1節にステージ9 の節(目的・方針・対象 Phase 61〜72・マイルストーン10)を足した |
 | [`README.md`](../../README.md) | ステージ9 を実装計画書に書き写したことを足した |
-| [`appendix/devex_roadmap.md`](../../appendix/devex_roadmap.md) | ステージ9 を「着手」にし、実装計画書への書き写しと申し送りを入れたことを足した |
-| [`appendix/stage9-10-plan.md`](../../appendix/stage9-10-plan.md) | 1.5節の未決事項を Phase 61 で決めた旨と、Phase の分け方を 61-3 に改めた旨を足した(本文は相談の時点の記録として残す) |
+| [`appendix/devex_roadmap.md`](../../appendix/concept-history.md#roadmap) | ステージ9 を「着手」にし、実装計画書への書き写しと申し送りを入れたことを足した |
+| [`appendix/stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) | 1.5節の未決事項を Phase 61 で決めた旨と、Phase の分け方を 61-3 に改めた旨を足した(本文は相談の時点の記録として残す) |
 
 ## 書き方の判断
 

@@ -4,7 +4,7 @@
 
 外部設計書を、LLM が自由に書く Markdown から「構造化出力 → 意味モデル(model)→ md を組み立てる」形に変える。画面・API・外部連携を行にし、各行に関係する要件ID(Phase 36 の `FR-001` など)を持たせる。画面ID(`SCR-001`)は再生成しても引き継ぐ。検証で「画面も API も無い Must の機能要件」「本文の欄が空の POST・PUT・PATCH」などを指摘し、プレビューに出す。ベースライン([33-1](../Phase-33/Phase-33-1.md))で多かった「API のメソッド・パス・本文が外部設計書に無い」(分類 B)を検証で拾えるようにし、Phase 38(要件 → 処理・作業単位)の入力をそろえる。
 
-方針は [Phase 33-2](../Phase-33/Phase-33-2.md) 決定11、計画は [33-5](../Phase-33/Phase-33-5.md) の Phase 37。形の見本は [`appendix/structured-requirements-sample/external_design.md`](../../appendix/structured-requirements-sample/external_design.md)。
+方針は [Phase 33-2](../Phase-33/Phase-33-2.md) 決定11、計画は [33-5](../Phase-33/Phase-33-5.md) の Phase 37。形の見本は `appendix/structured-requirements-sample/external_design.md`。
 
 ## パイプライン上の位置づけ・前提
 
@@ -22,7 +22,7 @@ Phase 38 要件 → 処理・作業単位(段階1の req_ids は、外部設計�
 
 - 前提として読むもの:
   - [Phase 36 の introduction](../Phase-36/Phase-36-introduction.md)(要件定義書の model・要件ID の引き継ぎ・生成時点の写し)
-  - [見本の外部設計書](../../appendix/structured-requirements-sample/external_design.md)(2.2・2.4・2.6 の行と検証の例)
+  - 見本の外部設計書(2.2・2.4・2.6 の行と検証の例)
   - [外部設計書](../../docs/external_design.md) 2.9節「外部設計書(両モード)」と、[内部設計書](../../docs/internal_design.md) 3.3節「6. ヒアリングと上流の構造化」
 - 外部設計書の md を読む後続: 詳細設計モードの段階1(機能一覧の下書きと `MISSING_API`)・段階7、簡易モードの内部設計書の生成と段階8(`extract_api_endpoints`)、自己診断。どれも md を読むので、見出しと 2.6 の列名を変えないことがこの Phase の前提になる。
 

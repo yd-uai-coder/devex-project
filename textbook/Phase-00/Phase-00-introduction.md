@@ -4,7 +4,7 @@
 
 Devex 実装(Phase 1 以降)に着手する前に、次の3つを確定する:
 
-1. [`appendix/cl-development-handoff.md`](../../appendix/cl-development-handoff.md) を土台に、本プロジェクト固有の進行ルール(#18〜28)を確定する。
+1. `appendix/cl-development-handoff.md` を土台に、本プロジェクト固有の進行ルール(#18〜28)を確定する。
 2. プロダクト目標([README.md](../../README.md)/`docs/`配下 準拠)・手法目標(CL開発の洗練)・再帰検証目標(Devex生成物とCL教材の相互転用)の3層からなるプロジェクトゴールを確定する。
 3. #27(Phase 0 の役割定義)に基づき、[README.md](../../README.md)/`docs/`配下を入力として Phase 1 以降の実装ロードマップを具体化する。
 
@@ -12,7 +12,7 @@ Devex 実装(Phase 1 以降)に着手する前に、次の3つを確定する:
 
 ## パイプライン上の位置づけ・前提
 
-- 前提として読むべきもの: [`appendix/cl-development-handoff.md`](../../appendix/cl-development-handoff.md)(CL開発の原本ルール #1〜17 と所感5.1〜5.6)、[`README.md`](../../README.md)(概要)+ `docs/`配下(Devexのプロダクト要件定義書・外部設計書・内部設計書・実装計画書の詳細)、[`CLAUDE.md`](../../CLAUDE.md)(リポジトリ構成、および本 Phase の成果物である「進行のルール」節)。
+- 前提として読むべきもの: `appendix/cl-development-handoff.md`(CL開発の原本ルール #1〜17 と所感5.1〜5.6)、[`README.md`](../../README.md)(概要)+ `docs/`配下(Devexのプロダクト要件定義書・外部設計書・内部設計書・実装計画書の詳細)、[`CLAUDE.md`](../../CLAUDE.md)(リポジトリ構成、および本 Phase の成果物である「進行のルール」節)。
 - このプロジェクトは「Devex を CL開発で作る」と同時に「Devex という成果物(要件定義/外部設計/内部設計/実装計画の自動生成)自体が CL開発の教材品質を検証する再帰的な題材である」という二重構造を持つ。この位置づけは Phase 0 全体の前提であり、以降すべての Phase の振り返り(#25)に影響する。
 
 ## 章一覧
@@ -37,7 +37,7 @@ Devex 実装(Phase 1 以降)に着手する前に、次の3つを確定する:
 
 設計レベルの疑問をここで出し切る(実装細部の疑問はこの Phase には存在しない — #20 の対象外だが同じ考え方を適用):
 
-- [ ] [`appendix/cl-development-handoff.md`](../../appendix/cl-development-handoff.md) の #1〜17 のうち、本プロジェクトで運用上の解釈が必要なものはあるか(例: samples フォルダの実体をいつ作るか)
+- [ ] `appendix/cl-development-handoff.md` の #1〜17 のうち、本プロジェクトで運用上の解釈が必要なものはあるか(例: samples フォルダの実体をいつ作るか)
 - [ ] #18〜28 の各ルールが、[`docs/implementation_plan.md`](../../docs/implementation_plan.md) のステージ1(MVP)スケジュール(Week 3 / Week 5)と矛盾しないか
 - [ ] プロジェクトゴールの3層(プロダクト/手法/再帰検証)の優先順位に認識齟齬がないか
 - [ ] [`decision-digest.md`](../decision-digest.md) を「能動的に参照するファイル」として今後の全セッション冒頭で読む、という運用に合意できるか

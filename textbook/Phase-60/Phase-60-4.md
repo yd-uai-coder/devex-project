@@ -77,4 +77,4 @@
 
 - 対象は確認の表の全項目 ── 設計レビュー(superuser の切り替え・自動のレビュー・区切り・採否・差し戻し・聞き直しの後の再レビュー・「直ったか」)、テスト仕様書(タブ・ステッパーの行・作り直し・検証の結果・zip)、実装手順書の「未定義・要決定の一覧」と `NO_ERROR_TEST`。Phase 53〜59 から積んでいた画面確認と、レビューの出力の上限・新しい題材での documents の区切りを含む。
 - Anthropic の実際の費用(Console の使用量)は、この記録の時点では未記録。
-- 記録はステージ8の振り返り([`overall-retrospective.md`](../appendix/overall-retrospective.md) 13節)のセッションで書いた。
+- 記録はステージ8の振り返り([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 13節)のセッションで書いた。

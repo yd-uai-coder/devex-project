@@ -17,7 +17,7 @@
 | [`docs/internal_design.md`](../../docs/internal_design.md) | 3.3節に「7. 変更影響分析・変更管理」を足した(要素と参照の導出・たどり方・横断事項の要件ID・作業単位の安定キー・差分・簡易モード) |
 | [`docs/implementation_plan.md`](../../docs/implementation_plan.md) | 4.1節を7ステージにし、ステージ7(目的・出発点・方針・対象 Phase 41〜50・マイルストーン8)を書き写した |
 | [`README.md`](../../README.md) | ステージ7の状態を「着手(Phase 41〜)」にし、4.1節への書き写しの注記を更新した |
-| [`appendix/devex_roadmap.md`](../../appendix/devex_roadmap.md) | ステージ6を「完了」に、ステージ7を「着手」にした(見出し・3.1・3.2)。ステージ7の構想の前に、Phase 41 の決定への注記(LLM の説明は使わないに変えた)を置いた |
+| [`appendix/devex_roadmap.md`](../../appendix/concept-history.md#roadmap) | ステージ6を「完了」に、ステージ7を「着手」にした(見出し・3.1・3.2)。ステージ7の構想の前に、Phase 41 の決定への注記(LLM の説明は使わないに変えた)を置いた |
 
 ## 反映の要点
 

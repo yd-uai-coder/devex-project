@@ -102,7 +102,7 @@ export function DesignReviewDemoPageContent() {
         <H2>AI 設計レビューデモ</H2>
         <Paragraph color="$color10">
           ステージ8で作る AI 設計レビューの見せ方を、仮データで確かめるページです。生成は今のモデルのまま、レビューは別のモデルが指摘だけを返します。
-          題材は Devex 自身で、appendix/stage8-baseline/ の測定と同じ生成物の指摘を縮めたものです。サーバーとは通信しません。
+          題材は Devex 自身で、appendix/measurements/stage8-baseline.md の測定と同じ生成物の指摘を縮めたものです。サーバーとは通信しません。
         </Paragraph>
       </YStack>
 

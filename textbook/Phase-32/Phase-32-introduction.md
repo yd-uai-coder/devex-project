@@ -108,7 +108,7 @@ Phase 31 から引き継いだもの:
 - **持ち越し(Phase 22 から)**:
   - 段階6が開いていないときの、05 の詳細バッジ
   - ER の主キーの NULL の表示
-- **E2E を CI で流すか**: 未定([`retrospective-memo.md`](../retrospective-memo.md) に候補として記録済み)。この Phase で、流さない期間に E2E が壊れる例が2つ出た([32-2](./Phase-32-2.md))。ステージ5の振り返りで、#36 のまま続ける(CI 化は候補のまま)と決めた([総括の振り返り 9節](../appendix/overall-retrospective.md))。
+- **E2E を CI で流すか**: 未定([`retrospective-memo.md`](../retrospective-memo.md) に候補として記録済み)。この Phase で、流さない期間に E2E が壊れる例が2つ出た([32-2](./Phase-32-2.md))。ステージ5の振り返りで、#36 のまま続ける(CI 化は候補のまま)と決めた([総括の振り返り 9節](../retrospectives/overall-retrospective.md))。
 - **コミュニケーション図**: 後回し([25-5](../Phase-25/Phase-25-5.md))。
 - **「段階Nで直す」の移動先での強調**: 段階5は手順・処理を開くが、段階3・4・7は段階を開くだけ。必要なら各パネルに `focus` を読ませる。
 - **「AI に提案を求める」**: ステージ8(AI 設計レビュー・再ヒアリング)との境界として申し送る。
@@ -142,4 +142,4 @@ Phase 31 から引き継いだもの:
 
 ## 次のフェーズ
 
-ステージ5はこの Phase で終わる。次は、ステージ5の完了として、振り返り(#10、`textbook/appendix/*-retrospective.md`。#25 の「→ Devex 仕様への示唆」を含む)と decision digest(#24)をまとめる。#18 により、別のセッションで行う。本番への反映と確認は、ユーザーが 10.2節の手順で行う。
+ステージ5はこの Phase で終わる。次は、ステージ5の完了として、振り返り(#10、`textbook/retrospectives/*-retrospective.md`。#25 の「→ Devex 仕様への示唆」を含む)と decision digest(#24)をまとめる。#18 により、別のセッションで行う。本番への反映と確認は、ユーザーが 10.2節の手順で行う。

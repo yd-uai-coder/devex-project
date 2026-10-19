@@ -33,7 +33,7 @@
 - **前提として読むもの**:
   - [`Phase-08-introduction.md`](../Phase-08/Phase-08-introduction.md): 意味モデル、`DfdFlow.data_item_id`、データ辞書
   - [`Phase-09-introduction.md`](../Phase-09/Phase-09-introduction.md): `layer` とレーン、`MAX_ELEMENTS`
-  - [`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md): 診断4・診断8
+  - [`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3): 診断4・診断8
   - [`docs/internal_design.md`](../../docs/internal_design.md) 3.3節③: 図と文書の対応(D5)
 - **本 Phase 開始時点の状態**:
   - `app/uml/generation/` は存在しない。
@@ -47,7 +47,7 @@
 
 自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
 
-> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
+> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) を参照。
 
 ## 章一覧
 

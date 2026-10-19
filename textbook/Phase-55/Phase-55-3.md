@@ -2,7 +2,7 @@
 
 ## この章の目的
 
-足した検証が、ステージ8の測定で Sonnet のレビューが拾えなかった手順書の欠陥(正解表 [`truth-e.md`](../../appendix/stage8-baseline/truth-e.md) の PR-1・PR-3・PR-5)を当てるか、題材で確かめる。続けて dev の DB にある生成物すべてに流して誤検知を探し、見つけた形を [55-1](./Phase-55-1.md) の判定から除いた。最後に docs に検証の一覧を書く。
+足した検証が、ステージ8の測定で Sonnet のレビューが拾えなかった手順書の欠陥(正解表 `truth-e.md` の PR-1・PR-3・PR-5)を当てるか、題材で確かめる。続けて dev の DB にある生成物すべてに流して誤検知を探し、見つけた形を [55-1](./Phase-55-1.md) の判定から除いた。最後に docs に検証の一覧を書く。
 
 自動実装モード: on([introduction](./Phase-55-introduction.md) 参照)。
 
@@ -17,7 +17,7 @@
 
 ## 1. 題材(決定的、DB も LLM も使わない)
 
-題材は [ステージ7 の効果測定の simple-2](../../appendix/stage7-effect/hearing/simple-2/) の実装手順書(`stages/stage8.json`)と4文書の md(model の無い版なので md の解析の経路)。ステージ8の (e) で Sonnet に渡した `simple-procedure` と同じもの。
+題材は ステージ7 の効果測定の simple-2 の実装手順書(`stages/stage8.json`)と4文書の md(model の無い版なので md の解析の経路)。ステージ8の (e) で Sonnet に渡した `simple-procedure` と同じもの。
 
 | 正解表 | 内容 | 足した検証の結果 |
 |---|---|---|
@@ -25,7 +25,7 @@
 | PR-3(軽微) | M-01-T01・M-02-T01・M-03-T02 はテスト観点があるのにテストのファイルが無い | `NO_TEST_FILE` 軽微 × 3(同じ3単位) |
 | PR-5(中程度) | `auth.py`(M-02-T01)と `chat_graph.py`(M-03-T01)の依存先 `ai_service.py` は M-03-T02 で作る | `DEPENDENCY_BUILT_LATER` 中程度 × 2(同じ2件、作り手 M-03-T02) |
 
-3件とも正解表どおりに当たり、ほかの新しい指摘は出なかった。(e) の Sonnet は PR-3・PR-5 を6回とも当てず、PR-1 は6回中5回当てていた([`results.md`](../../appendix/stage8-baseline/results.md) の simple-procedure)。
+3件とも正解表どおりに当たり、ほかの新しい指摘は出なかった。(e) の Sonnet は PR-3・PR-5 を6回とも当てず、PR-1 は6回中5回当てていた(`results.md` の simple-procedure)。
 
 ## 2. dev の DB(読み取りだけ)
 

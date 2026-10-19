@@ -1,5 +1,5 @@
 // 作成：Phase-33-3
-// 構造化した要件定義の見本(appendix/structured-requirements-sample/)を画面で確かめるデモの意味モデルと純粋関数。
+// 構造化した要件定義(観点の表・選択肢カード・要件 ID)の見せ方を画面で確かめるデモの意味モデルと純粋関数。
 // ヒアリングの完了は、観点ごとの状態から決定的に判定する(LLM には判定させない)。
 
 export type Scale = "personal" | "internal" | "public";

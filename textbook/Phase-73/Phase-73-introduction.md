@@ -2,7 +2,7 @@
 
 ## 目的
 
-ステージ9(使い勝手とアカウント・モデル設定の調整、Phase 61〜72)とその振り返りが終わった。次のステージとして「Google 認証」を始める。構想は[ロードマップ](../../appendix/devex_roadmap.md)のステージ10、影響調査は [`stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 2節にある。
+ステージ9(使い勝手とアカウント・モデル設定の調整、Phase 61〜72)とその振り返りが終わった。次のステージとして「Google 認証」を始める。構想は[ロードマップ](../../appendix/concept-history.md#roadmap)のステージ10、影響調査は [`stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 2節にある。
 
 Phase 73 は、[Phase 61](../Phase-61/Phase-61-introduction.md) と同じく、実装に入る前の要件確認フェーズとして次のことを行う。
 
@@ -26,9 +26,9 @@ Phase 73 は、[Phase 61](../Phase-61/Phase-61-introduction.md) と同じく、�
 ```
 
 - **前提として読むもの**:
-  - [`appendix/stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 2節(影響調査・未決事項・ステージ9の振り返りからの入力)
+  - [`appendix/stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 2節(影響調査・未決事項・ステージ9の振り返りからの入力)
   - [Phase 72](../Phase-72/Phase-72-introduction.md)「未消化の申し送り」(最後の Phase へ回す分・ステージ10の入力・生成の質の候補・持ち越し)
-  - [総括の振り返り](../appendix/overall-retrospective.md) 14節(ステージ9の振り返り)
+  - [総括の振り返り](../retrospectives/overall-retrospective.md) 14節(ステージ9の振り返り)
 - **今の仕組み**:
   - ログインはメールとパスワードだけである。access を本文で返し、refresh を API のオリジンの httpOnly cookie に置く。
   - 登録ではメールを確かめない。`users.hashed_password` は NOT NULL。
@@ -142,7 +142,7 @@ Claude の判断(計画の承認で確定、または診断中)は、[73-1](./Ph
 
 この Phase で解決したもの:
 
-- **[`stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 2.3節の未決事項**(フロー・紐付け・ライブラリ): [73-1](./Phase-73-1.md) の決定1〜6。
+- **[`stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 2.3節の未決事項**(フロー・紐付け・ライブラリ): [73-1](./Phase-73-1.md) の決定1〜6。
 - **ステージ10の入力**(5件。Phase 72 から): すべて範囲に入れた。
   - 開発環境の登録の上限 → Phase 74
   - 削除したプロジェクトの表示・新規作成の後の一覧の cache・押せないボタンの見た目・負荷のときだけ落ちるテスト → Phase 78

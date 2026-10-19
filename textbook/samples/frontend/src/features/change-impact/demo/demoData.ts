@@ -1,7 +1,7 @@
 // 作成：Phase-41-3
 import type { Change, DesignElement, EdgeKind, Ref } from "./impactModel";
 
-// デモの仮データ。題材は Devex 自身で、appendix/stage7-baseline/ のベースラインと同じ生成物
+// デモの仮データ。題材は Devex 自身で、appendix/measurements/stage7-baseline.md のベースラインと同じ生成物
 // (stage6-effect の詳細設計モード)を縮めたもの。横断事項の要件ID(req_ids)は、ステージ7で足す予定の形。
 
 const r = (edge: EdgeKind, ...to: string[]): Ref[] => to.map((t) => ({ to: t, edge }));

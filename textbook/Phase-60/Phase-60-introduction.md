@@ -121,7 +121,7 @@ Claude の判断(計画の承認で確定、または実装中):
 
 ## 未消化の申し送り(#37)
 
-ステージ8の振り返りで、Phase 59 から引き継いだ分とこの Phase で生まれた分を1件ずつ棚卸しした([`overall-retrospective.md`](../appendix/overall-retrospective.md) 13.3)。残ったのは次のとおり。次のステージの着手時はここから読む。
+ステージ8の振り返りで、Phase 59 から引き継いだ分とこの Phase で生まれた分を1件ずつ棚卸しした([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 13.3)。残ったのは次のとおり。次のステージの着手時はここから読む。
 
 次のステージの入力(仕様診断 #28 で、範囲に入れるかを1件ずつ決める):
 
@@ -175,4 +175,4 @@ Claude の判断(計画の承認で確定、または実装中):
 
 ## 次のフェーズ
 
-ステージ8はこの Phase で終わる。本番への反映と確認はユーザーが [`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.5節の手順で行い、すべて問題なしだった([60-4](./Phase-60-4.md#本番での確認の記録))。振り返り(#10・#25・#39)は [`overall-retrospective.md`](../appendix/overall-retrospective.md) 13節、decision digest(#24)は [`decision-digest.md`](../decision-digest.md)「Phase 51完了」〜「ステージ8完了後 ── AI の提案の精度」にまとめた。次はステージ9の構想(新しいセッション。入力は上の「未消化の申し送り」の次のステージの入力)。
+ステージ8はこの Phase で終わる。本番への反映と確認はユーザーが [`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.5節の手順で行い、すべて問題なしだった([60-4](./Phase-60-4.md#本番での確認の記録))。振り返り(#10・#25・#39)は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 13節、decision digest(#24)は [`decision-digest.md`](../decision-digest.md)「Phase 51完了」〜「ステージ8完了後 ── AI の提案の精度」にまとめた。次はステージ9の構想(新しいセッション。入力は上の「未消化の申し送り」の次のステージの入力)。

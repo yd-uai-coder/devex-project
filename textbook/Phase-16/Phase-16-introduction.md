@@ -46,7 +46,7 @@ Claude の判断で決めたこと(計画の承認で確定):
   - [`Phase-15-2.md`](../Phase-15/Phase-15-2.md): 段階の状態・承認・陳腐化の土台。本 Phase はその上に段階1の中身を載せる。
   - [`Phase-15-introduction.md`](../Phase-15/Phase-15-introduction.md)「後続 Phase への申し送り」: 下書きは `draft`、人の保存は `reviewing`。
   - [`Phase-10-introduction.md`](../Phase-10/Phase-10-introduction.md): UML 図の生成の受け付け・実行・失敗の理由の残し方。段階の下書きの生成も同じ形にした。
-  - [`appendix/detailed-design-devex/content.py`](../../appendix/detailed-design-devex/content.py) の `FUNCTIONS`: 段階1の列の見本。
+  - `appendix/detailed-design-devex/content.py` の `FUNCTIONS`: 段階1の列の見本。
 - **本 Phase 開始時点の状態**:
   - 段階の `model` は自由な JSON で、形も検証も無かった。SCR-008 の作業領域は「準備中」の表示だけだった。
   - 外部設計書に、自システムの API 一覧が無かった。
@@ -55,7 +55,7 @@ Claude の判断で決めたこと(計画の承認で確定):
 
 自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
 
-> 旧ルール(学習モード / 納期モード)では、16-5 を納期モード、他を学習モードとした。旧・納期モードの章は、#14 の SUT/ドライバ/スタブの言語化を省いている。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
+> 旧ルール(学習モード / 納期モード)では、16-5 を納期モード、他を学習モードとした。旧・納期モードの章は、#14 の SUT/ドライバ/スタブの言語化を省いている。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) を参照。
 
 ## 章一覧
 

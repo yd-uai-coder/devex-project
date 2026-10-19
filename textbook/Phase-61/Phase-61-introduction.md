@@ -2,7 +2,7 @@
 
 ## 目的
 
-ステージ8(AI設計レビュー + テスト設計、Phase 51〜60)の完了後、ロードマップを改め(旧ステージ9・10 を撤回)、次のステージとして「使い勝手とアカウント・モデル設定の調整」を始める。構想は [ロードマップ](../../appendix/devex_roadmap.md) のステージ9、影響調査は [`stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 1節にある。Phase 61 は、[Phase 51](../Phase-51/Phase-51-introduction.md) と同じく、実装に入る前の要件定義フェーズとして次を行う。
+ステージ8(AI設計レビュー + テスト設計、Phase 51〜60)の完了後、ロードマップを改め(旧ステージ9・10 を撤回)、次のステージとして「使い勝手とアカウント・モデル設定の調整」を始める。構想は [ロードマップ](../../appendix/concept-history.md#roadmap) のステージ9、影響調査は [`stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 1節にある。Phase 61 は、[Phase 51](../Phase-51/Phase-51-introduction.md) と同じく、実装に入る前の要件定義フェーズとして次を行う。
 
 - 未決事項の仕様診断(#28)・決定と、Phase 60 の申し送りの1件ずつの判断、モデルのカタログの確認([61-1](./Phase-61-1.md))
 - 決定事項の `docs/*.md` への反映([61-2](./Phase-61-2.md))
@@ -24,10 +24,10 @@
 ```
 
 - **前提として読むもの**:
-  - [`appendix/stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 1節(要望・影響調査・相談で決めた4点)
+  - [`appendix/stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 1節(要望・影響調査・相談で決めた4点)
   - [Phase 60](../Phase-60/Phase-60-introduction.md)「未消化の申し送り」(次のステージの入力11件・持ち越し3件)
-  - [総括の振り返り](../appendix/overall-retrospective.md) 13節(ステージ8の振り返り)
-- **今の仕組み**: モデルは `.env` の値が全体で1つ(`GEMINI_MODEL`=`gemini-3.5-flash-lite`・`REVIEW_MODEL`=`claude-sonnet-5-5`・`JUDGE_MODEL`=`claude-haiku-5-5`)で、取得関数は `lru_cache` でプロセスに1つ。レビューを使えるのは superuser だけ。プロジェクトの削除・一覧の検索・アカウントの変更の API は無い。詳細は [`stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 1.2節。
+  - [総括の振り返り](../retrospectives/overall-retrospective.md) 13節(ステージ8の振り返り)
+- **今の仕組み**: モデルは `.env` の値が全体で1つ(`GEMINI_MODEL`=`gemini-3.5-flash-lite`・`REVIEW_MODEL`=`claude-sonnet-5-5`・`JUDGE_MODEL`=`claude-haiku-5-5`)で、取得関数は `lru_cache` でプロセスに1つ。レビューを使えるのは superuser だけ。プロジェクトの削除・一覧の検索・アカウントの変更の API は無い。詳細は [`stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 1.2節。
 - **この Phase を始めた時点の状態**: ステージ8の振り返りとロードマップの修正(README・handoff v2・ロードマップ・Phase 60・振り返り・decision digest・q_a・retrospective-memo・`stage9-10-plan.md`)は外側のリポジトリで未コミット。この Phase はその上に重ねた。
 
 ## モード宣言(#21)・E2E の宣言(#36)
@@ -97,7 +97,7 @@ Phase 60 から引き継いだもの([61-1](./Phase-61-1.md) で1件ずつ判断
 
 この Phase で解決したもの:
 
-- **[`stage9-10-plan.md`](../../appendix/stage9-10-plan.md) 1.5節の未決事項**(削除・既定のキーでのレビュー・PDF・カタログ・メニュー・申し送り): [61-1](./Phase-61-1.md)。
+- **[`stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) 1.5節の未決事項**(削除・既定のキーでのレビュー・PDF・カタログ・メニュー・申し送り): [61-1](./Phase-61-1.md)。
 
 ## 後続 Phase での改訂
 

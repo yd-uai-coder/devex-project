@@ -2,7 +2,7 @@
 
 ## この章の目的
 
-[ベースライン](../../appendix/stage7-baseline/README.md)([41-1](../Phase-41/Phase-41-1.md))の変更シナリオ S1〜S8・N1〜N4 を、Phase 42〜46 で実装した仕組み(要素のグラフ・処理を軸のたどり方・承認時の写しとの差分・印)で測り、同じ正解と比べる。合格の基準(厳しめ)に届くかを判定し、届かない原因と直しの候補を、同じ材料で試算して示す。
+[ベースライン](../../appendix/measurements/stage7-baseline.md)([41-1](../Phase-41/Phase-41-1.md))の変更シナリオ S1〜S8・N1〜N4 を、Phase 42〜46 で実装した仕組み(要素のグラフ・処理を軸のたどり方・承認時の写しとの差分・印)で測り、同じ正解と比べる。合格の基準(厳しめ)に届くかを判定し、届かない原因と直しの候補を、同じ材料で試算して示す。
 
 自動実装モード: on([introduction](./Phase-49-introduction.md) 参照)。
 
@@ -12,17 +12,17 @@ samples の対象外(測定のスクリプトと出力。#13・#15 の対象外)
 
 | パス | 中身 |
 |---|---|
-| [`appendix/stage7-effect/README.md`](../../appendix/stage7-effect/README.md) | 測定の全体(実行・ファイル・規則) |
+| [`appendix/measurements/stage7-effect.md`](../../appendix/measurements/stage7-effect.md) | 測定の全体(実行・ファイル・規則) |
 | `appendix/stage7-effect/impact/export_models.py` | stage6-effect の1回目のプロジェクトの model を、ローカル DB から JSON へ |
 | `appendix/stage7-effect/impact/data/{detailed,simple}.json` | 書き出した段階・文書の model と ER |
 | `appendix/stage7-effect/impact/measure.py` | ベースラインを読み込み、実装の方式と直しの候補を足す |
-| [`appendix/stage7-effect/impact/results-49-1.md`](../../appendix/stage7-effect/impact/results-49-1.md) | この章の時点の出力(手で書き換えない。`results.md`・`results.json` は 49-3 で直した後の本体で書き直した) |
+| `appendix/stage7-effect/impact/results-49-1.md` | この章の時点の出力(手で書き換えない。`results.md`・`results.json` は 49-3 で直した後の本体で書き直した) |
 
 ## やり方
 
 - **材料**: ベースラインと同じ stage6-effect の1回目の生成物。文書の model は生成物の md には無いが、そのプロジェクトがローカル DB に残っていたので書き出した(詳細設計モードの要件定義書・外部設計書は model あり。簡易モードの内部設計書・実装計画書は Phase 45 より前の版で model が無い)。DB の段階1〜8 は stage6-effect の JSON と同じ(単位のキーを除く)ことをスクリプトで確かめた。
 - **簡易モード**: model の無い2文書は、段階8が model の無い版で使う md の解析(`parse_internal_design`・`parse_wbs`)から、要素に要る欄だけの model を作った。
-- **ベースラインの再利用**: ベースラインの `measure.py` を読み込み、グラフ・シナリオ・正解・4つの方式をそのまま使う。4つの方式の数字がベースラインの [`results.md`](../../appendix/stage7-baseline/results.md) と一致することを確かめた。正解は付け直していない(着手時の決定)。
+- **ベースラインの再利用**: ベースラインの `measure.py` を読み込み、グラフ・シナリオ・正解・4つの方式をそのまま使う。4つの方式の数字がベースラインの `results.md` と一致することを確かめた。正解は付け直していない(着手時の決定)。
 - **キーの対応**: ベースラインのキー(`PROC F-02`・`MOD x`・`UNIT M-02-T01` など)を本体の要素のキー(`proc:F-02`・`module:x`・`unit:U-003` など)へ写し、結果を戻して比べる。作業単位はキー(段階7の `U-001`…)で引く。本体にだけある要素(簡易モードの画面・API・DF など)は過剰に数える。
 - **2つの数え方**:
   - **実装(たどり方)**: 変わった要素を `Change` として `impact_of` に渡す。ベースラインの方式と同じく文書の要素も数える。**判定はこちらで行う**(ベースラインの4方式と同じ範囲)。
@@ -75,4 +75,4 @@ S7 の改名を承認した後、段階5の手順の呼び出し先を新しい�
 
 ## テスト観点
 
-この章は本体のコードを変えていないので、テストを足していない(#14 の対象外)。測定のスクリプトの正しさは、ベースラインの4方式の数字が [`results.md`](../../appendix/stage7-baseline/results.md) と一致することで確かめた。
+この章は本体のコードを変えていないので、テストを足していない(#14 の対象外)。測定のスクリプトの正しさは、ベースラインの4方式の数字が `results.md` と一致することで確かめた。

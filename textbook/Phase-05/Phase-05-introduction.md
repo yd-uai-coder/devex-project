@@ -20,7 +20,7 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 
 自動実装モード: **off**(AI は教材と `textbook/samples/` を作り、ユーザーが手で本体へ実装した。リポジトリ直下のインフラ・設定ファイルだけは AI が直接書いた)。
 
-> 旧ルール(学習モード / 納期モード)では、5-1・5-2・5-4・5-5 を納期モード(5-3 は宣言の対象外)とした。旧・納期モードの章は、#14 の SUT/ドライバ/スタブの言語化を省いている。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
+> 旧ルール(学習モード / 納期モード)では、5-1・5-2・5-4・5-5 を納期モード(5-3 は宣言の対象外)とした。旧・納期モードの章は、#14 の SUT/ドライバ/スタブの言語化を省いている。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) を参照。
 
 ## パイプライン上の位置づけ・前提
 
@@ -96,7 +96,7 @@ Phase 1〜4で完成したMVP(認証・チャットヒアリング・4文書生�
 
 ## 申し送り: CL開発プロセス自体の負債(rule #18に基づき本Phaseでは着手しない)
 
-[`Phase-04-introduction.md`](../Phase-04/Phase-04-introduction.md)が申し送った「`textbook/appendix/*-retrospective.md`(振り返り、rule #10)がPhase 0〜4のいずれについても未作成」という既知の負債は、本Phase完了時点でも解消していない。rule #18のセッション分離に従い、本Phaseでも振り返りの作成には着手せず、**別セッションでPhase 0〜5の振り返り・decision digestの整理・`q_a.md`の追記をまとめて行う**ことを推奨する。
+[`Phase-04-introduction.md`](../Phase-04/Phase-04-introduction.md)が申し送った「`textbook/retrospectives/*-retrospective.md`(振り返り、rule #10)がPhase 0〜4のいずれについても未作成」という既知の負債は、本Phase完了時点でも解消していない。rule #18のセッション分離に従い、本Phaseでも振り返りの作成には着手せず、**別セッションでPhase 0〜5の振り返り・decision digestの整理・`q_a.md`の追記をまとめて行う**ことを推奨する。
 
 ## 次のフェーズ
 

@@ -17,8 +17,8 @@
 | [`docs/internal_design.md`](../../docs/internal_design.md) | 3.2節の `users` の表で、`hashed_password` を NULL 可にし、`google_sub` を足した。ロールバックの注意も書いた。3.3節の API の一覧に `POST /auth/google`・`POST /auth/google/link`・`POST`/`DELETE /users/me/google` を足した。**3.3節 10項「Google 認証」を新設**した(フロー・検証・本人の見分け方・パスワード・`UserRead`・開発環境の上限)。3.4節のエラーのコードに `GOOGLE_LINK_REQUIRED` を足した |
 | [`docs/implementation_plan.md`](../../docs/implementation_plan.md) | ステージ9 の達成範囲に、本番への反映をステージ10 とまとめたことを足した。**ステージ10 を新設**した(目的・方針・対象 Phase 73〜79・マイルストーン11) |
 | [`README.md`](../../README.md) | ステージの表で、9 を「完了(本番への反映はステージ10と一緒)」、10 を「着手(Phase 73〜)」にした。実装計画書に書き写したことを足した |
-| [`appendix/devex_roadmap.md`](../../appendix/devex_roadmap.md) | ステージ9 を【完了】、ステージ10 を【着手】にした(見出し・流れの図・優先順位の表)。ステージ10 の方針に、Phase 73 で決めたことを足した |
-| [`appendix/stage9-10-plan.md`](../../appendix/stage9-10-plan.md) | 2.3節(未決事項)と 2.4節(ステージ9 の振り返りからの入力)に「Phase 73 で決定」の注記を足した |
+| [`appendix/devex_roadmap.md`](../../appendix/concept-history.md#roadmap) | ステージ9 を【完了】、ステージ10 を【着手】にした(見出し・流れの図・優先順位の表)。ステージ10 の方針に、Phase 73 で決めたことを足した |
+| [`appendix/stage9-10-plan.md`](../../appendix/concept-history.md#stage9-10) | 2.3節(未決事項)と 2.4節(ステージ9 の振り返りからの入力)に「Phase 73 で決定」の注記を足した |
 
 ## 書き方の判断
 

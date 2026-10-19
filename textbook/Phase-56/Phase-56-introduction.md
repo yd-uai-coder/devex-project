@@ -2,7 +2,7 @@
 
 ## 目的
 
-ステージ8で決めた「テスト設計」([51-2](../Phase-51/Phase-51-2.md) の決定7・8)を作る。結合テスト(API 単位)と総合テスト(画面の流れ・非機能)の「テスト仕様書」を、両モードで生成する。形は見本 [`test-spec.md`](../../appendix/design-review-sample/test-spec.md)(`IT-001`・`ST-001`、観点 = 正常・異常・境界・セキュリティ・非機能、要件 → テストの対応表)。レビューには渡さず、決定的な検証だけで見る(51-2 のユーザー決定)。画面・ダウンロード・zip は Phase 57。
+ステージ8で決めた「テスト設計」([51-2](../Phase-51/Phase-51-2.md) の決定7・8)を作る。結合テスト(API 単位)と総合テスト(画面の流れ・非機能)の「テスト仕様書」を、両モードで生成する。形は見本 `test-spec.md`(`IT-001`・`ST-001`、観点 = 正常・異常・境界・セキュリティ・非機能、要件 → テストの対応表)。レビューには渡さず、決定的な検証だけで見る(51-2 のユーザー決定)。画面・ダウンロード・zip は Phase 57。
 
 - model・必要なテストの一覧・md・検証(純粋関数)── [56-1](./Phase-56-1.md)
 - 生成と API(両モード)・偽 LLM・UI の型 ── [56-2](./Phase-56-2.md)
@@ -20,7 +20,7 @@
 詳細: 段階1の処理 + 段階7の単位(承認済みで古くないもの)───────┘
 ```
 
-- **前提として読むもの**: [51-5](../Phase-51/Phase-51-5.md) の Phase 56 の未確定事項、見本 [`test-spec.md`](../../appendix/design-review-sample/test-spec.md)、[`docs/external_design.md`](../../docs/external_design.md) 2.11節と [`docs/internal_design.md`](../../docs/internal_design.md) 3.3節「8.」のテスト仕様書。
+- **前提として読むもの**: [51-5](../Phase-51/Phase-51-5.md) の Phase 56 の未確定事項、見本 `test-spec.md`、[`docs/external_design.md`](../../docs/external_design.md) 2.11節と [`docs/internal_design.md`](../../docs/internal_design.md) 3.3節「8.」のテスト仕様書。
 - **今の仕組み**: 4文書は「構造化出力 → assemble → model → markdown → validation」の同じ形(`app/documents/<文書>/`)。テスト仕様書も同じ形のパッケージ `app/documents/test_spec/` にした。生成は `DocGeneratorService.generate`(`POST /projects/{id}/generate`、`start_from` で起点を選ぶ。Phase 53 の完了後の調整)。
 - **この Phase を始めた時点の状態**: Phase 55(と完了後の調整)までコミット済み。
 

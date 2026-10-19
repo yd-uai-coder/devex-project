@@ -104,13 +104,13 @@
 - **判断理由**: テンプレートを使う側のアプリでも、統合テストと E2E を続けて流すと同じことが起きる。テストの実行ではカウンタを別の Redis の DB 番号(またはキーの接頭辞)に分けるか、テストの前にカウンタを消す形をテンプレートに持たせておくと、見かけの失敗を防げる。
 - **対象外**: ステージ6では手を入れていない(「統合テストを E2E の直後に流さない」運用で回避した)。
 - **追記(Phase 64、[`Phase-64-1.md`](./Phase-64/Phase-64-1.md))**: 新しい integration のテストで利用者を API で5人登録したところ、スイート全体の1回の実行で登録の上限を超え、既存のテストが429で落ちた。新しいテストは利用者を DB に直接作り、アクセストークンも直接発行する形にした(登録・ログインの API を通さない)。認証の API そのものを確かめるテスト以外は、この形にすればカウンタを使わない。
-- **追記(ステージ9の振り返り、[`overall-retrospective.md`](./appendix/overall-retrospective.md) 14.1 Q3)**: ステージ9では Phase 63・66・67・71・72 の5回、このカウンタに当たった。既存の `test_auth_flow.py`・`test_projects_flow.py`(API で登録する)の流し直し・実 LLM の確かめのスクリプト(1回ごとにログイン)・全 E2E(1回5人)が、同じ 127.0.0.1 のカウンタに入る。ステージ10で `AuthRateLimiter` に Google ログインを足すときに、カウンタを分けることを範囲の候補にした([`stage9-10-plan.md`](../appendix/stage9-10-plan.md) 2.4)。
+- **追記(ステージ9の振り返り、[`overall-retrospective.md`](retrospectives/overall-retrospective.md) 14.1 Q3)**: ステージ9では Phase 63・66・67・71・72 の5回、このカウンタに当たった。既存の `test_auth_flow.py`・`test_projects_flow.py`(API で登録する)の流し直し・実 LLM の確かめのスクリプト(1回ごとにログイン)・全 E2E(1回5人)が、同じ 127.0.0.1 のカウンタに入る。ステージ10で `AuthRateLimiter` に Google ログインを足すときに、カウンタを分けることを範囲の候補にした([`stage9-10-plan.md`](../appendix/concept-history.md#stage9-10) 2.4)。
 - **追記(Phase 73、[`Phase-73-1.md`](./Phase-73/Phase-73-1.md) の決定11)**: カウンタを分けるのではなく、開発用の compose(dev・test・e2e)の env で登録・ログインの上限を上げることにした(Phase 74)。本番は `docker-compose.prod.yml` だけで起動するので値が漏れない。コードを変えずに、integration・E2E・手元の確かめのスクリプトのどれにも効く。テンプレートでも、開発用の compose に上限の env を書いておく形が手軽である。
 - **追記(Phase 74 で実装、[`Phase-74-3.md`](./Phase-74/Phase-74-3.md))**: `docker-compose.yml` の backend に `environment` で4つ(login_ip・login_email・register_ip・google_ip)を 1000回/時にした。`docker compose config` で、test・e2e のオーバーレイに引き継がれ、`docker-compose.prod.yml` には入らないことを確かめた。
 
 ## `[テンプレート反映候補]` ログイン済みのとき認証ページを飛ばす proxy とフラグ cookie
 
-- **発生**: ステージ8完了後のロードマップの修正(新ステージ9 の計画。[`appendix/stage9-10-plan.md`](../appendix/stage9-10-plan.md) 1.2節の項目3)。まだ実装していない。
+- **発生**: ステージ8完了後のロードマップの修正(新ステージ9 の計画。[`appendix/stage9-10-plan.md`](../appendix/concept-history.md#stage9-10) 1.2節の項目3)。まだ実装していない。
 - **概要**: devex-ui はアクセストークンをメモリ(Zustand)にだけ持ち、refresh cookie は API のオリジンの `path=/api/v1/auth` にある。そのため、Next.js 16 の `src/proxy.ts`(旧 `middleware.ts`)からはログインの状態が見えない。UI のオリジンに、トークンを含まないフラグ cookie を置き(login・refresh で付け、logout・401 で消す)、proxy で `/login`・`/register` を `/dashboard` へ飛ばす。フラグが古い場合は、クライアントの `RequireAuth` が受け止める。
 - **判断理由**: 「ログイン済みなら認証ページを飛ばす」はドメインに依存しない。トークンをメモリに置くテンプレートの方針を保ったまま、サーバー側で遷移を決められる。ユーザーが、汎用の機能としてテンプレートに反映する候補だと明言した。
 - **追記(Phase 63 で実装、[`Phase-63-introduction.md`](./Phase-63/Phase-63-introduction.md))**: 印の付け外しは `auth-store` の `login()`・`refreshTokens()` の成否・`logout()` に集めれば、`client.ts` の 401 も含めて足りる(`src/lib/auth-flag.ts`・`src/proxy.ts`)。matcher のテストの関数は、16.3.6 では文書の `unstable_doesProxyMatch` でなく旧名 `unstable_doesMiddlewareMatch` だった。
@@ -126,7 +126,7 @@
 - **発生**: [`Phase-64-3.md`](./Phase-64/Phase-64-3.md)
 - **概要**: devex-ui のテンプレートには、操作の完了を知らせる仕組みが無かった(失敗は画面の中に `role="alert"` で出すだけ)。Phase 64 で `src/components/layout/AppToast.tsx`(`ToastProvider`・`ToastViewport`・表示中のトースト)を `providers.tsx` に置き、`useToastController().show(題名)` で知らせる形にした。tamagui 2.6.0 では `@tamagui/toast/v2` の `Toaster` が `accessibilityLabel` を DOM に渡して React の警告を出すので、従来の API を使う。`@tamagui/toast` は tamagui 本体と同じ版に固定する(`^2.6.0` では新しい版を引き込み、Tamagui の部品が二重になる)。
 - **判断理由**: 「保存しました」「削除しました」の知らせはドメインに依存せず、画面を移っても残る置き場はルートにしか置けない。テンプレートを使うアプリでも同じ作り方になる。
-- **追記(ステージ9の振り返り、[`overall-retrospective.md`](./appendix/overall-retrospective.md) 14.3)**: Tamagui の版を上げるときに次を見る。(1) `@tamagui/toast/v2` の `Toaster` の警告が直っていれば v2 に寄せてよい (2) 2.6.0 の AlertDialog は、開く前に説明文を探して開発時の警告を出す(誤検知)。ほかに、Phase 65 で `RadioGroupWithLabel` の固定の幅が折り返して自前の並びにしたこと、Phase 67 で `AccordionInner` の `flex={1}` を縦に並べると見出しが重なったことも、テンプレートの部品の落とし穴として残す。
+- **追記(ステージ9の振り返り、[`overall-retrospective.md`](retrospectives/overall-retrospective.md) 14.3)**: Tamagui の版を上げるときに次を見る。(1) `@tamagui/toast/v2` の `Toaster` の警告が直っていれば v2 に寄せてよい (2) 2.6.0 の AlertDialog は、開く前に説明文を探して開発時の警告を出す(誤検知)。ほかに、Phase 65 で `RadioGroupWithLabel` の固定の幅が折り返して自前の並びにしたこと、Phase 67 で `AccordionInner` の `flex={1}` を縦に並べると見出しが重なったことも、テンプレートの部品の落とし穴として残す。
 
 ## `[テンプレート反映候補]` パスワードの規則が画面にしか無い・アカウントの変更の API が無い
 

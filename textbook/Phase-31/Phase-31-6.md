@@ -20,7 +20,7 @@ Phase 31 の決定と実装を、設計文書と作成方針に反映する。�
 | [`docs/external_design.md`](../../docs/external_design.md) | 画面一覧の SCR-005・SCR-008、画面遷移(「実装手順書へ進む」)、SCR-005 のアクションバー、2.7節の段階の進め方、2.8節の簡易ドキュメントモードに「実装(Phase 31)」(入口・作業単位・入力と陳腐化・直す先・決定的なチェック・参照の展開・出力) |
 | [`docs/internal_design.md`](../../docs/internal_design.md) | 3.3節1. の実装計画書の WBS に、番号を付けない方針を撤回した記録。API 一覧の `design-stages`(簡易モードは段階8だけ・`mode`・`plan`)・`document`・`procedure-document`・`sequence`・`units/{unit_id}/context`・`ai-markdown`。3.3節「5. 実装手順書」の出力の `procedure_output_source` の引数と、簡易ドキュメントモードの「実装(Phase 31)」 |
 | [`docs/implementation_plan.md`](../../docs/implementation_plan.md) | ステージ5の Phase 31 を完了に |
-| [`appendix/devex_implementation_procedure_guideline.md`](../../appendix/devex_implementation_procedure_guideline.md) | 3章(単位の元・実装の注記)、8.2(ID の形式は決定済み・簡易モードの ID の突き合わせ)、10章(DF の展開にテーブルを添える)、21章(簡易モードの部分を実装した注記) |
+| [`appendix/devex_implementation_procedure_guideline.md`](../../appendix/concept-history.md#procedure-guideline) | 3章(単位の元・実装の注記)、8.2(ID の形式は決定済み・簡易モードの ID の突き合わせ)、10章(DF の展開にテーブルを添える)、21章(簡易モードの部分を実装した注記) |
 
 文書のため #13・#15・#30 の対象外。
 

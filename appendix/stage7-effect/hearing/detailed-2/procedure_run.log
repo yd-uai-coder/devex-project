@@ -1,6 +1,0 @@
-段階8 手順書を作る単位: ['M-01-T01', 'M-01-T02', 'M-01-T03', 'M-02-T01', 'M-03-T01', 'M-03-T02'](全件)
-段階8 生成 {"unit_ids": ["M-01-T01", "M-01-T02", "M-01-T03", "M-02-T01", "M-03-T01"]} → completed(67秒) 
-段階8 生成 {"unit_ids": ["M-03-T02"]} → completed(5秒) 
-  検証 warning STUB_OUTSIDE_SEQUENCE M-03-T01 のテスト観点1のスタブ(api/routes/documents.py)は、F-04 の手順で SUT(services/document.py)から呼ばれていません(手順に無い依存です。手順に足すか、観点のスタブを直しま
-段階8 承認(v3)
-実装手順書の zip: 200 55438 bytes

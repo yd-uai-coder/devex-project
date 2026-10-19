@@ -405,7 +405,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 
 ### 4. 詳細設計モード(ステージ4)
 
-[外部設計書](external_design.md) 2.7節の詳細設計モードの内部の方針(Phase 14で確定)。構想は[`appendix/detailed-design-mode-organization.md`](../appendix/detailed-design-mode-organization.md)、経緯は[`textbook/Phase-14/Phase-14-1.md`](../textbook/Phase-14/Phase-14-1.md)参照。
+[外部設計書](external_design.md) 2.7節の詳細設計モードの内部の方針(Phase 14で確定)。構想は[`appendix/detailed-design-mode-organization.md`](../appendix/concept-history.md#detailed-design-mode)、経緯は[`textbook/Phase-14/Phase-14-1.md`](../textbook/Phase-14/Phase-14-1.md)参照。
 
 * **正本は段階の意味モデル**: 詳細設計書(HTML・Markdown)は、承認済みの段階の意味モデル(`design_stages.model`と、図の`uml_diagrams`)から決定的に組み立てる表示である。散文を正本にしないため、図や表の変更を散文へ戻す処理(旧M9b)は要らない。
 * **詳細設計書の章構成**: 01 機能(処理)一覧 / 02 データフロー / 03 データモデル / 04 ソフトウェア構造 / 05 主要処理の手順 / 06 処理ロジックの詳細(任意) / 07 横断事項(例外とHTTP・認証・トランザクション・ログ)。01〜06は段階1〜6と1対1。
@@ -480,7 +480,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 
 ### 5. 実装手順書(ステージ5)
 
-[外部設計書](external_design.md) 2.8節の実装手順書の内部の方針(Phase 25で確定)。方針は[`appendix/devex_implementation_procedure_guideline.md`](../appendix/devex_implementation_procedure_guideline.md)、経緯は[`textbook/Phase-25/Phase-25-1.md`](../textbook/Phase-25/Phase-25-1.md)・[`Phase-25-5.md`](../textbook/Phase-25/Phase-25-5.md)。意味モデル・API・マイグレーションの詳細は各実装 Phase で確定する。
+[外部設計書](external_design.md) 2.8節の実装手順書の内部の方針(Phase 25で確定)。方針は[`appendix/devex_implementation_procedure_guideline.md`](../appendix/concept-history.md#procedure-guideline)、経緯は[`textbook/Phase-25/Phase-25-1.md`](../textbook/Phase-25/Phase-25-1.md)・[`Phase-25-5.md`](../textbook/Phase-25/Phase-25-5.md)。意味モデル・API・マイグレーションの詳細は各実装 Phase で確定する。
 
 * **段階8として持つ**: `design_stages`に段階8(入力は段階1〜7と要件定義。`STAGE_INPUTS[8]`。要件定義は手順書の対象外(Should / Could / Won't)を書くために読む)を足し、承認・陳腐化(`input_fingerprint`)・生成の状態・段階ごとの検証(`STAGE_VALIDATORS[8]`)・部分生成(`StageGenerationContext.targets`)の仕組みをそのまま使う。`stage`の CHECK は 1〜8(Phase 27)。生成器は Phase 28 で登録した(`STAGE_GENERATORS[8] = generate_procedure_docs`)。
 * **意味モデル(Phase 27)**: `design_stages.model`(段階8)は`{units: [{unit_id, title, purpose, files: [{path, kind, responsibility, basis}], notes, tests: [{viewpoint, sut, driver, stub}], gwt, verify, findings: [{level, target, message, fix_stage}]}]}`(`app/detailed_design/procedure_doc.py`)。`units`は手順書のある単位だけ。`unit_id`と`title`は手順書を作ったときの段階7の単位の ID とタスク名で、段階7の並べ替え・改名で合わなくなった手順書は検証のエラー(`UNIT_MISMATCH`)にして作り直させる(自動で付け替えない。段階7を承認し直すと、段階8は既存の陳腐化で「古い」になる)。ファイルの`kind`は`module`(段階4のパス。検証する)・`test`・`config`。`findings`は AI の指摘で、重要度`level`(`critical`=最重要・`major`=中程度・`minor`=軽微)と直す先の段階`fix_stage`を持つ。単位の一覧は段階7の並び順(`plan_units`。依存は前の単位だけを指すので、これが依存順)。

@@ -13,8 +13,8 @@ samples の対象外(測定のスクリプトと出力。#13・#15 の対象外)
 | パス | 中身 |
 |---|---|
 | `appendix/stage8-effect/procedure_counts.py` | dev の DB の段階8の model すべてに `DesignStageService.list_stages` の検証を流し、4つの指摘を数える(rollback) |
-| [`appendix/stage8-effect/procedure_counts_before.md`](../../appendix/stage8-effect/procedure_counts_before.md) | 指示の前の 29 本 |
-| [`appendix/stage8-effect/results-procedure.md`](../../appendix/stage8-effect/results-procedure.md) | 判定と集計 |
+| `appendix/stage8-effect/procedure_counts_before.md` | 指示の前の 29 本 |
+| `appendix/stage8-effect/results-procedure.md` | 判定と集計 |
 
 ## 結果
 

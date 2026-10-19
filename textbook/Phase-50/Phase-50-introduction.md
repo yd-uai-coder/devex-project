@@ -117,7 +117,7 @@ Claude の判断(計画の承認で確定、または実装中):
 
 ## 未消化の申し送り(#37)
 
-ステージ7の振り返りで、Phase 49 から引き継いだ分とこの Phase で生まれた分を1件ずつ棚卸しした([`overall-retrospective.md`](../appendix/overall-retrospective.md) 12.3)。残ったのは次のとおり。次のステージの着手時はここから読む。
+ステージ7の振り返りで、Phase 49 から引き継いだ分とこの Phase で生まれた分を1件ずつ棚卸しした([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 12.3)。残ったのは次のとおり。次のステージの着手時はここから読む。
 
 次のステージの入力(仕様診断 #28 で、範囲に入れるかを1件ずつ決める):
 
@@ -166,4 +166,4 @@ Claude の判断(計画の承認で確定、または実装中):
 
 ## 次のフェーズ
 
-ステージ7はこの Phase で終わる。次は、ステージ7の完了として、振り返り(#10、[`overall-retrospective.md`](../appendix/overall-retrospective.md)。#25 の「→ Devex 仕様への示唆」と #39 の AI の提案の精度を含む)と decision digest(#24)をまとめる。#18 により、別のセッションで行う。本番への反映と確認は、ユーザーが [`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.4節の手順で行う。
+ステージ7はこの Phase で終わる。次は、ステージ7の完了として、振り返り(#10、[`overall-retrospective.md`](../retrospectives/overall-retrospective.md)。#25 の「→ Devex 仕様への示唆」と #39 の AI の提案の精度を含む)と decision digest(#24)をまとめる。#18 により、別のセッションで行う。本番への反映と確認は、ユーザーが [`OPERATIONS.md`](../../devex-api/OPERATIONS.md) 10.4節の手順で行う。

@@ -19,7 +19,7 @@ Phase 9で行う予定のレイアウトエンジン移植に先立ち、実装�
 ### 移植時に対応が必要な点(Phase 9への申し送り)
 
 1. **`assert`ベースの不変条件チェック**: `node()`/`edge()`の重複ID・未定義ノード参照チェックが`assert`(スクリプト実行前提)になっている。FastAPI経由で叩く場合は、4xxへ変換可能な専用例外に置き換える必要がある(バリデーションのM4と統合)。
-2. **計算量**: `route()`/`optimize()`はO(n²)〜O(n!)(小規模図は問題ないが、AI生成で大きい図になった場合はノード数上限と`asyncio.to_thread`実行が必須。[`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md)診断3と一致)。
+2. **計算量**: `route()`/`optimize()`はO(n²)〜O(n!)(小規模図は問題ないが、AI生成で大きい図になった場合はノード数上限と`asyncio.to_thread`実行が必須。[`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3)診断3と一致)。
 3. **未使用コード・マジックナンバー**: 未使用の`import math`、`_cost()`内の無コメントな重み定数(交差+400、重なり+1500等)。移植時にコメントを補うか、定数化する。
 4. **日本語文字幅推定**: `wrap`/`tw`/`cw`(`unicodedata.east_asian_width`ベース)はdevexでもそのまま必要(生成文書・図ラベルは日本語)。
 5. **既存テストが無い**: 移植元にも`engine.py`のテストは一切無い。移植時はゴールデンファイル比較・交差数ゼロ等の新規テストが必要(既存の動作を担保するテストが存在しない状態からの移植になる)。

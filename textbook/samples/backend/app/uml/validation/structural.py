@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from app.uml.domain.base import UmlElement, UmlRelation
 from app.uml.validation.base import ValidationIssue
 
-# 診断3(appendix/stage3-requirements-organization.md): ノード数上限の目安。
+# 診断3(appendix/concept-history.md 3節): ノード数上限の目安。
 # 大規模図はPhase 9のレイアウトエンジンが`asyncio.to_thread`実行前提のO(n^2)〜O(n!)アルゴリズムを
 # 使うため、超過時は警告にとどめる(エラーにして保存自体を止めない)。
 MAX_ELEMENTS = 30

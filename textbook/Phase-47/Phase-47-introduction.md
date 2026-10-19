@@ -25,7 +25,7 @@
 ```
 
 - **前提として読むもの**:
-  - [Phase 39](../Phase-39/Phase-39-introduction.md)(測定と L2 等の原因)・[`appendix/stage6-effect/README.md`](../../appendix/stage6-effect/README.md)(測定の規則)・[`persona.md`](../../appendix/stage6-baseline/persona.md)(潜在の事実 L1〜L14)。
+  - [Phase 39](../Phase-39/Phase-39-introduction.md)(測定と L2 等の原因)・[`appendix/measurements/stage6-effect.md`](../../appendix/measurements/stage6-effect.md)(測定の規則)・`persona.md`(潜在の事実 L1〜L14)。
   - [Phase 34](../Phase-34/Phase-34-introduction.md)(観点の表)・[Phase 35](../Phase-35/Phase-35-introduction.md)(カード)。
   - [41-5](../Phase-41/Phase-41-5.md)(Phase 47 のスコープと未確定事項)。
 - **この Phase を始めた時点の状態**: Phase 46 は3つのリポジトリ(外側・devex-api・devex-ui)とも未コミット。Phase 46 の完了後の調整は無かった。devex-api で Phase 46 と Phase 47 が触ったファイルは重ならないので、別々にコミットできる(外側のリポジトリの `docs/*.md` だけは両方の Phase が足している)。
@@ -67,7 +67,7 @@ Claude の判断(計画の承認で確定、または実装中):
 - 47-1: `app/hearing/points.py`・`app/documents/requirements/{assemble,validation}.py`
 - テスト: `tests/unit/test_hearing_points.py`・`test_hearing_point_repository.py`・`test_requirements_doc.py`
 
-47-2 は `appendix/stage7-hearing/`(samples には写さない)。マイグレーションは無い。
+47-2 は `appendix/measurements/stage7-hearing.md`(samples には写さない)。マイグレーションは無い。
 
 ## 実装前チェックリスト(#11、設計レベルの疑問に限定 #20)
 
@@ -90,7 +90,7 @@ Claude の判断(計画の承認で確定、または実装中):
 
 - devex-api: 部分テスト(47-1 の「テスト観点」のコマンド)成功、`ruff check`・`uvx pyright`(触ったファイル)0件。Phase 完了時の全体テスト(#18): 1039 件成功(Phase 46 の 1036 件 + 新規3件)。
 - devex-ui: 変更なし(全体テストは流していない)。
-- `tally.py`: ステージ6の4回で表が出た([`stage6-runs.md`](../../appendix/stage7-hearing/stage6-runs.md))。
+- `tally.py`: ステージ6の4回で表が出た(`stage6-runs.md`)。
 - `samples_check.py`(`--api-since HEAD --ui-since HEAD`): 不一致 0 件・作り忘れ 0 件(一致 561 / 並び順のみ差 8 / 例外 5)。`link_check.py`: 切れ 0 件。
 - 実画面: 確かめていない(#37 の運用注記。「未消化の申し送り」に手順を書いた)。
 
@@ -126,7 +126,7 @@ Phase 46 から引き継いだもの(未解決のまま):
 
 この Phase で生まれたもの:
 
-- **効果測定(Phase 49)でヒアリングを流す**: 同じ版で詳細・簡易を3回ずつ。発言の上限は24回。[`tally.py`](../../appendix/stage7-hearing/README.md) で、L2・L5・L6・L14 が聞けた回数と、自由回答の採用・発言の数の幅を数える。判定を直すかは、その幅を見て決める。
+- **効果測定(Phase 49)でヒアリングを流す**: 同じ版で詳細・簡易を3回ずつ。発言の上限は24回。[`tally.py`](../../appendix/measurements/stage7-hearing.md) で、L2・L5・L6・L14 が聞けた回数と、自由回答の採用・発言の数の幅を数える。判定を直すかは、その幅を見て決める。
 - **発言の数が増える**: 観点が4つ増えた(公開サービスの必須は15 → 19)。ステージ6の2回目は詳細16・簡易14発言だった。ヒアリングが長すぎると感じるかを、Phase 49 の数字と画面確認で見る。
 - **画面確認(ユーザー。Phase 49・50 でまとめてよい)**: 新しいプロジェクトでヒアリングし、観点の表に4つの観点が大項目の観点のすぐ後ろに並ぶこと。可用性の次にデータの保全が、セキュリティの次にログ・不正利用が聞かれること。個人・小規模ではログ・不正利用が任意になること。
 - **すでにヒアリングしたプロジェクト**: 新しい観点は未決として表に出る。保存済みの完了判定は次の発言まで変わらない。必須なら、チャットで答えると埋まる。

@@ -8,7 +8,7 @@
 
 ## この章で作成・更新したファイル
 
-samples の対象外(測定の出力。#13・#15 の対象外)。記録は [`appendix/stage8-effect/phase70/`](../../appendix/stage8-effect/phase70/README.md)。スクリプトは Phase 59 の `copy_project.py` と、ステージ8の `drive.py` をそのまま使った。
+samples の対象外(測定の出力。#13・#15 の対象外)。記録は `appendix/stage8-effect/phase70/`。スクリプトは Phase 59 の `copy_project.py` と、ステージ8の `drive.py` をそのまま使った。
 
 ## 結果
 

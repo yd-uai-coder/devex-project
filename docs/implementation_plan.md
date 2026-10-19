@@ -8,7 +8,7 @@
 
 ## 4.1 開発ステージ分割・マイルストーン
 
-プロジェクトの確実な立ち上げとリスク最小化のため、機能を段階的にリリースする7ステージの開発アプローチを採用する(ステージ8以降の構想は[`appendix/devex_roadmap.md`](../appendix/devex_roadmap.md)。各ステージの着手時にここへ書き写す)。
+プロジェクトの確実な立ち上げとリスク最小化のため、機能を段階的にリリースする7ステージの開発アプローチを採用する(ステージ8以降の構想は[`appendix/devex_roadmap.md`](../appendix/concept-history.md#roadmap)。各ステージの着手時にここへ書き写す)。
 
 > 用語注記: 本節の「ステージ」はプロダクトのリリース単位を指す。CL(Curriculum Loop)開発における教材単位「Phase」とは別軸の概念であり、混同を避けるためリネームした(詳細は `CLAUDE.md`「進行のルール」#27参照)。
 
@@ -59,7 +59,7 @@
 
 ### ステージ4：詳細設計モード ── 【Could have】
 
-* **目的**: 要件定義・外部設計の後に、段階ごとに人が承認しながら詳細設計書を組み立てる「詳細設計モード」を増設する。現行の4文書一括生成は「簡易ドキュメントモード」としてそのまま残す。実務の詳細設計(C4・arc42・日本の詳細設計の成果物)に構成を合わせ、人がコーディングするのに十分な資料をシステムが作ることを目指す(AIによる自動コーディングは理想形であり、要件ではない)。構想は[`appendix/detailed-design-mode-organization.md`](../appendix/detailed-design-mode-organization.md)参照。
+* **目的**: 要件定義・外部設計の後に、段階ごとに人が承認しながら詳細設計書を組み立てる「詳細設計モード」を増設する。現行の4文書一括生成は「簡易ドキュメントモード」としてそのまま残す。実務の詳細設計(C4・arc42・日本の詳細設計の成果物)に構成を合わせ、人がコーディングするのに十分な資料をシステムが作ることを目指す(AIによる自動コーディングは理想形であり、要件ではない)。構想は[`appendix/detailed-design-mode-organization.md`](../appendix/concept-history.md#detailed-design-mode)参照。
 * **段階**: 1 機能(処理)一覧 → 2 機能グループごとのDFD・データ辞書・処理概要表 → 3 ER・テーブル定義・CRUD図 → 4 構成図(層)+モジュール一覧 → 5 選んだ処理の番号付き手順 → 6(任意)選んだ関数の処理ロジックの詳細 → 7 横断事項と実装計画(Phase 23で改称)。各段階は人が承認してから次の段階の入力にする([内部設計書](internal_design.md) 3.3節「4. 詳細設計モード」参照)。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・再利用するステージ3の資産は[`textbook/Phase-14/Phase-14-4.md`](../textbook/Phase-14/Phase-14-4.md)参照):
   * Phase 14: 要件定義フェーズ(仕様診断・05/06章の表現と出力形式の確定・docs反映。実装は見せ方を確かめるデモページのみ)
@@ -79,7 +79,7 @@
 
 ### ステージ5：実装手順書 + 実装可能性チェック ── 【Could have】
 
-* **目的**: 実装計画・詳細設計から、開発者(人または AI Coding Agent)が実際に作業できる実装手順書を作る。その過程で、設計が実装できる状態かを検証し、不足・矛盾を表に出す(実装できない設計を、実装に入る前に見つける)。見つかった不足は、ステージ6(ヒアリング改良)の材料にする。方針は[`appendix/devex_implementation_procedure_guideline.md`](../appendix/devex_implementation_procedure_guideline.md)、構想の中の位置は[`appendix/devex_roadmap.md`](../appendix/devex_roadmap.md)。
+* **目的**: 実装計画・詳細設計から、開発者(人または AI Coding Agent)が実際に作業できる実装手順書を作る。その過程で、設計が実装できる状態かを検証し、不足・矛盾を表に出す(実装できない設計を、実装に入る前に見つける)。見つかった不足は、ステージ6(ヒアリング改良)の材料にする。方針は[`appendix/devex_implementation_procedure_guideline.md`](../appendix/concept-history.md#procedure-guideline)、構想の中の位置は[`appendix/devex_roadmap.md`](../appendix/concept-history.md#roadmap)。
 * **方針(Phase 25で確定)**: 段階7のタスクを機能ごとの縦割り・ID 付きに改め、手順書の作業単位にする。手順書は詳細設計モードの段階8。設計は ID で参照して書き写さない。未定義は検証と AI の指摘の2層で出し、対象の段階で直す。段階5の手順から読み取り専用のシーケンス図を導く。簡易ドキュメントモードは後半で同じ形にする([外部設計書](external_design.md) 2.8節、[内部設計書](internal_design.md) 3.3節「5. 実装手順書」)。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係は[`textbook/Phase-25/Phase-25-4.md`](../textbook/Phase-25/Phase-25-4.md)参照):
   * Phase 25: 要件定義フェーズ(仕様診断・手順書の見本とデモ・シーケンス図の判断・docs反映・ステージ5の実装計画) ── **完了**([`textbook/Phase-25/Phase-25-introduction.md`](../textbook/Phase-25/Phase-25-introduction.md))
@@ -95,8 +95,8 @@
 
 ### ステージ6：ヒアリング改良 + 上流の構造化 ── 【Could have】
 
-* **目的**: 聞き漏れを減らし、設計後の要件変更を減らす。セキュリティや非機能要件を、AI の推測に任せず、利用者の判断として引き出す。要件定義書・外部設計書を構造化して要件ID を振り、要件 → 処理 → 作業単位の追跡を上流までつなぐ。構想は[`appendix/devex_roadmap.md`](../appendix/devex_roadmap.md)。
-* **出発点(Phase 33 のベースライン)**: 今の Devex を実際の LLM で段階8まで動かしたところ、両モードとも利用者の発言3回でヒアリングが完了し、非機能の観点はほとんど聞かれなかった。技術スタックも聞かれず、簡易モードでは技術スタックを AI が創作した。要件定義書の非機能・制約の記述の6〜7割は、利用者が言っていない内容だった([`appendix/stage6-baseline/`](../appendix/stage6-baseline/README.md)、[`textbook/Phase-33/Phase-33-1.md`](../textbook/Phase-33/Phase-33-1.md))。
+* **目的**: 聞き漏れを減らし、設計後の要件変更を減らす。セキュリティや非機能要件を、AI の推測に任せず、利用者の判断として引き出す。要件定義書・外部設計書を構造化して要件ID を振り、要件 → 処理 → 作業単位の追跡を上流までつなぐ。構想は[`appendix/devex_roadmap.md`](../appendix/concept-history.md#roadmap)。
+* **出発点(Phase 33 のベースライン)**: 今の Devex を実際の LLM で段階8まで動かしたところ、両モードとも利用者の発言3回でヒアリングが完了し、非機能の観点はほとんど聞かれなかった。技術スタックも聞かれず、簡易モードでは技術スタックを AI が創作した。要件定義書の非機能・制約の記述の6〜7割は、利用者が言っていない内容だった([`appendix/measurements/stage6-baseline.md`](../appendix/measurements/stage6-baseline.md)、[`textbook/Phase-33/Phase-33-1.md`](../textbook/Phase-33/Phase-33-1.md))。
 * **方針(Phase 33で確定)**: ヒアリングの5条件を、観点の表(`hearing_points` テーブル。機能面の観点と IPA 非機能要求グレードの6大項目、規模で必須を切り替える)で置き換え、完了は「必須の観点がすべて未決以外」をコードが判定する。AI の問いは場面で聞く選択肢カードにし、選ぶと「AI の提案を採用」として記録する。要件定義書と外部設計書は意味モデルから組み立て、要件に ID(`FR-001`・`NFR-001`・`CON-001`)と出どころ(ユーザー・採用・推測)を持たせる。要件 → 処理は段階1の機能の`req_ids`、簡易モードは WBS の「要件」欄でつなぐ([外部設計書](external_design.md) 2.9節、[内部設計書](internal_design.md) 3.3節「6. ヒアリングと上流の構造化」。決定の経緯は[`textbook/Phase-33/Phase-33-2.md`](../textbook/Phase-33/Phase-33-2.md))。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-33/Phase-33-5.md`](../textbook/Phase-33/Phase-33-5.md)参照):
   * Phase 33: 要件定義フェーズ(ベースライン・仕様診断・見本とデモ・docs反映・ステージ6の実装計画) ── **完了**([`textbook/Phase-33/Phase-33-introduction.md`](../textbook/Phase-33/Phase-33-introduction.md))
@@ -105,15 +105,15 @@
   * Phase 36: 要件定義書のモデル化(要件の行・ID・出どころ・観点・md の組み立て・検証。両モード) ── **完了**([`textbook/Phase-36/Phase-36-introduction.md`](../textbook/Phase-36/Phase-36-introduction.md))
   * Phase 37: 外部設計書のモデル化(画面・API・外部連携の行と要件ID・本文の節・検証。両モード) ── **完了**([`textbook/Phase-37/Phase-37-introduction.md`](../textbook/Phase-37/Phase-37-introduction.md))
   * Phase 38: 要件 → 処理・作業単位(段階1の`req_ids`と検証・簡易モードの WBS の「要件」欄・手順書と詳細設計書の追跡表) ── **完了**([`textbook/Phase-38/Phase-38-introduction.md`](../textbook/Phase-38/Phase-38-introduction.md))
-  * Phase 39: 効果測定(ベースラインと同じペルソナ・規則で、実際の LLM で両モードを流して比べる。聞けた潜在の事実 0〜1/14 → 10/14、要件の非機能・制約の推測 6〜7割 → 0。測定で見つけた判定の取りこぼし・規模と技術スタックの推し量り・認証の聞き漏れを直して再測定) ── **完了**([`textbook/Phase-39/Phase-39-introduction.md`](../textbook/Phase-39/Phase-39-introduction.md)、[`appendix/stage6-effect/`](../appendix/stage6-effect/README.md))
+  * Phase 39: 効果測定(ベースラインと同じペルソナ・規則で、実際の LLM で両モードを流して比べる。聞けた潜在の事実 0〜1/14 → 10/14、要件の非機能・制約の推測 6〜7割 → 0。測定で見つけた判定の取りこぼし・規模と技術スタックの推し量り・認証の聞き漏れを直して再測定) ── **完了**([`textbook/Phase-39/Phase-39-introduction.md`](../textbook/Phase-39/Phase-39-introduction.md)、[`appendix/measurements/stage6-effect.md`](../appendix/measurements/stage6-effect.md))
   * Phase 40: 統合/E2E・デプロイでの確認(Phase 39 の測定で見つけた小さな不具合の直し・偽LLMのヒアリングから2文書の model までの契約テスト・カードと「採用にする」を足した E2E と既存を含めた全 E2E・マイグレーションの往復・本番反映の手順) ── **完了**([`textbook/Phase-40/Phase-40-introduction.md`](../textbook/Phase-40/Phase-40-introduction.md))
 * **マイルストーン7**: ヒアリングが観点の表で進み、必須の観点が決まるまで完了しない。要件定義書・外部設計書の要件・画面・API に ID と出どころがあり、要件から作業単位までをたどれる。ベースラインと比べて、聞けた事実が増え、要件の「推測」が減ったことを数字で示せる。(Phase 39で達成)
 * **達成範囲(Phase 40で終了)**: 観点の表と決定的な完了判定、選択肢カード、要件定義書・外部設計書の意味モデル(要件ID・画面ID・出どころ・検証)、要件 → 処理・作業単位の追跡、効果測定(ベースラインと比べた数字)。Phase 40で、偽LLMの判定・カード・2文書の出力が観点の取り込み・完了判定・組み立てと検証・「採用にする」を通ることを契約テスト(ブラウザ無し)で固定し、E2E(Playwright)は規模のカードを選ぶ操作と「採用にする」を足して、既存を含めた全 E2E を通した。聞かれない潜在の事実(バックアップ・ログの本文・不正利用・削除)は残る。本番への反映は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.3節の手順による。
 
 ### ステージ7：変更影響分析・変更管理 ── 【Could have】
 
-* **目的**: 設計を「作る」だけでなく「変更に強くする」。ある要素を変えたときに見直しが要る要素を示し、陳腐化を段階単位から要素単位へ細かくする。再生成の候補を示す。構想は[`appendix/devex_roadmap.md`](../appendix/devex_roadmap.md)。
-* **出発点(Phase 41 のベースライン)**: 決まった変更シナリオ(S1〜S8)で、今の段階単位の陳腐化が示した要素の 87% は見直し不要だった(見落としは2件 ── 同じ段階の中の依存と文書の中の画面)。ID のグラフを直接だけたどると見落とし21、全部たどると過剰 71%。処理を軸にたどる試案は過剰 43%・見落とし10(うち6は非機能要件から先の辺が無いため)で、後から決めたシナリオ(N1〜N4)でも同じ傾向だった([`appendix/stage7-baseline/`](../appendix/stage7-baseline/README.md)、[`textbook/Phase-41/Phase-41-1.md`](../textbook/Phase-41/Phase-41-1.md))
+* **目的**: 設計を「作る」だけでなく「変更に強くする」。ある要素を変えたときに見直しが要る要素を示し、陳腐化を段階単位から要素単位へ細かくする。再生成の候補を示す。構想は[`appendix/devex_roadmap.md`](../appendix/concept-history.md#roadmap)。
+* **出発点(Phase 41 のベースライン)**: 決まった変更シナリオ(S1〜S8)で、今の段階単位の陳腐化が示した要素の 87% は見直し不要だった(見落としは2件 ── 同じ段階の中の依存と文書の中の画面)。ID のグラフを直接だけたどると見落とし21、全部たどると過剰 71%。処理を軸にたどる試案は過剰 43%・見落とし10(うち6は非機能要件から先の辺が無いため)で、後から決めたシナリオ(N1〜N4)でも同じ傾向だった([`appendix/measurements/stage7-baseline.md`](../appendix/measurements/stage7-baseline.md)、[`textbook/Phase-41/Phase-41-1.md`](../textbook/Phase-41/Phase-41-1.md))
 * **方針(Phase 41で確定)**: 「処理を軸」のたどり方(改名は直接の参照元だけ、理由は参照の種類からシステムが書き LLM は使わない)。段階は直前の承認の写しと、文書は前の版の model と比べて変わったものを求める。段階の「古い」は残し、その中の要素に印を付けて「確認済み」にしていく。横断事項に要件ID、作業単位に安定キー。簡易モードは内部設計書・実装計画書も意味モデルにする。あわせて、ヒアリングで聞かれない側面(L2・L5・L6・L14)と段階3・5 の書き落としを直す([外部設計書](external_design.md) 2.10節、[内部設計書](internal_design.md) 3.3節「7. 変更影響分析・変更管理」)。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-41/Phase-41-5.md`](../textbook/Phase-41/Phase-41-5.md)参照):
   * Phase 41: 要件定義フェーズ(ベースライン・仕様診断・見本とデモ・docs反映・ステージ7の実装計画) ── **完了**([`textbook/Phase-41/Phase-41-introduction.md`](../textbook/Phase-41/Phase-41-introduction.md))
@@ -124,15 +124,15 @@
   * Phase 46: 簡易モードの変更の影響(段階8の単位の印) ── **完了**([`textbook/Phase-46/Phase-46-introduction.md`](../textbook/Phase-46/Phase-46-introduction.md))
   * Phase 47: ヒアリングの側面(L2・L5・L6・L14)と判定のゆらぎ ── **完了**([`textbook/Phase-47/Phase-47-introduction.md`](../textbook/Phase-47/Phase-47-introduction.md))
   * Phase 48: 段階3・5 の書き落とし(CRUD の下書きと DFD の食い違い・分岐の行) ── **完了**([`textbook/Phase-48/Phase-48-introduction.md`](../textbook/Phase-48/Phase-48-introduction.md))
-  * Phase 49: 効果測定(ベースラインと同じシナリオ・ヒアリングはステージ6のペルソナで複数回。基準(過剰 ≤ 35%・見落とし S ≤ 5 / N ≤ 1)に届かず、差分の再生成・単位のキーの引き継ぎ・たどり方を直して再測定: シナリオ S 過剰 22%・見落とし 2、N 過剰 23%・見落とし 0、別のプロジェクトの再生成で揺れの印 0) ── **完了**([`textbook/Phase-49/Phase-49-introduction.md`](../textbook/Phase-49/Phase-49-introduction.md)、[`appendix/stage7-effect/`](../appendix/stage7-effect/README.md))
+  * Phase 49: 効果測定(ベースラインと同じシナリオ・ヒアリングはステージ6のペルソナで複数回。基準(過剰 ≤ 35%・見落とし S ≤ 5 / N ≤ 1)に届かず、差分の再生成・単位のキーの引き継ぎ・たどり方を直して再測定: シナリオ S 過剰 22%・見落とし 2、N 過剰 23%・見落とし 0、別のプロジェクトの再生成で揺れの印 0) ── **完了**([`textbook/Phase-49/Phase-49-introduction.md`](../textbook/Phase-49/Phase-49-introduction.md)、[`appendix/measurements/stage7-effect.md`](../appendix/measurements/stage7-effect.md))
   * Phase 50: 統合/E2E・デプロイでの確認(偽LLMの変更の影響の契約テスト・変更の影響の流れを足した E2E と既存を含めた全 E2E・マイグレーションの往復・本番反映の手順・「開発用」メニューを外す) ── **完了**([`textbook/Phase-50/Phase-50-introduction.md`](../textbook/Phase-50/Phase-50-introduction.md))
 * **マイルストーン8**: 設計の要素を変えると、見直しが要る要素が理由つきで示され、段階の「古い」の中で要素を確認していける。ベースラインと比べて、示す要素の過剰が減り、見落としが増えていないことを数字で示せる。(Phase 49で達成)
 * **達成範囲(Phase 50で終了)**: 要素のグラフと「処理を軸」のたどり方(理由はシステムが書く)、承認時の写しと文書の版の model の差分から付ける見直しの印・確認済み・承認し直しの条件、作業領域の「変更の影響」パネルと各段階の表の印・再生成の候補、簡易モードの内部設計書・実装計画書の意味モデルと段階8の単位の印、差分の再生成と単位の安定キー、ヒアリングの側面(データの保全・保持と削除・ログ・不正利用)、段階3・5 の書き落としの直し、効果測定(ベースラインと比べた数字)。Phase 50で、偽LLMの出力が写し・差分・印・確認済み・承認し直しと、同じ出力での再生成(印が増えない)を通ることを契約テスト(ブラウザ無し)で固定し、E2E(Playwright)は段階1を直して承認し直し、下流の印を確認済みにして承認し直す流れを足して、既存を含めた全 E2E を通した。共有のモジュールの中で「どれを直すか」と、非機能要件から横断事項の対象を使う手順まで(シナリオ S2)は示さない。本番への反映は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.4節の手順による。
 
 ### ステージ8：AI設計レビュー + テスト設計 ── 【Could have】
 
-* **目的**: 「生成するAI」から「設計を成り立たせるAI」へ進める。生成と分けたレビューで設計の穴を示し、指摘から再生成・再ヒアリングへ戻る。要件 → 設計 → 実装 → テストの追跡を完成させ、生成の質を測れるようにする。構想は[`appendix/devex_roadmap.md`](../appendix/devex_roadmap.md)。
-* **出発点(Phase 51 のベースライン)**: 今の自己診断は、簡易モードの4文書(仕込み5件を含む18件)で平均4.0件、詳細設計モードの要件・外部(10件)で平均3.7件しか当たらず、元からある最重要は0件。同じ指示・入力で Claude Sonnet 5.5 は 16.7件・9.0件(1回 $0.05〜0.08)、Haiku 4.5 は 6.3件・3.7件。詳細設計モードの全文書(27件)では、区切りごとのレビューが 20.3件、全文書を1回が 17.7件。実装手順書に固有の欠陥はレビューで 8件中 1〜2件([`appendix/stage8-baseline/`](../appendix/stage8-baseline/README.md)、[`textbook/Phase-51/Phase-51-1.md`](../textbook/Phase-51/Phase-51-1.md))
+* **目的**: 「生成するAI」から「設計を成り立たせるAI」へ進める。生成と分けたレビューで設計の穴を示し、指摘から再生成・再ヒアリングへ戻る。要件 → 設計 → 実装 → テストの追跡を完成させ、生成の質を測れるようにする。構想は[`appendix/devex_roadmap.md`](../appendix/concept-history.md#roadmap)。
+* **出発点(Phase 51 のベースライン)**: 今の自己診断は、簡易モードの4文書(仕込み5件を含む18件)で平均4.0件、詳細設計モードの要件・外部(10件)で平均3.7件しか当たらず、元からある最重要は0件。同じ指示・入力で Claude Sonnet 5.5 は 16.7件・9.0件(1回 $0.05〜0.08)、Haiku 4.5 は 6.3件・3.7件。詳細設計モードの全文書(27件)では、区切りごとのレビューが 20.3件、全文書を1回が 17.7件。実装手順書に固有の欠陥はレビューで 8件中 1〜2件([`appendix/measurements/stage8-baseline.md`](../appendix/measurements/stage8-baseline.md)、[`textbook/Phase-51/Phase-51-1.md`](../textbook/Phase-51/Phase-51-1.md))
 * **方針(Phase 51で確定)**: 生成は Gemini のまま、レビューは Claude Sonnet が指摘だけを返す(狭い判定は Haiku)。区切りは簡易=4文書の後(自動)、詳細=要件・外部の後(自動)・段階6・7の後(ボタン)と未レビューの印。人が採否を決め、採用した指摘を再生成の指示に、ヒアリングの指摘は観点を未決に戻して聞き直す。superuser だけが使える(初期値オフ)、オフ・失敗のときは自己診断、1日の上限。テスト仕様書(結合・総合)を両モードで生成。実装手順書とテスト仕様書はレビューせず、決定的な検証で見る([外部設計書](external_design.md) 2.11節、[内部設計書](internal_design.md) 3.3節「8. AI 設計レビュー + テスト設計」)。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-51/Phase-51-5.md`](../textbook/Phase-51/Phase-51-5.md)参照):
   * Phase 51: 要件定義フェーズ(ベースライン・仕様診断・見本とデモ・docs反映・ステージ8の実装計画) ── **完了**([`textbook/Phase-51/Phase-51-introduction.md`](../textbook/Phase-51/Phase-51-introduction.md))
@@ -142,7 +142,7 @@
   * Phase 55: 実装手順書の決定的な検証の強化(依存の順・テストのファイル・テーブルを作る単位) ── **完了**([`textbook/Phase-55/Phase-55-introduction.md`](../textbook/Phase-55/Phase-55-introduction.md))
   * Phase 56: テスト仕様書の model と生成(両モード・決定的な検証 ── 要件 → テストの追跡・存在しない参照・異常系の無い API) ── **完了**([`textbook/Phase-56/Phase-56-introduction.md`](../textbook/Phase-56/Phase-56-introduction.md))
   * Phase 57: テスト仕様書の画面と出力(プレビュー・ダウンロード・zip・検証の指摘の表示) ── **完了**([`textbook/Phase-57/Phase-57-introduction.md`](../textbook/Phase-57/Phase-57-introduction.md))
-  * Phase 58: 効果測定(Phase 51 と同じ題材・正解表、テスト仕様書の正解例) ── **完了**([`textbook/Phase-58/Phase-58-introduction.md`](../textbook/Phase-58/Phase-58-introduction.md))。レビューの指示を直して、簡易の4文書 17.7/18・詳細の要件・外部 10.0/10・詳細の全文書 22.0/27(ベースラインの Sonnet 16.7・9.0・20.3)。D-NAT-1 は3回ともヒアリングが原因の指摘として当たる。「直ったか」(Haiku)は人の判定と8割一致([`appendix/stage8-effect/`](../appendix/stage8-effect/README.md))
+  * Phase 58: 効果測定(Phase 51 と同じ題材・正解表、テスト仕様書の正解例) ── **完了**([`textbook/Phase-58/Phase-58-introduction.md`](../textbook/Phase-58/Phase-58-introduction.md))。レビューの指示を直して、簡易の4文書 17.7/18・詳細の要件・外部 10.0/10・詳細の全文書 22.0/27(ベースラインの Sonnet 16.7・9.0・20.3)。D-NAT-1 は3回ともヒアリングが原因の指摘として当たる。「直ったか」(Haiku)は人の判定と8割一致([`appendix/measurements/stage8-effect.md`](../appendix/measurements/stage8-effect.md))
   * Phase 59: Phase 58 の申し送りの解決(段階7 の計画でスキーマを作る単位を置かせる・ヒアリングで委ねられたときの具体値・「直ったか」の重複判定・簡易の手順書の異常系のテスト観点・テスト仕様書の必要なテストの穴) ── **完了**([`textbook/Phase-59/Phase-59-introduction.md`](../textbook/Phase-59/Phase-59-introduction.md))
   * Phase 60: 統合/E2E・デプロイでの確認(偽LLMのレビュー・採否・差し戻し・聞き直し・「直ったか」・テスト仕様書の契約テスト・レビューの流れを足した E2E と既存を含めた全 E2E・マイグレーションの往復・本番反映の手順と鍵の設定・「開発用」メニューを外す) ── **完了**([`textbook/Phase-60/Phase-60-introduction.md`](../textbook/Phase-60/Phase-60-introduction.md))
 * **マイルストーン9**: 生成した設計に、生成と別のモデルの指摘が重要度・原因・対象つきで示され、人が採否を決めて再生成・再ヒアリングへ戻せる。テスト仕様書が要件から追跡できる形で生成される。ベースラインと比べて、見落としが減ったことを数字で示せる。(Phase 58で達成)
@@ -150,7 +150,7 @@
 
 ### ステージ9：使い勝手とアカウント・モデル設定の調整 ── 【Could have】
 
-* **目的**: 日常の使い勝手を整え、superuser でなくても自分の API キーとモデルで Devex を使えるようにする。あわせて、ステージ8 までの申し送り(生成の知らせ・ヒアリングとテスト仕様書の質・設計の検証)を片付ける。構想は[`appendix/devex_roadmap.md`](../appendix/devex_roadmap.md)、影響調査は[`appendix/stage9-10-plan.md`](../appendix/stage9-10-plan.md) 1節。
+* **目的**: 日常の使い勝手を整え、superuser でなくても自分の API キーとモデルで Devex を使えるようにする。あわせて、ステージ8 までの申し送り(生成の知らせ・ヒアリングとテスト仕様書の質・設計の検証)を片付ける。構想は[`appendix/devex_roadmap.md`](../appendix/concept-history.md#roadmap)、影響調査は[`appendix/stage9-10-plan.md`](../appendix/concept-history.md#stage9-10) 1節。
 * **方針(Phase 61で確定)**: `.env` のモデルとキーをシステムの既定値とし(dev は seed で既定値の行も書く。本番は行を入れず `.env` で補う ── Phase 72 で確定)、自分のキーがあればそちらを優先する。用途はチャット・生成・レビュー・判定の4つ(PDF の取り込みは Gemini に固定)。既定のキーでのレビューは superuser だけ、自分の Claude キーを登録したユーザーも使える。生成中のプロジェクトも削除できる(バックグラウンドの処理を消失に強くする)。`full_name` は `user_name` に改名する。認証ページは proxy と UI のオリジンのログインの印の cookie で飛ばす([外部設計書](external_design.md) 2.12節、[内部設計書](internal_design.md) 3.3節「9. 使い勝手とアカウント・モデル設定」)。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-61/Phase-61-3.md`](../textbook/Phase-61/Phase-61-3.md)参照):
   * Phase 61: 要件定義フェーズ(仕様診断・申し送りの判断・モデルのカタログ・docs反映・ステージ9の実装計画) ── **完了**([`textbook/Phase-61/Phase-61-introduction.md`](../textbook/Phase-61/Phase-61-introduction.md))
@@ -171,7 +171,7 @@
 
 ### ステージ10：Google 認証 ── 【Could have】
 
-* **目的**: Google アカウントでログイン・登録できるようにし、登録とログインの手間を減らす。あわせて、ステージ9 までの申し送りの小さな改善を片付け、ステージ9 と合わせて本番へ反映する。構想は[`appendix/devex_roadmap.md`](../appendix/devex_roadmap.md)、影響調査は[`appendix/stage9-10-plan.md`](../appendix/stage9-10-plan.md) 2節。
+* **目的**: Google アカウントでログイン・登録できるようにし、登録とログインの手間を減らす。あわせて、ステージ9 までの申し送りの小さな改善を片付け、ステージ9 と合わせて本番へ反映する。構想は[`appendix/devex_roadmap.md`](../appendix/concept-history.md#roadmap)、影響調査は[`appendix/stage9-10-plan.md`](../appendix/concept-history.md#stage9-10) 2節。
 * **方針(Phase 73で確定)**: Google Identity Services の ID トークンを API が `google-auth` で検証し、今の JWT と refresh cookie に載せる。同じメールの既存アカウントとは、最初の1度だけパスワードで確かめてから紐付け、その後は両方の方法でログインできる。Google だけのユーザーはパスワードを「設定」でき、連携の解除はパスワードがあるときだけ。E2E は `E2E_FAKE_GOOGLE` の偽の検証で流す([外部設計書](external_design.md) 2.13節、[内部設計書](internal_design.md) 3.3節「10. Google 認証」)。
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-73/Phase-73-3.md`](../textbook/Phase-73/Phase-73-3.md)参照):
   * Phase 73: 要件確認フェーズ(仕様診断・ステージ10の入力の判断・docs反映・ステージ10の実装計画) ── **完了**([`textbook/Phase-73/Phase-73-introduction.md`](../textbook/Phase-73/Phase-73-introduction.md))
@@ -183,9 +183,9 @@
   * Phase 79: 統合/E2E・本番への反映(ステージ9・10。Google の流れの E2E と既存を含めた全 E2E・マイグレーションの往復・`OPERATIONS.md` の手順を1つにまとめる・Google Cloud の OAuth クライアント・本番での確認と画面確認。あわせてログインの失敗の文を日本語に) ── **完了**([`textbook/Phase-79/Phase-79-introduction.md`](../textbook/Phase-79/Phase-79-introduction.md))
 * **達成範囲(Phase 79で終了)**: Google でのログイン・登録(初めての Google はそのまま登録)・同じメールの既存アカウントとの連携(最初の1度だけパスワードで確かめる)・マイページでのパスワードの設定と Google の連携・解除、削除したプロジェクトの知らせ・作成の後の一覧・押せないボタンの見た目、ログインの失敗の文の日本語化。Phase 79で、Google の流れの E2E(偽の検証。ログインの画面とマイページ)を足して、既存を含めた全 E2E を2回通した。本番への反映(ステージ9とまとめる)は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.7節の手順でユーザーが行う。
 * **マイルストーン11**: 利用者が Google アカウントだけで登録・ログインでき、既存のアカウントの利用者も、本人の確かめを経て Google と連携し、どちらの方法でも同じプロジェクトを使える。ステージ9 と10 の機能が本番で確かめてある。
-**(ステージ10の振り返り)** 振り返りは本番への反映の前に行った([`textbook/appendix/overall-retrospective.md`](../textbook/appendix/overall-retrospective.md) 15節)。2026-10-18 にステージ9・10をまとめて本番へ反映し、本番での確認は問題なし(トップページのカードの並びの1件は反映の後に直した。[`textbook/Phase-79/Phase-79-introduction.md`](../textbook/Phase-79/Phase-79-introduction.md)「本番での確認の記録」)。
+**(ステージ10の振り返り)** 振り返りは本番への反映の前に行った([`textbook/retrospectives/overall-retrospective.md`](../textbook/retrospectives/overall-retrospective.md) 15節)。2026-10-18 にステージ9・10をまとめて本番へ反映し、本番での確認は問題なし(トップページのカードの並びの1件は反映の後に直した。[`textbook/Phase-79/Phase-79-introduction.md`](../textbook/Phase-79/Phase-79-introduction.md)「本番での確認の記録」)。
 
-**(プロジェクトの完了)** ステージ10で、計画したステージをすべて終えた。2026-10-18 にプロジェクト全体の振り返りを行い、ステージ11以降は計画しない([`textbook/appendix/project-retrospective.md`](../textbook/appendix/project-retrospective.md))。再開するときは、同じ文書の8節(期限つきの持ち越し)と6節(取り込んでいない示唆)から読む。
+**(プロジェクトの完了)** ステージ10で、計画したステージをすべて終えた。2026-10-18 にプロジェクト全体の振り返りを行い、ステージ11以降は計画しない([`textbook/retrospectives/project-retrospective.md`](../textbook/retrospectives/project-retrospective.md))。再開するときは、同じ文書の8節(期限つきの持ち越し)と6節(取り込んでいない示唆)から読む。
 
 ---
 

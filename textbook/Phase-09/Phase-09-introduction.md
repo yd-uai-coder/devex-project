@@ -28,7 +28,7 @@
 
 ## パイプライン上の位置づけ・前提
 
-- 前提として読むべきもの: [`Phase-07-4.md`](../Phase-07/Phase-07-4.md)(申し送り5点)、[`Phase-08-introduction.md`](../Phase-08/Phase-08-introduction.md)(`app.uml.domain`の意味モデル・`layer`フィールド・`MAX_ELEMENTS`)、[`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md) 診断3(自動レイアウトの実行環境)・§3(移植元エンジン調査)、[`docs/internal_design.md`](../../docs/internal_design.md) 3.2節⑦(`layout_model`列)・3.3節①(`app/uml/layout/`パッケージ)・3.3節②(`/layout`エンドポイント)。
+- 前提として読むべきもの: [`Phase-07-4.md`](../Phase-07/Phase-07-4.md)(申し送り5点)、[`Phase-08-introduction.md`](../Phase-08/Phase-08-introduction.md)(`app.uml.domain`の意味モデル・`layer`フィールド・`MAX_ELEMENTS`)、[`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3) 診断3(自動レイアウトの実行環境)・§3(移植元エンジン調査)、[`docs/internal_design.md`](../../docs/internal_design.md) 3.2節⑦(`layout_model`列)・3.3節①(`app/uml/layout/`パッケージ)・3.3節②(`/layout`エンドポイント)。
 - 本Phase開始時点の既知の状態: `app/uml/layout/`パッケージは存在しない。Phase 8が既に`ComponentElement`/`DfdProcess`に`layer`フィールド、`app/uml/validation/structural.py`に`MAX_ELEMENTS=30`を用意済み(いずれもPhase 9向けの伏線として記載済み)。
 - 既存コードベースに前例が無い新規パターンが1つある: `asyncio.to_thread`によるCPU負荷の高い同期処理のオフロード(devex-api既存コードにはLLM呼び出し(非同期I/O)しかなく、CPU負荷の高い同期計算を別スレッドへ逃がす前例が無い)。
 
@@ -36,7 +36,7 @@
 
 自動実装モード: **on**(AI が本体へ実装し、`textbook/samples/` も並行して作った)。
 
-> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../appendix/overall-retrospective.md) を参照。
+> 旧ルール(学習モード / 納期モード)では、全章を学習モードとした。旧ルールから自動実装モードへ改めた経緯は [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) を参照。
 
 ## 章一覧
 

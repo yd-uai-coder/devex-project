@@ -2,7 +2,7 @@
 
 ## 目的
 
-ステージ5(実装手順書 + 実装可能性チェック、Phase 25〜32)の完了後、次のステージとして「ヒアリング改良 + 上流の構造化」を始める。構想は [ロードマップ](../../appendix/devex_roadmap.md) のステージ6にある。Phase 33 は、[Phase 25](../Phase-25/Phase-25-introduction.md) と同じく、実装に入る前の要件定義フェーズとして次を行う。
+ステージ5(実装手順書 + 実装可能性チェック、Phase 25〜32)の完了後、次のステージとして「ヒアリング改良 + 上流の構造化」を始める。構想は [ロードマップ](../../appendix/concept-history.md#roadmap) のステージ6にある。Phase 33 は、[Phase 25](../Phase-25/Phase-25-introduction.md) と同じく、実装に入る前の要件定義フェーズとして次を行う。
 
 - 今の Devex を実際の LLM で段階8まで動かし、未定義を「ヒアリングで聞くべきだった項目」までさかのぼって分類する(ベースライン。[33-1](./Phase-33-1.md))
 - スコープの確認と仕様診断(#28)・決定([33-2](./Phase-33-2.md))
@@ -28,8 +28,8 @@
 ```
 
 - 前提として読むもの:
-  - [`appendix/devex_roadmap.md`](../../appendix/devex_roadmap.md) のステージ6(観点の状態・出どころ・非機能要求グレード・問い方・要件ID・効果の測り方)
-  - [総括の振り返り](../appendix/overall-retrospective.md) 9節(ステージ5の振り返り。9.3「手順書を作ると、設計の穴が見える」と 9.4 の AI 所見「2モードの粒度を表に」)
+  - [`appendix/devex_roadmap.md`](../../appendix/concept-history.md#roadmap) のステージ6(観点の状態・出どころ・非機能要求グレード・問い方・要件ID・効果の測り方)
+  - [総括の振り返り](../retrospectives/overall-retrospective.md) 9節(ステージ5の振り返り。9.3「手順書を作ると、設計の穴が見える」と 9.4 の AI 所見「2モードの粒度を表に」)
   - [Phase 32](../Phase-32/Phase-32-introduction.md)「未消化の申し送り」(出力の未定義の分類)
 - ヒアリングの今の仕組み: 5条件の完了判定(`devex-api/backend/app/services/chat_service.py`)、Markdown の要件定義書・外部設計書(`doc_generator_service.py`)、生成後の自己診断。詳細は [33-2](./Phase-33-2.md)「調べて分かったこと」。
 
@@ -50,13 +50,13 @@ E2E: この Phase では流さない(画面の流れを変えないため)。ス
 Claude の判断(計画の承認で確定):
 
 - 診断の前にベースラインを取る(Phase 25 の「診断 → 見本」と順が違う。診断がベースラインを入力にするため)。
-- 利用者の役は、ゴール3の発言を順に送るのでなく、ペルソナ([`persona.md`](../../appendix/stage6-baseline/persona.md))で1回ずつ答える。改良の後に同じペルソナで流せば、「聞かれたかどうか」の差がそのまま出る。
+- 利用者の役は、ゴール3の発言を順に送るのでなく、ペルソナ(`persona.md`)で1回ずつ答える。改良の後に同じペルソナで流せば、「聞かれたかどうか」の差がそのまま出る。
 
 ## 章一覧
 
 | 章 | トピック | ファイル作成 | 依存 |
 |---|---|---|---|
-| [`Phase-33-1.md`](./Phase-33-1.md) | ベースライン: 実 LLM の段階8と未定義の分類(ものさし) | あり(`appendix/stage6-baseline/`。生成物と使い捨てのスクリプト。samples の対象外) | なし |
+| [`Phase-33-1.md`](./Phase-33-1.md) | ベースライン: 実 LLM の段階8と未定義の分類(ものさし) | あり(`appendix/measurements/stage6-baseline.md`。生成物と使い捨てのスクリプト。samples の対象外) | なし |
 | [`Phase-33-2.md`](./Phase-33-2.md) | スコープの確認と仕様診断(#28)・決定 | なし(設計討議) | 33-1 |
 | [`Phase-33-3.md`](./Phase-33-3.md) | 構造化した要件定義の見本(md)と画面のデモ `/hearing-points-demo` | あり(md の見本・devex-ui 本体と samples) | 33-2 |
 | [`Phase-33-4.md`](./Phase-33-4.md) | `docs/*.md`・README・ロードマップへの反映 | `docs/` 配下ほか(文書のため #13/#15/#30 の対象外) | 33-2, 33-3 |
@@ -72,13 +72,13 @@ Claude の判断(計画の承認で確定):
 - `app/hearing-points-demo/page.tsx`(ルート)、`lib/menu-tree.ts`(メニューへの追加)
 - 上記の `__tests__/` 配下のテスト
 
-md の見本は [`appendix/structured-requirements-sample/`](../../appendix/structured-requirements-sample/README.md)、ベースラインは [`appendix/stage6-baseline/`](../../appendix/stage6-baseline/README.md)(どちらも samples の対象外)。
+md の見本は `appendix/structured-requirements-sample/`、ベースラインは [`appendix/measurements/stage6-baseline.md`](../../appendix/measurements/stage6-baseline.md)(どちらも samples の対象外)。
 
 ## 実装前チェックリスト(#11、設計レベルの疑問に限定 #20)
 
 | 章 | 主なファイル | 役割1行 | テスト観点 |
 |---|---|---|---|
-| [33-1](./Phase-33-1.md) | `appendix/stage6-baseline/`(`drive.py`・`persona.md`) | 今の Devex の未定義と、聞けた事実・要件の出どころを数える | なし(生成物の分類) |
+| [33-1](./Phase-33-1.md) | `appendix/measurements/stage6-baseline.md`(`drive.py`・`persona.md`) | 今の Devex の未定義と、聞けた事実・要件の出どころを数える | なし(生成物の分類) |
 | [33-2](./Phase-33-2.md) | なし | スコープと作り方の決定 | なし(設計討議) |
 | [33-3](./Phase-33-3.md) | `hearingPointsModel.ts`・`demoData.ts`・`HearingPointsDemoPageContent.tsx`・`page.tsx`・`menu-tree.ts` | 観点の表・カード・出どころ・追跡の見せ方の見本 | 規模と必須・完了の判定(対象外を含む)・カードの答えの状態・出どころの数え方・追跡の指摘・画面の操作(`npx vitest run src/features/hearing-points "src/app/(pages)/hearing-points-demo" src/components/layout`) |
 | [33-4](./Phase-33-4.md) | `docs/*.md`・`README.md`・ロードマップ | 決定事項の反映 | なし(文書の目視レビュー) |
@@ -98,7 +98,7 @@ md の見本は [`appendix/structured-requirements-sample/`](../../appendix/stru
 
 ## 検証結果
 
-- 33-1: ローカルの devex-api(`main` = ステージ5の版)を、実 LLM(`gemini-3.5-flash-lite`)で両モードとも段階8の承認と zip まで流した。段階3で検証のエラー(`DFD_WRITE_MISSING`)が出たので、画面で人がする最小の修正をして進めた([README](../../appendix/stage6-baseline/README.md)「人の操作」)。
+- 33-1: ローカルの devex-api(`main` = ステージ5の版)を、実 LLM(`gemini-3.5-flash-lite`)で両モードとも段階8の承認と zip まで流した。段階3で検証のエラー(`DFD_WRITE_MISSING`)が出たので、画面で人がする最小の修正をして進めた([README](../../appendix/measurements/stage6-baseline.md)「人の操作」)。
 - devex-ui: デモ・ルート・layout のテスト 19 件成功(1回目)、`tsc --noEmit`・eslint・`npm run build` 成功。
 - Phase 完了時の全体テスト(#18): devex-ui 644 件成功(`--maxWorkers=4`、1回目。Phase 32 の 627 件 + この Phase の 17 件)。devex-api は変更なし。
 - `samples_check.py`(`--api-since HEAD --ui-since HEAD`): 不一致 0 件・作り忘れ 0 件(一致 468 / 並び順のみ差 8 / 例外 5)。`link_check.py`: 切れ 0 件(3232 件)。appendix の新しい md(対象外)も同じ方法で確かめ、切れ 0 件。

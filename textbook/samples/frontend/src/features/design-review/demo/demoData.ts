@@ -1,7 +1,7 @@
 // 作成：Phase-51-3
 import type { Finding, HearingPoint, Mode } from "./reviewModel";
 
-// デモの仮データ。題材は Devex 自身で、appendix/stage8-baseline/ の追加測定 (e) と同じ生成物
+// デモの仮データ。題材は Devex 自身で、appendix/measurements/stage8-baseline.md の追加測定 (e) と同じ生成物
 // (stage7-effect の detailed-3・simple-2)に Sonnet 5.5 がレビューした指摘を縮めたもの。
 // evidence(引用)は、ステージ8で指摘の形に足す予定の項目。
 

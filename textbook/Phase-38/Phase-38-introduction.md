@@ -4,7 +4,7 @@
 
 Phase 36・37 で要件定義書と外部設計書に付いた要件ID(`FR-001`)を、下流の処理(詳細設計モードの段階1)と作業単位(段階7・簡易モードの実装計画書の WBS)へつなぐ。段階1の処理に要件ID を持たせ、WBS のタスクに「要件」欄を書かせて読み、処理・作業単位の無い Must の機能要件を指摘する。詳細設計書の 01 と実装手順書に、要件との対応を載せる。ステージ6の目的のうち「要件から作業単位まで追跡できるようにする」([README](../../README.md) のステージ表)を、この Phase で満たす。
 
-方針は [Phase 33-2](../Phase-33/Phase-33-2.md) 決定4・7、計画は [33-5](../Phase-33/Phase-33-5.md) の Phase 38。形の見本は [`appendix/structured-requirements-sample/traceability.md`](../../appendix/structured-requirements-sample/traceability.md)。
+方針は [Phase 33-2](../Phase-33/Phase-33-2.md) 決定4・7、計画は [33-5](../Phase-33/Phase-33-5.md) の Phase 38。形の見本は `appendix/structured-requirements-sample/traceability.md`。
 
 ## パイプライン上の位置づけ・前提
 

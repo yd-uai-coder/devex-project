@@ -2,9 +2,9 @@
 
 ## 目的
 
-ステージ6(Phase 34〜38: 観点の表・選択肢カード・要件定義書と外部設計書のモデル化・要件の追跡)が、ヒアリングの聞き漏れと要件の推測を本当に減らしたかを、[ベースライン](../../appendix/stage6-baseline/README.md)([Phase 33-1](../Phase-33/Phase-33-1.md))と同じペルソナ・規則で、実際の LLM で流して数字で確かめる。基準に届かなければ、原因を直して再測定する。[README](../../README.md) のステージ表と[実装計画書](../../docs/implementation_plan.md)のマイルストーン7「ベースラインと比べて、聞けた事実が増え、要件の『推測』が減ったことを数字で示せる」を、この Phase で満たす。
+ステージ6(Phase 34〜38: 観点の表・選択肢カード・要件定義書と外部設計書のモデル化・要件の追跡)が、ヒアリングの聞き漏れと要件の推測を本当に減らしたかを、[ベースライン](../../appendix/measurements/stage6-baseline.md)([Phase 33-1](../Phase-33/Phase-33-1.md))と同じペルソナ・規則で、実際の LLM で流して数字で確かめる。基準に届かなければ、原因を直して再測定する。[README](../../README.md) のステージ表と[実装計画書](../../docs/implementation_plan.md)のマイルストーン7「ベースラインと比べて、聞けた事実が増え、要件の『推測』が減ったことを数字で示せる」を、この Phase で満たす。
 
-計画は [33-5](../Phase-33/Phase-33-5.md) の Phase 39。測定の生成物は [`appendix/stage6-effect/`](../../appendix/stage6-effect/README.md)。
+計画は [33-5](../Phase-33/Phase-33-5.md) の Phase 39。測定の生成物は [`appendix/measurements/stage6-effect.md`](../../appendix/measurements/stage6-effect.md)。
 
 ## パイプライン上の位置づけ・前提
 
@@ -46,7 +46,7 @@ E2E: この Phase では流さない。判定の取り込みの規則が変わ�
 Claude の判断(計画の承認で確定):
 
 - **題材**(33-5 の未確定事項「シナリオを増やすか」): Devex 1本のまま。ペルソナを変えると比べられないため。
-- **ペルソナの規則の差分**: カードの選び方・規模の選び方・「対象外」を使わない・任意を続けない([README](../../appendix/stage6-effect/README.md)「規則の差分」)。
+- **ペルソナの規則の差分**: カードの選び方・規模の選び方・「対象外」を使わない・任意を続けない([README](../../appendix/measurements/stage6-effect.md)「規則の差分」)。
 
 実装中の判断(選んだ直しの範囲を広げたもの。[39-2](./Phase-39-2.md)・[39-3](./Phase-39-3.md)):
 
@@ -89,7 +89,7 @@ Claude の判断(計画の承認で確定):
 - マイグレーション: 無し。
 - Phase 完了時の全体テスト(#18): devex-api 927 件成功(この Phase で 7 件増)。統合テスト 8 件成功(専用の DB、1回だけ)。devex-ui は変更なし。
 - `samples_check.py`(`--api-since HEAD --ui-since HEAD`): 不一致 0 件・作り忘れ 0 件(一致 515 / 並び順のみ差 8 / 例外 5)。`link_check.py`: 切れ 0 件。
-- 測定: [39-1](./Phase-39-1.md)・[39-3](./Phase-39-3.md)、数字は [README](../../appendix/stage6-effect/README.md)。
+- 測定: [39-1](./Phase-39-1.md)・[39-3](./Phase-39-3.md)、数字は [README](../../appendix/measurements/stage6-effect.md)。
 
 ## 未消化の申し送り(#37)
 

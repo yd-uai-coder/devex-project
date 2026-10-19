@@ -8,7 +8,7 @@
 
 ## この章で作成・更新したファイル
 
-samples の対象外(生成物)。`appendix/stage6-effect/{detailed-2,simple-2}/`(発言・チャット履歴・観点の表・文書・`metrics.json`)と、`detailed-2/regen/`(文書だけを再生成したもの)。条件と数字は [README](../../appendix/stage6-effect/README.md)。
+samples の対象外(生成物)。`appendix/stage6-effect/{detailed-2,simple-2}/`(発言・チャット履歴・観点の表・文書・`metrics.json`)と、`detailed-2/regen/`(文書だけを再生成したもの)。条件と数字は [README](../../appendix/measurements/stage6-effect.md)。
 
 ## 流れ(直しながら流した)
 

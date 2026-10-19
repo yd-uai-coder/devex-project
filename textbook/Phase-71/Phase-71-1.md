@@ -25,7 +25,7 @@
 
 ## 1. 調べて分かったこと
 
-- PR-7 の定義は [`appendix/stage8-baseline/truth-e.md`](../../appendix/stage8-baseline/truth-e.md) の PR-7 にある。M-01 のゴールは「FastAPI と Next.js のプロジェクト構造」なのに、M-01-T01 に Next.js もフロントのコンテナも無い、という例である。Phase 58 でも、簡易の M-01 のゴールに CI/CD・バックアップがあり、単位は Docker と nginx だけだった([58-3](../Phase-58/Phase-58-3.md))。
+- PR-7 の定義は `appendix/stage8-baseline/truth-e.md` の PR-7 にある。M-01 のゴールは「FastAPI と Next.js のプロジェクト構造」なのに、M-01-T01 に Next.js もフロントのコンテナも無い、という例である。Phase 58 でも、簡易の M-01 のゴールに CI/CD・バックアップがあり、単位は Docker と nginx だけだった([58-3](../Phase-58/Phase-58-3.md))。
 - ゴールは手順書でなく計画で決まる。簡易モードは実装計画書の WBS のゴールを、詳細設計モードは段階7のゴールを、手順書の概観の表に写すだけである。手順書を書く AI にはゴールの文を渡していない。
 - マイルストーンは自由文のゴールしか持たない。照らせるのは、タスクの `title`・`modules`・`config_files` である。
 - 保存済みの記録では、詳細設計モードのゴールは機能の文(「〜ができる」)で、食い違いは見つからなかった。簡易モードでは M-01 に Next.js・フロントエンド・CI/CD・バックアップが出る版が多かった([71-4](./Phase-71-4.md))。

@@ -28,7 +28,7 @@ Phase-8-3のサービス層をREST APIとして公開する。`docs/internal_des
 
 ### なぜ`/projects/{project_id}/uml`をrouterのprefixに含めたか(既存パターンとの違い)
 
-既存の`routes/projects.py`はrouterのprefixを`/projects`のみにし、ネストしたリソース(`/projects/{project_id}/documents/...`等)のパスはエンドポイント側に書く。UML設計図パイプラインは`docs/internal_design.md`が設計段階から`/projects/{id}/uml/...`という独立したサブツリーとして扱っており、`api/routes/uml.py`という別ファイルに全エンドポイントをまとめる方針([`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md) 7節「構成案」で`api/routes/uml.py`と明記済み)だったため、`APIRouter(prefix="/projects/{project_id}/uml", ...)`とrouter自体のprefixに含めた。FastAPIは複数routerにまたがるパスパラメータ名でも、コンパイル後の完全なパス上で名前が一致していれば依存関数(`CurrentProjectDep`の`get_current_project(project_id, ...)`)に正しく注入するため、動作上の違いは無い。
+既存の`routes/projects.py`はrouterのprefixを`/projects`のみにし、ネストしたリソース(`/projects/{project_id}/documents/...`等)のパスはエンドポイント側に書く。UML設計図パイプラインは`docs/internal_design.md`が設計段階から`/projects/{id}/uml/...`という独立したサブツリーとして扱っており、`api/routes/uml.py`という別ファイルに全エンドポイントをまとめる方針([`appendix/stage3-requirements-organization.md`](../../appendix/concept-history.md#stage3) 7節「構成案」で`api/routes/uml.py`と明記済み)だったため、`APIRouter(prefix="/projects/{project_id}/uml", ...)`とrouter自体のprefixに含めた。FastAPIは複数routerにまたがるパスパラメータ名でも、コンパイル後の完全なパス上で名前が一致していれば依存関数(`CurrentProjectDep`の`get_current_project(project_id, ...)`)に正しく注入するため、動作上の違いは無い。
 
 ### なぜdata-items用のエンドポイントを`docs/internal_design.md`に無いまま実装したか
 

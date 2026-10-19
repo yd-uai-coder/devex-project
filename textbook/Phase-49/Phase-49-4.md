@@ -19,13 +19,13 @@
 | ── ここからテスト ── | | |
 | [`tests/unit/test_impact_diff.py`](../samples/backend/tests/unit/test_impact_diff.py) | 更新 | 並びがずれただけの依存先は変わったものにならない |
 
-測定(samples の対象外。規則・実行は [README](../../appendix/stage7-effect/README.md)):
+測定(samples の対象外。規則・実行は [README](../../appendix/measurements/stage7-effect.md)):
 
 | パス | 中身 |
 |---|---|
 | `appendix/stage7-effect/hearing/{detailed,simple}-{2,3}/` | 発言・履歴・観点の表・文書・段階・手順書・`metrics.json`・`regen/`(49-2 と同じ形) |
-| [`appendix/stage7-effect/hearing/tally-run123.md`](../../appendix/stage7-effect/hearing/tally-run123.md) | 1〜3回目の6本の `tally.py` の出力 |
-| `appendix/stage7-effect/stage35.py`・[`stage35.md`](../../appendix/stage7-effect/stage35.md) | 逆向きの書き漏れ(CRUD に書き込みがあり DFD に線が無い)を足した。詳細1〜3回目 |
+| `appendix/stage7-effect/hearing/tally-run123.md` | 1〜3回目の6本の `tally.py` の出力 |
+| `appendix/stage7-effect/stage35.py`・`stage35.md` | 逆向きの書き漏れ(CRUD に書き込みがあり DFD に線が無い)を足した。詳細1〜3回目 |
 | `appendix/stage7-effect/regen.py` | 「今の本体で求め直した印」(版1・版2 の文書の差分から、今のたどり方で求め直す)を足した |
 
 ## 要点の抜粋
@@ -56,7 +56,7 @@ def task_body(unit: PlanUnit, units: Iterable[PlanUnit]) -> str:
 
 **判定: 基準どおり**。側面は6回とも聞けた。自由回答の採用は詳細 1〜2・簡易 1 で、ステージ6の幅の中。
 
-※ 詳細3回目は、コア機能を聞かれたときの答えに「ログインは MVP に入れます」(ペルソナの最初から話してよい事実)を含めたところ、セキュリティの観点がそれで「採用」になり、L4(本人以外に他人のプロジェクトを見せない)は聞かれなかった。要件定義書にも入っていない。[`tally.py`](../../appendix/stage7-hearing/README.md) は観点の状態だけで数えるので ○ と出す(出力の [`tally-run123.md`](../../appendix/stage7-effect/hearing/tally-run123.md) は 14)。ログインの方法だけでは「誰に見られたら困るか」が埋まらないのに、判定が観点を埋めた(新しい申し送り)。
+※ 詳細3回目は、コア機能を聞かれたときの答えに「ログインは MVP に入れます」(ペルソナの最初から話してよい事実)を含めたところ、セキュリティの観点がそれで「採用」になり、L4(本人以外に他人のプロジェクトを見せない)は聞かれなかった。要件定義書にも入っていない。[`tally.py`](../../appendix/measurements/stage7-hearing.md) は観点の状態だけで数えるので ○ と出す(出力の `tally-run123.md` は 14)。ログインの方法だけでは「誰に見られたら困るか」が埋まらないのに、判定が観点を埋めた(新しい申し送り)。
 
 - 問いの順は回ごとに少し違った(簡易3回目は利用者の場面をカードで先に聞いた。詳細2・3回目はコア機能を聞いた)。カードの選択肢がペルソナの事実と一部しか合わないことが多く、自由回答で答えた回数はステージ6と同じくらい。
 - **ログのカードのおすすめ**(49-2 の申し送り): 6回のうち2回、おすすめが利用者の事実と逆を向いた(詳細1回目「入力内容もすべて残す」、簡易3回目「エラー時の入力やプロンプトは一時的に残す」)。どちらも機密と答えた後。残り4回は「残さない」がおすすめ。

@@ -2,7 +2,7 @@
 
 ## 目的
 
-ステージ8(Phase 52〜57)で作った設計レビュー・区切り・差し戻し・聞き直し・「直ったか」・手順書の決定的な検証・テスト仕様書を、[ベースライン](../../appendix/stage8-baseline/README.md)([51-1](../Phase-51/Phase-51-1.md))と同じ題材・正解表と、実際の LLM で測る([51-5](../Phase-51/Phase-51-5.md) の Phase 58)。数字が基準に届かなければ指示を直し、その後の Phase 59 で E2E とデプロイの手順を固める。
+ステージ8(Phase 52〜57)で作った設計レビュー・区切り・差し戻し・聞き直し・「直ったか」・手順書の決定的な検証・テスト仕様書を、[ベースライン](../../appendix/measurements/stage8-baseline.md)([51-1](../Phase-51/Phase-51-1.md))と同じ題材・正解表と、実際の LLM で測る([51-5](../Phase-51/Phase-51-5.md) の Phase 58)。数字が基準に届かなければ指示を直し、その後の Phase 59 で E2E とデプロイの手順を固める。
 
 - 本体のレビューを 51-1 の題材で(1回目と、指示を直した2回目)── [58-1](./Phase-58-1.md)
 - ペルソナでの通しの実測(ヒアリング → 自動レビュー → 聞き直し・差し戻し → 「直ったか」・段階6・7)── [58-2](./Phase-58-2.md)
@@ -10,7 +10,7 @@
 - テスト仕様書の正解例との比較・「日本語で書く」── [58-4](./Phase-58-4.md)
 - 判断のまとめと直し(レビューの指示・テスト仕様書の言語の規則)── [58-5](./Phase-58-5.md)
 
-測定の記録は [`appendix/stage8-effect/`](../../appendix/stage8-effect/README.md)。
+測定の記録は [`appendix/measurements/stage8-effect.md`](../../appendix/measurements/stage8-effect.md)。
 
 ## パイプライン上の位置づけ・前提
 
@@ -25,12 +25,12 @@
 [58-4] テスト仕様書を開く前に正解例を書く ─▶ 33fdda56・86a37228 の仕様書と比べる
 ```
 
-- **前提として読むもの**: [Phase 57 の introduction](../Phase-57/Phase-57-introduction.md) の「未消化の申し送り」(「Phase 58 で確かめる」の項目)、[51-5](../Phase-51/Phase-51-5.md) の Phase 58 の未確定事項、[51-1 の結果](../../appendix/stage8-baseline/results.md)、[Phase 50 の申し送りの判断](../Phase-51/Phase-51-2.md)(3件を Phase 58 で確かめる)。
+- **前提として読むもの**: [Phase 57 の introduction](../Phase-57/Phase-57-introduction.md) の「未消化の申し送り」(「Phase 58 で確かめる」の項目)、[51-5](../Phase-51/Phase-51-5.md) の Phase 58 の未確定事項、51-1 の結果、[Phase 50 の申し送りの判断](../Phase-51/Phase-51-2.md)(3件を Phase 58 で確かめる)。
 - **この Phase を始めた時点の状態**: Phase 57 までコミット済み。dev の DB に確認用データ(33fdda56 簡易・86a37228 詳細・06f93618 その複製)。
 
 ## モード宣言(#21)・E2E の宣言(#36)
 
-自動実装モード: **on**(測定のスクリプトは `appendix/stage8-effect/`、samples にミラーしない。本体を直したところは本体と samples の両方に入れた)。
+自動実装モード: **on**(測定のスクリプトは `appendix/measurements/stage8-effect.md`、samples にミラーしない。本体を直したところは本体と samples の両方に入れた)。
 
 E2E: この Phase では流さない(Phase 60。完了後の調整で番号を送った)。直したのは LLM への指示の文言だけで、偽 LLM の E2E には響かない。
 
@@ -86,7 +86,7 @@ Claude の判断(計画の承認で確定、または作業中):
 ## サンプルコード一覧
 
 - `textbook/samples/backend/`: 更新 `app/review/prompt.py`・`app/documents/test_spec/drafting.py`・`tests/unit/test_review_prompt.py`・`tests/unit/test_test_spec_drafting.py`(すべて 58-5)。
-- 測定のスクリプト(`appendix/stage8-effect/` の `review_body.py`・`drive.py`・`say.sh`・`spec_dump.sh`・`procedure_counts.py`)は samples の対象外。
+- 測定のスクリプト(`appendix/measurements/stage8-effect.md` の `review_body.py`・`drive.py`・`say.sh`・`spec_dump.sh`・`procedure_counts.py`)は samples の対象外。
 
 ## 実装前チェックリスト(#11、設計レベルの疑問に限定 #20)
 

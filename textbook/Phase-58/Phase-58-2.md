@@ -12,10 +12,10 @@ samples の対象外(生成物と測定のスクリプト。#13・#15 の対象�
 
 | パス | 中身 |
 |---|---|
-| `appendix/stage8-effect/drive.py` | [stage7-effect](../../appendix/stage7-effect/README.md) の複製。seed の superuser でログインしてレビューをオン、`review`・`reviews`・`decide`・`rehearing`・`generate --findings`・`regen-stage`・`testspec` を足した。「直ったか」は `SHOW_FIX=1` のときだけ表示する |
+| `appendix/stage8-effect/drive.py` | [stage7-effect](../../appendix/measurements/stage7-effect.md) の複製。seed の superuser でログインしてレビューをオン、`review`・`reviews`・`decide`・`rehearing`・`generate --findings`・`regen-stage`・`testspec` を足した。「直ったか」は `SHOW_FIX=1` のときだけ表示する |
 | `appendix/stage8-effect/say.sh` | 発言を `input/u<n>.txt` に残して送る |
 | `appendix/stage8-effect/hearing/{detailed-1,simple-1}/` | 発言・観点の表・文書(v1・v2)・レビュー・段階・手順書・テスト仕様書 |
-| [`appendix/stage8-effect/results-flow.md`](../../appendix/stage8-effect/results-flow.md) | 判定と集計 |
+| `appendix/stage8-effect/results-flow.md` | 判定と集計 |
 
 ## 結果 1: ヒアリング(Phase 50 の申し送り2件)
 

@@ -3,7 +3,7 @@
 ステージ5で Devex が生成する「実装手順書 + 実装可能性チェック」の形を、生成機能を作る前に確かめるための見本です。Claude が手で書きました。LLM の出力ではありません。
 
 - 題材: ゴール3で Devex 自身を題材に生成した詳細設計([`appendix/goal3-generated/detailed/`](../goal3-generated/README.md)、段階1〜7)。
-- 形: [作成方針](../devex_implementation_procedure_guideline.md) 5・9・11〜13・17章と、[Phase 25-1](../../textbook/Phase-25/Phase-25-1.md) の決定。
+- 形: [作成方針](../concept-history.md#procedure-guideline) 5・9・11〜13・17章と、[Phase 25-1](../../textbook/Phase-25/Phase-25-1.md) の決定。
 - 画面のデモ: devex-ui の `/implementation-procedure-demo`(同じ題材・同じ中身)。
 
 ## ファイル
