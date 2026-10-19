@@ -9,14 +9,14 @@
 - [`CLAUDE.md`](../CLAUDE.md)「進行のルール」節に appendix原本の #1〜17 を転記し、本プロジェクト固有の #18〜27 を追加した。#1〜17 は今後も内容を変更しない(調整は #18 以降への追加で行う)。
 - 納期モード(#21)を採用。ただしMVPコアループ(チャット↔4文書生成の中核)の章は常に学習モード固定。
 - #26(md相互参照はリンクで明記)を追加。`textbook/`配下と`CLAUDE.md`からの`.md`参照は全てMarkdownリンクにする。
-- #1の「Phase毎に教材フォルダ」は「Phase毎にフォルダを作成する」の意と解釈し直した(#6「各Phaseフォルダ直下」と整合)。教材ファイルは `textbook/Phase-<N>/` 配下に置く(`textbook/`直下にフラット配置しない)。Phase-0の教材を `textbook/Phase-0/` に移設済み。
+- #1の「Phase毎に教材フォルダ」は「Phase毎にフォルダを作成する」の意と解釈し直した(#6「各Phaseフォルダ直下」と整合)。教材ファイルは `textbook/Phase-<N>/` 配下に置く(`textbook/`直下にフラット配置しない)。Phase-0の教材を `textbook/Phase-00/` に移設済み。
 - #27(Phase 0の役割定義、共通ルール候補)を追加。Phase 0の範囲を「ルール確定+ゴール策定」から「`README.md`/`docs/`配下を入力とした実装ロードマップの具体化」まで拡張した。Devex完成後は入力をDevex生成物に切り替える想定だが、詳細はDevex完成後の振り返りで具体化する(今は未確定)。
 - 用語衝突を解消: [`docs/implementation_plan.md`](../docs/implementation_plan.md)の「フェーズ1/フェーズ2」を「ステージ1/ステージ2」にリネームした。以後「Phase」はCL開発の実装単位(`Phase-<N>`)専用の語。
-- 実装ロードマップを確定([`docs/implementation_plan.md`](../docs/implementation_plan.md) 4.2 WBSの5区分に1:1対応): Phase 1=環境構築、Phase 2=バックエンド開発(2-1 DB移行〜2-5 エクスポート/エラーハンドリング)、Phase 3=フロントエンド開発(3-1〜3-3)、Phase 4=統合テスト・QA、Phase 5=デプロイ・運用準備。詳細は[`Phase-0/Phase-0-2.md`](./Phase-0/Phase-0-2.md)参照。旧決定「Phase 1=チャットヒアリングフロー設計」はPhase 2-3に位置づけ直した。
+- 実装ロードマップを確定([`docs/implementation_plan.md`](../docs/implementation_plan.md) 4.2 WBSの5区分に1:1対応): Phase 1=環境構築、Phase 2=バックエンド開発(2-1 DB移行〜2-5 エクスポート/エラーハンドリング)、Phase 3=フロントエンド開発(3-1〜3-3)、Phase 4=統合テスト・QA、Phase 5=デプロイ・運用準備。詳細は[`Phase-00/Phase-00-2.md`](./Phase-00/Phase-00-2.md)参照。旧決定「Phase 1=チャットヒアリングフロー設計」はPhase 2-3に位置づけ直した。
 
 ## Phase 0 ── 初期ヒアリング入力の設計(#27: 要件・設計の確認)
 
-この作業は#27が定めるPhase 0の範囲(要件・設計の確認)内であり、Phase 1以降ではない。まだ「Phase 1を開始する」等の明示トリガーは行っていない(#5)。将来Phase 2-3(チャットヒアリングフロー)・Phase 3-2(チャットヒアリングUI)が読む [`docs/external_design.md`](../docs/external_design.md)・[`docs/internal_design.md`](../docs/internal_design.md) 自体を、Phase 0のうちに先行して更新した。詳細は[`Phase-0/Phase-0-3.md`](./Phase-0/Phase-0-3.md)参照。着手時に参照すること:
+この作業は#27が定めるPhase 0の範囲(要件・設計の確認)内であり、Phase 1以降ではない。まだ「Phase 1を開始する」等の明示トリガーは行っていない(#5)。将来Phase 2-3(チャットヒアリングフロー)・Phase 3-2(チャットヒアリングUI)が読む [`docs/external_design.md`](../docs/external_design.md)・[`docs/internal_design.md`](../docs/internal_design.md) 自体を、Phase 0のうちに先行して更新した。詳細は[`Phase-00/Phase-00-3.md`](./Phase-00/Phase-00-3.md)参照。着手時に参照すること:
 
 - 初期ヒアリング入力は「概要(必須・自由記述)」「実現したいこと(必須・自由記述、箇条書き強制なし)」「補足(任意・自由記述、旧サブ機能+その他を統合)」の3項目+折りたたみ式「環境設定(任意)」に簡略化した。理由: 初期入力段階で明確な設計・構想を求めすぎないため(ユーザー方針)。箇条書き化・機能提案はチャット側でAIが行う。
 - 「言語→フレームワーク」の動的コンボボックスは devex-ui に前例がなくa11yリスクが高いため**採用しない**。フレームワークは言語ごとに `<fieldset><legend>` で静的グルーピングする静的チェックボックス群(`CheckboxGroupWithLabel`流用)にする。
@@ -26,11 +26,11 @@
 
 ## Phase 0 ── ドキュメント構成の分割(README.md → docs/)
 
-`README.md`に混在していた要件定義書・外部設計書・内部設計書・実装計画書を、Devex自身が生成する4ファイル構成([`docs/external_design.md`](../docs/external_design.md) 2.3節SCR-005参照)と揃えて`docs/requirements.md`/`docs/external_design.md`/`docs/internal_design.md`/`docs/implementation_plan.md`に分割した。`README.md`は概要+リンク表のみに縮小した。内部の節番号(1.1, 2.1, 3.1, 4.1…)は維持。詳細は[`Phase-0/Phase-0-4.md`](./Phase-0/Phase-0-4.md)参照。
+`README.md`に混在していた要件定義書・外部設計書・内部設計書・実装計画書を、Devex自身が生成する4ファイル構成([`docs/external_design.md`](../docs/external_design.md) 2.3節SCR-005参照)と揃えて`docs/requirements.md`/`docs/external_design.md`/`docs/internal_design.md`/`docs/implementation_plan.md`に分割した。`README.md`は概要+リンク表のみに縮小した。内部の節番号(1.1, 2.1, 3.1, 4.1…)は維持。詳細は[`Phase-00/Phase-00-4.md`](./Phase-00/Phase-00-4.md)参照。
 
 ## Phase 0 ── Phase 1着手前の仕様診断への対応(12項目)
 
-Phase 1着手前にユーザーへ仕様診断を提示し、全12項目の決定を得た。詳細は[`Phase-0/Phase-0-5.md`](./Phase-0/Phase-0-5.md)参照。
+Phase 1着手前にユーザーへ仕様診断を提示し、全12項目の決定を得た。詳細は[`Phase-00/Phase-00-5.md`](./Phase-00/Phase-00-5.md)参照。
 
 1. **リポジトリ構成**: `devex-api`/`devex-ui`の独立2リポジトリ構成を正とする(モノレポ案は破棄)。[`docs/implementation_plan.md`](../docs/implementation_plan.md) 4.3.2に反映。
 2. **ストリーミング方式**: SSE(Server-Sent Events)を採用(WebSocketは将来の双方向リアルタイム機能が必要になった場合に再検討)。
@@ -47,15 +47,15 @@ Phase 1着手前にユーザーへ仕様診断を提示し、全12項目の決�
 
 ## Phase 0 ── 実装着手前の仕様診断を共通ルール化(#28)
 
-上記の仕様診断(12項目)を一度限りのレビューで終わらせず、**Phase 0内で毎回行う共通ルール**として#28を新設した(ユーザー指示、#27と同様に将来のhandoff v2引き継ぎ候補)。Phase 1のトリガー前に、`docs/`配下4文書を対象に最重要/中程度/軽微の3段階で診断し、ユーザーが決定またはAIへの提案依頼を選べる運用とする。今回はルール新設のみで、追加の診断作業は行っていない。詳細は[`Phase-0/Phase-0-6.md`](./Phase-0/Phase-0-6.md)参照。
+上記の仕様診断(12項目)を一度限りのレビューで終わらせず、**Phase 0内で毎回行う共通ルール**として#28を新設した(ユーザー指示、#27と同様に将来のhandoff v2引き継ぎ候補)。Phase 1のトリガー前に、`docs/`配下4文書を対象に最重要/中程度/軽微の3段階で診断し、ユーザーが決定またはAIへの提案依頼を選べる運用とする。今回はルール新設のみで、追加の診断作業は行っていない。詳細は[`Phase-00/Phase-00-6.md`](./Phase-00/Phase-00-6.md)参照。
 
 ## Phase 0 ── 「生成ドキュメントの自己診断」をプロダクト要件化
 
-#28(CL進行ルールとしての仕様診断)を、Devexというプロダクト自体の機能要件としても明示した(ユーザー指示、#25再帰検証ルールの直接的な適用例)。[`docs/requirements.md`](../docs/requirements.md) 1.4節Must haveに「ドキュメント自己診断機能」を追加: 4文書生成後、AIが不足・不明瞭な点を最重要/中程度/軽微の3段階で自己診断しチャットに提示する。診断結果は`chat_histories`の`sender='others'`行として記録する(既存の4値化で確保していた枠を具体的な用途に確定)。詳細は[`Phase-0/Phase-0-7.md`](./Phase-0/Phase-0-7.md)参照。
+#28(CL進行ルールとしての仕様診断)を、Devexというプロダクト自体の機能要件としても明示した(ユーザー指示、#25再帰検証ルールの直接的な適用例)。[`docs/requirements.md`](../docs/requirements.md) 1.4節Must haveに「ドキュメント自己診断機能」を追加: 4文書生成後、AIが不足・不明瞭な点を最重要/中程度/軽微の3段階で自己診断しチャットに提示する。診断結果は`chat_histories`の`sender='others'`行として記録する(既存の4値化で確保していた枠を具体的な用途に確定)。詳細は[`Phase-00/Phase-00-7.md`](./Phase-00/Phase-00-7.md)参照。
 
 ## Phase 2着手前 ── 文書アップロード要件の追加
 
-「Phase 2を開始する」の実行中(教材ファイル生成前)にユーザーから新要件が提示され、一旦中断して`docs/*.md`を先行改訂した。Phase 1〜5のロードマップ区分自体は変更なし(Phase 2-1「DB移行」・Phase 2-3「チャットヒアリングフロー設計」・Phase 3-2「チャットヒアリングUI」の中に組み込む)。教材(`textbook/Phase-2/…`)の生成はこのセッションでは行っていない(次回「Phase 2を開始する」で着手)。
+「Phase 2を開始する」の実行中(教材ファイル生成前)にユーザーから新要件が提示され、一旦中断して`docs/*.md`を先行改訂した。Phase 1〜5のロードマップ区分自体は変更なし(Phase 2-1「DB移行」・Phase 2-3「チャットヒアリングフロー設計」・Phase 3-2「チャットヒアリングUI」の中に組み込む)。教材(`textbook/Phase-02/…`)の生成はこのセッションでは行っていない(次回「Phase 2を開始する」で着手)。
 
 - **要件本体(Must have化)**: 初期ヒアリング入力(SCR-004)時に参考資料を最大3ファイルまでアップロードできる機能を[`docs/requirements.md`](../docs/requirements.md) 1.3/1.4節に追加した。
 - **データモデル**: `projects.intake`(JSONB)を拡張するのではなく、`chat_histories`/`generated_documents`と同じ粒度の新規テーブル`intake_files`を新設した([`docs/internal_design.md`](../docs/internal_design.md) 3.2節)。理由: ファイル単位の状態(成功/失敗、エラー理由)を個別に持たせやすいため。
@@ -69,10 +69,10 @@ Phase 1着手前にユーザーへ仕様診断を提示し、全12項目の決�
 
 「Phase 3を開始する」の調査中、`devex-api`の実コード(`app/api/routes/auth.py`・`app/schemas/auth.py`)を確認したところ、[`docs/internal_design.md`](../docs/internal_design.md) 3.1節が当初(Phase 0-5時点)から定めていた「リフレッシュトークンはhttpOnly Secure Cookieに保持」という設計がコードに未反映(`register`/`login`/`refresh`/`logout`が全てJSONボディでリフレッシュトークンをやり取りし、`Set-Cookie`が存在しない)という実装ギャップが見つかった。
 
-- **原因**: [`Phase-2/Phase-2-2.md`](./Phase-2/Phase-2-2.md)が「既存のJWT認証(汎用テンプレート由来)は無変更で再利用する」と判断し、Phase 0-5で決定済みだったCookie方式との差分点検を行わなかったこと。設計書自体は当初から正しく、ドキュメントの誤りではなく実装側の見落とし。
+- **原因**: [`Phase-02/Phase-02-2.md`](./Phase-02/Phase-02-2.md)が「既存のJWT認証(汎用テンプレート由来)は無変更で再利用する」と判断し、Phase 0-5で決定済みだったCookie方式との差分点検を行わなかったこと。設計書自体は当初から正しく、ドキュメントの誤りではなく実装側の見落とし。
 - **検討した2方式**: (A) httpOnly Secure Cookieに修正 ── XSS耐性・ページリロードでもログアウトされない・設計書と整合・CORSは`allow_credentials=True`済みで追加対応不要。デメリットはroutes/schemas/depsの3ファイル変更とCookie属性(`path`/`samesite`)の設計が必要なこと。(B) 現状のJSONボディ方式のまま進める ── バックエンド変更は不要だが、リフレッシュトークンをlocalStorageかJSメモリに保持することになりXSS耐性が無い、または長時間セッション(チャットヒアリング)中のページリロードで即ログアウトするUX劣化がある。設計書と決定済み事項にも反する。→ **(A)を採用**。
 - **`docs/*.md`への影響**: **変更不要**。`internal_design.md`(26行目)・`external_design.md`(SCR-001)・`implementation_plan.md`(WBS該当行・§4.4リスク表)のいずれも、今回の実装修正と矛盾しない記述だった(実装が設計に追いついていなかっただけ)。
-- **rule #12の例外扱い**: 本来この種の手戻りは「後続Phase(今回はPhase 3)の教材に新しい内容を書き、変更元Phaseは書き換えない」という#12の前方参照方式で扱うが、ユーザー判断により今回は例外として[`Phase-2/Phase-2-2.md`](./Phase-2/Phase-2-2.md)自体を直接書き換えた。理由: Phase 3の教材・サンプルがまだ何にも依存していないタイミングであり、過去章を書き直しても整合性コストが無いため。**#12自体の運用方針(後続Phaseでの変更は前方参照で記録する)は今後も維持する**。
+- **rule #12の例外扱い**: 本来この種の手戻りは「後続Phase(今回はPhase 3)の教材に新しい内容を書き、変更元Phaseは書き換えない」という#12の前方参照方式で扱うが、ユーザー判断により今回は例外として[`Phase-02/Phase-02-2.md`](./Phase-02/Phase-02-2.md)自体を直接書き換えた。理由: Phase 3の教材・サンプルがまだ何にも依存していないタイミングであり、過去章を書き直しても整合性コストが無いため。**#12自体の運用方針(後続Phaseでの変更は前方参照で記録する)は今後も維持する**。
 - **修正内容**: `app/api/deps.py`に`REFRESH_TOKEN_COOKIE_NAME`定数・`get_refresh_token_from_cookie`・`RefreshTokenCookieDep`を追加、`app/schemas/auth.py`から`TokenPair`/`RefreshRequest`を廃止し`AccessToken`に統一、`app/api/routes/auth.py`の`login`が`Set-Cookie`で発行し`refresh`/`logout`がCookie経由で受け取るよう変更。`AuthService`本体は無変更(トークン文字列の受け渡しのみを行う設計だったため)。検証は`devex-api/backend`に一時反映して`pytest`(unit 91件green、統合テスト2件を個別実行してgreen)・`pyright`(0エラー)で確認済み、検証後は実ファイルを元に戻した(Phase 2の既存運用と同じ)。
 - **Phase 3への影響**: Phase 3-1(認証基盤刷新)は当初「バックエンドCookie化+フロントエンド`auth-store.ts`書き換え」を予定していたが、バックエンド側がPhase 2-2で完了したため**フロントエンドの`auth-store.ts`刷新のみ**に縮小した。
 
@@ -82,7 +82,7 @@ Phase 3-5(チャットヒアリングUI、SSE+完了承認)の設計中、フロ
 
 - **原因**: Phase 2-3のスコープ確認不足。サービス層の実装とテストが揃っていたため見落とされやすかった。
 - **修正内容**: `GET /api/v1/projects/{project_id}/hearing-completion`を新設し、`ChatService(session).check_completion(current_project)`へ委譲するだけの薄いルートとして追加。ルート自体は`llm`を注入できないため、ルートのテストは`app.services.chat_service.get_gemini_llm`を`monkeypatch`で`FakeLLM`に差し替える方式(`test_ai_graph_nodes.py`の既存手法を踏襲)。
-- **rule #12の例外扱い**: Phase 2-2のCookie化と同じ理由(Phase 3の教材・サンプルがまだこのエンドポイントに依存していないタイミングであり、過去章を直接修正しても整合性コストが無い)により、[`Phase-2/Phase-2-3.md`](./Phase-2/Phase-2-3.md)を直接書き換えた。**#12自体の運用方針(後続Phaseでの変更は前方参照で記録する)は今後も維持する**。
+- **rule #12の例外扱い**: Phase 2-2のCookie化と同じ理由(Phase 3の教材・サンプルがまだこのエンドポイントに依存していないタイミングであり、過去章を直接修正しても整合性コストが無い)により、[`Phase-02/Phase-02-3.md`](./Phase-02/Phase-02-3.md)を直接書き換えた。**#12自体の運用方針(後続Phaseでの変更は前方参照で記録する)は今後も維持する**。
 - **検証**: `devex-api/backend`に一時反映して`pytest tests/unit`(92件green、既存91件+新規1件)・`pyright`(0エラー)で確認済み、検証後は実ファイルを元に戻した(Phase 2の既存運用と同じ)。
 - **教訓**: サービスメソッド+単体テストが揃っていても、それを呼び出すAPIルートの配線漏れは見過ごされやすい。今後のPhaseでも「サービス層の実装が完了した時点でルート層への配線漏れが無いか」を実装前チェックリスト(#11)やテスト観点の突き合わせ(#13/#15)の一環として確認する。
 
@@ -93,7 +93,7 @@ Phase 3-5(チャットヒアリングUI、SSE+完了承認)の設計中、フロ
 - **適用範囲**: devex-ui全体(既存のデモギャラリを含む)を一括移行した。Phase 3の全サンプル(`textbook/samples/frontend/`)も同様に移行済み。
 - **影響**: 相対 import が1階層深くなる(`./Foo`→`../Foo`、`../../tamagui.config`→`../../../tamagui.config`)。`devex-ui/CLAUDE.md`のTesting節を更新済み。
 - **検証**: devex-ui実リポジトリで15ファイルを移動し`tsc --noEmit`・`vitest run`で確認した(既知の`Menu.test.tsx`不具合以外の新規回帰なし)。この検証中に`auth-store.ts`が旧Body方式と新Cookie方式のロジックが混在した中途状態(ユーザー自身の写経作業中)であることを発見し、ユーザーに報告済み(修正は未実施、ユーザーの作業範囲のため)。
-- **Phase 3教材への反映**: `textbook/Phase-3/Phase-3-1.md`〜`Phase-3-6.md`内の全テストファイルパスを`__tests__/`含みに更新した。この移行は特定の章の内容変更ではなく機械的なパス変更のため、サンプル側のファイルにはPhaseタグを新規付与していない(rule #29はコンテンツ変更の追跡用であり、単なるファイル移動には適用しないと判断)。
+- **Phase 3教材への反映**: `textbook/Phase-03/Phase-03-1.md`〜`Phase-03-6.md`内の全テストファイルパスを`__tests__/`含みに更新した。この移行は特定の章の内容変更ではなく機械的なパス変更のため、サンプル側のファイルにはPhaseタグを新規付与していない(rule #29はコンテンツ変更の追跡用であり、単なるファイル移動には適用しないと判断)。
 
 ## Phase 3完了後 ── 登録画面(RegisterForm)のパスワードに強度ルールを追加
 
@@ -103,33 +103,33 @@ Phase 3-5(チャットヒアリングUI、SSE+完了承認)の設計中、フロ
 - **`loginSchema`は対象外**: ログインのパスワード欄には課さない。新ルールは新規登録時のみ適用され、既存アカウントのパスワードが遡って新ルールを満たすとは限らないため。
 - **テストへの反映**: 成功系テストのパスワード値を新ルールを満たす`"S3cret-Pass"`に変更し、強度不足(英小文字のみ)を検出する新規テストケースを追加した。
 - **副次的な発見**: 検証中、ユーザーの`FormGeneral.tsx`の写経に`demoDelayMs`プロパティの分割代入漏れ(型定義にはあるが関数引数のデフォルト値指定が抜けていた)があり、`ReferenceError`でテストが落ちることを発見・修正した(rule #15が想定する「写経ミスの検知」がまさに機能した例)。
-- **対象外**: `textbook/samples/frontend/`は同内容に更新済みだが、[`Phase-3-2.md`](./Phase-3/Phase-3-2.md)自体は書き換えず、後続の改訂として1行の参照のみ追記した(rule #12の通常運用。Phase 3教材は既に公開済みの内容であり、Cookie化・hearing-completionのような例外は適用しない)。
+- **対象外**: `textbook/samples/frontend/`は同内容に更新済みだが、[`Phase-03-2.md`](./Phase-03/Phase-03-2.md)自体は書き換えず、後続の改訂として1行の参照のみ追記した(rule #12の通常運用。Phase 3教材は既に公開済みの内容であり、Cookie化・hearing-completionのような例外は適用しない)。
 
 ## Phase 3完了後 ── Server ComponentからTamaguiを直接importできない問題
 
 `npm run dev`実機検証で`/login`→`/register`→`/projects/new`と3画面続けて`TypeError: createReactContext is not a function`に遭遇した(ユーザーがブラウザで各画面を開くたびに発覚、その都度ユーザー自身が該当ファイルに`"use client"`を追加して解決していた)。
 
 - **原因**: これらの`page.tsx`はいずれも`"use client"`の無いServer Componentのまま`tamagui`パッケージを直接importしていた。Reactは`package.json`の`exports`に`"react-server"`条件専用のビルド(`react.react-server.js`)を持ち、Server Component(=`"use client"`が無いモジュール)からimportされた`react`はこのビルドに解決される。実際に`node_modules/react/cjs/react.react-server.development.js`を確認したところ`createContext`という文字列は1件もヒットせず、このビルドにはContext APIが存在しない(クライアント専用の概念でRSCには無関係なため意図的に除外されている)。`@tamagui/web`の`createStyledContext`はモジュール評価時に`React.createContext`を呼んでTheme/Text等の共有Contextを作るため、この解決では`undefined(...)`呼び出しになりTypeErrorになる。
-- **影響範囲**: `tamagui`から直接importしつつ`"use client"`を持たない`page.tsx`は必ずこのエラーになる。Next.js 16 + React 19 + Tamagui 2.6の組み合わせ特有の制約(`devex-ui/AGENTS.md`が警告する「訓練データに無い破壊的変更」の一種)。動的ルート`chat`/`documents`([`Phase-3-5.md`](./Phase-3/Phase-3-5.md)/[`Phase-3-6.md`](./Phase-3/Phase-3-6.md))は`params`の非同期解決のためServer Componentのまま維持しているが、tamaguiを直接importせず`ChatPageContent`/`DocumentsPageContent`という別のClient Componentに描画を委譲しているため対象外。
-- **対処**: 該当ページの先頭に`"use client";`を追加する。実ファイル(`devex-ui`)側は影響範囲の4ファイル([`Phase-3-2.md`](./Phase-3/Phase-3-2.md)のlogin/register、[`Phase-3-3.md`](./Phase-3/Phase-3-3.md)のdashboard、[`Phase-3-4.md`](./Phase-3/Phase-3-4.md)のprojects/new)すべてユーザー自身の対応により解決済みであることを確認した。`textbook/samples/frontend/`側の該当4ファイルにも同じ修正を反映済み。
+- **影響範囲**: `tamagui`から直接importしつつ`"use client"`を持たない`page.tsx`は必ずこのエラーになる。Next.js 16 + React 19 + Tamagui 2.6の組み合わせ特有の制約(`devex-ui/AGENTS.md`が警告する「訓練データに無い破壊的変更」の一種)。動的ルート`chat`/`documents`([`Phase-03-5.md`](./Phase-03/Phase-03-5.md)/[`Phase-03-6.md`](./Phase-03/Phase-03-6.md))は`params`の非同期解決のためServer Componentのまま維持しているが、tamaguiを直接importせず`ChatPageContent`/`DocumentsPageContent`という別のClient Componentに描画を委譲しているため対象外。
+- **対処**: 該当ページの先頭に`"use client";`を追加する。実ファイル(`devex-ui`)側は影響範囲の4ファイル([`Phase-03-2.md`](./Phase-03/Phase-03-2.md)のlogin/register、[`Phase-03-3.md`](./Phase-03/Phase-03-3.md)のdashboard、[`Phase-03-4.md`](./Phase-03/Phase-03-4.md)のprojects/new)すべてユーザー自身の対応により解決済みであることを確認した。`textbook/samples/frontend/`側の該当4ファイルにも同じ修正を反映済み。
 - **教材の生成プロセスへの示唆**: このパターン(Server Componentからのライブラリ直接import禁止)はコード生成時のレビュー観点として一般化できる ── 以降のPhaseで新規ページを追加する際は、tamagui(または他のクライアント専用ライブラリ)を直接importするなら`"use client"`を付けるか、Client Componentに描画を委譲するかを都度確認する。
 
 ## Phase 3完了後 ── ファイルアップロードの汎用コンポーネント化
 
-ユーザーから「ファイルアップロードは汎用コンポーネント化したい」との依頼。[`Phase-3-4.md`](./Phase-3/Phase-3-4.md)で実装した`FileUploadField.tsx`(ヒアリング機能専用、最大件数・拡張子・サイズ・ラベル文言が全てハードコード)を、`InputSimpleText`→`InputEmail`/`InputPassword`と同じ「汎用ベース+薄い特化ラッパー」構成に分解した。
+ユーザーから「ファイルアップロードは汎用コンポーネント化したい」との依頼。[`Phase-03-4.md`](./Phase-03/Phase-03-4.md)で実装した`FileUploadField.tsx`(ヒアリング機能専用、最大件数・拡張子・サイズ・ラベル文言が全てハードコード)を、`InputSimpleText`→`InputEmail`/`InputPassword`と同じ「汎用ベース+薄い特化ラッパー」構成に分解した。
 
 - **判断根拠(CLAUDE.md #17)**: 現時点で他に具体的なファイルアップロード機能の予定は無い(`docs/external_design.md`にチャット画面フッターの「ファイル添付(将来拡張用としてUIのみ、または無効化)」という未実装のプレースホルダが1件あるのみ)。一方`devex-ui`は`devex-ui/CLAUDE.md`が明記する通りDevexの実装であると同時に「今後のアプリ開発の土台として使うテンプレート」でもあり、`src/app/(pages)/(sample)/form-parts/`のデモギャラリ(`menu-tree.ts`に登録)がその実消費者になる ── 既存の`InputPassword`等と同じ立ち位置で「今この共通化を駆動する消費者は何か」に具体名で答えられるため実施した。
 - **設計**: `src/components/ui/form/FileUpload.tsx`(新規、デフォルトエクスポート)が汎用ベース。`value`/`onChange`に加え`label`/`accept`(拡張子リスト、判定用)/`acceptLabel`(エラー文言用の人が読める表記。`accept`をそのまま結合すると元の文言と一致しなくなるため判定用と表示用を分離)/`acceptAttr`(任意、未指定時は`accept.join(",")`)/`maxFiles`/`maxFileSizeBytes`をpropsに持つ。`validateFiles(files, options)`も同じ形でパラメータ化して名前付きエクスポート。
 - **`FileUploadField.tsx`は薄いラッパーに変更**: ヒアリング固有の定数(3件・txt/md/pdf・5MB・日本語ラベル)を固定して`FileUpload`に渡すだけになった。`FileUploadField`/`validateFiles(files)`という既存の公開contractは完全に維持されるため、`IntakeForm.tsx`・既存テスト(`FileUploadField.test.tsx`)は無変更のまま green(CLAUDE.md #12-4が定める「リファクタの写経ミスの番人」としての統合スモークテストの役割を果たした)。
 - **デモページ**: `src/app/(pages)/(sample)/form-parts/file-upload/page.tsx`を新設し`menu-tree.ts`の`Form Parts`グループに登録。汎用コンポーネントとしての実消費者を確保した。
 - **テスト**: 新規`src/components/ui/form/__tests__/FileUpload.test.tsx`(9件)。拡張子ミスマッチのテストでは、`@testing-library/user-event`の`upload()`がinputの`accept`属性で選択自体をブロックする挙動があるため、判定用の`accept` propとは別に`acceptAttr`をテスト用に緩めている(実際のゲートは常にJS側の`validateFiles`であり、`accept`属性はOSのファイル選択ダイアログ上のヒントに過ぎないという既存の設計方針と整合)。
-- **samplesへの反映**: `textbook/samples/frontend/`に`FileUpload.tsx`・書き換え後の`FileUploadField.tsx`・デモページ・新規テストを反映。`menu-tree.ts`は今回samplesに初めて追加したため、ヘッダーに過去に触れたPhaseを遡って列挙した(`# 更新：Phase-3-1,3-2,3-3,3-4`)。個別の`Phase-3-N:追記/更新`インラインタグは、パスワード強度ルール追加のときと同じ前例に倣い、`menu-tree.ts`の新規行以外には付けていない(内容変更点はこの節と[`Phase-3-4.md`](./Phase-3/Phase-3-4.md)に記録する運用のため)。
+- **samplesへの反映**: `textbook/samples/frontend/`に`FileUpload.tsx`・書き換え後の`FileUploadField.tsx`・デモページ・新規テストを反映。`menu-tree.ts`は今回samplesに初めて追加したため、ヘッダーに過去に触れたPhaseを遡って列挙した(`# 更新：Phase-3-1,3-2,3-3,3-4`)。個別の`Phase-3-N:追記/更新`インラインタグは、パスワード強度ルール追加のときと同じ前例に倣い、`menu-tree.ts`の新規行以外には付けていない(内容変更点はこの節と[`Phase-03-4.md`](./Phase-03/Phase-03-4.md)に記録する運用のため)。
 
 ## Phase 2完了後 ── チャット応答のrepr化バグ修正とヒアリングプロンプト調整
 
 実機検証で、ヒアリングチャットのAI返信が`[{'type': 'text', 'text': '...\n...', 'extras': {'signature': '...'}}]`のようなPythonのrepr文字列(波括弧・引用符・エスケープされた`\n`)としてそのまま表示される不具合が見つかった。
 
-- **原因**: [`Phase-2-5.md`](./Phase-2/Phase-2-5.md)の`ChatService.stream_reply`(`app/services/chat_service.py`)が、Geminiのストリーミングチャンクの`content`に無条件で`str()`を適用していた。Geminiが応答パートに`thought_signature`(内部推論の継続性を保つためのメタデータ。`gemini-2.5-flash`等でも付与されうる)を付与すると、`langchain-google-genai`は`AIMessageChunk.content`を`str`ではなく`[{"type": "text", "text": "...", "extras": {"signature": "<base64>"}}]`という辞書のリストに変える。これに`str()`を適用するとPythonのrepr(波括弧・引用符・`\n`のエスケープ表示)がそのまま出力され、SSEストリーミングとして即座にフロントへ流れると同時に、`chat_histories.message`(`Text`カラム)へもそのまま永続化されていた。
+- **原因**: [`Phase-02-5.md`](./Phase-02/Phase-02-5.md)の`ChatService.stream_reply`(`app/services/chat_service.py`)が、Geminiのストリーミングチャンクの`content`に無条件で`str()`を適用していた。Geminiが応答パートに`thought_signature`(内部推論の継続性を保つためのメタデータ。`gemini-2.5-flash`等でも付与されうる)を付与すると、`langchain-google-genai`は`AIMessageChunk.content`を`str`ではなく`[{"type": "text", "text": "...", "extras": {"signature": "<base64>"}}]`という辞書のリストに変える。これに`str()`を適用するとPythonのrepr(波括弧・引用符・`\n`のエスケープ表示)がそのまま出力され、SSEストリーミングとして即座にフロントへ流れると同時に、`chat_histories.message`(`Text`カラム)へもそのまま永続化されていた。
 - **対処**: `content`から`text`フィールドだけを安全に取り出す`_extract_text()`ヘルパーを追加し、`str(chunk.content)`を置き換えた。テキストを持たない(signatureのみの)チャンクは`yield`しない。
 - **フロント側は変更不要と判断した理由**: `ChatHistoryEntry{sender, message}`(`devex-ui/src/features/hearing/api/hearingApi.ts`)は既に`sender`で発言者を区別しており、`MessageBubble.tsx`も`sender==="user"`なら生テキスト、それ以外(`ai`/`intake`)は`react-markdown`でMarkdownとして描画する設計になっている ── つまり「発言者ごとに表示方法を分ける」という構造は既に実装済みで、真因はバックエンドが応答構造を検査せず`str()`していたことだった。修正後は`text`フィールドの実際の改行文字がそのまま渡るため、`\n`のエスケープ表示問題も同時に解消される。
 - **既存データへの言及**: `_build_messages`は対話履歴を毎回LLMへ渡す設計のため、修正前に保存された壊れたAI応答は、表示上の見た目だけでなく今後の対話コンテキスト(応答品質)にも影響し続ける。データ移行・既存プロジェクトの手動修復は今回のスコープ外とした。
@@ -138,7 +138,7 @@ Phase 3-5(チャットヒアリングUI、SSE+完了承認)の設計中、フロ
 
 ## 初回ヒアリング表示の整形 + AIの最初の発話の自動生成
 
-プロジェクト作成直後、チャット画面に`{"system_overview": "...", "goals_raw": "...", "notes_raw": null, "environment": null}`という生JSONがそのまま表示される不具合が見つかった。原因は[`Phase-2-3.md`](./Phase-2/Phase-2-3.md)の`ProjectService.create`(`app/services/project.py`)が`json.dumps(intake, ensure_ascii=False)`を`chat_histories`(`sender='intake'`)にそのまま保存していたこと。`docs/external_design.md` SCR-004 §2.3は「チャット開始直後、AIの最初の発話は初期ヒアリング入力の内容を踏まえた理解の要約と確認質問から始まる」と定めているが、実装ではプロジェクト作成後ユーザーが最初のメッセージを送るまでAIが一切発話しない状態だったため、この生JSONだけが画面に残っていた。
+プロジェクト作成直後、チャット画面に`{"system_overview": "...", "goals_raw": "...", "notes_raw": null, "environment": null}`という生JSONがそのまま表示される不具合が見つかった。原因は[`Phase-02-3.md`](./Phase-02/Phase-02-3.md)の`ProjectService.create`(`app/services/project.py`)が`json.dumps(intake, ensure_ascii=False)`を`chat_histories`(`sender='intake'`)にそのまま保存していたこと。`docs/external_design.md` SCR-004 §2.3は「チャット開始直後、AIの最初の発話は初期ヒアリング入力の内容を踏まえた理解の要約と確認質問から始まる」と定めているが、実装ではプロジェクト作成後ユーザーが最初のメッセージを送るまでAIが一切発話しない状態だったため、この生JSONだけが画面に残っていた。
 
 このタスクはユーザーから「claude側でプロジェクトに反映」と明示指示があったため、[[feedback_direct_impl_scope]]の既定(samples-only)の例外として実プロジェクトへ直接反映した。
 
@@ -209,27 +209,27 @@ Phase 3-5(チャットヒアリングUI、SSE+完了承認)の設計中、フロ
 - **根本原因**: バックエンド(`download_generated_document`)は`Content-Disposition: attachment; filename="external_design.md"; filename*=UTF-8''external_design.md`を正しく返しており(本セッション内で先に修正・検証済み)、フロントエンド(`documentsApi.ts`の`downloadDocument`)もヘッダーを正しくパースするロジックを持っていた ── **両方とも実装は正しかった**。抜けていたのは`app/main.py`のCORSミドルウェア設定。`Content-Disposition`はブラウザのCORSセーフリスト対象ヘッダーではないため、サーバーが`Access-Control-Expose-Headers`で明示的に許可しない限り、クロスオリジンの`fetch()`(devex-ui `localhost:3000` → devex-api `localhost:8000`)からJSで`res.headers.get("Content-Disposition")`を読むことができず`null`になる。`downloadDocument`はこのケースに備えて`parseFilename(...) ?? \`${docId}.md\``という(意図的な)フォールバックを持っており、これが発火してユーザー報告の症状になっていた。
 - **対処**: `app/main.py`の`CORSMiddleware`に`expose_headers=["Content-Disposition"]`を追加。
 - **テスト**: `tests/unit/test_cors.py`(新規)。DB/Redis接続が必要な実エンドポイント経由のテストは重いため、`test_body_size_limit.py`と同様の軽量パターンで、`app.main.app`の実際のミドルウェア登録内容(`app.user_middleware`、Starletteの`Middleware.cls`/`Middleware.kwargs`)を直接検査する形にした(DB非依存・高速、かつ実際の設定を直接見るため設定ドリフトの心配もない)。
-- **samplesへの反映は無し**: `app/main.py`はCL教材(curriculum)の対象外のスターターテンプレートファイルであり、`textbook/samples/backend/`に対応ファイル自体が存在しない([`Phase-1-1.md`](./Phase-1/Phase-1-1.md)が「CORSは変更不要だった」と記録している既存インフラのため)。今回も実`devex-api`のみを直接修正した。
+- **samplesへの反映は無し**: `app/main.py`はCL教材(curriculum)の対象外のスターターテンプレートファイルであり、`textbook/samples/backend/`に対応ファイル自体が存在しない([`Phase-01-1.md`](./Phase-01/Phase-01-1.md)が「CORSは変更不要だった」と記録している既存インフラのため)。今回も実`devex-api`のみを直接修正した。
 - **反映範囲**: ユーザー報告への直接対応(実環境で再現するバグ修正)のため、[[feedback_direct_impl_scope]]の既定の例外として実devex-apiへ直接反映した。`uv run pytest tests/unit`(114件green)・`uvx pyright`(0エラー)で検証済み。
 
 ## Phase 4完了後 ── 統合テスト・QA(rule #24: Phase完了時にまとめて1回追記)
 
 Phase 4の生成にあたり、事前にユーザーへE2Eテストの実装粒度(バックエンドAPI統合テストのみ/ブラウザE2E(Playwright)フル導入/両方の折衷案)を確認し、**ブラウザE2E(Playwright)をフル導入**する方針を選んだ(バックエンドAPI統合テストのみに絞る軽量案は不採用)。これが本Phaseの設計全体を左右する最大の決定である。
 
-- **2種類のフェイクLLM機構が併存する設計**: pytestプロセス内で`monkeypatch`により`get_gemini_llm`を直接差し替える既存手法(Phase 2から継続)に加え、環境変数`E2E_FAKE_LLM`経由で有効化する`E2eFakeLLM`(`app/ai/llm/fake.py`、Phase 4-3新設)を追加した。前者はpytestと同一プロセス内のFastAPIアプリを対象にでき、後者はPlaywrightが`docker compose`で起動する別プロセスをHTTP越しに操作するだけのため必要になった、テスト実行形態の違いに起因する使い分け。詳細は[`Phase-4-3.md`](./Phase-4/Phase-4-3.md)参照。
+- **2種類のフェイクLLM機構が併存する設計**: pytestプロセス内で`monkeypatch`により`get_gemini_llm`を直接差し替える既存手法(Phase 2から継続)に加え、環境変数`E2E_FAKE_LLM`経由で有効化する`E2eFakeLLM`(`app/ai/llm/fake.py`、Phase 4-3新設)を追加した。前者はpytestと同一プロセス内のFastAPIアプリを対象にでき、後者はPlaywrightが`docker compose`で起動する別プロセスをHTTP越しに操作するだけのため必要になった、テスト実行形態の違いに起因する使い分け。詳細は[`Phase-04-3.md`](./Phase-04/Phase-04-3.md)参照。
 - **`E2E_FAKE_LLM`の本番誤有効化への二重防御**: `app/core/config.py`の`Settings._reject_unsafe_production_settings`(Phase 1由来の既存バリデータ)に`ENVIRONMENT=production`かつ`E2E_FAKE_LLM=true`を拒否する分岐を追加。加えて`docker-compose.e2e.yml`は`docker-compose.prod.yml`と独立したオーバーレイとし、本番起動コマンドには一切登場しない構成にした。
-- **`docker-compose.e2e.yml`はsamplesへミラーせず`devex-api`直下へ直接反映**: [`Phase-1-introduction.md`](./Phase-1/Phase-1-introduction.md)が確立した「リポジトリ直下のインフラ設定ファイルは写経対象にしない」という前例に倣った(rule #3の例外の再適用であり、新たな例外ではない)。
-- **`get_gemini_llm`への`timeout`明示**: Phase 4-3の実装検証中に、`ChatGoogleGenerativeAI`へ`timeout`を渡していなかった(既定無制限)ことを発見。`invoke_with_retry`のリトライは例外発生時のみ機能しハングには無力なため、`settings.LLM_TIMEOUT_SECONDS`(既定60秒、実測に基づかない暫定値)を追加した。詳細は[`Phase-4-5.md`](./Phase-4/Phase-4-5.md)参照。
-- **監査で発見・修正した実害2件**: ①`app/services/llm_retry.py`の`LLMQuotaExceededError`/`GenerationFailedError`メッセージが英語のまま日本語UIに漏れ出ていたバグ(バックエンド、[`Phase-4-1.md`](./Phase-4/Phase-4-1.md))。②`ChatPanel.tsx`の`handleApprove`が`try/catch`を持たず、生成トリガー失敗時にボタンが固まったまま復旧不能になるバグ(フロントエンド、[`Phase-4-2.md`](./Phase-4/Phase-4-2.md))。いずれもPhase 2-5・Phase 3-5が作成した箇所への改訂であり、当該章のintroduction相当部分(`Phase-2-3.md`・`Phase-2-5.md`・`Phase-3-5.md`)に1行の参照を追記済み。
-- **統合テスト基盤の既知課題(Phase 1由来)を根本修正**: [`Phase-1-1.md`](./Phase-1/Phase-1-1.md)が発見し、Phase 2でも「個別実行」という回避策のまま持ち越されていた`tests/integration/`一括実行時のpytest-asyncioイベントループ後片付けエラーを、Phase 4-1で根本修正した。原因は`app/core/database.py`の`engine`・`app/infrastructure/redis.py`の`get_redis_pool()`がモジュールレベルのシングルトンで、内部コネクションプールが生成時のイベントループに紐づいたままになることだった。`tests/integration/conftest.py`の`client`フィクスチャのteardownで`engine.dispose()`・`get_redis_pool().disconnect()`+`cache_clear()`を行うよう修正し、`tests/integration`一括実行(最終的に9ファイル・9件)がgreenになることを確認した。詳細は[`Phase-4-1.md`](./Phase-4/Phase-4-1.md)参照。
-- **`E2eFakeLLM`の設計を実機検証で2度修正**: 当初の設計(ヒアリング完了判定を「HumanMessageが2件以上」、doc_type判別を「ラベル文字列の部分一致」)には、実際にdocker composeで起動したdevex-apiへcurlでアクセスして検証したところ2件の不具合があった((1)完了判定プロンプト自身のHumanMessageを数えてしまい実発話0件でも完了扱いになる、(2)doc_type間の相互参照文言により外部設計書・内部設計書の生成内容が要件定義書と誤判定される)。両方を修正し、当初「Playwrightのみで検証する、追加の単体テストは不要」としていた判断を撤回して`tests/unit/test_fake_llm_e2e.py`を追加した。詳細は[`Phase-4-3.md`](./Phase-4/Phase-4-3.md)「実機検証で発見した2件の不具合」参照。
-- **検討したが見送った項目**: `ApiError`(devex-ui `client.ts`)へのバックエンド`code`フィールド読み取り追加。rule #17の判定基準(「今この共通化を駆動している実在の消費者は何か」)に照らし、現状どの画面も`code`で挙動分岐しておらず、Phase 4-1のメッセージ日本語化で`message`のみでも十分ユーザーに伝わるため、追加しないことにした。詳細は[`Phase-4-2.md`](./Phase-4/Phase-4-2.md)参照。
-- **`GOOGLE_API_KEY`に関する既往の記録の訂正**: Phase 2〜Phase 4-4まで一貫して「`GOOGLE_API_KEY`未設定のため実LLM未検証」と記録してきたが、本Phaseの実機検証中に`devex-api/.env`へ実際の値が既に設定されていることが判明した(設定時期は本Phaseの範囲では特定していない)。本Phase自体は意図的に`E2E_FAKE_LLM=true`で検証する方針のため、この鍵を使った実際の動作確認は行っていない。詳細は[`Phase-4-5.md`](./Phase-4/Phase-4-5.md)参照。
-- **申し送り**: `textbook/appendix/*-retrospective.md`(rule #10)がPhase 0〜3のいずれについても未作成であることが本Phase準備中に判明した。rule #18のセッション分離に従い、振り返り・decision digestの整理(本entryが「Phase完了時にまとめて1回」の実施分)は本Phase生成と同一セッションで行い、**振り返り自体は別セッションで行う**方針にした。詳細は[`Phase-4-introduction.md`](./Phase-4/Phase-4-introduction.md)「申し送り」節参照。
+- **`docker-compose.e2e.yml`はsamplesへミラーせず`devex-api`直下へ直接反映**: [`Phase-01-introduction.md`](./Phase-01/Phase-01-introduction.md)が確立した「リポジトリ直下のインフラ設定ファイルは写経対象にしない」という前例に倣った(rule #3の例外の再適用であり、新たな例外ではない)。
+- **`get_gemini_llm`への`timeout`明示**: Phase 4-3の実装検証中に、`ChatGoogleGenerativeAI`へ`timeout`を渡していなかった(既定無制限)ことを発見。`invoke_with_retry`のリトライは例外発生時のみ機能しハングには無力なため、`settings.LLM_TIMEOUT_SECONDS`(既定60秒、実測に基づかない暫定値)を追加した。詳細は[`Phase-04-5.md`](./Phase-04/Phase-04-5.md)参照。
+- **監査で発見・修正した実害2件**: ①`app/services/llm_retry.py`の`LLMQuotaExceededError`/`GenerationFailedError`メッセージが英語のまま日本語UIに漏れ出ていたバグ(バックエンド、[`Phase-04-1.md`](./Phase-04/Phase-04-1.md))。②`ChatPanel.tsx`の`handleApprove`が`try/catch`を持たず、生成トリガー失敗時にボタンが固まったまま復旧不能になるバグ(フロントエンド、[`Phase-04-2.md`](./Phase-04/Phase-04-2.md))。いずれもPhase 2-5・Phase 3-5が作成した箇所への改訂であり、当該章のintroduction相当部分(`Phase-02-3.md`・`Phase-02-5.md`・`Phase-03-5.md`)に1行の参照を追記済み。
+- **統合テスト基盤の既知課題(Phase 1由来)を根本修正**: [`Phase-01-1.md`](./Phase-01/Phase-01-1.md)が発見し、Phase 2でも「個別実行」という回避策のまま持ち越されていた`tests/integration/`一括実行時のpytest-asyncioイベントループ後片付けエラーを、Phase 4-1で根本修正した。原因は`app/core/database.py`の`engine`・`app/infrastructure/redis.py`の`get_redis_pool()`がモジュールレベルのシングルトンで、内部コネクションプールが生成時のイベントループに紐づいたままになることだった。`tests/integration/conftest.py`の`client`フィクスチャのteardownで`engine.dispose()`・`get_redis_pool().disconnect()`+`cache_clear()`を行うよう修正し、`tests/integration`一括実行(最終的に9ファイル・9件)がgreenになることを確認した。詳細は[`Phase-04-1.md`](./Phase-04/Phase-04-1.md)参照。
+- **`E2eFakeLLM`の設計を実機検証で2度修正**: 当初の設計(ヒアリング完了判定を「HumanMessageが2件以上」、doc_type判別を「ラベル文字列の部分一致」)には、実際にdocker composeで起動したdevex-apiへcurlでアクセスして検証したところ2件の不具合があった((1)完了判定プロンプト自身のHumanMessageを数えてしまい実発話0件でも完了扱いになる、(2)doc_type間の相互参照文言により外部設計書・内部設計書の生成内容が要件定義書と誤判定される)。両方を修正し、当初「Playwrightのみで検証する、追加の単体テストは不要」としていた判断を撤回して`tests/unit/test_fake_llm_e2e.py`を追加した。詳細は[`Phase-04-3.md`](./Phase-04/Phase-04-3.md)「実機検証で発見した2件の不具合」参照。
+- **検討したが見送った項目**: `ApiError`(devex-ui `client.ts`)へのバックエンド`code`フィールド読み取り追加。rule #17の判定基準(「今この共通化を駆動している実在の消費者は何か」)に照らし、現状どの画面も`code`で挙動分岐しておらず、Phase 4-1のメッセージ日本語化で`message`のみでも十分ユーザーに伝わるため、追加しないことにした。詳細は[`Phase-04-2.md`](./Phase-04/Phase-04-2.md)参照。
+- **`GOOGLE_API_KEY`に関する既往の記録の訂正**: Phase 2〜Phase 4-4まで一貫して「`GOOGLE_API_KEY`未設定のため実LLM未検証」と記録してきたが、本Phaseの実機検証中に`devex-api/.env`へ実際の値が既に設定されていることが判明した(設定時期は本Phaseの範囲では特定していない)。本Phase自体は意図的に`E2E_FAKE_LLM=true`で検証する方針のため、この鍵を使った実際の動作確認は行っていない。詳細は[`Phase-04-5.md`](./Phase-04/Phase-04-5.md)参照。
+- **申し送り**: `textbook/appendix/*-retrospective.md`(rule #10)がPhase 0〜3のいずれについても未作成であることが本Phase準備中に判明した。rule #18のセッション分離に従い、振り返り・decision digestの整理(本entryが「Phase完了時にまとめて1回」の実施分)は本Phase生成と同一セッションで行い、**振り返り自体は別セッションで行う**方針にした。詳細は[`Phase-04-introduction.md`](./Phase-04/Phase-04-introduction.md)「申し送り」節参照。
 
 ## Phase 4完了後 ── 統合テスト用DBの分離
 
-ユーザーが実際に`devex-ui`のPlaywright E2Eテストを実行する過程で、開発用DBのスキーマ(`users`等9テーブル)が2度消失する事故が発生した。原因は`tests/integration/conftest.py`の`client`フィクスチャが、開発用DBと**同じ`DATABASE_URL`**に対して毎回`Base.metadata.create_all`/`drop_all`を実行する設計だったこと([`Phase-4-3.md`](./Phase-4/Phase-4-3.md)が「既知の残課題」として記録済みだった)。1度目は`alembic upgrade head`で復旧したが、2度目が発生した際、`alembic upgrade head`を実行しても復旧しないという追加の問題が判明した ── `Base.metadata.drop_all`はAlembicの管理外の削除のため、`alembic_version`テーブルは「最新リビジョン適用済み」の記録のまま実テーブルだけが消えるという食い違いが起き、`alembic upgrade head`が「もう最新なので何もしない」と誤判断してしまう。復旧には`alembic_version`テーブル自体を削除してから`alembic upgrade head`をやり直す必要があった。
+ユーザーが実際に`devex-ui`のPlaywright E2Eテストを実行する過程で、開発用DBのスキーマ(`users`等9テーブル)が2度消失する事故が発生した。原因は`tests/integration/conftest.py`の`client`フィクスチャが、開発用DBと**同じ`DATABASE_URL`**に対して毎回`Base.metadata.create_all`/`drop_all`を実行する設計だったこと([`Phase-04-3.md`](./Phase-04/Phase-04-3.md)が「既知の残課題」として記録済みだった)。1度目は`alembic upgrade head`で復旧したが、2度目が発生した際、`alembic upgrade head`を実行しても復旧しないという追加の問題が判明した ── `Base.metadata.drop_all`はAlembicの管理外の削除のため、`alembic_version`テーブルは「最新リビジョン適用済み」の記録のまま実テーブルだけが消えるという食い違いが起き、`alembic upgrade head`が「もう最新なので何もしない」と誤判断してしまう。復旧には`alembic_version`テーブル自体を削除してから`alembic upgrade head`をやり直す必要があった。
 
 これを踏まえ、統合テスト専用のPostgres DB(`$POSTGRES_TEST_DB`、既定値`devex-app-db-test`)を開発用DB(`$POSTGRES_DB`)とは別に用意する根本対策を行った。
 
@@ -238,30 +238,30 @@ Phase 4の生成にあたり、事前にユーザーへE2Eテストの実装粒�
 - `devex-api/.env`・`.env.example`に`POSTGRES_TEST_DB`を追加、`docker-compose.yml`のpostgresサービスに`POSTGRES_TEST_DB`環境変数と`postgres-init/`のマウントを追加。
 - 統合テストの正しい実行コマンドは以降 `docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm --no-deps backend uv run pytest -m integration tests/integration` に統一する(`devex-api/CLAUDE.md`「テストの分離」節、`tests/integration/conftest.py`のdocstringに明記)。
 - 動作確認: この新しいコマンドで統合テスト5件(当時`devex-ui`実リポジトリに存在した分)を実行し、テストDB側にはテーブルが残らず(想定どおりdrop_all済み)、開発用DB側の9テーブルは無傷であることを確認した。
-- `docker-compose.test.yml`・`postgres-init/`はrule #3の例外(リポジトリ直下のインフラ設定ファイルは写経対象にしない、[`Phase-1-introduction.md`](./Phase-1/Phase-1-introduction.md)の前例)としてsamplesへミラーせず`devex-api`へ直接反映した。`tests/integration/conftest.py`のdocstring更新のみsamplesにも反映済み。
+- `docker-compose.test.yml`・`postgres-init/`はrule #3の例外(リポジトリ直下のインフラ設定ファイルは写経対象にしない、[`Phase-01-introduction.md`](./Phase-01/Phase-01-introduction.md)の前例)としてsamplesへミラーせず`devex-api`へ直接反映した。`tests/integration/conftest.py`のdocstring更新のみsamplesにも反映済み。
 
 ## Phase 4完了後 ── E2Eスペックの実行時不具合修正
 
-ユーザーが実際に`devex-ui`で`npm run test:e2e`(Playwright)を実行したところ、[`Phase-4-4.md`](./Phase-4/Phase-4-4.md)の2シナリオとも失敗した。`error-context.md`(失敗時点のページスナップショット)とdevex-apiのログを突き合わせて診断し、E2Eスペック(`e2e/devex-flow.spec.ts`)自体の不備2件を発見・修正した(DB分離とは無関係)。
+ユーザーが実際に`devex-ui`で`npm run test:e2e`(Playwright)を実行したところ、[`Phase-04-4.md`](./Phase-04/Phase-04-4.md)の2シナリオとも失敗した。`error-context.md`(失敗時点のページスナップショット)とdevex-apiのログを突き合わせて診断し、E2Eスペック(`e2e/devex-flow.spec.ts`)自体の不備2件を発見・修正した(DB分離とは無関係)。
 
 1. **テストパスワードが登録画面の強度ルールを満たしていなかった**: `"s3cret-pass"`は大文字を含まず、`registerSchema`(Phase 3完了後に追加された強度ルール)のクライアント側バリデーションで弾かれ、登録APIが一度も呼ばれないまま`/register`に留まっていた。`"S3cret-pass"`に修正。
 2. **2本目のシナリオに登録後の`/login`遷移待ちが無かった**: 1本目のシナリオには`await expect(page).toHaveURL(/\/login/)`という明示的な遷移待ちがあったが、2本目には無かった。そのため、`/register`に留まっている間に後続の`fill()`がそのページ自身のフォームへ入力され、その後`/login`へ遷移した瞬間に`LoginForm`がまっさらな状態で再マウントされて入力が失われ、空欄のまま「ログイン」ボタンが押されてバリデーションエラーになっていた。1本目と同じ待ちを追加して解消した。
 3. **`getByText("E2E Fake")`がPlaywrightのstrict mode違反(複数要素にマッチ)になっていた**: `E2eFakeLLM._reply_for()`はオープニング発話と通常のチャット返信を同じ固定文字列で返す設計のため、1回目のユーザー発話後には同一文言のAI発話が2つ存在する。テスト側のロケータに`.first()`を追加して解消した(フェイクLLM側の設計変更ではない)。
 
-`devex-ui/e2e/devex-flow.spec.ts`(実リポジトリ)・`textbook/samples/frontend/e2e/devex-flow.spec.ts`(教材サンプル)の両方に反映済み。詳細は[`Phase-4-4.md`](./Phase-4/Phase-4-4.md)「実機検証で発見した不具合」節参照。
+`devex-ui/e2e/devex-flow.spec.ts`(実リポジトリ)・`textbook/samples/frontend/e2e/devex-flow.spec.ts`(教材サンプル)の両方に反映済み。詳細は[`Phase-04-4.md`](./Phase-04/Phase-04-4.md)「実機検証で発見した不具合」節参照。
 
 ## Phase 5完了後 ── README整備・GitHub Actions自動デプロイ(Phase 5-4、rule #24: Phase完了時にまとめて1回追記)
 
-Phase 5(5-1〜5-3)完了後、ユーザーから2件の追加依頼(README群がテンプレート説明のままであること、GitHub Actionsでの自動デプロイ)があり、Phase 5に4番目の章として追加した。詳細は[`Phase-5-4.md`](./Phase-5/Phase-5-4.md)参照。
+Phase 5(5-1〜5-3)完了後、ユーザーから2件の追加依頼(README群がテンプレート説明のままであること、GitHub Actionsでの自動デプロイ)があり、Phase 5に4番目の章として追加した。詳細は[`Phase-05-4.md`](./Phase-05/Phase-05-4.md)参照。
 
 - **README整備の範囲**: root `README.md`にdevex-api/devex-uiへのリンク表を追加。`devex-api/README.md`・`devex-ui/README.md`はいずれも冒頭を「Devexとしての主な機能」の説明に書き換え、既存のテンプレート説明(汎用FastAPIバックエンド/next-tamagui-templates)は「本リポジトリの位置づけ(テンプレートとしての出自)」節として保持した(削除しない ── どちらのリポジトリも実際に汎用テンプレートとして再利用可能な基盤を持つため)。
 - **`devex-api/CLAUDE.md`・`devex-ui/CLAUDE.md`はいずれも削除しなかった**: ユーザーから当初「両方ともテンプレート作成時のままなので削除」という依頼があったが、実際に内容を精査したところ、`devex-api/CLAUDE.md`は現在のアーキテクチャ(レイヤー構成・エラーハンドリング・LangGraph構成・レート制限・テスト分離・Docker構成)を正確に記述した現役のドキュメントであり、`devex-ui/CLAUDE.md`もTesting節(`__tests__/`配置規約)・バックエンド連携節(`apiFetch`/TTLキャッシュパターン)がPhase 3完了後の相談を通じて実際に更新され続けていた(decision-digest内の「Phase 3完了後」の複数エントリ参照)。この事実をユーザーに提示した上で、最終的に両方とも削除しない方針で確定した。**教訓**: 「テンプレート作成時のまま」という前提は、AI(私)自身の最初の一読による評価だったが、実際には過去のPhaseで参照・更新されていた形跡(他ドキュメントからの引用)を横断的に確認するまで正確性を判断できなかった。同種の削除判断を今後行う際は、対象ファイルへの相互参照を`grep`で洗い出してから判断することを推奨する。
 - **GitHub Actions自動デプロイ方式**: `devex-api`(ConoHa VPS)は`.github/workflows/deploy.yml`でtest→SSHデプロイ(`git pull`+`docker compose up -d --build`、レジストリ経由のpush/pull方式は個人開発規模には過剰と判断し不採用)。`devex-ui`(Vercel)はVercelのネイティブGitHub連携がデプロイを担うため、Actions側は`ci.yml`でlint/test/buildのみ(デプロイジョブなし)。
-- **CI導入を機に既存lintエラー(devex-api: 49件のE501等、devex-ui: lint 6件+vitest設定漏れ)を是正**: `uv run ruff check .`・`npm run lint`・`npm run test`をCIのゲートに含める以上、既存の未修正debtを放置するとCIが恒久的に赤くなるため、今回のCI導入作業の一環として修正した(CLAUDE.md #17: 「今この作業を駆動している実在の消費者」= 新設したCIワークフロー自身)。`devex-api`側の修正はコメント・docstringの折り返しのみでロジック変更は無く、`textbook/samples/backend/`側のミラーへは反映していない(rule #9が対象とする「クラス名・シグネチャ・型」の変更ではないため)。`devex-ui`側では`vitest.config.mts`が`e2e/`(Playwright仕様)を誤って収集していた設定漏れ(テスト実行のたびに無関係な1件が必ず失敗する原因)と、`HearingCompletionBanner.tsx`の実際のReact Hooksルール違反(早期returnの後にhookを呼んでいた)という、単なる整形を超えた実質的な修正が見つかった。詳細は[`Phase-5-4.md`](./Phase-5/Phase-5-4.md)参照。
+- **CI導入を機に既存lintエラー(devex-api: 49件のE501等、devex-ui: lint 6件+vitest設定漏れ)を是正**: `uv run ruff check .`・`npm run lint`・`npm run test`をCIのゲートに含める以上、既存の未修正debtを放置するとCIが恒久的に赤くなるため、今回のCI導入作業の一環として修正した(CLAUDE.md #17: 「今この作業を駆動している実在の消費者」= 新設したCIワークフロー自身)。`devex-api`側の修正はコメント・docstringの折り返しのみでロジック変更は無く、`textbook/samples/backend/`側のミラーへは反映していない(rule #9が対象とする「クラス名・シグネチャ・型」の変更ではないため)。`devex-ui`側では`vitest.config.mts`が`e2e/`(Playwright仕様)を誤って収集していた設定漏れ(テスト実行のたびに無関係な1件が必ず失敗する原因)と、`HearingCompletionBanner.tsx`の実際のReact Hooksルール違反(早期returnの後にhookを呼んでいた)という、単なる整形を超えた実質的な修正が見つかった。詳細は[`Phase-05-4.md`](./Phase-05/Phase-05-4.md)参照。
 
 ## Phase 5完了後 ── 共有Traefikへの移行(Phase 5-5)
 
-実際にConoHa VPSへ`docker-compose.prod.yml`をデプロイしたところ、同じVPSに同居する別プロジェクトが既にポート80/443を専有しており、devex-api自身の`nginx`が起動できなかった。ユーザーは今後も複数プロジェクトをこのVPSに同居させる方針であり、標準的な構成を求めたため、devex-api固有の`nginx`+`certbot`を廃止し、**VPS共有のTraefik**(devex-apiのリポジトリに属さない、VPS共通のリバースプロキシ)へ移行した。詳細は[`Phase-5-5.md`](./Phase-5/Phase-5-5.md)参照。
+実際にConoHa VPSへ`docker-compose.prod.yml`をデプロイしたところ、同じVPSに同居する別プロジェクトが既にポート80/443を専有しており、devex-api自身の`nginx`が起動できなかった。ユーザーは今後も複数プロジェクトをこのVPSに同居させる方針であり、標準的な構成を求めたため、devex-api固有の`nginx`+`certbot`を廃止し、**VPS共有のTraefik**(devex-apiのリポジトリに属さない、VPS共通のリバースプロキシ)へ移行した。詳細は[`Phase-05-5.md`](./Phase-05/Phase-05-5.md)参照。
 
 - **既に80/443を握っていた別プロジェクトも移行が必要**: 2つのコンテナが同じホストポートを同時に持つことはできないため、Traefik導入には既存の他プロジェクトを直接ポート公開からTraefik配下(labelベースのルーティング)へ移す設定変更(短時間の再起動を伴う)が必須になる。これは事前にユーザーへ確認し、了承を得た上で進めた。
 - **検討した代替案(不採用)**: VPSに追加IPv4を取得しdevex-apiだけ別IPの80/443を使う案は、既存の他プロジェクトに一切触れずに済む利点があったが、「今後も複数プロジェクトを同居させる」という方針の下ではプロジェクトが増えるたびにIPを追加購入することになりスケールしないと判断し、不採用とした。
@@ -271,7 +271,7 @@ Phase 5(5-1〜5-3)完了後、ユーザーから2件の追加依頼(README群が
 
 ## Phase 5完了後 ── 実VPSデプロイで発覚したTraefik関連の2件の不具合(Phase 5-5追補)
 
-ユーザーが実際にConoHa VPS上でPhase 5-5の手順を実行したところ、2件の実害ある不具合が見つかり、対話的なデバッグの末に解決した。両方とも`OPERATIONS.md`・[`Phase-5-5.md`](./Phase-5/Phase-5-5.md)に反映済み。`docker-compose.prod.yml`自体の修正(`traefik.docker.network=edge`label追加)はユーザー自身が直接反映した。
+ユーザーが実際にConoHa VPS上でPhase 5-5の手順を実行したところ、2件の実害ある不具合が見つかり、対話的なデバッグの末に解決した。両方とも`OPERATIONS.md`・[`Phase-05-5.md`](./Phase-05/Phase-05-5.md)に反映済み。`docker-compose.prod.yml`自体の修正(`traefik.docker.network=edge`label追加)はユーザー自身が直接反映した。
 
 1. **`traefik:v3.3`がDocker Engine 29+と非互換**: Docker 29がAPI最小サポートバージョンを1.44に引き上げたため、`v3.3`が使う古いDockerクライアント(APIバージョン1.24固定)がデーモンとの通信に失敗し、Traefikがコンテナを一切検出できなかった(`client version 1.24 is too old`エラーで無限リトライ)。`DOCKER_API_VERSION`環境変数での回避は効果が無かった(Traefikの内部Dockerクライアントはこの環境変数を参照しない)。`traefik:v3.6`(Docker API自動ネゴシエーション対応)へのイメージタグ変更で解決した。
 2. **複数ネットワーク参加時は`traefik.docker.network`の明示が必須**: `backend`が`internal`(DB/Redis用)と`edge`(Traefik用)の2つのネットワークに参加している状態で、Traefikにどちらを使うか明示しないと誤ったネットワーク側のIPで接続を試み`504 Gateway Timeout`になった。`traefik.docker.network=edge`labelの追加で解決した。
@@ -282,18 +282,18 @@ Phase 5(5-1〜5-3)完了後、ユーザーから2件の追加依頼(README群が
 
 Phase 5の生成にあたり、事前にユーザーへスコープ(WBS区分5の3項目+Phase4申し送り2点のみ/コード整理も含めて広げるか)・デプロイ先(devex-ui→Vercel、devex-api→契約済みのConoHa VPS)・実施深度(ローカル本番相当検証+手順書整備までか、実ライブデプロイまで行うか)を確認し、**最小スコープ・ローカル検証まで**の方針を選んだ。
 
-- **スコープを意図的に狭めた**: `prompt_templates`テーブルの放置(model+migrationのみ、repository/service/route/UI無し)、レガシーな汎用`conversations`/`messages`/`chat.py`の残存、ドキュメント生成がLangGraphを使わず手続き的な`llm.ainvoke()`呼び出しである点の3件は、いずれも本Phaseでは着手せず将来課題として記録するに留めた。詳細は[`Phase-5-introduction.md`](./Phase-5/Phase-5-introduction.md)「対象外にした既知の課題」参照。ステージ2のShould have要件(バージョン管理・プロンプトテンプレート選択等)を含め、次のPhaseを立てるかどうかは未定。
-- **既存インフラの監査が中心だった**: `devex-api`には既にPhase 1が発見済みの本番用Docker一式(`backend/Dockerfile`の3段構成、`docker-compose.prod.yml`、`nginx/nginx.prod.conf`)がスターターテンプレート由来で存在したため、WBS区分5の「Dockerイメージ最適化」「デプロイ検証」は新規構築ではなく監査+不足補完(`HEALTHCHECK`命令の追加、`nginx`の`depends_on`を`condition: service_healthy`化)が中心になった。詳細は[`Phase-5-1.md`](./Phase-5/Phase-5-1.md)・[`Phase-5-2.md`](./Phase-5/Phase-5-2.md)参照。
-- **`GEMINI_MODEL`の遡及的訂正**: 実`GOOGLE_API_KEY`で初めて実際にGemini APIを呼び出したところ、[`Phase-1-2.md`](./Phase-1/Phase-1-2.md)がspec確定値として設定した`gemini-2.5-flash-lite`が新規利用不可(404 NOT_FOUND)になっており、後継の`gemini-3.5-flash-lite`へ変更する必要があった(CLAUDE.md #12の遡及訂正、[`Phase-1-introduction.md`](./Phase-1/Phase-1-introduction.md)に1行の参照を追記済み)。あわせて`app/core/config.py`のクラス既定値が`.env.example`修正時(Phase 1)に見落とされたまま`gemini-2.5-flash`(`-lite`すら無い旧テンプレート値)だったことも発見・修正した。詳細は[`Phase-5-2.md`](./Phase-5/Phase-5-2.md)参照。
-- **`LLM_TIMEOUT_SECONDS`を実測に基づき60秒→30秒に変更**: 実`GEMINI_MODEL`に対し800字/3,000字/6,000字相当の出力を要求する3パターンを実行し、最大11.25秒という実測値を得た。実測最大値の約2.7倍のマージンを見て30秒とした(旧値60秒は[`Phase-4-5.md`](./Phase-4/Phase-4-5.md)が記録した通り実測に基づかない暫定値だった)。詳細は[`Phase-5-2.md`](./Phase-5/Phase-5-2.md)参照。
+- **スコープを意図的に狭めた**: `prompt_templates`テーブルの放置(model+migrationのみ、repository/service/route/UI無し)、レガシーな汎用`conversations`/`messages`/`chat.py`の残存、ドキュメント生成がLangGraphを使わず手続き的な`llm.ainvoke()`呼び出しである点の3件は、いずれも本Phaseでは着手せず将来課題として記録するに留めた。詳細は[`Phase-05-introduction.md`](./Phase-05/Phase-05-introduction.md)「対象外にした既知の課題」参照。ステージ2のShould have要件(バージョン管理・プロンプトテンプレート選択等)を含め、次のPhaseを立てるかどうかは未定。
+- **既存インフラの監査が中心だった**: `devex-api`には既にPhase 1が発見済みの本番用Docker一式(`backend/Dockerfile`の3段構成、`docker-compose.prod.yml`、`nginx/nginx.prod.conf`)がスターターテンプレート由来で存在したため、WBS区分5の「Dockerイメージ最適化」「デプロイ検証」は新規構築ではなく監査+不足補完(`HEALTHCHECK`命令の追加、`nginx`の`depends_on`を`condition: service_healthy`化)が中心になった。詳細は[`Phase-05-1.md`](./Phase-05/Phase-05-1.md)・[`Phase-05-2.md`](./Phase-05/Phase-05-2.md)参照。
+- **`GEMINI_MODEL`の遡及的訂正**: 実`GOOGLE_API_KEY`で初めて実際にGemini APIを呼び出したところ、[`Phase-01-2.md`](./Phase-01/Phase-01-2.md)がspec確定値として設定した`gemini-2.5-flash-lite`が新規利用不可(404 NOT_FOUND)になっており、後継の`gemini-3.5-flash-lite`へ変更する必要があった(CLAUDE.md #12の遡及訂正、[`Phase-01-introduction.md`](./Phase-01/Phase-01-introduction.md)に1行の参照を追記済み)。あわせて`app/core/config.py`のクラス既定値が`.env.example`修正時(Phase 1)に見落とされたまま`gemini-2.5-flash`(`-lite`すら無い旧テンプレート値)だったことも発見・修正した。詳細は[`Phase-05-2.md`](./Phase-05/Phase-05-2.md)参照。
+- **`LLM_TIMEOUT_SECONDS`を実測に基づき60秒→30秒に変更**: 実`GEMINI_MODEL`に対し800字/3,000字/6,000字相当の出力を要求する3パターンを実行し、最大11.25秒という実測値を得た。実測最大値の約2.7倍のマージンを見て30秒とした(旧値60秒は[`Phase-04-5.md`](./Phase-04/Phase-04-5.md)が記録した通り実測に基づかない暫定値だった)。詳細は[`Phase-05-2.md`](./Phase-05/Phase-05-2.md)参照。
 - **証明書取得(certbot)は「手順設計まで」に意図的に留めた**: 実ドメインが無いローカル環境では実際のLet's Encrypt発行を検証できないため、`docker-compose.prod.yml`に`profiles: ["certbot"]`のワンショットサービスを追加して手順を実行可能な形にしつつ、実行自体(証明書の実発行)はユーザーが実VPS上で行う運用とした。ローカル検証は一時的な自己署名証明書で代用した。手順は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md)にまとめた。
-- **`devex-api`直下のインフラ設定ファイルは引き続きsamplesへミラーせず直接反映**: [`Phase-1-introduction.md`](./Phase-1/Phase-1-introduction.md)が確立した前例をそのまま踏襲(`docker-compose.prod.yml`・`nginx/*.conf`・`backend/Dockerfile`・`OPERATIONS.md`・`devex-api/README.md`・`devex-ui/README.md`・`.env`/`.env.example`)。samplesへ反映したのは`app/core/config.py`(Phase 4-3以降既にsamples対象)の値変更のみ。
+- **`devex-api`直下のインフラ設定ファイルは引き続きsamplesへミラーせず直接反映**: [`Phase-01-introduction.md`](./Phase-01/Phase-01-introduction.md)が確立した前例をそのまま踏襲(`docker-compose.prod.yml`・`nginx/*.conf`・`backend/Dockerfile`・`OPERATIONS.md`・`devex-api/README.md`・`devex-ui/README.md`・`.env`/`.env.example`)。samplesへ反映したのは`app/core/config.py`(Phase 4-3以降既にsamples対象)の値変更のみ。
 - **`devex-ui/CLAUDE.md`の陳腐化は対象外のまま**: `src/features/{dashboard,hearing,documents}`等のDevex機能層を反映していない既知の課題([[feedback_direct_impl_scope]]と同種の「実プロジェクトへの直接反映」の話ではなく、単純な文書債務)だが、運用マニュアル整備とは別の作業としてスコープ確定時に対象外と合意した。次にこのファイルへ手を入れる機会があれば解消を検討する。
-- **申し送り**: [`Phase-4-introduction.md`](./Phase-4/Phase-4-introduction.md)が申し送った「`textbook/appendix/*-retrospective.md`(rule #10)がPhase 0〜4のいずれについても未作成」という既知の負債は、本Phase完了時点でも解消していない。rule #18に従い本Phaseでも着手せず、**別セッションでPhase 0〜5の振り返り・decision digestの整理・`q_a.md`の追記をまとめて行う**ことを推奨する。詳細は[`Phase-5-introduction.md`](./Phase-5/Phase-5-introduction.md)「申し送り」節参照。
+- **申し送り**: [`Phase-04-introduction.md`](./Phase-04/Phase-04-introduction.md)が申し送った「`textbook/appendix/*-retrospective.md`(rule #10)がPhase 0〜4のいずれについても未作成」という既知の負債は、本Phase完了時点でも解消していない。rule #18に従い本Phaseでも着手せず、**別セッションでPhase 0〜5の振り返り・decision digestの整理・`q_a.md`の追記をまとめて行う**ことを推奨する。詳細は[`Phase-05-introduction.md`](./Phase-05/Phase-05-introduction.md)「申し送り」節参照。
 
 ## Phase 6着手 ── ステージ2の仕様診断(#28)
 
-Phase 5(実VPSデプロイまで)完了後、ステージ2(Should have要件: バージョン管理・履歴保持/プロンプトテンプレート選択/エラーハンドリング堅牢化・ログ構造化・監視強化)の着手にあたり、rule #28に沿って4ドキュメント+実コードへの影響調査を行った。詳細は[`Phase-6-introduction.md`](./Phase-6/Phase-6-introduction.md)参照。
+Phase 5(実VPSデプロイまで)完了後、ステージ2(Should have要件: バージョン管理・履歴保持/プロンプトテンプレート選択/エラーハンドリング堅牢化・ログ構造化・監視強化)の着手にあたり、rule #28に沿って4ドキュメント+実コードへの影響調査を行った。詳細は[`Phase-06-introduction.md`](./Phase-06/Phase-06-introduction.md)参照。
 
 - **セッション境界(#18)に従い、Phase 6の着手そのものは別セッションへ持ち越した**: Phase 5完了と同一セッション内でCLAUDE.md「進行のルール」の改訂(rule #34追加)を行っていたため、そのセッションでは新規Phase生成を開始せず、新しいセッションでPhase 6に着手した。
 - **最重要5点を確定**: (1)バージョン履歴の保持件数は現状の3件キャップを維持、UIのみ新設。(2)復元は新バージョン追加(上書きしない)。(3)`projects.template_id`をサーバー側に永続化し、合流先は`doc_generator_service.py`ではなく`chat_service.py`(ヒアリングのシステムプロンプト)。(4)内部設計書の「DEBUGログにプロンプト内容を含める」記述を撤回し、メタデータのみ記録するプライバシー配慮を追加。(5)監視強化は`structlog`+`SENTRY_DSN`設定時のみ有効化するSentry+既存`/health`への外部アップタイム監視、という個人開発規模に見合う具体案を採用。
@@ -302,14 +302,14 @@ Phase 5(実VPSデプロイまで)完了後、ステージ2(Should have要件: �
 
 ## Phase 7完了 ── ステージ3(UML設計図パイプライン)着手: 設計フェーズ
 
-Phase 5完了後の要件整理([`appendix/stage3-requirements-organization.md`](../appendix/stage3-requirements-organization.md)、決定事項D1〜D8)を受け、Phase 7として設計フェーズ(仕様診断・D5確定・スパイク・`docs/`反映)を実施した。詳細は[`Phase-7-introduction.md`](./Phase-7/Phase-7-introduction.md)参照。
+Phase 5完了後の要件整理([`appendix/stage3-requirements-organization.md`](../appendix/stage3-requirements-organization.md)、決定事項D1〜D8)を受け、Phase 7として設計フェーズ(仕様診断・D5確定・スパイク・`docs/`反映)を実施した。詳細は[`Phase-07-introduction.md`](./Phase-07/Phase-07-introduction.md)参照。
 
 - **本Stage固有の進行特例**: ユーザー指示により、Stage 3に限りコードを`devex-api`/`devex-ui`本体へ直接反映する(通常のsamples-onlyから変更)。ただし教材・samplesは通常どおり作成し、samples側の#29 Phaseタグは本体コードには一切書かない。ユーザーはPhaseごとにテストを実行し確認後、次Phaseへ進む指示を出す。
 - **ブランチ運用の確定**: `devex-api`は`stage2-phase6`をmainへマージ済み(PR#1)・`stage3`ブランチで以降のPhaseを進行する。`devex-ui`とこのリポジトリ(`devex`本体)はいずれもブランチを切らず`main`直下で継続する(Phase 0〜6と同じ運用。事前の検討メモにあった「3リポジトリ共通でブランチを切る」という想定は、ユーザー確認の結果このプロジェクトでは不採用になった)。
 - **D5(図↔文書対応表)を確定**: コンポーネント図・ER図・処理別DFDはすべて`internal_design.md`(3.2節・3.3節)に寄せ、アクティビティ図のみ`external_design.md`(2.2節)に残した。`internal_design.md`が既にモジュール構造・データモデルを扱っており、`external_design.md`は利用者向け仕様のみという実際の文書構成を根拠にした。対応表は[`docs/internal_design.md`](../docs/internal_design.md) 3.3節「3. UML設計図パイプラインの図↔文書対応」に反映済み。
 - **`docs/*.md`への反映**: `requirements.md`(1.4節Could haveに1項目)、`external_design.md`(SCR-007・2.6節新設)、`internal_design.md`(`uml_diagrams`テーブル・データ辞書・D5対応表・UML APIエンドポイント)、`implementation_plan.md`(ステージ3節、Phase 7〜14のロードマップ、「2ステージ」→「3ステージ」)に反映した。Stage3全体は`docs/requirements.md`上ではCould have階層とした(Stage1=Must、Stage2=Shouldという既存の「Stage番号=優先度階層」の慣例を踏襲。Stage3内部のMust M1〜M9aとは別軸)。
 - **React Flow×Tamaguiスパイク(使い捨て)**: `@xyflow/react@^12.12.0`を`devex-ui`へ追加し、`app/.../projects/[id]/uml/page.tsx` + `src/features/uml/components/UmlPageContent.tsx`(Phase 11で使う予定の実配置)でダミーノードを描画する検証を行った。`npx tsc --noEmit`・`npm run lint`・`npm run test`(既存220件+新規1件)・`npm run build`すべて成功。jsdomの`ResizeObserver`未実装によるReact Flowのテスト失敗を懸念したが、Tamagui `Select`用に既存の`vitest.setup.ts`ポリフィルがそのまま効き、追加対応は不要だった。
-- **レイアウトエンジン移植の見通し(文書化のみ)**: 標準ライブラリのみ・約950行・自己完結・同一ユーザー所有(ライセンス障壁なし)と判定し、Phase 9移植時の申し送り事項5点(assertの例外化、O(n²〜n!)の計算量対策、未使用import等の整理、日本語文字幅推定の流用、既存テスト不在への対応)を[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)に記録した。コードのコピーは行っていない。
+- **レイアウトエンジン移植の見通し(文書化のみ)**: 標準ライブラリのみ・約950行・自己完結・同一ユーザー所有(ライセンス障壁なし)と判定し、Phase 9移植時の申し送り事項5点(assertの例外化、O(n²〜n!)の計算量対策、未使用import等の整理、日本語文字幅推定の流用、既存テスト不在への対応)を[`Phase-07-4.md`](./Phase-07/Phase-07-4.md)に記録した。コードのコピーは行っていない。
 
 ## Phase 7完了後 ── `devex-ui`のルートグループ名リネーム(`(proteced)`→`(protected)`)にまつわる後始末
 
@@ -324,18 +324,18 @@ Phase 7完了報告後、ユーザーが個別テストを実行しようとし�
 
 ## Phase 8完了 ── 意味モデル・データ辞書・CRUD/validate API
 
-[`Phase-7-introduction.md`](./Phase-7/Phase-7-introduction.md)「次のフェーズ」を受け、Phase 8として`app/uml/domain/`(意味モデル)・`app/uml/validation/`(M4構造検証+DFD規則)・`data_items`/`uml_diagrams`(永続化)・CRUD/validate APIを実装した。詳細は[`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)参照。
+[`Phase-07-introduction.md`](./Phase-07/Phase-07-introduction.md)「次のフェーズ」を受け、Phase 8として`app/uml/domain/`(意味モデル)・`app/uml/validation/`(M4構造検証+DFD規則)・`data_items`/`uml_diagrams`(永続化)・CRUD/validate APIを実装した。詳細は[`Phase-08-introduction.md`](./Phase-08/Phase-08-introduction.md)参照。
 
 - **着手前の設計判断3点を確定**(`docs/internal_design.md`の未決事項・未記載事項の解消): (1) `DataItem`の永続化は専用テーブル`data_items`(project_id FK + name一意制約 + fields)に確定。プロジェクト単位のJSONBは、項目単位のCRUD・一意性制約・未参照検証のしやすさで見送った。(2) `DataItem`用の最小限CRUD APIを`/projects/{id}/uml/data-items`系として新規公開(`docs/internal_design.md`3.3節②のエンドポイント表は元々diagrams系4本のみだった)。(3) DFD検証規則「上位図と下位図の境界フローが一致する」(診断8)はPhase 8では実装せず、`uml_diagrams`に`parent_diagram_id`/`level`等の階層列も追加しないことを確定。Phase 10のAI生成設計は診断8本文が示す「APIエンドポイント/バッチごとに1枚」というフラットな複数図構成を前提に行う(列を先に追加すると、実際の検証にはノード単位の対応情報が別途必要になり、Phase 10で結局作り直す手戻りの方が大きいと判断)。
 - **既存コードベースに前例の無い新規パターンを2つ導入**: (1) `semantic_model`をAPIスキーマ(`app/schemas/uml_diagram.py`)で生`dict`ではなく`app.uml.domain.SemanticModel`(discriminated union)としてそのまま公開する(既存の`project.intake`等は生dict)。(2) `UmlDiagram.version`による楽観ロック(PUT時にリクエストのversionとDB上の値が不一致なら`UmlDiagramVersionConflictError`/409)。`generated_documents.version`は「再生成のたびに増える版数」であり別物であることを明記した。
 - **`POST /diagrams`はPhase 8時点ではプレースホルダー**: M1(AI生成トリガー)の実装はPhase 10。Phase 8では指定notationの要素・関係が空のdraftを作るだけの`UmlDiagramService.create`として実装し、その旨をコード・教材双方に明記した。
-- **動作確認で2件のバグを発見・その場で修正**: (1) テストヘルパー`_create_project`が固定メールアドレスを使っていたため、同一テスト内で2プロジェクト作成すると`users.email`一意制約違反になっていた(呼び出しごとに一意化して解消)。(2) `UmlDiagramService.update`/`DataItemService.update`が、`onupdate=func.now()`のサーバー計算列(`updated_at`)を`commit`直後に同期アクセスして`MissingGreenlet`になっていた(`await self._session.refresh(...)`を追加して解消)。詳細は[`Phase-8-2.md`](./Phase-8/Phase-8-2.md)・[`Phase-8-3.md`](./Phase-8/Phase-8-3.md)「動作確認で見つかった落とし穴」参照。
-- **検証結果**: Phase 8分52件・全体222件のユニットテストが成功、`ruff check .`全通過、`uvx pyright`はPhase 8由来の新規エラー0件(既存の既知1件のみ残存)、`alembic history`でリビジョンチェーンの連結を確認。**Postgres実DBへの`alembic upgrade head`/`downgrade`往復確認は本セッションの環境制約(Docker不可・Postgres未起動)により未実施**。次回`docker compose`が使える環境での実行を推奨する(詳細は[`Phase-8-4.md`](./Phase-8/Phase-8-4.md)「動作確認」参照)。
-- **申し送り**: Phase 9着手時は[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)「Phase 9への申し送り」節(レイアウトエンジン移植時の対応点5点)を必ず参照すること(ユーザーからの明示的な指示)。DFD境界フロー一致検証の申し送りは本エントリ・[`Phase-8-introduction.md`](./Phase-8/Phase-8-introduction.md)を参照。
+- **動作確認で2件のバグを発見・その場で修正**: (1) テストヘルパー`_create_project`が固定メールアドレスを使っていたため、同一テスト内で2プロジェクト作成すると`users.email`一意制約違反になっていた(呼び出しごとに一意化して解消)。(2) `UmlDiagramService.update`/`DataItemService.update`が、`onupdate=func.now()`のサーバー計算列(`updated_at`)を`commit`直後に同期アクセスして`MissingGreenlet`になっていた(`await self._session.refresh(...)`を追加して解消)。詳細は[`Phase-08-2.md`](./Phase-08/Phase-08-2.md)・[`Phase-08-3.md`](./Phase-08/Phase-08-3.md)「動作確認で見つかった落とし穴」参照。
+- **検証結果**: Phase 8分52件・全体222件のユニットテストが成功、`ruff check .`全通過、`uvx pyright`はPhase 8由来の新規エラー0件(既存の既知1件のみ残存)、`alembic history`でリビジョンチェーンの連結を確認。**Postgres実DBへの`alembic upgrade head`/`downgrade`往復確認は本セッションの環境制約(Docker不可・Postgres未起動)により未実施**。次回`docker compose`が使える環境での実行を推奨する(詳細は[`Phase-08-4.md`](./Phase-08/Phase-08-4.md)「動作確認」参照)。
+- **申し送り**: Phase 9着手時は[`Phase-07-4.md`](./Phase-07/Phase-07-4.md)「Phase 9への申し送り」節(レイアウトエンジン移植時の対応点5点)を必ず参照すること(ユーザーからの明示的な指示)。DFD境界フロー一致検証の申し送りは本エントリ・[`Phase-08-introduction.md`](./Phase-08/Phase-08-introduction.md)を参照。
 
 ## Phase 8完了後 ── ルーター層の設計統一(Repository直接参照の禁止)
 
-Phase 8完了報告後、「routeから直接Repositoryを呼び出す場合とServiceを経由する場合の設計判断」についてユーザーと相談した。詳細は[`Phase-8-5.md`](./Phase-8/Phase-8-5.md)参照。
+Phase 8完了報告後、「routeから直接Repositoryを呼び出す場合とServiceを経由する場合の設計判断」についてユーザーと相談した。詳細は[`Phase-08-5.md`](./Phase-08/Phase-08-5.md)参照。
 
 - **既存の暗黙の基準を確認**: `devex-api`は「単純な読み取りはRepository直呼び、書き込み・複数Repo調整・外部LLM呼び出しはService経由」というCQRS的な基準に暗黙に従っていた(`projects.py`の`list_projects`/`get_project`/`get_hearing_history`/`list_generated_documents`/`download_generated_document`、`prompt_templates.py`の`list_prompt_templates`の計6箇所がRepository直呼び)。Phase 8の`app/uml/routes/uml.py`だけは全操作をService経由に統一しており、2つの流儀が混在していた。
 - **業界動向の調査**: 前者はArdalis等が支持するCQRS的な立場、後者はArchUnit等で強制する実務現場やFastAPI公式`full-stack-fastapi-template`("The API layer contains only route handlers with no business logic")に見られる立場であることを確認した。
@@ -343,25 +343,25 @@ Phase 8完了報告後、「routeから直接Repositoryを呼び出す場合とS
 - **対応**: `app/services/{project,chat_service,doc_generator_service}.py`に薄いラッパーメソッド(`list_for_user`/`get_detail`/`list_history`/`list_current_documents`/`get_document`)を追加し、`app/services/prompt_template.py`(`PromptTemplateService`)を新設。`projects.py`/`prompt_templates.py`からRepositoryの直接importを全て除去した。
 - **対象外とした境界**: `app/api/deps.py`の`get_current_project`(内部で`ProjectRepository.get_by_id`を直接呼ぶ)は対象外とした。ルートハンドラ本体ではなく、既存の`get_current_user`と同じ「認証・所有権解決を担う共有依存関数」という既存の例外カテゴリに属すると判断したため。
 - **検証結果**: 全体231件のユニットテストが成功(新規追加分含む)、`ruff check .`全通過、`uvx pyright`は本改訂由来の新規エラー0件。動作確認中に、新規テストの`_create_project`ヘルパーが固定メールアドレスを使っていたための`users.email`一意制約違反(Phase 8-2で見つけたものと同種のバグ)を発見・その場で修正した。
-- **記録**: 変更元Phase(Phase 2・Phase 6)のintroductionにも1行の参照を追記済み([`Phase-2-introduction.md`](./Phase-2/Phase-2-introduction.md)・[`Phase-6-introduction.md`](./Phase-6/Phase-6-introduction.md)「後続Phaseでの改訂」節)。
+- **記録**: 変更元Phase(Phase 2・Phase 6)のintroductionにも1行の参照を追記済み([`Phase-02-introduction.md`](./Phase-02/Phase-02-introduction.md)・[`Phase-06-introduction.md`](./Phase-06/Phase-06-introduction.md)「後続Phaseでの改訂」節)。
 
 ## Phase 9完了 ── レイアウトエンジン移植・レーン/行割り当て・`/layout` API
 
-Phase 8完了後の指示「Phase 9を開始する。過去のPhaseからの申し送り事項を見落とさない様注意」を受け、着手前に[`Phase-7-4.md`](./Phase-7/Phase-7-4.md)「Phase 9への申し送り」5点・`appendix/stage3-requirements-organization.md`診断3・移植元エンジン(950行)全文を2エージェントで横断調査してから実装した。詳細は[`Phase-9-introduction.md`](./Phase-9/Phase-9-introduction.md)参照。
+Phase 8完了後の指示「Phase 9を開始する。過去のPhaseからの申し送り事項を見落とさない様注意」を受け、着手前に[`Phase-07-4.md`](./Phase-07/Phase-07-4.md)「Phase 9への申し送り」5点・`appendix/stage3-requirements-organization.md`診断3・移植元エンジン(950行)全文を2エージェントで横断調査してから実装した。詳細は[`Phase-09-introduction.md`](./Phase-09/Phase-09-introduction.md)参照。
 
 - **申し送り5点への対応を確定**: (1) assertのうちnode()/edge()由来3点はM4構造検証との統合(実行前ゲート)で到達し得ない状態にし、実行時に本当に起こりうる2点(幅超過・経路探索失敗)のみ専用例外化。(2) ノード数上限(`MAX_ELEMENTS`共有)+`asyncio.to_thread`。(3) 未使用`import math`は移植せず、`_cost()`の重み定数は用途コメント付き定数に分解。(4) 日本語文字幅推定(`wrap`/`tw`/`cw`)は逐語移植。(5) 各章でゴールデンテストを新規作成。
 - **移植元に無い新規アルゴリズムを追加**: lane/rowの自動割り当て(`ranking.py`)。laneは要素の`layer`属性(初出順+フォールバックレーン)、rowはDFSによるback edge除去+最長経路法によるレイヤリング。移植元は人手指定前提のため、devex独自の設計判断として新規実装した。
 - **移植元との対比で2点を簡略化**: (1) `allow_swap`の手動選別を廃止し、行が全て自動算出であることを理由に**全要素を交差削減の対象**にする(`crossing_reduction.py`)。(2) `lane_weights`/`lane_w_hint`を持たず、全レーンを均等幅として扱う(`geometry.py`)。
 - **このセッションで確定した設計判断**: ER図のlane割り当ては`layer`を持たないため、`lane=0`固定+意味モデル内の定義順indexという機械的なフォールバックにする(ユーザーへ2案を提示し選択を得た。将来ER専用のレイアウト改善は別Phaseの余地として残す)。
 - **`layout_model`の設計**: 移植元で座標算出とSVG/drawio出力が同一コードだった点を踏まえ、Phase 9では`to_svg`/`to_drawio`(`app/uml/export/`、Phase 12)を含めず、ノード座標・辺の折れ点・lane/row・交差/重なり/衝突数のみを`LayoutModel`として永続化する設計にした。
-- **Phase 9完了後の相談で確定(依存ライブラリの方針)**: レイアウト処理へのライブラリ適用を検討し、採用したのは標準ライブラリ`graphlib.TopologicalSorter`(`ranking.py`の最長経路レイヤリング)だけ。networkxは`import`だけで約17.8MBかかり、置き換えられる量が`graphlib`と同じなので不採用。経路探索・仕上げ処理・線分判定は、レーン×行の格子という前提に合うライブラリが無いので自作のまま。以後も「標準ライブラリで足りるなら第三者ライブラリを入れない」を基準にする。評価の表は[`Phase-9-1.md`](./Phase-9/Phase-9-1.md)「ライブラリ適用の検討」節。
+- **Phase 9完了後の相談で確定(依存ライブラリの方針)**: レイアウト処理へのライブラリ適用を検討し、採用したのは標準ライブラリ`graphlib.TopologicalSorter`(`ranking.py`の最長経路レイヤリング)だけ。networkxは`import`だけで約17.8MBかかり、置き換えられる量が`graphlib`と同じなので不採用。経路探索・仕上げ処理・線分判定は、レーン×行の格子という前提に合うライブラリが無いので自作のまま。以後も「標準ライブラリで足りるなら第三者ライブラリを入れない」を基準にする。評価の表は[`Phase-09-1.md`](./Phase-09/Phase-09-1.md)「ライブラリ適用の検討」節。
 - **Phase 9完了後の相談で確定(出自表記)**: 移植元の別プロジェクト名は全ファイルで使わない。出自は「別プロジェクトの自作図生成エンジンから移植」の一般名1行だけにする(appendix D3を更新)。
 - **検証結果**: Phase 9分23件・全体261件のユニットテストが成功、`ruff check .`全通過、`uvx pyright`はPhase 9由来の新規エラー0件、`alembic history`で既存チェーンに変更が無いことを確認(Phase 9は新規マイグレーション不要、Phase 8で確保済みの列・テーブルを使用)。
 - **申し送り**: Phase 10(AI生成)は要素への`layer`設定の責務を持つ。DFD境界フロー一致検証(Phase 8からの申し送り)は診断8本文どおりフラットな複数図構成を前提に設計すること。Phase 12(export)は`LayoutModel`がexportに必要な情報を過不足なく持つか確認すること。
 
 ## Phase 10完了 ── AI生成(構造化出力)・内部設計書プロンプトへの「処理別データフロー」節追加
 
-[`Phase-9-introduction.md`](./Phase-9/Phase-9-introduction.md)「次のフェーズ」を受け、M1(設計図のAI生成)を実装した。Phase 8のプレースホルダー`POST /diagrams`を置き換えた。詳細は[`Phase-10-introduction.md`](./Phase-10/Phase-10-introduction.md)参照。
+[`Phase-09-introduction.md`](./Phase-09/Phase-09-introduction.md)「次のフェーズ」を受け、M1(設計図のAI生成)を実装した。Phase 8のプレースホルダー`POST /diagrams`を置き換えた。詳細は[`Phase-10-introduction.md`](./Phase-10/Phase-10-introduction.md)参照。
 
 - **着手前にユーザーが確定した事項**:
   1. 実行方式はBackgroundTasks(202+ポーリング)。

@@ -45,7 +45,7 @@ def _install_fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
 
     Phase 4-3で導入するE2eFakeLLM(環境変数E2E_FAKE_LLM経由、ブラウザE2E専用)とは別物 ──
     こちらはpytestプロセス内の関数差し替えであり、実プロセスを外部から叩くPlaywrightからは
-    そもそも差し替えが届かない。用途の異なる2つのフェイクが併存する理由はPhase-4-3.md参照。
+    そもそも差し替えが届かない。用途の異なる2つのフェイクが併存する理由はPhase-04-3.md参照。
     """
     fake = FakeLLM(
         content="[Fake] 次に、想定している主なユーザー層を教えてください。",

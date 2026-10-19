@@ -45,8 +45,8 @@ Claude の判断で決めたこと(計画の承認で確定):
 
 - **前提として読むもの**:
   - [`Phase-23-introduction.md`](../Phase-23/Phase-23-introduction.md)「後続 Phase への申し送り」: 本 Phase が回収する申し送り(E2E、マイグレーション、段階7の入力の大きさ)。
-  - [`Phase-4-4.md`](../Phase-4/Phase-4-4.md): E2E の仕組み。偽 LLM を環境変数で有効にし、Playwright の webServer が docker compose を起動する。
-  - [`Phase-5-4.md`](../Phase-5/Phase-5-4.md): GitHub Actions による自動デプロイ。
+  - [`Phase-04-4.md`](../Phase-04/Phase-04-4.md): E2E の仕組み。偽 LLM を環境変数で有効にし、Playwright の webServer が docker compose を起動する。
+  - [`Phase-05-4.md`](../Phase-05/Phase-05-4.md): GitHub Actions による自動デプロイ。
   - [`Phase-15-introduction.md`](../Phase-15/Phase-15-introduction.md): モード選択ダイアログと、生成の確認ダイアログ(気づき#4)。E2E が壊れた原因。
 - **本 Phase 開始時点の状態**:
   - **簡易モードの E2E が壊れていた**(2か所)。「新規プロジェクトを作成」がリンクからボタンに変わり、モード選択ダイアログが出るようになった。「この内容で設計書を生成する」の後には、確認ダイアログが出るようになった。どちらも Phase 15 の変更による。

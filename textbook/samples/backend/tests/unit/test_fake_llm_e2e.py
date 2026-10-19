@@ -2,7 +2,7 @@
 # 写経レベル: コア ── 実機検証で発見した2件の不具合(ヒアリング完了判定の誤カウント、
 # doc_type判別の誤マッチ)の回帰テスト。当初はPlaywright(Phase 4-4)のみで検証する設計にして
 # いたが、両方ともpytestレベルの単体テストで安価に検知できる性質のバグだったため、事後的に
-# この単体テストを追加した(判断の経緯はPhase-4-3.md「実機検証で発見した2件の不具合」参照)。
+# この単体テストを追加した(判断の経緯はPhase-04-3.md「実機検証で発見した2件の不具合」参照)。
 # Phase-31-1:追記 ── app.detailed_design.plan.unit_ids, app.detailed_design.simple_procedure.parse_wbs
 # Phase-34-2:追記 ── app.hearing(POINT_DEFS, JudgedPoint, initial_states, is_sufficient,
 #   merge_judgement), app.schemas.hearing.HearingPointsJudgement

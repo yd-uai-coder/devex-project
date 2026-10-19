@@ -6,8 +6,8 @@
 
 あわせて、過去の Phase からの申し送りを解消する。
 
-- **Phase 8**: DFD の境界フロー一致検証は、フラットな複数図構成を前提に Phase 10 で決める([`Phase-8-introduction.md`](../Phase-8/Phase-8-introduction.md))。
-- **Phase 9**: AI 生成は要素の `layer` を埋める責務を持つ。レーン割り当ての入力になる([`Phase-9-introduction.md`](../Phase-9/Phase-9-introduction.md))。
+- **Phase 8**: DFD の境界フロー一致検証は、フラットな複数図構成を前提に Phase 10 で決める([`Phase-08-introduction.md`](../Phase-08/Phase-08-introduction.md))。
+- **Phase 9**: AI 生成は要素の `layer` を埋める責務を持つ。レーン割り当ての入力になる([`Phase-09-introduction.md`](../Phase-09/Phase-09-introduction.md))。
 - **診断8**: 内部設計書が処理ごとのデータの流れを構造化して書いていない。生成プロンプトに「処理別データフロー」節を追加する(#12 改訂)。
 - **診断4**: 無料枠の制約がある。図ごとに独立して実行し、生成の対象を選べるようにする。
 
@@ -31,8 +31,8 @@
 ```
 
 - **前提として読むもの**:
-  - [`Phase-8-introduction.md`](../Phase-8/Phase-8-introduction.md): 意味モデル、`DfdFlow.data_item_id`、データ辞書
-  - [`Phase-9-introduction.md`](../Phase-9/Phase-9-introduction.md): `layer` とレーン、`MAX_ELEMENTS`
+  - [`Phase-08-introduction.md`](../Phase-08/Phase-08-introduction.md): 意味モデル、`DfdFlow.data_item_id`、データ辞書
+  - [`Phase-09-introduction.md`](../Phase-09/Phase-09-introduction.md): `layer` とレーン、`MAX_ELEMENTS`
   - [`appendix/stage3-requirements-organization.md`](../../appendix/stage3-requirements-organization.md): 診断4・診断8
   - [`docs/internal_design.md`](../../docs/internal_design.md) 3.3節③: 図と文書の対応(D5)
 - **本 Phase 開始時点の状態**:

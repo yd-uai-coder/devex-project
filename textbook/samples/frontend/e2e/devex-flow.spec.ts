@@ -40,7 +40,7 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
   // const email = uniqueEmail("e2e-flow");
   // // 作成時は"s3cret-pass"だったが、登録画面のパスワード強度ルール(大文字・小文字・数字・
   // // 記号を各1文字以上、Phase 3完了後に追加)を満たさず登録が常に弾かれていた。
-  // // 実機検証で発見・修正(Phase-4-4.md「実機検証で発見した不具合」参照)。
+  // // 実機検証で発見・修正(Phase-04-4.md「実機検証で発見した不具合」参照)。
   // const password = "S3cret-pass";
 //
   // // 1. 登録
@@ -72,7 +72,7 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
   // await messageBox.fill("利用者は倉庫の担当者を想定しています");
   // await page.getByRole("button", { name: "送信" }).click();
   // // オープニング発話と通常のチャット返信が同じ固定文字列(E2eFakeLLM._reply_for、
-  // // Phase-4-4.md「実機検証で発見した不具合」参照)のため、strict mode違反を避けるべく.first()を使う。
+  // // Phase-04-4.md「実機検証で発見した不具合」参照)のため、strict mode違反を避けるべく.first()を使う。
   // await expect(page.getByText("E2E Fake", { exact: false }).first()).toBeVisible();
 //
   // // Phase-6-6:追記 ── 最低発話数ガード(3回)を満たすための追加発話
@@ -185,7 +185,7 @@ test("ドキュメントプレビュー画面から再生成すると、再度�
   // // まだ/registerに留まっている間に次のfill()が/register自身のフォームへ入力されてしまい、
   // // その後/loginへ遷移した瞬間にLoginFormがまっさらな状態で再マウントされるため、
   // // 結局空欄のまま「ログイン」ボタンが押されてバリデーションエラーになる
-  // // (実機検証で発見・修正、Phase-4-4.md「実機検証で発見した不具合」参照)。
+  // // (実機検証で発見・修正、Phase-04-4.md「実機検証で発見した不具合」参照)。
   // await expect(page).toHaveURL(/\/login/);
 //
   // await page.getByLabel("メールアドレス").fill(email);

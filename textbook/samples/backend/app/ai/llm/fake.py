@@ -122,7 +122,7 @@ from app.uml.generation.schemas import (
 # 「intake1件+チャット2件=3件」から「intake1件+チャット3件=4件」へ引き上げた。
 # ガードだけが働いてフェイクは楽観的にtrueを返す、という食い違いを避けるため)
 # 当初は単純に「HumanMessageが2件以上」としていたが、実機検証で以下2件の不具合が見つかり
-# 修正した経緯がある(詳細はPhase-4-3.mdの「実機検証で発見した2件の不具合」参照)。
+# 修正した経緯がある(詳細はPhase-04-3.mdの「実機検証で発見した2件の不具合」参照)。
 # (1) chat_service.check_completionは末尾に_COMPLETION_CHECK_PROMPT自身のHumanMessageを
 #     追記するため、これも数えてしまうと実際のチャット発話が0件でも条件を満たしてしまう。
 # _TURNS_UNTIL_SUFFICIENT = 3

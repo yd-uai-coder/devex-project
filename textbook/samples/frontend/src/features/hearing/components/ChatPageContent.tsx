@@ -15,7 +15,7 @@
 // const POLL_TIMEOUT_MS = 3 * 60 * 1000;
 //
 // // POST /generateは202のみ返す(プッシュ通知が無い)ため、生成完了はGET /projects/{id}の
-// // statusをポーリングして検知する。既定値はPhase-3-introduction.mdの共通方針(5秒間隔・
+// // statusをポーリングして検知する。既定値はPhase-03-introduction.mdの共通方針(5秒間隔・
 // // 3分でタイムアウト)。
 // export function ChatPageContent({ projectId }: { projectId: string }) {
 //   const router = useRouter();

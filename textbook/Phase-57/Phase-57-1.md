@@ -73,7 +73,7 @@ async def bundle(self, project: Project) -> BundleFile:
 
 ## テスト観点
 
-用語(SUT / ドライバ / スタブ)は [Phase 1](../Phase-1/Phase-1-introduction.md) で定義済み。
+用語(SUT / ドライバ / スタブ)は [Phase 1](../Phase-01/Phase-01-introduction.md) で定義済み。
 
 | テスト対象(SUT) | ドライバ | スタブ | 備考 |
 |---|---|---|---|

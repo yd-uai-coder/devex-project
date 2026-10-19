@@ -58,7 +58,7 @@ zip:    GET /uml/bundle ─ with_image_links + svg/drawio → zipfile → export
 - **前提として読むもの**:
   - [`Phase-10-1.md`](../Phase-10/Phase-10-1.md): 内部設計書の見出しの固定形式と、`sections.py` の切り出し(13-1 で見出しの位置を返す関数を足す)。
   - [`Phase-12-introduction.md`](../Phase-12/Phase-12-introduction.md): 状態遷移(`status.py`)と出力エンジン(`build_render`/`to_svg`/`to_drawio`)。
-  - [`Phase-6-introduction.md`](../Phase-6/Phase-6-introduction.md): 文書の版の保持(3件)と、復元は `is_current` の付け替えだけで内容を書き換えないという不変条件。13-2 はこの不変条件の例外を1つ作る。
+  - [`Phase-06-introduction.md`](../Phase-06/Phase-06-introduction.md): 文書の版の保持(3件)と、復元は `is_current` の付け替えだけで内容を書き換えないという不変条件。13-2 はこの不変条件の例外を1つ作る。
 - **本 Phase 開始時点の状態**:
   - `uml_diagrams.source_doc_versions` は AI 生成のときに書き込まれるが、何とも比べられていない。
   - 内部設計書の本文には、図への参照が何も無い。文書のプレビュー(react-markdown)は HTML コメントを描かない。

@@ -390,7 +390,7 @@ def failure_record(reason: ReasonCode, targets: Sequence[str], now: datetime) ->
     }
 
 
-# Phase-15-3：更新(受け付けたときの状態を受け取る。Phase-2-4でuser_idを足した経緯はPhase-2-4.md参照)
+# Phase-15-3：更新(受け付けたときの状態を受け取る。Phase-2-4でuser_idを足した経緯はPhase-02-4.md参照)
 # async def generate_documents(project_id: uuid.UUID, user_id: uuid.UUID, *, llm=None) -> None:
 # ↓↓
 async def generate_documents(

@@ -48,9 +48,9 @@
 ```
 
 - **前提として読むもの**:
-  - [`Phase-9-introduction.md`](../Phase-9/Phase-9-introduction.md): 移植したレイアウトエンジン(`place_labels` を含む `finalize.py`)と、出力を移植しなかった理由(描画属性は Phase 12 の関心事)。
+  - [`Phase-09-introduction.md`](../Phase-09/Phase-09-introduction.md): 移植したレイアウトエンジン(`place_labels` を含む `finalize.py`)と、出力を移植しなかった理由(描画属性は Phase 12 の関心事)。
   - [`Phase-11-introduction.md`](../Phase-11/Phase-11-introduction.md): 手動座標の保存(`reconcile_layout`)、D2(`points=[]`)、「未保存の変更を先に保存してからサーバーの処理を呼ぶ」順序。
-  - [`Phase-7-4.md`](../Phase-7/Phase-7-4.md): 移植元エンジンの構造(D3: コピー+出自の明記)。
+  - [`Phase-07-4.md`](../Phase-07/Phase-07-4.md): 移植元エンジンの構造(D3: コピー+出自の明記)。
 - **本 Phase 開始時点の状態**:
   - `uml_diagrams.status` は、既定の `draft` から変わらない(AI の再生成が `draft` を書き込むだけ)。
   - 移植元の `Diagram.to_svg`/`to_drawio` は、Phase 9 では移植していない。

@@ -172,7 +172,7 @@ class LayoutNodeLimitExceededError(BadRequestError):
 class LayoutValidationFailedError(BadRequestError):
     """レイアウト対象の意味モデルがM4構造検証(ID重複・参照切れ等)を通らない場合に送出する。
     重複ID・未定義ノード参照は、レイアウトエンジン内でassertせず、この事前検証
-    (`app.uml.validation.validate_diagram`)に一本化する(Phase-7-4.md申し送り#1)。"""
+    (`app.uml.validation.validate_diagram`)に一本化する(Phase-07-4.md申し送り#1)。"""
 
     code: ClassVar[str | None] = "LAYOUT_VALIDATION_FAILED"
 

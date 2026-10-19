@@ -39,16 +39,16 @@
 
 | Must 要件 | 作った Phase | 裏付け |
 |---|---|---|
-| JWT による登録・ログイン | 2(API)・3(画面) | [Phase 2](../Phase-2/Phase-2-introduction.md)・[Phase 3](../Phase-3/Phase-3-introduction.md)。リフレッシュトークンの Cookie 化は 3 の着手前にやり直した([decision digest](../decision-digest.md)「Phase 3着手前」) |
+| JWT による登録・ログイン | 2(API)・3(画面) | [Phase 2](../Phase-02/Phase-02-introduction.md)・[Phase 3](../Phase-03/Phase-03-introduction.md)。リフレッシュトークンの Cookie 化は 3 の着手前にやり直した([decision digest](../decision-digest.md)「Phase 3着手前」) |
 | プロジェクトの作成・一覧・詳細 | 2-3・3 | 同上 |
-| 添付ファイル(txt/Markdown/PDF、3つまで) | 2-3 | [Phase 2-3](../Phase-2/Phase-2-3.md)。要件は Phase 2 の着手前に足した([decision digest](../decision-digest.md)「Phase 2着手前」) |
-| チャット(LangChain・ストリーミング) | 2-3・3 | SSE。[Phase 2](../Phase-2/Phase-2-introduction.md) の章一覧 |
+| 添付ファイル(txt/Markdown/PDF、3つまで) | 2-3 | [Phase 2-3](../Phase-02/Phase-02-3.md)。要件は Phase 2 の着手前に足した([decision digest](../decision-digest.md)「Phase 2着手前」) |
+| チャット(LangChain・ストリーミング) | 2-3・3 | SSE。[Phase 2](../Phase-02/Phase-02-introduction.md) の章一覧 |
 | 4種の Markdown の一括生成(バックグラウンド) | 2・3 | 4文書の専用プロンプトと連鎖生成([decision digest](../decision-digest.md)「ドキュメント生成: 4文書専用プロンプト + 連鎖生成への置き換え」) |
 | 閲覧・コピー・ダウンロード | 3 | 同上(ダウンロードの名前の不具合も直した) |
-| PostgreSQL での永続化 | 1・2 | [Phase 1](../Phase-1/Phase-1-introduction.md) |
+| PostgreSQL での永続化 | 1・2 | [Phase 1](../Phase-01/Phase-01-introduction.md) |
 
 - **マイルストーン1**(バックエンドの LLM 連携とチャット画面の結合): Phase 3 の完了(2026-09-26)で満たした。Phase 4 で E2E(偽の LLM)を通した。
-- **マイルストーン2**(MVP のリリース・個人の検証の開始): Phase 5 の後、ユーザーが実 VPS へ反映した(Traefik の2件の不具合を直した。[decision digest](../decision-digest.md)「Phase 5完了後 ── 実VPSデプロイで発覚したTraefik関連の2件の不具合」)。[Phase 6](../Phase-6/Phase-6-introduction.md) の冒頭に「実VPSデプロイまで確認済み」とある。実 LLM での生成は、Phase 5-2 で初めて Gemini を呼んで確かめた。
+- **マイルストーン2**(MVP のリリース・個人の検証の開始): Phase 5 の後、ユーザーが実 VPS へ反映した(Traefik の2件の不具合を直した。[decision digest](../decision-digest.md)「Phase 5完了後 ── 実VPSデプロイで発覚したTraefik関連の2件の不具合」)。[Phase 6](../Phase-06/Phase-06-introduction.md) の冒頭に「実VPSデプロイまで確認済み」とある。実 LLM での生成は、Phase 5-2 で初めて Gemini を呼んで確かめた。
 - **期日**: 計画は Week 3・Week 5 だったが、どちらも着手から1週間以内に済んだ。CL の手法の効果というより、個人開発で範囲が小さかったためである。
 - マイルストーン3〜11 も、それぞれのステージの最後の Phase で満たし、本番で確かめた(ステージ3の分はステージ4の反映で)。記録は [`docs/implementation_plan.md`](../../docs/implementation_plan.md) の各ステージの「達成範囲」にある。
 

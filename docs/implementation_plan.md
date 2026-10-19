@@ -41,7 +41,7 @@
 
 
 * **目的**: 承認済みの4文書からAIがUML意味モデル(JSON)を生成し、Web上でレビュー・修正した上でdraw.io/SVG形式へ出力する。生成した図と要素表を内部設計書へ差し込み、詳細設計の理解を補完する(自動コーディングはスコープ外のまま。[要件定義書](requirements.md) 1.3節参照)。
-* **対象Phase**(CL開発の教材単位。詳細は`textbook/Phase-7/`以降、`appendix/stage3-requirements-organization.md` 7節参照):
+* **対象Phase**(CL開発の教材単位。詳細は`textbook/Phase-07/`以降、`appendix/stage3-requirements-organization.md` 7節参照):
   * Phase 7: 設計フェーズ(仕様診断・図↔文書対応表(D5)の確定・スパイク・docs反映。実装なし)
   * Phase 8: 意味モデル(Pydantic)・データ辞書・`uml_diagrams`・CRUD/validate API(component/ER/DFD)
   * Phase 9: レイアウトエンジン移植・レーン/行割り当て・`/layout` API

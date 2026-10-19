@@ -6,7 +6,7 @@
 # Phase-6-1:追記 ── app.schemas.document.DocType, app.services.doc_generator_service.DocGeneratorService
 # Phase-8-5：更新(「常にService経由、Repository直参照は層違反として禁止」という方針へ統一。
 #   Repository4種・IntakeFileRead・DocumentNotFoundErrorへの直接importを削除し、
-#   各Serviceの新設メソッド経由に置き換えた。詳細はPhase-8-5.md参照)
+#   各Serviceの新設メソッド経由に置き換えた。詳細はPhase-08-5.md参照)
 # from app.repositories.chat_history import ChatHistoryRepository
 # from app.repositories.generated_document import GeneratedDocumentRepository
 # from app.repositories.intake_file import IntakeFileRepository
@@ -280,7 +280,7 @@ async def get_hearing_completion(
     return ChatService(session).stored_completion(current_project)
 
 
-# Phase-15-3：更新(気づき#4: 受け付け時に409・generatingにし、受け付け前の状態を渡す。Phase-2-4でuser_idを足した経緯はPhase-2-4.md参照)
+# Phase-15-3：更新(気づき#4: 受け付け時に409・generatingにし、受け付け前の状態を渡す。Phase-2-4でuser_idを足した経緯はPhase-02-4.md参照)
 # @router.post("/{project_id}/generate", status_code=status.HTTP_202_ACCEPTED)
 # async def trigger_generation(
 #     current_project: CurrentProjectDep,

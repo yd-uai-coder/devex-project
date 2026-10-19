@@ -122,7 +122,7 @@ class ProjectRepository(CRUDRepository[Project]):
 
     # Phase-2-4：削除(BackgroundTasksへuser_idも渡し、既存の所有者スコープ版get_by_idに統一する
     # 設計へ変更したため。「専用の所有者チェック無しメソッドを増やす」か「呼び出し側にuser_idを
-    # 持たせて既存メソッドに統一する」かの比較検討の結果、後者を採用した。理由の詳細はPhase-2-4.md
+    # 持たせて既存メソッドに統一する」かの比較検討の結果、後者を採用した。理由の詳細はPhase-02-4.md
     # 「設計判断」参照)
     # # Phase-2-4:追記
     # # BackgroundTasksから呼ばれるdoc_generator_service向けの追加。get_by_id は所有者スコープに

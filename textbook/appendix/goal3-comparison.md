@@ -8,7 +8,7 @@ CLAUDE.md「プロジェクトのゴール」3 の「最低1回、Devex の実�
   - 簡易モードの実装計画書: [`simple/implementation_plan.md`](../../appendix/goal3-generated/simple/implementation_plan.md)(4.1 マイルストーン / 4.2 WBS / 4.3 開発環境 / 4.4 リスク)
   - 詳細設計モードの実装計画(段階7): [`detailed/bundle/implementation_plan.md`](../../appendix/goal3-generated/detailed/bundle/implementation_plan.md)(マイルストーン表・マイルストーンごとのタスク表・処理の割り当て・開発環境・リスク)
 - **突き合わせの相手**: 実装計画に当たる CL 教材は introduction。off と on の典型を1本ずつ選んだ。
-  - [`Phase-4-introduction.md`](../Phase-4/Phase-4-introduction.md)(off、ステージ1の QA)
+  - [`Phase-04-introduction.md`](../Phase-04/Phase-04-introduction.md)(off、ステージ1の QA)
   - [`Phase-23-introduction.md`](../Phase-23/Phase-23-introduction.md)(on、ステージ4の段階7。生成した実装計画を作る Phase そのもの)
 
 対応の前提: 生成された実装計画の**マイルストーン1つ**が、CL の **Phase 1つ**(introduction 1本)に当たる。タスクの1行が、章(作業単位)に当たる。

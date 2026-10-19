@@ -41,11 +41,11 @@
 ```
 
 - **前提として読むもの**:
-  - [`Phase-7-3.md`](../Phase-7/Phase-7-3.md): React Flow × Tamagui のスパイク。本 Phase はこのスパイクの配置(`uml/page.tsx` + `UmlPageContent.tsx`)をそのまま本実装に置き換える。
-  - [`Phase-8-introduction.md`](../Phase-8/Phase-8-introduction.md): 意味モデルの形、`DfdFlow.data_item_id`、楽観ロック。
-  - [`Phase-9-introduction.md`](../Phase-9/Phase-9-introduction.md): 配置(`LayoutModel`)の形、レーンと `layer`、要素数の上限(`MAX_ELEMENTS=30`)。
+  - [`Phase-07-3.md`](../Phase-07/Phase-07-3.md): React Flow × Tamagui のスパイク。本 Phase はこのスパイクの配置(`uml/page.tsx` + `UmlPageContent.tsx`)をそのまま本実装に置き換える。
+  - [`Phase-08-introduction.md`](../Phase-08/Phase-08-introduction.md): 意味モデルの形、`DfdFlow.data_item_id`、楽観ロック。
+  - [`Phase-09-introduction.md`](../Phase-09/Phase-09-introduction.md): 配置(`LayoutModel`)の形、レーンと `layer`、要素数の上限(`MAX_ELEMENTS=30`)。
   - [`Phase-10-introduction.md`](../Phase-10/Phase-10-introduction.md): 生成の受け付けと履歴、`MAX_SUBJECTS_PER_REQUEST=5`、ER 部分図。
-  - [`Phase-3-6.md`](../Phase-3/Phase-3-6.md): FE の store・ポーリング(`useGenerationPolling`)の既存パターン。
+  - [`Phase-03-6.md`](../Phase-03/Phase-03-6.md): FE の store・ポーリング(`useGenerationPolling`)の既存パターン。
 - **本 Phase 開始時点の状態**:
   - `devex-ui/src/features/uml/` には、Phase 7 の使い捨てスパイク(ダミーノードの固定表示)しか無い。
   - FE の `ApiError` は `status` と `message` しか持たず、バックエンドの `code`(`VERSION_CONFLICT` など)を読めない。

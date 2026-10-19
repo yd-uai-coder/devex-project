@@ -7,7 +7,7 @@
 devexにはレーンごとの幅の重み・ヒントに相当する入力が無いため、全レーンを均等幅として扱う。
 
 幅960px超過は入力次第で実行時に起こり得るため、`assert`ではなく
-`LayoutWidthExceededError`として送出する(Phase-7-4.md申し送り#1: 4xxへ変換可能な専用例外化)。
+`LayoutWidthExceededError`として送出する(Phase-07-4.md申し送り#1: 4xxへ変換可能な専用例外化)。
 """
 
 from app.services.errors import LayoutWidthExceededError

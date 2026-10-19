@@ -39,7 +39,7 @@ async def client() -> AsyncGenerator[AsyncClient]:
         # テスト終了後にテーブルを破棄し、次のテストに影響を残さないようにする
         await conn.run_sync(Base.metadata.drop_all)
 
-    # Phase-4-1：更新([Phase-1-1.md](../../../Phase-1/Phase-1-1.md)で発見・Phase 2でも
+    # Phase-4-1：更新([Phase-01-1.md](../../../Phase-01/Phase-01-1.md)で発見・Phase 2でも
     # 個別実行という回避策のまま持ち越されていた既知課題の根本修正)
     # 従来はここで何も後始末していなかった。engine・get_redis_pool()はいずれも
     # モジュールレベルのシングルトンで、内部のコネクションプールは生成時のイベントループに

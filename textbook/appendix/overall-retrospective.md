@@ -18,9 +18,9 @@
 
 | # | テーマ | 主な事例(Phase) | ユーザーの回答 | 決定・状態 |
 |---|---|---|---|---|
-| T1 | 記録が後回しになり、そのまま溜まる | 振り返りファイルが1本も無かった([Phase 4](../Phase-4/Phase-4-introduction.md) で「別セッションで書く」と申し送っただけ)。digest は Phase 13〜24 が未追記。q_a は Phase 1〜5 が0件。直接実装に切り替えた理由が書かれていなかった([Phase 7](../Phase-7/Phase-7-introduction.md))。「画面確認は依頼中」の記述が残ったまま([Phase 20](../Phase-20/Phase-20-introduction.md)・[22](../Phase-22/Phase-22-introduction.md))。本番の記録欄が空([Phase-24-4](../Phase-24/Phase-24-4.md)) | 後回しにしたのは、CL 開発の方針としてまとめて吟味したかったから | 振り返り・digest は**ステージ完了時にまとめてよい**とした(#10・#24 の運用注記)。途中の申し送りは #37 の節に残す |
+| T1 | 記録が後回しになり、そのまま溜まる | 振り返りファイルが1本も無かった([Phase 4](../Phase-04/Phase-04-introduction.md) で「別セッションで書く」と申し送っただけ)。digest は Phase 13〜24 が未追記。q_a は Phase 1〜5 が0件。直接実装に切り替えた理由が書かれていなかった([Phase 7](../Phase-07/Phase-07-introduction.md))。「画面確認は依頼中」の記述が残ったまま([Phase 20](../Phase-20/Phase-20-introduction.md)・[22](../Phase-22/Phase-22-introduction.md))。本番の記録欄が空([Phase-24-4](../Phase-24/Phase-24-4.md)) | 後回しにしたのは、CL 開発の方針としてまとめて吟味したかったから | 振り返り・digest は**ステージ完了時にまとめてよい**とした(#10・#24 の運用注記)。途中の申し送りは #37 の節に残す |
 | T2 | 本体・samples・教材の三重管理がずれる | samples への反映漏れ(Phase 3 完了後)。Phase タグの付け漏れ(13)。samples の削除でリンクが約70本切れた(24 完了後)。本体のコメントに Phase の経緯が入り込んだ(7〜24)。frontend の samples に `package.json` が無い。フォルダの再整理を見送ったまま再判定していない(10 完了後) | (別のセッションで回答)on の Phase では samples に新規ファイルを作らない。既存の samples は本体に合わせ続ける。削除した samples へのリンクは外すだけ。フォルダ再整理は見送りを確定。samples の側が先だった分(off の写経漏れ)は本体に足す | **決定**(T2 のセッション)。#21・#29 を改訂し、#3・#9・#12 に運用注記を足した。道具を [`tools/`](../tools/README.md) に置いた。詳細は [decision digest](../decision-digest.md)「T2(ステージ4完了後)」 |
-| T3 | 写経か直接実装かの線引きがルールになっていない | 「納期モードの章は直接実装」案を撤回([Phase 2](../Phase-2/Phase-2-introduction.md))。その場の修正を本体に直接反映した(3 完了後)。ステージ3・4 の特例は口頭の合意だけ([Phase 7](../Phase-7/Phase-7-introduction.md)・[14-5](../Phase-14/Phase-14-5.md))。インフラ設定は前例に頼って運用(1〜5) | T1 の回答(下の3節)に含まれる | #21 を**自動実装モード(on/off)**に改定した。インフラ設定の扱いも #21 に明文化した |
+| T3 | 写経か直接実装かの線引きがルールになっていない | 「納期モードの章は直接実装」案を撤回([Phase 2](../Phase-02/Phase-02-introduction.md))。その場の修正を本体に直接反映した(3 完了後)。ステージ3・4 の特例は口頭の合意だけ([Phase 7](../Phase-07/Phase-07-introduction.md)・[14-5](../Phase-14/Phase-14-5.md))。インフラ設定は前例に頼って運用(1〜5) | T1 の回答(下の3節)に含まれる | #21 を**自動実装モード(on/off)**に改定した。インフラ設定の扱いも #21 に明文化した |
 | T4 | セッション・コミットの運用が #18 から外れた | 10-04 の1日に Phase 17〜24 をコミットした。Phase 2・3、7・8 をそれぞれ1コミットにまとめた。セッションの外でのリネーム(`(proteced)`)を見落とした | 今後、コミットとプッシュは基本的にユーザーが手で行う | **#35** を新設 |
 | T5 | 検証の穴 | 簡易モードの E2E が Phase 15 で壊れ、24 まで気づかなかった。Phase 12・13 は目視しないまま完了した。AI が E2E を実行せずに渡した(4)。テスト DB を共用していた(1〜4)。FE のテストが並列で時間切れになる(17〜23) | E2E は毎 Phase 流さなくてよい。E2E が必要な Phase で、過去の分も含めて流せばよい | **#36** を新設 |
 | T6 | 画面確認の往復が多い | Phase 16〜24 のほぼ毎回、画面確認の後に修正が入った(21 は3回。ユーザーが手で直した分を取り込んだ) | 問題とは思わない。AI のコードはあくまで提案で、採用するか変えるかの最終決定はユーザーが行う | **#38** を新設(通常の工程として扱う) |
@@ -103,7 +103,7 @@ T2 の決定のあと、ユーザーが「samples の内容を自動実装モー
 
 ## 8. handoff の所感(5章)の採否
 
-[`appendix/cl-development-handoff.md`](../../appendix/cl-development-handoff.md)(v1)5章の提案を、本プロジェクト(Phase 0〜24)でどう扱ったかを整理する(ゴール2)。採否の決定は Phase 0([`Phase-0-1.md`](../Phase-0/Phase-0-1.md))と今回の改訂(4節)で行った。「根拠」は、記録([`decision-digest.md`](../decision-digest.md)・[`q_a.md`](../q_a.md)・各 introduction)から分かる実績である。結果は [handoff v2](../../appendix/cl-development-handoff-v2.md) の本文と5章に反映した。
+[`appendix/cl-development-handoff.md`](../../appendix/cl-development-handoff.md)(v1)5章の提案を、本プロジェクト(Phase 0〜24)でどう扱ったかを整理する(ゴール2)。採否の決定は Phase 0([`Phase-00-1.md`](../Phase-00/Phase-00-1.md))と今回の改訂(4節)で行った。「根拠」は、記録([`decision-digest.md`](../decision-digest.md)・[`q_a.md`](../q_a.md)・各 introduction)から分かる実績である。結果は [handoff v2](../../appendix/cl-development-handoff-v2.md) の本文と5章に反映した。
 
 ### 5.1 進行スピード
 

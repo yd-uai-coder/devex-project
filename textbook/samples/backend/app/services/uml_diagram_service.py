@@ -131,7 +131,7 @@ class UmlDiagramService:
     #     `POST /projects/{id}/uml/diagrams`は本来「AIによる設計図の生成トリガー」(M1)だが、
     #     構造化出力によるAI生成自体はPhase 10で実装する。Phase 8時点では、指定notationの
     #     要素・関係が空の意味モデルを持つdraftを作成するプレースホルダーとして動作する
-    #     (textbook/Phase-8/Phase-8-introduction.md参照。Phase 10でこのメソッドの内部を
+    #     (textbook/Phase-08/Phase-08-introduction.md参照。Phase 10でこのメソッドの内部を
     #     AI生成呼び出しに置き換える)。
     #     """
     #     view = NOTATION_TO_VIEW[notation]
@@ -240,7 +240,7 @@ class UmlDiagramService:
         """UML図の自動レイアウト(M6)を実行し、`layout_model`を保存する。
 
         レイアウトエンジン(`app.uml.layout`)を実行する前に2つの事前チェックを行う
-        (Phase-7-4.md「Phase 9への申し送り」#1・#2): (1) 要素数が`MAX_ELEMENTS`
+        (Phase-07-4.md「Phase 9への申し送り」#1・#2): (1) 要素数が`MAX_ELEMENTS`
         (`app.uml.validation.structural`と共有する上限、目安30)を超える場合は
         `LayoutNodeLimitExceededError`(診断3「上限超過の検証エラー化」)。(2) M4構造検証
         (ID重複・参照切れ等)を通らない場合は`LayoutValidationFailedError`

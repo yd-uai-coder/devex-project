@@ -25,7 +25,7 @@ Phase 13b・旧 Phase 14 の記述は削除せず、元の文の直後に `> **[
 
 ### ステージ4も Could have 階層
 
-ステージ3と同じく、`docs/requirements.md` 上では Could have に置いた。ステージ番号と全体の優先度(ステージ1 = Must、ステージ2 = Should)の対応を踏襲する([`Phase-7-2.md`](../Phase-7/Phase-7-2.md) と同じ判断)。
+ステージ3と同じく、`docs/requirements.md` 上では Could have に置いた。ステージ番号と全体の優先度(ステージ1 = Must、ステージ2 = Should)の対応を踏襲する([`Phase-07-2.md`](../Phase-07/Phase-07-2.md) と同じ判断)。
 
 ### Phase 15 以降に回した詳細
 

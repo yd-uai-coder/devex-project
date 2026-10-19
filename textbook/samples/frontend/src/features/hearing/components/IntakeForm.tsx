@@ -35,7 +35,7 @@ const LANGUAGE_OPTIONS: CheckboxGroupOption[] = [
 ];
 
 // フレームワークは言語ごとに<fieldset><legend>で静的グルーピングする(動的な絞り込み
-// コンボボックスは採用しない、docs/external_design.md 2.3節SCR-004・Phase-0-3.md参照)。
+// コンボボックスは採用しない、docs/external_design.md 2.3節SCR-004・Phase-00-3.md参照)。
 // 選択結果自体は言語をまたいだ1つのフラットな配列(environment.frameworks)にまとめる。
 const FRAMEWORK_OPTIONS_BY_LANGUAGE: { language: string; items: CheckboxGroupOption[] }[] = [
   {
