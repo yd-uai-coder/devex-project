@@ -1,39 +1,55 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4
+# Phase-84-3：更新(docstring: ChangeRequestService に説明書の組み立てを足した)
 # Phase-83-3：更新(docstring: ChangeRequestService に影響の予測と保存を足した)
 # Phase-83-1：更新 ── collections.abc.Iterable → collections.abc.Sequence、app.change_requests.normalize_targets を削除(整えるのはスキーマ)
 # Phase-83-1:追記 ── app.change_requests.Target, app.change_requests.target_ids, app.change_requests.targets_from_json, app.change_requests.targets_to_json
 # Phase-83-3:追記 ── app.change_requests.Prediction, app.change_requests.predict_from_snapshots
+# Phase-84-3:追記 ── app.change_requests.ChangeRequestFacts, app.change_requests.Explanation, app.change_requests.build_explanation
+# Phase-84-4:追記 ── typing.Any, app.ai.llm.catalog.Purpose, app.ai.llm.content.extract_text_content, app.change_requests.SummaryState, app.change_requests.build_summary_messages, app.change_requests.clip_summary, app.change_requests.summary_state, app.change_requests.with_summary, app.models.change_request_summary.ChangeRequestSummary, app.repositories.change_request_summary.ChangeRequestSummaryRepository, app.services.errors.ChangeRequestSummaryNotFoundError, app.services.llm_resolver.LlmResolver, app.services.llm_resolver.ResolvedLlm, app.services.llm_resolver.injected_llm, app.services.llm_retry.invoke_with_retry
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Any
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.llm.catalog import Purpose
+from app.ai.llm.content import extract_text_content
 from app.change_requests import (
     ACTIVE_STATUSES,
     COPYABLE_STATUSES,
     DECISION_ACTIONS,
     INITIAL_STATUS,
     ChangeRequestAction,
+    ChangeRequestFacts,
     ChangeRequestStatus,
+    Explanation,
     Overlap,
     Prediction,
+    SummaryState,
     Target,
     allowed_actions,
+    build_explanation,
+    build_summary_messages,
+    clip_summary,
     next_status,
     overlaps,
     predict_from_snapshots,
+    summary_state,
     target_ids,
     targets_from_json,
     targets_to_json,
+    with_summary,
 )
 from app.models.baseline import Baseline
 from app.models.change_request import ChangeRequest
+from app.models.change_request_summary import ChangeRequestSummary
 from app.models.project import Project
 from app.repositories.baseline import BaselineRepository
 from app.repositories.change_request import ChangeRequestRepository
+from app.repositories.change_request_summary import ChangeRequestSummaryRepository
 from app.schemas.change_request import (
     ChangeRequestCreate,
     ChangeRequestDecision,
@@ -46,9 +62,12 @@ from app.services.errors import (
     ChangeRequestBaselineMissingError,
     ChangeRequestInvalidTransitionError,
     ChangeRequestNotFoundError,
+    ChangeRequestSummaryNotFoundError,
     ChangeRequestTargetUnknownError,
     DesignStagesNotAvailableError,
 )
+from app.services.llm_resolver import LlmResolver, ResolvedLlm, injected_llm
+from app.services.llm_retry import invoke_with_retry
 
 logger = structlog.get_logger(__name__)
 
@@ -86,6 +105,36 @@ class ImpactView:
     excluded: list[ExcludedItem]
 
 
+# Phase-84-3:追記
+@dataclass(frozen=True)
+class ExplanationView:
+    # Phase-84-4：更新
+    # """CR 1つの説明書(5節)。"""
+    # ↓↓
+    """CR 1つの説明書(5節)と、任意の要約(無ければ None)。"""
+
+    change_request: ChangeRequest
+    explanation: Explanation
+    # Phase-84-4:追記
+    summary: ChangeRequestSummary | None
+
+    # Phase-84-4:追記
+    @property
+    def summary_state(self) -> SummaryState | None:
+        """要約の状態(今の5節と比べる)。要約が無ければ None。"""
+        if self.summary is None:
+            return None
+        return summary_state(
+            self.summary.status, self.summary.fingerprint, self.explanation.fingerprint
+        )
+
+    @property
+    def output(self) -> str:
+        """出力する md(確認済みで古くない要約だけを載せる)。"""
+        text = self.summary.text if self.summary is not None else None
+        return with_summary(self.explanation, text if self.summary_state == "confirmed" else None)
+
+
 class ChangeRequestService:
     """変更要求(CR)の作成・一覧・取得・更新と、状態の遷移(説明済み・合意 / 却下・取り下げ)・
     却下した CR の写し(docs/external_design.md 2.14節)。
@@ -93,13 +142,22 @@ class ChangeRequestService:
     CR は合意済みの版(束)を基準にし、対象は基準の束の要件定義書にある要件 ID と、新しい要件を
     足す印。遷移の可否は app/change_requests/states.py の表で決め、遷移ごとに時系列へ1行残す。
     同じ要件を対象にする進行中の CR は止めず、詳細に重なりとして示す。影響の予測は基準の束の写しから
-    求め(app/change_requests/prediction.py)、判断(合意・却下)の時点で CR に保存する。
+    求め(app/change_requests/prediction.py)、判断(合意・却下)の時点で CR に保存する。説明書は
+    CR・束の写し・予測から決定的に組み立てる(app/change_requests/explanation.py)。
     詳細設計モードだけ。"""
 
-    def __init__(self, session: AsyncSession) -> None:
+    # Phase-84-4：更新
+    # def __init__(self, session: AsyncSession) -> None:
+    # ↓↓
+    def __init__(self, session: AsyncSession, *, llm: Any = None) -> None:
+        # llm: テストが差し替える要約の LLM(None なら利用者の生成の用途で解決する)
         self._session = session
+        # Phase-84-4:追記
+        self._llm = llm
         self._change_requests = ChangeRequestRepository(session)
         self._baselines = BaselineRepository(session)
+        # Phase-84-4:追記
+        self._summaries = ChangeRequestSummaryRepository(session)
 
     async def create(
         self, project: Project, payload: ChangeRequestCreate, *, created_by: uuid.UUID | None
@@ -116,7 +174,10 @@ class ChangeRequestService:
             # Phase-83-1：更新
             # payload.target_requirement_ids, payload.adds_requirement, baseline
             # ↓↓
-            [Target(t.requirement_id, t.kind) for t in payload.targets],
+            # Phase-84-1：更新
+            # [Target(t.requirement_id, t.kind) for t in payload.targets],
+            # ↓↓
+            [Target(t.requirement_id, t.kind, t.proposed_text) for t in payload.targets],
             payload.adds_requirement,
             baseline,
         )
@@ -180,7 +241,10 @@ class ChangeRequestService:
             targets = (
                 targets_from_json(change_request.targets)
                 if payload.targets is None
-                else [Target(t.requirement_id, t.kind) for t in payload.targets]
+                # Phase-84-1：更新
+                # else [Target(t.requirement_id, t.kind) for t in payload.targets]
+                # ↓↓
+                else [Target(t.requirement_id, t.kind, t.proposed_text) for t in payload.targets]
             )
             changes["targets"] = targets_to_json(
                 checked_targets(
@@ -324,6 +388,134 @@ class ChangeRequestService:
     async def impact(self, project: Project, number: int) -> ImpactView:
         """CR の影響の予測。判断の後は保存したもの、判断の前(と取り下げ)は基準の束から求める。"""
         change_request = await self._load(project, number)
+        # Phase-84-3：更新(束と予測を求める所を _impact_with_baseline に移し、説明書と共有した)
+        # baseline = await self._baseline_with_items(change_request)
+        # saved = change_request.predicted_impact
+        # prediction = (
+        #     Prediction.from_dict(saved)
+        #     if saved is not None
+        #     else predict_for(change_request, baseline)
+        # )
+        # return ImpactView(
+        #     change_request=change_request,
+        #     prediction=prediction,
+        #     saved=saved is not None,
+        #     excluded=[
+        #         ExcludedItem(key=item.key, state=item.state)
+        #         for item in baseline.items
+        #         if not item.included
+        #     ],
+        # )
+        # ↓↓
+        _, view = await self._impact_with_baseline(change_request)
+        return view
+
+    # Phase-84-3:追記
+    async def explanation(self, project: Project, number: int) -> ExplanationView:
+        # Phase-84-4：更新
+        # """CR の説明書(5節)。予測は影響の API と同じもの(判断の後は保存したもの)を使う。"""
+        # change_request = await self._load(project, number)
+        # return ExplanationView(
+        #     change_request=change_request,
+        #     explanation=await self._explanation(change_request),
+        # )
+        # ↓↓
+        """CR の説明書(5節)と要約。予測は影響の API と同じもの(判断の後は保存したもの)を使う。"""
+        return await self._explanation_view(await self._load(project, number))
+
+    # Phase-84-4:追記
+    async def generate_summary(
+        self, project: Project, number: int, *, user_id: uuid.UUID
+    ) -> ExplanationView:
+        """説明書の5節から、LLM(利用者の生成の用途)でクライアント向けの要約を作る。要約は
+        未確認ででき、前の要約(直した文・確かめた記録)は上書きする。どの状態の CR でも作れる。"""
+        change_request = await self._load(project, number)
+        explanation = await self._explanation(change_request)
+        resolved = await self._summary_llm(user_id)
+        messages = build_summary_messages(explanation.markdown)
+
+        async def _call() -> str:
+            response = await resolved.llm.ainvoke(messages)
+            return extract_text_content(response.content)
+
+        text = clip_summary(await invoke_with_retry(_call, messages=messages))
+        summary = await self._summaries.replace(
+            change_request_id=change_request.id,
+            text=text,
+            fingerprint=explanation.fingerprint,
+            status="unconfirmed",
+            generated_model=resolved.model,
+            generated_by=user_id,
+        )
+        await self._session.commit()
+        logger.info(
+            "change_request_summary_generated",
+            project_id=str(project.id),
+            number=number,
+            model=resolved.model,
+        )
+        return ExplanationView(change_request, explanation, summary)
+
+    async def edit_summary(self, project: Project, number: int, text: str) -> ExplanationView:
+        """要約の文を直す。直すと未確認に戻る(元の LLM の文は残す)。"""
+        change_request = await self._load(project, number)
+        summary = await self._require_summary(change_request)
+        summary.text = clip_summary(text)
+        summary.status = "unconfirmed"
+        summary.edited_at = datetime.now(UTC)
+        summary.confirmed_by = None
+        summary.confirmed_at = None
+        await self._session.commit()
+        return await self._explanation_view(change_request)
+
+    async def confirm_summary(
+        self, project: Project, number: int, *, actor_id: uuid.UUID | None
+    ) -> ExplanationView:
+        """要約を確かめた(誰が・いつ)と記録し、今の5節の fingerprint に合わせる(古い要約も、
+        今の5節と見比べて確かめれば載る)。照合の結果では止めない(人が判断する)。"""
+        change_request = await self._load(project, number)
+        summary = await self._require_summary(change_request)
+        explanation = await self._explanation(change_request)
+        summary.status = "confirmed"
+        summary.fingerprint = explanation.fingerprint
+        summary.confirmed_by = actor_id
+        summary.confirmed_at = datetime.now(UTC)
+        await self._session.commit()
+        return ExplanationView(change_request, explanation, summary)
+
+    async def _explanation_view(self, change_request: ChangeRequest) -> ExplanationView:
+        return ExplanationView(
+            change_request=change_request,
+            explanation=await self._explanation(change_request),
+            summary=await self._summaries.get_for(change_request.id),
+        )
+
+    async def _require_summary(self, change_request: ChangeRequest) -> ChangeRequestSummary:
+        summary = await self._summaries.get_for(change_request.id)
+        if summary is None:
+            raise ChangeRequestSummaryNotFoundError(
+                f"CR-{change_request.number} has no summary yet"
+            )
+        return summary
+
+    async def _summary_llm(self, user_id: uuid.UUID) -> ResolvedLlm:
+        if self._llm is not None:
+            return injected_llm(self._llm, Purpose.GENERATION)
+        return await LlmResolver(self._session).resolve(user_id, Purpose.GENERATION)
+
+    # Phase-84-3:追記
+    async def _explanation(self, change_request: ChangeRequest) -> Explanation:
+        baseline, view = await self._impact_with_baseline(change_request)
+        return build_explanation(
+            facts_of(change_request, baseline.number),
+            view.prediction,
+            {item.key: item.model for item in baseline.items if item.included},
+            [(e.key, e.state) for e in view.excluded],
+        )
+
+    async def _impact_with_baseline(
+        self, change_request: ChangeRequest
+    ) -> tuple[Baseline, ImpactView]:
         baseline = await self._baseline_with_items(change_request)
         saved = change_request.predicted_impact
         prediction = (
@@ -331,7 +523,7 @@ class ChangeRequestService:
             if saved is not None
             else predict_for(change_request, baseline)
         )
-        return ImpactView(
+        return baseline, ImpactView(
             change_request=change_request,
             prediction=prediction,
             saved=saved is not None,
@@ -415,6 +607,23 @@ def predict_for(change_request: ChangeRequest, baseline: Baseline) -> Prediction
         snapshots,
         targets_from_json(change_request.targets),
         adds_requirement=change_request.adds_requirement,
+    )
+
+
+# Phase-84-3:追記
+def facts_of(change_request: ChangeRequest, baseline_number: int) -> ChangeRequestFacts:
+    """説明書の1節・2節に載る CR の値。"""
+    return ChangeRequestFacts(
+        number=change_request.number,
+        title=change_request.title,
+        status=change_request.status,  # type: ignore[arg-type]
+        content=change_request.content,
+        background_source=change_request.background_source,  # type: ignore[arg-type]
+        background_date=change_request.background_date,
+        background_memo=change_request.background_memo,
+        targets=tuple(targets_from_json(change_request.targets)),
+        adds_requirement=change_request.adds_requirement,
+        baseline_number=baseline_number,
     )
 
 

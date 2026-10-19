@@ -198,7 +198,7 @@
   * Phase 81: 合意済みの版(束)の API(写し・合意の記録・文書の版に生成したモデル) ── **完了**([`textbook/Phase-81/Phase-81-introduction.md`](../textbook/Phase-81/Phase-81-introduction.md))
   * Phase 82: CR の API(項目・6つの状態の遷移と時系列・合意の記録・却下した CR の写し) ── **完了**([`textbook/Phase-82/Phase-82-introduction.md`](../textbook/Phase-82/Phase-82-introduction.md))
   * Phase 83: CR に結ぶ影響の予測(今の `impact_of` の再利用。文書の側の要素も。CR の対象に変更の種類を持たせた) ── **完了**([`textbook/Phase-83/Phase-83-introduction.md`](../textbook/Phase-83/Phase-83-introduction.md))
-  * Phase 84: 変更の説明書(5節の md・任意の LLM の要約・照合・確認の関門・古い印)
+  * Phase 84: 変更の説明書(5節の md・任意の LLM の要約・照合・確認の関門・古い印。CR の対象に変更後の案を持たせた) ── **完了**([`textbook/Phase-84/Phase-84-introduction.md`](../textbook/Phase-84/Phase-84-introduction.md))
   * Phase 85: 反映(`cr_id` を再生成へ。版に CR を残す・予測と実際の比較)
   * Phase 86: 再検証とたどれる記録(印の確認で検証済み・任意のレビュー・時系列・新しい合意済みの版)
   * Phase 87: CR の画面

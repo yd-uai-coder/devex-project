@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整),36-2,37-2,39-1,45-3
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整),36-2,37-2,39-1,45-3,84-4
 # 写経レベル: コア ── 実機検証で発見した2件の不具合(ヒアリング完了判定の誤カウント、
 # doc_type判別の誤マッチ)の回帰テスト。当初はPlaywright(Phase 4-4)のみで検証する設計にして
 # いたが、両方ともpytestレベルの単体テストで安価に検知できる性質のバグだったため、事後的に
@@ -13,11 +13,13 @@
 # Phase-37-2:追記 ── tests.fixtures.external_design.e2e_fake_external_design_md
 # Phase-45-3:追記 ── app.detailed_design.simple_procedure.parse_internal_design, tests.fixtures.simple_documents.e2e_fake_simple_documents
 # Phase-45-3：削除 ── app.services.doc_generator_service._DOC_TYPE_PROMPTS
+# Phase-84-4:追記 ── app.change_requests.build_summary_messages
 from langchain_core.messages import HumanMessage, SystemMessage
 from tests.fixtures.external_design import e2e_fake_external_design_md
 from tests.fixtures.simple_documents import e2e_fake_simple_documents
 
 from app.ai.llm.fake import E2eFakeLLM
+from app.change_requests import build_summary_messages
 from app.detailed_design.plan import unit_ids
 from app.detailed_design.simple_procedure import parse_internal_design, parse_wbs
 from app.documents.requirements import build_model, render_requirements
@@ -188,6 +190,16 @@ async def test_self_diagnosis_prompt_produces_diagnosis_reply() -> None:
     result = await llm.ainvoke(messages)
 
     assert "自己診断" in result.content
+
+
+# Phase-84-4:追記
+async def test_change_request_summary_prompt_produces_summary_reply() -> None:
+    """変更の説明書の要約(本物のプロンプト)には、要件 ID・数字の無い固定の要約を返す。"""
+    reply = await E2eFakeLLM().ainvoke(build_summary_messages("# 変更の説明書 CR-1"))
+
+    assert "[E2E Fake]" in str(reply.content) and "説明書" in str(reply.content)
+    body = str(reply.content).removeprefix("[E2E Fake]")
+    assert not any(ch.isdigit() for ch in body)  # 照合で印が付かない
 
 
 async def test_hearing_reply_is_returned_for_ordinary_chat_turn() -> None:

@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4
 # Phase-83-1：更新(docstring: ChangeRequestCreate の対象を、要件 ID と変更の種類の組にした)
 import uuid
 from datetime import date, datetime
@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 # Phase-83-1:追記 ── pydantic.field_validator, app.change_requests.TARGET_KIND_LABEL, app.change_requests.Target, app.change_requests.TargetKind, app.change_requests.normalize_targets, app.change_requests.targets_from_json
 # Phase-83-3:追記 ── app.change_requests.Prediction
+# Phase-84-3:追記 ── app.change_requests.Explanation, app.change_requests.explanation_filename
+# Phase-84-4:追記 ── app.change_requests.SUMMARY_MAX, app.change_requests.SUMMARY_STATE_LABEL, app.change_requests.SummaryState, app.change_requests.check_summary
 from pydantic import (
     AwareDatetime,
     BaseModel,
@@ -18,14 +20,20 @@ from pydantic import (
 from app.change_requests import (
     BACKGROUND_SOURCE_LABEL,
     STATUS_LABEL,
+    SUMMARY_MAX,
+    SUMMARY_STATE_LABEL,
     TARGET_KIND_LABEL,
     BackgroundSource,
     ChangeRequestAction,
     ChangeRequestStatus,
+    Explanation,
     Overlap,
     Prediction,
+    SummaryState,
     Target,
     TargetKind,
+    check_summary,
+    explanation_filename,
     normalize_targets,
     targets_from_json,
 )
@@ -33,12 +41,17 @@ from app.schemas.agreement import MEMO_MAX, REASON_MAX, AgreementNotes
 
 if TYPE_CHECKING:
     from app.models.change_request import ChangeRequest
+    # Phase-84-4:追記
+    from app.models.change_request_summary import ChangeRequestSummary
 
 # CR の文の上限(タイトルは一覧の1行、内容は変更の申し出の本文)
 TITLE_MAX = 200
 CONTENT_MAX = 20000
 # 1つの CR の対象の要件の数の上限
 TARGETS_MAX = 100
+# Phase-84-1:追記
+# 対象1つの変更後の案の上限(要件1行の文)
+PROPOSED_TEXT_MAX = 2000
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=TITLE_MAX)]
 Content = Annotated[
@@ -50,21 +63,42 @@ Content = Annotated[
 
 # Phase-83-1:追記
 class ChangeRequestTargetIn(BaseModel):
-    """CR の対象1つ(要件 ID と変更の種類。種類を省くと内容の変更)。"""
+    # Phase-84-1：更新
+    # """CR の対象1つ(要件 ID と変更の種類。種類を省くと内容の変更)。"""
+    # ↓↓
+    """CR の対象1つ(要件 ID・変更の種類・変更後の案。種類を省くと内容の変更、案は任意で、
+    削除の対象には書けない)。"""
 
     requirement_id: str
     kind: TargetKind = "content"
+    # Phase-84-1:追記
+    proposed_text: str = Field(default="", max_length=PROPOSED_TEXT_MAX)
 
 
 TargetsIn = Annotated[list[ChangeRequestTargetIn], Field(max_length=TARGETS_MAX)]
 
 
 def _normalized(value: list[ChangeRequestTargetIn] | None) -> list[ChangeRequestTargetIn] | None:
-    """対象を整える(空白・同じ組の重複を除く)。同じ要件が違う種類なら検証の誤り(422)。"""
+    # Phase-84-1：更新
+    # """対象を整える(空白・同じ組の重複を除く)。同じ要件が違う種類なら検証の誤り(422)。"""
+    # ↓↓
+    """対象を整える(空白・同じ要件の重複を除く)。同じ要件が違う種類・違う案のときと、削除の
+    対象に案があるときは検証の誤り(422)。"""
     if value is None:
         return None
-    targets = normalize_targets(Target(t.requirement_id, t.kind) for t in value)
-    return [ChangeRequestTargetIn(requirement_id=t.requirement_id, kind=t.kind) for t in targets]
+    # Phase-84-1：更新
+    # targets = normalize_targets(Target(t.requirement_id, t.kind) for t in value)
+    # return [ChangeRequestTargetIn(requirement_id=t.requirement_id, kind=t.kind) for t in targets]
+    # ↓↓
+    targets = normalize_targets(
+        Target(t.requirement_id, t.kind, t.proposed_text) for t in value
+    )
+    return [
+        ChangeRequestTargetIn(
+            requirement_id=t.requirement_id, kind=t.kind, proposed_text=t.proposed_text
+        )
+        for t in targets
+    ]
 
 
 class ChangeRequestCreate(BaseModel):
@@ -161,12 +195,30 @@ class ChangeRequestTargetRead(BaseModel):
     kind: TargetKind
     kind_label: str
 
+    # Phase-84-1：削除(変更後の案つきの ChangeRequestTargetDetailRead へ移した。予測の起点の
+    # PredictedTargetRead は案を持たないので、この型は ID・種類・表示名だけにする)
+    # @classmethod
+    # def from_target(cls, target: Target) -> "ChangeRequestTargetRead":
+    #     return cls(
+    #         requirement_id=target.requirement_id,
+    #         kind=target.kind,
+    #         kind_label=TARGET_KIND_LABEL[target.kind],
+    #     )
+
+
+# Phase-84-1:追記
+class ChangeRequestTargetDetailRead(ChangeRequestTargetRead):
+    """CR の対象1つ(一覧・詳細用。変更後の案つき)。"""
+
+    proposed_text: str
+
     @classmethod
-    def from_target(cls, target: Target) -> "ChangeRequestTargetRead":
+    def from_target(cls, target: Target) -> "ChangeRequestTargetDetailRead":
         return cls(
             requirement_id=target.requirement_id,
             kind=target.kind,
             kind_label=TARGET_KIND_LABEL[target.kind],
+            proposed_text=target.proposed_text,
         )
 
 
@@ -192,7 +244,10 @@ class ChangeRequestSummaryRead(BaseModel):
     # Phase-83-1：更新
     # target_requirement_ids: list[str]
     # ↓↓
-    targets: list[ChangeRequestTargetRead]
+    # Phase-84-1：更新
+    # targets: list[ChangeRequestTargetRead]
+    # ↓↓
+    targets: list[ChangeRequestTargetDetailRead]
     adds_requirement: bool
     baseline_number: int
     baseline_label: str
@@ -343,6 +398,117 @@ class ChangeRequestImpactRead(BaseModel):
         )
 
 
+# Phase-84-4:追記
+class SummaryEdit(BaseModel):
+    """説明書の要約を直す本文。"""
+
+    text: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=SUMMARY_MAX)
+    ]
+
+
+class ExplanationSummaryRead(BaseModel):
+    """説明書の要約。`state`は今の5節と比べた状態(古い = 作った・確かめた後に5節が変わった)。
+    `generated_text`は LLM の元の文、`text`は今の文。照合は、`text`に出る要件 ID・数字のうち
+    5節に無いもの。"""
+
+    text: str
+    generated_text: str
+    edited: bool
+    state: SummaryState
+    state_label: str
+    generated_model: str | None
+    generated_by: uuid.UUID | None
+    generated_at: datetime
+    edited_at: datetime | None
+    confirmed_by: uuid.UUID | None
+    confirmed_at: datetime | None
+    unknown_requirement_ids: list[str]
+    unknown_numbers: list[str]
+
+    @classmethod
+    def build(
+        cls, summary: "ChangeRequestSummary", state: SummaryState, explanation: Explanation
+    ) -> "ExplanationSummaryRead":
+        check = check_summary(summary.text, explanation)
+        return cls(
+            text=summary.text,
+            generated_text=summary.generated_text,
+            edited=summary.text != summary.generated_text,
+            state=state,
+            state_label=SUMMARY_STATE_LABEL[state],
+            generated_model=summary.generated_model,
+            generated_by=summary.generated_by,
+            generated_at=summary.generated_at,
+            edited_at=summary.edited_at,
+            confirmed_by=summary.confirmed_by,
+            confirmed_at=summary.confirmed_at,
+            unknown_requirement_ids=list(check.unknown_requirement_ids),
+            unknown_numbers=list(check.unknown_numbers),
+        )
+
+
+# Phase-84-3:追記
+class ChangeRequestExplanationRead(BaseModel):
+    # Phase-84-4：更新
+    # """CR の説明書(プレビュー)。`markdown`は5節、`fingerprint`はその sha256。作業単位とテストは
+    # 5節の数の内訳(`has_test_spec`が偽なら、束にテスト仕様書が無くテストは数えていない)。"""
+    # ↓↓
+    """CR の説明書(プレビュー)。`markdown`は5節、`fingerprint`はその sha256、`output`は出力する
+    md(確認済みで古くない要約だけを載せる)。作業単位とテストは5節の数の内訳(`has_test_spec`が
+    偽なら、束にテスト仕様書が無くテストは数えていない)。`summary`は要約(作っていなければ null)。"""
+
+    number: int
+    label: str
+    filename: str
+    markdown: str
+    fingerprint: str
+    # Phase-84-4:追記
+    output: str
+    units: list[str]
+    integration_tests: list[str]
+    system_tests: list[str]
+    has_test_spec: bool
+    # Phase-84-4:追記
+    summary: ExplanationSummaryRead | None
+
+    @classmethod
+    # Phase-84-4：更新
+    # def build(
+    #     cls, change_request: "ChangeRequest", explanation: Explanation
+    # ) -> "ChangeRequestExplanationRead":
+    # ↓↓
+    def build(
+        cls,
+        change_request: "ChangeRequest",
+        explanation: Explanation,
+        *,
+        output: str,
+        summary: "ChangeRequestSummary | None",
+        summary_state: SummaryState | None,
+    ) -> "ChangeRequestExplanationRead":
+        units = explanation.units
+        return cls(
+            number=change_request.number,
+            label=change_request_label(change_request.number),
+            filename=explanation_filename(change_request.number),
+            markdown=explanation.markdown,
+            fingerprint=explanation.fingerprint,
+            # Phase-84-4:追記
+            output=output,
+            units=list(units.units),
+            integration_tests=list(units.integration_tests),
+            system_tests=list(units.system_tests),
+            has_test_spec=units.has_test_spec,
+            # Phase-84-4:追記
+            summary=(
+                ExplanationSummaryRead.build(summary, summary_state, explanation)
+                if summary is not None and summary_state is not None
+                else None
+            ),
+        )
+
+
 def change_request_label(number: int) -> str:
     return f"CR-{number}"
 
@@ -365,7 +531,10 @@ def summary_fields(change_request: "ChangeRequest") -> dict[str, Any]:
         # "target_requirement_ids": list(change_request.target_requirement_ids),
         # ↓↓
         "targets": [
-            ChangeRequestTargetRead.from_target(t)
+            # Phase-84-1：更新
+            # ChangeRequestTargetRead.from_target(t)
+            # ↓↓
+            ChangeRequestTargetDetailRead.from_target(t)
             for t in targets_from_json(change_request.targets)
         ],
         "adds_requirement": change_request.adds_requirement,

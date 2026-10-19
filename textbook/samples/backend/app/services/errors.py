@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -631,3 +631,10 @@ class ChangeRequestInvalidTransitionError(ConflictError):
     送出する(画面が古いまま押したときに起きうる)。"""
 
     code: ClassVar[str | None] = "CR_INVALID_TRANSITION"
+
+
+# Phase-84-4:追記
+class ChangeRequestSummaryNotFoundError(NotFoundError):
+    """説明書の要約をまだ作っていない CR で、要約を直す・確かめる操作をした場合に送出する。"""
+
+    code: ClassVar[str | None] = "CR_SUMMARY_NOT_FOUND"

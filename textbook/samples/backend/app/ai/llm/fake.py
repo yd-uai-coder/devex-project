@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2,56-2,68-3
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2,56-2,68-3,84-4
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 # Phase-52-2:追記 ── app.review.schemas.ReviewFindingOut, app.review.schemas.ReviewOutput
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
@@ -851,6 +851,9 @@ _FIX_CHECK_OUTPUT = FixCheckOut(verdict="fixed", reason="[E2E Fake] 指摘の対
 
 _HEARING_REPLY = "[E2E Fake] 承知しました。次に、想定している主なユーザー層を教えてください。"
 _SELF_DIAGNOSIS_REPLY = "[E2E Fake] 自己診断: 特に致命的な不足点はありません。"
+# Phase-84-4:追記
+# 変更の説明書の要約(要件 ID・数字を書かず、照合で印が付かない文)
+_CR_SUMMARY_REPLY = "[E2E Fake] 今回の変更の内容と、見直しが要る設計の範囲を説明書にまとめました。"
 
 
 class _FakeChunk:
@@ -1089,6 +1092,9 @@ class E2eFakeLLM:
         #         return _IMPLEMENTATION_PLAN_REPLY
         if "レビュアー" in system_text:
             return _SELF_DIAGNOSIS_REPLY
+        # Phase-84-4:追記
+        if "変更の説明書" in system_text:
+            return _CR_SUMMARY_REPLY
         # ヒアリング対話(_HEARING_SYSTEM_PROMPT、_OPENING_TURN_PROMPT共通)への応答。
         # 内容の質はE2Eの検証対象ではない(UI遷移・状態遷移の検証がPhase 4-4の狙い)ため、
         # 固定文言で十分とする。

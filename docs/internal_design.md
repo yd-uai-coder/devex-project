@@ -37,7 +37,7 @@
 * **GeneratedDocument（生成ドキュメント）**: ヒアリング結果を基に生成された4種のMarkdownテキスト（要件定義、外部設計、内部設計、実装計画）およびそのバージョンを管理。
 * **PromptTemplate（プロンプトテンプレート）**: ※Should have要件を見据え、WebアプリやAPI向けなどのテンプレート定義を保持。
 * **IntakeFile（添付ファイル）**: 初期ヒアリング入力時にアップロードされた参考資料(txt/Markdown/PDF、最大3ファイル)から抽出したテキストを管理。
-* **Baseline・ChangeRequest(合意済みの版・変更要求、ステージ11)**: 合意済みの版(プロジェクトの束と、文書・段階の写し)と、変更要求とその状態の遷移・合意の記録を管理(⑭〜⑰、⑭⑮は Phase 81、⑯⑰は Phase 82 で新設。下の 3.3節「11. 合意と変更の一巡」)。
+* **Baseline・ChangeRequest(合意済みの版・変更要求、ステージ11)**: 合意済みの版(プロジェクトの束と、文書・段階の写し)と、変更要求とその状態の遷移・合意の記録・説明書の要約を管理(⑭〜⑱、⑭⑮は Phase 81、⑯⑰は Phase 82、⑱は Phase 84 で新設。下の 3.3節「11. 合意と変更の一巡」)。
 * **DesignStage（詳細設計の段階、ステージ4）**: 詳細設計モードの段階1〜7ごとの成果物(意味モデル)と承認状態を管理(⑩、Phase 15で新設)。
 
 ### 2. テーブル定義
@@ -318,7 +318,7 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | background_source | VARCHAR(20) | NOT NULL | 背景の出どころの種類(`meeting`/`email`/`document`/`other`) |
 | background_date | DATE | NULL可 | 背景の日付(日の単位) |
 | background_memo | TEXT | NOT NULL | 背景のメモ(空でもよい) |
-| targets | JSONB | NOT NULL | 対象の一覧`[{requirement_id, kind}]`(要件 ID は基準の束の要件定義書にあるもの。`kind`は`content`(内容の変更)/`delete`(削除))。**(Phase 83)** `target_requirement_ids`(ID の一覧)から変えた。マイグレーション `9f3e279a0210` が既存の行を`content`に写す |
+| targets | JSONB | NOT NULL | 対象の一覧`[{requirement_id, kind, proposed_text}]`(要件 ID は基準の束の要件定義書にあるもの。`kind`は`content`(内容の変更)/`delete`(削除))。**(Phase 83)** `target_requirement_ids`(ID の一覧)から変えた。マイグレーション `9f3e279a0210` が既存の行を`content`に写す。**(Phase 84)** `proposed_text`(変更後の案。任意、削除の対象には書けない)を足した。JSON の中の項目なのでマイグレーションは無く、案の無い行は空の案として読む |
 | adds_requirement | BOOLEAN | NOT NULL | 新しい要件を足す CR か(対象の ID とどちらか一方は要る) |
 | baseline_id | UUID | FK (`baselines.id`, ondelete CASCADE), NOT NULL | 基準の合意済みの版(作成の後は変えない) |
 | status | VARCHAR(20) | NOT NULL | `draft`/`explained`/`agreed`/`rejected`/`applied`/`verified`/`withdrawn` |
@@ -332,7 +332,7 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | created_by | UUID | FK (`users.id`, ondelete SET NULL), NULL可 | 作った開発者 |
 | created_at / updated_at | TIMESTAMP(tz) | NOT NULL | 作成・更新の日時 |
 
-`UNIQUE(project_id, number)`。予測(Phase 83 で `predicted_impact`)・反映した生成の版(Phase 85)・結んだレビュー(Phase 86)の列と、説明書の要約の持ち方(Phase 84)は、その Phase で足す。
+`UNIQUE(project_id, number)`。予測(Phase 83 で `predicted_impact`)・反映した生成の版(Phase 85)・結んだレビュー(Phase 86)の列は、その Phase で足す。説明書の要約は別の表⑱に持つ(Phase 84)。
 
 **⑰ `change_request_events`(CR の時系列)**
 
@@ -349,6 +349,25 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | note | TEXT | NOT NULL | 補足(取り下げの理由・「CR-1(却下)から写した」など) |
 
 `UNIQUE(change_request_id, position)`。作成・状態の遷移・写しを1行ずつ残す(下書きの中の直しは残さない)。Phase 85・86 で、どの版・どの再生成・どのレビューかを結ぶ参照を足す。
+
+**⑱ `change_request_summaries`(説明書の任意の要約。Phase 84)**
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | 行ID |
+| change_request_id | UUID | FK (`change_requests.id`, ondelete CASCADE), NOT NULL | CR ID |
+| generated_text | TEXT | NOT NULL | LLM が作った元の文 |
+| text | TEXT | NOT NULL | 今の文(人が直した文。作った直後は元の文と同じ) |
+| status | VARCHAR(20) | NOT NULL | `unconfirmed`(未確認)/`confirmed`(確認済み) |
+| fingerprint | VARCHAR(64) | NOT NULL | 要約を作った・確かめた時点の説明書の5節の sha256。今の5節と違えば「古い」(状態は保存せず読むときに決める) |
+| generated_model | VARCHAR(100) | NULL可 | 要約を作ったモデル名 |
+| generated_by | UUID | FK (`users.id`, ondelete SET NULL), NULL可 | 要約を作らせた開発者 |
+| generated_at | TIMESTAMP(tz) | NOT NULL | 要約を作った日時 |
+| edited_at | TIMESTAMP(tz) | NULL可 | 最後に直した日時 |
+| confirmed_by | UUID | FK (`users.id`, ondelete SET NULL), NULL可 | 確かめた開発者 |
+| confirmed_at | TIMESTAMP(tz) | NULL可 | 確かめた日時 |
+
+`UNIQUE(change_request_id)`(CR ごとに1行。作り直すと上書きし、直した文・確かめた記録も消える)。マイグレーション `fee4fbc2a00c`。
 
 * **`generated_documents` に足す列**: 反映した CR(`change_request_id`。NULL 可。Phase 85)。生成したモデル名(`generated_model`)は Phase 81 で足した(④)。
 ---
@@ -461,8 +480,10 @@ backend/
 | **POST** / **GET** | `/api/v1/projects/{id}/baselines` | （※ステージ11、Phase 81）合意済みの版(束)の作成(本文は合意の記録`{counterpart, agreed_at, memo, reason}`。`agreed_at`はタイムゾーン付き、`reason`は必須。201で写しの中身付きの束)・一覧(新しい順。写しは要約だけ)。`GET .../baselines/{number}` で中身(写し)、無ければ404。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`、生成中は409、要件定義書か外部設計書が無ければ409 `BASELINE_DOCUMENTS_MISSING`。直す・消す API は持たない | 必要 |
 | **POST** / **GET** | `/api/v1/projects/{id}/change-requests` | （※ステージ11、Phase 82）CR の作成(本文`{title, content, background_source, background_date, background_memo, targets, adds_requirement, baseline_number}`。`targets`は`[{requirement_id, kind}]`(`kind`は`content`/`delete`、省くと`content`。同じ要件を違う種類で2回は422)。`background_source`は`meeting`/`email`/`document`/`other`、`baseline_number`を省くと最新の束。201で詳細)・一覧(新しい順。中身と時系列なし)。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`、束が無ければ409 `CR_BASELINE_MISSING`、番号の束が無ければ404、基準の束の要件定義書に無い要件 ID・対象が空で新規の印も無いは422 `CR_TARGET_UNKNOWN` | 必要 |
 | **GET** / **PATCH** | `/api/v1/projects/{id}/change-requests/{number}` | （※ステージ11、Phase 82）CR の詳細(中身・合意の記録`decision`・時系列`events`・重なり`overlapping`・写しの元`derived_from_number`と先`derived_numbers`・今できる操作`allowed_actions`。無ければ404)・中身の更新(送った項目だけ。下書き・説明済みだけで、説明済みは下書きに戻る。ほかは409 `CR_INVALID_TRANSITION`) | 必要 |
-| **POST** | `/api/v1/projects/{id}/change-requests/{number}/explain` ・ `/decision` ・ `/withdraw` ・ `/copy` | （※ステージ11、Phase 82）状態の遷移。説明済みにする(下書きから)・合意 / 却下(説明済みから。本文は合意の記録`{decision, decided_at, counterpart, memo, reason}`)・取り下げ(下書き・説明済みから。本文`{reason}`は任意)・却下した CR の写し(新しい番号の下書き。201)。許されない遷移は409 `CR_INVALID_TRANSITION`。反映済み・検証済み・説明書は Phase 84〜86 で足す | 必要 |
+| **POST** | `/api/v1/projects/{id}/change-requests/{number}/explain` ・ `/decision` ・ `/withdraw` ・ `/copy` | （※ステージ11、Phase 82）状態の遷移。説明済みにする(下書きから)・合意 / 却下(説明済みから。本文は合意の記録`{decision, decided_at, counterpart, memo, reason}`)・取り下げ(下書き・説明済みから。本文`{reason}`は任意)・却下した CR の写し(新しい番号の下書き。201)。許されない遷移は409 `CR_INVALID_TRANSITION`。反映済み・検証済みは Phase 85・86 で足す | 必要 |
 | **GET** | `/api/v1/projects/{id}/change-requests/{number}/impact` | （※ステージ11、Phase 83）CR の影響の予測。基準の束の写しから、対象の要件ごとに見直しが要る要素をたどり、1つの一覧にまとめる(`targets`(種類・束の文)・`items`(`key`・`kind`・`stage`・`label`・`path`・`reason`・届いた対象`requirement_ids`)・`unpredicted_new_requirement`・束に入っていない文書と段階`excluded`)。判断の後は判断の時点で保存したもの(`saved: true`)。無ければ404 | 必要 |
+| **GET** | `/api/v1/projects/{id}/change-requests/{number}/explanation` ・ `/explanation/download` | （※ステージ11、Phase 84）変更の説明書。プレビューは5節の md(`markdown`)・その sha256(`fingerprint`)・出力する md(`output`。確認済みで古くない要約だけを載せる)・ファイル名(`cr-<番号>-explanation.md`)・作業単位とテストの内訳(`units`・`integration_tests`・`system_tests`・`has_test_spec`)・要約(`summary`。無ければ null。`text`・`generated_text`・`edited`・`state`(`unconfirmed`/`confirmed`/`stale`)・作った人とモデル・確かめた人と日時・照合で5節に無い要件 ID と数字`unknown_requirement_ids`・`unknown_numbers`)。ダウンロードは`output`を`text/markdown`で返す。CR が無ければ404 | 必要 |
+| **POST** / **PATCH** | `/api/v1/projects/{id}/change-requests/{number}/explanation/summary` ・ `.../summary/confirm`(POST) | （※ステージ11、Phase 84）説明書の任意の要約。作る(POST。利用者の生成の用途の LLM に5節だけを渡す。未確認ででき、前の要約は上書き)・直す(PATCH `{text}`。未確認に戻る)・確かめる(POST `.../confirm`。確かめた人と日時と今の5節の fingerprint を残し、出力に載る。照合の結果では止めない)。応答はどれもプレビューと同じ形。要約が無いのに直す・確かめるは404 `CR_SUMMARY_NOT_FOUND`。LLM のキーが自分にも既定にも無ければ`LLM_UNAVAILABLE` | 必要 |
 | **PUT** / **DELETE** | `/api/v1/users/me/api-keys/{provider}` | （※ステージ9、Phase 67）provider ごとの API キーの登録(`{api_key}`。保存の前にモデルの一覧の取得で確かめる。無効は422 `API_KEY_INVALID`、確かめられないときは502 `API_KEY_CHECK_FAILED`、暗号の鍵が無いときは503 `ENCRYPTION_UNAVAILABLE`。試行はユーザーごとに1時間10回)・削除(204。無くても204。選択の行は残す) | 必要 |
 
 > **[Phase 24 で確定 ── 〈簡易モードの設計図の API を削除〉]** 当初〈上の表の`POST /uml/diagrams`(生成)・`/uml/candidates`・`/uml/generation-runs`・`/uml/reflect`・`/uml/embeds`・`/uml/bundle`を提供する〉→ 撤回。理由〈簡易ドキュメントモードの設計図(SCR-007)を削除した([外部設計書](external_design.md) 2.6節の撤回を参照)。残りの`/uml/...`(図の取得・一覧・更新・検証・自動レイアウト・承認・出力、データ辞書)は、詳細設計モードの段階2〜4が使う〉。
@@ -761,6 +782,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
   * **Phase 83 で確定**: 純粋関数 `app/change_requests/prediction.py`(`baseline_models` が束の写しの key → model から `DesignModels` を作り、段階3の写しの `ER_SNAPSHOT_KEY` を ER の定義にする。`predict` が対象ごとに `impact_of` を呼び、同じ要素は短い道を残して届いた対象を集める)。変更の種類(`app/change_requests/targets.py`)によらず `Change(kind="content")` でたどる(`to_trace_changes` と同じ規則)。`ChangeRequestService.impact` は保存があればそれ、無ければ基準の束から求め、`decide` が判断と同じトランザクションで `predicted_impact` に書く。`ER_SNAPSHOT_KEY` は `app/services/design_stage_service.py` から `app/detailed_design/data_model.py` へ移した(純粋層の予測が使うため)。
 * **反映**: `POST /projects/{id}/generate` の本文に `cr_id` を足す。`finding_ids` と同じく、文書・段階ごとに CR の内容を修正の指示にしてプロンプトに入れる(`app/review/sendback.py` の `build_instruction` の型)。作った版に `change_request_id` とモデル名を残す。反映の後の印(`impact`)を、CR の予測と並べる。
 * **説明書**: 5節は、CR・束の写し・予測・観点の表(`hearing_points` の open)・要件の出どころ(`assumed`)から決定的に組み立てる。任意の要約は LLM で作り、要件 ID(`FR-`・`NFR-`・`CON-`)と数字を5節と照合する(決定的)。確認した時点の入力の fingerprint を持ち、CR か予測が変わったら「古い」にする(段階の `input_fingerprint` と同じ型)。
+  * **Phase 84 で確定**: 純粋関数 `app/change_requests/explanation.py`(`build_explanation` が `ChangeRequestFacts`(CR の値)・予測・束の写し・束に入っていないもの から5節の `Explanation` を作る。`fingerprint` は5節の md の sha256)。「観点の表の open」は、今の `hearing_points` でなく**束の要件定義書の写しの `point_statuses`** で読み、対象の要件の根拠の観点(`rows[].points`)のうち未決のものを出す(合意した版と同じものを示し、後でヒアリングが進んでも説明書が変わらないように)。推測の要件も対象の要件のうち `source` が `assumed` のもの。作業単位は予測の `task:`・`unit:` の要素を単位で1つにし、テストは束のテスト仕様書の写しのケースのうち、`functions` が予測の処理に当たるか `req_ids` が対象に当たるもの(テスト仕様書が束に無ければ数えない)。照合 `check_summary` は要件 ID と数字(全角は半角に直し、英字や数字に続く数字は名前の一部として除く。5節の見出しの行は照合の元にしない)。要約の LLM の入力と状態は `app/change_requests/summary.py`(`build_summary_messages`・`summary_state`)。`ChangeRequestService` が `explanation`・`generate_summary`(生成の用途で解決)・`edit_summary`・`confirm_summary` を持ち、予測は影響の API と同じもの(`_impact_with_baseline`)を使う。要約の表は⑱、マイグレーション `fee4fbc2a00c`。
 * **検証**: CR に結んだ段階の印(`design_stages.impact` の CR の反映が出どころのもの)がすべて確認済みなら、検証済みにできる。設計レビュー(`review_runs`)は任意で、流したときは CR に結ぶ。
 
 ## 3.4 例外処理・エラーハンドリング・ログ設計
