@@ -1,4 +1,5 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2
+# Phase-85-2：更新(docstring: generate_documents・request_generation・generate が cr_number を受けることを足した)
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
 # Phase-6-1:追記 ── app.services.errors.DocumentNotFoundError
@@ -31,6 +32,7 @@
 # Phase-69-1:追記 ── app.uml.generation.failures(ReasonCode, classify_failure)
 # Phase-69-1：削除 ── app.services.errors.LLMQuotaExceededError
 # Phase-81-1:追記 ── app.services.llm_resolver.injected_llm
+# Phase-85-2:追記 ── app.change_requests.join_instructions, app.detailed_design.impact.Mark, app.detailed_design.impact.cr_source, app.services.change_request_service.ChangeRequestService, app.services.errors.ChangeRequestNotReflectableError
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -43,9 +45,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.catalog import Purpose
 from app.ai.llm.content import extract_text_content
+from app.change_requests import join_instructions
 from app.core.database import AsyncSessionLocal
 from app.core.errors import AppError
 from app.detailed_design.function_list import FunctionListModel
+from app.detailed_design.impact import Mark, cr_source
 from app.detailed_design.plan import PLAN_STAGE, PlanModel
 from app.documents.external_design import (
     ExternalDesignModel,
@@ -146,8 +150,10 @@ from app.schemas.document import (
     RequirementsSummaryRead,
     TestSpecRead,
 )
+from app.services.change_request_service import ChangeRequestService
 from app.services.design_stage_service import DesignStageService
 from app.services.errors import (
+    ChangeRequestNotReflectableError,
     DocGenerationInProgressError,
     DocumentNotFoundError,
     GenerationStartInvalidError,
@@ -403,10 +409,12 @@ async def generate_documents(
     start_from: str | None = None,
     # Phase-54-2:追記
     finding_ids: Sequence[uuid.UUID] = (),
+    # Phase-85-2:追記
+    cr_number: int | None = None,
     llm=None,
 ) -> None:
     """`BackgroundTasks`から呼び出すエントリポイント。`start_from`は再生成の起点(省略で全部)、
-    `finding_ids`は再生成の指示に入れる採用した指摘。
+    `finding_ids`は再生成の指示に入れる採用した指摘、`cr_number`は反映する合意した CR の番号。
 
     FastAPI 0.106以降、`yield`を使うDIのセッション(SessionDep)はbackground task実行"前"に
     クローズされるため、background task内でリクエストのセッションをそのまま使うことはできない。
@@ -445,6 +453,8 @@ async def generate_documents(
                 start_from=start_from,
                 # Phase-54-2:追記
                 finding_ids=finding_ids,
+                # Phase-85-2:追記
+                cr_number=cr_number,
                 llm=llm,
             )
     finally:
@@ -487,6 +497,8 @@ class DocGeneratorService:
         *,
         start_from: str | None = None,
         finding_ids: Sequence[uuid.UUID] = (),
+        # Phase-85-2:追記
+        cr_number: int | None = None,
     ) -> str:
         """生成の要求を受け付け、`status`を`generating`にしてcommitする。戻り値は受け付ける前の状態
         (失敗したときに戻す先。バックグラウンドの`generate`へ渡す)。
@@ -496,7 +508,9 @@ class DocGeneratorService:
         `GenerationUpstreamMissingError`(409)。詳細設計モードのテスト仕様書は、段階1・段階7 が
         承認済みで古くなければ作れる(違えば`TestSpecUpstreamNotReadyError`(409))。`finding_ids`(再生成の指示に入れる指摘)に
         プロジェクトに無い指摘があれば`ReviewFindingNotFoundError`(404)、採用していない・ヒアリングが
-        原因の指摘があれば`SendbackFindingInvalidError`(409)。
+        原因の指摘があれば`SendbackFindingInvalidError`(409)。`cr_number`(反映する CR)が
+        プロジェクトに無ければ`ChangeRequestNotFoundError`(404)、合意・反映済みでないか、
+        作り直す文書が設計書を含まない(テスト仕様書だけ)なら`ChangeRequestNotReflectableError`(409)。
 
         生成中なら`DocGenerationInProgressError`(409)にする。受け付けと同じリクエストの中で
         `generating`にするのは、バックグラウンドで切り替えると、切り替わる前の二度押しを
@@ -525,6 +539,13 @@ class DocGeneratorService:
         await ReviewService(self._session).sendback_findings(
             project.id, finding_ids, strict=True
         )
+        # Phase-85-2:追記
+        if cr_number is not None:
+            await ChangeRequestService(self._session).reflectable(project, cr_number)
+            if not any(t in DOC_TYPES_BY_MODE[project.mode] for t in targets):
+                raise ChangeRequestNotReflectableError(
+                    "テスト仕様書だけの生成には、変更要求を渡せません。"
+                )
         await self.recover_if_stale(project)
         if project.status == "generating":
             raise DocGenerationInProgressError(
@@ -589,6 +610,8 @@ class DocGeneratorService:
         start_from: str | None = None,
         # Phase-54-2:追記
         finding_ids: Sequence[uuid.UUID] = (),
+        # Phase-85-2:追記
+        cr_number: int | None = None,
         llm=None,
         # Phase-52-4:追記
         review_llm=None,
@@ -624,6 +647,12 @@ class DocGeneratorService:
 
         `finding_ids`(設計レビューの採用した指摘)は、作り直す文書ごとに、関連する指摘だけを
         修正指示にして生成のプロンプトに入れる(app/review/sendback.py)。
+
+        `cr_number`(合意した CR)は、作り直す設計書のどれにも同じ指示にして入れ
+        (app/change_requests/instruction.py)、作った版に CR を残す。生成が終わったら、CR を
+        反映済みにし、付いた印(出どころに`cr:<番号>`を足す)を CR の写しに重ねる(同じ
+        トランザクション)。
+        受け付けの後に反映できない状態になった CR は渡さない。
 
         テスト仕様書(`TEST_SPEC`)は設計書の後に作る(簡易モードは毎回、詳細設計モードは
         `start_from="test_spec"`のときだけ。`generation_targets`)。設計書と同じトランザクションに
@@ -673,6 +702,14 @@ class DocGeneratorService:
             sendback = await ReviewService(self._session).sendback_findings(
                 project_id, finding_ids
             )
+            # Phase-85-2:追記
+            change_requests = ChangeRequestService(self._session)
+            reflection = await change_requests.reflection(project_id, cr_number)
+            cr_instruction = reflection.instruction if reflection is not None else ""
+            change_request_id = (
+                reflection.change_request.id if reflection is not None else None
+            )
+            versions: list[tuple[str, int]] = []
             history = await self._chat_histories.list_for_project(project_id)
             transcript = _render_transcript(history)
 
@@ -733,7 +770,12 @@ class DocGeneratorService:
                     doc_type, previous_models, requirements, external, internal
                 )
                 # Phase-54-2:追記
-                instruction = build_instruction(findings_for([doc_type], sendback))
+                # Phase-85-2：更新
+                # instruction = build_instruction(findings_for([doc_type], sendback))
+                # ↓↓
+                instruction = join_instructions(
+                    [build_instruction(findings_for([doc_type], sendback)), cr_instruction]
+                )
                 if doc_type == "requirements":
                     # Phase-37-2：更新
                     # content, model = await self._generate_requirements(
@@ -791,7 +833,10 @@ class DocGeneratorService:
                         project, generated, requirements, internal, changed, instruction, llm=llm
                     )
                     model = plan.model_dump(mode="json")
-                await self._documents.create_version(
+                # Phase-85-2：更新
+                # await self._documents.create_version(
+                # ↓↓
+                document = await self._documents.create_version(
                     # Phase-36-2：更新
                     # project_id=project_id, doc_type=doc_type, content=content
                     # ↓↓
@@ -803,7 +848,11 @@ class DocGeneratorService:
                     content=content,
                     model=model,
                     generated_model=resolved.model,
+                    # Phase-85-2:追記
+                    change_request_id=change_request_id,
                 )
+                # Phase-85-2:追記
+                versions.append((doc_type, document.version))
                 generated[doc_type] = content
                 # Phase-43-3:追記
                 new_models[doc_type] = model
@@ -834,9 +883,31 @@ class DocGeneratorService:
             # for doc_type in targets:
             # ↓↓
             designed = [doc_type for doc_type in targets if doc_type in doc_types]
+            # Phase-85-2:追記
+            extra_sources = (
+                (cr_source(reflection.change_request.number),) if reflection is not None else ()
+            )
+            marks: list[Mark] = []
             for doc_type in designed:
-                await self._stages.record_document_change(
-                    project, doc_type, previous_models[doc_type], new_models[doc_type]
+                # Phase-85-2：更新
+                # await self._stages.record_document_change(
+                #     project, doc_type, previous_models[doc_type], new_models[doc_type]
+                # ↓↓
+                marks += await self._stages.record_document_change(
+                    project,
+                    doc_type,
+                    previous_models[doc_type],
+                    new_models[doc_type],
+                    extra_sources=extra_sources,
+                )
+            # Phase-85-2:追記
+            if reflection is not None and versions:
+                await change_requests.record_document_apply(
+                    reflection.change_request,
+                    documents=versions,
+                    model=resolved.model,
+                    marks=marks,
+                    actor_id=user_id,
                 )
 
             # Phase-52-4：更新

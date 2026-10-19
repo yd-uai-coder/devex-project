@@ -1,5 +1,6 @@
-# 作成：Phase-82-3｜更新：Phase-83-3,84-3,84-4
+# 作成：Phase-82-3｜更新：Phase-83-3,84-3,84-4,85-4
 # Phase-84-3:追記 ── fastapi.Response
+# Phase-85-4:追記 ── app.schemas.change_request.ChangeRequestComparisonRead
 from typing import Annotated
 
 from fastapi import APIRouter, Path, Response, status
@@ -11,6 +12,7 @@ from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
 from app.api.responses import content_disposition
 from app.change_requests import explanation_filename
 from app.schemas.change_request import (
+    ChangeRequestComparisonRead,
     ChangeRequestCreate,
     ChangeRequestDecision,
     ChangeRequestExplanationRead,
@@ -103,6 +105,19 @@ async def get_change_request_impact(
         view.prediction,
         saved=view.saved,
         excluded=[ExcludedItemRead(key=e.key, state=e.state) for e in view.excluded],
+    )
+
+
+# Phase-85-4:追記
+@router.get("/{number}/comparison", response_model=ChangeRequestComparisonRead)
+async def get_change_request_comparison(
+    number: ChangeRequestNumber, session: SessionDep, current_project: CurrentProjectDep
+) -> ChangeRequestComparisonRead:
+    """反映した CR の、影響の予測と反映で付いた印の比較(一致 / 予測だけ / 実際だけ)。無ければ
+    404、まだ反映していなければ409。"""
+    view = await ChangeRequestService(session).comparison(current_project, number)
+    return ChangeRequestComparisonRead.build(
+        view.change_request, view.comparison, saved=view.saved
     )
 
 

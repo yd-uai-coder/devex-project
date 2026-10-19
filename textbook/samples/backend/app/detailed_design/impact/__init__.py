@@ -1,4 +1,4 @@
-# 作成：Phase-42-3｜更新：Phase-42-4,43-2,43-3,46-1
+# 作成：Phase-42-3｜更新：Phase-42-4,43-2,43-3,46-1,85-2
 """変更影響分析(ステージ7)の純粋関数。
 
 - elements: 設計の要素と参照の導出(文書の model と段階1〜8 の model から)
@@ -12,6 +12,7 @@
 # Phase-43-2:追記 ── app.detailed_design.impact.diff(DiffKind, ElementChange, diff_elements, to_trace_changes)
 # Phase-43-3:追記 ── app.detailed_design.impact.marks(Mark, RecordedChange, StageImpact, blocking_marks, doc_source, group_by_stage, marks_for, merged_elements, record, set_reviewed, stage_source)
 # Phase-46-1:追記 ── app.detailed_design.impact.simple(SimpleModels, build_simple_elements)
+# Phase-85-2:追記 ── app.detailed_design.impact.marks.cr_source
 from app.detailed_design.impact.diff import (
     DiffKind,
     ElementChange,
@@ -33,6 +34,7 @@ from app.detailed_design.impact.marks import (
     RecordedChange,
     StageImpact,
     blocking_marks,
+    cr_source,
     doc_source,
     group_by_stage,
     marks_for,
@@ -77,6 +79,8 @@ __all__ = [
     "SimpleModels",
     "StageImpact",
     "blocking_marks",
+    # Phase-85-2:追記
+    "cr_source",
     "build_elements",
     # Phase-46-1:追記
     "build_simple_elements",

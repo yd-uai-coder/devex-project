@@ -1,4 +1,5 @@
-# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4,30-5,30-7,31-4,43-4,54-3,54-5,68-4
+# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4,30-5,30-7,31-4,43-4,54-3,54-5,68-4,85-3
+# Phase-85-3：更新(docstring: generate_design_stage が cr_number を受けることを足した)
 # 写経レベル: 定型 ── サービスを呼ぶだけの薄いルート。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、実装手順書の zip を作れること)
 # Phase-16-4:追記 ── fastapi.BackgroundTasks, fastapi.status, app.services.design_stage_generation_service.DesignStageGenerationService, app.services.design_stage_generation_service.run_design_stage_generation
@@ -166,7 +167,8 @@ async def generate_design_stage(
     段階は「生成中」になり、終わると`completed`/`failed`になる。background taskには値だけを渡す
     (doc生成・UML図の生成と同じ理由)。段階5は、本文の`function_ids`で下書きを作る処理を選べる。
     段階6は、本文の`logics`で下書きを作る関数を選べる。段階8は、本文の`unit_ids`で手順書を作る
-    作業単位を選べる。`finding_ids`(設計レビューの採用した指摘)は修正指示にして生成に渡す。"""
+    作業単位を選べる。`finding_ids`(設計レビューの採用した指摘)と`cr_number`(文書へ反映した後の
+    変更要求)は修正指示にして生成に渡す。"""
     # Phase-20-3：更新
     # accepted = await DesignStageGenerationService(session).request_generation(
     #     current_project, stage=stage
@@ -197,6 +199,8 @@ async def generate_design_stage(
     )
     # Phase-54-3:追記
     finding_ids = payload.finding_ids if payload is not None else []
+    # Phase-85-3:追記
+    cr_number = payload.cr_number if payload is not None else None
     accepted = await DesignStageGenerationService(session).request_generation(
         # Phase-28-2：更新
         # current_project, stage=stage, function_ids=function_ids, logics=logics
@@ -210,6 +214,8 @@ async def generate_design_stage(
         logics=logics,
         unit_ids=unit_ids,
         finding_ids=finding_ids,
+        # Phase-85-3:追記
+        cr_number=cr_number,
     )
     background_tasks.add_task(
         run_design_stage_generation,
@@ -221,6 +227,8 @@ async def generate_design_stage(
         # Phase-28-2:追記
         unit_ids,
         finding_ids,
+        # Phase-85-3:追記
+        cr_number,
     )
     # ── ここから Phase-16-4 の作成分 ──
     return accepted

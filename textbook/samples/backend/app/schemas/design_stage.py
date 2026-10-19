@@ -1,4 +1,5 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5,31-4,31-7,38-2,43-4,54-3,69-2
+# 作成：Phase-15-2｜更新：Phase-16-3,18-3,20-3,21-3,27-1,27-2,28-1,28-2,29-4,29-5,30-5,31-4,31-7,38-2,43-4,54-3,69-2,85-3
+# Phase-85-3：更新(docstring: DesignStageRead の generation_change_request・generated_model を足した)
 # 写経レベル: 定型 ── Pydantic スキーマ。
 # Phase-31-4：更新(docstring: 簡易モードの段階8 ── fix_document・mode・plan・dataflow)
 # Phase-16-3:追記 ── typing.Literal, pydantic.Field
@@ -57,6 +58,15 @@ class GenerationFindingRead(BaseModel):
     problem: str
 
 
+# Phase-85-3:追記
+class GenerationChangeRequestRead(BaseModel):
+    """段階の直近の生成の修正指示に入れた変更要求(CR)の要約。`label`は画面に出す名前(CR-1…)。"""
+
+    number: int
+    label: str
+    title: str
+
+
 class DesignStageRead(BaseModel):
     """段階1つ分の状態。未着手の段階も含めて、モードの全段階を常に返す(詳細設計モードは段階1〜8、
     簡易モードは段階8だけ。行が無ければversion等はNone)。`mode`はプロジェクトのモード。
@@ -73,7 +83,9 @@ class DesignStageRead(BaseModel):
     (詳細設計モードは単位の処理の段階1の要件、簡易モードは WBS の「要件」欄)。`impact_open`・
     `impact_reviewed`は、この段階に記録した変更の影響の印のうち、未確認・確認済みの件数(印の中身は
     変更の影響の取得`DesignImpactRead`で読む)。`generation_findings`は、直近の生成の修正指示に
-    入れた指摘(差し戻しの作り直しのとき。消えた指摘は入らない。指摘の順は渡した順)。"""
+    入れた指摘(差し戻しの作り直しのとき。消えた指摘は入らない。指摘の順は渡した順)。
+    `generation_change_request`は、直近の生成の修正指示に入れた変更要求(反映の作り直しのとき。
+    CR が消えたら None)。`generated_model`は直近の下書きを生成したモデル名。"""
 
     stage: int
     # Phase-31-4:追記
@@ -100,6 +112,9 @@ class DesignStageRead(BaseModel):
     impact_reviewed: int = 0
     # Phase-69-2:追記
     generation_findings: list[GenerationFindingRead] = Field(default_factory=list)
+    # Phase-85-3:追記
+    generation_change_request: GenerationChangeRequestRead | None = None
+    generated_model: str | None = None
 
 
 class DesignStageSave(BaseModel):
@@ -130,7 +145,8 @@ class DesignStageGenerate(BaseModel):
     だけが使う、下書きを作る関数(省略すると、選んだ関数のうちまだ詳細の無いもの。Phase 21)。
     `unit_ids`は段階8だけが使う、手順書を作る作業単位の ID(省略すると、作業単位のうち手順書の
     無いもの。Phase 28)。`finding_ids`は修正指示に入れる、設計レビューの採用した指摘
-    (設計・不整合。Phase 54-3)。"""
+    (設計・不整合。Phase 54-3)。`cr_number`は修正指示に入れる変更要求(CR)の番号(文書へ
+    反映した後の、反映済みの CR。Phase 85-3)。"""
 
     function_ids: list[str] | None = None
     # Phase-21-3:追記
@@ -139,6 +155,8 @@ class DesignStageGenerate(BaseModel):
     unit_ids: list[str] | None = None
     # Phase-54-3:追記
     finding_ids: list[uuid.UUID] = []
+    # Phase-85-3:追記
+    cr_number: int | None = Field(default=None, ge=1)
 
 
 # Phase-28-1:追記

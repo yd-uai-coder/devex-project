@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -638,3 +638,19 @@ class ChangeRequestSummaryNotFoundError(NotFoundError):
     """説明書の要約をまだ作っていない CR で、要約を直す・確かめる操作をした場合に送出する。"""
 
     code: ClassVar[str | None] = "CR_SUMMARY_NOT_FOUND"
+
+
+# Phase-85-2:追記
+class ChangeRequestNotReflectableError(ConflictError):
+    """再生成に渡せない状態の CR を渡した場合に送出する。文書は合意・反映済みの CR、段階は文書へ
+    反映した後(反映済み)の CR だけを渡せる。"""
+
+    code: ClassVar[str | None] = "CR_NOT_REFLECTABLE"
+
+
+# Phase-85-4:追記
+class ChangeRequestNotAppliedError(ConflictError):
+    """まだ反映していない CR(反映済み・検証済みでない)で、予測と実際の印の比較を求めた場合に
+    送出する(比べる実際の印が無いため)。"""
+
+    code: ClassVar[str | None] = "CR_NOT_APPLIED"

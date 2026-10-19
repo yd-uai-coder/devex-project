@@ -1,4 +1,5 @@
-# 作成：Phase-82-1｜更新：Phase-83-1
+# 作成：Phase-82-1｜更新：Phase-83-1,85-2
+# Phase-85-2：更新(docstring: add_event の refs を足した)
 import uuid
 from collections.abc import Collection
 from datetime import UTC, date, datetime
@@ -96,9 +97,12 @@ class ChangeRequestRepository(CRUDRepository[ChangeRequest]):
         to_status: str,
         actor_id: uuid.UUID | None = None,
         note: str = "",
+        # Phase-85-2:追記
+        refs: dict | None = None,
     ) -> ChangeRequestEvent:
-        """時系列に1行足し、CR の状態と更新日時をそろえる。時系列は読み込み済みであること
-        (このリポジトリで読んだ CR は常に読み込み済み)。flushまで行う。"""
+        """時系列に1行足し、CR の状態と更新日時をそろえる。`refs`は行が指すもの(作った版など)。
+        時系列は読み込み済みであること(このリポジトリで読んだ CR は常に読み込み済み)。flushまで
+        行う。"""
         now = datetime.now(UTC)
         event = ChangeRequestEvent(
             position=len(change_request.events),
@@ -108,6 +112,8 @@ class ChangeRequestRepository(CRUDRepository[ChangeRequest]):
             occurred_at=now,
             actor_id=actor_id,
             note=note,
+            # Phase-85-2:追記
+            refs=refs,
         )
         change_request.events.append(event)
         change_request.status = to_status

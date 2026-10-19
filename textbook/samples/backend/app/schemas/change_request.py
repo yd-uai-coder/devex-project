@@ -1,5 +1,6 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4
 # Phase-83-1：更新(docstring: ChangeRequestCreate の対象を、要件 ID と変更の種類の組にした)
+# Phase-85-4:追記 ── app.change_requests.COMPARISON_STATUS_LABEL, app.change_requests.COMPARISON_STATUSES, app.change_requests.PREDICTED_ONLY_REASON_LABEL, app.change_requests.Comparison, app.change_requests.ComparisonStatus, app.change_requests.PredictedOnlyReason
 import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Annotated, Any, Literal
@@ -19,6 +20,9 @@ from pydantic import (
 
 from app.change_requests import (
     BACKGROUND_SOURCE_LABEL,
+    COMPARISON_STATUS_LABEL,
+    COMPARISON_STATUSES,
+    PREDICTED_ONLY_REASON_LABEL,
     STATUS_LABEL,
     SUMMARY_MAX,
     SUMMARY_STATE_LABEL,
@@ -26,8 +30,11 @@ from app.change_requests import (
     BackgroundSource,
     ChangeRequestAction,
     ChangeRequestStatus,
+    Comparison,
+    ComparisonStatus,
     Explanation,
     Overlap,
+    PredictedOnlyReason,
     Prediction,
     SummaryState,
     Target,
@@ -165,7 +172,11 @@ class ChangeRequestWithdraw(BaseModel):
 
 
 class ChangeRequestEventRead(BaseModel):
-    """CR の時系列の1行。`from_status`は作成・写しで null。"""
+    # Phase-85-2：更新
+    # """CR の時系列の1行。`from_status`は作成・写しで null。"""
+    # ↓↓
+    """CR の時系列の1行。`from_status`は作成・写しで null。`refs`は行が指すもの(反映: 作った文書の
+    版とモデル名、段階の反映: 段階・版・モデル名)。指すものの無い行は null。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -175,6 +186,8 @@ class ChangeRequestEventRead(BaseModel):
     occurred_at: datetime
     actor_id: uuid.UUID | None
     note: str
+    # Phase-85-2:追記
+    refs: dict[str, Any] | None = None
 
 
 class ChangeRequestDecisionRead(BaseModel):
@@ -333,6 +346,69 @@ class PredictedItemRead(BaseModel):
     path: list[str]
     reason: str
     requirement_ids: list[str]
+
+
+# Phase-85-4:追記
+class ComparedItemRead(BaseModel):
+    """予測と実際の印の比較の要素1つ。`status`は一致 / 予測だけ / 実際だけ、
+    `predicted_only_reason`は予測だけのときの理由(文書の側・承認していない段階・差分が届かな
+    かった)。`reviewed`は反映のときの印の確認の状態(印が無ければ null)。"""
+
+    key: str
+    label: str
+    stage: int
+    status: ComparisonStatus
+    status_label: str
+    predicted_only_reason: PredictedOnlyReason | None
+    predicted_only_reason_label: str | None
+    predicted_reason: str
+    actual_reason: str
+    requirement_ids: list[str]
+    reviewed: bool | None
+
+
+class ChangeRequestComparisonRead(BaseModel):
+    """反映した CR の、影響の予測と反映で付いた印の比較。`counts`は分類ごとの件数、`saved`は予測が
+    判断の時点で保存したものか。"""
+
+    number: int
+    label: str
+    status: ChangeRequestStatus
+    saved: bool
+    counts: dict[ComparisonStatus, int]
+    items: list[ComparedItemRead]
+
+    @classmethod
+    def build(
+        cls, change_request: "ChangeRequest", comparison: Comparison, *, saved: bool
+    ) -> "ChangeRequestComparisonRead":
+        return cls(
+            number=change_request.number,
+            label=change_request_label(change_request.number),
+            status=change_request.status,  # type: ignore[arg-type]
+            saved=saved,
+            counts={status: comparison.count(status) for status in COMPARISON_STATUSES},
+            items=[
+                ComparedItemRead(
+                    key=i.key,
+                    label=i.label,
+                    stage=i.stage,
+                    status=i.status,
+                    status_label=COMPARISON_STATUS_LABEL[i.status],
+                    predicted_only_reason=i.predicted_only_reason,
+                    predicted_only_reason_label=(
+                        PREDICTED_ONLY_REASON_LABEL[i.predicted_only_reason]
+                        if i.predicted_only_reason is not None
+                        else None
+                    ),
+                    predicted_reason=i.predicted_reason,
+                    actual_reason=i.actual_reason,
+                    requirement_ids=list(i.requirement_ids),
+                    reviewed=i.reviewed,
+                )
+                for i in comparison.items
+            ],
+        )
 
 
 class ExcludedItemRead(BaseModel):

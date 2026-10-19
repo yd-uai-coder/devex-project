@@ -1,4 +1,5 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1,65-1,68-3
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1,65-1,68-3,85-2
+# Phase-85-2：更新(docstring: trigger_generation が cr_number を受けることを足した)
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
 #                  app.services.doc_generator_service
@@ -355,7 +356,9 @@ async def trigger_generation(
     本文の`start_from`は再生成の起点(その文書から下流を作り直す。省略で全部)。モードに無い起点は
     400、起点より上流の文書が無ければ409。`test_spec`はテスト仕様書だけを作る(詳細設計モードは
     段階1・段階7 が承認済みでなければ409)。`finding_ids`は再生成の指示に入れる採用した指摘
-    (プロジェクトに無い指摘は404、採用していない・ヒアリングが原因の指摘は409)。
+    (プロジェクトに無い指摘は404、採用していない・ヒアリングが原因の指摘は409)。`cr_number`は
+    反映する合意した変更要求(プロジェクトに無ければ404、合意・反映済みでないか、テスト仕様書だけの
+    生成なら409)。生成が終わると CR は反映済みになる。
     """
     # Phase-53(完了後の調整)：更新
     # status_before_generation = await DocGeneratorService(session).request_generation(
@@ -368,11 +371,16 @@ async def trigger_generation(
     start_from = payload.start_from if payload else None
     # Phase-54-2:追記
     finding_ids = payload.finding_ids if payload else []
+    # Phase-85-2:追記
+    cr_number = payload.cr_number if payload else None
     status_before_generation = await DocGeneratorService(session).request_generation(
         # Phase-54-2：更新
         # current_project, start_from=start_from
         # ↓↓
-        current_project, start_from=start_from, finding_ids=finding_ids
+        # Phase-85-2：更新
+        # current_project, start_from=start_from, finding_ids=finding_ids
+        # ↓↓
+        current_project, start_from=start_from, finding_ids=finding_ids, cr_number=cr_number
     )
     background_tasks.add_task(
         generate_documents,
@@ -382,6 +390,8 @@ async def trigger_generation(
         start_from=start_from,
         # Phase-54-2:追記
         finding_ids=finding_ids,
+        # Phase-85-2:追記
+        cr_number=cr_number,
     )
 
 

@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-6,15-3,36-1,37-1,81-1
+# 作成：Phase-2-1｜更新：Phase-6-6,15-3,36-1,37-1,81-1,85-2
 # Phase-6-6:追記 ── sqlalchemy.Boolean, sqlalchemy.false
 # Phase-15-3:追記 ── sqlalchemy.UniqueConstraint
 # 写経レベル: 定型 ── 既存モデル群と同型のORMモデル定義(バージョニングロジック自体はrepositories/generated_document.pyのコア箇所を参照)。
@@ -68,6 +68,11 @@ class GeneratedDocument(Base):
     # Phase-81-1:追記
     # 生成したモデル名(例: gemini-3-flash-preview)。この列を足す前の版は NULL
     generated_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Phase-85-2:追記
+    # 反映した変更要求(CR を渡した再生成で作った版だけ。CR が消えたら NULL)
+    change_request_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("change_requests.id", ondelete="SET NULL"), nullable=True
+    )
     # Phase-6-6:追記
     is_current: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=false()

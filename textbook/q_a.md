@@ -1702,3 +1702,9 @@
 - **対象**: [外部設計書](../docs/external_design.md) 2.14節(CR の項目)、[内部設計書](../docs/internal_design.md) ⑯の表・API の表。本体は `app/change_requests/targets.py`・CR のスキーマ・サービス。列は JSON のままなのでマイグレーションは要らない(案の無い既存の行は空の案として読む)。
 - **影響**: 予測と重なりは変わらない(ID だけで見る)。画面はまだ無い。本番には未反映(Phase 89 で反映)。
 - **判断**: 採用(ユーザー決定)。Phase 84 の [84-1](./Phase-84/Phase-84-1.md) で反映する。
+
+### Phase 85 開始時
+
+1. Phase 85(ステージ11 の反映)。2026-10-19。
+2. 質問・相談内容: 「Phase85を開始する」。Claude は計画モードで、[80-4](./Phase-80/Phase-80-4.md) の Phase 85 の未確定事項、[Phase 84 の introduction](./Phase-84/Phase-84-introduction.md) の申し送り、指摘(`finding_ids`)が再生成に入る経路(`DocGeneratorService`・`DesignStageGenerationService`・`app/review/sendback.py`)、印の記録(`record_document_change`・`marks.py`)、CR の遷移の表を読み、4点を聞いた ── (1) 自動実装モード(on / off)(2) 反映の範囲(文書と段階の両方に CR を渡す / 文書だけ / 予測の段階をまとめて再生成)(3) 「反映済み」への遷移とやり直し(文書の再生成の成功で自動 / 開発者がボタンで)(4) 予測と実際の比較の表し方(両方を並べる / 実際の印だけ)。
+3. 回答と対応方針: 4点とも推奨どおり((1) on (2) 文書(要件定義書から)と段階の両方。段階は開発者が段階ごとに押す (3) 文書の再生成の成功で自動。反映済みの間もやり直せ、時系列に1行 (4) 両方を並べ、画面・API は「文書の側」と分ける)。本文の項目を仕様の `cr_id` から **`cr_number`** に変える(CR の API はどこも番号で指すため。計画の承認の前の決定なので #40 の CR にはしない)、受け付けは strict・裏の生成は非 strict、文書は合意・反映済み・段階は反映済みの CR だけ、指示は文書・段階ごとに絞らない、比較は反映のときの印の写し(`applied_impact`)で行い印の出どころに `cr:<番号>` を足す、段階にも CR とモデル名の列、予測だけに理由(文書の側・承認していない段階・届かなかった)、マイグレーションは1本、は Claude の判断として計画で示し、承認された。詳細は [Phase 85 の introduction](./Phase-85/Phase-85-introduction.md)。

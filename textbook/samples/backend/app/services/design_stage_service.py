@@ -1,4 +1,5 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整),56-2,69-2,81-3,83-2
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整),56-2,69-2,81-3,83-2,85-2,85-3
+# Phase-85-2：更新(docstring: record_document_change・_record_impact が記録した印を返し、extra_sources を足した)
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
 # Phase-16-3:追記 ── app.detailed_design.validation.StageSources, app.detailed_design.validation.has_errors, app.detailed_design.validation.validate_stage, app.models.generated_document.GeneratedDocument, app.schemas.design_stage.StageIssueRead, app.services.errors.DesignStageGenerationInProgressError, app.services.errors.DesignStageInvalidError
@@ -21,6 +22,8 @@
 # Phase-56-2:追記 ── collections.abc.Sequence
 # Phase-69-2:追記 ── collections.abc.Iterable, app.models.review.ReviewFinding, app.repositories.review.ReviewRunRepository, app.schemas.design_stage.GenerationFindingRead
 # Phase-83-2:追記 ── app.detailed_design.ER_SNAPSHOT_KEY(このファイルの定数を app/detailed_design/data_model.py へ移した)
+# Phase-85-2:追記 ── app.detailed_design.impact.Mark
+# Phase-85-3:追記 ── app.models.change_request.ChangeRequest, app.repositories.change_request.ChangeRequestRepository, app.schemas.change_request.change_request_label, app.schemas.design_stage.GenerationChangeRequestRead
 import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict
@@ -66,6 +69,7 @@ from app.detailed_design.impact import (
     REGENERATION_STAGES,
     DesignModels,
     Element,
+    Mark,
     SimpleModels,
     StageImpact,
     blocking_marks,
@@ -98,21 +102,25 @@ from app.detailed_design.validation import (
     selected_dfd_accesses,
     validate_stage,
 )
+from app.models.change_request import ChangeRequest
 from app.models.design_stage import DesignStage
 from app.models.generated_document import GeneratedDocument
 from app.models.project import Project
 from app.models.review import ReviewFinding
 from app.models.uml_diagram import UmlDiagram
+from app.repositories.change_request import ChangeRequestRepository
 from app.repositories.design_stage import DesignStageRepository
 from app.repositories.generated_document import GeneratedDocumentRepository
 from app.repositories.review import ReviewRunRepository
 from app.repositories.uml_diagram import UmlDiagramRepository
+from app.schemas.change_request import change_request_label
 from app.schemas.design_stage import (
     DesignImpactRead,
     DesignRefRead,
     DesignStageRead,
     DfdAccessRead,
     ElementChangeRead,
+    GenerationChangeRequestRead,
     GenerationFindingRead,
     ImpactMarkRead,
     RegenerationTargetRead,
@@ -195,7 +203,14 @@ class DesignStageService:
         # return [_to_read(views[stage], rows.get(stage), sources) for stage in views]
         # ↓↓
         findings = await self._generation_findings(project.id, rows.values())
-        return [_to_read(views[stage], rows.get(stage), sources, findings) for stage in views]
+        # Phase-85-3：更新
+        # return [_to_read(views[stage], rows.get(stage), sources, findings) for stage in views]
+        # ↓↓
+        change_requests = await self._generation_change_requests(project.id, rows.values())
+        return [
+            _to_read(views[stage], rows.get(stage), sources, findings, change_requests)
+            for stage in views
+        ]
 
     async def stage_view(
         self, project: Project, stage: int
@@ -417,21 +432,36 @@ class DesignStageService:
         doc_type: str,
         before_model: dict | None,
         after_model: dict | None,
-    ) -> None:
+        # Phase-85-2：更新
+        # ) -> None:
+        # ↓↓
+        *,
+        extra_sources: tuple[str, ...] = (),
+    ) -> list[Mark]:
         """文書の表示中の版が切り替わったとき(再生成・復元)、前に表示していた版の model と比べて、
         変更の影響を段階に印として記録する。model を持つ文書だけ(簡易モードは4文書、詳細設計モードは
         要件定義書・外部設計書)。どちらかの版に model が無ければ比べない。呼び出し元の版の切り替えと
-        同じトランザクションで使うため、commitしない。"""
+        同じトランザクションで使うため、commitしない。記録した印を返す。`extra_sources`(CR を渡した
+        再生成の`cr:<番号>`)は印の出どころに足す。"""
         # Phase-46-2：更新
         # if project.mode != "detailed" or doc_type not in IMPACT_DOCUMENTS:
         # ↓↓
         if doc_type not in IMPACT_DOCUMENTS.get(project.mode, ()):
-            return
+            # Phase-85-2：更新
+            # return
+            # ↓↓
+            return []
         if not before_model or not after_model:
-            return
+            # Phase-85-2：更新
+            # return
+            # ↓↓
+            return []
         rows = {row.stage: row for row in await self._stages.list_for_project(project.id)}
         if all(row.approved_version is None for row in rows.values()):
-            return
+            # Phase-85-2：更新
+            # return
+            # ↓↓
+            return []
         # Phase-46-2：更新
         # documents = await self._current_documents(project.id, STAGE_INPUTS)
         # ↓↓
@@ -460,7 +490,17 @@ class DesignStageService:
             after = build_elements(
                 DesignModels.from_dicts(stages, {**docs, doc_type: after_model}, er_tables)
             )
-        _record_impact(rows, doc_source(doc_type), before, after, stages=(DOCUMENT_STAGE,))
+        # Phase-85-2：更新
+        # _record_impact(rows, doc_source(doc_type), before, after, stages=(DOCUMENT_STAGE,))
+        # ↓↓
+        return _record_impact(
+            rows,
+            doc_source(doc_type),
+            before,
+            after,
+            stages=(DOCUMENT_STAGE,),
+            extra_sources=extra_sources,
+        )
 
     async def review_marks(
         self, project: Project, *, stage: int, keys: list[str], reviewed: bool
@@ -740,7 +780,25 @@ class DesignStageService:
         # ↓↓
         row = rows.get(stage)
         findings = await self._generation_findings(project.id, [row] if row is not None else [])
-        return _to_read(views[stage], row, sources, findings)
+        # Phase-85-3：更新
+        # return _to_read(views[stage], row, sources, findings)
+        # ↓↓
+        change_requests = await self._generation_change_requests(
+            project.id, [row] if row is not None else []
+        )
+        return _to_read(views[stage], row, sources, findings, change_requests)
+
+    # Phase-85-3:追記
+    async def _generation_change_requests(
+        self, project_id: uuid.UUID, rows: Iterable[DesignStage]
+    ) -> dict[uuid.UUID, ChangeRequest]:
+        """段階の直近の生成に渡した CR を、ID で引けるようにまとめる(渡した段階が無ければ
+        読まない)。"""
+        ids = {row.generation_change_request_id for row in rows} - {None}
+        if not ids:
+            return {}
+        found = await ChangeRequestRepository(self._session).list_for_project(project_id)
+        return {cr.id: cr for cr in found if cr.id in ids}
 
     async def _generation_findings(
         self, project_id: uuid.UUID, rows: Iterable[DesignStage]
@@ -968,16 +1026,36 @@ def _record_impact(
     after: list[Element],
     *,
     stages: tuple[int, ...],
-) -> None:
-    """前と後の差分から印を求め、届いた段階の行に記録する(今の記録に足す)。"""
+    # Phase-85-2：更新
+    # ) -> None:
+    # """前と後の差分から印を求め、届いた段階の行に記録する(今の記録に足す)。"""
+    # ↓↓
+    extra_sources: tuple[str, ...] = (),
+) -> list[Mark]:
+    """前と後の差分から印を求め、届いた段階の行に記録する(今の記録に足す)。記録した印を返す
+    (印を記録しない段階に届いたものは入れない)。`extra_sources`は印の出どころにだけ足す。"""
+    recorded: list[Mark] = []
     for target, impact in _impact_by_stage(source, before, after, stages=stages).items():
         row = rows.get(target)
         if not _records_impact(row):
             continue
         assert row is not None
         changes = [c.change for c in impact.changes]
-        merged = record(StageImpact.from_dict(row.impact), source, changes, impact.marks)
+        # Phase-85-2：更新
+        # merged = record(StageImpact.from_dict(row.impact), source, changes, impact.marks)
+        # ↓↓
+        merged = record(
+            StageImpact.from_dict(row.impact),
+            source,
+            changes,
+            impact.marks,
+            extra_sources=extra_sources,
+        )
         row.impact = merged.to_dict()
+        # Phase-85-2:追記
+        keys = {m.key for m in impact.marks}
+        recorded.extend(m for m in merged.marks if m.key in keys)
+    return recorded
 
 
 # Phase-43-4:追記
@@ -1163,6 +1241,8 @@ def _to_read(
     row: DesignStage | None,
     sources: StageSources,
     findings: Mapping[str, ReviewFinding] | None = None,
+    # Phase-85-3:追記
+    change_requests: Mapping[uuid.UUID, ChangeRequest] | None = None,
 ) -> DesignStageRead:
     # Phase-27-2：更新
     # issues = validate_stage(view.stage, row.model, sources) if row is not None else []
@@ -1218,6 +1298,24 @@ def _to_read(
         impact_reviewed=impact.reviewed_count,
         # Phase-69-2:追記
         generation_findings=_generation_finding_reads(row, findings or {}),
+        # Phase-85-3:追記
+        generation_change_request=_generation_change_request_read(row, change_requests or {}),
+        generated_model=row.generated_model if row is not None else None,
+    )
+
+
+# Phase-85-3:追記
+def _generation_change_request_read(
+    row: DesignStage | None, change_requests: Mapping[uuid.UUID, ChangeRequest]
+) -> GenerationChangeRequestRead | None:
+    """直近の生成に渡した CR(渡していない・消えた CR は None)。"""
+    if row is None or row.generation_change_request_id is None:
+        return None
+    found = change_requests.get(row.generation_change_request_id)
+    if found is None:
+        return None
+    return GenerationChangeRequestRead(
+        number=found.number, label=change_request_label(found.number), title=found.title
     )
 
 

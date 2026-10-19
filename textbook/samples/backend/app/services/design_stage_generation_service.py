@@ -1,4 +1,5 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整),64-2,68-3,69-1,69-2
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整),64-2,68-3,69-1,69-2,85-3
+# Phase-85-3：更新(docstring: request_generation・execute が cr_number を受け、下書きにモデル名を残すことを足した)
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
 # Phase-31-4：更新(docstring: 簡易モードの段階8は、作業単位を WBS、参照を内部設計書から取ること)
@@ -57,6 +58,7 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 # Phase-64-2:追記 ── app.services.project_deletion(commit_if_live, project_vanished, purge_deleted_projects)
 # Phase-68-3：削除 ── app.ai.llm.gemini.get_gemini_llm
 # Phase-68-3:追記 ── app.ai.llm.catalog.Purpose, app.services.llm_resolver.LlmResolver
+# Phase-85-3:追記 ── app.change_requests.join_instructions, app.services.change_request_service.ChangeRequestService, app.services.llm_resolver.injected_llm
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -69,6 +71,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.catalog import Purpose
+from app.change_requests import join_instructions
 from app.core.database import AsyncSessionLocal
 from app.detailed_design.data_flow import (
     MAX_DFD_GROUPS,
@@ -182,6 +185,7 @@ from app.repositories.project import ProjectRepository
 from app.repositories.uml_diagram import UmlDiagramRepository
 from app.review import build_instruction
 from app.schemas.design_stage import DesignStageRead
+from app.services.change_request_service import ChangeRequestService
 from app.services.data_item_service import DataItemService
 from app.services.design_stage_service import DesignStageService
 from app.services.detailed_design_export_service import DetailedDesignExportService
@@ -192,7 +196,7 @@ from app.services.errors import (
     DesignStageLockedError,
 )
 from app.services.generation_staleness import is_stale
-from app.services.llm_resolver import LlmResolver
+from app.services.llm_resolver import LlmResolver, injected_llm
 from app.services.llm_retry import invoke_structured
 from app.services.project_deletion import (
     commit_if_live,
@@ -964,6 +968,8 @@ async def run_design_stage_generation(
     unit_ids: list[str] | None = None,
     # Phase-54-3:追記
     finding_ids: Sequence[uuid.UUID] = (),
+    # Phase-85-3:追記
+    cr_number: int | None = None,
     *,
     llm=None,
 ) -> None:
@@ -987,6 +993,8 @@ async def run_design_stage_generation(
                 unit_ids=unit_ids,
                 # Phase-54-3:追記
                 finding_ids=finding_ids,
+                # Phase-85-3:追記
+                cr_number=cr_number,
                 llm=llm,
             )
     finally:
@@ -1022,6 +1030,8 @@ class DesignStageGenerationService:
         unit_ids: list[str] | None = None,
         # Phase-54-3:追記
         finding_ids: Sequence[uuid.UUID] = (),
+        # Phase-85-3:追記
+        cr_number: int | None = None,
     ) -> DesignStageRead:
         """生成を受け付け、段階を「生成中」にする。生成自体は呼び出し元がバックグラウンドで
         `execute`する。未着手の段階は、ここで行を作る(内容は空、`draft`)。
@@ -1030,7 +1040,8 @@ class DesignStageGenerationService:
         段階が開いていない /
         その段階を生成中 / 段階ごとの確認(段階2の DFD を描くグループの数、段階5の対象の処理、
         段階6の対象の関数、段階8の対象の単位)/ 修正指示に入れる指摘(プロジェクトに無い指摘は404、
-        採用していない・ヒアリングが原因の指摘は409)。"""
+        採用していない・ヒアリングが原因の指摘は409)/ 反映する CR(`cr_number`。プロジェクトに
+        無ければ404、文書へ反映した後(反映済み)でなければ409)。"""
         await self.recover_stale(project.id)
         # Phase-28-2：更新
         # row, view, _ = await self._stages.stage_view(project, stage)
@@ -1065,12 +1076,22 @@ class DesignStageGenerationService:
             project.id, finding_ids, strict=True
         )
         # ── ここから Phase-16-4 の作成分 ──
+        # Phase-85-3:追記
+        change_request = (
+            await ChangeRequestService(self._session).reflectable(project, cr_number, stage=True)
+            if cr_number is not None
+            else None
+        )
         if row is None:
             row = await self._rows.create(project_id=project.id, stage=stage, model=None)
         row.generation_status = "generating"
         row.generation_error = None
         # Phase-69-2:追記
         row.generation_finding_ids = [str(i) for i in finding_ids] or None
+        # Phase-85-3:追記
+        row.generation_change_request_id = (
+            change_request.id if change_request is not None else None
+        )
         row.generation_started_at = datetime.now(UTC)
         await self._session.commit()
         logger.info("design_stage_generation_requested", project_id=str(project.id), stage=stage)
@@ -1094,11 +1115,15 @@ class DesignStageGenerationService:
         unit_ids: list[str] | None = None,
         # Phase-54-3:追記
         finding_ids: Sequence[uuid.UUID] = (),
+        # Phase-85-3:追記
+        cr_number: int | None = None,
         llm=None,
     ) -> None:
         # ── ここから Phase-16-4 の作成分 ──
         """下書きを生成して段階に保存する。失敗したら理由を残して`failed`にする。`finding_ids`
-        (設計レビューの採用した指摘)は修正指示にして、段階の生成のプロンプトに足す。
+        (設計レビューの採用した指摘)と`cr_number`(反映済みの CR)は修正指示にして、段階の生成の
+        プロンプトに足す。下書きに生成したモデル名を残し、CR を渡したときは CR の時系列に段階の
+        反映(段階・版・モデル名)を1行足す(受け付けの後に反映できなくなった CR は渡さない)。
         プロジェクトや「生成中」の段階が見つからなければ何もしない(回収された後など)。生成の間に
         プロジェクトが削除されたときは、下書きも失敗も記録しない(app/services/project_deletion.py)。"""
         project = await self._projects.get_by_id(project_id, user_id=user_id)
@@ -1140,13 +1165,25 @@ class DesignStageGenerationService:
         #     targets=targets,
         #     instruction=build_instruction(sendback),
         # )
+        # Phase-85-3:追記
+        change_requests = ChangeRequestService(self._session)
+        reflection = await change_requests.reflection(project_id, cr_number, stage=True)
         try:
             # Phase-17-3：更新
             # model = await generator(llm or get_gemini_llm(), sources, row.model)
             # ↓↓
             # Phase-68-3:追記
-            if llm is None:
-                llm = (await LlmResolver(self._session).resolve(user_id, Purpose.GENERATION)).llm
+            # Phase-85-3：更新
+            # if llm is None:
+            #     llm = (await LlmResolver(self._session).resolve(user_id, Purpose.GENERATION)).llm
+            # ↓↓
+            # 下書きに残すモデル名のため、解決した結果を持つ(渡された LLM は既定のモデルとみなす)
+            resolved = (
+                injected_llm(llm, Purpose.GENERATION)
+                if llm is not None
+                else await LlmResolver(self._session).resolve(user_id, Purpose.GENERATION)
+            )
+            llm = resolved.llm
             context = StageGenerationContext(
                 llm=llm,
                 sources=sources,
@@ -1155,7 +1192,15 @@ class DesignStageGenerationService:
                 session=self._session,
                 project_id=project_id,
                 targets=targets,
-                instruction=build_instruction(sendback),
+                # Phase-85-3：更新
+                # instruction=build_instruction(sendback),
+                # ↓↓
+                instruction=join_instructions(
+                    [
+                        build_instruction(sendback),
+                        reflection.instruction if reflection is not None else "",
+                    ]
+                ),
             )
             model = await generator(context)
         except Exception as exc:
@@ -1193,6 +1238,19 @@ class DesignStageGenerationService:
         # Phase-64-2：更新
         # await self._session.commit()
         # ↓↓
+        # Phase-85-3:追記
+        row.generated_model = resolved.model
+        row.generation_change_request_id = (
+            reflection.change_request.id if reflection is not None else None
+        )
+        if reflection is not None:
+            await change_requests.record_stage_apply(
+                reflection.change_request,
+                stage=stage,
+                version=row.version,
+                model=resolved.model,
+                actor_id=user_id,
+            )
         if not await commit_if_live(self._session, project_id, job="design_stage"):
             return
         logger.info("design_stage_generation_completed", project_id=str(project_id), stage=stage)

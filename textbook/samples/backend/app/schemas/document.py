@@ -1,10 +1,12 @@
-# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2,57-2,81-1
+# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2,57-2,81-1,85-2
+# Phase-85-2：更新(docstring: GenerationRequest の cr_number を足した)
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
+# Phase-85-2:追記 ── pydantic.Field
 import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # Phase-56-2：更新
 # DocType = Literal["requirements", "external_design", "internal_design", "implementation_plan"]
@@ -118,11 +120,14 @@ class GenerationRequest(BaseModel):
     # ↓↓
     """設計書の(再)生成の要求。`start_from`は起点(その文書から下流を作り直す)。省略で全部。
     `test_spec`はテスト仕様書だけを作る(詳細設計モードは、これでだけ作る)。
-    `finding_ids`は再生成の指示に入れる、設計レビューの採用した指摘(設計・不整合)。"""
+    `finding_ids`は再生成の指示に入れる、設計レビューの採用した指摘(設計・不整合)。
+    `cr_number`は反映する合意した変更要求(CR)の番号(詳細設計モード。省略で渡さない)。"""
 
     start_from: DocType | None = None
     # Phase-54-2:追記
     finding_ids: list[uuid.UUID] = []
+    # Phase-85-2:追記
+    cr_number: int | None = Field(default=None, ge=1)
 
 
 class GenerationProgressRead(BaseModel):
