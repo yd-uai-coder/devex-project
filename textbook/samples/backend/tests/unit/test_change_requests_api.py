@@ -1,4 +1,4 @@
-# 作成：Phase-82-3｜更新：Phase-83-1,83-3,84-3,84-4,85-4
+# 作成：Phase-82-3｜更新：Phase-83-1,83-3,84-3,84-4,85-4,86-2,86-3,86-4
 # Phase-84-4：更新(docstring: SUT に説明書のルート(84-3)と要約のルート(84-4)を、スタブに LLM の解決の差し替え(84-4)を足した)
 # Phase-83-3：更新(docstring: SUT に get_change_request_impact を足した)
 # Phase-83-3:追記 ── app.api.routes.change_requests.get_change_request_impact
@@ -237,3 +237,12 @@ def test_router_is_registered() -> None:
     assert "/projects/{project_id}/change-requests/{number}/explanation/summary/confirm" in paths
     # Phase-85-4:追記
     assert "/projects/{project_id}/change-requests/{number}/comparison" in paths
+    # Phase-86-2:追記
+    assert "/projects/{project_id}/change-requests/{number}/verification" in paths
+    assert "/projects/{project_id}/change-requests/{number}/document-checks" in paths
+    assert "/projects/{project_id}/change-requests/{number}/verify" in paths
+    # Phase-86-3:追記
+    assert "/projects/{project_id}/change-requests/{number}/review-candidates" in paths
+    assert "/projects/{project_id}/change-requests/{number}/reviews" in paths
+    # Phase-86-4:追記
+    assert "/projects/{project_id}/change-requests/{number}/trace" in paths

@@ -1,12 +1,13 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4
+# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4
+# Phase-86-4：更新(docstring: 検証の条件(86-1)・レビューを結ぶ条件(86-3)・たどる記録(86-4)を足した)
 # Phase-85-4：更新(docstring: 反映の指示(85-1)・予測と実際の比較(85-4)を足した)
 # Phase-84-4：更新(docstring: 変更後の案(84-1)・説明書の組み立てと照合(84-2)・要約の入力と状態(84-4)を足した)
 # Phase-83-2：更新(docstring: 対象の扱い(83-1)と影響の予測(83-2)を足した)
 # """変更要求(CR)の状態・遷移・重なりの判定(純粋関数)。
 # ↓↓
 """変更要求(CR)の状態・遷移・重なりの判定と、対象(要件 ID・変更の種類・変更後の案)の扱い・
-影響の予測・説明書の組み立てと、任意の要約の入力・照合・状態・反映の指示・予測と実際の比較
-(純粋関数)。
+影響の予測・説明書の組み立てと、任意の要約の入力・照合・状態・反映の指示・予測と実際の比較・
+検証の条件・レビューを結ぶ条件・たどる記録(純粋関数)。
 
 docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 """
@@ -19,6 +20,9 @@ docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 # Phase-84-4:追記 ── app.change_requests.summary.SUMMARY_MAX, app.change_requests.summary.SUMMARY_STATE_LABEL, app.change_requests.summary.SummaryState, app.change_requests.summary.SummaryStatus, app.change_requests.summary.build_summary_messages, app.change_requests.summary.clip_summary, app.change_requests.summary.summary_state
 # Phase-85-1:追記 ── app.change_requests.instruction.build_cr_instruction, app.change_requests.instruction.join_instructions, app.change_requests.states.DOCUMENT_REFLECTABLE_STATUSES, app.change_requests.states.STAGE_REFLECTABLE_STATUSES
 # Phase-85-4:追記 ── app.change_requests.comparison(COMPARISON_STATUS_LABEL, COMPARISON_STATUSES, PREDICTED_ONLY_REASON_LABEL, AppliedMark, ComparedItem, Comparison, ComparisonStatus, PredictedOnlyReason, applied_marks_from_json, compare)
+# Phase-86-1:追記 ── app.change_requests.states(CHECKABLE_STATUSES, INCLUDABLE_STATUSES), app.change_requests.verification(MARK_CONFIRMATION_LABEL, MARK_CONFIRMATIONS, DocumentItem, MarkConfirmation, MarkState, Verification, checked_documents, document_items, mark_states, verification_of, with_confirmations)
+# Phase-86-3:追記 ── app.change_requests.reviews(LINKABLE_RUN_STATUS, aware, first_applied_at, review_link_problem)
+# Phase-86-4:追記 ── app.change_requests.trace(ACTION_LABEL, EventFacts, ReviewFacts, TraceDocument, TraceEntry, TraceStage, trace_entries)
 from app.change_requests.comparison import (
     COMPARISON_STATUS_LABEL,
     COMPARISON_STATUSES,
@@ -52,13 +56,21 @@ from app.change_requests.prediction import (
     predict_from_snapshots,
     requirement_texts,
 )
+from app.change_requests.reviews import (
+    LINKABLE_RUN_STATUS,
+    aware,
+    first_applied_at,
+    review_link_problem,
+)
 from app.change_requests.states import (
     ACTIVE_STATUSES,
     BACKGROUND_SOURCE_LABEL,
     BACKGROUND_SOURCES,
+    CHECKABLE_STATUSES,
     COPYABLE_STATUSES,
     DECISION_ACTIONS,
     DOCUMENT_REFLECTABLE_STATUSES,
+    INCLUDABLE_STATUSES,
     INITIAL_STATUS,
     STAGE_REFLECTABLE_STATUSES,
     STATUS_LABEL,
@@ -90,6 +102,28 @@ from app.change_requests.targets import (
     target_ids,
     targets_from_json,
     targets_to_json,
+)
+from app.change_requests.trace import (
+    ACTION_LABEL,
+    EventFacts,
+    ReviewFacts,
+    TraceDocument,
+    TraceEntry,
+    TraceStage,
+    trace_entries,
+)
+from app.change_requests.verification import (
+    MARK_CONFIRMATION_LABEL,
+    MARK_CONFIRMATIONS,
+    DocumentItem,
+    MarkConfirmation,
+    MarkState,
+    Verification,
+    checked_documents,
+    document_items,
+    mark_states,
+    verification_of,
+    with_confirmations,
 )
 
 __all__ = [
@@ -161,4 +195,31 @@ __all__ = [
     "PredictedOnlyReason",
     "applied_marks_from_json",
     "compare",
+    # Phase-86-1:追記
+    "CHECKABLE_STATUSES",
+    "INCLUDABLE_STATUSES",
+    "MARK_CONFIRMATIONS",
+    "MARK_CONFIRMATION_LABEL",
+    "DocumentItem",
+    "MarkConfirmation",
+    "MarkState",
+    "Verification",
+    "checked_documents",
+    "document_items",
+    "mark_states",
+    "verification_of",
+    "with_confirmations",
+    # Phase-86-3:追記
+    "LINKABLE_RUN_STATUS",
+    "aware",
+    "first_applied_at",
+    "review_link_problem",
+    # Phase-86-4:追記
+    "ACTION_LABEL",
+    "EventFacts",
+    "ReviewFacts",
+    "TraceDocument",
+    "TraceEntry",
+    "TraceStage",
+    "trace_entries",
 ]

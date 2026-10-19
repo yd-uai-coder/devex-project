@@ -1,4 +1,4 @@
-# 作成：Phase-52-3｜更新：Phase-53-1,53(完了後の調整),54-1,54-5,69-2
+# 作成：Phase-52-3｜更新：Phase-53-1,53(完了後の調整),54-1,54-5,69-2,86-3
 # Phase-54-1:追記 ── app.models.review.ReviewFixCheck
 import uuid
 from collections.abc import Mapping, Sequence
@@ -62,6 +62,11 @@ class ReviewRunRepository(CRUDRepository[ReviewRun]):
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    # Phase-86-3:追記
+    async def list_for_project(self, project_id: uuid.UUID) -> list[ReviewRun]:
+        """プロジェクトの回(指摘付き、新しい順)。CR に結ぶ候補を読むため。"""
+        return await self.list_all(order_by=ReviewRun.started_at.desc(), project_id=project_id)
 
     # Phase-54-1:追記
     async def list_with_adopted(self, *, project_id: uuid.UUID, gate: str) -> list[ReviewRun]:

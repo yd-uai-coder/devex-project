@@ -1,7 +1,8 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,85-1
+# 作成：Phase-82-2｜更新：Phase-83-1,85-1,86-1
 # Phase-85-1：更新(docstring: SUT に再生成に渡せる状態を足した)
 # Phase-83-1：更新(docstring: normalize_targets を targets.py のテストへ移した)
 # Phase-83-1：削除 ── app.change_requests.normalize_targets
+# Phase-86-1:追記 ── app.change_requests.CHECKABLE_STATUSES, app.change_requests.INCLUDABLE_STATUSES
 """変更要求(CR)の状態と遷移の表のテスト。
 
 SUT: app.change_requests(next_status / allowed_actions / overlaps と、
@@ -17,7 +18,9 @@ from app.change_requests import (
     ACTIVE_STATUSES,
     BACKGROUND_SOURCE_LABEL,
     BACKGROUND_SOURCES,
+    CHECKABLE_STATUSES,
     DOCUMENT_REFLECTABLE_STATUSES,
+    INCLUDABLE_STATUSES,
     STAGE_REFLECTABLE_STATUSES,
     STATUS_LABEL,
     STATUSES,
@@ -83,6 +86,16 @@ def test_reflectable_statuses() -> None:
     # 段階は、文書へ反映した後(反映済み)だけ
     assert set(DOCUMENT_REFLECTABLE_STATUSES) == {"agreed", "applied"}
     assert set(STAGE_REFLECTABLE_STATUSES) == {"applied"}
+
+
+# Phase-86-1:追記
+def test_after_reflection_statuses() -> None:
+    # 文書の側の確認・レビューを結ぶのは反映済みの間、束に入れるのは検証済みだけ
+    assert set(CHECKABLE_STATUSES) == {"applied"}
+    assert set(INCLUDABLE_STATUSES) == {"verified"}
+    # 記録だけの行は遷移の表に無い(状態を変えない)
+    assert "link_review" not in TRANSITIONS
+    assert "baseline" not in TRANSITIONS
 
 
 def test_tables_cover_every_status_and_source() -> None:

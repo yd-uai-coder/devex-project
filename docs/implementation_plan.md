@@ -200,7 +200,7 @@
   * Phase 83: CR に結ぶ影響の予測(今の `impact_of` の再利用。文書の側の要素も。CR の対象に変更の種類を持たせた) ── **完了**([`textbook/Phase-83/Phase-83-introduction.md`](../textbook/Phase-83/Phase-83-introduction.md))
   * Phase 84: 変更の説明書(5節の md・任意の LLM の要約・照合・確認の関門・古い印。CR の対象に変更後の案を持たせた) ── **完了**([`textbook/Phase-84/Phase-84-introduction.md`](../textbook/Phase-84/Phase-84-introduction.md))
   * Phase 85: 反映(`cr_number` を文書・段階の再生成へ。版に CR とモデル名を残し、自動で反映済みに。予測と実際の比較) ── **完了**([`textbook/Phase-85/Phase-85-introduction.md`](../textbook/Phase-85/Phase-85-introduction.md))
-  * Phase 86: 再検証とたどれる記録(印の確認で検証済み・任意のレビュー・時系列・新しい合意済みの版)
+  * Phase 86: 再検証とたどれる記録(印の今の確認の状態と文書の側の確認の項目で検証済み・任意のレビューを結ぶ・たどる記録の API・検証済みの CR を新しい合意済みの版に結ぶ) ── **完了**([`textbook/Phase-86/Phase-86-introduction.md`](../textbook/Phase-86/Phase-86-introduction.md))
   * Phase 87: CR の画面
   * Phase 88: 合意済みの版と説明書の画面・小さな修正(`postgres-init`・モデルのカタログ)
   * Phase 89: 効果測定・統合/E2E・本番への反映

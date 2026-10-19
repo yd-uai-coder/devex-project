@@ -1,4 +1,5 @@
-# 作成：Phase-81-3｜更新：Phase-82-2
+# 作成：Phase-81-3｜更新：Phase-82-2,86-4
+# Phase-86-4：更新(docstring: BaselineCreate に束に入れる CR の番号を足した)
 # Phase-82-2：更新 ── 合意の記録の項目を app.schemas.agreement.AgreementNotes に移した(CR の合意・却下と共有)
 # import uuid
 # from datetime import datetime
@@ -15,11 +16,12 @@
 # )
 #
 # ↓↓
+# Phase-86-4:追記 ── pydantic.Field, pydantic.field_validator
 import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, computed_field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from app.schemas.agreement import AgreementNotes
 
@@ -50,9 +52,19 @@ from app.schemas.agreement import AgreementNotes
 # ↓↓
 class BaselineCreate(AgreementNotes):
     """合意済みの版(束)を作るときの合意の記録。相手・メモ・理由は AgreementNotes。合意の日時は
-    記録する日時と別に、タイムゾーン付きで受け取る。"""
+    記録する日時と別に、タイムゾーン付きで受け取る。`change_request_numbers`は、この束に入れる
+    検証済みの CR の番号(任意。束と CR を結び、CR の時系列に1行残す)。"""
 
     agreed_at: AwareDatetime
+    # Phase-86-4:追記
+    change_request_numbers: list[int] = Field(default_factory=list, max_length=100)
+
+    @field_validator("change_request_numbers")
+    @classmethod
+    def _unique_numbers(cls, value: list[int]) -> list[int]:
+        if any(number < 1 for number in value):
+            raise ValueError("CR の番号は1以上です")
+        return list(dict.fromkeys(value))
 
 
 class BaselineItemSummaryRead(BaseModel):

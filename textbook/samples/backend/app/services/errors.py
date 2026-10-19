@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -654,3 +654,34 @@ class ChangeRequestNotAppliedError(ConflictError):
     送出する(比べる実際の印が無いため)。"""
 
     code: ClassVar[str | None] = "CR_NOT_APPLIED"
+
+
+# Phase-86-2:追記
+class ChangeRequestNotVerifiableError(ConflictError):
+    """反映で付いた印か文書の側の確認の項目に、未確認が残っている CR を検証済みにしようとした場合に
+    送出する。"""
+
+    code: ClassVar[str | None] = "CR_NOT_VERIFIABLE"
+
+
+# Phase-86-3:追記
+class ReviewRunNotFoundError(NotFoundError):
+    """プロジェクトに無い(別のプロジェクトの・存在しない)設計レビューの回を CR に結ぼうとした場合に
+    送出する。"""
+
+    code: ClassVar[str | None] = "REVIEW_RUN_NOT_FOUND"
+
+
+class ChangeRequestReviewNotLinkableError(ConflictError):
+    """CR に結べない設計レビューの回(CR が反映済みでない・回が成功していない・反映の前に流した・
+    もう結んである)を結ぼうとした場合に送出する。"""
+
+    code: ClassVar[str | None] = "CR_REVIEW_NOT_LINKABLE"
+
+
+# Phase-86-4:追記
+class ChangeRequestNotIncludableError(ConflictError):
+    """合意済みの版(束)に入れられない CR(検証済みでない・もう別の束に入っている)を、束の作成に
+    渡した場合に送出する。"""
+
+    code: ClassVar[str | None] = "CR_NOT_INCLUDABLE"

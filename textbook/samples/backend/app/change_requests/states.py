@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,85-1
+# 作成：Phase-82-2｜更新：Phase-83-1,85-1,86-1
+# Phase-86-1：更新(docstring: 検証の条件と、記録だけの操作 link_review・baseline を足した)
 # Phase-85-1：更新(docstring: 反映のやり直しを足した)
 """変更要求(CR)の状態と遷移の表(純粋関数。docs/external_design.md 2.14節)。
 
@@ -6,7 +7,9 @@
 取り下げ。説明済みで中身を直すと下書きに戻る(説明した中身と変わるため)。却下は終わりの状態で、
 出し直すときは写して新しい CR(下書き)を作る(元の CR は却下と理由のまま残す)。
 反映(apply)は、CR を渡した再生成が終わったときに記録する(反映済みの間もやり直せ、そのたびに
-時系列に1行足す)。検証(verify)の操作は表にだけ持ち、API は再検証の Phase で足す。
+時系列に1行足す)。検証(verify)は、反映で付いた印と文書の側の確認がすべて済んだときだけ
+(条件は verification.py)。レビューを結ぶ(link_review)・束に入れる(baseline)は、状態を変えない
+記録だけの行(写しの copied と同じく、遷移の表には持たない)。
 """
 
 from collections.abc import Iterable, Sequence
@@ -17,7 +20,21 @@ ChangeRequestStatus = Literal[
     "draft", "explained", "agreed", "rejected", "applied", "verified", "withdrawn"
 ]
 ChangeRequestAction = Literal[
-    "create", "copy", "copied", "edit", "explain", "agree", "reject", "withdraw", "apply", "verify"
+    # Phase-86-1：更新
+    # "create", "copy", "copied", "edit", "explain", "agree", "reject", "withdraw", "apply", "verify"
+    # ↓↓
+    "create",
+    "copy",
+    "copied",
+    "edit",
+    "explain",
+    "agree",
+    "reject",
+    "withdraw",
+    "apply",
+    "verify",
+    "link_review",
+    "baseline",
 ]
 BackgroundSource = Literal["meeting", "email", "document", "other"]
 
@@ -67,6 +84,11 @@ ACTIVE_STATUSES: frozenset[ChangeRequestStatus] = frozenset(
 # 再生成に渡せる状態(文書は合意・反映済み、段階は文書へ反映した後の反映済みだけ)
 DOCUMENT_REFLECTABLE_STATUSES: frozenset[ChangeRequestStatus] = frozenset({"agreed", "applied"})
 STAGE_REFLECTABLE_STATUSES: frozenset[ChangeRequestStatus] = frozenset({"applied"})
+# Phase-86-1:追記
+# 反映の後の確かめ(文書の側の確認・レビューを結ぶ)ができる状態
+CHECKABLE_STATUSES: frozenset[ChangeRequestStatus] = frozenset({"applied"})
+# 新しい合意済みの版(束)に入れられる状態
+INCLUDABLE_STATUSES: frozenset[ChangeRequestStatus] = frozenset({"verified"})
 # 判断(合意・却下)の操作
 DECISION_ACTIONS: dict[str, ChangeRequestAction] = {"agreed": "agree", "rejected": "reject"}
 
