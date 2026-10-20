@@ -1894,3 +1894,19 @@
    - (4) 2節の新しい要件の行の下に起点、3節の「届いた対象」に「新しい要件(起点 X)」、反映の指示の新しい要件の行の下に起点の1行。
 
    結ぶのを作り直した後の最初の承認だけにし、それを CR の時系列の版と段階の承認した版で判定すること(列を足さない)、記録だけの行 `approve_stage`、循環を避けて `DesignStageService` から `ChangeRequestRepository` で書くこと、`merge_applied_marks` を `app/change_requests/comparison.py` へ移して共有したこと(#17)、起点の表示名も保存すること、`baseline_snapshots` にまとめたことは、Claude の判断として計画に書いた。詳細は [Phase 96 の introduction](./Phase-96/Phase-96-introduction.md)。
+
+### Phase 97 開始時
+
+1. Phase 97(ステージ12。行の合意と履歴の画面)。2026-10-20。
+2. 質問・相談内容: 「Phase97を開始する」。Claude は計画モードで調べた。調べたのは、プレビュー(SCR-005)の部品(`DocumentMarkdownView`・要件の出どころの枠・外部設計書の枠・版の履歴・`MarkdownBody`)・文書の応答(`protection`、CR の番号は版の履歴だけ)・合意の API(`GET /agreements`・`/agreements/history`)・合意の対象の要素(`agreement_items`・`body_of`)・束の feature の形である。そのうえで、[90-4](./Phase-90/Phase-90-4.md) の Phase 97〜98 の未確定事項と Phase 93 の申し送りから1回で4つ聞いた。置き場は、Phase 88 と同じく画面のイメージを並べて聞いた。
+   - (1) 自動実装モード
+   - (2) 置き場(プレビューの md の上の枠 / md の表の行に直接 / 別のページ)
+   - (3) 要素ごとの状態の求め方(状態の API を足す / 画面だけで組む)
+   - (4) 予測に無い要素の戻しの見せ方(CR の版は言い分ける / 区別しない)
+3. 回答と対応方針: すべて推奨どおり。
+   - (1) on
+   - (2) 要件定義書・外部設計書のタブで、md の上に「合意の状態」の枠。要素の一覧(印・出どころ)と戻した要素、行を押すと履歴がその場で開く。md は変えない。
+   - (3) `GET /projects/{id}/agreements/status?doc_type=`。純粋関数 `app/agreements/status.py` が、表示中の版の要素と今の合意を `body_of` で突き合わせ、合意済み・合意と違う・未合意・今の版に無いに分ける。
+   - (4) CR を反映した版の戻しは「CR-n の予測に無い変更を合意の形に戻しました」と書き、CR の詳細へリンクする。CR を渡さない版は「再生成で、合意の形に戻しました」。
+
+   版の CR の番号を状態の API が返すこと、戻した要素に表示名を付けること、取り直しの鍵を版の id と中身にすること(「採用にする」は版を増やさないため)は、Claude の判断として計画に書いた。作業中に、行の「履歴」を未合意の行にも出すことにした(CR で足した要件は、合意の記録が無くても関わる CR を持つため)。詳細は [Phase 97 の introduction](./Phase-97/Phase-97-introduction.md)。

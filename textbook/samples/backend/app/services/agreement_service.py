@@ -1,10 +1,11 @@
-# 作成：Phase-91-3｜更新：Phase-91-4,93-4,94-3,95-2
+# 作成：Phase-91-3｜更新：Phase-91-4,93-4,94-3,95-2,97-1
 # Phase-93-4：更新(docstring: AgreementService の記録の出どころに CR の反映を足した)
 # Phase-91-4：更新(docstring: AgreementService に今の合意の一覧を足した)
 # Phase-91-4:追記 ── app.agreements.AGREED_KINDS, app.services.detailed_mode.require_detailed
 # Phase-93-4:追記 ── app.agreements.AgreedKind, app.agreements.change_request_items, app.change_requests.rewritable_keys, app.change_requests.targets_from_json, app.models.change_request.ChangeRequest
 # Phase-94-3:追記 ── app.documents.requirements.model.UserScene
 # Phase-95-2:追記 ── app.agreements.ChangeRequestRef, app.agreements.ElementHistory, app.agreements.RecordFacts, app.agreements.VersionFacts, app.agreements.element_history, app.agreements.kind_of, app.agreements.origin_label, app.change_requests.predicted_document_keys, app.repositories.change_request.ChangeRequestRepository, app.repositories.generated_document.GeneratedDocumentRepository, app.services.errors.AgreementKeyInvalidError
+# Phase-97-1:追記 ── app.agreements.CurrentAgreement, app.agreements.DocumentAgreementStatus, app.agreements.element_states, app.agreements.restored_elements
 import uuid
 from collections.abc import Mapping
 from typing import Any
@@ -15,15 +16,19 @@ from app.agreements import (
     AGREED_KINDS,
     AgreedKind,
     ChangeRequestRef,
+    CurrentAgreement,
+    DocumentAgreementStatus,
     ElementHistory,
     RecordFacts,
     VersionFacts,
     agreement_items,
     change_request_items,
     element_history,
+    element_states,
     kind_of,
     origin_label,
     removed_keys,
+    restored_elements,
 )
 from app.change_requests import (
     predicted_document_keys,
@@ -102,6 +107,41 @@ class AgreementService:
                 )
                 for cr in change_requests
             ],
+        )
+
+    # Phase-97-1:追記
+    async def status(self, project: Project, doc_type: str) -> DocumentAgreementStatus:
+        """要件定義書・外部設計書(`doc_type`)の表示中の版の、要素ごとの合意の状態と、その版で
+        合意の形へ戻した要素。文書が無ければ空(版は None)。model の無い以前の形式の版は要素が
+        無く、合意済みの要素はすべて「今の版に無い」になる。詳細設計モードだけ(簡易モードは
+        DesignStagesNotAvailableError)。"""
+        require_detailed(project, "Agreements")
+        kinds = _DOCUMENT_KINDS[doc_type]
+        document = await GeneratedDocumentRepository(self._session).get_current(
+            project_id=project.id, doc_type=doc_type
+        )
+        if document is None:
+            return DocumentAgreementStatus(doc_type, None, None, (), ())
+        requirements = doc_type == "requirements"
+        items = agreement_items(
+            parse_model(RequirementsModel, document.model) if requirements else None,
+            parse_model(ExternalDesignModel, document.model) if not requirements else None,
+        )
+        agreements = [
+            _current_agreement(r) for r in await self.current(project) if r.kind in kinds
+        ]
+        cr_number = None
+        if document.change_request_id is not None:
+            change_request = await ChangeRequestRepository(self._session).get_by_id(
+                document.change_request_id
+            )
+            cr_number = change_request.number if change_request is not None else None
+        return DocumentAgreementStatus(
+            doc_type,
+            document.version,
+            cr_number,
+            tuple(element_states(items, agreements, kinds)),
+            tuple(restored_elements(document.protection or [], items, agreements)),
         )
 
     # Phase-91-3:追記 ── ここから下は 91-3
@@ -212,6 +252,26 @@ def _record_facts(record: AgreementRecord) -> RecordFacts:
             cr_number=record.change_request.number if record.change_request is not None else None,
         ),
         recorded_by=record.recorded_by,
+    )
+
+
+# Phase-97-1:追記
+def _current_agreement(record: AgreementRecord) -> CurrentAgreement:
+    """今の合意の記録の行から状態の材料を作る(出どころの束・CR は読み込み済みであること)。"""
+    baseline_number = record.baseline.number if record.baseline is not None else None
+    cr_number = record.change_request.number if record.change_request is not None else None
+    return CurrentAgreement(
+        key=record.key,
+        kind=record.kind,  # type: ignore[arg-type]
+        label=record.label,
+        content=record.content or {},
+        origin_label=origin_label(
+            record.origin,  # type: ignore[arg-type]
+            baseline_number=baseline_number,
+            cr_number=cr_number,
+        ),
+        baseline_number=baseline_number,
+        change_request_number=cr_number,
     )
 
 

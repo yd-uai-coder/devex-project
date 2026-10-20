@@ -1,15 +1,19 @@
-# 作成：Phase-91-4｜更新：Phase-95-2
+# 作成：Phase-91-4｜更新：Phase-95-2,97-1
 # Phase-95-2:追記 ── typing.Annotated, fastapi.Query, app.schemas.agreement.AgreementHistoryRead, app.schemas.agreement.agreement_history_read
+# Phase-97-1:追記 ── app.schemas.agreement.AgreementDocType, app.schemas.agreement.AgreementStatusRead, app.schemas.agreement.agreement_status_read
 from typing import Annotated
 
 from fastapi import APIRouter, Query
 
 from app.api.deps import CurrentProjectDep, SessionDep
 from app.schemas.agreement import (
+    AgreementDocType,
     AgreementHistoryRead,
     AgreementRead,
+    AgreementStatusRead,
     agreement_history_read,
     agreement_read,
+    agreement_status_read,
 )
 from app.services.agreement_service import AgreementService
 
@@ -38,3 +42,15 @@ async def get_agreement_history(
     モードは409。"""
     history = await AgreementService(session).history(current_project, key)
     return agreement_history_read(history)
+
+
+# Phase-97-1:追記
+@router.get("/status", response_model=AgreementStatusRead)
+async def get_agreement_status(
+    session: SessionDep, current_project: CurrentProjectDep, doc_type: AgreementDocType
+) -> AgreementStatusRead:
+    """要件定義書・外部設計書(`doc_type`)の表示中の版の、要素ごとの合意の状態(合意済み・合意と
+    違う・未合意・今の版に無い)と、その版で合意の形へ戻した要素。文書が無ければ空(`version`は
+    null)。ほかの文書の種類は422、簡易ドキュメントモードは409。"""
+    status = await AgreementService(session).status(current_project, doc_type)
+    return agreement_status_read(status)

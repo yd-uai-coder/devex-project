@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,12-5,13-6,24(完了後の調整),36-3,37-3,45-5,88-3
+// 作成：Phase-3-6｜更新：Phase-6-2,12-5,13-6,24(完了後の調整),36-3,37-3,45-5,88-3,97-2
 // Phase-6-2:追記 ── @/features/documents/components/VersionHistoryPanel
 // Phase-12-5:追記 ── @/lib/api/download.saveFile
 // Phase-13-6:追記 ── @/features/documents/anchors.splitByAnchors,
@@ -9,24 +9,26 @@
 "use client";
 
 // Phase-45-5:追記 ── @/features/documents/components/SimpleDesignSummaryPanel.SimpleDesignSummaryPanel
-import { useState } from "react";
 // Phase-88-3：更新
 // import ReactMarkdown from "react-markdown";
 // import remarkGfm from "remark-gfm";
 // import { Button, H1, H2, H3, H4, Paragraph, Text, XStack, YStack } from "tamagui";
 // ↓↓
+// Phase-37-3:追記 ── @/features/documents/components/ExternalDesignSummaryPanel.ExternalDesignSummaryPanel
+// Phase-88-3:追記 ── @/features/documents/components/MarkdownBody.MarkdownBody
+// Phase-97-2:追記 ── @/features/agreements/components/AgreementStatusPanel.AgreementStatusPanel, @/features/documents/documents-store.useDocumentsStore
+import { useState } from "react";
 import { Button, Text, XStack, YStack } from "tamagui";
+import { AgreementStatusPanel } from "@/features/agreements/components/AgreementStatusPanel";
 import { downloadDocument } from "@/features/documents/api/documentsApi";
 import { saveFile } from "@/lib/api/download";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
-// Phase-37-3:追記
 import { ExternalDesignSummaryPanel } from "@/features/documents/components/ExternalDesignSummaryPanel";
-// Phase-88-3:追記
 import { MarkdownBody } from "@/features/documents/components/MarkdownBody";
 import { RequirementsSummaryPanel } from "@/features/documents/components/RequirementsSummaryPanel";
-// Phase-45-5:追記
 import { SimpleDesignSummaryPanel } from "@/features/documents/components/SimpleDesignSummaryPanel";
 import { VersionHistoryPanel } from "@/features/documents/components/VersionHistoryPanel";
+import { useDocumentsStore } from "@/features/documents/documents-store";
 // Phase-24：削除
 // import { splitByAnchors } from "@/features/documents/anchors";
 // import { DiagramEmbed } from "@/features/documents/components/DiagramEmbed";
@@ -128,6 +130,13 @@ export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownVi
   //   await fetchDocuments(projectId, { force: true });
   //   await reload();
   // }
+  // Phase-97-2:追記
+  const projectMode = useDocumentsStore((s) => s.projectMode);
+  // 行の合意は詳細設計モードの要件定義書・外部設計書だけ(簡易モードは API も呼ばない)
+  const agreementDocType =
+    projectMode === "detailed" && (document.doc_type === "requirements" || document.doc_type === "external_design")
+      ? document.doc_type
+      : null;
 
   async function handleCopy() {
     try {
@@ -211,6 +220,15 @@ export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownVi
         </ReactMarkdown>
       </YStack>
       ↓↓ */}
+      {/* Phase-97-2:追記 */}
+      {agreementDocType ? (
+        // 版の切り替え(id)と、「採用にする」で同じ版の中身が変わったとき(content)に取り直す
+        <AgreementStatusPanel
+          projectId={projectId}
+          docType={agreementDocType}
+          refreshKey={`${document.id}:${document.content}`}
+        />
+      ) : null}
       <MarkdownBody content={document.content} />
     </YStack>
   );

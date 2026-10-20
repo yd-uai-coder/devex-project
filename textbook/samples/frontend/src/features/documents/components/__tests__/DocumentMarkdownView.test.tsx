@@ -1,12 +1,15 @@
-// 作成：Phase-3-6｜更新：Phase-6-6,13-6,24(完了後の調整),45-5
+// 作成：Phase-3-6｜更新：Phase-6-6,13-6,24(完了後の調整),45-5,97-2
 // Phase-13-6:追記 ── @/lib/api/test-utils/fetch-stub.stubFetch, umlFixtures.makeEmbed,
 //   documentsApi.DocType(SAMPLE_DOC の doc_type を internal_design に差し替えられるようにする)
+// Phase-97-2:追記 ── @/features/documents/documents-store.useDocumentsStore, @/features/agreements/test-utils/agreementFixtures.makeStatus
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DocumentMarkdownView } from "../DocumentMarkdownView";
+import { useDocumentsStore } from "@/features/documents/documents-store";
+import { makeStatus } from "@/features/agreements/test-utils/agreementFixtures";
 import type { DocType } from "@/features/documents/api/documentsApi";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 // Phase-24：削除
@@ -40,6 +43,8 @@ describe("DocumentMarkdownView", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    // Phase-97-2:追記
+    useDocumentsStore.setState({ projectMode: null });
   });
 
   it("Markdown本文をレンダリングする", () => {
@@ -177,6 +182,35 @@ describe("DocumentMarkdownView", () => {
     // Phase-45-5:追記
     // model の無い以前の版なので、書き落としの検証の代わりに再生成の案内を出す
     expect(screen.getByText(/書き落としの検証がありません/)).toBeInTheDocument();
+    expect(stub.requests).toHaveLength(0);
+    stub.restore();
+  });
+
+  // Phase-97-2:追記
+  it("詳細設計モードの要件定義書・外部設計書だけ、行の合意の状態を出す", async () => {
+    const stub = stubFetch();
+    stub.queue({ body: makeStatus() });
+    useDocumentsStore.setState({ projectMode: "detailed" });
+    renderView();
+
+    expect(await screen.findByLabelText("合意の状態")).toBeInTheDocument();
+    expect(stub.requests[0].url).toContain("/projects/p1/agreements/status?doc_type=requirements");
+    stub.restore();
+  });
+
+  it("簡易モードと、ほかの文書では、合意の状態を出さず API も呼ばない", () => {
+    const stub = stubFetch();
+    useDocumentsStore.setState({ projectMode: "simple" });
+    const { unmount } = renderView();
+    unmount();
+    useDocumentsStore.setState({ projectMode: "detailed" });
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DocumentMarkdownView projectId="p1" document={{ ...SAMPLE_DOC, doc_type: "implementation_plan" }} />
+      </TamaguiProvider>,
+    );
+
+    expect(screen.queryByLabelText("合意の状態")).not.toBeInTheDocument();
     expect(stub.requests).toHaveLength(0);
     stub.restore();
   });
