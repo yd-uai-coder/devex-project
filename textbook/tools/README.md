@@ -39,13 +39,19 @@ python3 textbook/tools/link_check.py
 
 ```sh
 git -C devex-api show HEAD:backend/app/services/foo.py > /tmp/old.py
-python3 textbook/tools/tagmerge.py textbook/samples/backend/app/services/foo.py /tmp/old.py devex-api/backend/app/services/foo.py 25-1 '#'
+devex-api/backend/.venv/bin/python textbook/tools/tagmerge.py textbook/samples/backend/app/services/foo.py /tmp/old.py devex-api/backend/app/services/foo.py 25-1 '#'
 ```
 
 - 本体の旧(HEAD)→新(作業ツリー)の差分を、#29 の「追記・更新・削除」のタグつきで samples のファイルに当てる。
+- Python 3.12 以降の構文(PEP 695)を読むため、devex-api の venv の Python で動かす(古い Python では import 区間と docstring を読めず、手当てが増える)。
+- 自動で扱うもの(2026-10-20 の手直し。ステージ11 の振り返り 16.1 の Q2):
+  - **ファイル冒頭のヘッダー**: `更新：` の列に章を足す(既にあれば触らない)。ヘッダーが無ければ `更新：Phase-<章>` を入れる。
+  - **ファイル先頭の import 区間**(`if TYPE_CHECKING:` の中・TS の複数行の import を含む): samples を新の区間で置き換え、増えた名前を `Phase-<章>:追記 ── m.a, …`、減った名前を `Phase-<章>：削除 ── m.c` の1行ずつにまとめて区間の直前に積む(#29 の特則)。並べ替えだけならタグなし。samples の区間の中にあった過去のタグ・コメントアウトは区間の直前へ移す。
+  - **docstring(複数行の文字列)**: 文字列を途中で切る変更には、タグもコメントアウトも差し込まない。新の行をそのまま当て、標準エラーに記録の行の案(`# Phase-<章>：更新(docstring: <名前> …)`。ヘッダーの後に人が書く)を出す。samples の文字列が本体とずれていて当てる位置が決まらないときは当てずに、新の行を標準エラーに出す。
+  - 当てた後の Python が構文として読めなければ、`!! 構文エラー` を出して終了コード 1 にする(ファイルは書く)。
 - 次のものは自動では扱わない。標準エラーの「要手当て」を見て手で直す。
-  - import 文(#29 の特則で、タグは import ブロックの直前にまとめる)
-  - 複数行の文字列(docstring)の中
-  - ファイル冒頭のヘッダー(`# 作成：…｜更新：…`)
+  - 関数の中の import
   - JSX の中(`{/* … */}` でのコメントアウトが要る)
+  - 複数の章にまたがるファイルの章の振り分け(当てた章を既定にして、後の章の分を直す)
 - 整形だけの変更(並び順・import の順・引用符・末尾のセミコロン)はタグを付けずに上書きしてよい(#29)。
+- テスト: `devex-api/backend/.venv/bin/python -m pytest textbook/tools/test_tagmerge.py`

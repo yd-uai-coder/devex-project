@@ -127,7 +127,7 @@ samples に写さないもの: [`appendix/measurements/stage11/effect.py`](../..
 - Google の公開鍵を毎回取りに行く(Phase 74)
 - `ListCard` の入れ物(Phase 79。テンプレートでは直した)
 - 英語のままの refresh の失敗の文(Phase 79)
-- `tagmerge.py` の手直し(ステージ10 の振り返り。Phase 88 の手直しの一覧はその introduction)→ ステージ11 の振り返りで、ステージ12 の前に別のセッションで直すと決めた(overall-retrospective 16.1 の Q2)
+- `tagmerge.py` の手直し(ステージ10 の振り返り。Phase 88 の手直しの一覧はその introduction)→ ステージ11 の振り返りで、ステージ12 の前に別のセッションで直すと決めた(overall-retrospective 16.1 の Q2)→ 2026-10-20 に直した(ヘッダーの更新・import のタグの集約・docstring に差し込まない・構文の確かめ。JSX と章の振り分けは手のまま。[`tools/README.md`](../tools/README.md))
 - `streamChat.test.ts` の lint の警告(使っていない変数。既存)
 - `appendix/measurements/stage11/measure.py` の `ruff check` の指摘(行の長さ1件。Phase 80 から)
 
@@ -209,4 +209,4 @@ samples のタグは `Phase-89(完了後の調整)`。
 
 ## 次のフェーズ
 
-**ステージ11 の振り返り**は済んだ([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 16節・decision digest)。本番での確認の指摘(#39)はステージ15 の反映の後に埋める。次は、**`tagmerge.py` の修正**(別のセッション。16.1 の Q2)→ **ステージ12(合意の精度)** の要件確認フェーズ。入力は 16.3 の「ステージ12 の入力」・この Phase の申し送り・[位置付け](../../appendix/devex_project_positioning.md) 12章。
+**ステージ11 の振り返り**は済んだ([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 16節・decision digest)。本番での確認の指摘(#39)はステージ15 の反映の後に埋める。次は、~~**`tagmerge.py` の修正**(別のセッション。16.1 の Q2)~~(2026-10-20 に直した)→ **ステージ12(合意の精度)** の要件確認フェーズ。入力は 16.3 の「ステージ12 の入力」・この Phase の申し送り・[位置付け](../../appendix/devex_project_positioning.md) 12章。
