@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3
 # Phase-86-4：更新(docstring: 検証の条件(86-1)・レビューを結ぶ条件(86-3)・たどる記録(86-4)を足した)
 # Phase-85-4：更新(docstring: 反映の指示(85-1)・予測と実際の比較(85-4)を足した)
 # Phase-84-4：更新(docstring: 変更後の案(84-1)・説明書の組み立てと照合(84-2)・要約の入力と状態(84-4)を足した)
@@ -25,6 +25,8 @@ docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 # Phase-86-4:追記 ── app.change_requests.trace(ACTION_LABEL, EventFacts, ReviewFacts, TraceDocument, TraceEntry, TraceStage, trace_entries)
 # Phase-89(完了後の調整):追記 ── app.change_requests.trace(DecisionFacts, decision_note)
 # Phase-93-3:追記 ── app.change_requests.prediction.rewritable_keys
+# Phase-95-1:追記 ── app.change_requests.prediction.predicted_document_keys
+# Phase-95-3:追記 ── app.change_requests.trace.EDITED_FIELD_LABEL
 from app.change_requests.comparison import (
     COMPARISON_STATUS_LABEL,
     COMPARISON_STATUSES,
@@ -56,6 +58,7 @@ from app.change_requests.prediction import (
     baseline_models,
     predict,
     predict_from_snapshots,
+    predicted_document_keys,
     requirement_texts,
     rewritable_keys,
 )
@@ -108,6 +111,7 @@ from app.change_requests.targets import (
 )
 from app.change_requests.trace import (
     ACTION_LABEL,
+    EDITED_FIELD_LABEL,
     DecisionFacts,
     EventFacts,
     ReviewFacts,
@@ -193,6 +197,8 @@ __all__ = [
     "COMPARISON_STATUSES",
     "COMPARISON_STATUS_LABEL",
     "PREDICTED_ONLY_REASON_LABEL",
+    # Phase-95-3:追記
+    "EDITED_FIELD_LABEL",
     "AppliedMark",
     "ComparedItem",
     "Comparison",
@@ -230,6 +236,8 @@ __all__ = [
     "TraceStage",
     # Phase-89(完了後の調整):追記
     "decision_note",
+    # Phase-95-1:追記
+    "predicted_document_keys",
     # Phase-93-3:追記
     "rewritable_keys",
     "trace_entries",

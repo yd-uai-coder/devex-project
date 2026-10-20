@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,88(完了後の調整)
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,88(完了後の調整),95-3
 # Phase-84-4：更新(docstring: SUT に explanation(84-3)・要約の3つの操作と ExplanationView(84-4)・facts_of(84-3)を、スタブに要約のフェイクの LLM(84-4)を足した)
 # Phase-83-3：更新(docstring: SUT に impact・predict_for と、保存した予測を読み直さないことのスタブを足した)
 # Phase-83-3:追記 ── app.services.change_request_service.predict_for
@@ -259,7 +259,18 @@ async def test_update_in_explained_returns_to_draft(db_session: AsyncSession) ->
     draft_edit = await service.update(
         project, 1, ChangeRequestUpdate(title="題を直す"), actor_id=None
     )
-    assert len(draft_edit.change_request.events) == 1  # 下書きの中の直しは時系列に残さない
+    # Phase-95-3：更新
+    # assert len(draft_edit.change_request.events) == 1  # 下書きの中の直しは時系列に残さない
+    # ↓↓
+    # 下書きの中の直しも、直した項目の名前を時系列に残す。値の変わらない保存は残さない
+    assert [(e.action, e.refs) for e in draft_edit.change_request.events] == [
+        ("create", None),
+        ("edit", {"fields": ["title"]}),
+    ]
+    same = await service.update(
+        project, 1, ChangeRequestUpdate(title="題を直す", content=None), actor_id=None
+    )
+    assert len(same.change_request.events) == 2
     await service.explain(project, 1, actor_id=None)
     view = await service.update(
         project,
@@ -292,9 +303,13 @@ async def test_update_in_explained_returns_to_draft(db_session: AsyncSession) ->
     assert change_request.content == "予約の一覧を日付で絞り込めるようにする"
     assert [(e.action, e.from_status, e.to_status) for e in change_request.events] == [
         ("create", None, "draft"),
+        # Phase-95-3:追記
+        ("edit", "draft", "draft"),
         ("explain", "draft", "explained"),
         ("edit", "explained", "draft"),
     ]
+    # Phase-95-3:追記
+    assert change_request.events[-1].refs == {"fields": ["background_date", "targets"]}
     with pytest.raises(ChangeRequestTargetUnknownError):
         await service.update(
             # Phase-83-1：更新

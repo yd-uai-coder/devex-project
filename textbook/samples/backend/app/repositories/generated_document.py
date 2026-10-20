@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2,81-1,85-2,89(完了後の調整),91-3,92-3
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2,81-1,85-2,89(完了後の調整),91-3,92-3,95-2
 # Phase-92-3：更新(docstring: create_version の protection を足した)
 # Phase-91-3：更新(docstring: 束が写した版も消さず、数にも入れない。モジュールの注記・create_version・list_versions)
 # Phase-85-2：更新(docstring: create_version の change_request_id を足した)
@@ -7,7 +7,9 @@
 # ドメイン規則をそのままロジック化した箇所であり、慎重な写経・理解が必要。
 # Phase-6-1: list_versions/get_versionはSCR-006向けの定型的な参照系メソッド(写経レベル: 定型)。
 # Phase-91-3:追記 ── sqlalchemy.select, app.models.baseline.Baseline, app.models.baseline.BaselineItem
+# Phase-95-2:追記 ── collections.abc.Sequence
 import uuid
+from collections.abc import Sequence
 
 from sqlalchemy import select
 
@@ -205,6 +207,23 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
         return await self.list_all(
             order_by=GeneratedDocument.version.desc(), project_id=project_id, doc_type=doc_type
         )
+
+    # Phase-95-2:追記
+    async def list_protected(
+        self, project_id: uuid.UUID, doc_types: Sequence[str]
+    ) -> list[GeneratedDocument]:
+        """`doc_types`の版のうち、合意を守った版(`protection`が一覧のもの)を、文書の種類・版の順に
+        返す(要素の履歴のため)。JSON の中身では DB で絞らない(版の数は巡回で小さいため)。"""
+        stmt = (
+            select(GeneratedDocument)
+            .where(
+                GeneratedDocument.project_id == project_id,
+                GeneratedDocument.doc_type.in_(doc_types),
+            )
+            .order_by(GeneratedDocument.doc_type, GeneratedDocument.version)
+        )
+        documents = (await self._session.execute(stmt)).scalars().all()
+        return [d for d in documents if isinstance(d.protection, list)]
 
     async def get_version(
         self, *, project_id: uuid.UUID, doc_type: str, version: int

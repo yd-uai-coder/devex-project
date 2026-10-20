@@ -191,7 +191,7 @@ Claude の判断(計画の承認で確定):
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- **Phase 95**: `rewritable_keys` の中の「保存した予測の文書の側のキー」を `predicted_document_keys` に出し、要素の履歴の関わる CR と共有した(#17。挙動は同じ)。経緯は [95-1](../Phase-95/Phase-95-1.md)。
 
 ## Phase 完了チェック(#22)
 

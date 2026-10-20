@@ -1,4 +1,4 @@
-# 作成：Phase-82-3｜更新：Phase-83-1,83-3,84-4,85-4,86-4
+# 作成：Phase-82-3｜更新：Phase-83-1,83-3,84-4,85-4,86-4,95-3
 # Phase-86-4：更新(docstring: 検証・レビューを結ぶ・束に入れる・たどる記録の API と、結んだレビューの CASCADE を足した)
 # Phase-85-4：更新(docstring: CR を渡した生成と比較の API を SUT に足した)
 # Phase-84-4：更新(docstring: 説明書と要約の API・要約の CASCADE と、要約の LLM のスタブを足した)
@@ -179,7 +179,21 @@ async def test_reject_copy_agree_and_cascade(client: AsyncClient) -> None:
         "api:GET /api/v1/reservations",
     }
     assert {"stage:1", "stage:8"} <= {e["key"] for e in impact["excluded"]}
-    assert [e["to_status"] for e in agreed.json()["events"]] == ["draft", "explained", "agreed"]
+    # Phase-95-3：更新
+    # assert [e["to_status"] for e in agreed.json()["events"]] == ["draft", "explained", "agreed"]
+    # ↓↓
+    # 下書きの中の直しも時系列に残り、たどる記録に直した項目の名前が出る
+    assert [e["to_status"] for e in agreed.json()["events"]] == [
+        "draft",
+        "draft",
+        "explained",
+        "agreed",
+    ]
+    trace = (await client.get(f"{base}/2/trace", headers=headers)).json()
+    assert [(e["action"], e["edited_fields"]) for e in trace["entries"][:2]] == [
+        ("copy", []),
+        ("edit", ["背景の日付", "対象"]),
+    ]
 
     source = (await client.get(f"{base}/1", headers=headers)).json()
     assert (source["status"], source["derived_numbers"]) == ("rejected", [2])
@@ -187,7 +201,10 @@ async def test_reject_copy_agree_and_cascade(client: AsyncClient) -> None:
     listed = await client.get(base, headers=headers)
     assert [c["label"] for c in listed.json()] == ["CR-2", "CR-1"]
 
-    assert await _rows(project_id) == (2, 7)
+    # Phase-95-3：更新
+    # assert await _rows(project_id) == (2, 7)
+    # ↓↓
+    assert await _rows(project_id) == (2, 8)  # CR-2 の下書きの直しの1行を含む
     assert (
         await client.delete(f"/api/v1/projects/{project_id}", headers=headers)
     ).status_code == 204

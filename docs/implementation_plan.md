@@ -217,8 +217,8 @@
   * Phase 91: 行の合意の記録 API(束・採用にするで記録、今の合意の一覧、束が指す版を巡回から外す、既存の束からの移行) ── **完了**([`textbook/Phase-91/Phase-91-introduction.md`](../textbook/Phase-91/Phase-91-introduction.md))
   * Phase 92: 要件定義書の保護(出どころの上限をかけ直さない・合意済みの行と利用者を戻す・戻した件数) ── **完了**([`textbook/Phase-92/Phase-92-introduction.md`](../textbook/Phase-92/Phase-92-introduction.md))
   * Phase 93: 外部設計書の保護と、CR の反映での合意の更新(画面・API・外部連携を戻す・予測の画面と API だけ書き換えを許す・反映済みの時点で合意を CR を出どころに更新) ── **完了**([`textbook/Phase-93/Phase-93-introduction.md`](../textbook/Phase-93/Phase-93-introduction.md))
-  * Phase 94: 確認事項の一覧 API(決める機会・状態・推測の採用率)
-  * Phase 95: 行の履歴 API と、CR の下書きの直しの時系列
+  * Phase 94: 確認事項の一覧 API(決める機会・状態・推測の採用率。確認済みで採用と合意の記録) ── **完了**([`textbook/Phase-94/Phase-94-introduction.md`](../textbook/Phase-94/Phase-94-introduction.md))
+  * Phase 95: 行の履歴 API と、CR の下書きの直しの時系列(要素ごとの履歴。戻した版は残っている版の分だけ。下書きの直しは直した項目の名前) ── **完了**([`textbook/Phase-95/Phase-95-introduction.md`](../textbook/Phase-95/Phase-95-introduction.md))
   * Phase 96: 段階の承認の印を CR に結ぶ・新しい要件の予測の起点
   * Phase 97: 行の合意と履歴の画面
   * Phase 98: 確認事項の一覧の画面と、CR の画面の手直し

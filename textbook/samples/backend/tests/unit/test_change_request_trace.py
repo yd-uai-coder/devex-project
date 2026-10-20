@@ -1,4 +1,4 @@
-# 作成：Phase-86-4｜更新：Phase-88-2,89(完了後の調整)
+# 作成：Phase-86-4｜更新：Phase-88-2,89(完了後の調整),95-3
 # Phase-89(完了後の調整)：更新(docstring: SUT に decision_note を足した)
 """検証済みの変更要求(CR)を合意済みの版(束)に入れることと、受付から検証までをたどる記録のテスト。
 
@@ -18,6 +18,7 @@ SUT: 純粋関数 trace_entries・decision_note と ACTION_LABEL(app/change_requ
 
 # Phase-88-2:追記 ── app.api.routes.change_requests.list_change_requests
 # Phase-89(完了後の調整):追記 ── app.change_requests.DecisionFacts, app.change_requests.decision_note
+# Phase-95-3:追記 ── app.change_requests.EDITED_FIELD_LABEL, app.schemas.change_request.ChangeRequestUpdate, app.schemas.change_request.TraceEntryRead
 from datetime import UTC, datetime
 from typing import get_args
 
@@ -34,6 +35,7 @@ from app.api.routes.baselines import create_baseline
 from app.api.routes.change_requests import get_change_request_trace, list_change_requests
 from app.change_requests import (
     ACTION_LABEL,
+    EDITED_FIELD_LABEL,
     ChangeRequestAction,
     DecisionFacts,
     EventFacts,
@@ -47,7 +49,12 @@ from app.models.project import Project
 from app.models.user import User
 from app.repositories.review import ReviewRunRepository
 from app.schemas.baseline import BaselineCreate
-from app.schemas.change_request import ChangeRequestTraceRead, ChangeRequestVerify
+from app.schemas.change_request import (
+    ChangeRequestTraceRead,
+    ChangeRequestUpdate,
+    ChangeRequestVerify,
+    TraceEntryRead,
+)
 from app.services.change_request_service import ChangeRequestService
 from app.services.errors import ChangeRequestNotFoundError, ChangeRequestNotIncludableError
 
@@ -108,6 +115,25 @@ def test_decision_rows_show_the_agreement_record() -> None:
 
     expected = "相手: 先方の山田さん / メモ: 定例で確認 / 理由: 費用が収まる"
     assert [e.note for e in entries] == [expected, expected, ""]
+
+
+# Phase-95-3:追記
+def test_edit_rows_show_the_edited_fields() -> None:
+    """直したの行は、直した項目の名前を項目の並びで出す。知らない項目・形の悪い値・項目を残す
+    前の行(refs なし)・ほかの操作の行は空。"""
+    events = [
+        _event("edit", {"fields": ["targets", "title", "unknown"]}),
+        _event("edit", {"fields": "title"}),
+        _event("edit"),
+        _event("explain", {"fields": ["title"]}),
+    ]
+
+    entries = trace_entries(events, {}, {})
+
+    assert [e.edited_fields for e in entries] == [("タイトル", "対象"), (), (), ()]
+    assert entries[0].action_label == "直した"
+    assert set(EDITED_FIELD_LABEL) == set(ChangeRequestUpdate.model_fields)
+    assert TraceEntryRead.from_entry(entries[0]).edited_fields == ["タイトル", "対象"]
 
 
 def test_decision_note_skips_missing_values_and_keeps_row_note() -> None:

@@ -1,8 +1,10 @@
-# 作成：Phase-91-3｜更新：Phase-91-4,93-4
+# 作成：Phase-91-3｜更新：Phase-91-4,93-4,94-3,95-2
 # Phase-93-4：更新(docstring: AgreementService の記録の出どころに CR の反映を足した)
 # Phase-91-4：更新(docstring: AgreementService に今の合意の一覧を足した)
 # Phase-91-4:追記 ── app.agreements.AGREED_KINDS, app.services.detailed_mode.require_detailed
 # Phase-93-4:追記 ── app.agreements.AgreedKind, app.agreements.change_request_items, app.change_requests.rewritable_keys, app.change_requests.targets_from_json, app.models.change_request.ChangeRequest
+# Phase-94-3:追記 ── app.documents.requirements.model.UserScene
+# Phase-95-2:追記 ── app.agreements.ChangeRequestRef, app.agreements.ElementHistory, app.agreements.RecordFacts, app.agreements.VersionFacts, app.agreements.element_history, app.agreements.kind_of, app.agreements.origin_label, app.change_requests.predicted_document_keys, app.repositories.change_request.ChangeRequestRepository, app.repositories.generated_document.GeneratedDocumentRepository, app.services.errors.AgreementKeyInvalidError
 import uuid
 from collections.abc import Mapping
 from typing import Any
@@ -12,20 +14,34 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agreements import (
     AGREED_KINDS,
     AgreedKind,
+    ChangeRequestRef,
+    ElementHistory,
+    RecordFacts,
+    VersionFacts,
     agreement_items,
     change_request_items,
+    element_history,
+    kind_of,
+    origin_label,
     removed_keys,
 )
-from app.change_requests import rewritable_keys, targets_from_json
+from app.change_requests import (
+    predicted_document_keys,
+    rewritable_keys,
+    targets_from_json,
+)
 from app.detailed_design.impact.elements import parse_model
 from app.documents.external_design.model import ExternalDesignModel
-from app.documents.requirements.model import RequirementRow, RequirementsModel
+from app.documents.requirements.model import RequirementRow, RequirementsModel, UserScene
 from app.models.agreement import AgreementRecord
 from app.models.baseline import Baseline
 from app.models.change_request import ChangeRequest
 from app.models.project import Project
 from app.repositories.agreement import AgreementRepository
+from app.repositories.change_request import ChangeRequestRepository
+from app.repositories.generated_document import GeneratedDocumentRepository
 from app.services.detailed_mode import require_detailed
+from app.services.errors import AgreementKeyInvalidError
 
 
 class AgreementService:
@@ -46,6 +62,47 @@ class AgreementService:
         order = {kind: i for i, kind in enumerate(AGREED_KINDS)}
         records = await self._records.current(project.id)
         return sorted(records, key=lambda r: (order.get(r.kind, len(order)), r.seq))
+
+    # Phase-95-2:追記
+    async def history(self, project: Project, key: str) -> ElementHistory:
+        """要素1つの履歴(合意の記録・合意の形へ戻した版・関わる CR)。詳細設計モードだけ
+        (簡易モードは DesignStagesNotAvailableError)。合意の対象でないキーは
+        AgreementKeyInvalidError。記録も CR も無いキーは空の履歴(まだ合意していない要素)。"""
+        require_detailed(project, "Agreements")
+        if kind_of(key) is None:
+            raise AgreementKeyInvalidError(f"合意の対象でない要素のキーです: {key}")
+        records = await self._records.list_for_key(project.id, key)
+        change_requests = await ChangeRequestRepository(self._session).list_for_project(project.id)
+        numbers = {cr.id: cr.number for cr in change_requests}
+        versions = await GeneratedDocumentRepository(self._session).list_protected(
+            project.id, tuple(_DOCUMENT_KINDS)
+        )
+        return element_history(
+            key,
+            [_record_facts(r) for r in records],
+            [
+                VersionFacts(
+                    doc_type=d.doc_type,
+                    version=d.version,
+                    created_at=d.created_at,
+                    protection=d.protection or [],
+                    change_request_number=numbers.get(d.change_request_id)
+                    if d.change_request_id
+                    else None,
+                )
+                for d in versions
+            ],
+            [
+                ChangeRequestRef(
+                    number=cr.number,
+                    title=cr.title,
+                    status=cr.status,
+                    targets=targets_from_json(cr.targets),
+                    predicted_keys=predicted_document_keys(cr.predicted_impact),
+                )
+                for cr in change_requests
+            ],
+        )
 
     # Phase-91-3:追記 ── ここから下は 91-3
     async def record_baseline(
@@ -85,6 +142,19 @@ class AgreementService:
         )
 
     # Phase-93-4:追記
+    # Phase-94-3:追記
+    async def record_adopt_users(
+        self, project: Project, users: list[UserScene], *, recorded_by: uuid.UUID | None
+    ) -> list[AgreementRecord]:
+        """確認事項の一覧で推測の利用者を採用にしたとき、利用者と使う場面(1.2)の全体を合意に
+        する(1.2 は全体で1つの要素のため)。簡易ドキュメントモードでは記録しない。"""
+        if project.mode != "detailed":
+            return []
+        items = agreement_items(RequirementsModel(purpose="", users=users), None)
+        return await self._records.append(
+            project_id=project.id, items=items, origin="adopt", recorded_by=recorded_by
+        )
+
     async def record_change_request(
         self,
         project: Project,
@@ -125,6 +195,24 @@ class AgreementService:
             change_request_id=change_request.id,
             recorded_by=recorded_by,
         )
+
+
+# Phase-95-2:追記
+def _record_facts(record: AgreementRecord) -> RecordFacts:
+    """記録の行から履歴の材料を作る(出どころの束・CR は読み込み済みであること)。"""
+    return RecordFacts(
+        seq=record.seq,
+        created_at=record.created_at,
+        label=record.label,
+        content=record.content,
+        origin=record.origin,
+        origin_label=origin_label(
+            record.origin,  # type: ignore[arg-type]
+            baseline_number=record.baseline.number if record.baseline is not None else None,
+            cr_number=record.change_request.number if record.change_request is not None else None,
+        ),
+        recorded_by=record.recorded_by,
+    )
 
 
 # 文書の種類ごとの、合意の対象の要素の種類

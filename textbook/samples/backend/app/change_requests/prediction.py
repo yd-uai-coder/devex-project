@@ -1,4 +1,4 @@
-# 作成：Phase-83-2｜更新：Phase-93-3
+# 作成：Phase-83-2｜更新：Phase-93-3,95-1
 # Phase-93-3：更新(docstring: モジュールに CR で書き換えてよい要素を足した)
 """変更要求(CR)に結ぶ影響の予測(純粋関数。docs/external_design.md 2.14節)。
 
@@ -215,7 +215,19 @@ def rewritable_keys(
     """CR を反映する再生成で書き換えてよい要素のキー。対象の要件(内容の変更・削除)と、保存した
     予測(`predicted_impact`。無ければ対象の要件だけ)の文書の側の要素(画面・API)。"""
     keys = {_requirement_key(target.requirement_id) for target in targets}
-    if predicted_impact:
-        prediction = Prediction.from_dict(predicted_impact)
-        keys |= {item.key for item in prediction.items if item.stage == DOCUMENT_STAGE}
-    return frozenset(keys)
+    # Phase-95-1：更新
+    # if predicted_impact:
+    #     prediction = Prediction.from_dict(predicted_impact)
+    #     keys |= {item.key for item in prediction.items if item.stage == DOCUMENT_STAGE}
+    # return frozenset(keys)
+    # ↓↓
+    return frozenset(keys | predicted_document_keys(predicted_impact))
+
+
+# Phase-95-1:追記
+def predicted_document_keys(predicted_impact: Mapping[str, Any] | None) -> frozenset[str]:
+    """保存した予測(`predicted_impact`。無ければ空)の、文書の側の要素(画面・API)のキー。"""
+    if not predicted_impact:
+        return frozenset()
+    prediction = Prediction.from_dict(predicted_impact)
+    return frozenset(item.key for item in prediction.items if item.stage == DOCUMENT_STAGE)

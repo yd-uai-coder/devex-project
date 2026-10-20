@@ -1,4 +1,4 @@
-# 作成：Phase-91-2
+# 作成：Phase-91-2｜更新：Phase-95-2
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -79,6 +79,17 @@ class AgreementRepository(CRUDRepository[AgreementRecord]):
         stmt = (
             select(AgreementRecord)
             .where(AgreementRecord.project_id == project_id)
+            .order_by(AgreementRecord.seq)
+            .options(*self._default_options())
+        )
+        return list((await self._session.execute(stmt)).scalars().all())
+
+    # Phase-95-2:追記
+    async def list_for_key(self, project_id: uuid.UUID, key: str) -> list[AgreementRecord]:
+        """プロジェクトの、要素1つ(`key`)の記録を、記録の順(古い順)に返す(履歴のため)。"""
+        stmt = (
+            select(AgreementRecord)
+            .where(AgreementRecord.project_id == project_id, AgreementRecord.key == key)
             .order_by(AgreementRecord.seq)
             .options(*self._default_options())
         )

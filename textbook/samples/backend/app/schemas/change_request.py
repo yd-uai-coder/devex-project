@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3
 # Phase-86-2：更新(docstring: ComparedItemRead の reviewed を今の確認の状態にした)
 # Phase-83-1：更新(docstring: ChangeRequestCreate の対象を、要件 ID と変更の種類の組にした)
 # Phase-85-4:追記 ── app.change_requests.COMPARISON_STATUS_LABEL, app.change_requests.COMPARISON_STATUSES, app.change_requests.PREDICTED_ONLY_REASON_LABEL, app.change_requests.Comparison, app.change_requests.ComparisonStatus, app.change_requests.PredictedOnlyReason
@@ -612,6 +612,9 @@ class TraceEntryRead(BaseModel):
     stage: TraceStageRead | None
     reviews: list[TraceReviewRead]
     baseline_number: int | None
+    # Phase-95-3:追記
+    # 直した(edit)の行の、直した項目の名前(タイトル・対象…)。ほかの行と、項目を残す前の行は空
+    edited_fields: list[str]
 
     @classmethod
     def from_entry(cls, entry: TraceEntry) -> "TraceEntryRead":
@@ -648,6 +651,8 @@ class TraceEntryRead(BaseModel):
                 for r in entry.reviews
             ],
             baseline_number=entry.baseline_number,
+            # Phase-95-3:追記
+            edited_fields=list(entry.edited_fields),
         )
 
 

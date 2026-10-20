@@ -1,4 +1,5 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3,93-3,93-4
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3,93-3,93-4,94-3
+# Phase-94-3：更新(docstring: adopt_requirement を commit だけにし、中身を apply_adopt_requirement〈採用した行を確認済みにすることを足した〉へ移した)
 # Phase-93-4：更新(docstring: generate が CR の反映で合意を更新することを足した)
 # Phase-93-3：更新(docstring: _generate_external_design が合意済みの画面・API・外部連携を守り、戻した要素を返すことを足した)
 # Phase-92-3：更新(docstring: _generate_requirements が合意済みの行と利用者を守り、戻した要素を返すことを足した)
@@ -42,6 +43,7 @@
 # Phase-92-3:追記 ── app.agreements.USERS_KEY, app.agreements.agreed_requirement_ids, app.agreements.protect_requirements, app.agreements.requirement_key, app.change_requests.targets_from_json, app.documents.requirements.UserScene, app.models.change_request.ChangeRequest
 # Phase-93-3:追記 ── app.agreements.agreed_external_ids, app.agreements.protect_external_design, app.change_requests.rewritable_keys
 # Phase-93-3：削除 ── app.agreements.requirement_key
+# Phase-94-3:追記 ── app.confirmations.requirement_item, app.confirmations.user_item, app.documents.requirements.mark_user_adopted, app.repositories.confirmation.ConfirmationRepository
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -62,6 +64,7 @@ from app.agreements import (
 from app.ai.llm.catalog import Purpose
 from app.ai.llm.content import extract_text_content
 from app.change_requests import join_instructions, rewritable_keys, targets_from_json
+from app.confirmations import requirement_item, user_item
 from app.core.database import AsyncSessionLocal
 from app.core.errors import AppError
 from app.detailed_design.function_list import FunctionListModel
@@ -111,6 +114,7 @@ from app.documents.requirements import (
     UserScene,
     build_model,
     mark_adopted,
+    mark_user_adopted,
     render_requirements,
     source_counts,
     validate_requirements,
@@ -148,6 +152,7 @@ from app.models.project import Project
 from app.models.user import User
 from app.repositories.change_request import ChangeRequestRepository
 from app.repositories.chat_history import ChatHistoryRepository
+from app.repositories.confirmation import ConfirmationRepository
 from app.repositories.generated_document import (
     DOC_TYPES_BY_MODE,
     TEST_SPEC,
@@ -1212,20 +1217,35 @@ class DocGeneratorService:
         self, project: Project, req_id: str, *, recorded_by: uuid.UUID | None = None
     ) -> GeneratedDocument:
         """現在の版の要件定義書の推測の要件を、利用者が確かめた「採用」にする(LLMは呼ばない)。
+        中身は`apply_adopt_requirement`で、ここで commit する。"""
+        document = await self.apply_adopt_requirement(project, req_id, recorded_by=recorded_by)
+        await self._session.commit()
+        await self._session.refresh(document)
+        return document
+
+    # Phase-94-3:追記
+    async def apply_adopt_requirement(
+        self, project: Project, req_id: str, *, recorded_by: uuid.UUID | None = None
+    ) -> GeneratedDocument:
+        """推測の要件を「採用」にする(commit は呼ぶ側。確認事項の一覧からも使う)。
 
         同じ版の model と md を書き換え、版は増やさない(中身は変わらないので、後続の段階を
-        古くしない)。詳細設計モードでは、採用した行を合意として記録する(記録した人 =
-        `recorded_by`)。生成中は409。要件が無い・model の無い版は404、推測でない要件は409。"""
-        if project.status == "generating":
-            raise DocGenerationInProgressError(
-                "設計書を生成しています。完了してから再度お試しください。"
-            )
-        document = await self._documents.get_current(
-            project_id=project.id, doc_type="requirements"
-        )
-        if document is None:
-            raise DocumentNotFoundError("requirements not found")
-        model = parse_requirements_model(document.model)
+        古くしない)。詳細設計モードでは、採用した行を合意として記録し、確認事項の一覧の項目を
+        確認済みにする(記録した人 = `recorded_by`)。生成中は409。要件が無い・model の無い版は
+        404、推測でない要件は409。"""
+        # Phase-94-3：更新(生成中・要件定義書の無いときの確かめは _requirements_for_adopt へ移した)
+        # if project.status == "generating":
+        #     raise DocGenerationInProgressError(
+        #         "設計書を生成しています。完了してから再度お試しください。"
+        #     )
+        # document = await self._documents.get_current(
+        #     project_id=project.id, doc_type="requirements"
+        # )
+        # if document is None:
+        #     raise DocumentNotFoundError("requirements not found")
+        # model = parse_requirements_model(document.model)
+        # ↓↓
+        document, model = await self._requirements_for_adopt(project)
         if model is None or all(row.id != req_id for row in model.rows):
             raise RequirementNotFoundError(f"Requirement {req_id} not found")
         adopted = mark_adopted(model, req_id)
@@ -1239,9 +1259,60 @@ class DocGeneratorService:
         # Phase-91-3:追記
         row = next(row for row in adopted.rows if row.id == req_id)
         await AgreementService(self._session).record_adopt(project, row, recorded_by=recorded_by)
-        await self._session.commit()
-        await self._session.refresh(document)
+        # Phase-94-3：更新
+        # await self._session.commit()
+        # await self._session.refresh(document)
+        # ↓↓
+        if project.mode == "detailed":
+            await ConfirmationRepository(self._session).mark_confirmed(
+                project.id, requirement_item(row), updated_by=recorded_by
+            )
         return document
+
+    # Phase-94-3:追記
+    async def apply_adopt_user(
+        self, project: Project, user: str, *, recorded_by: uuid.UUID | None = None
+    ) -> GeneratedDocument:
+        """推測の利用者と使う場面(1.2 の行。利用者の名前で指す)を「採用」にする(commit は
+        呼ぶ側。確認事項の一覧から使う)。要件の採用と同じく版は増やさず、詳細設計モードでは
+        1.2 全体を合意として記録し、確認事項の一覧の項目を確認済みにする。生成中は409。要件定義書・
+        その行が無ければ404、推測でない行は409。"""
+        document, model = await self._requirements_for_adopt(project)
+        if model is None or all(u.user != user.strip() for u in model.users):
+            raise RequirementNotFoundError(f"User scene {user} not found")
+        adopted = mark_user_adopted(model, user)
+        if adopted is None:
+            raise RequirementNotAssumedError(f"User scene {user} is not assumed")
+        await self._documents.replace_model(
+            document,
+            content=render_requirements(adopted),
+            model=adopted.model_dump(mode="json"),
+        )
+        if project.mode == "detailed":
+            await AgreementService(self._session).record_adopt_users(
+                project, adopted.users, recorded_by=recorded_by
+            )
+            scene = next(u for u in adopted.users if u.user == user.strip())
+            await ConfirmationRepository(self._session).mark_confirmed(
+                project.id, user_item(scene), updated_by=recorded_by
+            )
+        return document
+
+    # Phase-94-3:追記
+    async def _requirements_for_adopt(
+        self, project: Project
+    ) -> tuple[GeneratedDocument, RequirementsModel | None]:
+        """採用の対象の、現在の版の要件定義書と model。生成中は409、要件定義書が無ければ404。"""
+        if project.status == "generating":
+            raise DocGenerationInProgressError(
+                "設計書を生成しています。完了してから再度お試しください。"
+            )
+        document = await self._documents.get_current(
+            project_id=project.id, doc_type="requirements"
+        )
+        if document is None:
+            raise DocumentNotFoundError("requirements not found")
+        return document, parse_requirements_model(document.model)
 
     async def _generate_requirements(
         # Phase-54-2：更新

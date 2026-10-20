@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1,34-1,52-3,64-1,69-1,81-2,82-1,91-2
+# 作成：Phase-2-1｜更新：Phase-6-3,8-2,10-4,15-1,15-2,24(ゴール3後の調整),27-1,34-1,52-3,64-1,69-1,81-2,82-1,91-2,94-2
 # 写経レベル: 定型 ── 既存User/Conversationと同型のORMモデル定義。
 # Phase-34-1:追記 ── app.models.hearing_point.HearingPoint(TYPE_CHECKING)
 # Phase-52-3:追記 ── app.models.review.ReviewRun(TYPE_CHECKING)
@@ -8,6 +8,7 @@
 # Phase-82-1:追記 ── app.models.change_request.ChangeRequest(TYPE_CHECKING のみ)
     # Phase-10-4:追記
 # Phase-91-2:追記 ── app.models.agreement.AgreementRecord
+# Phase-94-2:追記 ── app.models.confirmation.ConfirmationItemRecord
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
     from app.models.baseline import Baseline
     from app.models.change_request import ChangeRequest
     from app.models.chat_history import ChatHistory
+    from app.models.confirmation import ConfirmationItemRecord
     from app.models.data_item import DataItem
     from app.models.design_stage import DesignStage
     from app.models.generated_document import GeneratedDocument
@@ -134,4 +136,8 @@ class Project(Base):
     # Phase-91-2:追記
     agreement_records: Mapped[list["AgreementRecord"]] = relationship(
         back_populates="project", cascade="all, delete-orphan", order_by="AgreementRecord.seq"
+    )
+    # Phase-94-2:追記
+    confirmation_items: Mapped[list["ConfirmationItemRecord"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
     )

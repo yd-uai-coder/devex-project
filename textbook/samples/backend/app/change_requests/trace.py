@@ -1,8 +1,9 @@
-# 作成：Phase-86-4｜更新：Phase-89(完了後の調整)
+# 作成：Phase-86-4｜更新：Phase-89(完了後の調整),95-3
+# Phase-95-3：更新(docstring: 読み解く行に「直した」を足した)
 # Phase-89(完了後の調整)：更新(docstring: 合意・却下の行のメモに合意の記録を出す。CR で反映した版は消さない)
 """変更要求(CR)の、受付から検証までをたどる記録(純粋関数。docs/external_design.md 2.14節)。
 
-CR の時系列の行(状態の遷移・反映・レビューを結ぶ・検証・束に入れる)の`refs`を、指す先の今の
+CR の時系列の行(状態の遷移・直した・反映・レビューを結ぶ・検証・束に入れる)の`refs`を、指す先の今の
 状態で読み解く。文書の版は直近の数版しか残さないので、作った版が今も残っているかを示す(CR で反映した
 版は消さないが、それより前の記録もあるため)。レビューは CR に結んだ回の要点(区切り・モデル・状態・
 指摘と採用の数)を付ける。合意・却下の行のメモには、CR に残した合意の記録(相手・メモ・理由)を出す。
@@ -28,6 +29,19 @@ ACTION_LABEL: dict[str, str] = {
     "verify": "検証",
     "link_review": "レビューを結んだ",
     "baseline": "合意済みの版に入れた",
+# Phase-95-3:追記
+}
+
+
+# 直した(edit)の行の`refs.fields`に残す CR の項目と、画面に出す名前(項目の並び)
+EDITED_FIELD_LABEL: dict[str, str] = {
+    "title": "タイトル",
+    "content": "内容",
+    "background_source": "背景の出どころ",
+    "background_date": "背景の日付",
+    "background_memo": "背景のメモ",
+    "targets": "対象",
+    "adds_requirement": "新しい要件を足す",
 }
 
 
@@ -104,6 +118,8 @@ class TraceEntry:
     stage: TraceStage | None = None
     reviews: tuple[ReviewFacts, ...] = ()
     baseline_number: int | None = None
+    # Phase-95-3:追記
+    edited_fields: tuple[str, ...] = ()
 
 
 def trace_entries(
@@ -167,7 +183,18 @@ def _entry(
             reviews[str(run_id)] for run_id in run_ids or [] if str(run_id) in reviews
         ),
         baseline_number=baseline if isinstance(baseline, int) else None,
+        # Phase-95-3:追記
+        edited_fields=_edited_fields(refs) if event.action == "edit" else (),
     )
+
+
+# Phase-95-3:追記
+def _edited_fields(refs: Mapping[str, Any]) -> tuple[str, ...]:
+    """直した項目の名前(項目の並び)。知らない項目・形の正しくない値は読まない。"""
+    fields = refs.get("fields")
+    if not isinstance(fields, list):
+        return ()
+    return tuple(label for field, label in EDITED_FIELD_LABEL.items() if field in fields)
 
 
 def _documents(

@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4,94-3,95-2
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -399,6 +399,22 @@ class RequirementNotAssumedError(ConflictError):
     """推測でない要件を「採用」にしようとした場合に送出する(画面が古いまま押したときに起きうる)。"""
 
     code: ClassVar[str | None] = "REQUIREMENT_NOT_ASSUMED"
+
+
+# Phase-95-2:追記
+class AgreementKeyInvalidError(UnprocessableEntityError):
+    """合意の対象でない要素のキー(要件・利用者と使う場面・画面・API・外部連携のどれでもない)の
+    履歴を求めた場合に送出する。"""
+
+    code: ClassVar[str | None] = "AGREEMENT_KEY_INVALID"
+
+
+# Phase-94-3:追記
+class ConfirmationItemNotFoundError(NotFoundError):
+    """確認事項の一覧に、指定したキーの項目が無い場合に送出する(今の一覧にも、利用者が欄を決めた
+    行にも無い)。"""
+
+    code: ClassVar[str | None] = "CONFIRMATION_ITEM_NOT_FOUND"
 
 
 # Phase-52-2:追記

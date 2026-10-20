@@ -1,4 +1,4 @@
-# 作成：Phase-36-1｜更新：Phase-37-1,40-1,47-1,49-3,70-3,92-2
+# 作成：Phase-36-1｜更新：Phase-37-1,40-1,47-1,49-3,70-3,92-2,94-1
 # Phase-92-2：更新(docstring: モジュール ── 合意済みの行に上限をかけ直さないことを足した。build_model の agreed_ids)
 """AI の下書きから要件定義書の model を組み立てる(純粋関数)。
 
@@ -56,7 +56,10 @@ _NFR_CATEGORY: dict[str, str] = {
 }
 _OTHER_CATEGORY = "その他"
 # 1.2(利用者と使う場面)の根拠の観点
-_USER_POINTS = ("users", "daily_flow")
+# Phase-94-1：更新
+# _USER_POINTS = ("users", "daily_flow")
+# ↓↓
+USER_POINTS = ("users", "daily_flow")
 
 
 @dataclass(frozen=True)
@@ -102,6 +105,13 @@ def known_points(points: Iterable[str]) -> list[str]:
     return seen
 
 
+# Phase-94-1:追記
+def grounding_points(points: Sequence[str], kind: str = "") -> list[str]:
+    """行の根拠の観点(出どころの上限を決める観点)。規模は除く。ただし制約の行は規模も含む。"""
+    excluded = frozenset() if kind in _SCALE_GROUNDS_KINDS else _NOT_GROUNDING
+    return [key for key in points if key not in excluded]
+
+
 def cap_source(
     # Phase-40-1：更新
     # source: str, points: Sequence[str], states: Mapping[str, PointState]
@@ -115,14 +125,16 @@ def cap_source(
     if source not in _SOURCE_RANK:
         return "assumed"
     # Phase-40-1:追記
-    excluded = frozenset() if kind in _SCALE_GROUNDS_KINDS else _NOT_GROUNDING
+    # Phase-94-1：削除
+    # excluded = frozenset() if kind in _SCALE_GROUNDS_KINDS else _NOT_GROUNDING
     caps = [
         _SOURCE_RANK[_STATUS_CAP[states[key].status]]
-        for key in points
-        # Phase-40-1：更新
-        # if key in states and key not in _NOT_GROUNDING
+        # Phase-94-1：更新
+        # for key in points
+        # if key in states and key not in excluded
         # ↓↓
-        if key in states and key not in excluded
+        for key in grounding_points(points, kind)
+        if key in states
     ]
     if not caps:
         return "assumed"
@@ -232,7 +244,10 @@ def build_model(
         UserScene(
             user=u.user.strip(),
             scene=u.scene.strip(),
-            source=cap_source(u.source, _USER_POINTS, states),
+            # Phase-94-1：更新
+            # source=cap_source(u.source, _USER_POINTS, states),
+            # ↓↓
+            source=cap_source(u.source, USER_POINTS, states),
         )
         for u in draft.users
         if u.user.strip()
@@ -256,3 +271,18 @@ def mark_adopted(model: RequirementsModel, req_id: str) -> RequirementsModel | N
         return None
     rows = [r.model_copy(update={"source": "adopted"}) if r is target else r for r in model.rows]
     return model.model_copy(update={"rows": rows})
+
+
+# Phase-94-1:追記
+def mark_user_adopted(model: RequirementsModel, user: str) -> RequirementsModel | None:
+    """推測の利用者と使う場面(1.2 の行。利用者の名前で指す)を「採用」にする。推測の行が無ければ
+    None。"""
+    target = next(
+        (u for u in model.users if u.user == user.strip() and u.source == "assumed"), None
+    )
+    if target is None:
+        return None
+    users = [
+        u.model_copy(update={"source": "adopted"}) if u is target else u for u in model.users
+    ]
+    return model.model_copy(update={"users": users})
