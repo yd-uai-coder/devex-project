@@ -201,8 +201,8 @@
   * Phase 84: 変更の説明書(5節の md・任意の LLM の要約・照合・確認の関門・古い印。CR の対象に変更後の案を持たせた) ── **完了**([`textbook/Phase-84/Phase-84-introduction.md`](../textbook/Phase-84/Phase-84-introduction.md))
   * Phase 85: 反映(`cr_number` を文書・段階の再生成へ。版に CR とモデル名を残し、自動で反映済みに。予測と実際の比較) ── **完了**([`textbook/Phase-85/Phase-85-introduction.md`](../textbook/Phase-85/Phase-85-introduction.md))
   * Phase 86: 再検証とたどれる記録(印の今の確認の状態と文書の側の確認の項目で検証済み・任意のレビューを結ぶ・たどる記録の API・検証済みの CR を新しい合意済みの版に結ぶ) ── **完了**([`textbook/Phase-86/Phase-86-introduction.md`](../textbook/Phase-86/Phase-86-introduction.md))
-  * Phase 87: CR の画面
-  * Phase 88: 合意済みの版と説明書の画面・小さな修正(`postgres-init`・モデルのカタログ)
+  * Phase 87: CR の画面(一覧・作成・詳細の4つのタブ(内容・影響・検証・たどる記録)、文書への反映のボタン、詳細設計画面の「変更の影響」から段階の生成に CR を渡す欄、`?stage=N`) ── **完了**([`textbook/Phase-87/Phase-87-introduction.md`](../textbook/Phase-87/Phase-87-introduction.md))
+  * Phase 88: 合意済みの版と説明書の画面・小さな修正(束の一覧・作成・中身のページ、CR の詳細の説明書のタブ(要約の確認・プレビュー)、`postgres-init`・モデルのカタログ・束の一覧の読み込み・版の履歴の CR) ── **完了**([`textbook/Phase-88/Phase-88-introduction.md`](../textbook/Phase-88/Phase-88-introduction.md))
   * Phase 89: 効果測定・統合/E2E・本番への反映
 * **マイルストーン12**: 決まったシナリオ(N2。Devex 自身を題材にした詳細設計モードの生成物)で、1件の CR が受付から再検証まで通り、「何を・なぜ・誰の合意で・どこに反映したか」を後からたどれる。
 

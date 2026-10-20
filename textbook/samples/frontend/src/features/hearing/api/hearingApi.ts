@@ -1,4 +1,4 @@
-// 作成：Phase-3-5｜更新：Phase-34-3,35-3,35(完了後の調整),53(完了後の調整),54-2
+// 作成：Phase-3-5｜更新：Phase-34-3,35-3,35(完了後の調整),53(完了後の調整),54-2,87-1
 import { apiFetch } from "@/lib/api/client";
 import type { ProjectRead } from "@/features/dashboard/api/projects";
 
@@ -102,10 +102,21 @@ export function markPointNotApplicable(projectId: string, pointKey: string): Pro
 // export function triggerGeneration(projectId: string, startFrom?: string): Promise<void> {
 // ↓↓
 // findingIds は再生成の指示に入れる、AI 設計レビューの採用した指摘(設計・不整合)。
-export function triggerGeneration(projectId: string, startFrom?: string, findingIds: string[] = []): Promise<void> {
+// Phase-87-1：更新
+// export function triggerGeneration(projectId: string, startFrom?: string, findingIds: string[] = []): Promise<void> {
+// ↓↓
+// crNumber は反映する合意した変更要求(CR)の番号(詳細設計モード。合意・反映済みの CR だけ)。
+export function triggerGeneration(
+  projectId: string,
+  startFrom?: string,
+  findingIds: string[] = [],
+  crNumber?: number,
+): Promise<void> {
   const body = {
     ...(startFrom ? { start_from: startFrom } : {}),
     ...(findingIds.length > 0 ? { finding_ids: findingIds } : {}),
+    // Phase-87-1:追記
+    ...(crNumber !== undefined ? { cr_number: crNumber } : {}),
   };
   return apiFetch<void>(`/api/v1/projects/${projectId}/generate`, {
     method: "POST",

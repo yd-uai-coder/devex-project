@@ -1,4 +1,4 @@
-# 作成：Phase-82-1｜更新：Phase-83-1,85-2,86-3,86-4
+# 作成：Phase-82-1｜更新：Phase-83-1,85-2,86-3,86-4,88-1
 # Phase-86-4：更新(docstring: 入れた束を CR と一緒に読む)
 # Phase-86-3：更新(docstring: 結んだレビューの永続化と、CR と一緒に読むことを足した)
 # Phase-85-2：更新(docstring: add_event の refs を足した)
@@ -176,6 +176,14 @@ class ChangeRequestRepository(CRUDRepository[ChangeRequest]):
             .options(*self._default_options())
         )
         return list((await self._session.execute(stmt)).scalars().all())
+
+    # Phase-88-1:追記
+    async def numbers_by_id(self, ids: Collection[uuid.UUID]) -> dict[uuid.UUID, int]:
+        """CR の id → 番号。文書の版の応答に、反映した CR の番号を出すため(時系列は読まない)。"""
+        if not ids:
+            return {}
+        stmt = select(ChangeRequest.id, ChangeRequest.number).where(ChangeRequest.id.in_(ids))
+        return {row.id: row.number for row in (await self._session.execute(stmt)).all()}
 
     async def find_derived(self, change_request_id: uuid.UUID) -> list[ChangeRequest]:
         """この CR を写して作った CR(番号の順)。"""

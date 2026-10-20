@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3,44-1,54-3,78-1
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3,44-1,54-3,78-1,87-4
 // 写経レベル: コア ── 版の競合と、承認後の取り直し。
 // Phase-16-6:追記 ── ../test-utils/stageFixtures.makeFunctionList
 // Phase-44-1:追記 ── ../test-utils/stageFixtures(makeImpact, makeModuleList, makePlan)
@@ -369,6 +369,16 @@ describe("useDetailedDesignStore", () => {
 
     expect(stub.requests[0].url).toContain("/design-stages/8/generate");
     expect(JSON.parse(String(stub.requests[0].init?.body))).toEqual({ unit_ids: ["M-01-T02"] });
+  });
+
+  // Phase-87-4:追記
+  it("regenerateは反映済みの CR の番号を cr_number で一緒に渡す", async () => {
+    stub.queue({ status: 202, body: {} });
+    stub.queue({ status: 200, body: makeStages() });
+
+    await useDetailedDesignStore.getState().regenerate("p1", 5, ["proc:F-01"], 2);
+
+    expect(JSON.parse(String(stub.requests[0].init?.body))).toEqual({ function_ids: ["F-01"], cr_number: 2 });
   });
 
   it("showInTableは段階へ移って行を強調し、段階5・6 はタブの移動先も立てる", () => {

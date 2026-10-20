@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4,69-3,78-1
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4,69-3,78-1,87-2,87-4,88-3
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-44-2:追記 ── ../../test-utils/stageFixtures.makeImpact
@@ -13,6 +13,8 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DetailedDesignPageContent } from "../DetailedDesignPageContent";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+// Phase-87-4:追記
+import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import { useReviewStore } from "@/features/design-review/review-store";
 import { useTestSpecStore } from "@/features/documents/test-spec-store";
 import { makeTestSpec } from "@/features/documents/test-utils/testSpecFixtures";
@@ -77,6 +79,9 @@ describe("DetailedDesignPageContent", () => {
       approve: vi.fn().mockResolvedValue(undefined),
     });
     // Phase-57-3:追記
+    // Phase-87-4:追記
+    // 「変更の影響」が反映済みの CR を読む(ここでは CR は無い)
+    useChangeRequestsStore.setState({ projectId: "p1", list: [], fetchList: vi.fn().mockResolvedValue(undefined) });
     useTestSpecStore.setState({
       testSpec: null,
       status: "success",
@@ -87,6 +92,30 @@ describe("DetailedDesignPageContent", () => {
       fetchTestSpec: vi.fn().mockResolvedValue(undefined),
       generate: vi.fn().mockResolvedValue(undefined),
     });
+  });
+
+  // Phase-87-4:追記
+  it("?stage=N で開くと、段階を読んだ後にその段階を選ぶ", async () => {
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DetailedDesignPageContent projectId="p1" initialStage={3} />
+      </TamaguiProvider>,
+    );
+
+    await waitFor(() => expect(useDetailedDesignStore.getState().selectStage).toHaveBeenCalledWith(3));
+  });
+
+  // Phase-87-2:追記
+  // Phase-88-3：更新
+  // it("詳細設計モードは変更要求(CR)へのリンクを出す", () => {
+  // ↓↓
+  it("詳細設計モードは変更要求(CR)と合意済みの版へのリンクを出す", () => {
+    renderContent();
+
+    expect(screen.getByRole("link", { name: "変更要求(CR) →" })).toHaveAttribute("href", "/projects/p1/change-requests");
+    // Phase-88-3:追記
+    expect(screen.getByRole("link", { name: "合意済みの版 →" })).toHaveAttribute("href", "/projects/p1/baselines");
+    expect(useDetailedDesignStore.getState().selectStage).not.toHaveBeenCalled();
   });
 
   it("マウント時にfetchStages(projectId)を呼び、ステッパーと選んだ段階を表示する", () => {

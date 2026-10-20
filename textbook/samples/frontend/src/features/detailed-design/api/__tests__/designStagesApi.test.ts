@@ -1,4 +1,4 @@
-// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6,28-3,28-4,29-4,30-5,30-7,31-5
+// 作成：Phase-15-6｜更新：Phase-16-5,17-5,18-5,20-4,21-4,22-6,28-3,28-4,29-4,30-5,30-7,31-5,87-1
 // 写経レベル: 定型 ── API クライアント・型・そのテスト。
 // Phase-16-5:追記 ── ../designStagesApi.generateDesignStage
 // Phase-17-5:追記 ── ../types.MAX_DFD_GROUPS, @/features/detailed-design/test-utils/stageFixtures.makeDataFlow
@@ -150,6 +150,15 @@ describe("designStagesApi", () => {
 
   // Phase-18-5:追記
   // Phase-28-3:追記
+  // Phase-87-1:追記
+  it("反映する CR の番号を本文の cr_number で渡す(部分再生成の対象と一緒に)", async () => {
+    stub.queue({ status: 202, body: { ...STAGE1, stage: 5, generation_status: "generating" } });
+
+    await generateDesignStage("p1", 5, ["F-02"], undefined, undefined, [], 3);
+
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ function_ids: ["F-02"], cr_number: 3 });
+  });
+
   it("段階8は手順書を作る単位を本文の unit_ids で渡す", async () => {
     stub.queue({ status: 202, body: { ...STAGE1, stage: 8, generation_status: "generating" } });
 

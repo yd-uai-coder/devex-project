@@ -1,4 +1,4 @@
-# 作成：Phase-67-3
+# 作成：Phase-67-3｜更新：Phase-88-1
 """用途ごとのモデルと API キーの登録(サービスとルート)のテスト。
 
 SUT: LlmSettingsService(get_model_settings・update_model_settings・list_api_keys・
@@ -10,6 +10,7 @@ SUT: LlmSettingsService(get_model_settings・update_model_settings・list_api_ke
      DB はテスト用の SQLite のセッション。暗号の鍵は settings を monkeypatch で替える
 """
 
+# Phase-88-1:追記 ── app.ai.llm.catalog.CATALOG
 from typing import Any
 
 import pytest
@@ -18,7 +19,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from tests.fixtures.fake_redis import FakeRedis
 
-from app.ai.llm.catalog import Provider, Purpose
+from app.ai.llm.catalog import CATALOG, Provider, Purpose
 from app.ai.llm.key_check import KeyCheckResult, KeyVerifier
 from app.api.routes.llm import read_llm_catalog
 from app.api.routes.users import (
@@ -243,7 +244,10 @@ async def test_routes_round_trip(db_session: AsyncSession) -> None:
     await delete_api_key(Provider.CLAUDE, db_session, user)
     after = await read_model_settings(db_session, user)
 
-    assert len(catalog.models) == 8 and len(catalog.purposes) == 4
+    # Phase-88-1：更新
+    # assert len(catalog.models) == 8 and len(catalog.purposes) == 4
+    # ↓↓
+    assert len(catalog.models) == len(CATALOG) == 7 and len(catalog.purposes) == 4
     assert registered.key_hint == "9876"
     assert keys.encryption_available is True and keys.keys[0].provider is Provider.CLAUDE
     assert {s.purpose: s.is_default for s in updated.settings}[Purpose.JUDGE] is False

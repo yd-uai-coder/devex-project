@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3,44-1,54-3,78-1
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,18-9,20-4,21-4,21-7(画面確認後の修正),27-3,28-3,44-1,54-3,78-1,87-4
 // 写経レベル: コア ── 承認の後に全段階を取り直す(後ろの段階が開く・古いが消える)。
 // Phase-16-6:追記 ── @/features/detailed-design/api/designStagesApi.generateDesignStage, @/features/detailed-design/api/designStagesApi.saveDesignStage
 // Phase-18-9:追記 ── @/features/detailed-design/labels.approvalBlockers
@@ -96,7 +96,10 @@ type DetailedDesignStore = {
   // // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を、段階8は unitIds で単位を選べる
   // ↓↓
   // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を、段階8は unitIds で単位を選べる。
-  // findingIds は修正指示に入れる、AI 設計レビューの採用した指摘
+  // Phase-87-4：更新
+  // // findingIds は修正指示に入れる、AI 設計レビューの採用した指摘
+  // ↓↓
+  // findingIds は修正指示に入れる、AI 設計レビューの採用した指摘。crNumber は修正指示に入れる反映済みの CR
   // (Phase 20・21・28)
   generate: (
     projectId: string,
@@ -107,6 +110,8 @@ type DetailedDesignStore = {
     unitIds?: string[],
     // Phase-54-3:追記
     findingIds?: string[],
+    // Phase-87-4:追記
+    crNumber?: number,
   ) => Promise<void>;
   // Phase-44-1:追記
   // 段階の印を確認済み(reviewed=false で未確認)にする。確認できたら true
@@ -116,8 +121,12 @@ type DetailedDesignStore = {
     keys: string[],
     reviewed: boolean,
   ) => Promise<boolean>;
-  // 再生成の候補(要素のキー)から、段階5・6・8 の部分再生成を呼ぶ
-  regenerate: (projectId: string, stage: number, keys: string[]) => Promise<void>;
+  // Phase-87-4：更新
+  // // 再生成の候補(要素のキー)から、段階5・6・8 の部分再生成を呼ぶ
+  // regenerate: (projectId: string, stage: number, keys: string[]) => Promise<void>;
+  // ↓↓
+  // 再生成の候補(要素のキー)から、段階5・6・8 の部分再生成を呼ぶ。crNumber は修正指示に入れる反映済みの CR
+  regenerate: (projectId: string, stage: number, keys: string[], crNumber?: number) => Promise<void>;
   // 変更の影響の「表で見る」: その段階へ移り、表の行を強調する
   showInTable: (stage: number, key: string) => void;
   // Phase-44-1：更新
@@ -329,7 +338,10 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
     // Phase-54-3：更新
     // generate: async (projectId, stage, functionIds, logics, unitIds) => {
     // ↓↓
-    generate: async (projectId, stage, functionIds, logics, unitIds, findingIds) => {
+    // Phase-87-4：更新
+    // generate: async (projectId, stage, functionIds, logics, unitIds, findingIds) => {
+    // ↓↓
+    generate: async (projectId, stage, functionIds, logics, unitIds, findingIds, crNumber) => {
       set({ requestingGeneration: true, actionError: null });
       try {
         // Phase-28-3：更新
@@ -338,7 +350,10 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
         // Phase-54-3：更新
         // await generateDesignStage(projectId, stage, functionIds, logics, unitIds);
         // ↓↓
-        await generateDesignStage(projectId, stage, functionIds, logics, unitIds, findingIds);
+        // Phase-87-4：更新
+        // await generateDesignStage(projectId, stage, functionIds, logics, unitIds, findingIds);
+        // ↓↓
+        await generateDesignStage(projectId, stage, functionIds, logics, unitIds, findingIds, crNumber);
       // ── ここから Phase-20-4 の作成分 ──
       } catch (err) {
         // 生成の受け付けの 409 DESIGN_STAGE_INVALID(対象の数・選択)は、承認の文言でなくサーバーの理由を出す
@@ -376,10 +391,16 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
       return done;
     },
 
-    regenerate: async (projectId, stage, keys) => {
+    // Phase-87-4：更新
+    // regenerate: async (projectId, stage, keys) => {
+    // ↓↓
+    regenerate: async (projectId, stage, keys, crNumber) => {
       const plan = get().stages.find((s) => s.stage === 8)?.plan ?? null;
       const args = regenerationArgs(stage, keys, plan);
-      await get().generate(projectId, stage, args.functionIds, args.logics, args.unitIds);
+      // Phase-87-4：更新
+      // await get().generate(projectId, stage, args.functionIds, args.logics, args.unitIds);
+      // ↓↓
+      await get().generate(projectId, stage, args.functionIds, args.logics, args.unitIds, [], crNumber);
     },
 
     showInTable: (stage, key) =>

@@ -1,4 +1,4 @@
-# 作成：Phase-82-3｜更新：Phase-83-1,83-3,84-3,84-4,85-4,86-2,86-3,86-4
+# 作成：Phase-82-3｜更新：Phase-83-1,83-3,84-3,84-4,85-4,86-2,86-3,86-4,88-2
 # Phase-84-4：更新(docstring: SUT に説明書のルート(84-3)と要約のルート(84-4)を、スタブに LLM の解決の差し替え(84-4)を足した)
 # Phase-83-3：更新(docstring: SUT に get_change_request_impact を足した)
 # Phase-83-3:追記 ── app.api.routes.change_requests.get_change_request_impact
@@ -124,6 +124,10 @@ async def test_routes_run_the_whole_flow(db_session: AsyncSession) -> None:
     assert (copied.label, copied.derived_from_number) == ("CR-2", 1)
     assert withdrawn.status_label == "取り下げ"
     assert [c.label for c in listed] == ["CR-2", "CR-1"]
+    # Phase-88-2:追記
+    # 一覧も合意の記録を持つ(束の作成で、合意の記録の初期値にする)
+    assert listed[1].decision is not None and listed[1].decision.reason == "範囲の外"
+    assert listed[0].decision is None and listed[0].included_baseline_number is None
     assert fetched.derived_numbers == [2]
     assert [e.action for e in fetched.events] == ["create", "explain", "reject", "copied"]
 

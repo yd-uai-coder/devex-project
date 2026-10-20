@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3,78-1
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3,78-1,87-2,88-3
 "use client";
 
 // Phase-15-8:追記 ── useState(react), ConfirmDialog
@@ -178,6 +178,22 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           {projectMode === "detailed" ? (
             <Link href={`/projects/${projectId}/detailed-design`}>
               <Text color="$blue10">詳細設計へ進む →</Text>
+            </Link>
+          ) : null}
+          {/* Phase-87-2:追記 */}
+          {/* Phase-88-3：更新
+          変更要求(SCR-010)は詳細設計モードだけ
+          ↓↓ */}
+          {/* 変更要求・合意済みの版(SCR-010)は詳細設計モードだけ */}
+          {projectMode === "detailed" ? (
+            <Link href={`/projects/${projectId}/change-requests`}>
+              <Text color="$blue10">変更要求(CR)</Text>
+            </Link>
+          ) : null}
+          {/* Phase-88-3:追記 */}
+          {projectMode === "detailed" ? (
+            <Link href={`/projects/${projectId}/baselines`}>
+              <Text color="$blue10">合意済みの版</Text>
             </Link>
           ) : null}
           {/* Phase-15-8：更新(押したら確認ダイアログを開く)

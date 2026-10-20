@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1
 # Phase-85-2：更新(docstring: generate_documents・request_generation・generate が cr_number を受けることを足した)
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
@@ -33,6 +33,7 @@
 # Phase-69-1：削除 ── app.services.errors.LLMQuotaExceededError
 # Phase-81-1:追記 ── app.services.llm_resolver.injected_llm
 # Phase-85-2:追記 ── app.change_requests.join_instructions, app.detailed_design.impact.Mark, app.detailed_design.impact.cr_source, app.services.change_request_service.ChangeRequestService, app.services.errors.ChangeRequestNotReflectableError
+# Phase-88-1:追記 ── app.repositories.change_request.ChangeRequestRepository
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -128,6 +129,7 @@ from app.models.chat_history import ChatHistory
 from app.models.generated_document import GeneratedDocument
 from app.models.project import Project
 from app.models.user import User
+from app.repositories.change_request import ChangeRequestRepository
 from app.repositories.chat_history import ChatHistoryRepository
 from app.repositories.generated_document import (
     DOC_TYPES_BY_MODE,
@@ -1110,6 +1112,14 @@ class DocGeneratorService:
         """指定doc_typeの保管済み全バージョン(最大3件)を新しい順に返す。"""
         return await self._documents.list_versions(project_id=project_id, doc_type=doc_type)
 
+    # Phase-88-1:追記
+    async def change_request_numbers(
+        self, documents: Sequence[GeneratedDocument]
+    ) -> dict[uuid.UUID, int]:
+        """版が反映した CR の id → 番号(版の履歴に「CR-N で反映」と出すため)。"""
+        ids = {d.change_request_id for d in documents if d.change_request_id is not None}
+        return await ChangeRequestRepository(self._session).numbers_by_id(ids)
+
     async def restore_version(
         self, project_id: uuid.UUID, doc_type: str, version: int
     ) -> GeneratedDocument:
@@ -1672,13 +1682,17 @@ def _issues_read(issues: list[DocumentIssue]) -> list[DocumentIssueRead]:
     ]
 
 
-def document_read(document: GeneratedDocument) -> GeneratedDocumentRead:
+def document_read(
+    document: GeneratedDocument, change_request_number: int | None = None
+) -> GeneratedDocumentRead:
     # Phase-37-2：更新
     # """文書の応答。要件定義書は出どころの件数・推測の要件・検証の指摘を付ける。"""
     # ↓↓
     """文書の応答。要件定義書は出どころの件数・推測の要件・検証の指摘を、外部設計書・内部設計書・
-    実装計画書は行数と検証の指摘を付ける。"""
+    実装計画書は行数と検証の指摘を付ける。反映した CR の番号は、読んだ呼び手が渡す(版の履歴)。"""
     read = GeneratedDocumentRead.model_validate(document)
+    # Phase-88-1:追記
+    read.change_request_number = change_request_number
     read.requirements = requirements_summary(document)
     # Phase-37-2:追記
     read.external_design = external_design_summary(document)

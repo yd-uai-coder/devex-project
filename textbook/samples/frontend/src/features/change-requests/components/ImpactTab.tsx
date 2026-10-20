@@ -1,0 +1,203 @@
+// 作成：Phase-87-3
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Button, Paragraph, Text, YStack } from "tamagui";
+import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import type { ChangeRequestRead, ComparedItemRead, PredictedItemRead } from "@/features/change-requests/api/types";
+import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
+import {
+  canReflectDocuments,
+  comparisonGroups,
+  groupByStage,
+  isApplied,
+  stageLabel,
+} from "@/features/change-requests/changeRequestOps";
+import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
+import { failureHeading } from "@/lib/generation-failure";
+
+// 詳細の「影響」タブ。合意の前は基準の版から求めた予測、判断の後は保存した予測を段階ごとに出す。
+// 合意・反映済みの CR は、文書(要件定義書から)への反映のボタンを出す(段階への反映は詳細設計画面の
+// 「変更の影響」で CR を選ぶ)。反映の後は、予測と実際の印の比較を3つに分けて出す。
+export function ImpactTab({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
+  const impact = useChangeRequestsStore((s) => s.views.impact);
+  const comparison = useChangeRequestsStore((s) => s.views.comparison);
+  const viewErrors = useChangeRequestsStore((s) => s.viewErrors);
+  const fetchView = useChangeRequestsStore((s) => s.fetchView);
+  const reflecting = useChangeRequestsStore((s) => s.reflecting);
+  const reflectError = useChangeRequestsStore((s) => s.reflectError);
+  const reflectFailure = useChangeRequestsStore((s) => s.reflectFailure);
+  const reflectDocuments = useChangeRequestsStore((s) => s.reflectDocuments);
+  const [confirming, setConfirming] = useState(false);
+  const applied = isApplied(cr.status);
+
+  useEffect(() => {
+    if (impact === null) void fetchView(projectId, cr.number, "impact");
+  }, [impact, projectId, cr.number, fetchView]);
+  useEffect(() => {
+    if (applied && comparison === null) void fetchView(projectId, cr.number, "comparison");
+  }, [applied, comparison, projectId, cr.number, fetchView]);
+
+  return (
+    <YStack gap="$4">
+      {canReflectDocuments(cr.status) ? (
+        <YStack gap="$2" aria-label="反映">
+          <Text fontWeight="600">反映</Text>
+          <Paragraph color="$color11">
+            {cr.status === "agreed"
+              ? "合意した内容を指示に入れて、要件定義書から文書を作り直します。作り直しが終わると反映済みになります。"
+              : "反映済みです。作り直しはやり直せます(そのたびに記録に1行残ります)。段階は、詳細設計画面の「変更の影響」でこの CR を選んで作り直します。"}
+          </Paragraph>
+          <Button size="$3" theme="green" alignSelf="flex-start" disabled={reflecting} onPress={() => setConfirming(true)}>
+            {reflecting ? "反映中(文書を作り直しています)..." : "文書へ反映する(要件定義書から再生成)"}
+          </Button>
+          {reflectError ? (
+            <Text role="alert" color="$red10">
+              {reflectError}
+            </Text>
+          ) : null}
+          {reflectFailure ? (
+            <Text role="alert" color="$red10">
+              {`${failureHeading(reflectFailure)}: ${reflectFailure.message}`}
+            </Text>
+          ) : null}
+          {cr.status === "applied" ? (
+            <Link href={`/projects/${projectId}/detailed-design`}>
+              <Text color="$blue10">詳細設計画面で段階へ反映する →</Text>
+            </Link>
+          ) : null}
+        </YStack>
+      ) : null}
+
+      {applied ? (
+        <YStack gap="$2" aria-label="予測と実際の比較">
+          <Text fontWeight="600">予測と実際の比較</Text>
+          {viewErrors.comparison ? (
+            <Text role="alert" color="$red10">
+              {viewErrors.comparison}
+            </Text>
+          ) : null}
+          {comparison === null && !viewErrors.comparison ? <Text color="$color11">読み込み中...</Text> : null}
+          {comparison
+            ? comparisonGroups(comparison.items).map((group) => (
+                <ComparisonGroup
+                  key={group.status}
+                  title={`${group.items[0]?.status_label ?? STATUS_TITLE[group.status]}(${comparison.counts[group.status] ?? 0})`}
+                  items={group.items}
+                />
+              ))
+            : null}
+        </YStack>
+      ) : null}
+
+      <YStack gap="$2" aria-label="影響の予測">
+        <Text fontWeight="600">影響の予測</Text>
+        {viewErrors.impact ? (
+          <Text role="alert" color="$red10">
+            {viewErrors.impact}
+          </Text>
+        ) : null}
+        {impact === null && !viewErrors.impact ? <Text color="$color11">読み込み中...</Text> : null}
+        {impact ? (
+          <>
+            <Text color="$color11">
+              {impact.saved
+                ? `判断の時点で保存した予測です(基準: ${impact.baseline_label})。`
+                : `基準の合意済みの版(${impact.baseline_label})から求めた予測です(判断すると保存します)。`}
+            </Text>
+            {impact.unpredicted_new_requirement ? (
+              <Text color="$color11">新しい要件を足す分は、起点の要素が無いので予測に入っていません。</Text>
+            ) : null}
+            {impact.excluded.length > 0 ? (
+              <Text color="$color11">
+                {`基準の版に入っていない段階(予測に出ません): ${impact.excluded.map((e) => e.key).join("、")}`}
+              </Text>
+            ) : null}
+            {impact.items.length === 0 ? <Text>予測に出た要素はありません。</Text> : null}
+            {groupByStage(impact.items).map((group) => (
+              <PredictionGroup key={group.stage} stage={group.stage} items={group.items} />
+            ))}
+          </>
+        ) : null}
+      </YStack>
+
+      <ConfirmDialog
+        open={confirming}
+        title="文書へ反映する"
+        description="この CR を指示に入れて、要件定義書と外部設計書を作り直します。生成には数分かかります。"
+        confirmLabel="反映する"
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => {
+          setConfirming(false);
+          void reflectDocuments(projectId, cr.number);
+        }}
+      />
+    </YStack>
+  );
+}
+
+const STATUS_TITLE = { matched: "一致", predicted_only: "予測だけ", actual_only: "実際だけ(予測の外)" } as const;
+
+function PredictionGroup({ stage, items }: { stage: number; items: PredictedItemRead[] }) {
+  return (
+    <YStack gap="$1">
+      <Text fontSize="$3">{`${stageLabel(stage)}(${items.length})`}</Text>
+      <table style={TABLE}>
+        <thead>
+          <tr>
+            <th style={HEAD}>要素</th>
+            <th style={HEAD}>理由</th>
+            <th style={HEAD}>届いた要件</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.key}>
+              <td style={CELL}>{item.label}</td>
+              <td style={CELL}>{item.reason}</td>
+              <td style={{ ...CELL, ...MONO }}>{item.requirement_ids.join(", ")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </YStack>
+  );
+}
+
+function ComparisonGroup({ title, items }: { title: string; items: ComparedItemRead[] }) {
+  return (
+    <YStack gap="$1">
+      <Text fontSize="$3">{title}</Text>
+      {items.length === 0 ? (
+        <Text color="$color11">なし</Text>
+      ) : (
+        <table style={TABLE}>
+          <thead>
+            <tr>
+              <th style={HEAD}>段階</th>
+              <th style={HEAD}>要素</th>
+              <th style={HEAD}>予測の理由</th>
+              <th style={HEAD}>実際の理由</th>
+              <th style={HEAD}>確認</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.key}>
+                <td style={{ ...CELL, whiteSpace: "nowrap" }}>{stageLabel(item.stage)}</td>
+                <td style={CELL}>{item.label}</td>
+                <td style={CELL}>
+                  {item.predicted_reason}
+                  {item.predicted_only_reason_label ? `(${item.predicted_only_reason_label})` : ""}
+                </td>
+                <td style={CELL}>{item.actual_reason}</td>
+                <td style={CELL}>{item.reviewed === null ? "─" : item.reviewed ? "確認済み" : "未確認"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </YStack>
+  );
+}

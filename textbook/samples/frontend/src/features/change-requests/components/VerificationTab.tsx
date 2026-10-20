@@ -1,0 +1,174 @@
+// 作成：Phase-87-4
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
+import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import type { ChangeRequestRead, MarkConfirmation } from "@/features/change-requests/api/types";
+import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
+import { designStageHref, stageLabel } from "@/features/change-requests/changeRequestOps";
+import type { ReviewGate } from "@/features/design-review/api/reviewApi";
+import { GATE_LABEL } from "@/features/design-review/model";
+import { CELL, HEAD, INPUT, TABLE } from "@/features/detailed-design/components/tableStyles";
+
+const CONFIRMATION_COLOR: Record<MarkConfirmation, string> = {
+  open: "var(--red10)",
+  reviewed: "var(--green10)",
+  approved: "var(--color11)",
+};
+
+const gateLabel = (gate: string) => GATE_LABEL[gate as ReviewGate] ?? gate;
+
+// 詳細の「検証」タブ(反映の後)。反映で付いた印の今の確認の状態(未確認 / 確認済み / 承認で済んだ)を
+// 段階へのリンクと一緒に出し、印の付かない文書の側(画面・API)の確認の項目をここで確認済みにする。
+// 反映の後に流したレビューを選んで結べ(任意。外せない)、未確認が0件なら検証済みにできる。
+export function VerificationTab({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
+  const verification = useChangeRequestsStore((s) => s.views.verification);
+  const candidates = useChangeRequestsStore((s) => s.views.candidates);
+  const viewErrors = useChangeRequestsStore((s) => s.viewErrors);
+  const fetchView = useChangeRequestsStore((s) => s.fetchView);
+  const acting = useChangeRequestsStore((s) => s.acting);
+  const checkDocuments = useChangeRequestsStore((s) => s.checkDocuments);
+  const linkReview = useChangeRequestsStore((s) => s.linkReview);
+  const verify = useChangeRequestsStore((s) => s.verify);
+  const [confirming, setConfirming] = useState(false);
+  const [note, setNote] = useState("");
+  const checkable = cr.status === "applied";
+
+  useEffect(() => {
+    if (verification === null) void fetchView(projectId, cr.number, "verification");
+  }, [verification, projectId, cr.number, fetchView]);
+  useEffect(() => {
+    if (checkable && candidates === null) void fetchView(projectId, cr.number, "candidates");
+  }, [checkable, candidates, projectId, cr.number, fetchView]);
+
+  if (viewErrors.verification) {
+    return (
+      <Text role="alert" color="$red10">
+        {viewErrors.verification}
+      </Text>
+    );
+  }
+  if (verification === null) return <Text color="$color11">読み込み中...</Text>;
+
+  return (
+    <YStack gap="$4">
+      <Text>
+        {cr.status === "verified"
+          ? "検証済みです。"
+          : `未確認: 段階の印 ${verification.open_marks} 件・文書の側 ${verification.open_documents} 件`}
+      </Text>
+
+      <YStack gap="$2" aria-label="反映で付いた印">
+        <Text fontWeight="600">反映で付いた印</Text>
+        <Paragraph color="$color11">
+          段階の印は、詳細設計画面の段階で確かめます(承認すると印は消え、「承認で済んだ」になります)。
+        </Paragraph>
+        {verification.marks.length === 0 ? <Text color="$color11">印はありません。</Text> : null}
+        {verification.marks.length > 0 ? (
+          <table style={TABLE}>
+            <thead>
+              <tr>
+                <th style={HEAD}>段階</th>
+                <th style={HEAD}>要素</th>
+                <th style={HEAD}>理由</th>
+                <th style={HEAD}>確認</th>
+              </tr>
+            </thead>
+            <tbody>
+              {verification.marks.map((mark) => (
+                <tr key={`${mark.stage}:${mark.key}`}>
+                  <td style={{ ...CELL, whiteSpace: "nowrap" }}>
+                    <Link href={designStageHref(projectId, mark.stage)}>{stageLabel(mark.stage)}</Link>
+                  </td>
+                  <td style={CELL}>{mark.label}</td>
+                  <td style={CELL}>{mark.reason}</td>
+                  <td style={{ ...CELL, whiteSpace: "nowrap", color: CONFIRMATION_COLOR[mark.confirmation] }}>
+                    {mark.confirmation_label}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : null}
+      </YStack>
+
+      <YStack gap="$2" aria-label="文書の側の確認">
+        <Text fontWeight="600">文書の側(画面・API)の確認</Text>
+        <Paragraph color="$color11">
+          画面と API には印が付かないので、予測に出たものを外部設計書で確かめてから、確認済みにしてください。
+        </Paragraph>
+        {verification.documents.length === 0 ? <Text color="$color11">確認の項目はありません。</Text> : null}
+        {verification.documents.map((doc) => (
+          <label key={doc.key} style={{ fontSize: 13 }}>
+            <input
+              type="checkbox"
+              checked={doc.reviewed}
+              disabled={!checkable || acting}
+              onChange={(e) => void checkDocuments(projectId, cr.number, [doc.key], e.target.checked)}
+            />{" "}
+            {`${doc.label} ── ${doc.reason}`}
+          </label>
+        ))}
+      </YStack>
+
+      <YStack gap="$2" aria-label="結んだレビュー">
+        <Text fontWeight="600">設計レビュー(任意)</Text>
+        {cr.reviews.length === 0 ? <Text color="$color11">結んだレビューはありません。</Text> : null}
+        {cr.reviews.map((review) => (
+          <Text key={review.review_run_id} fontSize="$3">
+            {`${gateLabel(review.gate)}・${review.model}(${new Date(review.started_at).toLocaleString("ja-JP")}): 指摘 ${review.findings}・採用 ${review.adopted}`}
+          </Text>
+        ))}
+        {checkable && candidates && candidates.length > 0 ? (
+          <YStack gap="$1">
+            <Text fontSize="$3">反映の後に流したレビュー(選んで結ぶ。結んだレビューは外せません)</Text>
+            {candidates.map((run) => (
+              <XStack key={run.review_run_id} gap="$2" alignItems="center">
+                <Text fontSize="$3">
+                  {`${gateLabel(run.gate)}・${run.model}(${new Date(run.started_at).toLocaleString("ja-JP")}): 指摘 ${run.findings}・採用 ${run.adopted}`}
+                </Text>
+                <Button
+                  size="$2"
+                  disabled={acting}
+                  onPress={() => void linkReview(projectId, cr.number, run.review_run_id)}
+                >
+                  結ぶ
+                </Button>
+              </XStack>
+            ))}
+          </YStack>
+        ) : null}
+      </YStack>
+
+      {checkable ? (
+        <XStack>
+          <Button size="$3" theme="green" disabled={!verification.can_verify || acting} onPress={() => setConfirming(true)}>
+            検証済みにする
+          </Button>
+        </XStack>
+      ) : null}
+
+      <ConfirmDialog
+        open={confirming}
+        title="検証済みにする"
+        description={
+          <>
+            反映で付いた印と文書の側の確認が済みました。検証済みにすると、新しい合意済みの版に入れられます。
+            <label style={{ display: "block", marginTop: 8, fontSize: 13 }}>
+              メモ(任意)
+              <textarea style={INPUT} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+            </label>
+          </>
+        }
+        confirmLabel="検証を記録する"
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => {
+          setConfirming(false);
+          void verify(projectId, cr.number, note.trim());
+        }}
+      />
+    </YStack>
+  );
+}

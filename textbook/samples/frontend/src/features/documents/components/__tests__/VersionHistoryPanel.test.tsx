@@ -1,4 +1,4 @@
-// 作成：Phase-6-2｜更新：Phase-6-6,57-2,69-3
+// 作成：Phase-6-2｜更新：Phase-6-6,57-2,69-3,88-1
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -133,6 +133,23 @@ describe("VersionHistoryPanel", () => {
     expect(stub.requests[2].url).toContain("/test-spec");
     // Phase-69-3:追記
     expect(stub.requests[3].url).toMatch(/\/projects\/p1$/);
+  });
+
+  // Phase-88-1:追記
+  it("版ごとに生成したモデルと、反映した CR を出す", async () => {
+    stub.queue({
+      status: 200,
+      body: [{ ...V2, generated_model: "gemini-3.5-flash-lite", change_request_number: 3 }, V1],
+    });
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "バージョン履歴" }));
+
+    expect(
+      await screen.findByText(/v2\(最新\).*gemini-3\.5-flash-lite ・CR-3 で反映/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/v1/)).not.toHaveTextContent("CR-");
   });
 
   it("取得失敗時はエラーを表示する", async () => {

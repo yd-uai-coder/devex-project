@@ -1,0 +1,77 @@
+// 作成：Phase-87-3｜更新：Phase-88-3
+// SUT: ContentTab(内容・対象・合意の記録・重なり・写しの元と先、直すフォーム)
+// ドライバ: Testing Library(描画・クリック)
+// スタブ: ストアの関数(vi.fn)── 束の要件の読み込みと、直したときに送る本文だけを見るため
+import { beforeEach, describe, expect, it } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { ContentTab } from "../ContentTab";
+import { useChangeRequestsStore } from "../../change-requests-store";
+import { makeChangeRequest } from "../../test-utils/changeRequestFixtures";
+import { renderWithTheme, resetChangeRequestsStore } from "../../test-utils/renderWithStore";
+
+const store = () => useChangeRequestsStore.getState();
+
+describe("ContentTab", () => {
+  beforeEach(() => {
+    resetChangeRequestsStore();
+    useChangeRequestsStore.setState({
+      requirements: { 1: [{ id: "FR-005", kind: "FR", priority: "Must", category: "", text: "3件まで添付できる" }] },
+    });
+  });
+
+  it("基準の束の要件を読み、対象を合意済みの文と案の表で出す", () => {
+    renderWithTheme(<ContentTab projectId="p1" cr={makeChangeRequest()} />);
+
+    expect(store().fetchRequirements).toHaveBeenCalledWith("p1", 1);
+    expect(screen.getByText("対象の要件(基準: B-1)")).toBeInTheDocument();
+    expect(screen.getByText("3件まで添付できる")).toBeInTheDocument();
+    expect(screen.getByText("5件まで添付できる")).toBeInTheDocument();
+  });
+
+  it("合意の記録・重なり・写しの元と先・入れた版を出す。直せない状態では直すボタンを出さない", () => {
+    const cr = makeChangeRequest({
+      status: "verified",
+      allowed_actions: [],
+      decision: { counterpart: null, decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "合意した", recorded_by: "u1" },
+      overlapping: [{ number: 2, label: "CR-2", requirement_ids: ["FR-005"] }],
+      derived_from_number: 3,
+      derived_numbers: [6],
+      included_baseline_number: 2,
+    });
+
+    renderWithTheme(<ContentTab projectId="p1" cr={cr} />);
+
+    expect(screen.getByText("相手: (記録なし)")).toBeInTheDocument();
+    expect(screen.getByText("理由: 合意した")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "CR-2(FR-005)" })).toHaveAttribute("href", "/projects/p1/change-requests/2");
+    expect(screen.getByRole("link", { name: "写しの元: CR-3" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "写しの先: CR-6" })).toBeInTheDocument();
+    // Phase-88-3：更新
+    // expect(screen.getByText("合意済みの版 B-2 に入れました。")).toBeInTheDocument();
+    // ↓↓
+    expect(screen.getByRole("link", { name: "合意済みの版 B-2 に入れました。" })).toHaveAttribute(
+      "href",
+      "/projects/p1/baselines/2",
+    );
+    expect(screen.queryByRole("button", { name: "内容を直す" })).not.toBeInTheDocument();
+  });
+
+  it("説明済みで直すと、下書きに戻ることを示して本文を送る", async () => {
+    renderWithTheme(
+      <ContentTab projectId="p1" cr={makeChangeRequest({ status: "explained", allowed_actions: ["edit", "agree"] })} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "内容を直す" }));
+    await userEvent.clear(screen.getByLabelText("タイトル"));
+    await userEvent.type(screen.getByLabelText("タイトル"), "直した");
+    await userEvent.click(screen.getByRole("button", { name: "直す(下書きに戻る)" }));
+
+    expect(store().update).toHaveBeenCalledWith(
+      "p1",
+      1,
+      expect.objectContaining({ title: "直した", targets: [{ requirement_id: "FR-005", kind: "content", proposed_text: "5件まで添付できる" }] }),
+    );
+    await waitFor(() => expect(screen.getByRole("button", { name: "内容を直す" })).toBeInTheDocument());
+  });
+});

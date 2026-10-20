@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整)
 # Phase-86-2：更新(docstring: ChangeRequestService に検証の確かめを足した)
 # Phase-84-3：更新(docstring: ChangeRequestService に説明書の組み立てを足した)
 # Phase-83-3：更新(docstring: ChangeRequestService に影響の予測と保存を足した)
@@ -12,6 +12,8 @@
 # Phase-86-2:追記 ── app.change_requests.CHECKABLE_STATUSES, app.change_requests.Verification, app.change_requests.checked_documents, app.change_requests.document_items, app.change_requests.verification_of, app.change_requests.with_confirmations, app.detailed_design.impact.StageImpact, app.schemas.change_request.ChangeRequestVerify, app.schemas.change_request.DocumentChecksUpdate, app.services.errors.ChangeRequestNotVerifiableError
 # Phase-86-3:追記 ── app.change_requests.first_applied_at, app.change_requests.review_link_problem, app.models.review.ReviewRun, app.repositories.review.ReviewRunRepository, app.services.errors.ChangeRequestReviewNotLinkableError, app.services.errors.ReviewRunNotFoundError
 # Phase-86-4:追記 ── app.change_requests.EventFacts, app.change_requests.ReviewFacts, app.change_requests.TraceEntry, app.change_requests.trace_entries, app.repositories.generated_document.GeneratedDocumentRepository
+# Phase-87-1:追記 ── app.services.baseline_service.baseline_requirement_rows
+# Phase-88(完了後の調整):追記 ── app.services.baseline_service.require_detailed(app.services.errors.DesignStagesNotAvailableError は使わなくなったので外した)
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -89,7 +91,11 @@ from app.schemas.change_request import (
     DocumentChecksUpdate,
     change_request_label,
 )
-from app.services.baseline_service import BaselineService
+from app.services.baseline_service import (
+    BaselineService,
+    baseline_requirement_rows,
+    require_detailed,
+)
 from app.services.errors import (
     ChangeRequestBaselineMissingError,
     ChangeRequestInvalidTransitionError,
@@ -100,7 +106,6 @@ from app.services.errors import (
     ChangeRequestReviewNotLinkableError,
     ChangeRequestSummaryNotFoundError,
     ChangeRequestTargetUnknownError,
-    DesignStagesNotAvailableError,
     ReviewRunNotFoundError,
 )
 from app.services.llm_resolver import LlmResolver, ResolvedLlm, injected_llm
@@ -108,8 +113,9 @@ from app.services.llm_retry import invoke_with_retry
 
 logger = structlog.get_logger(__name__)
 
-# 対象の要件を読む、束の写しの key
-REQUIREMENTS_KEY = "requirements"
+# Phase-87-1：削除
+# # 対象の要件を読む、束の写しの key
+# REQUIREMENTS_KEY = "requirements"
 # Phase-85-4:追記
 # 反映した後の状態(予測と実際の印を比べられる)
 APPLIED_STATUSES = frozenset({"applied", "verified"})
@@ -249,11 +255,14 @@ class ChangeRequestService:
     ) -> ChangeRequestView:
         """CR を下書きで作る。基準の束は番号の束(省けば最新の束)。束が1つも無ければ
         ChangeRequestBaselineMissingError、番号の束が無ければ BaselineNotFoundError。"""
-        if project.mode != "detailed":
-            raise DesignStagesNotAvailableError(
-                f"Change requests are not available for project {project.id} "
-                f"(mode={project.mode})"
-            )
+        # Phase-88(完了後の調整)：更新(読み出しと共通の require_detailed へ)
+        # if project.mode != "detailed":
+        #     raise DesignStagesNotAvailableError(
+        #         f"Change requests are not available for project {project.id} "
+        #         f"(mode={project.mode})"
+        #     )
+        # ↓↓
+        require_detailed(project, "Change requests")
         baseline = await self._base_baseline(project, payload.baseline_number)
         targets = checked_targets(
             # Phase-83-1：更新
@@ -291,7 +300,11 @@ class ChangeRequestService:
         return await self._view(change_request)
 
     async def list_for_project(self, project: Project) -> list[ChangeRequest]:
-        """プロジェクトの CR を新しい順に返す。"""
+        # Phase-88(完了後の調整)：更新
+        # """プロジェクトの CR を新しい順に返す。"""
+        # ↓↓
+        """プロジェクトの CR を新しい順に返す(詳細設計モードだけ)。"""
+        require_detailed(project, "Change requests")
         return await self._change_requests.list_for_project(project.id)
 
     async def get(self, project: Project, number: int) -> ChangeRequestView:
@@ -900,10 +913,17 @@ class ChangeRequestService:
     async def _base_baseline(self, project: Project, number: int | None) -> Baseline:
         if number is not None:
             return await BaselineService(self._session).get(project, number)
-        latest = await self._baselines.list_for_project(project.id)
-        if not latest:
+        # Phase-88-1：更新
+        # latest = await self._baselines.list_for_project(project.id)
+        # if not latest:
+        # ↓↓
+        latest = await self._baselines.latest(project.id)
+        if latest is None:
             raise ChangeRequestBaselineMissingError(f"No baseline in project {project.id}")
-        return latest[0]
+        # Phase-88-1：更新
+        # return latest[0]
+        # ↓↓
+        return latest
 
     async def _baseline_with_items(self, change_request: ChangeRequest) -> Baseline:
         """CR の基準の束を、写し付きで読む(CR と一緒に読んだ束は写しを読んでいないため)。"""
@@ -912,6 +932,9 @@ class ChangeRequestService:
         return baseline
 
     async def _load(self, project: Project, number: int) -> ChangeRequest:
+        # Phase-88(完了後の調整):追記
+        # CR ごとの操作と読み出し(予測・比較・検証・説明書・たどる記録)はみなここを通る
+        require_detailed(project, "Change requests")
         change_request = await self._change_requests.get_by_number(
             project_id=project.id, number=number
         )
@@ -1016,10 +1039,13 @@ def facts_of(change_request: ChangeRequest, baseline_number: int) -> ChangeReque
 
 def baseline_requirement_ids(baseline: Baseline) -> list[str]:
     """束の要件定義書の写しにある要件 ID(行の順)。写しが無い・model が無ければ空。"""
-    item = next((i for i in baseline.items if i.key == REQUIREMENTS_KEY), None)
-    if item is None or not item.model:
-        return []
-    return [str(row["id"]) for row in item.model.get("rows", []) if row.get("id")]
+    # Phase-87-1：更新
+    # item = next((i for i in baseline.items if i.key == REQUIREMENTS_KEY), None)
+    # if item is None or not item.model:
+    #     return []
+    # return [str(row["id"]) for row in item.model.get("rows", []) if row.get("id")]
+    # ↓↓
+    return [str(row["id"]) for row in baseline_requirement_rows(baseline)]
 
 
 # Phase-83-1：更新

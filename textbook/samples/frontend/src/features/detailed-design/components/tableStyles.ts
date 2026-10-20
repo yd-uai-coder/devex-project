@@ -1,4 +1,4 @@
-// 作成：Phase-17-6｜更新：Phase-21-6
+// 作成：Phase-17-6｜更新：Phase-21-6,88(完了後の調整)
 // 写経レベル: 定型 ── FunctionListPanel から切り出した表の見た目。
 import type { CSSProperties } from "react";
 
@@ -30,6 +30,9 @@ export const INPUT: CSSProperties = {
   border: "1px solid var(--borderColor)",
   borderRadius: 4,
 };
+// Phase-88(完了後の調整):追記
+// 表の中の、ほかのページへ移るリンク(押せることが見て分かるよう、色と下線を付ける)
+export const LINK: CSSProperties = { color: "var(--blue10)", textDecoration: "underline" };
 export const OPTION: CSSProperties = { background: "var(--background)", color: "var(--color)" };
 export const MONO: CSSProperties = {
   fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",

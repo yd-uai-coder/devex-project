@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,88(完了後の調整)
 # Phase-84-4：更新(docstring: SUT に explanation(84-3)・要約の3つの操作と ExplanationView(84-4)・facts_of(84-3)を、スタブに要約のフェイクの LLM(84-4)を足した)
 # Phase-83-3：更新(docstring: SUT に impact・predict_for と、保存した予測を読み直さないことのスタブを足した)
 # Phase-83-3:追記 ── app.services.change_request_service.predict_for
@@ -9,7 +9,8 @@
 
 SUT: ChangeRequestService(create / list_for_project / get / update / explain / decide /
      withdraw / copy_rejected / impact / explanation / generate_summary / edit_summary /
-     confirm_summary)と ExplanationView(summary_state・output)、純粋関数 baseline_requirement_ids /
+     confirm_summary。簡易モードは作成・読み出しとも require_detailed で断る)と
+     ExplanationView(summary_state・output)、純粋関数 baseline_requirement_ids /
      checked_targets / predict_for / facts_of、
      スキーマ ChangeRequestCreate・ChangeRequestUpdate・ChangeRequestDecision・
      ChangeRequestWithdraw・ChangeRequestRead・ChangeRequestSummaryRead、共有の AgreementNotes
@@ -191,6 +192,14 @@ async def test_create_conditions(db_session: AsyncSession) -> None:
     project.mode = "simple"
     with pytest.raises(DesignStagesNotAvailableError):
         await service.create(project, _create(), created_by=None)
+    # Phase-88(完了後の調整):追記
+    # 読み出しと CR ごとの操作も詳細設計モードだけ
+    with pytest.raises(DesignStagesNotAvailableError):
+        await service.list_for_project(project)
+    with pytest.raises(DesignStagesNotAvailableError):
+        await service.get(project, view.change_request.number)
+    with pytest.raises(DesignStagesNotAvailableError):
+        await service.explanation(project, view.change_request.number)
 
 
 async def test_base_baseline_defaults_to_latest(db_session: AsyncSession) -> None:

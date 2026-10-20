@@ -1,11 +1,15 @@
-// 作成：Phase-44-2｜更新：Phase-44-4,44(完了後の調整)
+// 作成：Phase-44-2｜更新：Phase-44-4,44(完了後の調整),87-4
 "use client";
 
 // Phase-44-4:追記 ── @/features/detailed-design/components/RegenerationTargets.RegenerationTargets
 // Phase-44(完了後の調整):追記 ── @/features/detailed-design/impactOps(stageMarkSummary, visibleMarks)
+// Phase-87-4:追記 ── @/features/change-requests/changeRequestOps.defaultReflectionCr, @/features/change-requests/components/CrReflectionSection.CrReflectionSection, @/features/change-requests/hooks/useAppliedChangeRequests.useAppliedChangeRequests
 import { useState } from "react";
 import Link from "next/link";
 import { Button, Text, XStack, YStack } from "tamagui";
+import { defaultReflectionCr } from "@/features/change-requests/changeRequestOps";
+import { CrReflectionSection } from "@/features/change-requests/components/CrReflectionSection";
+import { useAppliedChangeRequests } from "@/features/change-requests/hooks/useAppliedChangeRequests";
 import type {
   ElementChangeRead,
   ImpactMarkRead,
@@ -37,6 +41,8 @@ import { STAGE_TITLES } from "@/features/detailed-design/labels";
 // 印を確認済みにし、「表で見る」でその段階の表の行を強調して開く。印も変わったものも無ければ出さない。
 // Phase-44(完了後の調整):追記
 // 全段階を並べると縦に長くなるので、初めは選んでいる段階の分だけを出す(「全段階」「未確認のみ」で切り替える)。
+// Phase-87-4:追記
+// 詳細設計モードで反映済みの変更要求(CR)があれば、段階の生成に渡す CR を選ぶ欄を出す。
 export function ChangeImpactPanel({ projectId }: { projectId: string }) {
   const impact = useDetailedDesignStore((s) => s.impact);
   const impactError = useDetailedDesignStore((s) => s.impactError);
@@ -53,6 +59,13 @@ export function ChangeImpactPanel({ projectId }: { projectId: string }) {
   // 絞り込み: 段階はステッパーで選んでいる段階に追従し、allStages で全段階にする
   const [allStages, setAllStages] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
+  // Phase-87-4:追記
+  // 段階の生成に渡す CR(選ぶまでは、印の出どころの反映済みの CR。「渡さない」を選ぶと null)
+  const detailed = useDetailedDesignStore((s) => s.stages[0]?.mode === "detailed");
+  const applied = useAppliedChangeRequests(projectId, detailed);
+  const [chosenCr, setChosenCr] = useState<number | null | undefined>(undefined);
+  const crNumber =
+    chosenCr !== undefined ? chosenCr : defaultReflectionCr(applied.map((cr) => cr.number), impact);
 
   if (!hasImpact(impact) && !impactError) return null;
 
@@ -149,9 +162,19 @@ export function ChangeImpactPanel({ projectId }: { projectId: string }) {
           {/* Phase-44(完了後の調整)：更新
           <RegenerationTargets projectId={projectId} targets={impact.regeneration_targets} />
           ↓↓ */}
+          {/* Phase-87-4:追記 */}
+          <CrReflectionSection
+            projectId={projectId}
+            impact={impact}
+            applied={applied}
+            crNumber={crNumber}
+            onChange={setChosenCr}
+          />
           <RegenerationTargets
             projectId={projectId}
             targets={impact.regeneration_targets.filter((t) => inView(t.stage))}
+            // Phase-87-4:追記
+            crNumber={crNumber ?? undefined}
           />
         </YStack>
       ) : null}

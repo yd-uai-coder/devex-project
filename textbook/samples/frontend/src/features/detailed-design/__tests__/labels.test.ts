@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,44(完了後の調整),69-4
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,44(完了後の調整),69-4,87-4
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../labels.hasErrors, ../test-utils/stageFixtures.makeFunctionList
 import { describe, expect, it } from "vitest";
@@ -13,6 +13,8 @@ import {
   describeMissingInput,
   firstStageToApprove,
   hasErrors,
+  // Phase-87-4:追記
+  stageParam,
   visibleIssues,
 } from "../labels";
 import { makeFunctionList, makeStages } from "../test-utils/stageFixtures";
@@ -147,5 +149,17 @@ describe("図の未承認は承認時に出す", () => {
     expect(
       firstStageToApprove({ ...stages[0], is_open: false, missing_inputs: ["doc:external_design"] }, stages),
     ).toBeNull();
+  });
+});
+
+// Phase-87-4:追記
+describe("stageParam", () => {
+  it("?stage=N の値を段階の番号にする(段階で無い値・数で無い値は undefined)", () => {
+    expect(stageParam("3")).toBe(3);
+    expect(stageParam(["8", "1"])).toBe(8);
+    expect(stageParam("9")).toBeUndefined();
+    expect(stageParam("0")).toBeUndefined();
+    expect(stageParam("2a")).toBeUndefined();
+    expect(stageParam(undefined)).toBeUndefined();
   });
 });

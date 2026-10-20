@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,12-5,13-6,24(完了後の調整),36-3,37-3,45-5
+// 作成：Phase-3-6｜更新：Phase-6-2,12-5,13-6,24(完了後の調整),36-3,37-3,45-5,88-3
 // Phase-6-2:追記 ── @/features/documents/components/VersionHistoryPanel
 // Phase-12-5:追記 ── @/lib/api/download.saveFile
 // Phase-13-6:追記 ── @/features/documents/anchors.splitByAnchors,
@@ -10,14 +10,19 @@
 
 // Phase-45-5:追記 ── @/features/documents/components/SimpleDesignSummaryPanel.SimpleDesignSummaryPanel
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { Button, H1, H2, H3, H4, Paragraph, Text, XStack, YStack } from "tamagui";
+// Phase-88-3：更新
+// import ReactMarkdown from "react-markdown";
+// import remarkGfm from "remark-gfm";
+// import { Button, H1, H2, H3, H4, Paragraph, Text, XStack, YStack } from "tamagui";
+// ↓↓
+import { Button, Text, XStack, YStack } from "tamagui";
 import { downloadDocument } from "@/features/documents/api/documentsApi";
 import { saveFile } from "@/lib/api/download";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
 // Phase-37-3:追記
 import { ExternalDesignSummaryPanel } from "@/features/documents/components/ExternalDesignSummaryPanel";
+// Phase-88-3:追記
+import { MarkdownBody } from "@/features/documents/components/MarkdownBody";
 import { RequirementsSummaryPanel } from "@/features/documents/components/RequirementsSummaryPanel";
 // Phase-45-5:追記
 import { SimpleDesignSummaryPanel } from "@/features/documents/components/SimpleDesignSummaryPanel";
@@ -29,7 +34,8 @@ import { VersionHistoryPanel } from "@/features/documents/components/VersionHist
 // import { useDocumentsStore } from "@/features/documents/documents-store";
 // import { useDiagramEmbeds } from "@/features/documents/hooks/useDiagramEmbeds";
 // import type { UmlEmbedRead } from "@/features/uml/api/types";
-import type { Components } from "react-markdown";
+// Phase-88-3：削除
+// import type { Components } from "react-markdown";
 
 type DocumentMarkdownViewProps = {
   projectId: string;
@@ -38,49 +44,50 @@ type DocumentMarkdownViewProps = {
   document: GeneratedDocumentRead;
 };
 
-// 見出し・段落・リスト・テーブルへの明示的なスタイル指定。react-markdownはデフォルトでは
-// componentsを指定しないとブラウザのUAスタイルのみに依存し、見出し同士の余白が不足して
-// 詰まって見える。TamaguiのYStack/Textはネイティブのul/ol/li/table/th/td相当のtag上書きに
-// 対応していないため、リスト・テーブルは素のHTML要素+インラインstyleで組む(既存の`filter`
-// prop対応と同じ「Tamagui未対応箇所は素のstyle propで補う」パターン、`var(--borderColor)`で
-// テーマ追従)。
-const markdownComponents: Components = {
-  h1: ({ children }) => (
-    <H1 marginTop="$2" marginBottom="$4">
-      {children}
-    </H1>
-  ),
-  h2: ({ children }) => (
-    <H2 marginTop="$5" marginBottom="$3">
-      {children}
-    </H2>
-  ),
-  h3: ({ children }) => (
-    <H3 marginTop="$4" marginBottom="$2">
-      {children}
-    </H3>
-  ),
-  h4: ({ children }) => (
-    <H4 marginTop="$3" marginBottom="$2">
-      {children}
-    </H4>
-  ),
-  p: ({ children }) => <Paragraph marginBottom="$3">{children}</Paragraph>,
-  ul: ({ children }) => <ul style={{ marginBottom: "1em", paddingLeft: "1.5em" }}>{children}</ul>,
-  ol: ({ children }) => <ol style={{ marginBottom: "1em", paddingLeft: "1.5em" }}>{children}</ol>,
-  li: ({ children }) => <li style={{ marginBottom: "4px" }}>{children}</li>,
-  table: ({ children }) => (
-    <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1em" }}>{children}</table>
-  ),
-  th: ({ children }) => (
-    <th style={{ border: "1px solid var(--borderColor)", padding: "6px 10px", textAlign: "left" }}>
-      {children}
-    </th>
-  ),
-  td: ({ children }) => (
-    <td style={{ border: "1px solid var(--borderColor)", padding: "6px 10px" }}>{children}</td>
-  ),
-};
+// Phase-88-3：削除(MarkdownBody.tsx へ移した)
+// // 見出し・段落・リスト・テーブルへの明示的なスタイル指定。react-markdownはデフォルトでは
+// // componentsを指定しないとブラウザのUAスタイルのみに依存し、見出し同士の余白が不足して
+// // 詰まって見える。TamaguiのYStack/Textはネイティブのul/ol/li/table/th/td相当のtag上書きに
+// // 対応していないため、リスト・テーブルは素のHTML要素+インラインstyleで組む(既存の`filter`
+// // prop対応と同じ「Tamagui未対応箇所は素のstyle propで補う」パターン、`var(--borderColor)`で
+// // テーマ追従)。
+// const markdownComponents: Components = {
+//   h1: ({ children }) => (
+//     <H1 marginTop="$2" marginBottom="$4">
+//       {children}
+//     </H1>
+//   ),
+//   h2: ({ children }) => (
+//     <H2 marginTop="$5" marginBottom="$3">
+//       {children}
+//     </H2>
+//   ),
+//   h3: ({ children }) => (
+//     <H3 marginTop="$4" marginBottom="$2">
+//       {children}
+//     </H3>
+//   ),
+//   h4: ({ children }) => (
+//     <H4 marginTop="$3" marginBottom="$2">
+//       {children}
+//     </H4>
+//   ),
+//   p: ({ children }) => <Paragraph marginBottom="$3">{children}</Paragraph>,
+//   ul: ({ children }) => <ul style={{ marginBottom: "1em", paddingLeft: "1.5em" }}>{children}</ul>,
+//   ol: ({ children }) => <ol style={{ marginBottom: "1em", paddingLeft: "1.5em" }}>{children}</ol>,
+//   li: ({ children }) => <li style={{ marginBottom: "4px" }}>{children}</li>,
+//   table: ({ children }) => (
+//     <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1em" }}>{children}</table>
+//   ),
+//   th: ({ children }) => (
+//     <th style={{ border: "1px solid var(--borderColor)", padding: "6px 10px", textAlign: "left" }}>
+//       {children}
+//     </th>
+//   ),
+//   td: ({ children }) => (
+//     <td style={{ border: "1px solid var(--borderColor)", padding: "6px 10px" }}>{children}</td>
+//   ),
+// };
 
 // Phase-13-6:追記
 // Phase-24：削除
@@ -195,24 +202,16 @@ export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownVi
       <RequirementsSummaryPanel projectId={projectId} document={document} />
       {/* Phase-37-3:追記 */}
       <ExternalDesignSummaryPanel document={document} />
-      // Phase-45-5:追記
+      {/* Phase-45-5:追記 */}
       <SimpleDesignSummaryPanel document={document} />
+      {/* Phase-88-3：更新(本文の描き方は MarkdownBody.tsx へ移した)
       <YStack borderWidth={1} borderColor="$borderColor" borderRadius="$4" padding="$4">
-        {/* Phase-24：更新
-        {isInternalDesign ? (
-          renderWithDiagrams(document.content, embeds, loaded)
-        ) : (
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {document.content}
-          </ReactMarkdown>
-        )}
-        ↓↓ */}
-        {/* 生の HTML は描かない(skipHtml)。以前に簡易モードの設計図を反映した内部設計書には、
-            図のアンカー(HTML コメント)が残っており、そのままだと文字として出てしまうため */}
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents} skipHtml>
           {document.content}
         </ReactMarkdown>
       </YStack>
+      ↓↓ */}
+      <MarkdownBody content={document.content} />
     </YStack>
   );
 }

@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4,69-3,78-1
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4,69-3,78-1,87-2,87-4,88-3
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -61,8 +61,13 @@ import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 // (段階1・段階7 の承認の後に作る。簡易モードのテスト仕様書はプレビューのタブに出す)。
 export function DetailedDesignPageContent({
   projectId,
+  // Phase-87-4:追記
+  initialStage,
 }: {
   projectId: string;
+  // Phase-87-4:追記
+  // URL の `?stage=N` で選ぶ段階(変更要求の画面から来たとき)。段階を読んだ後に選ぶ
+  initialStage?: number;
 }) {
   // Phase-64-4:追記
   const router = useRouter();
@@ -105,8 +110,18 @@ export function DetailedDesignPageContent({
   const onTestSpecGenerated = useTestSpecStore((s) => s.onGenerated);
 
   useEffect(() => {
-    void fetchStages(projectId);
-  }, [projectId, fetchStages]);
+    // Phase-87-4：更新
+    // void fetchStages(projectId);
+    // }, [projectId, fetchStages]);
+    // ↓↓
+    void fetchStages(projectId).then(() => {
+      // 別のプロジェクトを開くと最初の未承認の段階を選び直すので、読んだ後に選ぶ
+      if (initialStage !== undefined) {
+        setShowTestSpec(false);
+        selectStage(initialStage);
+      }
+    });
+  }, [projectId, initialStage, fetchStages, selectStage]);
 
   const current = stages.find((s) => s.stage === selectedStage);
   // Phase-18-9:追記
@@ -194,6 +209,22 @@ export function DetailedDesignPageContent({
           <Link href={`/projects/${projectId}/documents`}>
             <Text color="$blue10">← ドキュメントに戻る</Text>
           </Link>
+          {/* Phase-87-2:追記 */}
+          {/* Phase-88-3：更新
+          変更要求(SCR-010)は詳細設計モードだけ
+          ↓↓ */}
+          {/* 変更要求・合意済みの版(SCR-010)は詳細設計モードだけ */}
+          {detailed ? (
+            <Link href={`/projects/${projectId}/change-requests`}>
+              <Text color="$blue10">変更要求(CR) →</Text>
+            </Link>
+          ) : null}
+          {/* Phase-88-3:追記 */}
+          {detailed ? (
+            <Link href={`/projects/${projectId}/baselines`}>
+              <Text color="$blue10">合意済みの版 →</Text>
+            </Link>
+          ) : null}
           {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}
           <DeleteProjectButton projectId={projectId} onDeleted={() => router.push("/dashboard")} />
         </XStack>

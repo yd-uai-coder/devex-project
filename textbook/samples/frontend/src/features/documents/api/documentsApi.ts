@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3,37-3,45-5,53(完了後の調整),56-2,57-2
+// 作成：Phase-3-6｜更新：Phase-6-2,6-6,12-5,36-3,37-3,45-5,53(完了後の調整),56-2,57-2,88-1
 // Phase-12-5:追記 ── @/lib/api/download.parseFilename(UML 図の出力と共有するため移した)
 // Phase-57-2:追記 ── @/lib/api/client.ApiError
 import { ApiError, apiFetch } from "@/lib/api/client";
@@ -82,6 +82,11 @@ export type GeneratedDocumentRead = {
   // Phase-6-6:追記 ── 現在表示中のバージョンかどうか(バージョン履歴の「表示中」バッジ用)
   is_current: boolean;
   // Phase-36-3:追記
+  // Phase-88-1:追記
+  // 生成したモデル名(この列を足す前の版は null)
+  generated_model?: string | null;
+  // 反映した変更要求の番号(CR を渡した再生成で作った版の、版の履歴の応答だけ)
+  change_request_number?: number | null;
   // 要件定義書で model を持つ版だけ(ほかの文書・以前の版は null)
   requirements?: RequirementsSummaryRead | null;
   // Phase-37-3:追記

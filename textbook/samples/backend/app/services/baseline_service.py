@@ -1,13 +1,16 @@
-# 作成：Phase-81-3｜更新：Phase-86-4
+# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整)
 # Phase-86-4：更新(docstring: BaselineService・create に束に CR を結ぶことを足した)
 # Phase-86-4:追記 ── app.change_requests.INCLUDABLE_STATUSES, app.models.change_request.ChangeRequest, app.repositories.change_request.ChangeRequestRepository, app.services.errors.ChangeRequestNotFoundError, app.services.errors.ChangeRequestNotIncludableError
+# Phase-87-1:追記 ── typing.Any, app.change_requests.explanation.REQUIREMENTS_KEY
 import uuid
 from collections.abc import Mapping
+from typing import Any
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.change_requests import INCLUDABLE_STATUSES
+from app.change_requests.explanation import REQUIREMENTS_KEY
 from app.detailed_design import StageView, stage_key
 from app.models.baseline import Baseline
 from app.models.change_request import ChangeRequest
@@ -64,10 +67,13 @@ class BaselineService:
         要件定義書・外部設計書の表示中の版がある / 渡した CR がどれもあり(無ければ
         ChangeRequestNotFoundError)、検証済みで、まだ束に入っていない(違えば
         ChangeRequestNotIncludableError)。未承認・古い段階があっても作れる。"""
-        if project.mode != "detailed":
-            raise DesignStagesNotAvailableError(
-                f"Baselines are not available for project {project.id} (mode={project.mode})"
-            )
+        # Phase-88(完了後の調整)：更新(読み出しと共通の require_detailed へ)
+        # if project.mode != "detailed":
+        #     raise DesignStagesNotAvailableError(
+        #         f"Baselines are not available for project {project.id} (mode={project.mode})"
+        #     )
+        # ↓↓
+        require_detailed(project, "Baselines")
         if project.status == "generating":
             raise DocGenerationInProgressError(
                 "設計書を生成しています。完了してから再度お試しください。"
@@ -133,15 +139,49 @@ class BaselineService:
         return found
 
     async def list_for_project(self, project: Project) -> list[Baseline]:
-        """プロジェクトの束を新しい順に返す。"""
+        # Phase-88(完了後の調整)：更新
+        # """プロジェクトの束を新しい順に返す。"""
+        # ↓↓
+        """プロジェクトの束を新しい順に返す(詳細設計モードだけ)。"""
+        require_detailed(project, "Baselines")
         return await self._baselines.list_for_project(project.id)
 
     async def get(self, project: Project, number: int) -> Baseline:
-        """番号の束(写し付き)。無ければ BaselineNotFoundError。"""
+        # Phase-88(完了後の調整)：更新
+        # """番号の束(写し付き)。無ければ BaselineNotFoundError。"""
+        # ↓↓
+        """番号の束(写し付き。詳細設計モードだけ)。無ければ BaselineNotFoundError。"""
+        require_detailed(project, "Baselines")
         baseline = await self._baselines.get_by_number(project_id=project.id, number=number)
         if baseline is None:
             raise BaselineNotFoundError(f"Baseline B-{number} not found")
         return baseline
+
+    # Phase-87-1:追記
+    async def requirements(self, project: Project, number: int) -> list[dict[str, Any]]:
+        """番号の束の要件定義書の写しにある要件の行(CR の対象を選ぶ画面用)。無ければ
+        BaselineNotFoundError。"""
+        return baseline_requirement_rows(await self.get(project, number))
+
+
+# Phase-88(完了後の調整):追記
+def require_detailed(project: Project, what: str) -> None:
+    """合意済みの版と変更要求は詳細設計モードだけ(作成も読み出しも)。簡易モードなら
+    DesignStagesNotAvailableError(409)。画面は、この 409 を受けて「詳細設計モードだけ」と
+    知らせる。"""
+    if project.mode != "detailed":
+        raise DesignStagesNotAvailableError(
+            f"{what} are not available for project {project.id} (mode={project.mode})"
+        )
+
+
+def baseline_requirement_rows(baseline: Baseline) -> list[dict[str, Any]]:
+    """束の要件定義書の写しにある要件の行(行の順。ID の無い行は除く)。写しが無い・model が
+    無ければ空。"""
+    item = next((i for i in baseline.items if i.key == REQUIREMENTS_KEY), None)
+    if item is None or not item.model:
+        return []
+    return [row for row in item.model.get("rows", []) if row.get("id")]
 
 
 def document_snapshots(

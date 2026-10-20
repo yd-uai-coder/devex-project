@@ -1,4 +1,4 @@
-// 作成：Phase-6-2｜更新：Phase-6-6,57-2
+// 作成：Phase-6-2｜更新：Phase-6-6,57-2,88-1
 // 写経レベル: コア ── 復元後にdocuments-storeを force再取得する連携部分は、
 // 「一覧側の最新表示とどう同期させるか」という設計判断そのもの。
 "use client";
@@ -133,6 +133,11 @@ export function VersionHistoryPanel({ projectId, docType }: VersionHistoryPanelP
                 {index === 0 ? "(最新)" : ""}
                 {doc.is_current ? "(表示中)" : ""} ──{" "}
                 {new Date(doc.created_at).toLocaleString("ja-JP")}
+                {/* Phase-88-1:追記 */}
+                {doc.generated_model ? ` ・${doc.generated_model}` : ""}
+                {doc.change_request_number != null
+                  ? ` ・CR-${doc.change_request_number} で反映`
+                  : ""}
               </Text>
               {!doc.is_current ? (
                 <Button

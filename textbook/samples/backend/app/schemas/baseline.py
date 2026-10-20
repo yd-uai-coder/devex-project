@@ -1,4 +1,4 @@
-# 作成：Phase-81-3｜更新：Phase-82-2,86-4
+# 作成：Phase-81-3｜更新：Phase-82-2,86-4,87-1
 # Phase-86-4：更新(docstring: BaselineCreate に束に入れる CR の番号を足した)
 # Phase-82-2：更新 ── 合意の記録の項目を app.schemas.agreement.AgreementNotes に移した(CR の合意・却下と共有)
 # import uuid
@@ -116,3 +116,14 @@ class BaselineRead(_BaselineRecordRead):
     """合意済みの版1つ(写しの中身付き)。"""
 
     items: list[BaselineItemRead]
+
+
+# Phase-87-1:追記
+class BaselineRequirementRead(BaseModel):
+    """束の要件定義書の写しにある要件1行(CR の対象を選ぶ画面用。根拠の観点などは返さない)。"""
+
+    id: str
+    kind: str
+    priority: str | None = None
+    category: str = ""
+    text: str

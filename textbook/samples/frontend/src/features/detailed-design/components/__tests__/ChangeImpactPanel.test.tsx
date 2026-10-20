@@ -1,5 +1,6 @@
-// 作成：Phase-44-2｜更新：Phase-44-4,44(完了後の調整)
+// 作成：Phase-44-2｜更新：Phase-44-4,44(完了後の調整),87-4
 // Phase-44(完了後の調整):追記 ── @testing-library/react.act
+// Phase-87-4:追記 ── @/features/change-requests/change-requests-store.useChangeRequestsStore, @/features/change-requests/test-utils/changeRequestFixtures.makeChangeRequest, ../../test-utils/stageFixtures.makeMark
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -7,7 +8,9 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { ChangeImpactPanel } from "../ChangeImpactPanel";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
-import { makeElementChange, makeImpact, makeStages } from "../../test-utils/stageFixtures";
+import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
+import { makeChangeRequest } from "@/features/change-requests/test-utils/changeRequestFixtures";
+import { makeElementChange, makeImpact, makeMark, makeStages } from "../../test-utils/stageFixtures";
 
 function renderPanel() {
   return render(
@@ -33,6 +36,9 @@ describe("ChangeImpactPanel", () => {
       // Phase-44(完了後の調整):追記
       selectedStage: 5,
     });
+    // Phase-87-4:追記
+    // 反映済みの CR は、使うテストだけで置く
+    useChangeRequestsStore.setState({ projectId: "p1", list: [], fetchList: vi.fn().mockResolvedValue(undefined) });
   });
 
   // Phase-44(完了後の調整):追記
@@ -146,7 +152,10 @@ describe("ChangeImpactPanel", () => {
     const stage5 = screen.getByLabelText("段階5の再生成の候補");
     await user.click(within(stage5).getByRole("button", { name: "選んだ候補を再生成する(1件)" }));
     expect(selectStage).toHaveBeenCalledWith(5);
-    expect(regenerate).toHaveBeenCalledWith("p1", 5, ["proc:F-01"]);
+    // Phase-87-4：更新
+    // expect(regenerate).toHaveBeenCalledWith("p1", 5, ["proc:F-01"]);
+    // ↓↓
+    expect(regenerate).toHaveBeenCalledWith("p1", 5, ["proc:F-01"], undefined);
 
     // 外すと押せない
     const stage8 = screen.getByLabelText("段階8の再生成の候補");
@@ -220,5 +229,59 @@ describe("ChangeImpactPanel", () => {
     act(() => useDetailedDesignStore.setState({ selectedStage: 6 }));
     await user.click(screen.getByRole("button", { name: "段階6" }));
     expect(screen.getByText("この段階に未確認の印はありません。")).toBeInTheDocument();
+  });
+
+  // Phase-87-4:追記
+  it("反映済みの CR があれば、印の出どころの CR を初期値にして、再生成の候補と段階の作り直しに渡す", async () => {
+    const user = userEvent.setup();
+    const impact = makeImpact();
+    impact.stages[4] = { ...impact.stages[4], marks: [makeMark({ sources: ["cr:2"] })] };
+    impact.stages[2] = {
+      stage: 3,
+      changes: [],
+      marks: [makeMark({ key: "table:uploads", label: "uploads", stage: 3, sources: ["cr:2"] })],
+      open: 1,
+      reviewed: 0,
+    };
+    const generate = vi.fn().mockResolvedValue(undefined);
+    useDetailedDesignStore.setState({
+      impact,
+      generate,
+      stages: makeStages({ 3: { is_open: true }, 5: { is_open: true } }),
+    });
+    useChangeRequestsStore.setState({
+      list: [
+        makeChangeRequest({ number: 2, label: "CR-2", title: "上限の変更", status: "applied" }),
+        makeChangeRequest({ number: 1, label: "CR-1", status: "agreed" }),
+      ],
+    });
+    renderPanel();
+    await showAllStages(user);
+
+    expect(useChangeRequestsStore.getState().fetchList).toHaveBeenCalledWith("p1");
+    const select = screen.getByLabelText("段階の生成に渡す変更要求");
+    expect(select).toHaveValue("2");
+    // 合意だけ(文書へ反映していない)の CR は選べない
+    expect(within(select).queryByRole("option", { name: /CR-1/ })).not.toBeInTheDocument();
+
+    const stage5 = screen.getByLabelText("段階5の再生成の候補");
+    await user.click(within(stage5).getByRole("button", { name: "選んだ候補を CR-2 で再生成する(1件)" }));
+    expect(useDetailedDesignStore.getState().regenerate).toHaveBeenCalledWith("p1", 5, ["proc:F-01"], 2);
+
+    // 部分再生成でない段階は、印のある段階ごとに作り直す(確かめてから)
+    expect(screen.queryByRole("button", { name: /段階5 .* で作り直す/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "段階3 データモデル を CR-2 で作り直す" }));
+    await user.click(await screen.findByLabelText("作り直す"));
+    expect(generate).toHaveBeenCalledWith("p1", 3, undefined, undefined, undefined, [], 2);
+
+    // 「渡さない」を選ぶと、候補の再生成に CR を渡さない
+    await user.selectOptions(select, "");
+    expect(within(stage5).getByRole("button", { name: "選んだ候補を再生成する(1件)" })).toBeInTheDocument();
+  });
+
+  it("簡易ドキュメントモード・反映済みの CR が無ければ、CR を選ぶ欄を出さない", () => {
+    renderPanel();
+
+    expect(screen.queryByLabelText("段階の生成に渡す変更要求")).not.toBeInTheDocument();
   });
 });

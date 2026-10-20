@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1,65-1,68-3,85-2
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1,65-1,68-3,85-2,88-1
 # Phase-85-2：更新(docstring: trigger_generation が cr_number を受けることを足した)
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
@@ -473,12 +473,21 @@ async def download_generated_document(
 async def list_document_versions(
     doc_type: DocType, session: SessionDep, current_project: CurrentProjectDep
 ) -> list[GeneratedDocumentRead]:
-    """指定doc_typeの保管済み全バージョン(最大3件)を新しい順に取得する。"""
-    versions = await DocGeneratorService(session).list_versions(current_project.id, doc_type)
-    # Phase-36-2：更新
-    # return [GeneratedDocumentRead.model_validate(v) for v in versions]
+    # Phase-88-1：更新
+    # """指定doc_typeの保管済み全バージョン(最大3件)を新しい順に取得する。"""
+    # versions = await DocGeneratorService(session).list_versions(current_project.id, doc_type)
+    # return [document_read(v) for v in versions]
     # ↓↓
-    return [document_read(v) for v in versions]
+    """指定doc_typeの保管済み全バージョン(最大3件)を新しい順に取得する(反映した CR の番号付き)。"""
+    service = DocGeneratorService(session)
+    versions = await service.list_versions(current_project.id, doc_type)
+    numbers = await service.change_request_numbers(versions)
+    return [
+        document_read(
+            v, numbers.get(v.change_request_id) if v.change_request_id is not None else None
+        )
+        for v in versions
+    ]
 
 
 @router.post(

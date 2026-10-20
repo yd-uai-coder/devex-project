@@ -1,11 +1,17 @@
-# 作成：Phase-81-3｜更新：Phase-86-4
+# 作成：Phase-81-3｜更新：Phase-86-4,87-1
 # Phase-86-4：更新(docstring: create_baseline に CR を結ぶことと 404/409 を足した)
+# Phase-87-1:追記 ── app.schemas.baseline.BaselineRequirementRead
 from typing import Annotated
 
 from fastapi import APIRouter, Path, status
 
 from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
-from app.schemas.baseline import BaselineCreate, BaselineRead, BaselineSummaryRead
+from app.schemas.baseline import (
+    BaselineCreate,
+    BaselineRead,
+    BaselineRequirementRead,
+    BaselineSummaryRead,
+)
 from app.services.baseline_service import BaselineService
 
 # 段階・レビューと同じく、プロジェクト配下の独立したサブツリーとしてprefixにproject_idを含める
@@ -45,3 +51,14 @@ async def get_baseline(
 ) -> BaselineRead:
     """合意済みの版1つ(写しの中身付き)。無ければ404。"""
     return BaselineRead.model_validate(await BaselineService(session).get(current_project, number))
+
+
+# Phase-87-1:追記
+@router.get("/{number}/requirements", response_model=list[BaselineRequirementRead])
+async def list_baseline_requirements(
+    number: BaselineNumber, session: SessionDep, current_project: CurrentProjectDep
+) -> list[BaselineRequirementRead]:
+    """合意済みの版1つの要件定義書の写しにある要件の行(CR の対象を選ぶ画面用。写しの全体より
+    軽い)。無ければ404。"""
+    rows = await BaselineService(session).requirements(current_project, number)
+    return [BaselineRequirementRead.model_validate(row) for row in rows]

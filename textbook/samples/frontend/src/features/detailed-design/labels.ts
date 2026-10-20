@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3,28-4,29-1,31-5,44(完了後の調整),57-2,69-4
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,19-5,23-6,26-5,27-3,28-4,29-1,31-5,44(完了後の調整),57-2,69-4,87-4
 // 写経レベル: コア ── 状態の言葉と、承認できる条件(古い段階は承認し直せる)。
 // Phase-18-9:追記 ── @/features/detailed-design/api/types.StageIssue
 // Phase-26-5:追記 ── UnitKind
@@ -32,6 +32,15 @@ export const STAGE_TITLES: Record<number, string> = {
   // Phase-27-3:追記
   8: "実装手順書",
 };
+
+// Phase-87-4:追記
+// URL の `?stage=N`(変更要求の画面から段階を開くリンク)を段階の番号にする。段階で無ければ undefined
+export function stageParam(value: string | string[] | undefined): number | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === undefined || !/^\d+$/.test(raw)) return undefined;
+  const stage = Number(raw);
+  return STAGE_TITLES[stage] !== undefined ? stage : undefined;
+}
 
 // ── ここから Phase-15-7 の作成分 ──
 export const STATE_LABELS: Record<StageState, string> = {

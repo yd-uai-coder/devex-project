@@ -1,0 +1,222 @@
+// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整)
+// Phase-88-2：更新
+// // SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映)
+// ↓↓
+// SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映・説明書の要約)
+// ドライバ: vitest のテスト関数(ストアの関数を直接呼ぶ)
+// スタブ: fetch(stubFetch)── ストアが API を呼ぶ順と本文、応答・失敗の後の状態を確かめるため
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { useChangeRequestsStore } from "../change-requests-store";
+// Phase-88-2：更新
+// import { makeChangeRequest, makeVerification } from "../test-utils/changeRequestFixtures";
+// ↓↓
+import {
+  makeChangeRequest,
+  makeExplanation,
+  makeSummary,
+  makeVerification,
+} from "../test-utils/changeRequestFixtures";
+import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
+import type { ProjectRead } from "@/features/dashboard/api/projects";
+
+const state = () => useChangeRequestsStore.getState();
+
+describe("useChangeRequestsStore", () => {
+  let stub: ReturnType<typeof stubFetch>;
+
+  beforeEach(() => {
+    // 前のテストの内容を捨てる(プロジェクトを開き直すと、ストアも同じ値に戻す)
+    useChangeRequestsStore.setState({
+      projectId: null,
+      list: [],
+      fetchedAt: null,
+      requirements: {},
+      detail: null,
+      actionError: null,
+      reflecting: false,
+      reflectError: null,
+      // Phase-88-2:追記
+      summaryActing: null,
+      summaryError: null,
+      // Phase-88(完了後の調整):追記
+      unavailable: false,
+    });
+    stub = stubFetch();
+  });
+
+  afterEach(() => {
+    stub.restore();
+  });
+
+  it("一覧を読み、鮮度のある間は読み直さない", async () => {
+    stub.queue({ body: [makeChangeRequest()] });
+
+    await state().fetchList("p1");
+    await state().fetchList("p1");
+
+    expect(state().list).toHaveLength(1);
+    expect(state().status).toBe("success");
+    expect(stub.requests).toHaveLength(1);
+  });
+
+  it("一覧の404はプロジェクトが無いとして知らせる", async () => {
+    stub.queue({ status: 404, body: { detail: "not found" } });
+
+    await state().fetchList("p1");
+
+    expect(state().notFound).toBe(true);
+  });
+
+  it("束の要件は束ごとに1回だけ読む", async () => {
+    stub.queue({ body: [{ id: "FR-001", kind: "FR", priority: null, category: "", text: "a" }] });
+
+    await state().fetchRequirements("p1", 1);
+    await state().fetchRequirements("p1", 1);
+
+    expect(state().requirements[1]).toHaveLength(1);
+    expect(stub.requests).toHaveLength(1);
+  });
+
+  it("詳細のタブを読み、比較の 409 はタブの失敗として残す", async () => {
+    stub.queue({ body: makeChangeRequest({ status: "agreed" }) });
+    stub.queue({ body: makeVerification() });
+    stub.queue({ status: 409, body: { detail: "反映の前です", code: "CR_NOT_APPLIED" } });
+
+    await state().fetchDetail("p1", 1);
+    await state().fetchView("p1", 1, "verification");
+    await state().fetchView("p1", 1, "comparison");
+
+    expect(state().detail?.status).toBe("agreed");
+    expect(state().views.verification?.open_marks).toBe(1);
+    expect(state().viewErrors.comparison).toBe("反映の前です");
+  });
+
+  it("状態の操作は詳細を置き換え、タブの内容と一覧の鮮度を捨てる", async () => {
+    stub.queue({ body: makeChangeRequest() });
+    stub.queue({ body: makeVerification() });
+    stub.queue({ body: makeChangeRequest({ status: "explained", allowed_actions: ["edit", "agree"] }) });
+
+    await state().fetchDetail("p1", 1);
+    await state().fetchView("p1", 1, "verification");
+    const ok = await state().explain("p1", 1);
+
+    expect(ok).toBe(true);
+    expect(state().detail?.status).toBe("explained");
+    expect(state().views.verification).toBeNull();
+    expect(state().fetchedAt).toBeNull();
+    expect(state().acting).toBe(false);
+  });
+
+  it("操作の失敗は actionError に残し、詳細は変えない", async () => {
+    stub.queue({ body: makeChangeRequest({ status: "applied" }) });
+    stub.queue({ status: 409, body: { detail: "未確認が残っています", code: "CR_NOT_VERIFIABLE" } });
+
+    await state().fetchDetail("p1", 1);
+    const ok = await state().verify("p1", 1, "");
+
+    expect(ok).toBe(false);
+    expect(state().actionError).toBe("未確認が残っています");
+    expect(state().detail?.status).toBe("applied");
+  });
+
+  it("作成・写しは作った CR を返し、開いている詳細は変えない", async () => {
+    stub.queue({ status: 201, body: makeChangeRequest({ number: 4, label: "CR-4" }) });
+
+    const created = await state().copy("p1", 3);
+
+    expect(created?.number).toBe(4);
+    expect(stub.requests[0].url).toContain("/change-requests/3/copy");
+    expect(state().detail).toBeNull();
+  });
+
+  it("文書の側の確認は返った検証の内容でタブを置き換える", async () => {
+    stub.queue({ body: makeChangeRequest({ status: "applied" }) });
+    stub.queue({ body: makeVerification({ open_documents: 0 }) });
+
+    await state().fetchDetail("p1", 1);
+    await state().checkDocuments("p1", 1, ["SCR-004"], true);
+
+    expect(state().views.verification?.open_documents).toBe(0);
+  });
+
+  it("文書への反映は CR の番号を渡して再生成を始め、完了で詳細を読み直す", async () => {
+    stub.queue({ status: 202, body: {} });
+    stub.queue({ body: makeChangeRequest({ status: "applied" }) });
+
+    await state().reflectDocuments("p1", 1);
+    expect(state().reflecting).toBe(true);
+    expect(stub.requests[0].url).toContain("/api/v1/projects/p1/generate");
+    expect(JSON.parse(String(stub.requests[0].init?.body))).toEqual({ cr_number: 1 });
+
+    state().onReflectionFinished("p1", 1, { generation_failure: null } as unknown as ProjectRead);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(state().reflecting).toBe(false);
+    expect(state().detail?.status).toBe("applied");
+  });
+
+  it("生成中の 409 は失敗にせず、完了を待つ", async () => {
+    stub.queue({ status: 409, body: { detail: "生成中", code: "DOC_GENERATION_IN_PROGRESS" } });
+
+    await state().reflectDocuments("p1", 1);
+
+    expect(state().reflecting).toBe(true);
+    expect(state().reflectError).toBeNull();
+  });
+
+  // Phase-88-2:追記
+  it("説明書はタブとして読み、要約の操作は応答の説明書でタブだけを置き換える", async () => {
+    stub.queue({ body: makeChangeRequest() });
+    stub.queue({ body: makeExplanation() });
+    stub.queue({ body: makeExplanation({ summary: makeSummary() }) });
+    stub.queue({ body: makeExplanation({ summary: makeSummary({ text: "直した", edited: true }) }) });
+    stub.queue({ body: makeExplanation({ summary: makeSummary({ state: "confirmed" }) }) });
+
+    await state().fetchDetail("p1", 1);
+    await state().fetchView("p1", 1, "explanation");
+    expect(state().views.explanation?.summary).toBeNull();
+
+    expect(await state().summarize("p1", 1)).toBe(true);
+    expect(stub.requests[2].url).toContain("/change-requests/1/explanation/summary");
+    expect(stub.requests[2].init?.method).toBe("POST");
+    expect(state().views.explanation?.summary?.state).toBe("unconfirmed");
+
+    await state().editSummary("p1", 1, "直した");
+    expect(stub.requests[3].init?.method).toBe("PATCH");
+    expect(JSON.parse(String(stub.requests[3].init?.body))).toEqual({ text: "直した" });
+    expect(state().views.explanation?.summary?.edited).toBe(true);
+
+    await state().confirmSummary("p1", 1);
+    expect(stub.requests[4].url).toContain("/explanation/summary/confirm");
+    expect(state().views.explanation?.summary?.state).toBe("confirmed");
+    // CR の状態は変わらないので、詳細と一覧の鮮度はそのまま
+    expect(state().detail?.status).toBe("draft");
+    expect(state().summaryActing).toBeNull();
+  });
+
+  it("要約の失敗は summaryError に残し、説明書のタブは変えない", async () => {
+    stub.queue({ body: makeChangeRequest() });
+    stub.queue({ body: makeExplanation() });
+    stub.queue({ status: 502, body: { detail: "LLM の呼び出しに失敗しました" } });
+
+    await state().fetchDetail("p1", 1);
+    await state().fetchView("p1", 1, "explanation");
+    const ok = await state().summarize("p1", 1);
+
+    expect(ok).toBe(false);
+    expect(state().summaryError).toBe("LLM の呼び出しに失敗しました");
+    expect(state().views.explanation?.summary).toBeNull();
+  });
+
+  // Phase-88(完了後の調整):追記
+  it("簡易モードの 409 は unavailable で知らせる(一覧・詳細)", async () => {
+    stub.queue({ status: 409, body: { detail: "簡易モード", code: "DESIGN_STAGES_NOT_AVAILABLE" } });
+    stub.queue({ status: 409, body: { detail: "簡易モード", code: "DESIGN_STAGES_NOT_AVAILABLE" } });
+
+    await state().fetchList("p9");
+    expect(state().unavailable).toBe(true);
+    await state().fetchDetail("p9", 1);
+    expect(state().unavailable).toBe(true);
+    expect(state().detailNotFound).toBe(false);
+  });
+});
