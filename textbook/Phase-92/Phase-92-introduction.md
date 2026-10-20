@@ -163,7 +163,10 @@ Claude の判断(計画の承認で確定):
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- [Phase 93](../Phase-93/Phase-93-introduction.md): 2つの改訂をした。挙動は変えていない。
+  - `protect_requirements` の戻す手順を、外部設計書と共有する `_protect_rows` に寄せた([93-1](../Phase-93/Phase-93-1.md))。
+  - `_generate_requirements` の免除を、CR で書き換えてよい要素のキー(`rewritable_keys`。予測の画面・API も含む)に替えた([93-3](../Phase-93/Phase-93-3.md))。
+  - 申し送りの「CR を反映した行が戻る」は [93-4](../Phase-93/Phase-93-4.md) で解決した。
 
 ## Phase 完了チェック(#22)
 

@@ -1,4 +1,5 @@
-# 作成：Phase-49-3｜更新：Phase-59-2,70-3,92-2
+# 作成：Phase-49-3｜更新：Phase-59-2,70-3,92-2,93-2
+# Phase-93-2：更新(docstring: SUT に外部設計書の合意済みの印を足した)
 # Phase-92-2：更新(docstring: SUT に合意済みの行の出どころと、要件定義書の合意済みの印を足した)
 """文書の再生成を前の版の差分にとどめる仕組み(変更なしの行を前の版から写す)のテスト。
 
@@ -7,7 +8,7 @@ SUT: rows_text / changed_rows / changed_rows_text / requirement_rows / external_
      4文書の build_model の変更なし(`unchanged`)と実装計画書の`prev_key`、要件定義書の写した行の
      出どころ(`cap_source`のかけ直しと、合意済みの行はかけ直さないこと)、4文書の`REVISION`(節の
      分け方)、
-     4文書の下書きのメッセージ(前の版の行・上流の変わった行・要件定義書の合意済みの印)、
+     4文書の下書きのメッセージ(前の版の行・上流の変わった行・要件定義書と外部設計書の合意済みの印)、
      upstream_changes(app/services/doc_generator_service.py)
 ドライバ: 各テスト関数
 スタブ不要 ── どれも純粋関数(副作用なし)で、DB や LLM を呼ばないため。下書きは偽の LLM の見本の
@@ -17,6 +18,7 @@ SUT: rows_text / changed_rows / changed_rows_text / requirement_rows / external_
 # Phase-70-3:追記 ── 4文書の drafting(REVISION, SYSTEM_PROMPT)・build_requirements_messages, app.documents.revision(RevisionInputs, revision_rule), app.hearing(PointState, initial_states)
 # Phase-70-3：削除 ── app.documents.revision.REVISION_RULE
 # Phase-92-2:追記 ── app.documents.requirements.drafting.AGREED_MARK
+# Phase-93-2:追記 ── app.documents.external_design.drafting.GeneratedIntegration
 from tests.fixtures.external_design import external_design_output
 from tests.fixtures.requirements import requirements_output
 from tests.fixtures.simple_documents import implementation_plan_output, internal_design_output
@@ -24,7 +26,10 @@ from tests.fixtures.simple_documents import implementation_plan_output, internal
 from app.documents.external_design import build_model as build_external_design_model
 from app.documents.external_design.drafting import REVISION as EXTERNAL_REVISION
 from app.documents.external_design.drafting import SYSTEM_PROMPT as EXTERNAL_PROMPT
-from app.documents.external_design.drafting import build_external_design_messages
+from app.documents.external_design.drafting import (
+    GeneratedIntegration,
+    build_external_design_messages,
+)
 from app.documents.external_design.drafting import to_draft as to_external_design_draft
 from app.documents.implementation_plan import build_model as build_plan_model
 from app.documents.implementation_plan.drafting import REVISION as PLAN_REVISION
@@ -258,6 +263,33 @@ def test_external_design_messages_show_previous_rows_and_changed_requirements():
     assert "## 上流の変わった行\n- 要件 FR-001(変わった)" in human.content
     [_, initial] = build_external_design_messages("要件", None)
     assert f"## 前の版の API\n{NONE_TEXT}" in initial.content
+    # Phase-93-2:追記
+    assert f"## 前の版の外部連携\n{NONE_TEXT}" in initial.content
+
+
+def test_external_design_prompt_marks_agreed_rows():
+    """前の版の画面・API・外部連携のうち、合意済みの行に印を付ける。印が無ければ今までどおり。"""
+    output = external_design_output()
+    output.integrations = [
+        GeneratedIntegration(service="メール配信", purpose="通知", auth="", timing="", req_ids=[])
+    ]
+    first = build_external_design_model(to_external_design_draft(output), None, None)
+
+    [_, plain] = build_external_design_messages("要件", first)
+    [_, marked] = build_external_design_messages(
+        "要件",
+        first,
+        agreed_screen_ids=frozenset({"SCR-001"}),
+        agreed_endpoints=frozenset({"POST /api/v1/reservations"}),
+        agreed_services=frozenset({"メール配信"}),
+    )
+    assert AGREED_MARK not in str(plain.content)
+    assert '"service": "メール配信"' in str(plain.content)
+    marked_lines = [
+        line for line in str(marked.content).splitlines() if line.endswith(f"|{AGREED_MARK}")
+    ]
+    assert len(marked_lines) == 3
+    assert f"「{AGREED_MARK}」の印が付いた行は" in EXTERNAL_PROMPT
 
 
 # --- 内部設計書 ---

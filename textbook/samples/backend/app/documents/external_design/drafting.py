@@ -1,10 +1,12 @@
-# 作成：Phase-37-2｜更新：Phase-40-1,49-3,54-2,70-3
+# 作成：Phase-37-2｜更新：Phase-40-1,49-3,54-2,70-3,93-2
+# Phase-93-2：更新(docstring: モジュールに前の版の外部連携と合意済みの印を足した)
 """外部設計書の AI の下書きの入出力(純粋関数)。
 
 AI には要件定義書から、画面・API・外部連携の行(関係する要件ID 付き)と本文の節を書かせる。
 画面ID は仮の ID として書かせ(前の版と同じ画面なら前の版の ID)、`assemble.build_model`が前の版に
-在る ID だけを引き継いで振り直す。再生成では、前の版の画面・API の行と要件定義書の変わった行を
-見せ、変えない行を`unchanged`と答えさせる(`app.documents.revision`)。
+在る ID だけを引き継いで振り直す。再生成では、前の版の画面・API・外部連携の行と要件定義書の
+変わった行を見せ、変えない行を`unchanged`と答えさせる(`app.documents.revision`)。合意済みの行には
+印を付ける(生成の後に合意の形へ戻すのは app/agreements/protection.py)。
 """
 
 # Phase-40-1:追記 ── app.documents.external_design.model.NO_BODY
@@ -12,12 +14,16 @@ AI には要件定義書から、画面・API・外部連携の行(関係する�
 # Phase-54-2:追記 ── app.documents.revision.instruction_text
 # Phase-70-3:追記 ── app.documents.revision(RevisionInputs, revision_rule)
 # Phase-70-3：削除 ── app.documents.revision.REVISION_RULE
-from collections.abc import Sequence
+# Phase-93-2:追記 ── json, collections.abc.Iterable, app.detailed_design.api_list.endpoint_key, app.documents.requirements.drafting.AGREED_MARK
+# Phase-93-2：削除 ── app.documents.revision.rows_text
+import json
+from collections.abc import Iterable, Sequence
 from typing import Literal
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
+from app.detailed_design.api_list import endpoint_key
 from app.documents.external_design.assemble import (
     ApiDraft,
     ExternalDesignDraft,
@@ -25,6 +31,7 @@ from app.documents.external_design.assemble import (
     ScreenDraft,
 )
 from app.documents.external_design.model import NO_BODY, ExternalDesignModel
+from app.documents.requirements.drafting import AGREED_MARK
 from app.documents.revision import (
     NONE_TEXT,
     UNCHANGED_DESCRIPTION,
@@ -32,7 +39,6 @@ from app.documents.revision import (
     changed_rows_text,
     instruction_text,
     revision_rule,
-    rows_text,
 )
 
 _REQ_IDS_DESCRIPTION = "関係する要件ID(【要件定義書】の FR-001・NFR-001・CON-001 など。1つ以上)"
@@ -118,7 +124,10 @@ class ExternalDesignGenerationOutput(BaseModel):
 # Phase-70-3:追記
 # 再生成のプロンプトの節の分け方(前の版・きっかけ・参照)。節を足したら、ここにも分ける
 REVISION = RevisionInputs(
-    previous=("前の版の画面", "前の版の API"),
+    # Phase-93-2：更新
+    # previous=("前の版の画面", "前の版の API"),
+    # ↓↓
+    previous=("前の版の画面", "前の版の API", "前の版の外部連携"),
     triggers={
         "上流の変わった行": "要件定義書の要件で変わった行。その行に関係する行を書き直す",
         "修正指示": "設計レビューの採用した指摘。指示が指す行を書き直す",
@@ -150,11 +159,21 @@ SYSTEM_PROMPT = (
     # f"{REVISION_RULE}(【前の版】は【前の版の画面】【前の版の API】。【上流の変わった行】は"
     # "要件定義書の要件)"
     # ↓↓
+    # Phase-93-2:追記
+    "- 外部連携のサービス名は、【前の版の外部連携】に同じサービスがあれば、その名前のまま書く\n"
+    f"- 前の版の行で「{AGREED_MARK}」の印が付いた行は、クライアントと合意した行。"
+    "【上流の変わった行】【修正指示】がその行を指していなければ、unchanged を true にして"
+    "必ず残す(書き直さない・落とさない。同じ画面を別の画面ID で書かない)\n"
     f"{revision_rule(REVISION)}"
 )
 
 
-def previous_screens_text(previous: ExternalDesignModel | None) -> str:
+# Phase-93-2：更新
+# def previous_screens_text(previous: ExternalDesignModel | None) -> str:
+# ↓↓
+def previous_screens_text(
+    previous: ExternalDesignModel | None, agreed_screen_ids: frozenset[str] = frozenset()
+) -> str:
     # Phase-49-3：更新
     # """前の版の画面(画面ID の引き継ぎに使う)。無ければ「なし」。"""
     # ↓↓
@@ -165,7 +184,20 @@ def previous_screens_text(previous: ExternalDesignModel | None) -> str:
         # return "\n".join(f"{s.id}|{s.name}" for s in previous.screens)
         # ↓↓
         return NONE_TEXT
-    return rows_text(previous.screens)
+    # Phase-93-2：更新
+    # return rows_text(previous.screens)
+    # ↓↓
+    return _marked_rows_text((s, s.id in agreed_screen_ids) for s in previous.screens)
+
+
+def _marked_rows_text(rows: Iterable[tuple[BaseModel, bool]]) -> str:
+    """前の版の行(1行1つの JSON)。合意済みの行は末尾に印を付ける。無ければ「なし」。"""
+    lines = [
+        json.dumps(row.model_dump(mode="json"), ensure_ascii=False)
+        + (f"|{AGREED_MARK}" if agreed else "")
+        for row, agreed in rows
+    ]
+    return "\n".join(lines) or NONE_TEXT
 
 
 def build_external_design_messages(
@@ -177,11 +209,31 @@ def build_external_design_messages(
     changed_requirements: Sequence[str] = (),
     # Phase-54-2:追記
     instruction: str = "",
+    # Phase-93-2:追記
+    *,
+    agreed_screen_ids: frozenset[str] = frozenset(),
+    agreed_endpoints: frozenset[str] = frozenset(),
+    agreed_services: frozenset[str] = frozenset(),
 ) -> list[BaseMessage]:
+    # Phase-93-2:追記
+    """外部設計書の生成のメッセージ。`agreed_*`は守る合意(画面ID・`endpoint_key`・サービス名。
+    前の版の行に印を付ける)。"""
+    apis = previous.apis if previous else []
+    integrations = previous.integrations if previous else []
+    apis_text = _marked_rows_text(
+        (a, endpoint_key(a.method, a.path) in agreed_endpoints) for a in apis
+    )
+    integrations_text = _marked_rows_text(
+        (i, i.service.strip() in agreed_services) for i in integrations
+    )
     human = (
-        f"## 前の版の画面\n{previous_screens_text(previous)}\n\n"
-        # Phase-49-3:追記
-        f"## 前の版の API\n{rows_text(previous.apis if previous else [])}\n\n"
+        # Phase-93-2：更新
+        # f"## 前の版の画面\n{previous_screens_text(previous)}\n\n"
+        # f"## 前の版の API\n{rows_text(previous.apis if previous else [])}\n\n"
+        # ↓↓
+        f"## 前の版の画面\n{previous_screens_text(previous, agreed_screen_ids)}\n\n"
+        f"## 前の版の API\n{apis_text}\n\n"
+        f"## 前の版の外部連携\n{integrations_text}\n\n"
         f"## 上流の変わった行\n{changed_rows_text(changed_requirements)}\n\n"
         # Phase-54-2:追記
         f"## 修正指示\n{instruction_text(instruction)}\n\n"

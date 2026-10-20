@@ -1,4 +1,5 @@
-# 作成：Phase-83-2
+# 作成：Phase-83-2｜更新：Phase-93-3
+# Phase-93-3：更新(docstring: モジュールに CR で書き換えてよい要素を足した)
 """変更要求(CR)に結ぶ影響の予測(純粋関数。docs/external_design.md 2.14節)。
 
 合意の前に、基準の合意済みの版(束)の写しから設計の要素を組み、CR の対象の要件ごとに今の変更影響
@@ -10,8 +11,12 @@
 - 画面・API(文書の側の要素)も入る(再生成の印は文書の側に付かないため、予測で示す)。
 - 新しい要件を足す分は起点の要素が無いので予測に入らない(`unpredicted_new_requirement`で示す)。
 - 保存の形(`to_dict`・`from_dict`)は、判断(合意・却下)の時点で CR に残すときに使う。
+- CR の反映で書き換えてよい要素(`rewritable_keys`)は、対象の要件と、保存した予測の文書の側の
+  要素(画面・API)。合意済みの要素の保護から外し、反映で合意を更新する(docs/external_design.md
+  2.15節)。
 """
 
+# Phase-93-3:追記 ── app.detailed_design.impact.DOCUMENT_STAGE
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -19,6 +24,7 @@ from typing import Any
 from app.change_requests.targets import TARGET_KINDS, Target, TargetKind
 from app.detailed_design import DATA_MODEL_STAGE, ER_SNAPSHOT_KEY
 from app.detailed_design.impact import (
+    DOCUMENT_STAGE,
     Change,
     DesignModels,
     Element,
@@ -200,3 +206,16 @@ def predict_from_snapshots(
 
 def _requirement_key(requirement_id: str) -> str:
     return f"req:{requirement_id}"
+
+
+# Phase-93-3:追記
+def rewritable_keys(
+    targets: Sequence[Target], predicted_impact: Mapping[str, Any] | None
+) -> frozenset[str]:
+    """CR を反映する再生成で書き換えてよい要素のキー。対象の要件(内容の変更・削除)と、保存した
+    予測(`predicted_impact`。無ければ対象の要件だけ)の文書の側の要素(画面・API)。"""
+    keys = {_requirement_key(target.requirement_id) for target in targets}
+    if predicted_impact:
+        prediction = Prediction.from_dict(predicted_impact)
+        keys |= {item.key for item in prediction.items if item.stage == DOCUMENT_STAGE}
+    return frozenset(keys)

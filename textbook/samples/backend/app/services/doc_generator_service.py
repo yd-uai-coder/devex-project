@@ -1,4 +1,6 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3,93-3,93-4
+# Phase-93-4：更新(docstring: generate が CR の反映で合意を更新することを足した)
+# Phase-93-3：更新(docstring: _generate_external_design が合意済みの画面・API・外部連携を守り、戻した要素を返すことを足した)
 # Phase-92-3：更新(docstring: _generate_requirements が合意済みの行と利用者を守り、戻した要素を返すことを足した)
 # Phase-91-3：更新(docstring: adopt_requirement が詳細設計モードで合意を記録することを足した)
 # Phase-85-2：更新(docstring: generate_documents・request_generation・generate が cr_number を受けることを足した)
@@ -38,6 +40,8 @@
 # Phase-88-1:追記 ── app.repositories.change_request.ChangeRequestRepository
 # Phase-91-3:追記 ── app.services.agreement_service.AgreementService
 # Phase-92-3:追記 ── app.agreements.USERS_KEY, app.agreements.agreed_requirement_ids, app.agreements.protect_requirements, app.agreements.requirement_key, app.change_requests.targets_from_json, app.documents.requirements.UserScene, app.models.change_request.ChangeRequest
+# Phase-93-3:追記 ── app.agreements.agreed_external_ids, app.agreements.protect_external_design, app.change_requests.rewritable_keys
+# Phase-93-3：削除 ── app.agreements.requirement_key
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -50,13 +54,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agreements import (
     USERS_KEY,
+    agreed_external_ids,
     agreed_requirement_ids,
+    protect_external_design,
     protect_requirements,
-    requirement_key,
 )
 from app.ai.llm.catalog import Purpose
 from app.ai.llm.content import extract_text_content
-from app.change_requests import join_instructions, targets_from_json
+from app.change_requests import join_instructions, rewritable_keys, targets_from_json
 from app.core.database import AsyncSessionLocal
 from app.core.errors import AppError
 from app.detailed_design.function_list import FunctionListModel
@@ -666,7 +671,8 @@ class DocGeneratorService:
         `cr_number`(合意した CR)は、作り直す設計書のどれにも同じ指示にして入れ
         (app/change_requests/instruction.py)、作った版に CR を残す。生成が終わったら、CR を
         反映済みにし、付いた印(出どころに`cr:<番号>`を足す)を CR の写しに重ねる(同じ
-        トランザクション)。
+        トランザクション)。CR で書き換えてよい要素(対象の要件と、保存した予測の画面・API)の
+        合意も、作り直した中身で更新する(app/services/agreement_service.py)。
         受け付けの後に反映できない状態になった CR は渡さない。
 
         テスト仕様書(`TEST_SPEC`)は設計書の後に作る(簡易モードは毎回、詳細設計モードは
@@ -814,7 +820,10 @@ class DocGeneratorService:
                     # Phase-45-3：更新
                     # content, model = await self._generate_external_design(
                     # ↓↓
-                    content, external = await self._generate_external_design(
+                    # Phase-93-3：更新
+                    # content, external = await self._generate_external_design(
+                    # ↓↓
+                    content, external, protection = await self._generate_external_design(
                         # Phase-49-3：更新
                         # project, generated["requirements"], requirements, llm=llm
                         # ↓↓
@@ -826,6 +835,8 @@ class DocGeneratorService:
                         requirements,
                         changed,
                         instruction,
+                        # Phase-93-3:追記
+                        reflection.change_request if reflection is not None else None,
                         llm=llm,
                     )
                     # Phase-45-3:追記
@@ -932,6 +943,10 @@ class DocGeneratorService:
                     model=resolved.model,
                     marks=marks,
                     actor_id=user_id,
+                # Phase-93-4:追記
+                )
+                await AgreementService(self._session).record_change_request(
+                    project, reflection.change_request, new_models, recorded_by=user_id
                 )
 
             # Phase-52-4：更新
@@ -1264,10 +1279,13 @@ class DocGeneratorService:
         # messages = build_requirements_messages(transcript, states, scale, previous, instruction)
         # ↓↓
         agreed = await self._agreed_elements(project)
-        exempt = frozenset(
-            requirement_key(target.requirement_id)
-            for target in targets_from_json(change_request.targets if change_request else None)
-        )
+        # Phase-93-3：更新
+        # exempt = frozenset(
+        #     requirement_key(target.requirement_id)
+        #     for target in targets_from_json(change_request.targets if change_request else None)
+        # )
+        # ↓↓
+        exempt = _rewritable(change_request)
         agreed_ids = agreed_requirement_ids(agreed or {}, exempt)
         agreed_users = (
             [UserScene.model_validate(u) for u in agreed[USERS_KEY]["users"]]
@@ -1312,12 +1330,21 @@ class DocGeneratorService:
         changed_upstream: list[str],
         # Phase-54-2:追記
         instruction: str = "",
+        # Phase-93-3:追記
+        change_request: ChangeRequest | None = None,
         *,
         llm,
-    ) -> tuple[str, ExternalDesignModel]:
+    # Phase-93-3：更新
+    # ) -> tuple[str, ExternalDesignModel]:
+    # ↓↓
+    ) -> tuple[str, ExternalDesignModel, list[dict] | None]:
         """外部設計書を構造化出力で下書きし、model と md を作る。入力は要件定義書の md、前の版の
-        画面・API(画面ID を引き継ぎ、変えない行をそのまま使うため)と、要件定義書の変わった行。
-        要件ID の照合用に要件定義書の model を写す(app/documents/external_design)。"""
+        画面・API・外部連携(画面ID を引き継ぎ、変えない行をそのまま使うため)と、要件定義書の
+        変わった行。要件ID の照合用に要件定義書の model を写す(app/documents/external_design)。
+
+        詳細設計モードでは、合意済みの画面・API・外部連携を守る(要件定義書と同じ。
+        docs/external_design.md 2.15節)。反映する CR(`change_request`)の保存した予測の画面・API
+        は書き換えてよい。戻した要素の一覧を3つ目に返す(簡易ドキュメントモードは None)。"""
         current = await self._documents.get_current(
             project_id=project.id, doc_type="external_design"
         )
@@ -1328,8 +1355,21 @@ class DocGeneratorService:
         # Phase-54-2：更新
         # messages = build_external_design_messages(requirements_md, previous, changed_upstream)
         # ↓↓
+        # Phase-93-3:追記
+        agreed = await self._agreed_elements(project)
+        exempt = _rewritable(change_request)
+        ids = agreed_external_ids(agreed or {}, exempt)
         messages = build_external_design_messages(
-            requirements_md, previous, changed_upstream, instruction
+            # Phase-93-3：更新
+            # requirements_md, previous, changed_upstream, instruction
+            # ↓↓
+            requirements_md,
+            previous,
+            changed_upstream,
+            instruction,
+            agreed_screen_ids=ids.screen_ids,
+            agreed_endpoints=ids.endpoints,
+            agreed_services=ids.services,
         )
         output = await invoke_structured(llm, ExternalDesignGenerationOutput, messages)
         model = build_external_design_model(
@@ -1338,7 +1378,14 @@ class DocGeneratorService:
         # Phase-45-3：更新
         # return render_external_design(model), model.model_dump(mode="json")
         # ↓↓
-        return render_external_design(model), model
+        # Phase-93-3：更新
+        # return render_external_design(model), model
+        # ↓↓
+        if agreed is None:
+            return render_external_design(model), model, None
+        model, restored = protect_external_design(model, previous, agreed, exempt=exempt)
+        protection = [{"key": r.key, "reason": r.reason} for r in restored]
+        return render_external_design(model), model, protection
 
     async def _generate_internal_design(
         self,
@@ -1598,6 +1645,16 @@ def _render_transcript(history: list[ChatHistory]) -> str:
 
 
 # Phase-49-3:追記
+# Phase-93-3:追記
+def _rewritable(change_request: ChangeRequest | None) -> frozenset[str]:
+    """反映する CR で書き換えてよい要素のキー(合意済みの要素の保護から外す)。CR が無ければ空。"""
+    if change_request is None:
+        return frozenset()
+    return rewritable_keys(
+        targets_from_json(change_request.targets), change_request.predicted_impact
+    )
+
+
 def upstream_changes(
     doc_type: str,
     previous_models: Mapping[str, dict | None],

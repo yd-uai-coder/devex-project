@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2,57-2,81-1,85-2,88-1,92-3
+# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2,57-2,81-1,85-2,88-1,92-3,93-3
 # Phase-85-2：更新(docstring: GenerationRequest の cr_number を足した)
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 # Phase-85-2:追記 ── pydantic.Field
@@ -98,7 +98,10 @@ class GeneratedDocumentRead(BaseModel):
     generated_model: str | None = None
     # Phase-88-1:追記
     # Phase-92-3:追記
-    # 再生成の後に合意の形へ戻した要素(合意を守った要件定義書の版だけ。ほかは None)
+    # Phase-93-3：更新
+    # # 再生成の後に合意の形へ戻した要素(合意を守った要件定義書の版だけ。ほかは None)
+    # ↓↓
+    # 再生成の後に合意の形へ戻した要素(合意を守った要件定義書・外部設計書の版だけ。ほかは None)
     protection: list[RestoredRead] | None = None
     # 反映した変更要求の番号(CR を渡した再生成で作った版だけ。ほかは None)。ルートが入れる
     change_request_number: int | None = None

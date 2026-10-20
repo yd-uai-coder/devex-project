@@ -1,4 +1,4 @@
-# 作成：Phase-2-1｜更新：Phase-6-6,15-3,36-1,37-1,81-1,85-2,92-3
+# 作成：Phase-2-1｜更新：Phase-6-6,15-3,36-1,37-1,81-1,85-2,92-3,93-3
 # Phase-6-6:追記 ── sqlalchemy.Boolean, sqlalchemy.false
 # Phase-15-3:追記 ── sqlalchemy.UniqueConstraint
 # 写経レベル: 定型 ── 既存モデル群と同型のORMモデル定義(バージョニングロジック自体はrepositories/generated_document.pyのコア箇所を参照)。
@@ -76,7 +76,10 @@ class GeneratedDocument(Base):
     # Phase-92-3:追記
     # 再生成の後に合意の形へ戻した要素(`[{key, reason}]`。app/agreements/protection.py の
     # Restored の形)。合意を守った版だけ(戻すものが無ければ空の一覧)。簡易ドキュメントモード・
-    # 要件定義書でない版・この列を足す前の版は NULL
+    # Phase-93-3：更新
+    # # 要件定義書でない版・この列を足す前の版は NULL
+    # ↓↓
+    # 要件定義書・外部設計書でない版・この列を足す前の版は NULL
     protection: Mapped[list[dict] | None] = mapped_column(PortableJSON, nullable=True)
     # Phase-6-6:追記
     is_current: Mapped[bool] = mapped_column(
