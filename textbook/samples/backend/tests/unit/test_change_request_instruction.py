@@ -1,4 +1,4 @@
-# 作成：Phase-85-1
+# 作成：Phase-85-1｜更新：Phase-96-2
 """合意した CR からの再生成の指示のテスト。
 
 SUT: app.change_requests(build_cr_instruction / join_instructions)
@@ -6,6 +6,7 @@ SUT: app.change_requests(build_cr_instruction / join_instructions)
 スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
 """
 
+# Phase-96-2:追記 ── app.change_requests.instruction.ORIGIN_LINE
 from datetime import date
 
 from app.change_requests import (
@@ -14,7 +15,7 @@ from app.change_requests import (
     build_cr_instruction,
     join_instructions,
 )
-from app.change_requests.instruction import ADDS_REQUIREMENT_LINE
+from app.change_requests.instruction import ADDS_REQUIREMENT_LINE, ORIGIN_LINE
 
 
 def _facts(targets: tuple[Target, ...], **overrides: object) -> ChangeRequestFacts:
@@ -63,6 +64,25 @@ def test_instruction_for_new_requirement_only() -> None:
     assert "対象の要件:" not in text
     assert "内容: —" in text
     assert text.endswith(ADDS_REQUIREMENT_LINE)
+
+
+# Phase-96-2:追記
+def test_instruction_lists_new_requirement_origins() -> None:
+    text = build_cr_instruction(
+        _facts(
+            (),
+            adds_requirement=True,
+            origin_labels=("SCR-002 設定画面", "FR-004 参照ファイルを添付できる"),
+        )
+    )
+
+    lines = text.splitlines()
+    assert lines[-2] == ADDS_REQUIREMENT_LINE
+    assert lines[-1] == ORIGIN_LINE.format(
+        origins="SCR-002 設定画面・FR-004 参照ファイルを添付できる"
+    )
+    # 新しい要件を足さない CR は、起点を書かない
+    assert ORIGIN_LINE.split("{")[0] not in build_cr_instruction(_facts((Target("FR-005"),)))
 
 
 def test_join_instructions_skips_empty() -> None:

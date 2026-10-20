@@ -1,4 +1,5 @@
-# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整),56-2,69-2,81-3,83-2,85-2,85-3
+# 作成：Phase-15-2｜更新：Phase-16-3,16-4,17-3,17-4,18-3,19-3,22-5,27-1,27-2,28-1,29-4,30-5,31-3,31-4,38-2,42-1,43-1,43-3,43-4,45-4,46-2,54-1,55(完了後の調整),56-2,69-2,81-3,83-2,85-2,85-3,96-1
+# Phase-96-1：更新(docstring: approve が CR で作り直した段階の承認の印を CR に結ぶ。_record_stage_change が印を返す)
 # Phase-85-2：更新(docstring: record_document_change・_record_impact が記録した印を返し、extra_sources を足した)
 # 写経レベル: コア ── 承認の条件の順序と、承認時に入力の版を記録すること。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、入力は4文書)
@@ -24,6 +25,7 @@
 # Phase-83-2:追記 ── app.detailed_design.ER_SNAPSHOT_KEY(このファイルの定数を app/detailed_design/data_model.py へ移した)
 # Phase-85-2:追記 ── app.detailed_design.impact.Mark
 # Phase-85-3:追記 ── app.models.change_request.ChangeRequest, app.repositories.change_request.ChangeRequestRepository, app.schemas.change_request.change_request_label, app.schemas.design_stage.GenerationChangeRequestRead
+# Phase-96-1:追記 ── app.change_requests.APPROVE_STAGE_ACTION, app.change_requests.CHECKABLE_STATUSES, app.change_requests.StageFacts, app.change_requests.merge_applied_marks, app.change_requests.pending_stages, app.change_requests.stage_apply_versions, app.detailed_design.impact.cr_source
 import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict
@@ -32,6 +34,14 @@ import structlog
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.change_requests import (
+    APPROVE_STAGE_ACTION,
+    CHECKABLE_STATUSES,
+    StageFacts,
+    merge_applied_marks,
+    pending_stages,
+    stage_apply_versions,
+)
 from app.detailed_design import (
     DATA_MODEL_STAGE,
     ER_SNAPSHOT_KEY,
@@ -75,6 +85,7 @@ from app.detailed_design.impact import (
     blocking_marks,
     build_elements,
     build_simple_elements,
+    cr_source,
     diff_elements,
     doc_source,
     group_by_stage,
@@ -346,10 +357,22 @@ class DesignStageService:
         return True
 
     async def approve(
-        self, project: Project, *, stage: int, expected_version: int
+        # Phase-96-1：更新
+        # self, project: Project, *, stage: int, expected_version: int
+        # ↓↓
+        self,
+        project: Project,
+        *,
+        stage: int,
+        expected_version: int,
+        actor_id: uuid.UUID | None = None,
     ) -> DesignStageRead:
         """段階を承認する。承認したときの入力の版を`input_fingerprint`に記録する(後で前の段階・
         文書が変わったら「古い」と判定するため)。versionは増やさない。
+
+        反映済みの CR を渡して作り直した後の最初の承認なら、承認で付く印の出どころに`cr:<番号>`を
+        足し、CR の印の写しに重ねて、CR の時系列に記録だけの1行を足す(app/change_requests/
+        stage_approvals.py。同じトランザクション)。
 
         条件(この順に確かめる): 行がある / versionが一致する / 段階が開いている /
         承認できる状態(下書き・レビュー中・古い) / 内容が空でない / 段階ごとの検証でエラーが無い。
@@ -396,8 +419,29 @@ class DesignStageService:
         # 届いた段階(この段階を含む)に印を記録し、写しを置き換える
         row.impact = None
         er = await self._er_tables(project.id) if project.mode == "detailed" else {}
+        # Phase-96-1:追記
+        change_request = await self._approving_change_request(project, row)
+        extra_sources = (cr_source(change_request.number),) if change_request else ()
+        marks: list[Mark] = []
         if row.approved_model and project.mode == "detailed":
-            _record_stage_change(rows, documents, stage, row.approved_model, er)
+            # Phase-96-1：更新
+            # _record_stage_change(rows, documents, stage, row.approved_model, er)
+            # ↓↓
+            marks = _record_stage_change(
+                rows, documents, stage, row.approved_model, er, extra_sources=extra_sources
+            )
+        if change_request is not None:
+            change_request.applied_impact = merge_applied_marks(
+                change_request.applied_impact, marks
+            )
+            await ChangeRequestRepository(self._session).add_event(
+                change_request,
+                action=APPROVE_STAGE_ACTION,
+                to_status=change_request.status,
+                actor_id=actor_id,
+                note=f"段階{stage}の承認で印を{len(marks)}件結んだ",
+                refs={"stage": stage, "version": row.version, "mark_count": len(marks)},
+            )
         row.status = "approved"
         row.approved_version = row.version
         # Phase-43-3：更新(段階3の写しに ER のテーブル定義を添える)
@@ -424,6 +468,23 @@ class DesignStageService:
         # return await self._read_one(project.id, stage)
         # ↓↓
         return await self._read_one(project, stage)
+
+    # Phase-96-1:追記
+    async def _approving_change_request(
+        self, project: Project, row: DesignStage
+    ) -> ChangeRequest | None:
+        """この承認で印を結ぶ CR。段階を作り直した CR が反映済みで、作り直した後にまだ承認して
+        いないときだけ(無ければ None)。"""
+        if row.generation_change_request_id is None:
+            return None
+        found = await ChangeRequestRepository(self._session).find_one(
+            id=row.generation_change_request_id, project_id=project.id
+        )
+        if found is None or found.status not in CHECKABLE_STATUSES:
+            return None
+        versions = stage_apply_versions((e.action, e.refs) for e in found.events)
+        facts = StageFacts(row.stage, row.generation_change_request_id, row.approved_version)
+        return found if row.stage in pending_stages(found.id, versions, [facts]) else None
 
     # Phase-43-3:追記
     async def record_document_change(
@@ -956,8 +1017,15 @@ def _record_stage_change(
     stage: int,
     snapshot: dict,
     er: dict[str, dict],
-) -> None:
-    """段階の承認時の写しと今の内容の差分から、変更の影響を印として記録する。"""
+    # Phase-96-1：更新
+    # ) -> None:
+    # """段階の承認時の写しと今の内容の差分から、変更の影響を印として記録する。"""
+    # ↓↓
+    *,
+    extra_sources: tuple[str, ...] = (),
+) -> list[Mark]:
+    """段階の承認時の写しと今の内容の差分から、変更の影響を印として記録する。記録した印を返す。
+    `extra_sources`(CR で作り直した段階の`cr:<番号>`)は印の出どころに足す。"""
     stages = {s: row.model for s, row in rows.items()}
     docs = _document_models(documents)
     # Phase-46-2：更新
@@ -973,7 +1041,12 @@ def _record_stage_change(
     # after = DesignModels.from_dicts(stages, docs, er)
     # ↓↓
     after = build_elements(DesignModels.from_dicts(stages, docs, er))
-    _record_impact(rows, stage_source(stage), before, after, stages=(stage,))
+    # Phase-96-1：更新
+    # _record_impact(rows, stage_source(stage), before, after, stages=(stage,))
+    # ↓↓
+    return _record_impact(
+        rows, stage_source(stage), before, after, stages=(stage,), extra_sources=extra_sources
+    )
 
 
 def _snapshot_er(stage: int, snapshot: dict, er: dict[str, dict]) -> dict[str, dict]:

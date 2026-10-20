@@ -1,9 +1,11 @@
-# 作成：Phase-84-2｜更新：Phase-84-3
+# 作成：Phase-84-2｜更新：Phase-84-3,96-2
+# Phase-96-2：更新(docstring: SUT に起点の表示名を足した)
 """変更要求(CR)の説明書(5節の md)と要約の照合のテスト。
 
 SUT: app.change_requests の build_explanation / with_summary / check_summary / affected_units /
      explanation_filename(84-3)と、
-     Explanation(markdown・fingerprint)・ChangeRequestFacts・AffectedUnits・SummaryCheck
+     Explanation(markdown・fingerprint)・ChangeRequestFacts(新しい要件の起点の`origin_labels`も)・
+     AffectedUnits・SummaryCheck
 ドライバ: pytest のテスト関数
 スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため。入力は、要件 FR-001・FR-002・
 NFR-001 と段階1〜8 を持つ fixture の model を束の写しの形に並べ、要件定義書に観点の状態と推測の
@@ -69,12 +71,17 @@ def _build(
     *,
     snapshots: dict[str, dict] | None = None,
     excluded: list[tuple[str, str]] | None = None,
+    # Phase-96-2:追記
+    origins: tuple[str, ...] = (),
     **overrides: object,
 ):
     snapshots = snapshots if snapshots is not None else _snapshots()
     facts = _facts(targets, **overrides)
     prediction = predict_from_snapshots(
-        snapshots, list(targets), adds_requirement=facts.adds_requirement
+        # Phase-96-2：更新
+        # snapshots, list(targets), adds_requirement=facts.adds_requirement
+        # ↓↓
+        snapshots, list(targets), adds_requirement=facts.adds_requirement, origins=origins
     )
     return build_explanation(facts, prediction, snapshots, excluded or [])
 
@@ -130,6 +137,23 @@ def test_impact_is_grouped_by_place_with_notes() -> None:
     assert "| 届いた対象 |" in md and "| FR-001 |" in md
     assert "段階6 処理ロジック(レビュー中)・テスト仕様書(無い)" in md
     assert "新しい要件を足す分は、つながりの起点が無いため予測に入っていません。" in md
+
+
+# Phase-96-2:追記
+def test_new_requirement_origins_are_shown_in_targets_and_impact() -> None:
+    """新しい要件の起点は、2節の「新しい要件を足します」の後と、3節の「届いた対象」に出る。
+    起点があれば「予測に入っていません」の注記は出ない。"""
+    md = _build(
+        (Target("FR-002"),),
+        adds_requirement=True,
+        origins=("screen:SCR-001",),
+        origin_labels=("SCR-001 予約画面",),
+    ).markdown
+
+    assert "新しい要件の予測の起点: SCR-001 予約画面。" in md
+    assert "(対象の要件と新しい要件の起点からのつながりをたどったもの)" in md
+    assert "| SCR-001 予約画面 | 新しい要件の起点 | FR-002・新しい要件(起点 SCR-001) |" in md
+    assert "起点が無いため予測に入っていません" not in md
 
 
 def test_no_impact_and_no_open_points() -> None:

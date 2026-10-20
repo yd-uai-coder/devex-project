@@ -1,9 +1,11 @@
-# 作成：Phase-85-2
+# 作成：Phase-85-2｜更新：Phase-96-1
+# Phase-96-1：更新(docstring: merge_applied_marks の置き場)
 """合意した変更要求(CR)を文書の再生成に渡す(反映)のテスト。
 
 SUT: DocGeneratorService.request_generation・generate の`cr_number`
      (app/services/doc_generator_service.py)、ChangeRequestService.reflectable・reflection・
-     record_document_apply と純粋関数 merge_applied_marks(app/services/change_request_service.py)、
+     record_document_apply(app/services/change_request_service.py)と純粋関数 merge_applied_marks
+     (app/change_requests/comparison.py)、
      DesignStageService.record_document_change の`extra_sources`、marks.cr_source・record、
      リポジトリ create_version(change_request_id)・add_event(refs)とモデルの列、
      スキーマ GenerationRequest・ChangeRequestEventRead、ChangeRequestNotReflectableError、
@@ -14,6 +16,8 @@ SUT: DocGeneratorService.request_generation・generate の`cr_number`
 (構造化出力の見本を返し、プロンプトを記録する)
 """
 
+# Phase-96-1:追記 ── app.change_requests.merge_applied_marks
+# Phase-96-1：削除 ── app.services.change_request_service.merge_applied_marks
 from datetime import UTC, datetime
 
 import pytest
@@ -26,6 +30,7 @@ from tests.fixtures.fake_llm import FakeLLM
 from tests.fixtures.requirements import requirements_output
 
 from app.api.routes.projects import trigger_generation
+from app.change_requests import merge_applied_marks
 from app.change_requests.instruction import CR_INSTRUCTION_HEAD
 from app.detailed_design.impact import Mark, StageImpact
 from app.detailed_design.impact.marks import cr_source
@@ -45,7 +50,7 @@ from app.schemas.change_request import (
 )
 from app.schemas.document import GenerationRequest
 from app.services.baseline_service import BaselineService
-from app.services.change_request_service import ChangeRequestService, merge_applied_marks
+from app.services.change_request_service import ChangeRequestService
 from app.services.design_stage_service import DesignStageService
 from app.services.doc_generator_service import DocGeneratorService, generate_documents
 from app.services.errors import ChangeRequestNotFoundError, ChangeRequestNotReflectableError

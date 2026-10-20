@@ -1,4 +1,5 @@
-# 作成：Phase-86-1
+# 作成：Phase-86-1｜更新：Phase-96-1
+# Phase-96-1：更新(docstring: 作り直した段階が未承認の間は検証できない。Verification・verification_of)
 """変更要求(CR)の検証の条件と、反映で付いた印の今の確認の状態(純粋関数)。
 
 docs/external_design.md 2.14節「検証」。反映(CR を渡した文書の再生成)で付いた印の写し
@@ -14,6 +15,10 @@ docs/external_design.md 2.14節「検証」。反映(CR を渡した文書の再
 
 同じ要素に後から別の変更の印が届いても、出どころの`cr:<番号>`は残り、未確認に戻る(marks.py の
 `record`)ので、確かめ直すまで検証できない。
+
+CR で作り直した段階の承認で付く印も、印の写しに重なって同じく確かめる。作り直した段階をまだ承認して
+いない間(`pending_stages`。stage_approvals.py)も、検証できない(承認で付く印が結ばれる前に検証が
+済まないようにするため)。
 """
 
 from collections.abc import Iterable, Mapping, Sequence
@@ -61,10 +66,16 @@ class DocumentItem:
 
 @dataclass(frozen=True)
 class Verification:
-    """CR 1つの検証の確かめ。`marks`は置き場とキーの順、`documents`は予測の順。"""
+    # Phase-96-1：更新
+    # """CR 1つの検証の確かめ。`marks`は置き場とキーの順、`documents`は予測の順。"""
+    # ↓↓
+    """CR 1つの検証の確かめ。`marks`は置き場とキーの順、`documents`は予測の順、`pending_stages`は
+    CR で作り直した後にまだ承認していない段階(段階の順)。"""
 
     marks: tuple[MarkState, ...]
     documents: tuple[DocumentItem, ...]
+    # Phase-96-1:追記
+    pending_stages: tuple[int, ...] = ()
 
     @property
     def open_marks(self) -> int:
@@ -76,8 +87,13 @@ class Verification:
 
     @property
     def complete(self) -> bool:
-        """印も文書の側も、未確認が無いか(CR の状態は見ない。サービスが遷移の表で確かめる)。"""
-        return self.open_marks == 0 and self.open_documents == 0
+        # Phase-96-1：更新
+        # """印も文書の側も、未確認が無いか(CR の状態は見ない。サービスが遷移の表で確かめる)。"""
+        # return self.open_marks == 0 and self.open_documents == 0
+        # ↓↓
+        """印も文書の側も未確認が無く、作り直した段階がすべて承認済みか(CR の状態は見ない。
+        サービスが遷移の表で確かめる)。"""
+        return self.open_marks == 0 and self.open_documents == 0 and not self.pending_stages
 
 
 def mark_states(
@@ -124,11 +140,19 @@ def verification_of(
     number: int,
     prediction: Prediction,
     checked: Iterable[str],
+    # Phase-96-1:追記
+    pending: Iterable[int] = (),
 ) -> Verification:
-    """反映で付いた印と文書の側の確認から、検証の確かめを作る。"""
+    # Phase-96-1：更新
+    # """反映で付いた印と文書の側の確認から、検証の確かめを作る。"""
+    # ↓↓
+    """反映で付いた印と文書の側の確認、まだ承認していない作り直した段階(`pending`)から、検証の
+    確かめを作る。"""
     return Verification(
         tuple(mark_states(applied, current, number)),
         tuple(document_items(prediction, checked)),
+        # Phase-96-1:追記
+        tuple(sorted(pending)),
     )
 
 

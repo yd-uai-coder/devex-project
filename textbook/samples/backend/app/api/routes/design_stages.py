@@ -1,4 +1,5 @@
-# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4,30-5,30-7,31-4,43-4,54-3,54-5,68-4,85-3
+# 作成：Phase-15-2｜更新：Phase-16-4,20-3,21-3,22-5,23-3,23-4,27-1,28-1,28-2,29-4,30-5,30-7,31-4,43-4,54-3,54-5,68-4,85-3,96-1
+# Phase-96-1：更新(docstring: approve_design_stage が印を CR に結ぶ)
 # Phase-85-3：更新(docstring: generate_design_stage が cr_number を受けることを足した)
 # 写経レベル: 定型 ── サービスを呼ぶだけの薄いルート。
 # Phase-31-4：更新(docstring: 簡易モードは段階8だけを持ち、実装手順書の zip を作れること)
@@ -259,14 +260,18 @@ async def approve_design_stage(
 ) -> DesignStageRead:
     """段階を承認する(古い段階は、内容を変えずに承認し直せる)。他の段階・文書の変更から届いた
     見直しの印が未確認なら409(`DESIGN_STAGE_UNREVIEWED_IMPACT`)。設計レビューがオンなら、
-    承認の後に、採用した指摘が直ったかをバックグラウンドで判定する(シャドーモード)。"""
+    承認の後に、採用した指摘が直ったかをバックグラウンドで判定する(シャドーモード)。反映済みの CR で
+    作り直した後の最初の承認なら、付いた印を CR に結ぶ。"""
     # Phase-54-5：更新
     # return await DesignStageService(session).approve(
     #     current_project, stage=stage, expected_version=payload.version
     # )
     # ↓↓
     approved = await DesignStageService(session).approve(
-        current_project, stage=stage, expected_version=payload.version
+        # Phase-96-1：更新
+        # current_project, stage=stage, expected_version=payload.version
+        # ↓↓
+        current_project, stage=stage, expected_version=payload.version, actor_id=current_user.id
     )
     # Phase-54-5:追記
     # Phase-68-4：更新

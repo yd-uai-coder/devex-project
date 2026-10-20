@@ -1,4 +1,5 @@
-# 作成：Phase-84-2｜更新：Phase-84-3
+# 作成：Phase-84-2｜更新：Phase-84-3,96-2
+# Phase-96-2：更新(docstring: 2節・3節に新しい要件の起点。ChangeRequestFacts)
 """変更要求(CR)の説明書(5節の md)の組み立てと、任意の要約の照合(純粋関数)。
 
 docs/external_design.md 2.14節「変更の説明書」。合意の前にクライアントへ見せる md を、CR の値・
@@ -6,8 +7,8 @@ docs/external_design.md 2.14節「変更の説明書」。合意の前にクラ�
 いつも同じ md になる。
 
 1. 変更の内容と背景
-2. 対象の要件(合意済みの文と変更後の案)
-3. 影響の一覧(置き場ごと・理由・届いた対象)
+2. 対象の要件(合意済みの文と変更後の案。新しい要件を足すなら、その予測の起点)
+3. 影響の一覧(置き場ごと・理由・届いた対象と新しい要件の起点)
 4. 関わる未決事項(対象の要件の根拠の観点のうち未決のもの・推測の要件)
 5. 影響を受ける作業単位とテストの数
 
@@ -17,6 +18,7 @@ docs/external_design.md 2.14節「変更の説明書」。合意の前にクラ�
 - 要約の照合は、要約に出る要件 ID と数字のうち、5節に出ないものを返す。
 """
 
+# Phase-96-2:追記 ── app.change_requests.prediction.PredictedItem, app.change_requests.prediction.origin_name
 import hashlib
 import re
 import unicodedata
@@ -25,7 +27,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from app.change_requests.prediction import Prediction
+from app.change_requests.prediction import PredictedItem, Prediction, origin_name
 from app.change_requests.states import (
     BACKGROUND_SOURCE_LABEL,
     STATUS_LABEL,
@@ -75,7 +77,11 @@ _NUMBER = re.compile(r"(?<![A-Za-z\d.])\d+(?:\.\d+)?(?![A-Za-z\d])")
 
 @dataclass(frozen=True)
 class ChangeRequestFacts:
-    """説明書の1節に載る CR の値(DB の行から写したもの)。"""
+    # Phase-96-2：更新
+    # """説明書の1節に載る CR の値(DB の行から写したもの)。"""
+    # ↓↓
+    """説明書の1節・2節に載る CR の値(DB の行から写したもの)。`origin_labels`は新しい要件の
+    予測の起点の表示名(選んだ順)。"""
 
     number: int
     title: str
@@ -87,6 +93,8 @@ class ChangeRequestFacts:
     targets: tuple[Target, ...]
     adds_requirement: bool
     baseline_number: int
+    # Phase-96-2:追記
+    origin_labels: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -268,6 +276,9 @@ def _section_targets(facts: ChangeRequestFacts, rows: Mapping[str, Mapping[str, 
         lines.append("既存の要件は変えません。")
     if facts.adds_requirement:
         lines += ["", "このほかに、新しい要件を足します(内容は1節)。"]
+        # Phase-96-2:追記
+        if facts.origin_labels:
+            lines.append(f"新しい要件の予測の起点: {'・'.join(facts.origin_labels)}。")
     return "\n".join(lines)
 
 
@@ -276,7 +287,11 @@ def _section_impact(prediction: Prediction, excluded: Sequence[tuple[str, str]])
     if prediction.items:
         lines.append(
             f"合意済みの版の設計から、見直しが要る要素を{len(prediction.items)}件と予測しました"
-            "(対象の要件からのつながりをたどったもの)。"
+            # Phase-96-2：更新
+            # "(対象の要件からのつながりをたどったもの)。"
+            # ↓↓
+            f"({'対象の要件と新しい要件の起点' if prediction.origins else '対象の要件'}からの"
+            "つながりをたどったもの)。"
         )
         for place in sorted({i.stage for i in prediction.items}):
             lines += [
@@ -288,8 +303,11 @@ def _section_impact(prediction: Prediction, excluded: Sequence[tuple[str, str]])
             ]
             for item in (i for i in prediction.items if i.stage == place):
                 lines.append(
-                    f"| {_cell(item.label)} | {_cell(item.reason)} | "
-                    f"{'・'.join(item.requirement_ids)} |"
+                    # Phase-96-2：更新
+                    # f"| {_cell(item.label)} | {_cell(item.reason)} | "
+                    # f"{'・'.join(item.requirement_ids)} |"
+                    # ↓↓
+                    f"| {_cell(item.label)} | {_cell(item.reason)} | {_reached_by(item)} |"
                 )
     else:
         lines.append("見直しが要る要素は予測されませんでした。")
@@ -307,6 +325,15 @@ def _section_impact(prediction: Prediction, excluded: Sequence[tuple[str, str]])
     if notes:
         lines += ["", *notes]
     return "\n".join(lines)
+
+
+# Phase-96-2:追記
+def _reached_by(item: PredictedItem) -> str:
+    """影響の表の「届いた対象」(対象の要件と、新しい要件の起点)。"""
+    names = list(item.requirement_ids)
+    if item.origin_keys:
+        names.append(f"新しい要件(起点 {'・'.join(origin_name(k) for k in item.origin_keys)})")
+    return _cell("・".join(names))
 
 
 def _section_open_points(

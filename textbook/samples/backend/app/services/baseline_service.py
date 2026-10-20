@@ -1,4 +1,4 @@
-# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整),91-3,91-4
+# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整),91-3,91-4,96-3
 # Phase-91-3：更新(docstring: BaselineService が束の要素を合意の記録にも残すことを足した)
 # Phase-86-4：更新(docstring: BaselineService・create に束に CR を結ぶことを足した)
 # Phase-86-4:追記 ── app.change_requests.INCLUDABLE_STATUSES, app.models.change_request.ChangeRequest, app.repositories.change_request.ChangeRequestRepository, app.services.errors.ChangeRequestNotFoundError, app.services.errors.ChangeRequestNotIncludableError
@@ -6,6 +6,7 @@
 # Phase-91-3:追記 ── app.services.agreement_service.AgreementService
 # Phase-91-4:追記 ── app.services.detailed_mode.require_detailed
 # Phase-91-4：削除 ── app.services.errors.DesignStagesNotAvailableError
+# Phase-96-3:追記 ── app.change_requests.PredictedOrigin, app.change_requests.origin_candidates_from_snapshots
 import uuid
 from collections.abc import Mapping
 from typing import Any
@@ -13,7 +14,11 @@ from typing import Any
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.change_requests import INCLUDABLE_STATUSES
+from app.change_requests import (
+    INCLUDABLE_STATUSES,
+    PredictedOrigin,
+    origin_candidates_from_snapshots,
+)
 from app.change_requests.explanation import REQUIREMENTS_KEY
 from app.detailed_design import StageView, stage_key
 from app.models.baseline import Baseline
@@ -174,6 +179,18 @@ class BaselineService:
         """番号の束の要件定義書の写しにある要件の行(CR の対象を選ぶ画面用)。無ければ
         BaselineNotFoundError。"""
         return baseline_requirement_rows(await self.get(project, number))
+
+    # Phase-96-3:追記
+    async def origins(self, project: Project, number: int) -> list[PredictedOrigin]:
+        """番号の束で、新しい要件の予測の起点に選べる要素(要件・画面・API。CR の起点を選ぶ
+        画面用)。無ければ BaselineNotFoundError。"""
+        baseline = await self.get(project, number)
+        return origin_candidates_from_snapshots(baseline_snapshots(baseline))
+
+
+def baseline_snapshots(baseline: Baseline) -> dict[str, Any]:
+    """束の写しのうち入っているもの(key → model)。予測と起点の候補の入力。"""
+    return {item.key: item.model for item in baseline.items if item.included}
 
 
 # Phase-91-4：削除 ── Phase-88(完了後の調整) で足した require_detailed を、末端のモジュール

@@ -1878,3 +1878,19 @@
    - (4) 値の変わった項目の名前を `refs.fields` に残し、下書きのままでも「直した」の行を足す。値の変わらない保存は残さない。
 
    記録の分け方(最初の合意・中身が変わった・同じ中身で合意し直した・外れた。`body_of` で比べる)、関わる CR を状態によらず出すこと、合意の対象でないキーを 422 にすること、予測の文書の側のキーを `predicted_document_keys` に出して `rewritable_keys` と共有したこと(#17)は、Claude の判断として計画に書いた。詳細は [Phase 95 の introduction](./Phase-95/Phase-95-introduction.md)。
+
+### Phase 96 開始時
+
+1. Phase 96(ステージ12。段階の承認の印と、新しい要件の予測の起点)。2026-10-20。
+2. 質問・相談内容: 「Phase96を開始する」。Claude は計画モードで調べた。調べたのは、段階の承認(`DesignStageService.approve`・`_record_stage_change`・`_record_impact` の `extra_sources`)・段階の作り直しの CR(`generation_change_request_id`・時系列の段階の反映の行)・検証の条件(`verification.py`)・CR の対象と予測(`targets.py`・`prediction.py`・`adds_requirement`)・説明書と反映の指示・サービス間の import の向き(`ChangeRequestService` → `BaselineService` → `DesignStageService`)である。そのうえで、[90-4](./Phase-90/Phase-90-4.md) の Phase 96 の未確定事項から1回で4つ聞いた。
+   - (1) 自動実装モード
+   - (2) 承認の印を結んだ後の検証の条件(結んだ印を検証の対象にし、作り直した段階が未承認の間も止める / 結んだ印を検証の対象にするだけ)
+   - (3) 起点の持ち方(CR の別の項目 `origins` / 対象に種類「起点」を足す)
+   - (4) 説明書と反映の指示での見せ方(既存の節に足す / 3節に小節を分ける)
+3. 回答と対応方針: すべて推奨どおり。
+   - (1) on
+   - (2) 承認で付いた印を CR の印の写しに重ねて検証の対象にし、CR で作り直した段階が未承認の間も検証済みにしない(検証が承認より先に済んで印が結ばれない穴をふさぐ)。
+   - (3) `change_requests.origins`(`[{key, label}]`。マイグレーション `ee299cd210b8`)。新しい要件を足す CR だけが持て、基準の束の要件・画面・API だけ。起点の画面・API そのものも予測に入れ(反映で書き換えてよい要素になる)、起点の要件は入れない。候補の API `GET .../baselines/{number}/origins` も作る。
+   - (4) 2節の新しい要件の行の下に起点、3節の「届いた対象」に「新しい要件(起点 X)」、反映の指示の新しい要件の行の下に起点の1行。
+
+   結ぶのを作り直した後の最初の承認だけにし、それを CR の時系列の版と段階の承認した版で判定すること(列を足さない)、記録だけの行 `approve_stage`、循環を避けて `DesignStageService` から `ChangeRequestRepository` で書くこと、`merge_applied_marks` を `app/change_requests/comparison.py` へ移して共有したこと(#17)、起点の表示名も保存すること、`baseline_snapshots` にまとめたことは、Claude の判断として計画に書いた。詳細は [Phase 96 の introduction](./Phase-96/Phase-96-introduction.md)。

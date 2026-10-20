@@ -219,7 +219,7 @@
   * Phase 93: 外部設計書の保護と、CR の反映での合意の更新(画面・API・外部連携を戻す・予測の画面と API だけ書き換えを許す・反映済みの時点で合意を CR を出どころに更新) ── **完了**([`textbook/Phase-93/Phase-93-introduction.md`](../textbook/Phase-93/Phase-93-introduction.md))
   * Phase 94: 確認事項の一覧 API(決める機会・状態・推測の採用率。確認済みで採用と合意の記録) ── **完了**([`textbook/Phase-94/Phase-94-introduction.md`](../textbook/Phase-94/Phase-94-introduction.md))
   * Phase 95: 行の履歴 API と、CR の下書きの直しの時系列(要素ごとの履歴。戻した版は残っている版の分だけ。下書きの直しは直した項目の名前) ── **完了**([`textbook/Phase-95/Phase-95-introduction.md`](../textbook/Phase-95/Phase-95-introduction.md))
-  * Phase 96: 段階の承認の印を CR に結ぶ・新しい要件の予測の起点
+  * Phase 96: 段階の承認の印を CR に結ぶ・新しい要件の予測の起点(作り直した後の最初の承認の印を CR に結び、未承認の間は検証を止める。起点は CR の別の項目で、起点の画面・API も予測に入る) ── **完了**([`textbook/Phase-96/Phase-96-introduction.md`](../textbook/Phase-96/Phase-96-introduction.md))
   * Phase 97: 行の合意と履歴の画面
   * Phase 98: 確認事項の一覧の画面と、CR の画面の手直し
   * Phase 99: 効果測定・統合/E2E(影響が広がる CR を実 LLM で反映し、CR を渡さない再生成を挟む・全 E2E・マイグレーションの往復・開発環境での画面確認・`OPERATIONS.md` 10.8節のステージ12 の分)

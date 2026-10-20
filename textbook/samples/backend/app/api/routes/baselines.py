@@ -1,6 +1,7 @@
-# 作成：Phase-81-3｜更新：Phase-86-4,87-1
+# 作成：Phase-81-3｜更新：Phase-86-4,87-1,96-3
 # Phase-86-4：更新(docstring: create_baseline に CR を結ぶことと 404/409 を足した)
 # Phase-87-1:追記 ── app.schemas.baseline.BaselineRequirementRead
+# Phase-96-3:追記 ── app.schemas.baseline.BaselineOriginRead
 from typing import Annotated
 
 from fastapi import APIRouter, Path, status
@@ -8,6 +9,7 @@ from fastapi import APIRouter, Path, status
 from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
 from app.schemas.baseline import (
     BaselineCreate,
+    BaselineOriginRead,
     BaselineRead,
     BaselineRequirementRead,
     BaselineSummaryRead,
@@ -62,3 +64,14 @@ async def list_baseline_requirements(
     軽い)。無ければ404。"""
     rows = await BaselineService(session).requirements(current_project, number)
     return [BaselineRequirementRead.model_validate(row) for row in rows]
+
+
+# Phase-96-3:追記
+@router.get("/{number}/origins", response_model=list[BaselineOriginRead])
+async def list_baseline_origins(
+    number: BaselineNumber, session: SessionDep, current_project: CurrentProjectDep
+) -> list[BaselineOriginRead]:
+    """合意済みの版1つで、新しい要件の予測の起点に選べる要素(要件・画面・API。CR の起点を選ぶ
+    画面用)。無ければ404。"""
+    origins = await BaselineService(session).origins(current_project, number)
+    return [BaselineOriginRead(key=o.key, kind=o.kind, label=o.label) for o in origins]

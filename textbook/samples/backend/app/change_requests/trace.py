@@ -1,12 +1,14 @@
-# 作成：Phase-86-4｜更新：Phase-89(完了後の調整),95-3
+# 作成：Phase-86-4｜更新：Phase-89(完了後の調整),95-3,96-1,96-3
+# Phase-96-1：更新(docstring: 読み解く行に「段階の承認で印を結ぶ」を足した)
 # Phase-95-3：更新(docstring: 読み解く行に「直した」を足した)
 # Phase-89(完了後の調整)：更新(docstring: 合意・却下の行のメモに合意の記録を出す。CR で反映した版は消さない)
 """変更要求(CR)の、受付から検証までをたどる記録(純粋関数。docs/external_design.md 2.14節)。
 
-CR の時系列の行(状態の遷移・直した・反映・レビューを結ぶ・検証・束に入れる)の`refs`を、指す先の今の
-状態で読み解く。文書の版は直近の数版しか残さないので、作った版が今も残っているかを示す(CR で反映した
-版は消さないが、それより前の記録もあるため)。レビューは CR に結んだ回の要点(区切り・モデル・状態・
-指摘と採用の数)を付ける。合意・却下の行のメモには、CR に残した合意の記録(相手・メモ・理由)を出す。
+CR の時系列の行(状態の遷移・直した・反映・段階の承認で印を結ぶ・レビューを結ぶ・検証・
+束に入れる)の`refs`を、指す先の今の状態で読み解く。文書の版は直近の数版しか残さないので、
+作った版が今も残っているかを示す(CR で反映した版は消さないが、それより前の記録もあるため)。
+レビューは CR に結んだ回の要点(区切り・モデル・状態・指摘と採用の数)を付ける。合意・却下の行の
+メモには、CR に残した合意の記録(相手・メモ・理由)を出す。
 """
 
 from collections.abc import Collection, Mapping, Sequence
@@ -30,6 +32,8 @@ ACTION_LABEL: dict[str, str] = {
     "link_review": "レビューを結んだ",
     "baseline": "合意済みの版に入れた",
 # Phase-95-3:追記
+    # Phase-96-1:追記
+    "approve_stage": "段階の承認で印を結んだ",
 }
 
 
@@ -42,6 +46,8 @@ EDITED_FIELD_LABEL: dict[str, str] = {
     "background_memo": "背景のメモ",
     "targets": "対象",
     "adds_requirement": "新しい要件を足す",
+    # Phase-96-3:追記
+    "origins": "予測の起点",
 }
 
 
@@ -69,6 +75,9 @@ class DecisionFacts:
 
 
 DECISION_ACTIONS: frozenset[str] = frozenset({"agree", "reject"})
+# Phase-96-1:追記
+# 段階と版(`refs.stage`・`refs.version`)を持つ行(段階の反映・CR で作り直した段階の承認)
+STAGE_ACTIONS: frozenset[str] = frozenset({"apply", "approve_stage"})
 
 
 @dataclass(frozen=True)
@@ -178,7 +187,10 @@ def _entry(
         note=note,
         model=model if isinstance(model, str) else None,
         documents=tuple(_documents(refs.get("documents"), available_versions)),
-        stage=_stage(refs) if event.action == "apply" else None,
+        # Phase-96-1：更新
+        # stage=_stage(refs) if event.action == "apply" else None,
+        # ↓↓
+        stage=_stage(refs) if event.action in STAGE_ACTIONS else None,
         reviews=tuple(
             reviews[str(run_id)] for run_id in run_ids or [] if str(run_id) in reviews
         ),

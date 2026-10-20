@@ -1,4 +1,4 @@
-# 作成：Phase-85-4｜更新：Phase-86-1
+# 作成：Phase-85-4｜更新：Phase-86-1,96-1
 # Phase-86-1：更新(docstring: 確認の状態を今の状態と文書の側の確認から出すようにした)
 """変更要求(CR)の影響の予測と、反映で実際に付いた印の比較(純粋関数)。
 
@@ -18,12 +18,13 @@ docs/external_design.md 2.14節「反映」。判断の時点で保存した予�
 確認済みのキー(`document_checks`)から出す。
 """
 
+# Phase-96-1:追記 ── dataclasses.asdict, app.detailed_design.impact.Mark
 from collections.abc import Collection, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any, Literal, get_args
 
 from app.change_requests.prediction import Prediction
-from app.detailed_design.impact import DOCUMENT_STAGE
+from app.detailed_design.impact import DOCUMENT_STAGE, Mark
 
 ComparisonStatus = Literal["matched", "predicted_only", "actual_only"]
 PredictedOnlyReason = Literal["document_side", "unmarked_stage", "not_changed"]
@@ -96,6 +97,18 @@ def applied_marks_from_json(value: Sequence[Mapping[str, Any]] | None) -> list[A
         except (KeyError, TypeError, ValueError):
             continue
     return marks
+
+
+# Phase-96-1:追記
+def merge_applied_marks(
+    existing: Sequence[Mapping[str, Any]] | None, marks: Sequence[Mark]
+) -> list[dict[str, Any]]:
+    """反映で付いた印の写しに、新しい印を重ねる(同じ要素は新しい印にする。置き場とキーの順)。
+    文書の反映と、CR で作り直した段階の承認(stage_approvals.py)の両方が使う。"""
+    by_key = {str(item["key"]): dict(item) for item in existing or []}
+    for mark in marks:
+        by_key[mark.key] = asdict(mark)
+    return sorted(by_key.values(), key=lambda m: (int(m["stage"]), str(m["key"])))
 
 
 def compare(

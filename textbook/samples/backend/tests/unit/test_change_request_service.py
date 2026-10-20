@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,88(完了後の調整),95-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,88(完了後の調整),95-3,96-3
 # Phase-84-4：更新(docstring: SUT に explanation(84-3)・要約の3つの操作と ExplanationView(84-4)・facts_of(84-3)を、スタブに要約のフェイクの LLM(84-4)を足した)
 # Phase-83-3：更新(docstring: SUT に impact・predict_for と、保存した予測を読み直さないことのスタブを足した)
 # Phase-83-3:追記 ── app.services.change_request_service.predict_for
@@ -499,12 +499,16 @@ def test_facts_of_reads_the_row() -> None:
         background_memo="",
         targets=[{"requirement_id": "FR-001", "kind": "delete"}],
         adds_requirement=True,
+        # Phase-96-3:追記
+        origins=[{"key": "screen:SCR-001", "label": "SCR-001 予約画面"}],
     )
 
     facts = facts_of(row, 2)  # type: ignore[arg-type]
 
     assert (facts.number, facts.baseline_number, facts.adds_requirement) == (3, 2, True)
     assert facts.targets == (Target("FR-001", "delete"),)
+    # Phase-96-3:追記
+    assert facts.origin_labels == ("SCR-001 予約画面",)
 
 
 async def test_withdrawn_impact_is_not_saved(db_session: AsyncSession) -> None:

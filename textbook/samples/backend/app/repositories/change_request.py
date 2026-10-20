@@ -1,4 +1,4 @@
-# 作成：Phase-82-1｜更新：Phase-83-1,85-2,86-3,86-4,88-1
+# 作成：Phase-82-1｜更新：Phase-83-1,85-2,86-3,86-4,88-1,96-3
 # Phase-86-4：更新(docstring: 入れた束を CR と一緒に読む)
 # Phase-86-3：更新(docstring: 結んだレビューの永続化と、CR と一緒に読むことを足した)
 # Phase-85-2：更新(docstring: add_event の refs を足した)
@@ -64,6 +64,8 @@ class ChangeRequestRepository(CRUDRepository[ChangeRequest]):
         # ↓↓
         targets: list[dict] | None = None,
         adds_requirement: bool = False,
+        # Phase-96-3:追記
+        origins: list[dict] | None = None,
         derived_from_id: uuid.UUID | None = None,
         created_by: uuid.UUID | None = None,
         note: str = "",
@@ -85,6 +87,8 @@ class ChangeRequestRepository(CRUDRepository[ChangeRequest]):
             # ↓↓
             targets=list(targets or []),
             adds_requirement=adds_requirement,
+            # Phase-96-3:追記
+            origins=origins,
             status=status,
             derived_from_id=derived_from_id,
             created_by=created_by,

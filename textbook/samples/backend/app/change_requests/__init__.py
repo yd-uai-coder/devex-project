@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2
+# Phase-96-1：更新(docstring: CR で作り直した段階の承認を足した)
 # Phase-86-4：更新(docstring: 検証の条件(86-1)・レビューを結ぶ条件(86-3)・たどる記録(86-4)を足した)
 # Phase-85-4：更新(docstring: 反映の指示(85-1)・予測と実際の比較(85-4)を足した)
 # Phase-84-4：更新(docstring: 変更後の案(84-1)・説明書の組み立てと照合(84-2)・要約の入力と状態(84-4)を足した)
@@ -7,7 +8,7 @@
 # ↓↓
 """変更要求(CR)の状態・遷移・重なりの判定と、対象(要件 ID・変更の種類・変更後の案)の扱い・
 影響の予測・説明書の組み立てと、任意の要約の入力・照合・状態・反映の指示・予測と実際の比較・
-検証の条件・レビューを結ぶ条件・たどる記録(純粋関数)。
+検証の条件・CR で作り直した段階の承認・レビューを結ぶ条件・たどる記録(純粋関数)。
 
 docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 """
@@ -27,6 +28,8 @@ docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 # Phase-93-3:追記 ── app.change_requests.prediction.rewritable_keys
 # Phase-95-1:追記 ── app.change_requests.prediction.predicted_document_keys
 # Phase-95-3:追記 ── app.change_requests.trace.EDITED_FIELD_LABEL
+# Phase-96-1:追記 ── app.change_requests.comparison.merge_applied_marks, app.change_requests.stage_approvals.APPROVE_STAGE_ACTION, app.change_requests.stage_approvals.StageFacts, app.change_requests.stage_approvals.pending_stages, app.change_requests.stage_approvals.stage_apply_versions
+# Phase-96-2:追記 ── app.change_requests.prediction.ORIGIN_KINDS, app.change_requests.prediction.ORIGIN_REASON, app.change_requests.prediction.PredictedOrigin, app.change_requests.prediction.origin_candidates, app.change_requests.prediction.origin_candidates_from_snapshots, app.change_requests.prediction.origin_name
 from app.change_requests.comparison import (
     COMPARISON_STATUS_LABEL,
     COMPARISON_STATUSES,
@@ -38,6 +41,7 @@ from app.change_requests.comparison import (
     PredictedOnlyReason,
     applied_marks_from_json,
     compare,
+    merge_applied_marks,
 )
 from app.change_requests.explanation import (
     AffectedUnits,
@@ -52,10 +56,16 @@ from app.change_requests.explanation import (
 )
 from app.change_requests.instruction import build_cr_instruction, join_instructions
 from app.change_requests.prediction import (
+    ORIGIN_KINDS,
+    ORIGIN_REASON,
     PredictedItem,
+    PredictedOrigin,
     PredictedTarget,
     Prediction,
     baseline_models,
+    origin_candidates,
+    origin_candidates_from_snapshots,
+    origin_name,
     predict,
     predict_from_snapshots,
     predicted_document_keys,
@@ -67,6 +77,12 @@ from app.change_requests.reviews import (
     aware,
     first_applied_at,
     review_link_problem,
+)
+from app.change_requests.stage_approvals import (
+    APPROVE_STAGE_ACTION,
+    StageFacts,
+    pending_stages,
+    stage_apply_versions,
 )
 from app.change_requests.states import (
     ACTIVE_STATUSES,
@@ -241,4 +257,17 @@ __all__ = [
     # Phase-93-3:追記
     "rewritable_keys",
     "trace_entries",
+    # Phase-96-1:追記
+    "APPROVE_STAGE_ACTION",
+    "StageFacts",
+    "merge_applied_marks",
+    "pending_stages",
+    "stage_apply_versions",
+    # Phase-96-2:追記
+    "ORIGIN_KINDS",
+    "ORIGIN_REASON",
+    "PredictedOrigin",
+    "origin_candidates",
+    "origin_candidates_from_snapshots",
+    "origin_name",
 ]
