@@ -203,8 +203,10 @@
   * Phase 86: 再検証とたどれる記録(印の今の確認の状態と文書の側の確認の項目で検証済み・任意のレビューを結ぶ・たどる記録の API・検証済みの CR を新しい合意済みの版に結ぶ) ── **完了**([`textbook/Phase-86/Phase-86-introduction.md`](../textbook/Phase-86/Phase-86-introduction.md))
   * Phase 87: CR の画面(一覧・作成・詳細の4つのタブ(内容・影響・検証・たどる記録)、文書への反映のボタン、詳細設計画面の「変更の影響」から段階の生成に CR を渡す欄、`?stage=N`) ── **完了**([`textbook/Phase-87/Phase-87-introduction.md`](../textbook/Phase-87/Phase-87-introduction.md))
   * Phase 88: 合意済みの版と説明書の画面・小さな修正(束の一覧・作成・中身のページ、CR の詳細の説明書のタブ(要約の確認・プレビュー)、`postgres-init`・モデルのカタログ・束の一覧の読み込み・版の履歴の CR) ── **完了**([`textbook/Phase-88/Phase-88-introduction.md`](../textbook/Phase-88/Phase-88-introduction.md))
-  * Phase 89: 効果測定・統合/E2E・本番への反映
+  * Phase 89: 効果測定・統合/E2E(CR の流れの E2E と既存を含めた全 E2E・マイグレーションの往復・`OPERATIONS.md` の手順の下書き・開発環境での画面確認と実 LLM での一巡)。本番への反映はステージ15 の完了時へ移した(下の注)
 * **マイルストーン12**: 決まったシナリオ(N2。Devex 自身を題材にした詳細設計モードの生成物)で、1件の CR が受付から再検証まで通り、「何を・なぜ・誰の合意で・どこに反映したか」を後からたどれる。
+
+**(Phase 89 の着手時に変更)** ステージ11〜15 の本番への反映は、ステージ15 の完了時にまとめて行う(2026-10-20 のユーザー決定。[`textbook/q_a.md`](../textbook/q_a.md)「Phase 89 開始時」の CR)。手順は [`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.8節に、各ステージが自分の分を足していく。各ステージの最後の Phase は、効果測定・E2E・開発環境での画面確認までを行う。
 
 ---
 
