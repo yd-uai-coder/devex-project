@@ -1,7 +1,11 @@
-# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整)
+# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整),91-3,91-4
+# Phase-91-3：更新(docstring: BaselineService が束の要素を合意の記録にも残すことを足した)
 # Phase-86-4：更新(docstring: BaselineService・create に束に CR を結ぶことを足した)
 # Phase-86-4:追記 ── app.change_requests.INCLUDABLE_STATUSES, app.models.change_request.ChangeRequest, app.repositories.change_request.ChangeRequestRepository, app.services.errors.ChangeRequestNotFoundError, app.services.errors.ChangeRequestNotIncludableError
 # Phase-87-1:追記 ── typing.Any, app.change_requests.explanation.REQUIREMENTS_KEY
+# Phase-91-3:追記 ── app.services.agreement_service.AgreementService
+# Phase-91-4:追記 ── app.services.detailed_mode.require_detailed
+# Phase-91-4：削除 ── app.services.errors.DesignStagesNotAvailableError
 import uuid
 from collections.abc import Mapping
 from typing import Any
@@ -25,14 +29,15 @@ from app.repositories.generated_document import (
     GeneratedDocumentRepository,
 )
 from app.schemas.baseline import BaselineCreate
+from app.services.agreement_service import AgreementService
 from app.services.design_stage_service import DesignStageService
+from app.services.detailed_mode import require_detailed
 from app.services.errors import (
     BaselineDocumentsMissingError,
     BaselineNotFoundError,
     ChangeRequestNotFoundError,
     ChangeRequestNotIncludableError,
     DesignStageGenerationInProgressError,
-    DesignStagesNotAvailableError,
     DocGenerationInProgressError,
 )
 
@@ -48,7 +53,8 @@ class BaselineService:
     """合意済みの版(束)の作成・一覧・取得(docs/external_design.md 2.14節)。
 
     束は、作った時点の文書(要件定義書・外部設計書・テスト仕様書の表示中の版)と、段階1〜8 の
-    承認の写しを写して凍結する。承認の写しが無い段階・無い文書も「入っていない」として行を作り、
+    承認の写しを写して凍結する。要件定義書・外部設計書の要素は、要素ごとの合意の記録にも残す
+    (AgreementService)。承認の写しが無い段階・無い文書も「入っていない」として行を作り、
     そのときの状態を残す。作った後は直さず消さない。検証済みの CR を渡すと、束と CR を結ぶ
     (CR のサービスはこのサービスを使うので、循環を避けて CR はリポジトリで読む)。
     詳細設計モードだけ。"""
@@ -102,6 +108,12 @@ class BaselineService:
             reason=payload.reason,
             recorded_by=recorded_by,
             items=[*document_snapshots(documents), *stage_snapshots(rows, views)],
+        # Phase-91-3:追記
+        )
+        await AgreementService(self._session).record_baseline(
+            baseline,
+            {doc_type: doc.model if doc else None for doc_type, doc in documents.items()},
+            recorded_by=recorded_by,
         )
         # Phase-86-4:追記
         for change_request in change_requests:
@@ -164,17 +176,18 @@ class BaselineService:
         return baseline_requirement_rows(await self.get(project, number))
 
 
-# Phase-88(完了後の調整):追記
-def require_detailed(project: Project, what: str) -> None:
-    """合意済みの版と変更要求は詳細設計モードだけ(作成も読み出しも)。簡易モードなら
-    DesignStagesNotAvailableError(409)。画面は、この 409 を受けて「詳細設計モードだけ」と
-    知らせる。"""
-    if project.mode != "detailed":
-        raise DesignStagesNotAvailableError(
-            f"{what} are not available for project {project.id} (mode={project.mode})"
-        )
-
-
+# Phase-91-4：削除 ── Phase-88(完了後の調整) で足した require_detailed を、末端のモジュール
+# app/services/detailed_mode.py へ移した(合意のサービスも使い、束のサービスとの循環を避けるため)
+# def require_detailed(project: Project, what: str) -> None:
+#     """合意済みの版と変更要求は詳細設計モードだけ(作成も読み出しも)。簡易モードなら
+#     DesignStagesNotAvailableError(409)。画面は、この 409 を受けて「詳細設計モードだけ」と
+#     知らせる。"""
+#     if project.mode != "detailed":
+#         raise DesignStagesNotAvailableError(
+#             f"{what} are not available for project {project.id} (mode={project.mode})"
+#         )
+#
+#
 def baseline_requirement_rows(baseline: Baseline) -> list[dict[str, Any]]:
     """束の要件定義書の写しにある要件の行(行の順。ID の無い行は除く)。写しが無い・model が
     無ければ空。"""

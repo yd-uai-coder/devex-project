@@ -1,4 +1,5 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3
+# Phase-91-3：更新(docstring: adopt_requirement が詳細設計モードで合意を記録することを足した)
 # Phase-85-2：更新(docstring: generate_documents・request_generation・generate が cr_number を受けることを足した)
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
 # Phase-2-5:追記 ── app.services.errors.LLMQuotaExceededError, app.services.llm_retry.invoke_with_retry
@@ -34,6 +35,7 @@
 # Phase-81-1:追記 ── app.services.llm_resolver.injected_llm
 # Phase-85-2:追記 ── app.change_requests.join_instructions, app.detailed_design.impact.Mark, app.detailed_design.impact.cr_source, app.services.change_request_service.ChangeRequestService, app.services.errors.ChangeRequestNotReflectableError
 # Phase-88-1:追記 ── app.repositories.change_request.ChangeRequestRepository
+# Phase-91-3:追記 ── app.services.agreement_service.AgreementService
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -152,6 +154,7 @@ from app.schemas.document import (
     RequirementsSummaryRead,
     TestSpecRead,
 )
+from app.services.agreement_service import AgreementService
 from app.services.change_request_service import ChangeRequestService
 from app.services.design_stage_service import DesignStageService
 from app.services.errors import (
@@ -1168,11 +1171,17 @@ class DocGeneratorService:
         return restored
 
     # Phase-36-2:追記
-    async def adopt_requirement(self, project: Project, req_id: str) -> GeneratedDocument:
+    # Phase-91-3：更新
+    # async def adopt_requirement(self, project: Project, req_id: str) -> GeneratedDocument:
+    # ↓↓
+    async def adopt_requirement(
+        self, project: Project, req_id: str, *, recorded_by: uuid.UUID | None = None
+    ) -> GeneratedDocument:
         """現在の版の要件定義書の推測の要件を、利用者が確かめた「採用」にする(LLMは呼ばない)。
 
         同じ版の model と md を書き換え、版は増やさない(中身は変わらないので、後続の段階を
-        古くしない)。生成中は409。要件が無い・model の無い版は404、推測でない要件は409。"""
+        古くしない)。詳細設計モードでは、採用した行を合意として記録する(記録した人 =
+        `recorded_by`)。生成中は409。要件が無い・model の無い版は404、推測でない要件は409。"""
         if project.status == "generating":
             raise DocGenerationInProgressError(
                 "設計書を生成しています。完了してから再度お試しください。"
@@ -1193,6 +1202,9 @@ class DocGeneratorService:
             content=render_requirements(adopted),
             model=adopted.model_dump(mode="json"),
         )
+        # Phase-91-3:追記
+        row = next(row for row in adopted.rows if row.id == req_id)
+        await AgreementService(self._session).record_adopt(project, row, recorded_by=recorded_by)
         await self._session.commit()
         await self._session.refresh(document)
         return document

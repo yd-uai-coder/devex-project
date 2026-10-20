@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整)
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4
 # Phase-86-2：更新(docstring: ChangeRequestService に検証の確かめを足した)
 # Phase-84-3：更新(docstring: ChangeRequestService に説明書の組み立てを足した)
 # Phase-83-3：更新(docstring: ChangeRequestService に影響の予測と保存を足した)
@@ -15,6 +15,8 @@
 # Phase-87-1:追記 ── app.services.baseline_service.baseline_requirement_rows
 # Phase-88(完了後の調整):追記 ── app.services.baseline_service.require_detailed(app.services.errors.DesignStagesNotAvailableError は使わなくなったので外した)
 # Phase-89(完了後の調整):追記 ── app.change_requests.DecisionFacts
+# Phase-91-4:追記 ── app.services.detailed_mode.require_detailed
+# Phase-91-4：削除 ── app.services.baseline_service.require_detailed
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -93,11 +95,8 @@ from app.schemas.change_request import (
     DocumentChecksUpdate,
     change_request_label,
 )
-from app.services.baseline_service import (
-    BaselineService,
-    baseline_requirement_rows,
-    require_detailed,
-)
+from app.services.baseline_service import BaselineService, baseline_requirement_rows
+from app.services.detailed_mode import require_detailed
 from app.services.errors import (
     ChangeRequestBaselineMissingError,
     ChangeRequestInvalidTransitionError,

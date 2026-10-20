@@ -208,6 +208,23 @@
 
 **(Phase 89 の着手時に変更)** ステージ11〜15 の本番への反映は、ステージ15 の完了時にまとめて行う(2026-10-20 のユーザー決定。[`textbook/q_a.md`](../textbook/q_a.md)「Phase 89 開始時」の CR)。手順は [`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.8節に、各ステージが自分の分を足していく。各ステージの最後の Phase は、効果測定・E2E・開発環境での画面確認までを行う。
 
+### ステージ12：合意の精度 ── 【Could have】
+
+* **目的**: 合意した中身(要件の行・利用者・画面・API・外部連携)が、CR の範囲の外の再生成で変わらないようにし、推測と未決を確認事項として漏れなく出す。構想は[`appendix/devex_project_positioning.md`](../appendix/devex_project_positioning.md) 12章、出発点は[`appendix/measurements/stage12-baseline.md`](../appendix/measurements/stage12-baseline.md)。
+* **方針(Phase 90で確定)**: 行ごとの合意の記録(追記型。束・採用にする・CR が出どころ)を持ち、再生成の後に合意済みの行をコードで戻す。合意済みの行には出どころの上限をかけ直さない。確認事項の一覧は推測の要件・推測の利用者・未決の観点を決定的に集め、決める機会と状態を持つ。版の巡回で束が指す版も消さない。CR で作り直した段階の承認の印を CR に結び、新しい要件の CR は人が選んだ起点から予測する([外部設計書](external_design.md) 2.15節、[内部設計書](internal_design.md) 3.3節「12. 合意の精度」)。
+* **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-90/Phase-90-4.md`](../textbook/Phase-90/Phase-90-4.md)参照):
+  * Phase 90: 要件確認フェーズ(仕様診断・ステージ12 の入力7件の判断・実 LLM を少し使ったベースライン・docs反映・ステージ12の実装計画) ── **完了**([`textbook/Phase-90/Phase-90-introduction.md`](../textbook/Phase-90/Phase-90-introduction.md))
+  * Phase 91: 行の合意の記録 API(束・採用にするで記録、今の合意の一覧、束が指す版を巡回から外す、既存の束からの移行) ── **完了**([`textbook/Phase-91/Phase-91-introduction.md`](../textbook/Phase-91/Phase-91-introduction.md))
+  * Phase 92: 要件定義書の保護(出どころの上限をかけ直さない・合意済みの行と利用者を戻す・戻した件数)
+  * Phase 93: 外部設計書の保護と、CR の反映での合意の更新
+  * Phase 94: 確認事項の一覧 API(決める機会・状態・推測の採用率)
+  * Phase 95: 行の履歴 API と、CR の下書きの直しの時系列
+  * Phase 96: 段階の承認の印を CR に結ぶ・新しい要件の予測の起点
+  * Phase 97: 行の合意と履歴の画面
+  * Phase 98: 確認事項の一覧の画面と、CR の画面の手直し
+  * Phase 99: 効果測定・統合/E2E(影響が広がる CR を実 LLM で反映し、CR を渡さない再生成を挟む・全 E2E・マイグレーションの往復・開発環境での画面確認・`OPERATIONS.md` 10.8節のステージ12 の分)
+* **マイルストーン13**: 合意済みの行(要件・利用者・画面・API・外部連携)が、CR の範囲の外の再生成で変わらない。推測の要件・推測の利用者・根拠が未決の観点が、すべて確認事項に出る。
+
 ---
 
 ## 4.2 タスク分解（WBS案）

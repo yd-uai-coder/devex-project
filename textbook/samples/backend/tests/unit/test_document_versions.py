@@ -1,4 +1,4 @@
-# 作成：Phase-6-1｜更新：Phase-6-6,36-2,88-1
+# 作成：Phase-6-1｜更新：Phase-6-6,36-2,88-1,91-3
 # Phase-6-6:追記 ── app.api.routes.projects.list_generated_documents
 # Phase-36-2:追記 ── app.api.routes.projects.adopt_requirement, app.documents.requirements(RequirementRow, RequirementsModel, render_requirements), app.services.errors.RequirementNotFoundError
 # Phase-88-1:追記 ── tests.fixtures.change_requests.applied_change_request_project
@@ -128,7 +128,12 @@ async def test_requirements_summary_and_adopt_route(db_session: AsyncSession) ->
     await repo.create_version(project_id=project.id, doc_type="external_design", content="e")
 
     listed = {d.doc_type: d for d in await list_generated_documents(db_session, project)}
-    adopted = await adopt_requirement("FR-001", db_session, project)
+    # Phase-91-3：更新
+    # adopted = await adopt_requirement("FR-001", db_session, project)
+    # ↓↓
+    user = await db_session.get(User, project.user_id)
+    assert user is not None
+    adopted = await adopt_requirement("FR-001", db_session, project, user)
 
     summary = listed["requirements"].requirements
     assert summary is not None
@@ -140,7 +145,10 @@ async def test_requirements_summary_and_adopt_route(db_session: AsyncSession) ->
     assert adopted.requirements is not None
     assert adopted.requirements.counts == {"user": 0, "adopted": 1, "assumed": 0}
     with pytest.raises(RequirementNotFoundError):
-        await adopt_requirement("FR-002", db_session, project)
+        # Phase-91-3：更新
+        # await adopt_requirement("FR-002", db_session, project)
+        # ↓↓
+        await adopt_requirement("FR-002", db_session, project, user)
 
 
 # Phase-88-1:追記

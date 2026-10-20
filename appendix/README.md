@@ -18,7 +18,8 @@
 | 6 ヒアリング改良 + 上流の構造化 | [stage6-baseline](./measurements/stage6-baseline.md) | [stage6-effect](./measurements/stage6-effect.md) |
 | 7 変更影響分析 | [stage7-baseline](./measurements/stage7-baseline.md) | [stage7-effect](./measurements/stage7-effect.md)(ヒアリングの数え方は [stage7-hearing](./measurements/stage7-hearing.md)) |
 | 8 AI 設計レビュー + テスト設計 | [stage8-baseline](./measurements/stage8-baseline.md) | [stage8-effect](./measurements/stage8-effect.md) |
-| 11 合意と変更の一巡 | [stage11-baseline](./measurements/stage11-baseline.md)(スクリプトは `measurements/stage11/measure.py`。材料は git から読み出す) | (Phase 89) |
+| 11 合意と変更の一巡 | [stage11-baseline](./measurements/stage11-baseline.md)(スクリプトは `measurements/stage11/measure.py`。材料は git から読み出す) | [stage11-effect](./measurements/stage11-effect.md)(スクリプトは `measurements/stage11/effect.py`) |
+| 12 合意の精度 | [stage12-baseline](./measurements/stage12-baseline.md)(スクリプトは `measurements/stage12/measure.py`。開発環境の版を `data/` に書き出して比べる) | (Phase 99) |
 
 ## 2026-10-19 の整理
 

@@ -1,4 +1,4 @@
-# 更新：Phase-2-3,6-3,8-4,15-2,52-5,67-3,79(完了後の調整),81-3,82-3
+# 更新：Phase-2-3,6-3,8-4,15-2,52-5,67-3,79(完了後の調整),81-3,82-3,91-4
 # Phase-2-3:追記 ── app.api.routes.projects
 # Phase-6-3:追記 ── app.api.routes.prompt_templates
 # Phase-8-4:追記 ── app.api.routes.uml
@@ -8,8 +8,10 @@
 # Phase-79(完了後の調整)：削除 ── app.api.routes.chat.router(chat_router)
 # Phase-81-3:追記 ── app.api.routes.baselines.router(baselines_router)
 # Phase-82-3:追記 ── app.api.routes.change_requests.router(change_requests_router)
+# Phase-91-4:追記 ── app.api.routes.agreements.router
 from fastapi import APIRouter
 
+from app.api.routes.agreements import router as agreements_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.baselines import router as baselines_router
 from app.api.routes.change_requests import router as change_requests_router
@@ -42,4 +44,6 @@ api_router.include_router(baselines_router)
 # Phase-82-3:追記
 api_router.include_router(change_requests_router)
 # Phase-67-3:追記
+# Phase-91-4:追記
+api_router.include_router(agreements_router)
 api_router.include_router(llm_router)

@@ -1,4 +1,4 @@
-# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2,79(完了後の調整),81-2,82-1,84-4,86-2
+# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2,79(完了後の調整),81-2,82-1,84-4,86-2,91-2
 # 写経レベル: 定型 ── re-exportの機械的な追記。
 # Phase-2-1:追記 ── ChatHistory, GeneratedDocument, IntakeFile, Project, PromptTemplate
 # Phase-8-2:追記 ── DataItem, UmlDiagram
@@ -13,6 +13,8 @@
 # Phase-82-1:追記 ── app.models.change_request(ChangeRequest, ChangeRequestEvent)
 # Phase-84-4:追記 ── app.models.change_request_summary(ChangeRequestSummary)
 # Phase-86-2:追記 ── app.models.change_request(ChangeRequestReview)
+# Phase-91-2:追記 ── app.models.agreement.AgreementRecord
+from app.models.agreement import AgreementRecord
 from app.models.baseline import Baseline, BaselineItem
 from app.models.change_request import ChangeRequest, ChangeRequestEvent, ChangeRequestReview
 from app.models.change_request_summary import ChangeRequestSummary
@@ -37,6 +39,8 @@ from app.models.user_model_setting import UserModelSetting
 # Phase-8-2:追記 ── DataItem, UmlDiagram
 __all__ = [
     # Phase-81-2:追記
+    # Phase-91-2:追記
+    "AgreementRecord",
     "Baseline",
     "BaselineItem",
     # Phase-82-1:追記

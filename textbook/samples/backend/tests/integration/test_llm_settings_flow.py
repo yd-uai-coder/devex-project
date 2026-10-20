@@ -1,4 +1,4 @@
-# 作成：Phase-67-3
+# 作成：Phase-67-3｜更新：Phase-91(既存の直し)
 """用途ごとのモデルと API キーの登録を、実際の PostgreSQL と Redis で確かめる。
 
 SUT: GET /api/v1/llm/catalog・GET/PUT /api/v1/users/me/models・GET /api/v1/users/me/api-keys・
@@ -64,7 +64,10 @@ async def test_register_key_then_choose_model(client: AsyncClient) -> None:
 
     catalog = await client.get("/api/v1/llm/catalog", headers=headers)
     assert catalog.status_code == 200
-    assert len(catalog.json()["models"]) == 8
+    # Phase-91(既存の直し)：更新
+    # assert len(catalog.json()["models"]) == 8
+    # ↓↓
+    assert len(catalog.json()["models"]) == 7
 
     choice = {"choices": [{"purpose": "chat", "provider": "claude", "model": "claude-haiku-5-5"}]}
     refused = await client.put("/api/v1/users/me/models", json=choice, headers=headers)

@@ -1,4 +1,5 @@
-# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1,65-1,68-3,85-2,88-1
+# 作成：Phase-2-3｜更新：Phase-2-4,2-5,6-1,6-3,6-6,8-5,12-4,15-1,15-3,24(T2同期),24(ゴール3後の調整),34-2,35-2,35(完了後の調整),36-2,53(完了後の調整),54-2,56-2,64-1,65-1,68-3,85-2,88-1,91-3
+# Phase-91-3：更新(docstring: adopt_requirement が詳細設計モードで合意を記録することを足した)
 # Phase-85-2：更新(docstring: trigger_generation が cr_number を受けることを足した)
 # 写経レベル: 定型 ── ルーターは薄く保つ方針どおり、サービス呼び出し+スキーマ変換のみ。multipart/SSEの配線部分は各自コメントを参照。
 # Phase-2-4:追記 ── BackgroundTasks, app.repositories.generated_document, app.schemas.document,
@@ -512,11 +513,19 @@ async def restore_document_version(
     response_model=GeneratedDocumentRead,
 )
 async def adopt_requirement(
-    req_id: str, session: SessionDep, current_project: CurrentProjectDep
+    # Phase-91-3：更新
+    # req_id: str, session: SessionDep, current_project: CurrentProjectDep
+    # ↓↓
+    req_id: str,
+    session: SessionDep,
+    current_project: CurrentProjectDep,
+    current_user: CurrentUserDep,
 ) -> GeneratedDocumentRead:
     """要件定義書の推測の要件を、利用者が確かめた「採用」にする(LLMは呼ばない。同じ版の
-    model と md を書き換え、版は増やさない)。"""
-    document = await DocGeneratorService(session).adopt_requirement(current_project, req_id)
+    model と md を書き換え、版は増やさない。詳細設計モードでは合意として記録する)。"""
+    document = await DocGeneratorService(session).adopt_requirement(
+        current_project, req_id, recorded_by=current_user.id
+    )
     return document_read(document)
 
 

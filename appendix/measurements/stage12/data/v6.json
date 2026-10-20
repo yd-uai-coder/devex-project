@@ -1,0 +1,426 @@
+{
+ "documents": {
+  "external_design": {
+   "cr": false,
+   "generated_model": "gemini-3.5-flash-lite",
+   "model": {
+    "apis": [
+     {
+      "body": "",
+      "errors": "401 Unauthorized (認証エラー), 429 Too Many Requests (レート制限超過)",
+      "method": "GET",
+      "path": "/api/v1/trends",
+      "req_ids": [
+       "FR-005"
+      ],
+      "response": "200 OK (トレンドランキングTOP10および背景解説のJSONリスト)",
+      "screens": [],
+      "summary": "トレンドデータ一覧の取得"
+     }
+    ],
+    "data_io": "- データ保存先: PostgreSQLデータベース\n- バックグラウンド処理: FastAPI内蔵のAPSchedulerによる定期実行\n- 入出力形式: 外部API提供時はJSONフォーマットを使用",
+    "integrations": [
+     {
+      "auth": "OAuth 2.0 / Bearerトークン",
+      "purpose": "日本国内のトレンドランキングTOP10の取得",
+      "req_ids": [
+       "FR-001",
+       "CON-005"
+      ],
+      "service": "X API (Freeプラン / 日本リージョン)",
+      "timing": "12時間ごとの定期バッチ処理実行時"
+     },
+     {
+      "auth": "APIキー",
+      "purpose": "トレンド上位10件の背景解説の自動生成",
+      "req_ids": [
+       "FR-002",
+       "CON-006"
+      ],
+      "service": "LLM API",
+      "timing": "トレンド取得バッチ処理の実行に連動"
+     }
+    ],
+    "known_req_ids": [
+     "FR-001",
+     "FR-002",
+     "FR-003",
+     "FR-004",
+     "FR-005",
+     "NFR-001",
+     "CON-001",
+     "CON-002",
+     "CON-003",
+     "CON-004",
+     "CON-005",
+     "CON-006"
+    ],
+    "must_fr_ids": [
+     "FR-001",
+     "FR-002",
+     "FR-003",
+     "FR-004",
+     "FR-005"
+    ],
+    "next_seq": {
+     "SCR": 3
+    },
+    "overview": "本システムは、Python (FastAPI / Jinja2 / APScheduler) および PostgreSQL を基盤として構築するトレンド追跡アプリケーションである。6時間ごとの定期バッチ処理によりX APIから日本国内のトレンドランキングTOP10を取得し、同時にLLM APIを用いて各トレンドの背景解説を自動生成してデータベースに保存する。一般ユーザー向けにはJinja2テンプレートによるトップページおよび背景解説ページを提供し、外部クライアント向けにはAPIキーまたはBearerトークン認証とレート制限を備えたトレンドデータ提供APIを提供する。\n\n```\n+-------------------------------------------------------------+\n|                     一般ユーザー / 外部クライアント             +\n+------------------------------+------------------------------+\n                               | HTTP (ブラウザ / API)\n+------------------------------v------------------------------+\n|                    FastAPI Web アプリケーション               +\n|  - トップページ / 背景解説ページ (Jinja2)                      +\n|  - トレンドデータ提供 API                                   +\n+-------+------------------------------+--------------+-------+\n        | APScheduler (定期バッチ)     | DBアクセス   | LLM連携\n+-------v-------+                      |              |\n| X APIクライアント +------------------+              |\n+-------+-------+                      |              |\n        | トレンド取得                 |              |\n+-------v-------+                      |              |\n|   X API (Free)                      |              |\n+---------------+                      |              |\n                               +-------v-------+      ||\n                               |  PostgreSQL   |<-----+\n                               |  データベース  | LLM API\n+------------------------------+---------------+--------------+\n```",
+    "screens": [
+     {
+      "id": "SCR-001",
+      "name": "トップページ",
+      "priority": "Must",
+      "req_ids": [
+       "FR-003"
+      ],
+      "role": "保持している最新のトレンドランキングTOP10を一覧表示する",
+      "ui_spec": "- 最新トレンドランキングTOP10のリスト表示項目(順位、トレンド名、取得日時)\n- 各トレンド項目から対応する背景解説ページへのリンクボタン\n- アクション: ページアクセス時に最新のトレンド情報をJinja2テンプレートでレンダリングして表示する"
+     },
+     {
+      "id": "SCR-002",
+      "name": "背景解説ページ",
+      "priority": "Must",
+      "req_ids": [
+       "FR-004"
+      ],
+      "role": "選択されたトレンドのLLMによる背景解説を表示する",
+      "ui_spec": "- トレンド名およびランクの表示項目\n- LLMによって自動生成された背景解説文の表示項目\n- トップページに戻るためのナビゲーションリンク\n- アクション: 指定されたトレンドIDに対応する背景解説データを取得しJinja2テンプレートで表示する"
+     }
+    ],
+    "transition": "SCR-001 (トップページ) --[トレンド項目選択]--> SCR-002 (背景解説ページ)\nSCR-002 (背景解説ページ) --[戻るリンク]--> SCR-001 (トップページ)"
+   },
+   "version": 6
+  },
+  "requirements": {
+   "cr": false,
+   "generated_model": "gemini-3.5-flash-lite",
+   "model": {
+    "in_scope": [
+     "6時間ごとのX APIからのトレンド自動取得",
+     "LLMを用いた背景解説の自動生成",
+     "Jinja2テンプレートによるトップページおよび解説ページのレンダリング",
+     "外部向けAPIの提供"
+    ],
+    "next_seq": {
+     "CON": 7,
+     "FR": 6,
+     "NFR": 2
+    },
+    "out_of_scope": [
+     "ユーザー認証機能（ログイン等）",
+     "高度な検索・過去履歴の閲覧機能"
+    ],
+    "point_statuses": {
+     "abuse": "open",
+     "availability": "open",
+     "backup": "open",
+     "core": "open",
+     "daily_flow": "open",
+     "data_retention": "open",
+     "environment": "open",
+     "exceptions": "open",
+     "future": "open",
+     "logging": "open",
+     "migration": "open",
+     "operability": "open",
+     "performance": "open",
+     "purpose": "open",
+     "scale": "open",
+     "schedule": "open",
+     "scope": "open",
+     "security": "open",
+     "tech": "open",
+     "users": "open"
+    },
+    "purpose": "X APIとLLMを組み合わせて、日本国内のトレンドランキングTOP10とその背景解説を自動生成・提供するトレンド追跡アプリを構築する。",
+    "rows": [
+     {
+      "category": "",
+      "id": "FR-001",
+      "kind": "FR",
+      "points": [
+       "scale"
+      ],
+      "priority": "Must",
+      "source": "assumed",
+      "text": "12時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。"
+     },
+     {
+      "category": "",
+      "id": "FR-002",
+      "kind": "FR",
+      "points": [
+       "core"
+      ],
+      "priority": "Must",
+      "source": "assumed",
+      "text": "トレンド取得と同時にLLMを用いて上位10件分の背景解説を自動生成しデータベースに保存する。"
+     },
+     {
+      "category": "",
+      "id": "FR-003",
+      "kind": "FR",
+      "points": [
+       "users",
+       "core"
+      ],
+      "priority": "Must",
+      "source": "assumed",
+      "text": "トップページにおいて保持している最新のトレンドランキングTOP10をJinja2テンプレートにより表示する。"
+     },
+     {
+      "category": "",
+      "id": "FR-004",
+      "kind": "FR",
+      "points": [
+       "users",
+       "core"
+      ],
+      "priority": "Must",
+      "source": "assumed",
+      "text": "背景解説ページにおいて事前生成されたトレンドの背景解説を表示する。"
+     },
+     {
+      "category": "",
+      "id": "FR-005",
+      "kind": "FR",
+      "points": [
+       "core",
+       "security"
+      ],
+      "priority": "Must",
+      "source": "assumed",
+      "text": "外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。"
+     },
+     {
+      "category": "セキュリティ",
+      "id": "NFR-001",
+      "kind": "NFR",
+      "points": [
+       "exceptions"
+      ],
+      "priority": null,
+      "source": "assumed",
+      "text": "X API取得失敗時はキャッシュを返さずそのままエラーレスポンスを返却する。"
+     },
+     {
+      "category": "技術スタック",
+      "id": "CON-001",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "assumed",
+      "text": "プログラミング言語にはPythonを使用する。"
+     },
+     {
+      "category": "技術スタック",
+      "id": "CON-002",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "assumed",
+      "text": "WebフレームワークにはFastAPIおよびJinja2テンプレートを使用する。"
+     },
+     {
+      "category": "技術スタック",
+      "id": "CON-003",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "assumed",
+      "text": "データベースにはPostgreSQLを使用する。"
+     },
+     {
+      "category": "技術スタック",
+      "id": "CON-004",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "assumed",
+      "text": "定期実行にはFastAPI内蔵のAPSchedulerを使用する。"
+     },
+     {
+      "category": "外部サービス",
+      "id": "CON-005",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "assumed",
+      "text": "X API(Freeプラン / 日本リージョン)を利用する。"
+     },
+     {
+      "category": "外部サービス",
+      "id": "CON-006",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "assumed",
+      "text": "LLM APIを利用して背景解説を自動生成する。"
+     }
+    ],
+    "scale": null,
+    "users": [
+     {
+      "scene": "トップページを開いてその時点のトレンドランキングや、トレンド入りの背景解説を閲覧する",
+      "source": "assumed",
+      "user": "一般ユーザー"
+     },
+     {
+      "scene": "APIを利用してトレンドランキングデータを取得する",
+      "source": "assumed",
+      "user": "外部クライアント"
+     }
+    ]
+   },
+   "version": 6
+  }
+ },
+ "stages": {
+  "1": {
+   "impact": {
+    "changes": [
+     {
+      "after": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\", \"security\"], \"priority\": \"Must\", \"source\": \"assumed\", \"text\": \"外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。\"}",
+      "before": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\", \"security\"], \"priority\": \"Must\", \"source\": \"adopted\", \"text\": \"外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。\"}",
+      "change": "content",
+      "key": "req:FR-005",
+      "label": "FR-005 外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。",
+      "new_key": null,
+      "source": "doc:requirements",
+      "stage": 0
+     }
+    ],
+    "marks": [
+     {
+      "key": "fn:F-01",
+      "label": "F-01 最新のトレンドデータをJSON形式で返却する",
+      "path": [
+       "req:FR-005",
+       "api:GET /api/v1/trends",
+       "fn:F-01"
+      ],
+      "reason": "この API で起動する",
+      "reviewed": false,
+      "sources": [
+       "doc:requirements"
+      ],
+      "stage": 1
+     }
+    ]
+   },
+   "status": "approved",
+   "version": 8
+  },
+  "2": {
+   "impact": null,
+   "status": "approved",
+   "version": 3
+  },
+  "3": {
+   "impact": null,
+   "status": "approved",
+   "version": 9
+  },
+  "4": {
+   "impact": null,
+   "status": "approved",
+   "version": 8
+  },
+  "5": {
+   "impact": {
+    "changes": [
+     {
+      "after": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\", \"security\"], \"priority\": \"Must\", \"source\": \"assumed\", \"text\": \"外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。\"}",
+      "before": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\", \"security\"], \"priority\": \"Must\", \"source\": \"adopted\", \"text\": \"外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。\"}",
+      "change": "content",
+      "key": "req:FR-005",
+      "label": "FR-005 外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。",
+      "new_key": null,
+      "source": "doc:requirements",
+      "stage": 0
+     }
+    ],
+    "marks": [
+     {
+      "key": "proc:F-01",
+      "label": "F-01 の手順",
+      "path": [
+       "req:FR-005",
+       "api:GET /api/v1/trends",
+       "fn:F-01",
+       "proc:F-01"
+      ],
+      "reason": "この処理に属する",
+      "reviewed": false,
+      "sources": [
+       "doc:requirements"
+      ],
+      "stage": 5
+     }
+    ]
+   },
+   "status": "approved",
+   "version": 4
+  },
+  "6": {
+   "impact": null,
+   "status": "approved",
+   "version": 17
+  },
+  "7": {
+   "impact": null,
+   "status": "approved",
+   "version": 8
+  },
+  "8": {
+   "impact": {
+    "changes": [
+     {
+      "after": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\", \"security\"], \"priority\": \"Must\", \"source\": \"assumed\", \"text\": \"外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。\"}",
+      "before": "{\"category\": \"\", \"kind\": \"FR\", \"points\": [\"core\", \"security\"], \"priority\": \"Must\", \"source\": \"adopted\", \"text\": \"外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。\"}",
+      "change": "content",
+      "key": "req:FR-005",
+      "label": "FR-005 外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。",
+      "new_key": null,
+      "source": "doc:requirements",
+      "stage": 0
+     }
+    ],
+    "marks": [
+     {
+      "key": "unit:U-005",
+      "label": "M-03-T01 の手順書",
+      "path": [
+       "req:FR-005",
+       "api:GET /api/v1/trends",
+       "fn:F-01",
+       "proc:F-01",
+       "unit:U-005"
+      ],
+      "reason": "この設計を手順書で実装する",
+      "reviewed": false,
+      "sources": [
+       "doc:requirements"
+      ],
+      "stage": 8
+     }
+    ]
+   },
+   "status": "approved",
+   "version": 4
+  }
+ }
+}
