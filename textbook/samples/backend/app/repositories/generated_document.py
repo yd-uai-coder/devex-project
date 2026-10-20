@@ -1,4 +1,5 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2,81-1,85-2,89(完了後の調整),91-3
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2,81-1,85-2,89(完了後の調整),91-3,92-3
+# Phase-92-3：更新(docstring: create_version の protection を足した)
 # Phase-91-3：更新(docstring: 束が写した版も消さず、数にも入れない。モジュールの注記・create_version・list_versions)
 # Phase-85-2：更新(docstring: create_version の change_request_id を足した)
 # Phase-89(完了後の調整)：更新(docstring: CR で反映した版は消さず、数にも入れない。create_version・list_versions)
@@ -62,9 +63,12 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
         generated_model: str | None = None,
         # Phase-85-2:追記
         change_request_id: uuid.UUID | None = None,
+        # Phase-92-3:追記
+        protection: list[dict] | None = None,
     ) -> GeneratedDocument:
         """新バージョンを追加する(既存行は上書きしない)。`model`は意味モデルを持つ文書だけ。
         `generated_model`は生成したモデル名、`change_request_id`は反映した CR(渡したときだけ)。
+        `protection`は合意の形へ戻した要素(合意を守った版だけ)。
         追加後に保管数がMAX_VERSIONS_PER_DOC_TYPEを超える場合は、最も古いバージョンから順に
         削除して上限を維持する。CR で反映した版と、束が写した版は消さず、数にも入れない。
 
@@ -90,6 +94,8 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
             generated_model=generated_model,
             # Phase-85-2:追記
             change_request_id=change_request_id,
+            # Phase-92-3:追記
+            protection=protection,
             version=next_version,
             is_current=True,  # Phase-6-6:追記
         )

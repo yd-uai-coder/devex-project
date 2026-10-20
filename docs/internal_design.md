@@ -102,6 +102,7 @@
 | version | INT | NOT NULL, DEFAULT 1 | バージョン番号 |
 | generated_model | VARCHAR(100) | NULL可 | 生成したモデル名(Phase 81。合意済みの版の写しにも載る)。この列を足す前の版はNULL |
 | change_request_id | UUID | FK (`change_requests.id`, ondelete SET NULL), NULL可 | 反映した変更要求(CR を渡した再生成で作った版だけ。Phase 85、マイグレーション `f9c9614d5329`) |
+| protection | JSONB | NULL可 | 再生成の後に合意の形へ戻した要素(`[{key, reason}]`。reason は `changed`〈LLM が書き換えた〉/ `dropped`〈LLM が落とした〉)。詳細設計モードの要件定義書の版だけ(戻すものが無ければ空の一覧)。簡易ドキュメントモード・ほかの文書・この列を足す前の版は NULL(ステージ12、Phase 92、マイグレーション `956b403c67fe`) |
 | is_current | BOOLEAN | NOT NULL, DEFAULT false | 現在表示中のバージョンか。同一`project_id`+`doc_type`につきちょうど1行のみ`true`(ステージ2追補) |
 | created_at | TIMESTAMP | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 作成日時 |
 
@@ -841,7 +842,8 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 外部設計書 2.15節の方針を実装する。テーブル・列・API の形は各 Phase の着手時に決める(未確定事項は[`textbook/Phase-90/Phase-90-4.md`](../textbook/Phase-90/Phase-90-4.md))。ここには Phase 90 で決まった構造だけを置く。
 
 * **合意の記録**: **Phase 91 で確定**: 表⑳。純粋関数 `app/agreements/`(`items.py` の `agreement_items` が要件定義書・外部設計書の model から合意の対象の要素〈キー・種類・表示名・中身〉を文書の順に作る。キーは変更影響分析の要素のキーと、利用者 1.2 は全体で `users`・外部連携は `integration:<サービス名>`。`body_of` は中身を行の model で読み直し、キーの欄を除いた正規化した JSON〈変更影響分析の要素の body と同じ形〉。`removed_keys` は今の合意にあって新しい要素に無いキー。`origins.py` の `origin_label`)。`AgreementService`(`app/services/agreement_service.py`)の `record_baseline` が束の作成(`BaselineService.create`)で、束が写した2文書の要素をまとめて記録し、外れた要素も記録する。`record_adopt` が「採用にする」(`DocGeneratorService.adopt_requirement`)で、採用にした行を記録する(詳細設計モードだけ)。どちらも呼ぶ側のトランザクションの中。`current` が今の合意の一覧。リポジトリ `AgreementRepository`(`append`・`list_for_project`・`current`)。詳細設計モードの判定 `require_detailed` は、束・CR・合意のサービスで共有するため `app/services/detailed_mode.py` に置いた。既存の束からの移行はマイグレーション `75d414ded7cb`(app を import しない純粋関数で、束の作成と同じ規則)。
-* **保護**(Phase 92・93 予定): `app/documents/requirements/assemble.py` の `build_model` の後と、外部設計書の組み立ての後に、合意済みの行を戻す純粋関数を置く。例外(CR の対象・保存した予測 `predicted_impact` の文書の側の要素)を引数で受ける。`cap_source` は合意済みの行に当てない。戻した件数を版に残す。
+* **保護**(Phase 92・93): `app/documents/requirements/assemble.py` の `build_model` の後と、外部設計書の組み立ての後に、合意済みの行を戻す純粋関数を置く。例外(CR の対象・保存した予測 `predicted_impact` の文書の側の要素)を引数で受ける。`cap_source` は合意済みの行に当てない。戻した件数を版に残す。
+  * **Phase 92 で確定**(要件定義書): 純粋関数 `app/agreements/protection.py`(`protect_requirements` が、合意済みの `req:<ID>`〈`exempt` を除く〉の行のすべての欄が合意と違えば置き換え〈`changed`〉、無ければ前の版で同じ種別の直前にあった行の後へ戻し〈`dropped`。前の版で先頭なら今の同じ種別の先頭、前の版に無ければ同じ種別の末尾〉、合意済みの行と同じ文〈前後の空白を除く〉の新しい行を除く。`users` は 1.2 全体を比べて置き換える。戻した行の番号を `next_seq` が越えるようにする。戻した要素は `Restored(key, reason)`)。`build_model(..., agreed_ids=)` は、`unchanged` で写す合意済みの行に `cap_source` を当てない。プロンプトは新しい節を作らず、`previous_rows_text` が前の版の要件の合意済みの行に `|合意済み` の印を付け、合意済みの利用者と使う場面を末尾に1行足す(規則にも1文)。`DocGeneratorService._generate_requirements` が、詳細設計モードなら `AgreementService.current` から合意を読み(`_agreed_elements`。簡易モードは読まない)、反映する CR の対象(`targets` の要件 ID。内容の変更・削除の両方)を `exempt` にして守り、戻した要素を版の `protection`(④)に残す。束に入った推測の行も合意済みで、出どころは推測のまま戻す。CR の反映での合意の更新は Phase 93(それまでは、CR で変えた行が次の CR を渡さない再生成で合意の形に戻る)。
 * **版の巡回**: **Phase 91 で確定**: `GeneratedDocumentRepository.create_version` の巡回で、同じプロジェクトの `baseline_items`(`key` が文書の種類)の `source_version` が指す版も、消さず数にも入れない(CR を反映した版と同じ扱い)。
 * **確認事項の一覧**(Phase 94 予定): 今の要件定義書の model と観点の表から組み立てる純粋関数と、利用者が決めた欄(決める機会・状態)の保存。
 * **履歴**(Phase 95 予定): 合意の記録と、保護で戻した記録から、要素のキーごとに組み立てる。CR の下書きの編集は `change_request_events` に1行足す。

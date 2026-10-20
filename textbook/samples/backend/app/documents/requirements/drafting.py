@@ -1,4 +1,4 @@
-# 作成：Phase-36-2｜更新：Phase-39-1,49-3,54-2,59-2,70-3
+# 作成：Phase-36-2｜更新：Phase-39-1,49-3,54-2,59-2,70-3,92-2
 """要件定義書の AI の下書きの入出力(純粋関数)。
 
 AI には会話と観点の表から、要件の中身・出どころ・根拠の観点を書かせる。ID は書かせず、前の版の
@@ -11,7 +11,8 @@ AI には会話と観点の表から、要件の中身・出どころ・根拠�
 # Phase-54-2:追記 ── app.documents.revision.instruction_text
 # Phase-70-3:追記 ── app.documents.revision(RevisionInputs, revision_rule)
 # Phase-70-3：削除 ── app.documents.revision.REVISION_RULE
-from collections.abc import Mapping
+# Phase-92-2:追記 ── collections.abc.Sequence, app.documents.requirements.model.UserScene
+from collections.abc import Mapping, Sequence
 from typing import Literal
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -22,7 +23,7 @@ from app.documents.requirements.assemble import (
     RequirementsDraft,
     UserSceneDraft,
 )
-from app.documents.requirements.model import RequirementsModel
+from app.documents.requirements.model import RequirementsModel, UserScene
 from app.documents.revision import (
     NONE_TEXT,
     UNCHANGED_DESCRIPTION,
@@ -133,8 +134,16 @@ SYSTEM_PROMPT = (
     # "それも変更のきっかけ。その観点を points に持つ要件は unchanged にせず、決めたことの値・方式を"
     # "そのまま書き直す(聞き直しで観点を決め直した後の再生成)"
     # ↓↓
+    # Phase-92-2:追記
+    "- 【前の版の要件】で「合意済み」の印が付いた行は、クライアントと合意した行。【修正指示】が"
+    "その ID を指していなければ、unchanged を true にして必ず残す(書き直さない・落とさない。"
+    "同じ中身を別の要件として書かない)。合意済みの利用者と使う場面も、そのまま書く\n"
     f"{revision_rule(REVISION)}"
 )
+
+# Phase-92-2:追記
+# 前の版の要件のうち、合意済みの行に付ける印
+AGREED_MARK = "合意済み"
 
 
 def points_table(states: Mapping[str, PointState], scale: Scale | None) -> str:
@@ -148,14 +157,33 @@ def points_table(states: Mapping[str, PointState], scale: Scale | None) -> str:
     return "\n".join(lines)
 
 
-def previous_rows_text(previous: RequirementsModel | None) -> str:
-    """前の版の要件(ID の引き継ぎに使う)。無ければ「なし」。"""
+# Phase-92-2：更新
+# def previous_rows_text(previous: RequirementsModel | None) -> str:
+#     """前の版の要件(ID の引き継ぎに使う)。無ければ「なし」。"""
+# ↓↓
+def previous_rows_text(
+    previous: RequirementsModel | None,
+    agreed_ids: frozenset[str] = frozenset(),
+    agreed_users: Sequence[UserScene] = (),
+) -> str:
+    """前の版の要件(ID の引き継ぎに使う)。無ければ「なし」。合意済みの行(`agreed_ids`)には
+    印を付け、合意済みの利用者と使う場面(`agreed_users`)を末尾に足す。"""
     if previous is None or not previous.rows:
         # Phase-49-3：更新
         # return "なし"
         # ↓↓
         return NONE_TEXT
-    return "\n".join(f"{r.id}|{r.text}" for r in previous.rows)
+    # Phase-92-2：更新
+    # return "\n".join(f"{r.id}|{r.text}" for r in previous.rows)
+    # ↓↓
+    lines = [
+        f"{r.id}|{r.text}|{AGREED_MARK}" if r.id in agreed_ids else f"{r.id}|{r.text}"
+        for r in previous.rows
+    ]
+    if agreed_users:
+        users = " / ".join(f"{u.user}: {u.scene}" for u in agreed_users)
+        lines.append(f"利用者と使う場面({AGREED_MARK}): {users}")
+    return "\n".join(lines)
 
 
 def build_requirements_messages(
@@ -165,10 +193,21 @@ def build_requirements_messages(
     previous: RequirementsModel | None,
     # Phase-54-2:追記
     instruction: str = "",
+    # Phase-92-2:追記
+    *,
+    agreed_ids: frozenset[str] = frozenset(),
+    agreed_users: Sequence[UserScene] = (),
 ) -> list[BaseMessage]:
+    # Phase-92-2:追記
+    """要件定義書の生成のメッセージ。`agreed_ids`・`agreed_users`は守る合意(前の版の要件に印を
+    付ける。app/agreements/protection.py が生成の後に戻すもの)。"""
+    previous_text = previous_rows_text(previous, agreed_ids, agreed_users)
     human = (
         f"## 観点の表\nkey|名前|状態|決めたこと\n{points_table(states, scale)}\n\n"
-        f"## 前の版の要件\n{previous_rows_text(previous)}\n\n"
+        # Phase-92-2：更新
+        # f"## 前の版の要件\n{previous_rows_text(previous)}\n\n"
+        # ↓↓
+        f"## 前の版の要件\n{previous_text}\n\n"
         # Phase-54-2:追記
         f"## 修正指示\n{instruction_text(instruction)}\n\n"
         f"## 会話\n{transcript}"

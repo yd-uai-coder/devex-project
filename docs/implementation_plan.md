@@ -215,7 +215,7 @@
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-90/Phase-90-4.md`](../textbook/Phase-90/Phase-90-4.md)参照):
   * Phase 90: 要件確認フェーズ(仕様診断・ステージ12 の入力7件の判断・実 LLM を少し使ったベースライン・docs反映・ステージ12の実装計画) ── **完了**([`textbook/Phase-90/Phase-90-introduction.md`](../textbook/Phase-90/Phase-90-introduction.md))
   * Phase 91: 行の合意の記録 API(束・採用にするで記録、今の合意の一覧、束が指す版を巡回から外す、既存の束からの移行) ── **完了**([`textbook/Phase-91/Phase-91-introduction.md`](../textbook/Phase-91/Phase-91-introduction.md))
-  * Phase 92: 要件定義書の保護(出どころの上限をかけ直さない・合意済みの行と利用者を戻す・戻した件数)
+  * Phase 92: 要件定義書の保護(出どころの上限をかけ直さない・合意済みの行と利用者を戻す・戻した件数) ── **完了**([`textbook/Phase-92/Phase-92-introduction.md`](../textbook/Phase-92/Phase-92-introduction.md))
   * Phase 93: 外部設計書の保護と、CR の反映での合意の更新
   * Phase 94: 確認事項の一覧 API(決める機会・状態・推測の採用率)
   * Phase 95: 行の履歴 API と、CR の下書きの直しの時系列

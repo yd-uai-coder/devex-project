@@ -1,12 +1,15 @@
-# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2,57-2,81-1,85-2,88-1
+# 作成：Phase-2-4｜更新：Phase-6-6,36-2,37-2,45-3,53(完了後の調整),54-2,56-2,57-2,81-1,85-2,88-1,92-3
 # Phase-85-2：更新(docstring: GenerationRequest の cr_number を足した)
 # 写経レベル: 定型 ── 既存schemas群と同型のPydanticスキーマ。
 # Phase-85-2:追記 ── pydantic.Field
+# Phase-92-3:追記 ── app.agreements.RestoreReason
 import uuid
 from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.agreements import RestoreReason
 
 # Phase-56-2：更新
 # DocType = Literal["requirements", "external_design", "internal_design", "implementation_plan"]
@@ -69,6 +72,14 @@ class ExternalDesignSummaryRead(DocumentSummaryRead):
     """外部設計書の行数(screens / apis / integrations)と検証の指摘。"""
 
 
+# Phase-92-3:追記
+class RestoredRead(BaseModel):
+    """再生成の後に合意の形へ戻した要素1つ(app/agreements/protection.py の Restored)。"""
+
+    key: str
+    reason: RestoreReason
+
+
 class GeneratedDocumentRead(BaseModel):
     """生成された設計書1件をAPIレスポンスとして返す際のスキーマ(一覧では現在表示中のバージョン)。"""
 
@@ -86,6 +97,9 @@ class GeneratedDocumentRead(BaseModel):
     # 生成したモデル名(この列を足す前の版は None)
     generated_model: str | None = None
     # Phase-88-1:追記
+    # Phase-92-3:追記
+    # 再生成の後に合意の形へ戻した要素(合意を守った要件定義書の版だけ。ほかは None)
+    protection: list[RestoredRead] | None = None
     # 反映した変更要求の番号(CR を渡した再生成で作った版だけ。ほかは None)。ルートが入れる
     change_request_number: int | None = None
     # 要件定義書で model を持つ版だけ(ほかは None)。ルートが requirements_summary で入れる

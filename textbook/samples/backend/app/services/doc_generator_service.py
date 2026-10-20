@@ -1,4 +1,5 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3
+# Phase-92-3：更新(docstring: _generate_requirements が合意済みの行と利用者を守り、戻した要素を返すことを足した)
 # Phase-91-3：更新(docstring: adopt_requirement が詳細設計モードで合意を記録することを足した)
 # Phase-85-2：更新(docstring: generate_documents・request_generation・generate が cr_number を受けることを足した)
 # 写経レベル: コア ── MVPコアループ(4文書生成+自己診断)そのもの。BackgroundTasksのセッション管理とエラー時のstatus復旧ロジックに注意。
@@ -36,6 +37,7 @@
 # Phase-85-2:追記 ── app.change_requests.join_instructions, app.detailed_design.impact.Mark, app.detailed_design.impact.cr_source, app.services.change_request_service.ChangeRequestService, app.services.errors.ChangeRequestNotReflectableError
 # Phase-88-1:追記 ── app.repositories.change_request.ChangeRequestRepository
 # Phase-91-3:追記 ── app.services.agreement_service.AgreementService
+# Phase-92-3:追記 ── app.agreements.USERS_KEY, app.agreements.agreed_requirement_ids, app.agreements.protect_requirements, app.agreements.requirement_key, app.change_requests.targets_from_json, app.documents.requirements.UserScene, app.models.change_request.ChangeRequest
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -46,9 +48,15 @@ from pydantic import BaseModel, ValidationError
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agreements import (
+    USERS_KEY,
+    agreed_requirement_ids,
+    protect_requirements,
+    requirement_key,
+)
 from app.ai.llm.catalog import Purpose
 from app.ai.llm.content import extract_text_content
-from app.change_requests import join_instructions
+from app.change_requests import join_instructions, targets_from_json
 from app.core.database import AsyncSessionLocal
 from app.core.errors import AppError
 from app.detailed_design.function_list import FunctionListModel
@@ -95,6 +103,7 @@ from app.documents.internal_design.drafting import to_draft as to_internal_desig
 from app.documents.issues import DocumentIssue
 from app.documents.requirements import (
     RequirementsModel,
+    UserScene,
     build_model,
     mark_adopted,
     render_requirements,
@@ -127,6 +136,7 @@ from app.documents.test_spec.drafting import TestSpecGenerationOutput, build_tes
 from app.documents.test_spec.drafting import to_draft as to_test_spec_draft
 from app.hearing import as_scale
 from app.infrastructure.redis import get_redis_client
+from app.models.change_request import ChangeRequest
 from app.models.chat_history import ChatHistory
 from app.models.generated_document import GeneratedDocument
 from app.models.project import Project
@@ -770,6 +780,8 @@ class DocGeneratorService:
                 # ↓↓
                 model: dict | None = None
                 # Phase-49-3:追記
+                # Phase-92-3:追記
+                protection: list[dict] | None = None
                 # 再生成を前の版の差分にとどめるため、上流の文書で変わった行を渡す
                 changed = upstream_changes(
                     doc_type, previous_models, requirements, external, internal
@@ -785,11 +797,16 @@ class DocGeneratorService:
                     # Phase-37-2：更新
                     # content, model = await self._generate_requirements(
                     # ↓↓
-                    content, requirements = await self._generate_requirements(
-                        # Phase-54-2：更新
-                        # project, transcript, llm=llm
-                        # ↓↓
-                        project, transcript, instruction, llm=llm
+                    # Phase-92-3：更新
+                    # content, requirements = await self._generate_requirements(
+                    #     project, transcript, instruction, llm=llm
+                    # ↓↓
+                    content, requirements, protection = await self._generate_requirements(
+                        project,
+                        transcript,
+                        instruction,
+                        reflection.change_request if reflection is not None else None,
+                        llm=llm,
                     # Phase-37-2:追記
                     )
                     model = requirements.model_dump(mode="json")
@@ -855,6 +872,8 @@ class DocGeneratorService:
                     generated_model=resolved.model,
                     # Phase-85-2:追記
                     change_request_id=change_request_id,
+                    # Phase-92-3:追記
+                    protection=protection,
                 )
                 # Phase-85-2:追記
                 versions.append((doc_type, document.version))
@@ -1213,10 +1232,25 @@ class DocGeneratorService:
         # Phase-54-2：更新
         # self, project: Project, transcript: str, *, llm
         # ↓↓
-        self, project: Project, transcript: str, instruction: str = "", *, llm
-    ) -> tuple[str, RequirementsModel]:
+        # Phase-92-3：更新
+        # self, project: Project, transcript: str, instruction: str = "", *, llm
+        # ) -> tuple[str, RequirementsModel]:
+        # ↓↓
+        self,
+        project: Project,
+        transcript: str,
+        instruction: str = "",
+        change_request: ChangeRequest | None = None,
+        *,
+        llm,
+    ) -> tuple[str, RequirementsModel, list[dict] | None]:
         """要件定義書を構造化出力で下書きし、model と md を作る。入力は会話・観点の表・前の版の
-        要件(ID を引き継ぐため)。出どころは観点の状態を上限に直す(app/documents/requirements)。"""
+        要件(ID を引き継ぐため)。出どころは観点の状態を上限に直す(app/documents/requirements)。
+
+        詳細設計モードでは、合意済みの要件の行と利用者(1.2)を守る(docs/external_design.md
+        2.15節)。プロンプトで「変えない行」として渡し、組み立ての後に合意の形へ戻す
+        (app/agreements/protection.py)。反映する CR(`change_request`)の対象の要件は書き換えて
+        よい。戻した要素の一覧を3つ目に返す(簡易ドキュメントモードは None)。"""
         states = await self._hearing_points.load_states(project.id)
         scale = as_scale(project.hearing_scale)
         current = await self._documents.get_current(
@@ -1226,13 +1260,48 @@ class DocGeneratorService:
         # Phase-54-2：更新
         # messages = build_requirements_messages(transcript, states, scale, previous)
         # ↓↓
-        messages = build_requirements_messages(transcript, states, scale, previous, instruction)
-        output = await invoke_structured(llm, RequirementsGenerationOutput, messages)
-        model = build_model(to_draft(output), previous, states, scale)
-        # Phase-37-2：更新
-        # return render_requirements(model), model.model_dump(mode="json")
+        # Phase-92-3：更新
+        # messages = build_requirements_messages(transcript, states, scale, previous, instruction)
         # ↓↓
-        return render_requirements(model), model
+        agreed = await self._agreed_elements(project)
+        exempt = frozenset(
+            requirement_key(target.requirement_id)
+            for target in targets_from_json(change_request.targets if change_request else None)
+        )
+        agreed_ids = agreed_requirement_ids(agreed or {}, exempt)
+        agreed_users = (
+            [UserScene.model_validate(u) for u in agreed[USERS_KEY]["users"]]
+            if agreed and USERS_KEY in agreed
+            else []
+        )
+        messages = build_requirements_messages(
+            transcript,
+            states,
+            scale,
+            previous,
+            instruction,
+            agreed_ids=agreed_ids,
+            agreed_users=agreed_users,
+        )
+        output = await invoke_structured(llm, RequirementsGenerationOutput, messages)
+        # Phase-92-3：更新
+        # model = build_model(to_draft(output), previous, states, scale)
+        # return render_requirements(model), model
+        # ↓↓
+        model = build_model(to_draft(output), previous, states, scale, agreed_ids=agreed_ids)
+        if agreed is None:
+            return render_requirements(model), model, None
+        model, restored = protect_requirements(model, previous, agreed, exempt=exempt)
+        protection = [{"key": r.key, "reason": r.reason} for r in restored]
+        return render_requirements(model), model, protection
+
+    async def _agreed_elements(self, project: Project) -> dict[str, dict] | None:
+        """今の合意(キー → 合意した中身)。合意は詳細設計モードの機能なので、簡易ドキュメント
+        モードは None(合意を読まず、守らない)。"""
+        if project.mode != "detailed":
+            return None
+        records = await AgreementService(self._session).current(project)
+        return {r.key: r.content for r in records if r.content is not None}
 
     async def _generate_external_design(
         self,
