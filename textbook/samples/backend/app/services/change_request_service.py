@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整)
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整)
 # Phase-86-2：更新(docstring: ChangeRequestService に検証の確かめを足した)
 # Phase-84-3：更新(docstring: ChangeRequestService に説明書の組み立てを足した)
 # Phase-83-3：更新(docstring: ChangeRequestService に影響の予測と保存を足した)
@@ -14,6 +14,7 @@
 # Phase-86-4:追記 ── app.change_requests.EventFacts, app.change_requests.ReviewFacts, app.change_requests.TraceEntry, app.change_requests.trace_entries, app.repositories.generated_document.GeneratedDocumentRepository
 # Phase-87-1:追記 ── app.services.baseline_service.baseline_requirement_rows
 # Phase-88(完了後の調整):追記 ── app.services.baseline_service.require_detailed(app.services.errors.DesignStagesNotAvailableError は使わなくなったので外した)
+# Phase-89(完了後の調整):追記 ── app.change_requests.DecisionFacts
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
@@ -37,6 +38,7 @@ from app.change_requests import (
     ChangeRequestFacts,
     ChangeRequestStatus,
     Comparison,
+    DecisionFacts,
     EventFacts,
     Explanation,
     Overlap,
@@ -751,7 +753,15 @@ class ChangeRequestService:
             )
             for e in change_request.events
         ]
-        return TraceView(change_request, trace_entries(events, available, reviews))
+        # Phase-89(完了後の調整)：更新
+        # return TraceView(change_request, trace_entries(events, available, reviews))
+        # ↓↓
+        decision = DecisionFacts(
+            change_request.decision_counterpart,
+            change_request.decision_memo,
+            change_request.decision_reason,
+        )
+        return TraceView(change_request, trace_entries(events, available, reviews, decision))
 
     # Phase-85-2:追記
     async def reflectable(

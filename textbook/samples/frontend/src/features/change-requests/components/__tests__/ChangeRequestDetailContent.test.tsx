@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整)
+// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整)
 // SUT: ChangeRequestDetailContent(詳細の見出し・タブの切り替え・反映の完了待ち)
 // ドライバ: Testing Library(描画・タブのクリック)
 // スタブ: ストアの関数(vi.fn)・useGenerationPolling(vi.mock)・各タブと操作の部品(vi.mock)──
@@ -38,6 +38,9 @@ describe("ChangeRequestDetailContent", () => {
     renderWithTheme(<ChangeRequestDetailContent projectId="p1" number={1} />);
 
     expect(useChangeRequestsStore.getState().fetchDetail).toHaveBeenCalledWith("p1", 1);
+    // Phase-89(完了後の調整):追記
+    // 生成中に別の画面へ移って戻ったときも、反映の完了を待ち直す
+    expect(useChangeRequestsStore.getState().resumeReflection).toHaveBeenCalledWith("p1");
     expect(screen.getByRole("heading", { name: "CR-1 参考資料を5件まで" })).toBeInTheDocument();
     expect(screen.getByLabelText("状態: 下書き")).toBeInTheDocument();
     expect(screen.getByText("内容のタブ")).toBeInTheDocument();

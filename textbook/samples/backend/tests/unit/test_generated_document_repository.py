@@ -1,8 +1,11 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,89(完了後の調整)
+# Phase-89(完了後の調整):追記 ── tests.fixtures.change_requests.agreed_change_request_project, app.repositories.change_request.ChangeRequestRepository
 from sqlalchemy.ext.asyncio import AsyncSession
+from tests.fixtures.change_requests import agreed_change_request_project
 
 from app.models.project import Project
 from app.models.user import User
+from app.repositories.change_request import ChangeRequestRepository
 from app.repositories.generated_document import GeneratedDocumentRepository
 
 
@@ -226,3 +229,28 @@ async def test_replace_model_rewrites_same_version(db_session: AsyncSession) -> 
 #     versions = await repo.list_versions(project_id=project.id, doc_type="internal_design")
 #     assert [(v.version, v.content) for v in versions] == [(2, "v2 + 図"), (1, "v1")]
 #     assert versions[0].is_current
+
+
+# Phase-89(完了後の調整):追記
+async def test_create_version_keeps_versions_reflecting_a_change_request(
+    db_session: AsyncSession,
+) -> None:
+    # CR を渡した再生成で作った版は、上限を超えても消えず、数にも入らない(たどる記録が指す先を残す)
+    project = await agreed_change_request_project(db_session)
+    cr = await ChangeRequestRepository(db_session).find_one(project_id=project.id, number=1)
+    assert cr is not None
+    repo = GeneratedDocumentRepository(db_session)
+    # 詳細設計モードの準備で作られない種類(版の数をこのテストだけで数える)
+    doc_type = "implementation_plan"
+    await repo.create_version(project_id=project.id, doc_type=doc_type, content="v1")
+    await repo.create_version(
+        project_id=project.id, doc_type=doc_type, content="v2", change_request_id=cr.id
+    )
+    for content in ("v3", "v4", "v5"):
+        await repo.create_version(project_id=project.id, doc_type=doc_type, content=content)
+    await repo.create_version(
+        project_id=project.id, doc_type=doc_type, content="v6", change_request_id=cr.id
+    )
+
+    versions = await repo.list_versions(project_id=project.id, doc_type=doc_type)
+    assert [v.content for v in versions] == ["v6", "v5", "v4", "v3", "v2"]

@@ -186,7 +186,7 @@ Claude の判断(計画の承認で確定、または作業中):
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- Phase 89 完了後の調整: CR を渡した再生成で作った文書の版(`change_request_id` あり)は、版の巡回(直近3件)で消さず、数にも入れない(反映の時系列が指す版が残るように)。経緯は [Phase 89 の introduction](../Phase-89/Phase-89-introduction.md#phase-完了後の調整) と [`q_a.md`](../q_a.md)「Phase 89 完了後の調整」。
 
 ## Phase 完了チェック(#22)
 

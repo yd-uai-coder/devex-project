@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整)
+// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整)
 // Phase-87-4:追記 ── @/features/change-requests/components/VerificationTab.VerificationTab
 "use client";
 
@@ -42,7 +42,10 @@ const TABS: { value: DetailTab; label: string }[] = [
 // 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は5つのタブ(内容・影響・検証・説明書・
 // たどる記録)。タブの中身(予測・比較・検証・説明書・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
 // フォームの状態を、親の再描画で失わないよう、部品を作り直さない)。文書への反映の完了待ちは、
-// タブを移っても続くようにここで持つ。
+// Phase-89(完了後の調整)：更新
+// // タブを移っても続くようにここで持つ。
+// ↓↓
+// タブを移っても続くようにここで持ち、開いたときにプロジェクトが生成中なら待ち直す。
 export function ChangeRequestDetailContent({ projectId, number }: { projectId: string; number: number }) {
   const detail = useChangeRequestsStore((s) => (s.projectId === projectId && s.detail?.number === number ? s.detail : null));
   const detailStatus = useChangeRequestsStore((s) => s.detailStatus);
@@ -54,11 +57,18 @@ export function ChangeRequestDetailContent({ projectId, number }: { projectId: s
   const reflecting = useChangeRequestsStore((s) => s.reflecting);
   const fetchDetail = useChangeRequestsStore((s) => s.fetchDetail);
   const onReflectionFinished = useChangeRequestsStore((s) => s.onReflectionFinished);
+  // Phase-89(完了後の調整):追記
+  const resumeReflection = useChangeRequestsStore((s) => s.resumeReflection);
   const [tab, setTab] = useState<DetailTab>("content");
 
   useEffect(() => {
     void fetchDetail(projectId, number);
-  }, [projectId, number, fetchDetail]);
+    // Phase-89(完了後の調整):追記
+    void resumeReflection(projectId);
+    // Phase-89(完了後の調整)：更新
+    // }, [projectId, number, fetchDetail]);
+    // ↓↓
+  }, [projectId, number, fetchDetail, resumeReflection]);
 
   const { timedOut } = useGenerationPolling(projectId, reflecting, (project) =>
     onReflectionFinished(projectId, number, project),

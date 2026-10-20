@@ -112,6 +112,8 @@
 
 **(ステージ2動作確認後の改訂・上記の復元方針を置き換える)** 復元のたびに同じ内容のバージョンが増え、保持3件を無意味に消費してしまうため、「復元」は**新しい行を作らず、表示中バージョン(`is_current`)を指定バージョンへ切り替えるだけ**にする。バージョン番号が増えるのは再生成(`create_version`)のときのみで、新しく生成した版は自動的に`is_current=true`になる(それまでの`is_current`は外れる)。ドキュメント一覧(`GET /projects/{id}/documents`)は最新版ではなく`is_current=true`の版を返し、画面表示・ダウンロードの対象は常に表示中バージョンになる。バージョン履歴UIは表示中の版に「表示中」バッジを付ける。
 
+**(Phase 89 完了後の調整)** CR を渡した再生成で作った版(`change_request_id` あり)は、何を合意してどこに反映したかをたどれるように削除しない。直近3件の数にも入れない(数えるのは CR を渡していない版だけ)。そのため版の一覧は3件を超えることがある。CR の版が増え続けるのは、CR の反映の回数だけ(合意を経た変更なので多くならない)。
+
 #### ⑤ `prompt_templates` テーブル（※Should have対応）
 
 | カラム名 | データ型 | 制約 | 説明 |
@@ -307,7 +309,7 @@ UML図のAI生成リクエスト1回分の履歴。一括生成の途中でク�
 | model | JSONB | NULL可 | 文書の意味モデル、段階の`approved_model`(段階3は承認したときの ER の写しを含む) |
 | generated_model | VARCHAR(100) | NULL可 | 文書を生成したモデル名 |
 
-`UNIQUE(baseline_id, key)`。入っていない文書・段階も行を作り、そのときの状態を残す。`generated_documents`(直近3版で巡回)・`design_stages`(1行を上書き)から切り離して凍結する。
+`UNIQUE(baseline_id, key)`。入っていない文書・段階も行を作り、そのときの状態を残す。`generated_documents`(直近3版で巡回。CR で反映した版は残す)・`design_stages`(1行を上書き)から切り離して凍結する。
 
 **⑯ `change_requests`(変更要求。CR)**
 
@@ -452,7 +454,7 @@ backend/
 | **GET** | `/api/v1/projects/{id}/documents` | 生成された設計書一覧(doc_typeごとの現在表示中(`is_current`)の版のみ)・内容の取得 | 必要 |
 | **POST** | `/api/v1/projects/{id}/documents/requirements/rows/{req_id}/adopt` | 要件定義書の現在の版の推測の要件を「採用」にする(LLM は呼ばない。同じ版の model と md を書き換え、版は増やさない)。要件が無い・model の無い版は 404 `REQUIREMENT_NOT_FOUND`、推測でない要件・生成中は 409(Phase 36) | 必要 |
 | **GET** | `/api/v1/projects/{id}/documents/{doc_id}/download` | 指定Markdownドキュメントのダウンロード | 必要 |
-| **GET** | `/api/v1/projects/{id}/documents/{doc_type}/versions` | （※ステージ2、SCR-006向け）指定doc_typeの保持済みバージョン一覧(最大3件)を取得。**(Phase 88)** 版ごとに、反映した CR の番号 `change_request_number`(CR を渡した再生成で作った版だけ。ほかは null)を付ける | 必要 |
+| **GET** | `/api/v1/projects/{id}/documents/{doc_type}/versions` | （※ステージ2、SCR-006向け）指定doc_typeの保持済みバージョン一覧(最大3件。**(Phase 89 完了後の調整)** CR で反映した版はこれに加えて残る)を取得。**(Phase 88)** 版ごとに、反映した CR の番号 `change_request_number`(CR を渡した再生成で作った版だけ。ほかは null)を付ける | 必要 |
 | **POST** | `/api/v1/projects/{id}/documents/{doc_type}/versions/{version}/restore` | （※ステージ2、SCR-006向け）指定バージョンを表示中(`is_current`)に切り替える。新バージョンは作らない(3.2節バージョニング方針参照) | 必要 |
 | **GET** | `/api/v1/prompt-templates` | （※ステージ2、SCR-003向け）選択可能なプロンプトテンプレート一覧の取得(固定シードデータ) | 必要 |
 | **POST** | `/api/v1/projects/{id}/uml/diagrams` | （※ステージ3、Phase 10）UML設計図のAI生成の受け付け(`202`、非同期。`{notation, subjects: [{subject, tables?}]}`、1回5件まで。同じ対象の図は上書き) | 必要 |
@@ -504,7 +506,7 @@ backend/
 | **GET** | `/api/v1/projects/{id}/change-requests/{number}/comparison` | （※ステージ11、Phase 85）反映した CR の、影響の予測(判断の時点で保存したもの)と反映で付いた印の比較。要素ごとに`status`(`matched`/`predicted_only`/`actual_only`)と、予測だけの理由`predicted_only_reason`(`document_side` = 画面・API。印が付かない/`unmarked_stage` = 一度も承認していない段階/`not_changed` = 反映の差分が届かなかった)・予測と実際の理由・届いた対象・印の確認の状態(**Phase 86** から今の状態。承認で消えた印は確認済み、文書の側は確認の項目の状態)。`counts`は分類ごとの件数。CR が無ければ404、反映の前は409 `CR_NOT_APPLIED` | 必要 |
 | **GET** / **PUT** / **POST** | `/api/v1/projects/{id}/change-requests/{number}/verification` ・ `/document-checks` ・ `/verify` | （※ステージ11、Phase 86）検証の確かめ(反映で付いた印ごとの今の確認の状態`confirmation`(`open`/`reviewed`/`approved`)・文書の側の確認の項目`documents`・未確認の数・`can_verify`。反映の前は409 `CR_NOT_APPLIED`)・文書の側の確認(本文`{keys, reviewed}`。予測に無いキーは無視。反映済みでなければ409 `CR_INVALID_TRANSITION`)・検証済みにする(本文`{note}`は任意。反映済みでなければ409 `CR_INVALID_TRANSITION`、未確認が残れば409 `CR_NOT_VERIFIABLE`) | 必要 |
 | **GET** / **POST** | `/api/v1/projects/{id}/change-requests/{number}/review-candidates` ・ `/reviews` | （※ステージ11、Phase 86）CR に結べる設計レビューの回(反映の後に流して成功し、まだ結んでいないもの。新しい順。反映済みでなければ空)・回を結ぶ(本文`{review_run_id}`。時系列に`link_review`。回が無ければ404 `REVIEW_RUN_NOT_FOUND`、結べなければ409 `CR_REVIEW_NOT_LINKABLE`)。結んだ回は CR の詳細の`reviews`に出る | 必要 |
-| **GET** | `/api/v1/projects/{id}/change-requests/{number}/trace` | （※ステージ11、Phase 86）受付から検証までをたどる記録。基準の束・入れた束(`included_baseline_number`)と、時系列の行ごとの操作の名前・作った文書の版(今も残っているか)・段階の版・モデル名・結んだレビュー(区切り・モデル・状態・指摘と採用の数)・束の番号 | 必要 |
+| **GET** | `/api/v1/projects/{id}/change-requests/{number}/trace` | （※ステージ11、Phase 86）受付から検証までをたどる記録。基準の束・入れた束(`included_baseline_number`)と、時系列の行ごとの操作の名前・作った文書の版(今も残っているか)・段階の版・モデル名・結んだレビュー(区切り・モデル・状態・指摘と採用の数)・束の番号。**(Phase 89 完了後の調整)** 合意・却下の行の `note` に、CR の合意の記録(相手・メモ・理由)を続ける(`decision_note`) | 必要 |
 | **GET** | `/api/v1/projects/{id}/change-requests/{number}/explanation` ・ `/explanation/download` | （※ステージ11、Phase 84）変更の説明書。プレビューは5節の md(`markdown`)・その sha256(`fingerprint`)・出力する md(`output`。確認済みで古くない要約だけを載せる)・ファイル名(`cr-<番号>-explanation.md`)・作業単位とテストの内訳(`units`・`integration_tests`・`system_tests`・`has_test_spec`)・要約(`summary`。無ければ null。`text`・`generated_text`・`edited`・`state`(`unconfirmed`/`confirmed`/`stale`)・作った人とモデル・確かめた人と日時・照合で5節に無い要件 ID と数字`unknown_requirement_ids`・`unknown_numbers`)。ダウンロードは`output`を`text/markdown`で返す。CR が無ければ404 | 必要 |
 | **POST** / **PATCH** | `/api/v1/projects/{id}/change-requests/{number}/explanation/summary` ・ `.../summary/confirm`(POST) | （※ステージ11、Phase 84）説明書の任意の要約。作る(POST。利用者の生成の用途の LLM に5節だけを渡す。未確認ででき、前の要約は上書き)・直す(PATCH `{text}`。未確認に戻る)・確かめる(POST `.../confirm`。確かめた人と日時と今の5節の fingerprint を残し、出力に載る。照合の結果では止めない)。応答はどれもプレビューと同じ形。要約が無いのに直す・確かめるは404 `CR_SUMMARY_NOT_FOUND`。LLM のキーが自分にも既定にも無ければ`LLM_UNAVAILABLE` | 必要 |
 | **PUT** / **DELETE** | `/api/v1/users/me/api-keys/{provider}` | （※ステージ9、Phase 67）provider ごとの API キーの登録(`{api_key}`。保存の前にモデルの一覧の取得で確かめる。無効は422 `API_KEY_INVALID`、確かめられないときは502 `API_KEY_CHECK_FAILED`、暗号の鍵が無いときは503 `ENCRYPTION_UNAVAILABLE`。試行はユーザーごとに1時間10回)・削除(204。無くても204。選択の行は残す) | 必要 |
@@ -798,7 +800,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 
 [外部設計書](external_design.md) 2.14節の内部の方針(Phase 80で確定)。経緯は[`textbook/Phase-80/Phase-80-1.md`](../textbook/Phase-80/Phase-80-1.md)。細部は各 Phase の着手時に決める(未確定事項は[`textbook/Phase-80/Phase-80-4.md`](../textbook/Phase-80/Phase-80-4.md))。
 
-* **凍結**: 合意済みの版は、作る時点の content・model・`approved_model` を⑮に写す。`generated_documents` の巡回(`MAX_VERSIONS_PER_DOC_TYPE`)と `design_stages` の上書きの仕組みは変えない。
+* **凍結**: 合意済みの版は、作る時点の content・model・`approved_model` を⑮に写す。`generated_documents` の巡回(`MAX_VERSIONS_PER_DOC_TYPE`)と `design_stages` の上書きの仕組みは変えない(**Phase 89 完了後の調整**で、CR で反映した版だけは巡回から外した。3.2節)。
   * **Phase 81 で確定**: `BaselineService`(`app/services/baseline_service.py`)が、詳細設計モード → 生成中でない(文書は`projects.status`、段階は`generation_status`)→ 要件定義書・外部設計書の表示中の版がある、の順に確かめて束を作る(**未承認・古い段階があっても作れる**。ユーザー決定)。段階の行と状態は `DesignStageService.stage_rows` から読む。写しは純粋関数 `document_snapshots`・`stage_snapshots`。文書の版の生成したモデル名は、`generate_documents` が解決した `ResolvedLlm.model` を `create_version` に渡す(注入した LLM は `injected_llm` で `.env` の既定のモデル)。マイグレーションは `9dde45561e02`(列)・`d28026a1521b`(⑭⑮)。
 * **CR**: **Phase 82 で確定**: `ChangeRequestService`(`app/services/change_request_service.py`)が、作成(詳細設計モード → 基準の束 → 対象の確かめ)・更新・状態の遷移・却下した CR の写しを行う。遷移の可否は純粋な表 `app/change_requests/states.py`(`TRANSITIONS`・`next_status`・`allowed_actions`)で決め、`ChangeRequestRepository.add_event` が時系列(⑰)に1行足して状態をそろえる。対象の要件 ID は、基準の束の要件定義書の写しの `rows` で確かめる(`baseline_requirement_ids`・`checked_targets`)。重なりは、進行中(`ACTIVE_STATUSES`)のほかの CR と対象を突き合わせる純粋関数 `overlaps`。合意の記録の項目(相手・メモ・理由)は `app/schemas/agreement.py` の `AgreementNotes` を、束の作成(`BaselineCreate`)と CR の判断(`ChangeRequestDecision`)で共有する。マイグレーションは `e1cfb47f1d13`(⑯⑰)。
 * **予測**: 基準の束の写しから `build_elements(DesignModels.from_dicts(...))` で要素を作り、対象の要件を `impact_of(elements, Change("req:<ID>"))` に渡す(`app/detailed_design/impact/trace.py`。LLM なし・決定的)。Phase 80 のベースラインで、N2 の予測は正解の6件と一致した。今の再生成の印(`record_document_change` → `marks_for`)は、文書の側の要素(画面・API)に付かない(4件)。

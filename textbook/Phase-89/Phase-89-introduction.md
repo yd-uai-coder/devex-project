@@ -105,20 +105,9 @@ samples に写さないもの: [`appendix/measurements/stage11/effect.py`](../..
 
 [Phase 88](../Phase-88/Phase-88-introduction.md#未消化の申し送り37) から引き継いだもの。
 
-**この Phase の中で扱うもの**(89-4 の画面確認で決める。結果は [89-4](./Phase-89-4.md)):
-- **画面確認**(Phase 87・88 の分。一覧は [89-4](./Phase-89-4.md) の表)。
-- **写しの元の基準の束**: 写しは元の CR の基準の束をそのまま使う。運用で困るか。
-- **予測・説明書の応答の大きさ**: 効果測定では予測 1.7KB・説明書 2.1KB([89-1](./Phase-89-1.md))。画面で重く感じるかだけを見る。
-- **要約の質**: 実 LLM で1回作って、照合の不一致と読みやすさを見る。
-- **要約を直した人**: 記録していない。画面確認で要ると分かったら列を足す。
-- **反映を実 LLM で通すか** → 実 LLM での一巡で通す。
-- **反映の完了待ちの範囲**: 生成中に一覧や別の画面へ移って戻ったときの動き。
-- **CR を選ぶ欄の初期値**: CR が2つ以上同時に反映済みのとき。
-- **束の段階の写しを読む画面**: 合意した時点の段階を見たい場面があるか。
-- **全角の数字の印**: 画面の文の中の印が半角だけに付くことで困るか。
-- **たどる記録に合意の相手が出ない**(この Phase で生まれた。E2E で分かった): 相手は内容のタブにある。たどる記録の「合意」の行のメモに出すか。
-
 **ステージ11 の範囲の外へ送るもの**:
+- **CR を渡さない再生成で、合意した行が動く**(この Phase で生まれた。[89-4](./Phase-89-4.md) の実 LLM での一巡): FR-005 の文は同じまま、出どころが「採用」から「推測」に変わり、関係の無い印が3件付いた。ステージ12(合意済みの行の保護)で扱う。
+- **影響が広がる変更の実 LLM での比較**(この Phase で生まれた): 実 LLM の一巡は予測0件の変更だった。予測と実際の印の比較を実 LLM で見るのは、ステージ12 以降の測定で行う。
 - **段階の承認で付く印の漏れ**: CR を渡して作り直した段階を承認したとき、新しく生まれた要素から先の印は CR に結ばれない(Phase 86 のユーザー決定)。N2 の材料では差分が要件1件で出ない([89-1](./Phase-89-1.md))。段階の作り直しが要る変更の測定を、ステージ12(行単位の変更の履歴)で行う。
 - **下書きの中の直しは時系列に残さない**: ステージ12(行単位の変更の履歴)。
 - **要約の生成の回数の上限**: 置いていない(文書の生成と同じ)。既定のキーで使われすぎると分かったら決める。
@@ -138,21 +127,71 @@ samples に写さないもの: [`appendix/measurements/stage11/effect.py`](../..
 - Google の公開鍵を毎回取りに行く(Phase 74)
 - `ListCard` の入れ物(Phase 79。テンプレートでは直した)
 - 英語のままの refresh の失敗の文(Phase 79)
-- `tagmerge.py` の手直し(ステージ10 の振り返り。Phase 88 の手直しの一覧はその introduction)
+- `tagmerge.py` の手直し(ステージ10 の振り返り。Phase 88 の手直しの一覧はその introduction)→ ステージ11 の振り返りで、ステージ12 の前に別のセッションで直すと決めた(overall-retrospective 16.1 の Q2)
 - `streamChat.test.ts` の lint の警告(使っていない変数。既存)
 - `appendix/measurements/stage11/measure.py` の `ruff check` の指摘(行の長さ1件。Phase 80 から)
 
 **ユーザーが決めるもの**:
 - **開発環境の後始末**: 確認用の利用者・プロジェクト(開発 DB の束 12・CR 8。多くは E2E が作った)、DB の事故の後の複製(振り返り 8節)。
-- **この Phase の未コミット**: 外側のリポジトリ・devex-ui。devex-api は本体を変えていない(`OPERATIONS.md` だけ)。コミットはユーザーが行う(#35)。タグは devex-api・devex-ui とも `phase-89`。
-- **ステージ11 の振り返り**(#10・#24・#25・#39): #18 により別のセッションで行う。
+- **この Phase の未コミット**: Phase 完了後の調整(外側のリポジトリ・devex-api・devex-ui)。コミットはユーザーが行う(#35)。タグは devex-api・devex-ui とも `phase-89`(調整のコミットに付ける)。
+- ~~**ステージ11 の振り返り**~~ → 別のセッションで行った([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 16節)。
 
-**セッションの区切りの記録**: Phase 89 は1セッションで、計画 → 89-1〜89-3 → 教材までを行った。89-4(画面確認と実 LLM)はユーザーの確認を待つ。
+**セッションの区切りの記録**: Phase 89 は2セッション。1つ目で計画 → 89-1〜89-3 → 教材まで、2つ目で 89-4 の記録(ユーザーの画面確認と実 LLM での一巡の後)と Phase 完了後の調整を行った。2つ目は、ステージ11 の振り返りを始めようとして 89-4 が済んでいないと分かり、先に 89-4 を済ませたもの(振り返りは別のセッション。#18)。
 
 **この Phase で解決したもの**:
 - **80-4 の Phase 89 の未確定事項**(実 LLM で反映を通すか・E2E の範囲・本番の手順とロールバック): 着手時の相談と [89-2](./Phase-89-2.md)・[89-3](./Phase-89-3.md)。本番の手順は下書き(ステージ15 で仕上げる)。
 - **CR の流れの E2E**(Phase 87 から): [89-2](./Phase-89-2.md)。束は画面で作り、CR は束の中身から作る。
-- **予測・説明書の応答の大きさ**(Phase 87 から): [89-1](./Phase-89-1.md) で測り、今の形で足りると判断した(画面の体感は 89-4)。
+- **予測・説明書の応答の大きさ**(Phase 87 から): [89-1](./Phase-89-1.md) で測り、今の形で足りると判断した。画面でも重さの指摘は無かった([89-4](./Phase-89-4.md))。
+- **画面確認**(Phase 87・88 の分): [89-4](./Phase-89-4.md)。指摘は無かった。
+- **反映・要約を実 LLM で通す**: [89-4](./Phase-89-4.md) の実 LLM での一巡。要約の照合の不一致 0件・読みやすさは問題なし。
+- **写しの元の基準の束・CR を選ぶ欄の初期値・要約を直した人・束の段階の写しを読む画面・全角の数字の印・レビューを外す操作**: [89-4](./Phase-89-4.md) で、どれも今のままに決めた。
+- **たどる記録に合意の相手が出ない**(この Phase で生まれた)・**反映の完了待ちの範囲**: 下の「Phase 完了後の調整」で直した。
+
+## Phase 完了後の調整
+
+89-4 の決める項目の2件(推奨どおり)と、実 LLM での一巡で見つかった版の巡回(推奨は「ステージ12 へ送る」だったが、ユーザーが「今直す」を選んだ)を直した(#38 の通常の工程)。仕様を変えるので、#40 の CR として [`q_a.md`](../q_a.md)「Phase 89 完了後の調整」に残し、docs に反映した。マイグレーションは無い。
+
+| 指摘 | 対応 |
+|---|---|
+| たどる記録に合意の相手が出ない(89-2) | 「合意」「却下」の行のメモに、CR の合意の記録(相手・メモ・理由。あるものだけ)を「相手: … / メモ: … / 理由: …」の形で出す。画面は行のメモを出しているので変えない |
+| 反映の生成中に一覧や別の画面へ移って戻ると、反映中の表示と完了の後の読み直しが消える | CR の詳細を開いたとき、プロジェクトを読み、生成中なら反映の完了を待ち直す(`resumeReflection`。使われていなかった `setReflecting` を置き換えた) |
+| CR-2 の反映で作った文書の版が、CR を渡さない再生成2回で消えた(実 LLM での一巡) | CR を渡した再生成で作った版(`change_request_id` あり)は、巡回で消さず、直近3件の数にも入れない |
+
+### 作成・更新したファイル
+
+| ファイル | 新規/更新 | 内容 |
+| --- | --- | --- |
+| [`backend/app/repositories/generated_document.py`](../samples/backend/app/repositories/generated_document.py) | 更新 | `create_version` の巡回が、CR で反映していない版だけを数えて消す |
+| [`backend/app/change_requests/trace.py`](../samples/backend/app/change_requests/trace.py) | 更新 | `DecisionFacts`・`decision_note`。`trace_entries` に `decision` |
+| [`backend/app/change_requests/__init__.py`](../samples/backend/app/change_requests/__init__.py) | 更新 | `DecisionFacts`・`decision_note` の re-export |
+| [`backend/app/services/change_request_service.py`](../samples/backend/app/services/change_request_service.py) | 更新 | `trace` が CR の合意の記録を `DecisionFacts` で渡す |
+| [`frontend/src/features/change-requests/change-requests-store.ts`](../samples/frontend/src/features/change-requests/change-requests-store.ts) | 更新 | `resumeReflection`(`setReflecting` を置き換え) |
+| [`frontend/src/features/change-requests/components/ChangeRequestDetailContent.tsx`](../samples/frontend/src/features/change-requests/components/ChangeRequestDetailContent.tsx) | 更新 | 開いたときに `resumeReflection` |
+| テスト(更新) | 更新 | `test_generated_document_repository.py`・`test_change_request_trace.py`、ストアのテスト・`ChangeRequestDetailContent.test.tsx`、テストの準備 `renderWithStore.tsx` |
+
+samples のタグは `Phase-89(完了後の調整)`。
+
+### 要点
+
+- **数えるのは CR を渡していない版だけ**: 新しい版が CR の版なら、CR を渡していない版の数は増えないので消さない。CR を渡していない版なら、今までどおり直近3件にそろえる。表示中の版は常に最新なので、消える版が表示中になることは無い(今までと同じ)。
+- **合意の記録は CR の列から読む**: 時系列の行には合意の記録を写していない(Phase 82)。たどる記録を組むときに CR の列から渡すので、前に合意した CR にも出る。却下も同じ列を使うので、却下の行にも出る。
+- **完了待ちはプロジェクトの状態で決める**: 生成中なら、CR の反映かどうかを問わず待つ(生成中は反映を押しても 409 で、完了の後に詳細を読み直せばよいため)。
+
+### テスト観点
+
+| テスト | SUT | ドライバ | スタブ |
+|---|---|---|---|
+| `test_generated_document_repository.py`(追記) | `create_version` の巡回 | pytest のテスト関数 | SQLite のセッション。CR は `tests/fixtures/change_requests.py` の合意した CR-1 |
+| `test_change_request_trace.py`(追記) | `trace_entries`・`decision_note`、`ChangeRequestService.trace` の合意の行 | pytest のテスト関数 | 純粋関数はスタブ不要 ── 対象が純粋で外部依存を呼ばないため。サービスは既存のとおり |
+| ストアのテスト(追記) | `resumeReflection`(生成中なら待つ・生成中でなければ待たない) | vitest のテスト関数 | `fetch`(`stubFetch`) |
+| `ChangeRequestDetailContent.test.tsx`(追記) | 開いたときに `resumeReflection` を呼ぶ | Testing Library | ストアの関数(`vi.fn`) |
+
+### 検証
+
+- devex-api: **1629 件成功**(3件増えた)。`ruff check`・`pyright`(変えたファイル)成功。
+- devex-ui: **1175 件成功**(`--maxWorkers=4`。1件増えた。既存のテストに確かめを足した分は件数に出ない)。`tsc` 成功、`lint` は既存の警告1件だけ。
+- `samples_check.py`: 一致 924・並び順のみ差 8・例外 5、「samples のみ」「本体のみ」0件。`link_check.py`: 0 件。
+- 画面での確かめはしていない(E2E は変えていない。たどる記録の spec は内容のタブで相手を確かめる形のまま)。
 
 ## 後続 Phase での改訂
 
@@ -170,4 +209,4 @@ samples に写さないもの: [`appendix/measurements/stage11/effect.py`](../..
 
 ## 次のフェーズ
 
-**ステージ11 の振り返り**(別セッション。#18): [`overall-retrospective.md`](../retrospectives/overall-retrospective.md) にステージ11 の節(#10・#25・#39)と decision digest(#24)。本番での確認の指摘(#39)はステージ15 の反映の後に埋める。その後、**ステージ12(合意の精度)** の要件確認フェーズ。入力はこの Phase の申し送りと [位置付け](../../appendix/devex_project_positioning.md) 12章。
+**ステージ11 の振り返り**は済んだ([`overall-retrospective.md`](../retrospectives/overall-retrospective.md) 16節・decision digest)。本番での確認の指摘(#39)はステージ15 の反映の後に埋める。次は、**`tagmerge.py` の修正**(別のセッション。16.1 の Q2)→ **ステージ12(合意の精度)** の要件確認フェーズ。入力は 16.3 の「ステージ12 の入力」・この Phase の申し送り・[位置付け](../../appendix/devex_project_positioning.md) 12章。

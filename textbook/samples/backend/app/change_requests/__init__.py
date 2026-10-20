@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4
+# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整)
 # Phase-86-4：更新(docstring: 検証の条件(86-1)・レビューを結ぶ条件(86-3)・たどる記録(86-4)を足した)
 # Phase-85-4：更新(docstring: 反映の指示(85-1)・予測と実際の比較(85-4)を足した)
 # Phase-84-4：更新(docstring: 変更後の案(84-1)・説明書の組み立てと照合(84-2)・要約の入力と状態(84-4)を足した)
@@ -23,6 +23,7 @@ docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 # Phase-86-1:追記 ── app.change_requests.states(CHECKABLE_STATUSES, INCLUDABLE_STATUSES), app.change_requests.verification(MARK_CONFIRMATION_LABEL, MARK_CONFIRMATIONS, DocumentItem, MarkConfirmation, MarkState, Verification, checked_documents, document_items, mark_states, verification_of, with_confirmations)
 # Phase-86-3:追記 ── app.change_requests.reviews(LINKABLE_RUN_STATUS, aware, first_applied_at, review_link_problem)
 # Phase-86-4:追記 ── app.change_requests.trace(ACTION_LABEL, EventFacts, ReviewFacts, TraceDocument, TraceEntry, TraceStage, trace_entries)
+# Phase-89(完了後の調整):追記 ── app.change_requests.trace(DecisionFacts, decision_note)
 from app.change_requests.comparison import (
     COMPARISON_STATUS_LABEL,
     COMPARISON_STATUSES,
@@ -105,11 +106,13 @@ from app.change_requests.targets import (
 )
 from app.change_requests.trace import (
     ACTION_LABEL,
+    DecisionFacts,
     EventFacts,
     ReviewFacts,
     TraceDocument,
     TraceEntry,
     TraceStage,
+    decision_note,
     trace_entries,
 )
 from app.change_requests.verification import (
@@ -201,6 +204,8 @@ __all__ = [
     "MARK_CONFIRMATIONS",
     "MARK_CONFIRMATION_LABEL",
     "DocumentItem",
+    # Phase-89(完了後の調整):追記
+    "DecisionFacts",
     "MarkConfirmation",
     "MarkState",
     "Verification",
@@ -221,5 +226,7 @@ __all__ = [
     "TraceDocument",
     "TraceEntry",
     "TraceStage",
+    # Phase-89(完了後の調整):追記
+    "decision_note",
     "trace_entries",
 ]

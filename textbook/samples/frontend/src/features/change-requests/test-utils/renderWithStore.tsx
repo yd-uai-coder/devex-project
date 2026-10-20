@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-88-2,88(完了後の調整)
+// 作成：Phase-87-3｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整)
 import type { ReactElement } from "react";
 import { render } from "@testing-library/react";
 import { vi } from "vitest";
@@ -53,6 +53,8 @@ export function resetChangeRequestsStore(): void {
     checkDocuments: vi.fn().mockResolvedValue(undefined),
     reflectDocuments: vi.fn().mockResolvedValue(undefined),
     onReflectionFinished: vi.fn(),
+    // Phase-89(完了後の調整):追記
+    resumeReflection: vi.fn().mockResolvedValue(undefined),
     // Phase-88-2:追記
     summarize: vi.fn().mockResolvedValue(true),
     editSummary: vi.fn().mockResolvedValue(true),

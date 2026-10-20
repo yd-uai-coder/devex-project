@@ -1,8 +1,11 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整)
+// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整)
 // Phase-88-2：更新
 // // SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映)
 // ↓↓
-// SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映・説明書の要約)
+// Phase-89(完了後の調整)：更新
+// // SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映・説明書の要約)
+// ↓↓
+// SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映と完了の待ち直し・説明書の要約)
 // ドライバ: vitest のテスト関数(ストアの関数を直接呼ぶ)
 // スタブ: fetch(stubFetch)── ストアが API を呼ぶ順と本文、応答・失敗の後の状態を確かめるため
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -162,6 +165,21 @@ describe("useChangeRequestsStore", () => {
 
     expect(state().reflecting).toBe(true);
     expect(state().reflectError).toBeNull();
+  });
+
+  // Phase-89(完了後の調整):追記
+  it("詳細を開いたとき、プロジェクトが生成中なら反映の完了を待ち直し、そうでなければ待たない", async () => {
+    stub.queue({ body: makeChangeRequest() });
+    stub.queue({ body: { id: "p1", status: "generating" } });
+    await state().fetchDetail("p1", 1);
+    await state().resumeReflection("p1");
+    expect(stub.requests[1].url).toMatch(/\/api\/v1\/projects\/p1$/);
+    expect(state().reflecting).toBe(true);
+
+    useChangeRequestsStore.setState({ reflecting: false });
+    stub.queue({ body: { id: "p1", status: "completed" } });
+    await state().resumeReflection("p1");
+    expect(state().reflecting).toBe(false);
   });
 
   // Phase-88-2:追記

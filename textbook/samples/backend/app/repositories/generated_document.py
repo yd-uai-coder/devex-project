@@ -1,5 +1,6 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2,81-1,85-2
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2,81-1,85-2,89(完了後の調整)
 # Phase-85-2：更新(docstring: create_version の change_request_id を足した)
+# Phase-89(完了後の調整)：更新(docstring: CR で反映した版は消さず、数にも入れない。create_version・list_versions)
 # 写経レベル: コア ── バージョニング(直近3件保持・最古削除)はdocs/internal_design.md 3.2節の
 # ドメイン規則をそのままロジック化した箇所であり、慎重な写経・理解が必要。
 # Phase-6-1: list_versions/get_versionはSCR-006向けの定型的な参照系メソッド(写経レベル: 定型)。
@@ -29,6 +30,9 @@ DOC_TYPES_BY_MODE: dict[str, tuple[str, ...]] = {
 TEST_SPEC = "test_spec"
 
 # 同一project_id+doc_typeにつき保管する最大バージョン数(docs/internal_design.md 3.2節「バージョニング方針」)。
+# Phase-89(完了後の調整):追記
+# CR を渡した再生成で作った版(`change_request_id`あり)は、何を合意して反映したかをたどれるように
+# 消さず、この数にも入れない。
 MAX_VERSIONS_PER_DOC_TYPE = 3
 
 
@@ -55,7 +59,7 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
         """新バージョンを追加する(既存行は上書きしない)。`model`は意味モデルを持つ文書だけ。
         `generated_model`は生成したモデル名、`change_request_id`は反映した CR(渡したときだけ)。
         追加後に保管数がMAX_VERSIONS_PER_DOC_TYPEを超える場合は、最も古いバージョンから順に
-        削除して上限を維持する。
+        削除して上限を維持する。CR で反映した版は消さず、数にも入れない。
 
         Phase-6-6:追記 ── 新バージョンは常にis_current=Trueで作成し、既存行のis_currentは全て外す
         (新規生成した版が表示中になる)。新しい版が常にcurrentなので、保持数超過で削除される
@@ -85,11 +89,21 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
         self._session.add(document)
         await self._session.flush()
 
-        # existingは新バージョン追加"前"の一覧(新しい順)。追加後の総数が上限を超える古いものを削除する。
-        keep_count = MAX_VERSIONS_PER_DOC_TYPE - 1
-        for stale in existing[keep_count:]:
+        # Phase-89(完了後の調整)：更新
+        # # existingは新バージョン追加"前"の一覧(新しい順)。追加後の総数が上限を超える古いものを削除する。
+        # keep_count = MAX_VERSIONS_PER_DOC_TYPE - 1
+        # for stale in existing[keep_count:]:
+        #     await self._session.delete(stale)
+        # if len(existing) > keep_count:
+        #     await self._session.flush()
+        # ↓↓
+        # existingは新バージョン追加"前"の一覧(新しい順)。CR で反映していない版だけを数え、
+        # 追加後の数が上限を超える古いものを削除する。
+        plain = [row for row in existing if row.change_request_id is None]
+        keep_count = MAX_VERSIONS_PER_DOC_TYPE - (1 if change_request_id is None else 0)
+        for stale in plain[keep_count:]:
             await self._session.delete(stale)
-        if len(existing) > keep_count:
+        if len(plain) > keep_count:
             await self._session.flush()
 
         return document
@@ -149,8 +163,8 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
     async def list_versions(
         self, *, project_id: uuid.UUID, doc_type: str
     ) -> list[GeneratedDocument]:
-        """指定project_id・doc_typeについて、保管されている全バージョン(最大MAX_VERSIONS_PER_DOC_TYPE件)
-        を新しい順に返す。"""
+        """指定project_id・doc_typeについて、保管されている全バージョン(最大MAX_VERSIONS_PER_DOC_TYPE件と、
+        CR で反映した版)を新しい順に返す。"""
         return await self.list_all(
             order_by=GeneratedDocument.version.desc(), project_id=project_id, doc_type=doc_type
         )

@@ -185,7 +185,7 @@ Claude の判断(計画の承認で確定、または作業中):
 
 ## 後続 Phase での改訂
 
-(まだ無い)
+- Phase 89 完了後の調整: たどる記録の「合意」「却下」の行のメモに、CR の合意の記録(相手・メモ・理由)を出す(`DecisionFacts`・`decision_note`)。経緯は [Phase 89 の introduction](../Phase-89/Phase-89-introduction.md#phase-完了後の調整) と [`q_a.md`](../q_a.md)「Phase 89 完了後の調整」。
 
 ## Phase 完了チェック(#22)
 
