@@ -1,4 +1,4 @@
-// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正),29-4,44-3
+// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正),29-4,44-3,99(完了後の調整)
 // 写経レベル: コア ── 生成の対象・作り直しの確認・関与表の反映を確かめる。
 // Phase-21-8:追記 ── ../../test-utils/stageFixtures.makeLogics
 // Phase-29-4:追記 ── @/features/detailed-design/api/designStagesApi.getProcedureSequence
@@ -215,6 +215,19 @@ describe("ProcedurePanel", () => {
     expect(screen.getByText(/5 件までです/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "この処理の下書きを生成する" }));
     expect(useDetailedDesignStore.getState().generate).toHaveBeenCalledWith("p1", 5, ["F-01"]);
+  });
+
+  // Phase-99(完了後の調整):追記
+  it("機能一覧に無い処理の手順があるときだけ、付け替えか消すの一覧を出し、消すと保存できる", async () => {
+    const stray = { ...makeProcedures().procedures[0], function_id: "F-04" };
+    const onDirtyChange = renderPanel(
+      setup({ state: "regenerated", version: 5, model: { procedures: [...makeProcedures().procedures, stray] } }),
+    );
+
+    expect(screen.getByText("機能一覧に無い処理の手順(1)")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "F-04 の手順を消す" }));
+    expect(screen.queryByText("機能一覧に無い処理の手順(1)")).not.toBeInTheDocument();
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
   });
 
   it("生成中は手順の表を出さない", () => {

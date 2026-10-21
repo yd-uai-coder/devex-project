@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2
+// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2,99(完了後の調整)
 // SUT: changeRequestOps(CR の画面の純粋な変換)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
@@ -11,6 +11,7 @@
 // ↓↓
 // Phase-88(完了後の調整):追記
 // Phase-98-2:追記 ── ../changeRequestOps.ORIGIN_KIND_LABEL, ../changeRequestOps.addOrigin, ../changeRequestOps.originLabel, ../changeRequestOps.removeOrigin
+// Phase-99(完了後の調整):追記 ── ../changeRequestOps.verifyBannerText
 import { describe, expect, it } from "vitest";
 import {
   ORIGIN_KIND_LABEL,
@@ -42,6 +43,7 @@ import {
   summaryOutputNote,
   toCreateBody,
   toUpdateBody,
+  verifyBannerText,
 } from "../changeRequestOps";
 import {
   makeChangeRequest,
@@ -221,5 +223,13 @@ describe("モード", () => {
     expect(isDetailedModeOnly(new ApiError(409, "m", "DESIGN_STAGES_NOT_AVAILABLE"))).toBe(true);
     expect(isDetailedModeOnly(new ApiError(409, "m", "DOC_GENERATION_IN_PROGRESS"))).toBe(false);
     expect(isDetailedModeOnly(new Error("x"))).toBe(false);
+  });
+});
+// Phase-99(完了後の調整):追記
+describe("詳細設計の画面の CR の帯", () => {
+  it("未確認の印・文書の側・未承認の段階の数を1行にする", () => {
+    expect(verifyBannerText({ open_marks: 3, open_documents: 0, pending_stages: [1, 4] })).toBe(
+      "未確認の印 3 / 文書の側 0 / 未承認の段階 2",
+    );
   });
 });

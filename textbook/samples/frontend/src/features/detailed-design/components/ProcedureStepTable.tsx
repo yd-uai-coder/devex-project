@@ -1,4 +1,4 @@
-// 作成：Phase-20-6｜更新：Phase-21-8,29-1
+// 作成：Phase-20-6｜更新：Phase-21-8,29-1,99(完了後の調整)
 // 写経レベル: コア ── 分岐の行の見せ方と、一覧に無い呼び出し先の印(検証のエラーと同じ条件)。
 "use client";
 
@@ -224,7 +224,11 @@ export function ProcedureStepTable({
                           ) : null}
                         </td>
                         {/* Phase-29-1:追記 */}
-                        <td style={CELL}>
+                        {/* Phase-99(完了後の調整)：更新 */}
+                        {/* <td style={CELL}> */}
+                        {/* ↓↓ */}
+                        {/* ほかの列が広がっても、選んだ種別が読める幅 */}
+                        <td style={{ ...CELL, minWidth: 90 }}>
                           <select
                             style={INPUT}
                             aria-label={`${id} の種別`}

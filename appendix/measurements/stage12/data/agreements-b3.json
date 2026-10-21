@@ -1,0 +1,365 @@
+[
+ {
+  "baseline": 3,
+  "content": {
+   "category": "",
+   "id": "FR-001",
+   "kind": "FR",
+   "points": [
+    "core"
+   ],
+   "priority": "Must",
+   "source": "assumed",
+   "text": "8時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。"
+  },
+  "cr": null,
+  "key": "req:FR-001",
+  "kind": "requirement",
+  "label": "FR-001 8時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。",
+  "origin": "baseline",
+  "seq": 1
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "",
+   "id": "FR-002",
+   "kind": "FR",
+   "points": [
+    "core"
+   ],
+   "priority": "Must",
+   "source": "assumed",
+   "text": "トレンド取得と同時にLLMを用いて上位10件分の背景解説を自動生成しデータベースに保存する。"
+  },
+  "cr": null,
+  "key": "req:FR-002",
+  "kind": "requirement",
+  "label": "FR-002 トレンド取得と同時にLLMを用いて上位10件分の背景解説を自動生成しデータベースに保存する。",
+  "origin": "baseline",
+  "seq": 2
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "",
+   "id": "FR-003",
+   "kind": "FR",
+   "points": [
+    "users",
+    "core"
+   ],
+   "priority": "Must",
+   "source": "assumed",
+   "text": "トップページにおいて保持している最新のトレンドランキングTOP10をJinja2テンプレートにより表示する。"
+  },
+  "cr": null,
+  "key": "req:FR-003",
+  "kind": "requirement",
+  "label": "FR-003 トップページにおいて保持している最新のトレンドランキングTOP10をJinja2テンプレートにより表示する。",
+  "origin": "baseline",
+  "seq": 3
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "",
+   "id": "FR-004",
+   "kind": "FR",
+   "points": [
+    "users",
+    "core"
+   ],
+   "priority": "Must",
+   "source": "assumed",
+   "text": "背景解説ページにおいて事前生成されたトレンドの背景解説を表示する。"
+  },
+  "cr": null,
+  "key": "req:FR-004",
+  "kind": "requirement",
+  "label": "FR-004 背景解説ページにおいて事前生成されたトレンドの背景解説を表示する。",
+  "origin": "baseline",
+  "seq": 4
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "",
+   "id": "FR-005",
+   "kind": "FR",
+   "points": [
+    "core",
+    "security"
+   ],
+   "priority": "Must",
+   "source": "assumed",
+   "text": "外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。"
+  },
+  "cr": null,
+  "key": "req:FR-005",
+  "kind": "requirement",
+  "label": "FR-005 外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。",
+  "origin": "baseline",
+  "seq": 5
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "セキュリティ",
+   "id": "NFR-001",
+   "kind": "NFR",
+   "points": [
+    "exceptions"
+   ],
+   "priority": null,
+   "source": "assumed",
+   "text": "X API取得失敗時はキャッシュを返さずそのままエラーレスポンスを返却する。"
+  },
+  "cr": null,
+  "key": "req:NFR-001",
+  "kind": "requirement",
+  "label": "NFR-001 X API取得失敗時はキャッシュを返さずそのままエラーレスポンスを返却する。",
+  "origin": "baseline",
+  "seq": 6
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "技術スタック",
+   "id": "CON-001",
+   "kind": "CON",
+   "points": [
+    "tech"
+   ],
+   "priority": null,
+   "source": "assumed",
+   "text": "プログラミング言語にはPythonを使用する。"
+  },
+  "cr": null,
+  "key": "req:CON-001",
+  "kind": "requirement",
+  "label": "CON-001 プログラミング言語にはPythonを使用する。",
+  "origin": "baseline",
+  "seq": 7
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "技術スタック",
+   "id": "CON-002",
+   "kind": "CON",
+   "points": [
+    "tech"
+   ],
+   "priority": null,
+   "source": "assumed",
+   "text": "WebフレームワークにはFastAPIおよびJinja2テンプレートを使用する。"
+  },
+  "cr": null,
+  "key": "req:CON-002",
+  "kind": "requirement",
+  "label": "CON-002 WebフレームワークにはFastAPIおよびJinja2テンプレートを使用する。",
+  "origin": "baseline",
+  "seq": 8
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "技術スタック",
+   "id": "CON-003",
+   "kind": "CON",
+   "points": [
+    "tech"
+   ],
+   "priority": null,
+   "source": "assumed",
+   "text": "データベースにはPostgreSQLを使用する。"
+  },
+  "cr": null,
+  "key": "req:CON-003",
+  "kind": "requirement",
+  "label": "CON-003 データベースにはPostgreSQLを使用する。",
+  "origin": "baseline",
+  "seq": 9
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "技術スタック",
+   "id": "CON-004",
+   "kind": "CON",
+   "points": [
+    "tech"
+   ],
+   "priority": null,
+   "source": "assumed",
+   "text": "定期実行にはFastAPI内蔵のAPSchedulerを使用する。"
+  },
+  "cr": null,
+  "key": "req:CON-004",
+  "kind": "requirement",
+  "label": "CON-004 定期実行にはFastAPI内蔵のAPSchedulerを使用する。",
+  "origin": "baseline",
+  "seq": 10
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "外部サービス",
+   "id": "CON-005",
+   "kind": "CON",
+   "points": [
+    "tech"
+   ],
+   "priority": null,
+   "source": "assumed",
+   "text": "X API(Freeプラン / 日本リージョン)を利用する。"
+  },
+  "cr": null,
+  "key": "req:CON-005",
+  "kind": "requirement",
+  "label": "CON-005 X API(Freeプラン / 日本リージョン)を利用する。",
+  "origin": "baseline",
+  "seq": 11
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "category": "外部サービス",
+   "id": "CON-006",
+   "kind": "CON",
+   "points": [
+    "tech"
+   ],
+   "priority": null,
+   "source": "assumed",
+   "text": "LLM APIを利用して背景解説を自動生成する。"
+  },
+  "cr": null,
+  "key": "req:CON-006",
+  "kind": "requirement",
+  "label": "CON-006 LLM APIを利用して背景解説を自動生成する。",
+  "origin": "baseline",
+  "seq": 12
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "users": [
+    {
+     "scene": "トップページや背景解説ページを開き、最新のトレンドランキングやその背景解説を閲覧する",
+     "source": "assumed",
+     "user": "一般ユーザー"
+    },
+    {
+     "scene": "APIを経由してトレンドデータを取得・利用する",
+     "source": "assumed",
+     "user": "外部クライアント"
+    }
+   ]
+  },
+  "cr": null,
+  "key": "users",
+  "kind": "users",
+  "label": "利用者と使う場面",
+  "origin": "baseline",
+  "seq": 13
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "id": "SCR-001",
+   "name": "トップページ",
+   "priority": "Must",
+   "req_ids": [
+    "FR-003"
+   ],
+   "role": "保持している最新のトレンドランキングTOP10を一覧表示する",
+   "ui_spec": "- 最新トレンドランキングTOP10のリスト表示項目(順位、トレンド名、取得日時)\n- 各トレンド項目から対応する背景解説ページへのリンクボタン\n- アクション: ページアクセス時に最新のトレンド情報をJinja2テンプレートでレンダリングして表示する"
+  },
+  "cr": null,
+  "key": "screen:SCR-001",
+  "kind": "screen",
+  "label": "SCR-001 トップページ",
+  "origin": "baseline",
+  "seq": 14
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "id": "SCR-002",
+   "name": "背景解説ページ",
+   "priority": "Must",
+   "req_ids": [
+    "FR-004"
+   ],
+   "role": "選択されたトレンドのLLMによる背景解説を表示する",
+   "ui_spec": "- トレンド名およびランクの表示項目\n- LLMによって自動生成された背景解説文の表示項目\n- トップページに戻るためのナビゲーションリンク\n- アクション: 指定されたトレンドIDに対応する背景解説データを取得しJinja2テンプレートで表示する"
+  },
+  "cr": null,
+  "key": "screen:SCR-002",
+  "kind": "screen",
+  "label": "SCR-002 背景解説ページ",
+  "origin": "baseline",
+  "seq": 15
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "body": "",
+   "errors": "401 Unauthorized (認証エラー), 429 Too Many Requests (レート制限超過)",
+   "method": "GET",
+   "path": "/api/v1/trends",
+   "req_ids": [
+    "FR-005"
+   ],
+   "response": "200 OK (トレンドランキングTOP10および背景解説のJSONリスト)",
+   "screens": [],
+   "summary": "トレンドデータ一覧の取得"
+  },
+  "cr": null,
+  "key": "api:GET /api/v1/trends",
+  "kind": "api",
+  "label": "GET /api/v1/trends",
+  "origin": "baseline",
+  "seq": 16
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "auth": "OAuth / Bearerトークン",
+   "purpose": "日本国内のトレンドランキングTOP10の取得",
+   "req_ids": [
+    "FR-001",
+    "CON-005"
+   ],
+   "service": "X API",
+   "timing": "8時間ごとの定期バッチ処理"
+  },
+  "cr": null,
+  "key": "integration:X API",
+  "kind": "integration",
+  "label": "X API",
+  "origin": "baseline",
+  "seq": 17
+ },
+ {
+  "baseline": 3,
+  "content": {
+   "auth": "APIキー",
+   "purpose": "上位10件のトレンドに対する背景解説の自動生成",
+   "req_ids": [
+    "FR-002",
+    "CON-006"
+   ],
+   "service": "LLM API",
+   "timing": "トレンド取得バッチ処理の実行時"
+  },
+  "cr": null,
+  "key": "integration:LLM API",
+  "kind": "integration",
+  "label": "LLM API",
+  "origin": "baseline",
+  "seq": 18
+ }
+]

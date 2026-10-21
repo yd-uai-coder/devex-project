@@ -1,4 +1,4 @@
-// 作成：Phase-20-6｜更新：Phase-21-8,29-1
+// 作成：Phase-20-6｜更新：Phase-21-8,29-1,99(完了後の調整)
 // 写経レベル: 定型 ── 表の編集が onChange に渡ることと、番号・印の出方を確かめる。
 // Phase-21-8:追記 ── @/features/detailed-design/logicOps.logicKey
 import { describe, expect, it, vi } from "vitest";
@@ -68,6 +68,9 @@ describe("ProcedureStepTable", () => {
     const onChange = renderTable();
 
     expect(screen.getByLabelText("F-01#1 の種別")).toHaveValue("call");
+    // Phase-99(完了後の調整):追記
+    // ほかの列が広がっても、選んだ種別が読める最小の幅
+    expect((screen.getByLabelText("F-01#1 の種別").closest("td") as HTMLElement).style.minWidth).toBe("90px");
     expect(screen.queryByLabelText("F-01#1a の種別")).not.toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("F-01#1 の種別"), "戻り");
     const last = onChange.mock.lastCall?.[0] as ProcedureModel;

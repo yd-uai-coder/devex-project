@@ -1,4 +1,4 @@
-// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正。保存バー・タブの保持),29-4,44-3,53(完了後の調整)
+// 作成：Phase-20-7｜更新：Phase-21-8,21-7(画面確認後の修正。保存バー・タブの保持),29-4,44-3,53(完了後の調整),99(完了後の調整)
 // 写経レベル: コア ── 生成は保存した選択から、まとめて(手順の無い処理)とタブごと(1処理)の2通り。
 "use client";
 
@@ -7,6 +7,7 @@
 // Phase-29-4:追記 ── @/features/detailed-design/components/ProcedureSequenceView.ProcedureSequenceView
 // Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
 // Phase-53(完了後の調整):追記 ── ReviewFindingBadge(@/features/design-review/components/ReviewFindingBadge), useStageReview(@/features/detailed-design/hooks/useStageReview)
+// Phase-99(完了後の調整):追記 ── @/features/detailed-design/components/StrayProcedureTable.StrayProcedureTable
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -22,6 +23,7 @@ import { ProcedureSequenceView } from "@/features/detailed-design/components/Pro
 import { ProcedureStepTable } from "@/features/detailed-design/components/ProcedureStepTable";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
+import { StrayProcedureTable } from "@/features/detailed-design/components/StrayProcedureTable";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
@@ -204,6 +206,15 @@ export function ProcedurePanel({
           })}
         </XStack>
       </YStack>
+
+      {/* Phase-99(完了後の調整):追記 */}
+      {/* 段階1 の作り直しで処理 ID が変わって残った手順(選択には出ないので、付け替えるか消す) */}
+      <StrayProcedureTable
+        model={draft}
+        functionList={functionList}
+        disabled={generating || !stage.is_open}
+        onChange={setDraft}
+      />
 
       <YStack gap="$2">
         <XStack gap="$3" alignItems="center" flexWrap="wrap">

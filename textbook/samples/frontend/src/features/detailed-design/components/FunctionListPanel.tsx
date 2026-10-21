@@ -1,4 +1,4 @@
-// 作成：Phase-16-6｜更新：Phase-17-6,21-7(画面確認後の修正),38-3,44-3,53(完了後の調整)
+// 作成：Phase-16-6｜更新：Phase-17-6,21-7(画面確認後の修正),38-3,44-3,53(完了後の調整),99(完了後の調整)
 // 写経レベル: コア ── 編集中の内容を手元に持ち、保存して初めて送ること。作り直す前の確認と、生成中の操作の止め方。
 "use client";
 
@@ -249,7 +249,10 @@ export function FunctionListPanel({
                       {/* Phase-53(完了後の調整):追記 */}
                       <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.fn(row.id))} />
                     </td>
-                    <td style={{ ...CELL, minWidth: 160 }}>
+                    {/* Phase-99(完了後の調整)：更新 */}
+                    {/* <td style={{ ...CELL, minWidth: 160 }}> */}
+                    {/* ↓↓ */}
+                    <td style={{ ...CELL, minWidth: 130 }}>
                       <input
                         style={INPUT}
                         aria-label={`${row.id} の名称`}
@@ -259,7 +262,11 @@ export function FunctionListPanel({
                         }
                       />
                     </td>
-                    <td style={CELL}>
+                    {/* Phase-99(完了後の調整)：更新 */}
+                    {/* <td style={CELL}> */}
+                    {/* ↓↓ */}
+                    {/* 影響・レビューの印で処理ID の列が広がっても、選んだ種別(最長「API+バッチ」)が読める幅 */}
+                    <td style={{ ...CELL, minWidth: 120 }}>
                       <select
                         style={INPUT}
                         aria-label={`${row.id} の種別`}
@@ -277,7 +284,10 @@ export function FunctionListPanel({
                         ))}
                       </select>
                     </td>
-                    <td style={{ ...CELL, minWidth: 220 }}>
+                    {/* Phase-99(完了後の調整)：更新 */}
+                    {/* <td style={{ ...CELL, minWidth: 220 }}> */}
+                    {/* ↓↓ */}
+                    <td style={{ ...CELL, minWidth: 170 }}>
                       <input
                         style={{ ...INPUT, ...MONO }}
                         aria-label={`${row.id} のトリガー`}
@@ -301,7 +311,10 @@ export function FunctionListPanel({
                       />
                     </td>
                     ↓↓ */}
-                    <td style={{ ...CELL, minWidth: 100 }}>
+                    {/* Phase-99(完了後の調整)：更新 */}
+                    {/* <td style={{ ...CELL, minWidth: 100 }}> */}
+                    {/* ↓↓ */}
+                    <td style={{ ...CELL, minWidth: 80 }}>
                       <ListInput
                         label={`${row.id} の関連画面`}
                         items={row.screens}
@@ -324,7 +337,11 @@ export function FunctionListPanel({
                         }
                       />
                     </td>
-                    <td style={{ ...CELL, minWidth: 140 }}>
+                    {/* Phase-99(完了後の調整)：更新 */}
+                    {/* <td style={{ ...CELL, minWidth: 140 }}> */}
+                    {/* ↓↓ */}
+                    {/* 機能グループの名前(「トップページ表示」など)が切れない幅。名称・トリガー・関連画面を詰めた分を回す */}
+                    <td style={{ ...CELL, minWidth: 200 }}>
                       <select
                         style={INPUT}
                         aria-label={`${row.id} の機能グループ`}

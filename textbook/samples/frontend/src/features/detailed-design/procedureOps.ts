@@ -1,4 +1,4 @@
-// 作成：Phase-20-5｜更新：Phase-29-1
+// 作成：Phase-20-5｜更新：Phase-29-1,99(完了後の調整)
 // 写経レベル: コア ── 番号を並び順から導き、分岐を手順に付けて扱う。関与表の列はモジュール一覧のパスだけ。
 // Phase-29-1:追記 ── @/features/detailed-design/api/types.StepKind
 import type {
@@ -231,6 +231,54 @@ export function buildIndex(model: ProcedureModel, functionList: FunctionListMode
     fn: functions.get(procedure.function_id) ?? null,
     stepCount: mainStepCount(procedure),
   }));
+}
+
+// Phase-99(完了後の調整):追記
+// 機能一覧に無い処理の手順(段階1 の作り直しで処理 ID が変わって残ったもの)。「手順を書く処理」の
+// 選択には出ないので、今の処理へ付け替えるか消す。index は procedures の並びの位置。
+export type StrayProcedure = { index: number; functionId: string; stepCount: number };
+
+export function strayProcedures(model: ProcedureModel, functionList: FunctionListModel): StrayProcedure[] {
+  const ids = new Set(functionList.functions.map((fn) => fn.id));
+  return model.procedures.flatMap((procedure, index) =>
+    ids.has(procedure.function_id)
+      ? []
+      : [{ index, functionId: procedure.function_id, stepCount: mainStepCount(procedure) }],
+  );
+}
+
+// 付け替え先に選べる処理(機能一覧にあって、手順がまだ無いもの。選んだだけで手順の無い処理を含む)。
+export function reassignTargets(model: ProcedureModel, functionList: FunctionListModel): FunctionRow[] {
+  const written = new Set(model.procedures.filter((p) => p.steps.length > 0).map((p) => p.function_id));
+  return functionList.functions.filter((fn) => !written.has(fn.id));
+}
+
+// index の手順を、中身(選定理由・注記・手順)はそのままで functionId の処理へ付け替える。付け替え先を
+// 選んだだけの空の行があれば置き換え、機能一覧の順に並べ直す。
+export function reassignProcedure(
+  model: ProcedureModel,
+  functionList: FunctionListModel,
+  index: number,
+  functionId: string,
+): ProcedureModel {
+  const moved = model.procedures[index];
+  if (moved === undefined) return model;
+  const rest = model.procedures.filter((p, i) => i !== index && p.function_id !== functionId);
+  const order = new Map(functionList.functions.map((fn, i) => [fn.id, i]));
+  const rank = (id: string) => order.get(id) ?? Number.MAX_SAFE_INTEGER;
+  const procedures = [...rest, { ...moved, function_id: functionId }].sort(
+    (a, b) => rank(a.function_id) - rank(b.function_id),
+  );
+  return { procedures };
+}
+
+export function removeProcedureAt(model: ProcedureModel, index: number): ProcedureModel {
+  return { procedures: model.procedures.filter((_, i) => i !== index) };
+}
+
+export function removeStrayProcedures(model: ProcedureModel, functionList: FunctionListModel): ProcedureModel {
+  const ids = new Set(functionList.functions.map((fn) => fn.id));
+  return { procedures: model.procedures.filter((p) => ids.has(p.function_id)) };
 }
 
 export type Involvement = {

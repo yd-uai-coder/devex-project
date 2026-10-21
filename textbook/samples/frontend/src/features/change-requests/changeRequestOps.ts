@@ -1,7 +1,8 @@
-// 作成：Phase-87-1｜更新：Phase-87-3,87-4,88-2,88(完了後の調整),98-2
+// 作成：Phase-87-1｜更新：Phase-87-3,87-4,88-2,88(完了後の調整),98-2,99(完了後の調整)
   // Phase-88-2:追記
 // Phase-88(完了後の調整):追記
 // Phase-98-2:追記 ── @/features/change-requests/api/types.ChangeRequestOriginRead, @/features/baselines/api/types.OriginKind
+// Phase-99(完了後の調整):追記 ── @/features/change-requests/api/types.ChangeRequestVerificationRead
 import type {
   BackgroundSource,
   ChangeRequestAction,
@@ -11,6 +12,7 @@ import type {
   ChangeRequestStatus,
   ChangeRequestTargetIn,
   ChangeRequestUpdate,
+  ChangeRequestVerificationRead,
   ComparedItemRead,
   ComparisonStatus,
   ExplanationSummaryRead,
@@ -284,6 +286,14 @@ export function comparisonGroups(
 // ---- 段階への行き来 ----
 
 // 詳細設計画面のその段階を開くリンク
+// Phase-99(完了後の調整):追記
+// 詳細設計の画面の CR の帯の文(未確認の印・文書の側・未承認の段階の数)。検証を開く前に、残りを見せる
+export function verifyBannerText(
+  verification: Pick<ChangeRequestVerificationRead, "open_marks" | "open_documents" | "pending_stages">,
+): string {
+  return `未確認の印 ${verification.open_marks} / 文書の側 ${verification.open_documents} / 未承認の段階 ${verification.pending_stages.length}`;
+}
+
 export function designStageHref(projectId: string, stage: number): string {
   return `/projects/${projectId}/detailed-design?stage=${stage}`;
 }

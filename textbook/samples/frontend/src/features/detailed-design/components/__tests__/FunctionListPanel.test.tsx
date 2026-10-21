@@ -1,4 +1,4 @@
-// 作成：Phase-16-6｜更新：Phase-21-7(画面確認後の修正),38-3,44-3,53(完了後の調整)
+// 作成：Phase-16-6｜更新：Phase-21-7(画面確認後の修正),38-3,44-3,53(完了後の調整),99(完了後の調整)
 // 写経レベル: コア ── 生成・確認・編集・保存の流れを画面越しに確かめる。
 // Phase-44-3:追記 ── ../../test-utils/stageFixtures(impactWith, makeMark)
 // Phase-53(完了後の調整):追記 ── useReviewStore, @/features/design-review/test-utils/reviewFixtures(finding, gate, run, user)
@@ -90,6 +90,20 @@ describe("FunctionListPanel", () => {
     expect(onDirtyChange).toHaveBeenLastCalledWith(true);
     const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(model).toMatchObject({ functions: [{ id: "F-01", name: "予約する" }] });
+  // Phase-99(完了後の調整):追記
+  });
+
+  // Phase-99(完了後の調整)：更新
+  // it("種別の列は、ほかの列が広がっても選んだ値が読める最小の幅を持つ", () => {
+  // ↓↓
+  it("種別と機能グループの列は、ほかの列が広がっても選んだ値が読める最小の幅を持つ", () => {
+    renderPanel(draftStage());
+    const cell = screen.getByLabelText("F-01 の種別").closest("td") as HTMLElement;
+    expect(cell.style.minWidth).toBe("120px");
+    // Phase-99(完了後の調整):追記
+    // 機能グループの名前も切れない幅にする
+    const group = screen.getByLabelText("F-01 の機能グループ").closest("td") as HTMLElement;
+    expect(group.style.minWidth).toBe("200px");
   });
 
   // Phase-38-3:追記

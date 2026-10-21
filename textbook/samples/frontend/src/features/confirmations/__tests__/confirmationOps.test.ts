@@ -1,24 +1,59 @@
-// 作成：Phase-98-1
-// SUT: confirmationOps(確認事項の一覧の絞り込み・分け方・採用率の文・確認のダイアログの要否)
+// 作成：Phase-98-1｜更新：Phase-99(完了後の調整)
+// Phase-99(完了後の調整)：更新
+// // SUT: confirmationOps(確認事項の一覧の絞り込み・分け方・採用率の文・確認のダイアログの要否)
+// ↓↓
+// SUT: confirmationOps(確認事項の一覧の絞り込み・行の状態を変えられるか・採用率の文・確認のダイアログの要否)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
+// Phase-99(完了後の調整):追記 ── ../confirmationOps.rowLock
+// Phase-99(完了後の調整)：削除 ── ../confirmationOps.splitByPresence
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_FILTER,
   adoptionText,
   filterItems,
   needsAdoptConfirm,
-  splitByPresence,
+  rowLock,
   unconfirmedCountsText,
 } from "../confirmationOps";
 import { makeItem, makeList } from "../test-utils/confirmationFixtures";
 
 describe("confirmationOps", () => {
-  it("今の一覧の項目と、一覧から消えた項目に分ける", () => {
-    const { present, gone } = splitByPresence(makeList().items);
+  // Phase-99(完了後の調整)：更新
+  // it("今の一覧の項目と、一覧から消えた項目に分ける", () => {
+  //   const { present, gone } = splitByPresence(makeList().items);
+  // ↓↓
+  it("今の一覧に無い行は状態を変えられず、採用して合意した要件・利用者は変更要求へ案内する", () => {
+    expect(rowLock(makeItem())).toEqual({ locked: false });
+    expect(rowLock(makeItem({ present: false, status: "confirmed" }))).toEqual({
+      locked: true,
+      label: "確認済み(採用して合意)",
+      viaChangeRequest: true,
+    });
+    expect(rowLock(makeItem({ key: "user:管理者", kind: "user", present: false, status: "confirmed" }))).toMatchObject({
+      viaChangeRequest: true,
+    });
+    // 観点・却下の行は採用にしていないので、理由だけ(変更要求は要らない)
+    expect(rowLock(makeItem({ key: "point:x", kind: "point", present: false, status: "confirmed" }))).toEqual({
+      locked: true,
+      label: "確認済み(今の一覧に無い)",
+      viaChangeRequest: false,
+    });
+    expect(rowLock(makeItem({ present: false, status: "rejected" }))).toMatchObject({
+      label: "却下(今の一覧に無い)",
+      viaChangeRequest: false,
+    });
+  });
 
-    expect(present.map((i) => i.key)).toEqual(["req:FR-004", "user:管理者", "point:scale"]);
-    expect(gone.map((i) => i.key)).toEqual(["req:FR-009"]);
+  // Phase-99(完了後の調整)：更新
+  //   expect(present.map((i) => i.key)).toEqual(["req:FR-004", "user:管理者", "point:scale"]);
+  //   expect(gone.map((i) => i.key)).toEqual(["req:FR-009"]);
+  // ↓↓
+  it("絞り込みは今の一覧に無い項目にも同じく当たる", () => {
+    const items = makeList().items;
+
+    expect(filterItems(items, DEFAULT_FILTER).map((i) => i.key)).toEqual(["req:FR-004", "user:管理者", "point:scale"]);
+    expect(filterItems(items, { kind: "all", status: "confirmed" }).map((i) => i.key)).toEqual(["req:FR-009"]);
   });
 
   it("種類と状態で絞る(既定は未確認だけ)", () => {

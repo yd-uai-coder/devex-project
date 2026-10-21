@@ -1,4 +1,4 @@
-// 作成：Phase-87-4｜更新：Phase-98-2
+// 作成：Phase-87-4｜更新：Phase-98-2,99(完了後の調整)
 "use client";
 
 import { useEffect, useState } from "react";
@@ -27,7 +27,19 @@ const gateLabel = (gate: string) => GATE_LABEL[gate as ReviewGate] ?? gate;
 // ↓↓
 // 反映の後に流したレビューを選んで結べ(任意。外せない)。CR で作り直した後にまだ承認していない段階は
 // 段階へのリンクと一緒に出す。未確認が0件で、作り直した段階をすべて承認したら検証済みにできる。
-export function VerificationTab({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
+// Phase-99(完了後の調整)：更新
+// export function VerificationTab({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
+// ↓↓
+export function VerificationTab({
+  projectId,
+  cr,
+  onStageLink,
+}: {
+  projectId: string;
+  cr: ChangeRequestRead;
+  // 詳細設計の画面のモーダルで開いたとき、段階へのリンクで画面を移らず、その段階を選ぶ
+  onStageLink?: (stage: number) => void;
+}) {
   const verification = useChangeRequestsStore((s) => s.views.verification);
   const candidates = useChangeRequestsStore((s) => s.views.candidates);
   const viewErrors = useChangeRequestsStore((s) => s.viewErrors);
@@ -39,6 +51,14 @@ export function VerificationTab({ projectId, cr }: { projectId: string; cr: Chan
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState("");
   const checkable = cr.status === "applied";
+  // Phase-99(完了後の調整):追記
+  const stageClick = (stage: number) =>
+    onStageLink
+      ? (e: { preventDefault: () => void }) => {
+          e.preventDefault();
+          onStageLink(stage);
+        }
+      : undefined;
 
   useEffect(() => {
     if (verification === null) void fetchView(projectId, cr.number, "verification");
@@ -72,7 +92,10 @@ export function VerificationTab({ projectId, cr }: { projectId: string; cr: Chan
             この CR で作り直した段階です。詳細設計画面で確かめて承認すると、承認で付く印がこの CR に結ばれます。すべて承認するまで検証済みにできません。
           </Paragraph>
           {verification.pending_stages.map((stage) => (
-            <Link key={stage} href={designStageHref(projectId, stage)}>
+            // Phase-99(完了後の調整)：更新
+            // <Link key={stage} href={designStageHref(projectId, stage)}>
+            // ↓↓
+            <Link key={stage} href={designStageHref(projectId, stage)} onClick={stageClick(stage)}>
               <Text color="$blue10">{`${stageLabel(stage)} を承認する →`}</Text>
             </Link>
           ))}
@@ -99,7 +122,12 @@ export function VerificationTab({ projectId, cr }: { projectId: string; cr: Chan
               {verification.marks.map((mark) => (
                 <tr key={`${mark.stage}:${mark.key}`}>
                   <td style={{ ...CELL, whiteSpace: "nowrap" }}>
-                    <Link href={designStageHref(projectId, mark.stage)}>{stageLabel(mark.stage)}</Link>
+                    {/* Phase-99(完了後の調整)：更新 */}
+                    {/* <Link href={designStageHref(projectId, mark.stage)}>{stageLabel(mark.stage)}</Link> */}
+                    {/* ↓↓ */}
+                    <Link href={designStageHref(projectId, mark.stage)} onClick={stageClick(mark.stage)}>
+                      {stageLabel(mark.stage)}
+                    </Link>
                   </td>
                   <td style={CELL}>{mark.label}</td>
                   <td style={CELL}>{mark.reason}</td>

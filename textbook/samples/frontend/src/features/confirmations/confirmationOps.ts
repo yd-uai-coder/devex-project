@@ -1,4 +1,4 @@
-// 作成：Phase-98-1
+// 作成：Phase-98-1｜更新：Phase-99(完了後の調整)
 import type {
   AdoptionRead,
   ConfirmationItemRead,
@@ -37,15 +37,31 @@ export type ConfirmationFilter = { kind: KindFilter; status: StatusFilter };
 // 既定は未確認だけ(決めることが残っている項目から見る)
 export const DEFAULT_FILTER: ConfirmationFilter = { kind: "all", status: "unconfirmed" };
 
-// 今の一覧にある項目と、状態を決めた後に一覧から消えた項目(決めた記録)に分ける
-export function splitByPresence(items: ConfirmationItemRead[]): {
-  present: ConfirmationItemRead[];
-  gone: ConfirmationItemRead[];
-} {
-  return {
-    present: items.filter((item) => item.present),
-    gone: items.filter((item) => !item.present),
-  };
+// Phase-99(完了後の調整)：更新
+// // 今の一覧にある項目と、状態を決めた後に一覧から消えた項目(決めた記録)に分ける
+// export function splitByPresence(items: ConfirmationItemRead[]): {
+//   present: ConfirmationItemRead[];
+//   gone: ConfirmationItemRead[];
+// } {
+//   return {
+//     present: items.filter((item) => item.present),
+//     gone: items.filter((item) => !item.present),
+//   };
+// ↓↓
+// 行の状態を変えられるか。今の一覧に無い項目(状態を決めた後に一覧から消えたもの)は変えられない。
+// 確認済みにした推測の要件・利用者は、採用にして合意を記録したので、文書と合意の記録はもう変わって
+// いる(状態だけを戻すと食い違う。変えるときは変更要求)。ほかの消えた項目(観点の表で決まった観点
+// など)は、決める対象がもう無い
+export type RowLock =
+  | { locked: false }
+  | { locked: true; label: string; viaChangeRequest: boolean };
+
+export function rowLock(item: ConfirmationItemRead): RowLock {
+  if (item.present) return { locked: false };
+  if (item.kind !== "point" && item.status === "confirmed") {
+    return { locked: true, label: "確認済み(採用して合意)", viaChangeRequest: true };
+  }
+  return { locked: true, label: `${STATUS_LABEL[item.status]}(今の一覧に無い)`, viaChangeRequest: false };
 }
 
 export function filterItems(items: ConfirmationItemRead[], filter: ConfirmationFilter): ConfirmationItemRead[] {

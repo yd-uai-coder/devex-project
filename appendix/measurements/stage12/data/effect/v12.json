@@ -1,0 +1,2043 @@
+{
+ "change_requests": [
+  {
+   "adds_requirement": true,
+   "applied_impact": null,
+   "mark_counts": [],
+   "number": 1,
+   "predicted_impact": {
+    "items": [],
+    "targets": [],
+    "unpredicted_new_requirement": true
+   },
+   "status": "rejected",
+   "targets": []
+  },
+  {
+   "adds_requirement": true,
+   "applied_impact": [],
+   "mark_counts": [],
+   "number": 2,
+   "predicted_impact": {
+    "items": [],
+    "targets": [],
+    "unpredicted_new_requirement": true
+   },
+   "status": "applied",
+   "targets": []
+  },
+  {
+   "adds_requirement": false,
+   "applied_impact": [],
+   "mark_counts": [],
+   "number": 3,
+   "predicted_impact": {
+    "items": [],
+    "targets": [
+     {
+      "kind": "content",
+      "requirement_id": "FR-001",
+      "text": "8時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。"
+     }
+    ],
+    "unpredicted_new_requirement": false
+   },
+   "status": "applied",
+   "targets": [
+    {
+     "kind": "content",
+     "proposed_text": "",
+     "requirement_id": "FR-001"
+    }
+   ]
+  },
+  {
+   "adds_requirement": false,
+   "applied_impact": [
+    {
+     "key": "fn:F-04",
+     "label": "F-04 トップページを返却する",
+     "path": [
+      "screen:SCR-001",
+      "fn:F-04"
+     ],
+     "reason": "この画面に関わる",
+     "reviewed": false,
+     "sources": [
+      "doc:external_design",
+      "cr:4"
+     ],
+     "stage": 1
+    },
+    {
+     "key": "summary:F-01",
+     "label": "F-01 の処理の要約",
+     "path": [
+      "fn:F-01",
+      "summary:F-01"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 2
+    },
+    {
+     "key": "summary:F-04",
+     "label": "F-04 の処理の要約",
+     "path": [
+      "fn:F-04",
+      "summary:F-04"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 2
+    },
+    {
+     "key": "summary:F-05",
+     "label": "F-05 の処理の要約",
+     "path": [
+      "fn:F-05",
+      "summary:F-05"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 2
+    },
+    {
+     "key": "summary:F-09",
+     "label": "F-09 の処理の要約",
+     "path": [
+      "fn:F-09",
+      "summary:F-09"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 2
+    },
+    {
+     "key": "crud:F-01×new_table",
+     "label": "F-01 × new_table",
+     "path": [
+      "fn:F-01",
+      "crud:F-01×new_table"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-01×new_table2",
+     "label": "F-01 × new_table2",
+     "path": [
+      "fn:F-01",
+      "crud:F-01×new_table2"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-01×trends",
+     "label": "F-01 × trends",
+     "path": [
+      "fn:F-01",
+      "crud:F-01×trends"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-04×new_table",
+     "label": "F-04 × new_table",
+     "path": [
+      "fn:F-04",
+      "crud:F-04×new_table"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-04×new_table2",
+     "label": "F-04 × new_table2",
+     "path": [
+      "fn:F-04",
+      "crud:F-04×new_table2"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-04×trends",
+     "label": "F-04 × trends",
+     "path": [
+      "fn:F-04",
+      "crud:F-04×trends"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-05×new_table",
+     "label": "F-05 × new_table",
+     "path": [
+      "fn:F-05",
+      "crud:F-05×new_table"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-05×new_table2",
+     "label": "F-05 × new_table2",
+     "path": [
+      "fn:F-05",
+      "crud:F-05×new_table2"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-05×trends",
+     "label": "F-05 × trends",
+     "path": [
+      "fn:F-05",
+      "crud:F-05×trends"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-09×new_table",
+     "label": "F-09 × new_table",
+     "path": [
+      "fn:F-09",
+      "crud:F-09×new_table"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-09×new_table2",
+     "label": "F-09 × new_table2",
+     "path": [
+      "fn:F-09",
+      "crud:F-09×new_table2"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "crud:F-09×trends",
+     "label": "F-09 × trends",
+     "path": [
+      "fn:F-09",
+      "crud:F-09×trends"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 3
+    },
+    {
+     "key": "module:app/models/trend.py",
+     "label": "app/models/trend.py",
+     "path": [
+      "fn:F-01",
+      "module:app/models/trend.py"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 4
+    },
+    {
+     "key": "module:app/routers/api.py",
+     "label": "app/routers/api.py",
+     "path": [
+      "fn:F-01",
+      "module:app/routers/api.py"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 4
+    },
+    {
+     "key": "module:app/routers/web.py",
+     "label": "app/routers/web.py",
+     "path": [
+      "fn:F-04",
+      "module:app/routers/web.py"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 4
+    },
+    {
+     "key": "module:app/services/llm_client.py",
+     "label": "app/services/llm_client.py",
+     "path": [
+      "fn:F-09",
+      "module:app/services/llm_client.py"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 4
+    },
+    {
+     "key": "module:app/services/scheduler.py",
+     "label": "app/services/scheduler.py",
+     "path": [
+      "fn:F-09",
+      "module:app/services/scheduler.py"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 4
+    },
+    {
+     "key": "module:app/services/x_client.py",
+     "label": "app/services/x_client.py",
+     "path": [
+      "fn:F-09",
+      "module:app/services/x_client.py"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 4
+    },
+    {
+     "key": "proc:F-01",
+     "label": "F-01 の手順",
+     "path": [
+      "fn:F-01",
+      "proc:F-01"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "doc:requirements",
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 5
+    },
+    {
+     "key": "proc:F-04",
+     "label": "F-04 の手順",
+     "path": [
+      "fn:F-04",
+      "proc:F-04"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "doc:external_design",
+      "cr:4",
+      "stage:1"
+     ],
+     "stage": 5
+    },
+    {
+     "key": "proc:F-05",
+     "label": "F-05 の手順",
+     "path": [
+      "fn:F-05",
+      "proc:F-05"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 5
+    },
+    {
+     "key": "proc:F-09",
+     "label": "F-09 の手順",
+     "path": [
+      "fn:F-09",
+      "proc:F-09"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 5
+    },
+    {
+     "key": "logic:app/models/trend.py::TrendModel.get_top_trends",
+     "label": "app/models/trend.py の TrendModel.get_top_trends",
+     "path": [
+      "fn:F-04",
+      "proc:F-04",
+      "logic:app/models/trend.py::TrendModel.get_top_trends"
+     ],
+     "reason": "この手順から呼ばれる",
+     "reviewed": false,
+     "sources": [
+      "doc:external_design",
+      "cr:4",
+      "stage:1"
+     ],
+     "stage": 6
+    },
+    {
+     "key": "logic:app/models/trend.py::TrendModel.save_new_tables",
+     "label": "app/models/trend.py の TrendModel.save_new_tables",
+     "path": [
+      "fn:F-09",
+      "proc:F-09",
+      "logic:app/models/trend.py::TrendModel.save_new_tables"
+     ],
+     "reason": "この手順から呼ばれる",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 6
+    },
+    {
+     "key": "logic:app/routers/web.py::get_top_page",
+     "label": "app/routers/web.py の get_top_page",
+     "path": [
+      "fn:F-04",
+      "proc:F-04",
+      "logic:app/routers/web.py::get_top_page"
+     ],
+     "reason": "この手順から呼ばれる",
+     "reviewed": false,
+     "sources": [
+      "doc:external_design",
+      "cr:4",
+      "stage:1"
+     ],
+     "stage": 6
+    },
+    {
+     "key": "logic:app/routers/web.py::get_trend_background",
+     "label": "app/routers/web.py の get_trend_background",
+     "path": [
+      "fn:F-05",
+      "proc:F-05",
+      "logic:app/routers/web.py::get_trend_background"
+     ],
+     "reason": "この手順から呼ばれる",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 6
+    },
+    {
+     "key": "logic:app/services/scheduler.py::SchedulerService.fetch_and_generate_trends",
+     "label": "app/services/scheduler.py の SchedulerService.fetch_and_generate_trends",
+     "path": [
+      "fn:F-09",
+      "proc:F-09",
+      "logic:app/services/scheduler.py::SchedulerService.fetch_and_generate_trends"
+     ],
+     "reason": "この手順から呼ばれる",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 6
+    },
+    {
+     "key": "logic:app/services/x_client.py::XClient.get_trends_top10",
+     "label": "app/services/x_client.py の XClient.get_trends_top10",
+     "path": [
+      "fn:F-09",
+      "proc:F-09",
+      "logic:app/services/x_client.py::XClient.get_trends_top10"
+     ],
+     "reason": "この手順から呼ばれる",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 6
+    },
+    {
+     "key": "task:U-002",
+     "label": "M-02-T01 トレンドデータ定期取得と背景解説生成の実装",
+     "path": [
+      "fn:F-09",
+      "task:U-002"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 7
+    },
+    {
+     "key": "task:U-003",
+     "label": "M-02-T02 トップページを返却する機能の実装",
+     "path": [
+      "fn:F-04",
+      "task:U-003"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 7
+    },
+    {
+     "key": "task:U-004",
+     "label": "M-02-T03 背景解説ページを返却する機能の実装",
+     "path": [
+      "fn:F-05",
+      "task:U-004"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 7
+    },
+    {
+     "key": "task:U-005",
+     "label": "M-03-T01 最新のトレンドデータをJSON形式で返却するAPIの実装",
+     "path": [
+      "fn:F-01",
+      "task:U-005"
+     ],
+     "reason": "この処理に属する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 7
+    },
+    {
+     "key": "unit:U-002",
+     "label": "M-02-T01 の手順書",
+     "path": [
+      "fn:F-09",
+      "proc:F-09",
+      "unit:U-002"
+     ],
+     "reason": "この設計を手順書で実装する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 8
+    },
+    {
+     "key": "unit:U-003",
+     "label": "M-02-T02 の手順書",
+     "path": [
+      "fn:F-04",
+      "proc:F-04",
+      "unit:U-003"
+     ],
+     "reason": "この設計を手順書で実装する",
+     "reviewed": false,
+     "sources": [
+      "doc:external_design",
+      "cr:4",
+      "stage:1"
+     ],
+     "stage": 8
+    },
+    {
+     "key": "unit:U-004",
+     "label": "M-02-T03 の手順書",
+     "path": [
+      "fn:F-05",
+      "proc:F-05",
+      "unit:U-004"
+     ],
+     "reason": "この設計を手順書で実装する",
+     "reviewed": false,
+     "sources": [
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 8
+    },
+    {
+     "key": "unit:U-005",
+     "label": "M-03-T01 の手順書",
+     "path": [
+      "fn:F-01",
+      "proc:F-01",
+      "unit:U-005"
+     ],
+     "reason": "この設計を手順書で実装する",
+     "reviewed": false,
+     "sources": [
+      "doc:requirements",
+      "stage:1",
+      "cr:4"
+     ],
+     "stage": 8
+    }
+   ],
+   "mark_counts": [
+    40
+   ],
+   "number": 4,
+   "predicted_impact": {
+    "items": [
+     {
+      "key": "screen:SCR-001",
+      "kind": "screen",
+      "label": "SCR-001 トップページ",
+      "origin_keys": [],
+      "path": [
+       "req:FR-003",
+       "screen:SCR-001"
+      ],
+      "reason": "この要件を持つ",
+      "requirement_ids": [
+       "FR-003"
+      ],
+      "stage": 0
+     }
+    ],
+    "origins": [],
+    "targets": [
+     {
+      "kind": "content",
+      "requirement_id": "FR-003",
+      "text": "トップページにおいて保持している最新のトレンドランキングTOP10をJinja2テンプレートにより表示する。"
+     }
+    ],
+    "unpredicted_new_requirement": false
+   },
+   "status": "applied",
+   "targets": [
+    {
+     "kind": "content",
+     "proposed_text": "最新のトレンドランキング TOP20 を表示し、前回からの順位の変動を矢印で示す",
+     "requirement_id": "FR-003"
+    }
+   ]
+  }
+ ],
+ "confirmations": null,
+ "documents": {
+  "external_design": {
+   "cr": null,
+   "model": {
+    "apis": [
+     {
+      "body": "",
+      "errors": "401 Unauthorized (認証エラー), 429 Too Many Requests (レート制限超過)",
+      "method": "GET",
+      "path": "/api/v1/trends",
+      "req_ids": [
+       "FR-005"
+      ],
+      "response": "200 OK (トレンドランキングTOP10および背景解説のJSONリスト)",
+      "screens": [],
+      "summary": "トレンドデータ一覧の取得"
+     }
+    ],
+    "data_io": "なし",
+    "integrations": [
+     {
+      "auth": "OAuth / Bearerトークン",
+      "purpose": "日本国内のトレンドランキングTOP10の取得",
+      "req_ids": [
+       "FR-001",
+       "CON-005"
+      ],
+      "service": "X API",
+      "timing": "12時間ごとの定期バッチ実行時"
+     },
+     {
+      "auth": "APIキー",
+      "purpose": "トレンドに対する背景解説文の自動生成",
+      "req_ids": [
+       "FR-002",
+       "CON-006"
+      ],
+      "service": "LLM API",
+      "timing": "トレンド取得バッチ内での処理時"
+     }
+    ],
+    "known_req_ids": [
+     "FR-001",
+     "FR-002",
+     "FR-003",
+     "FR-004",
+     "FR-005",
+     "NFR-001",
+     "CON-001",
+     "CON-002",
+     "CON-003",
+     "CON-004",
+     "CON-005",
+     "CON-006"
+    ],
+    "must_fr_ids": [
+     "FR-001",
+     "FR-002",
+     "FR-003",
+     "FR-004",
+     "FR-005"
+    ],
+    "next_seq": {
+     "SCR": 3
+    },
+    "overview": "本システムは、Python (FastAPI / Jinja2) および PostgreSQL を用いて構築されるWebアプリケーションおよびAPIサーバーです。定期バッチ処理（APScheduler）により X API から日本国内のトレンド情報を取得し、LLM API を用いて背景解説文を自動生成・データベースに保存します。一般ユーザー向けにはブラウザ経由で最新のトレンドランキングや背景解説を表示し、外部クライアント向けにはAPI経由でトレンドデータを提供します。\n\n```\n[一般ユーザー] --- (HTTP) ---> [FastAPI / Jinja2 (SCR-001, SCR-002)]\n                                      |\n[外部クライアント] - (API) ---> [API (/api/v1/trends)]\n                                      |\n                                  [PostgreSQL]\n                                      ^\n                                      | (定期バッチ)\n                               [X API & LLM API]\n```",
+    "screens": [
+     {
+      "id": "SCR-001",
+      "name": "トップページ",
+      "priority": "Must",
+      "req_ids": [
+       "FR-003"
+      ],
+      "role": "保持している最新のトレンドランキングTOP20を一覧表示する",
+      "ui_spec": "- 最新トレンドランキングTOP20のリスト表示項目(順位、前回からの順位変動を示す矢印、トレンド名、取得日時)\n- 各トレンド項目から対応する背景解説ページへのリンクボタン\n- アクション: ページアクセス時に最新のトレンド情報をJinja2テンプレートでレンダリングして表示する"
+     },
+     {
+      "id": "SCR-002",
+      "name": "背景解説ページ",
+      "priority": "Must",
+      "req_ids": [
+       "FR-004"
+      ],
+      "role": "選択されたトレンドのLLMによる背景解説を表示する",
+      "ui_spec": "- トレンド名およびランクの表示項目\n- LLMによって自動生成された背景解説文の表示項目\n- トップページに戻るためのナビゲーションリンク\n- アクション: 指定されたトレンドIDに対応する背景解説データを取得しJinja2テンプレートで表示する"
+     }
+    ],
+    "transition": "SCR-001 (トップページ) --[トレンド項目をクリック]--> SCR-002 (背景解説ページ)\nSCR-002 (背景解説ページ) --[トップに戻るリンク]--> SCR-001 (トップページ)"
+   },
+   "protection": [],
+   "version": 12
+  },
+  "requirements": {
+   "cr": null,
+   "model": {
+    "in_scope": [
+     "定期バッチ処理（6時間ごと）",
+     "トップページ表示",
+     "背景解説ページ表示",
+     "外部向けトレンドデータ提供API"
+    ],
+    "next_seq": {
+     "CON": 7,
+     "FR": 6,
+     "NFR": 2
+    },
+    "out_of_scope": [
+     "ユーザー認証機能（ログイン等）",
+     "高度な検索・過去履歴の閲覧機能"
+    ],
+    "point_statuses": {
+     "abuse": "open",
+     "availability": "open",
+     "backup": "open",
+     "core": "open",
+     "daily_flow": "open",
+     "data_retention": "open",
+     "environment": "open",
+     "exceptions": "open",
+     "future": "open",
+     "logging": "open",
+     "migration": "open",
+     "operability": "open",
+     "performance": "open",
+     "purpose": "open",
+     "scale": "open",
+     "schedule": "open",
+     "scope": "open",
+     "security": "open",
+     "tech": "open",
+     "users": "open"
+    },
+    "purpose": "X APIとLLMを組み合わせ、日本国内のトレンドランキングTOP10とその背景解説を自動生成・提供する。",
+    "rows": [
+     {
+      "category": "",
+      "id": "FR-001",
+      "kind": "FR",
+      "points": [
+       "scale"
+      ],
+      "priority": "Must",
+      "source": "adopted",
+      "text": "12時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。"
+     },
+     {
+      "category": "",
+      "id": "FR-002",
+      "kind": "FR",
+      "points": [
+       "core"
+      ],
+      "priority": "Must",
+      "source": "adopted",
+      "text": "トレンド取得と同時にLLMを用いて上位10件分の背景解説を自動生成しデータベースに保存する。"
+     },
+     {
+      "category": "",
+      "id": "FR-003",
+      "kind": "FR",
+      "points": [
+       "users"
+      ],
+      "priority": "Must",
+      "source": "assumed",
+      "text": "最新のトレンドランキング TOP20 を表示し、前回からの順位の変動を矢印で示す"
+     },
+     {
+      "category": "",
+      "id": "FR-004",
+      "kind": "FR",
+      "points": [
+       "users",
+       "core"
+      ],
+      "priority": "Must",
+      "source": "adopted",
+      "text": "背景解説ページにおいて事前生成されたトレンドの背景解説を表示する。"
+     },
+     {
+      "category": "",
+      "id": "FR-005",
+      "kind": "FR",
+      "points": [
+       "core",
+       "security"
+      ],
+      "priority": "Must",
+      "source": "adopted",
+      "text": "外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。"
+     },
+     {
+      "category": "セキュリティ",
+      "id": "NFR-001",
+      "kind": "NFR",
+      "points": [
+       "exceptions"
+      ],
+      "priority": null,
+      "source": "adopted",
+      "text": "X API取得失敗時はキャッシュを返さずそのままエラーレスポンスを返却する。"
+     },
+     {
+      "category": "技術スタック",
+      "id": "CON-001",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "adopted",
+      "text": "プログラミング言語にはPythonを使用する。"
+     },
+     {
+      "category": "技術スタック",
+      "id": "CON-002",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "adopted",
+      "text": "WebフレームワークにはFastAPIおよびJinja2テンプレートを使用する。"
+     },
+     {
+      "category": "技術スタック",
+      "id": "CON-003",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "adopted",
+      "text": "データベースにはPostgreSQLを使用する。"
+     },
+     {
+      "category": "技術スタック",
+      "id": "CON-004",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "adopted",
+      "text": "定期実行にはFastAPI内蔵のAPSchedulerを使用する。"
+     },
+     {
+      "category": "外部サービス",
+      "id": "CON-005",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "adopted",
+      "text": "X API(Freeプラン / 日本リージョン)を利用する。"
+     },
+     {
+      "category": "外部サービス",
+      "id": "CON-006",
+      "kind": "CON",
+      "points": [
+       "tech"
+      ],
+      "priority": null,
+      "source": "assumed",
+      "text": "LLM APIを利用して背景解説を自動生成する。"
+     }
+    ],
+    "scale": null,
+    "users": [
+     {
+      "scene": "トップページを開いてその時点のトレンドランキングを見る、またはトレンド入りの背景解説を見る",
+      "source": "adopted",
+      "user": "一般ユーザー"
+     },
+     {
+      "scene": "APIを通じてトレンドデータを取得する",
+      "source": "assumed",
+      "user": "外部クライアント"
+     }
+    ]
+   },
+   "protection": [
+    {
+     "key": "req:FR-003",
+     "reason": "changed"
+    },
+    {
+     "key": "users",
+     "reason": "changed"
+    }
+   ],
+   "version": 12
+  }
+ },
+ "records": [
+  {
+   "baseline": 3,
+   "content": {
+    "category": "",
+    "id": "FR-001",
+    "kind": "FR",
+    "points": [
+     "core"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "8時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。"
+   },
+   "cr": null,
+   "key": "req:FR-001",
+   "kind": "requirement",
+   "label": "FR-001 8時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。",
+   "origin": "baseline",
+   "seq": 1
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "",
+    "id": "FR-002",
+    "kind": "FR",
+    "points": [
+     "core"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "トレンド取得と同時にLLMを用いて上位10件分の背景解説を自動生成しデータベースに保存する。"
+   },
+   "cr": null,
+   "key": "req:FR-002",
+   "kind": "requirement",
+   "label": "FR-002 トレンド取得と同時にLLMを用いて上位10件分の背景解説を自動生成しデータベースに保存する。",
+   "origin": "baseline",
+   "seq": 2
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "",
+    "id": "FR-003",
+    "kind": "FR",
+    "points": [
+     "users",
+     "core"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "トップページにおいて保持している最新のトレンドランキングTOP10をJinja2テンプレートにより表示する。"
+   },
+   "cr": null,
+   "key": "req:FR-003",
+   "kind": "requirement",
+   "label": "FR-003 トップページにおいて保持している最新のトレンドランキングTOP10をJinja2テンプレートにより表示する。",
+   "origin": "baseline",
+   "seq": 3
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "",
+    "id": "FR-004",
+    "kind": "FR",
+    "points": [
+     "users",
+     "core"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "背景解説ページにおいて事前生成されたトレンドの背景解説を表示する。"
+   },
+   "cr": null,
+   "key": "req:FR-004",
+   "kind": "requirement",
+   "label": "FR-004 背景解説ページにおいて事前生成されたトレンドの背景解説を表示する。",
+   "origin": "baseline",
+   "seq": 4
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "",
+    "id": "FR-005",
+    "kind": "FR",
+    "points": [
+     "core",
+     "security"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。"
+   },
+   "cr": null,
+   "key": "req:FR-005",
+   "kind": "requirement",
+   "label": "FR-005 外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。",
+   "origin": "baseline",
+   "seq": 5
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "セキュリティ",
+    "id": "NFR-001",
+    "kind": "NFR",
+    "points": [
+     "exceptions"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "X API取得失敗時はキャッシュを返さずそのままエラーレスポンスを返却する。"
+   },
+   "cr": null,
+   "key": "req:NFR-001",
+   "kind": "requirement",
+   "label": "NFR-001 X API取得失敗時はキャッシュを返さずそのままエラーレスポンスを返却する。",
+   "origin": "baseline",
+   "seq": 6
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-001",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "プログラミング言語にはPythonを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-001",
+   "kind": "requirement",
+   "label": "CON-001 プログラミング言語にはPythonを使用する。",
+   "origin": "baseline",
+   "seq": 7
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-002",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "WebフレームワークにはFastAPIおよびJinja2テンプレートを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-002",
+   "kind": "requirement",
+   "label": "CON-002 WebフレームワークにはFastAPIおよびJinja2テンプレートを使用する。",
+   "origin": "baseline",
+   "seq": 8
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-003",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "データベースにはPostgreSQLを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-003",
+   "kind": "requirement",
+   "label": "CON-003 データベースにはPostgreSQLを使用する。",
+   "origin": "baseline",
+   "seq": 9
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-004",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "定期実行にはFastAPI内蔵のAPSchedulerを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-004",
+   "kind": "requirement",
+   "label": "CON-004 定期実行にはFastAPI内蔵のAPSchedulerを使用する。",
+   "origin": "baseline",
+   "seq": 10
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "外部サービス",
+    "id": "CON-005",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "X API(Freeプラン / 日本リージョン)を利用する。"
+   },
+   "cr": null,
+   "key": "req:CON-005",
+   "kind": "requirement",
+   "label": "CON-005 X API(Freeプラン / 日本リージョン)を利用する。",
+   "origin": "baseline",
+   "seq": 11
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "category": "外部サービス",
+    "id": "CON-006",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "LLM APIを利用して背景解説を自動生成する。"
+   },
+   "cr": null,
+   "key": "req:CON-006",
+   "kind": "requirement",
+   "label": "CON-006 LLM APIを利用して背景解説を自動生成する。",
+   "origin": "baseline",
+   "seq": 12
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "users": [
+     {
+      "scene": "トップページや背景解説ページを開き、最新のトレンドランキングやその背景解説を閲覧する",
+      "source": "assumed",
+      "user": "一般ユーザー"
+     },
+     {
+      "scene": "APIを経由してトレンドデータを取得・利用する",
+      "source": "assumed",
+      "user": "外部クライアント"
+     }
+    ]
+   },
+   "cr": null,
+   "key": "users",
+   "kind": "users",
+   "label": "利用者と使う場面",
+   "origin": "baseline",
+   "seq": 13
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "id": "SCR-001",
+    "name": "トップページ",
+    "priority": "Must",
+    "req_ids": [
+     "FR-003"
+    ],
+    "role": "保持している最新のトレンドランキングTOP10を一覧表示する",
+    "ui_spec": "- 最新トレンドランキングTOP10のリスト表示項目(順位、トレンド名、取得日時)\n- 各トレンド項目から対応する背景解説ページへのリンクボタン\n- アクション: ページアクセス時に最新のトレンド情報をJinja2テンプレートでレンダリングして表示する"
+   },
+   "cr": null,
+   "key": "screen:SCR-001",
+   "kind": "screen",
+   "label": "SCR-001 トップページ",
+   "origin": "baseline",
+   "seq": 14
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "id": "SCR-002",
+    "name": "背景解説ページ",
+    "priority": "Must",
+    "req_ids": [
+     "FR-004"
+    ],
+    "role": "選択されたトレンドのLLMによる背景解説を表示する",
+    "ui_spec": "- トレンド名およびランクの表示項目\n- LLMによって自動生成された背景解説文の表示項目\n- トップページに戻るためのナビゲーションリンク\n- アクション: 指定されたトレンドIDに対応する背景解説データを取得しJinja2テンプレートで表示する"
+   },
+   "cr": null,
+   "key": "screen:SCR-002",
+   "kind": "screen",
+   "label": "SCR-002 背景解説ページ",
+   "origin": "baseline",
+   "seq": 15
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "body": "",
+    "errors": "401 Unauthorized (認証エラー), 429 Too Many Requests (レート制限超過)",
+    "method": "GET",
+    "path": "/api/v1/trends",
+    "req_ids": [
+     "FR-005"
+    ],
+    "response": "200 OK (トレンドランキングTOP10および背景解説のJSONリスト)",
+    "screens": [],
+    "summary": "トレンドデータ一覧の取得"
+   },
+   "cr": null,
+   "key": "api:GET /api/v1/trends",
+   "kind": "api",
+   "label": "GET /api/v1/trends",
+   "origin": "baseline",
+   "seq": 16
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "auth": "OAuth / Bearerトークン",
+    "purpose": "日本国内のトレンドランキングTOP10の取得",
+    "req_ids": [
+     "FR-001",
+     "CON-005"
+    ],
+    "service": "X API",
+    "timing": "8時間ごとの定期バッチ処理"
+   },
+   "cr": null,
+   "key": "integration:X API",
+   "kind": "integration",
+   "label": "X API",
+   "origin": "baseline",
+   "seq": 17
+  },
+  {
+   "baseline": 3,
+   "content": {
+    "auth": "APIキー",
+    "purpose": "上位10件のトレンドに対する背景解説の自動生成",
+    "req_ids": [
+     "FR-002",
+     "CON-006"
+    ],
+    "service": "LLM API",
+    "timing": "トレンド取得バッチ処理の実行時"
+   },
+   "cr": null,
+   "key": "integration:LLM API",
+   "kind": "integration",
+   "label": "LLM API",
+   "origin": "baseline",
+   "seq": 18
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "",
+    "id": "FR-001",
+    "kind": "FR",
+    "points": [
+     "scale"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "12時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。"
+   },
+   "cr": null,
+   "key": "req:FR-001",
+   "kind": "requirement",
+   "label": "FR-001 12時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。",
+   "origin": "baseline",
+   "seq": 19
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "",
+    "id": "FR-002",
+    "kind": "FR",
+    "points": [
+     "core"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "トレンド取得と同時にLLMを用いて上位10件分の背景解説を自動生成しデータベースに保存する。"
+   },
+   "cr": null,
+   "key": "req:FR-002",
+   "kind": "requirement",
+   "label": "FR-002 トレンド取得と同時にLLMを用いて上位10件分の背景解説を自動生成しデータベースに保存する。",
+   "origin": "baseline",
+   "seq": 20
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "",
+    "id": "FR-003",
+    "kind": "FR",
+    "points": [
+     "users",
+     "core"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "トップページにおいて保持している最新のトレンドランキングTOP10をJinja2テンプレートにより表示する。"
+   },
+   "cr": null,
+   "key": "req:FR-003",
+   "kind": "requirement",
+   "label": "FR-003 トップページにおいて保持している最新のトレンドランキングTOP10をJinja2テンプレートにより表示する。",
+   "origin": "baseline",
+   "seq": 21
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "",
+    "id": "FR-004",
+    "kind": "FR",
+    "points": [
+     "users",
+     "core"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "背景解説ページにおいて事前生成されたトレンドの背景解説を表示する。"
+   },
+   "cr": null,
+   "key": "req:FR-004",
+   "kind": "requirement",
+   "label": "FR-004 背景解説ページにおいて事前生成されたトレンドの背景解説を表示する。",
+   "origin": "baseline",
+   "seq": 22
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "",
+    "id": "FR-005",
+    "kind": "FR",
+    "points": [
+     "core",
+     "security"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。"
+   },
+   "cr": null,
+   "key": "req:FR-005",
+   "kind": "requirement",
+   "label": "FR-005 外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。",
+   "origin": "baseline",
+   "seq": 23
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "セキュリティ",
+    "id": "NFR-001",
+    "kind": "NFR",
+    "points": [
+     "exceptions"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "X API取得失敗時はキャッシュを返さずそのままエラーレスポンスを返却する。"
+   },
+   "cr": null,
+   "key": "req:NFR-001",
+   "kind": "requirement",
+   "label": "NFR-001 X API取得失敗時はキャッシュを返さずそのままエラーレスポンスを返却する。",
+   "origin": "baseline",
+   "seq": 24
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-001",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "プログラミング言語にはPythonを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-001",
+   "kind": "requirement",
+   "label": "CON-001 プログラミング言語にはPythonを使用する。",
+   "origin": "baseline",
+   "seq": 25
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-002",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "WebフレームワークにはFastAPIおよびJinja2テンプレートを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-002",
+   "kind": "requirement",
+   "label": "CON-002 WebフレームワークにはFastAPIおよびJinja2テンプレートを使用する。",
+   "origin": "baseline",
+   "seq": 26
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-003",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "データベースにはPostgreSQLを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-003",
+   "kind": "requirement",
+   "label": "CON-003 データベースにはPostgreSQLを使用する。",
+   "origin": "baseline",
+   "seq": 27
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-004",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "定期実行にはFastAPI内蔵のAPSchedulerを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-004",
+   "kind": "requirement",
+   "label": "CON-004 定期実行にはFastAPI内蔵のAPSchedulerを使用する。",
+   "origin": "baseline",
+   "seq": 28
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "外部サービス",
+    "id": "CON-005",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "X API(Freeプラン / 日本リージョン)を利用する。"
+   },
+   "cr": null,
+   "key": "req:CON-005",
+   "kind": "requirement",
+   "label": "CON-005 X API(Freeプラン / 日本リージョン)を利用する。",
+   "origin": "baseline",
+   "seq": 29
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "category": "外部サービス",
+    "id": "CON-006",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "assumed",
+    "text": "LLM APIを利用して背景解説を自動生成する。"
+   },
+   "cr": null,
+   "key": "req:CON-006",
+   "kind": "requirement",
+   "label": "CON-006 LLM APIを利用して背景解説を自動生成する。",
+   "origin": "baseline",
+   "seq": 30
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "users": [
+     {
+      "scene": "トップページを開いてその時点のトレンドランキングを見る、またはトレンド入りの背景解説を見る",
+      "source": "assumed",
+      "user": "一般ユーザー"
+     },
+     {
+      "scene": "APIを通じてトレンドデータを取得する",
+      "source": "assumed",
+      "user": "外部クライアント"
+     }
+    ]
+   },
+   "cr": null,
+   "key": "users",
+   "kind": "users",
+   "label": "利用者と使う場面",
+   "origin": "baseline",
+   "seq": 31
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "id": "SCR-001",
+    "name": "トップページ",
+    "priority": "Must",
+    "req_ids": [
+     "FR-003"
+    ],
+    "role": "保持している最新のトレンドランキングTOP10を一覧表示する",
+    "ui_spec": "- 最新トレンドランキングTOP10のリスト表示項目(順位、トレンド名、取得日時)\n- 各トレンド項目から対応する背景解説ページへのリンクボタン\n- アクション: ページアクセス時に最新のトレンド情報をJinja2テンプレートでレンダリングして表示する"
+   },
+   "cr": null,
+   "key": "screen:SCR-001",
+   "kind": "screen",
+   "label": "SCR-001 トップページ",
+   "origin": "baseline",
+   "seq": 32
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "id": "SCR-002",
+    "name": "背景解説ページ",
+    "priority": "Must",
+    "req_ids": [
+     "FR-004"
+    ],
+    "role": "選択されたトレンドのLLMによる背景解説を表示する",
+    "ui_spec": "- トレンド名およびランクの表示項目\n- LLMによって自動生成された背景解説文の表示項目\n- トップページに戻るためのナビゲーションリンク\n- アクション: 指定されたトレンドIDに対応する背景解説データを取得しJinja2テンプレートで表示する"
+   },
+   "cr": null,
+   "key": "screen:SCR-002",
+   "kind": "screen",
+   "label": "SCR-002 背景解説ページ",
+   "origin": "baseline",
+   "seq": 33
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "body": "",
+    "errors": "401 Unauthorized (認証エラー), 429 Too Many Requests (レート制限超過)",
+    "method": "GET",
+    "path": "/api/v1/trends",
+    "req_ids": [
+     "FR-005"
+    ],
+    "response": "200 OK (トレンドランキングTOP10および背景解説のJSONリスト)",
+    "screens": [],
+    "summary": "トレンドデータ一覧の取得"
+   },
+   "cr": null,
+   "key": "api:GET /api/v1/trends",
+   "kind": "api",
+   "label": "GET /api/v1/trends",
+   "origin": "baseline",
+   "seq": 34
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "auth": "OAuth / Bearerトークン",
+    "purpose": "日本国内のトレンドランキングTOP10の取得",
+    "req_ids": [
+     "FR-001",
+     "CON-005"
+    ],
+    "service": "X API",
+    "timing": "12時間ごとの定期バッチ実行時"
+   },
+   "cr": null,
+   "key": "integration:X API",
+   "kind": "integration",
+   "label": "X API",
+   "origin": "baseline",
+   "seq": 35
+  },
+  {
+   "baseline": 4,
+   "content": {
+    "auth": "APIキー",
+    "purpose": "トレンドに対する背景解説文の自動生成",
+    "req_ids": [
+     "FR-002",
+     "CON-006"
+    ],
+    "service": "LLM API",
+    "timing": "トレンド取得バッチ内での処理時"
+   },
+   "cr": null,
+   "key": "integration:LLM API",
+   "kind": "integration",
+   "label": "LLM API",
+   "origin": "baseline",
+   "seq": 36
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "",
+    "id": "FR-001",
+    "kind": "FR",
+    "points": [
+     "scale"
+    ],
+    "priority": "Must",
+    "source": "adopted",
+    "text": "12時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。"
+   },
+   "cr": null,
+   "key": "req:FR-001",
+   "kind": "requirement",
+   "label": "FR-001 12時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。",
+   "origin": "adopt",
+   "seq": 37
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "",
+    "id": "FR-003",
+    "kind": "FR",
+    "points": [
+     "users",
+     "core"
+    ],
+    "priority": "Must",
+    "source": "adopted",
+    "text": "トップページにおいて保持している最新のトレンドランキングTOP10をJinja2テンプレートにより表示する。"
+   },
+   "cr": null,
+   "key": "req:FR-003",
+   "kind": "requirement",
+   "label": "FR-003 トップページにおいて保持している最新のトレンドランキングTOP10をJinja2テンプレートにより表示する。",
+   "origin": "adopt",
+   "seq": 38
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "",
+    "id": "FR-004",
+    "kind": "FR",
+    "points": [
+     "users",
+     "core"
+    ],
+    "priority": "Must",
+    "source": "adopted",
+    "text": "背景解説ページにおいて事前生成されたトレンドの背景解説を表示する。"
+   },
+   "cr": null,
+   "key": "req:FR-004",
+   "kind": "requirement",
+   "label": "FR-004 背景解説ページにおいて事前生成されたトレンドの背景解説を表示する。",
+   "origin": "adopt",
+   "seq": 39
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "",
+    "id": "FR-005",
+    "kind": "FR",
+    "points": [
+     "core",
+     "security"
+    ],
+    "priority": "Must",
+    "source": "adopted",
+    "text": "外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。"
+   },
+   "cr": null,
+   "key": "req:FR-005",
+   "kind": "requirement",
+   "label": "FR-005 外部クライアント向けにAPIキーまたはBearerトークン認証およびレート制限を適用したトレンドデータ提供APIを提供する。",
+   "origin": "adopt",
+   "seq": 40
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "",
+    "id": "FR-002",
+    "kind": "FR",
+    "points": [
+     "core"
+    ],
+    "priority": "Must",
+    "source": "adopted",
+    "text": "トレンド取得と同時にLLMを用いて上位10件分の背景解説を自動生成しデータベースに保存する。"
+   },
+   "cr": null,
+   "key": "req:FR-002",
+   "kind": "requirement",
+   "label": "FR-002 トレンド取得と同時にLLMを用いて上位10件分の背景解説を自動生成しデータベースに保存する。",
+   "origin": "adopt",
+   "seq": 41
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "セキュリティ",
+    "id": "NFR-001",
+    "kind": "NFR",
+    "points": [
+     "exceptions"
+    ],
+    "priority": null,
+    "source": "adopted",
+    "text": "X API取得失敗時はキャッシュを返さずそのままエラーレスポンスを返却する。"
+   },
+   "cr": null,
+   "key": "req:NFR-001",
+   "kind": "requirement",
+   "label": "NFR-001 X API取得失敗時はキャッシュを返さずそのままエラーレスポンスを返却する。",
+   "origin": "adopt",
+   "seq": 42
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-002",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "adopted",
+    "text": "WebフレームワークにはFastAPIおよびJinja2テンプレートを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-002",
+   "kind": "requirement",
+   "label": "CON-002 WebフレームワークにはFastAPIおよびJinja2テンプレートを使用する。",
+   "origin": "adopt",
+   "seq": 43
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-001",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "adopted",
+    "text": "プログラミング言語にはPythonを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-001",
+   "kind": "requirement",
+   "label": "CON-001 プログラミング言語にはPythonを使用する。",
+   "origin": "adopt",
+   "seq": 44
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-003",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "adopted",
+    "text": "データベースにはPostgreSQLを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-003",
+   "kind": "requirement",
+   "label": "CON-003 データベースにはPostgreSQLを使用する。",
+   "origin": "adopt",
+   "seq": 45
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "技術スタック",
+    "id": "CON-004",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "adopted",
+    "text": "定期実行にはFastAPI内蔵のAPSchedulerを使用する。"
+   },
+   "cr": null,
+   "key": "req:CON-004",
+   "kind": "requirement",
+   "label": "CON-004 定期実行にはFastAPI内蔵のAPSchedulerを使用する。",
+   "origin": "adopt",
+   "seq": 46
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "外部サービス",
+    "id": "CON-005",
+    "kind": "CON",
+    "points": [
+     "tech"
+    ],
+    "priority": null,
+    "source": "adopted",
+    "text": "X API(Freeプラン / 日本リージョン)を利用する。"
+   },
+   "cr": null,
+   "key": "req:CON-005",
+   "kind": "requirement",
+   "label": "CON-005 X API(Freeプラン / 日本リージョン)を利用する。",
+   "origin": "adopt",
+   "seq": 47
+  },
+  {
+   "baseline": null,
+   "content": {
+    "users": [
+     {
+      "scene": "トップページを開いてその時点のトレンドランキングを見る、またはトレンド入りの背景解説を見る",
+      "source": "adopted",
+      "user": "一般ユーザー"
+     },
+     {
+      "scene": "APIを通じてトレンドデータを取得する",
+      "source": "assumed",
+      "user": "外部クライアント"
+     }
+    ]
+   },
+   "cr": null,
+   "key": "users",
+   "kind": "users",
+   "label": "利用者と使う場面",
+   "origin": "adopt",
+   "seq": 48
+  },
+  {
+   "baseline": null,
+   "content": {
+    "category": "",
+    "id": "FR-003",
+    "kind": "FR",
+    "points": [
+     "users"
+    ],
+    "priority": "Must",
+    "source": "assumed",
+    "text": "最新のトレンドランキング TOP20 を表示し、前回からの順位の変動を矢印で示す"
+   },
+   "cr": 4,
+   "key": "req:FR-003",
+   "kind": "requirement",
+   "label": "FR-003 最新のトレンドランキング TOP20 を表示し、前回からの順位の変動を矢印で示す",
+   "origin": "change_request",
+   "seq": 49
+  },
+  {
+   "baseline": null,
+   "content": {
+    "id": "SCR-001",
+    "name": "トップページ",
+    "priority": "Must",
+    "req_ids": [
+     "FR-003"
+    ],
+    "role": "保持している最新のトレンドランキングTOP20を一覧表示する",
+    "ui_spec": "- 最新トレンドランキングTOP20のリスト表示項目(順位、前回からの順位変動を示す矢印、トレンド名、取得日時)\n- 各トレンド項目から対応する背景解説ページへのリンクボタン\n- アクション: ページアクセス時に最新のトレンド情報をJinja2テンプレートでレンダリングして表示する"
+   },
+   "cr": 4,
+   "key": "screen:SCR-001",
+   "kind": "screen",
+   "label": "SCR-001 トップページ",
+   "origin": "change_request",
+   "seq": 50
+  }
+ ],
+ "stages": null
+}

@@ -1,0 +1,24 @@
+{
+ "adds_requirement": false,
+ "applied_impact": [],
+ "number": 3,
+ "predicted_impact": {
+  "items": [],
+  "targets": [
+   {
+    "kind": "content",
+    "requirement_id": "FR-001",
+    "text": "8時間ごとにX APIから日本国内のトレンドランキングTOP10を取得する定期バッチ処理を実装する。"
+   }
+  ],
+  "unpredicted_new_requirement": false
+ },
+ "status": "applied",
+ "targets": [
+  {
+   "kind": "content",
+   "proposed_text": "",
+   "requirement_id": "FR-001"
+  }
+ ]
+}
