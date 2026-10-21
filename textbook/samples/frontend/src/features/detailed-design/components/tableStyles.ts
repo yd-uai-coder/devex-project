@@ -1,4 +1,4 @@
-// 作成：Phase-17-6｜更新：Phase-21-6,88(完了後の調整)
+// 作成：Phase-17-6｜更新：Phase-21-6,88(完了後の調整),99(完了後の調整)
 // 写経レベル: 定型 ── FunctionListPanel から切り出した表の見た目。
 import type { CSSProperties } from "react";
 
@@ -10,6 +10,8 @@ export const CELL: CSSProperties = {
   borderBottom: "1px solid var(--borderColor)",
   textAlign: "left",
   verticalAlign: "top",
+  // Phase-99(完了後の調整):追記
+  minWidth:"80px"
 };
 export const HEAD: CSSProperties = { ...CELL, background: "var(--color3)", whiteSpace: "nowrap" };
 export const TABLE: CSSProperties = {

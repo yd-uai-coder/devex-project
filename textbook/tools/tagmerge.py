@@ -12,15 +12,22 @@
   (`<c> Phase-N-n:追記 ── m.a, m.b` / `<c> Phase-N-n：削除 ── m.c`)にまとめる(#29 の特則)。並べ替えだけならタグなし。
 - 複数行の文字列(docstring)を途中で切る変更・関数の中の import はタグを付けずにそのまま当て、
   標準エラーに「要手当て」と出す。docstring は記録の行の案も出す。
-- 当てた後の Python が構文として読めなければ、標準エラーに出して終了コード 1 にする(ファイルは書く)。
+- TSX の JSX の子の位置(開きタグと閉じタグの間)では、タグ・コメントアウトを `{/* … */}` で入れる
+  (位置は tsx_context.cjs が devex-ui の typescript の構文木で調べる)。
+- 同じ行が続くときの挿入・削除の区切りは下へずらし、挿入は samples の次の行の履歴タグより前に入れる。
+- 当てた後の Python・TS/TSX が構文として読めなければ、標準エラーに出して終了コード 1 にする(ファイルは書く)。
 """
 
 import ast
 import difflib
 import io
+import json
 import re
+import subprocess
 import sys
 import tokenize
+from collections.abc import Callable
+from pathlib import Path
 
 Span = tuple[int, int]  # 行の範囲(0始まり、両端を含む)
 
@@ -215,6 +222,38 @@ def update_header(sample: list[str], chapter: str, c: str) -> list[str]:
     return sample[:at] + [f"{c} 更新：Phase-{chapter}\n"] + sample[at:]
 
 
+# ── TS/TSX(tsx_context.cjs) ────────────────────────────────
+
+
+TSX_HELPER = Path(__file__).with_name("tsx_context.cjs")
+
+
+class TsUnavailable(Exception):
+    """node か devex-ui の typescript が無く、構文木を読めない。"""
+
+
+def ts_info(text: str, file_name: str, lines: list[int]) -> tuple[set[int], list[tuple[int, str]]]:
+    """lines(0始まり)のうち JSX の子の位置にある行と、構文エラー(1始まりの行, 文)。"""
+    try:
+        result = subprocess.run(
+            ["node", str(TSX_HELPER)],
+            input=json.dumps({"text": text, "fileName": file_name, "lines": lines}),
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as e:
+        raise TsUnavailable(str(e)) from e
+    data = json.loads(result.stdout)
+    return set(data["jsx"]), [(x["line"], x["msg"]) for x in data["errors"]]
+
+
+def jsx_comment(text: str) -> str:
+    """JSX の子の位置のコメント。中の `*/` はコメントを閉じないように崩す。"""
+    text = text.replace("*/", "*\\/")
+    return f"{{/* {text} */}}" if text else "{/* */}"
+
+
 # ── 本体 ────────────────────────────────────────────────────
 
 
@@ -233,8 +272,33 @@ def enclosing_name(text: str, line: int) -> str:
     return best
 
 
-def merge(sample_text: str, old_text: str, new_text: str, chapter: str, c: str) -> tuple[str, list[str]]:
-    """samples に本体の 旧→新 の差分をタグ付きで当てた結果と、標準エラーに出す報告。"""
+Op = tuple[str, int, int, int, int]
+
+
+def slide(old: list[str], new: list[str], opcodes: list[Op]) -> list[Op]:
+    """equal 以外の op。挿入・削除の区切りは、後ろの一致する行の範囲で下へずらす(git と同じ)。
+
+    `) : null}` のような同じ行が続くと、difflib は既存の行から挿入を始めることがあり、タグが既存の行の前に付く。
+    """
+    result: list[Op] = []
+    for k, (tag, i1, i2, j1, j2) in enumerate(opcodes):
+        if tag == "equal":
+            continue
+        limit = next((op[1] for op in opcodes[k + 1 :] if op[0] != "equal"), len(old))
+        if tag == "insert":
+            while i1 < limit and j2 < len(new) and new[j1] == new[j2] == old[i1]:
+                i1, i2, j1, j2 = i1 + 1, i2 + 1, j1 + 1, j2 + 1
+        elif tag == "delete":
+            while i2 < limit and j1 < len(new) and old[i1] == old[i2] == new[j1]:
+                i1, i2, j1, j2 = i1 + 1, i2 + 1, j1 + 1, j2 + 1
+        result.append((tag, i1, i2, j1, j2))
+    return result
+
+
+def merge(
+    sample_text: str, old_text: str, new_text: str, chapter: str, c: str, tsx: bool = False
+) -> tuple[str, list[str]]:
+    """samples に本体の 旧→新 の差分をタグ付きで当てた結果と、標準エラーに出す報告。tsx なら JSX の位置を調べる。"""
     reports: list[str] = []
     if old_text == new_text:
         return sample_text, reports
@@ -265,12 +329,22 @@ def merge(sample_text: str, old_text: str, new_text: str, chapter: str, c: str) 
             j -= 1
         return to_sample[j] + 1 if j >= 0 else 0
 
-    ops = difflib.SequenceMatcher(None, old, new, autojunk=False).get_opcodes()
+    def op_start(tag: str, i1: int) -> int:
+        """op を当てる samples の位置。挿入は直前の行のすぐ後(samples だけにある次の行の履歴タグより前)。"""
+        if tag == "insert" and i1 - 1 in to_sample:
+            return to_sample[i1 - 1] + 1
+        return sample_index(i1)
+
+    ops = slide(old, new, difflib.SequenceMatcher(None, old, new, autojunk=False).get_opcodes())
+    jsx: set[int] = set()
+    if tsx:
+        try:
+            jsx, _ = ts_info("".join(sample), "sample.tsx", sorted({op_start(op[0], op[1]) for op in ops}))
+        except TsUnavailable as e:
+            reports.append(f"-- 要手当て(JSX): 構文木を読めないので JSX の子の位置も `{c}` で入れた({e})")
     edits = []
     for tag, i1, i2, j1, j2 in ops:
-        if tag == "equal":
-            continue
-        start = sample_index(i1)
+        start = op_start(tag, i1)
         end = sample_index(i2 - 1) + 1 if i2 > i1 else start
         missing = i2 > i1 and any(i not in to_sample for i in range(i1, i2))
         old_lines, new_lines = old[i1:i2], new[j1:j2]
@@ -305,23 +379,21 @@ def merge(sample_text: str, old_text: str, new_text: str, chapter: str, c: str) 
             ref = next((x for x in (new_lines or old_lines) if x.strip()), "\n")
             ind = indent_of(ref)
 
-            def comment(line: str, ind: str = ind) -> str:
+            def note(text: str, ind: str = ind, in_jsx: bool = start in jsx) -> str:
+                if in_jsx:
+                    return f"{ind}{jsx_comment(text)}\n"
+                return f"{ind}{c} {text}\n" if text else f"{ind}{c}\n"
+
+            def comment(line: str, ind: str = ind, note: Callable[[str], str] = note) -> str:
                 text = line.rstrip("\n")
-                if not text.strip():
-                    return f"{ind}{c}\n"
-                return f"{ind}{c} {text[len(ind):] if text.startswith(ind) else text.lstrip()}\n"
+                return note(text[len(ind) :] if text.startswith(ind) else text.strip())
 
             if tag == "insert":
-                body = [*lead, f"{ind}{c} Phase-{chapter}:追記\n", *new_lines]
+                body = [*lead, note(f"Phase-{chapter}:追記"), *new_lines]
             elif tag == "delete":
-                body = [f"{ind}{c} Phase-{chapter}：削除\n", *map(comment, old_lines)]
+                body = [note(f"Phase-{chapter}：削除"), *map(comment, old_lines)]
             else:
-                body = [
-                    f"{ind}{c} Phase-{chapter}：更新\n",
-                    *map(comment, old_lines),
-                    f"{ind}{c} ↓↓\n",
-                    *new_lines,
-                ]
+                body = [note(f"Phase-{chapter}：更新"), *map(comment, old_lines), note("↓↓"), *new_lines]
         edits.append((start, end, body))
     for start, end, body in sorted(edits, key=lambda e: e[0], reverse=True):
         sample[start:end] = body
@@ -337,18 +409,26 @@ def main() -> int:
         old = f.read()
     with open(new_path) as f:
         new = f.read()
-    result, reports = merge(sample, old, new, chapter, c)
+    suffix = Path(sample_path).suffix
+    result, reports = merge(sample, old, new, chapter, c, tsx=suffix == ".tsx")
     for line in reports:
         print(f"{line} ({sample_path})", file=sys.stderr)
     with open(sample_path, "w") as f:
         f.write(result)
+    errors: list[tuple[int | None, str]] = []
     if c == "#":
         try:
             ast.parse(result)
         except SyntaxError as e:
-            print(f"!! 構文エラー: {sample_path}:{e.lineno} {e.msg}", file=sys.stderr)
-            return 1
-    return 0
+            errors.append((e.lineno, e.msg))
+    elif suffix in (".ts", ".tsx"):
+        try:
+            errors += ts_info(result, f"sample{suffix}", [])[1]
+        except TsUnavailable as e:
+            print(f"-- 要手当て(構文): 構文木を読めないので確かめていない({e}) ({sample_path})", file=sys.stderr)
+    for lineno, msg in errors:
+        print(f"!! 構文エラー: {sample_path}:{lineno} {msg}", file=sys.stderr)
+    return 1 if errors else 0
 
 
 if __name__ == "__main__":

@@ -232,7 +232,7 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           >
             {regenerating ? "再生成中..." : "再生成する"}
           </Button>
-          // Phase-64-4:追記
+          {/* Phase-64-4:追記 */}
           {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}
           <DeleteProjectButton
             projectId={projectId}
@@ -334,7 +334,7 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
                 </span>
               </label>
             ))}
-            // Phase-54-2:追記
+            {/* Phase-54-2:追記 */}
             {sendback.length > 0 ? (
               <>
                 <span style={{ display: "block", marginTop: 12, fontWeight: 600 }}>

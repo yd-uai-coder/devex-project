@@ -74,9 +74,8 @@ export function TemplateSelectField({ value, onChange }: TemplateSelectFieldProp
     <RadioGroupWithLabel
       label="テンプレート(任意)"
       width="100%"
-      {/* Phase-24(T2同期)：削除(本体に合わせた)
-      orientation="vertical"
-      */}
+      // Phase-24(T2同期)：削除(本体に合わせた)
+      // orientation="vertical"
       items={items}
       value={value ?? NO_TEMPLATE_VALUE}
       onValueChange={(next) => {

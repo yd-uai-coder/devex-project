@@ -31,9 +31,9 @@ const V2 = {
 function renderPanel(docType: "requirements" | "test_spec" = "requirements") {
   return render(
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      // Phase-57-2：更新
-      // <VersionHistoryPanel projectId="p1" docType="requirements" />
-      // ↓↓
+      {/* Phase-57-2：更新 */}
+      {/* <VersionHistoryPanel projectId="p1" docType="requirements" /> */}
+      {/* ↓↓ */}
       <VersionHistoryPanel projectId="p1" docType={docType} />
     </TamaguiProvider>,
   );

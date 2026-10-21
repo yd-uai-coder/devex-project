@@ -214,11 +214,11 @@ export function DetailedDesignPageContent({
            <H2>詳細設計</H2>
            ↓↓ */}
         <H2>{simple ? "実装手順書" : "詳細設計"}</H2>
-        // Phase-64-4：更新
-        // <Link href={`/projects/${projectId}/documents`}>
-        //   <Text color="$blue10">← ドキュメントに戻る</Text>
-        // </Link>
-        // ↓↓
+        {/* Phase-64-4：更新 */}
+        {/* <Link href={`/projects/${projectId}/documents`}> */}
+        {/*   <Text color="$blue10">← ドキュメントに戻る</Text> */}
+        {/* </Link> */}
+        {/* ↓↓ */}
         <XStack gap="$3" alignItems="center">
           <Link href={`/projects/${projectId}/documents`}>
             <Text color="$blue10">← ドキュメントに戻る</Text>
@@ -270,9 +270,9 @@ export function DetailedDesignPageContent({
           stages={stages}
           testSpecNote={detailed ? zipTestSpecNote(testSpec) : null}
         />
-      // Phase-99(完了後の調整):追記
       ) : null}
 
+      {/* Phase-99(完了後の調整):追記 */}
       {/* 反映済みの CR の検証の帯(詳細設計モードで、反映済みの CR があるときだけ)。「検証する」でモーダル */}
       {stages.length > 0 && detailed ? (
         <ChangeRequestVerifyBanner projectId={projectId} refreshKey={verifyKey} onVerify={setVerifyCr} />
@@ -291,7 +291,7 @@ export function DetailedDesignPageContent({
       {stages.length > 0 ? (
         <ReviewPanel projectId={projectId} targetAction={targetAction} refreshKey={stagesKey} />
       ) : null}
-      // Phase-54-1:追記
+      {/* Phase-54-1:追記 */}
       {/* 差し戻し: 段階6・7 の採用した指摘で段階を作り直す(レビューがオンで、採用した指摘があるときだけ) */}
       {stages.length > 0 && !simple ? <StageSendbackPanel projectId={projectId} /> : null}
 
@@ -390,7 +390,7 @@ export function DetailedDesignPageContent({
             // 説明は段落の中に出るので、ブロック要素(XStack など)を入れない
             <>
               {`段階${approvedStage}-${STAGE_TITLES[approvedStage] ?? ""}を承認しました。`}
-              // Phase-54-1:追記
+              {/* Phase-54-1:追記 */}
               {/* 段階6・7 の承認では、採用したまま直していない指摘を知らせる(止めはしない) */}
               {reviewEffective && (approvedStage === 6 || approvedStage === 7) && unaddressedNotice(reviewGates)
                 ? ` ${unaddressedNotice(reviewGates)}`

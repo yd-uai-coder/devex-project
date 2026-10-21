@@ -56,9 +56,9 @@ export function ReviewFindingBadge({ projectId, items }: { projectId: string | n
         title="AI 設計レビューの指摘を見る"
         onClick={() => setOpen(true)}
       >
-        // Phase-54-1：更新
-        // {`AI 指摘 ${items.length}`}
-        // ↓↓
+        {/* Phase-54-1：更新 */}
+        {/* {`AI 指摘 ${items.length}`} */}
+        {/* ↓↓ */}
         {`AI 指摘 ${items.length}${unaddressed > 0 ? `・未対応 ${unaddressed}` : ""}`}
       </button>
       <Dialog modal open={open} onOpenChange={setOpen}>
@@ -86,7 +86,7 @@ export function ReviewFindingBadge({ projectId, items }: { projectId: string | n
                     <Text fontSize="$1" color="$color10">
                       {`${GATE_LABEL[gate]}のレビュー${isCurrent ? "" : "(段階・文書が変わる前)"}`}
                     </Text>
-                    // Phase-54-1:追記
+                    {/* Phase-54-1:追記 */}
                     {f.followup ? <FollowupChip state={f.followup} /> : null}
                     {f.fix_check ? <FixCheckNote check={f.fix_check} /> : null}
                   </XStack>

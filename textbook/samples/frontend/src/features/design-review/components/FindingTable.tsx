@@ -122,7 +122,7 @@ export function FindingTable({
                     </Button>
                   ))}
                 </XStack>
-                // Phase-54-1:追記
+                {/* Phase-54-1:追記 */}
                 {f.followup ? <FollowupChip state={f.followup} /> : null}
                 {f.fix_check ? <FixCheckNote check={f.fix_check} /> : null}
               </td>

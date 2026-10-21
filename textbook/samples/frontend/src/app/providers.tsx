@@ -53,9 +53,9 @@ export function Providers({ children }: { children: ReactNode }) {
       onChangeTheme={(next) => setTheme(next as "light" | "dark")}
     >
       <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
-        // Phase-64-3：更新
-        // {children}
-        // ↓↓
+        {/* Phase-64-3：更新 */}
+        {/* {children} */}
+        {/* ↓↓ */}
         {/* 操作の完了の知らせ(トースト)。ルートに置くので、画面を移っても消えない */}
         <AppToastProvider>{children}</AppToastProvider>
       </TamaguiProvider>

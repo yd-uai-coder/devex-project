@@ -53,11 +53,11 @@ export function ProjectListItem({ project }: { project: ProjectRead }) {
           aria-label={`${project.title}(${STATUS_LABEL[project.status]})`}
           style={{ flex: 1, minWidth: 0 }}
         >
-          // Phase-24：更新
-          // <Text fontSize="$5" fontWeight="600">
-          //   {project.title}
-          // </Text>
-          // ↓↓
+          {/* Phase-24：更新 */}
+          {/* <Text fontSize="$5" fontWeight="600"> */}
+          {/*   {project.title} */}
+          {/* </Text> */}
+          {/* ↓↓ */}
           <XStack alignItems="center" gap="$2" flexShrink={1}>
             <Text
               fontSize="$1"
@@ -75,19 +75,19 @@ export function ProjectListItem({ project }: { project: ProjectRead }) {
               {project.title}
             </Text>
           </XStack>
-        // Phase-64-4:追記
+        {/* Phase-64-4:追記 */}
         </Link>
         <XStack alignItems="center" gap="$2" flexShrink={0}>
           <Text fontSize="$2" color="$color11">
             {STATUS_LABEL[project.status]}
           </Text>
-          // Phase-64-4:追記
+          {/* Phase-64-4:追記 */}
           <DeleteProjectButton projectId={project.id} title={project.title} variant="icon" />
         </XStack>
-      // Phase-64-4：更新
-      // </StyledCard>
-      // </Link>
-      // ↓↓
+      {/* Phase-64-4：更新 */}
+      {/* </StyledCard> */}
+      {/* </Link> */}
+      {/* ↓↓ */}
       </XStack>
     </StyledCard>
   );

@@ -223,9 +223,9 @@ export function ReviewPanel({
                   >
                     {open ? "▼" : "▶"}
                   </Button>
-                  // Phase-54-1：更新
-                  // <Text fontWeight="600">{`${GATE_LABEL[g.gate]}の指摘 ${g.run.findings.length}件`}</Text>
-                  // ↓↓
+                  {/* Phase-54-1：更新 */}
+                  {/* <Text fontWeight="600">{`${GATE_LABEL[g.gate]}の指摘 ${g.run.findings.length}件`}</Text> */}
+                  {/* ↓↓ */}
                   <Text fontWeight="600">{`${GATE_LABEL[g.gate]}の指摘 ${findings.length}件`}</Text>
                   {follow.adopted > 0 ? (
                     <Text fontSize="$2" color={follow.unaddressed > 0 ? "$red10" : "$color10"}>
@@ -233,13 +233,13 @@ export function ReviewPanel({
                     </Text>
                   ) : null}
                 </XStack>
-                // Phase-54-1：更新
-                // <Paragraph fontSize="$2" color="$color10">
-                //   {`採用 ${counts.adopted} ・ 却下 ${counts.rejected} ・ 保留 ${counts.held} ・ 未判断 ${counts.pending}`}
-                //   {g.run.is_current ? "" : " ── 文書・段階が変わる前のレビューです(もう一度レビューすると今の版を見ます)"}
-                // </Paragraph>
-                // {open && g.run.findings.length > 0 ? (
-                // ↓↓
+                {/* Phase-54-1：更新 */}
+                {/* <Paragraph fontSize="$2" color="$color10"> */}
+                {/*   {`採用 ${counts.adopted} ・ 却下 ${counts.rejected} ・ 保留 ${counts.held} ・ 未判断 ${counts.pending}`} */}
+                {/*   {g.run.is_current ? "" : " ── 文書・段階が変わる前のレビューです(もう一度レビューすると今の版を見ます)"} */}
+                {/* </Paragraph> */}
+                {/* {open && g.run.findings.length > 0 ? ( */}
+                {/* ↓↓ */}
                 {g.run?.status === "succeeded" ? (
                   <Paragraph fontSize="$2" color="$color10">
                     {`採用 ${counts.adopted} ・ 却下 ${counts.rejected} ・ 保留 ${counts.held} ・ 未判断 ${counts.pending}`}
@@ -256,9 +256,9 @@ export function ReviewPanel({
                       .join("　")}`}
                   </Text>
                 ) : null}
-                // Phase-54-1：更新
-                // {!open ? null : g.run.findings.length > 0 ? (
-                // ↓↓
+                {/* Phase-54-1：更新 */}
+                {/* {!open ? null : g.run.findings.length > 0 ? ( */}
+                {/* ↓↓ */}
                 {!open ? null : findings.length > 0 ? (
                   <FindingTable
                     // Phase-54-1：更新

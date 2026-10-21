@@ -28,9 +28,9 @@ export function AccordionInner({
   flex = 1,
 }: AccordionInnerProps) {
   return(
-    {/* Phase-67(完了後の調整)：更新
-       <Accordion.Item value={value} flex={1}>
-       ↓↓ */}
+    // Phase-67(完了後の調整)：更新
+    // <Accordion.Item value={value} flex={1}>
+    // ↓↓
     <Accordion.Item value={value} flex={flex}>
       <StyledAccordionHeader>
         {({ open }: { open: boolean }) => (

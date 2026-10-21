@@ -21,9 +21,9 @@ const NO_KEYS = { encryption_available: true, keys: [] };
 function renderSection() {
   render(
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      // Phase-67(完了後の調整)：更新
-      // <ApiKeySection onChanged={onChanged} />
-      // ↓↓
+      {/* Phase-67(完了後の調整)：更新 */}
+      {/* <ApiKeySection onChanged={onChanged} /> */}
+      {/* ↓↓ */}
       <ApiKeySection />
     </TamaguiProvider>,
   );

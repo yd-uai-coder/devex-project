@@ -98,7 +98,7 @@ Claude の判断:
 - Phase 完了後の調整の後:
   - devex-api: ユニット 1756件・統合 39件がすべて通った。`ruff check` と `pyright`(触ったファイル)も通った。
   - devex-ui: ユニット 1227件がすべて通った(`--maxWorkers=4`)。`tsc`・`build` も通り、`lint` は既存の警告1件だけ。
-  - 全 E2E は **11件成功** を2回(2回目の調整まで)。3回目の調整の後は、ユーザーが画面を使っていたので流していない(未消化の申し送り)。
+  - 全 E2E は **11件成功** を2回(2回目の調整まで)。3回目の調整の後は、ユーザーが画面を使っていたので流さず、ステージ12 の振り返りのセッション(2026-10-21)で流して **11件成功** を2回([振り返り](../retrospectives/overall-retrospective.md) 17節の Q5)。流し方は 99-2 と同じ(3100 番・一時的な CORS の上書き)。
   - 段階1 の表の幅は、確認用のプロジェクトを Playwright で撮って確かめた。
   - `samples_check.py --api-since stage11-15 --ui-since HEAD`: 不一致 0・本体のみ 0(一致 993)。
   - `link_check.py`: 0件。
@@ -135,10 +135,7 @@ Claude の判断:
 - 反映の後の CR の流れの部品・束の写しの取り出し(#17。触るときに寄せる)
 - `tagmerge.py` は JSX の中のタグを `//` で入れる(手で `{/* */}` に直した。この Phase では TypeScript の構文木で確かめる一時的なスクリプトを使った)
 
-- **3回目の調整の後の全 E2E**: 流していない(backend を一時的に偽の LLM にするため、ユーザーが画面を使っていない時に流す)。
-
 **ユーザーが決めるもの**:
-- **`tableStyles.ts` の `CELL` の `minWidth:"80px"`**: Claude の変更ではない本体の編集(2026-10-20 22:49)。残すなら samples に写す。
 - **開発環境の後始末**: 確認用の利用者・プロジェクト。E2E が作ったものと、この Phase で幅の確認に作った「画面確認(段階の表)」(`check-layout-…@example.com`)がある。「トレンド追跡アプリ」は CR-4 が反映済み(未検証)のまま。
 - **この Phase の未コミット**: Phase 98 の分と合わせて、外側のリポジトリ・devex-api・devex-ui。コミットはユーザーが行う(#35)。タグは devex-api・devex-ui とも `phase-99`。
 - **ステージ12 の振り返り**: 別のセッションで行う(#18)。#39 の「本番での確認の指摘」はステージ15 の反映の後。
@@ -147,6 +144,7 @@ Claude の判断:
 - **影響が広がる変更の実 LLM での比較**(P89 から)→ [99-1](./Phase-99-1.md)。CR-4 の予測と、段階の承認で結んだ印 40件。
 - **外部連携の言い換え**(Phase 91 から)→ [99-1](./Phase-99-1.md)。プロンプトの後は起きていない。重複の規則は上の申し送り。
 - **画面確認で決める項目**(Phase 97・98)→ [99-4](./Phase-99-4.md) と下の調整。
+- **3回目の調整の後の全 E2E**・**`tableStyles.ts` の `CELL` の `minWidth`**(ユーザーの本体の編集)→ ステージ12 の振り返りのセッションで、E2E を流し、`minWidth` は残して samples に写した([振り返り](../retrospectives/overall-retrospective.md) 17節の Q5・Q6)。
 - **Phase 99 の未確定事項**(90-4)→ 「着手時の相談で決めたこと」。
 
 **セッションの区切りの記録**: Phase 99 は1セッションで行った。
@@ -184,6 +182,7 @@ Claude の判断:
 | [`frontend/src/features/confirmations/confirmationOps.ts`](../samples/frontend/src/features/confirmations/confirmationOps.ts) | 更新 | `splitByPresence` を `rowLock` に置き換えた |
 | [`frontend/src/features/confirmations/components/ConfirmationTable.tsx`](../samples/frontend/src/features/confirmations/components/ConfirmationTable.tsx) | 更新 | 行ごとの `rowLock`。理由と変更要求へのリンク(2段)。メモはどの行も書ける |
 | [`frontend/src/features/confirmations/components/ConfirmationsPageContent.tsx`](../samples/frontend/src/features/confirmations/components/ConfirmationsPageContent.tsx) | 更新 | 「決めた記録」の節をやめ、1つの表 |
+| [`frontend/src/features/detailed-design/components/tableStyles.ts`](../samples/frontend/src/features/detailed-design/components/tableStyles.ts) | 更新 | `CELL` の最小の幅 80px(ユーザーの編集。振り返りのセッションで写した) |
 | [`frontend/src/features/detailed-design/components/FunctionListPanel.tsx`](../samples/frontend/src/features/detailed-design/components/FunctionListPanel.tsx) | 更新 | 列の最小の幅 |
 | [`frontend/src/features/detailed-design/components/ProcedureStepTable.tsx`](../samples/frontend/src/features/detailed-design/components/ProcedureStepTable.tsx) | 更新 | 種別の列の最小の幅 |
 | [`frontend/src/features/change-requests/changeRequestOps.ts`](../samples/frontend/src/features/change-requests/changeRequestOps.ts) | 更新 | `verifyBannerText` |
