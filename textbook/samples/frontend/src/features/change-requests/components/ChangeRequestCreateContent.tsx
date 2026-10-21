@@ -1,3 +1,4 @@
+// 更新：Phase-98-2
 "use client";
 // 作成：Phase-88(完了後の調整)
 
@@ -12,17 +13,25 @@ import { DetailedModeOnlyNotice } from "@/features/change-requests/components/De
 import { baselineHref, baselinesHref } from "@/features/baselines/baselineOps";
 
 // 合意済みの版を基準に変更要求(CR)を作るページ(SCR-010)。合意済みの版の中身から移る。基準の版は
-// URL の番号に固定し、選ぶ欄は出さない(対象の版が分かりやすいように)。対象はその版の要件から選ぶ。
+// Phase-98-2：更新
+// // URL の番号に固定し、選ぶ欄は出さない(対象の版が分かりやすいように)。対象はその版の要件から選ぶ。
+// ↓↓
+// URL の番号に固定し、選ぶ欄は出さない(対象の版が分かりやすいように)。対象はその版の要件から、
+// 新しい要件の予測の起点はその版の要件・画面・API から選ぶ。
 // 作ったら CR の詳細へ、やめると合意済みの版の中身へ戻る。
 export function ChangeRequestCreateContent({ projectId, baselineNumber }: { projectId: string; baselineNumber: number }) {
   const router = useRouter();
   const baselines = useChangeRequestsStore((s) => (s.projectId === projectId ? s.baselines : null));
   const requirements = useChangeRequestsStore((s) => s.requirements[baselineNumber] ?? null);
+  // Phase-98-2:追記
+  const origins = useChangeRequestsStore((s) => s.origins[baselineNumber] ?? null);
   const unavailable = useChangeRequestsStore((s) => s.unavailable && s.projectId === projectId);
   const acting = useChangeRequestsStore((s) => s.acting);
   const actionError = useChangeRequestsStore((s) => s.actionError);
   const fetchBaselines = useChangeRequestsStore((s) => s.fetchBaselines);
   const fetchRequirements = useChangeRequestsStore((s) => s.fetchRequirements);
+  // Phase-98-2:追記
+  const fetchOrigins = useChangeRequestsStore((s) => s.fetchOrigins);
   const clearActionError = useChangeRequestsStore((s) => s.clearActionError);
   const create = useChangeRequestsStore((s) => s.create);
 
@@ -33,8 +42,14 @@ export function ChangeRequestCreateContent({ projectId, baselineNumber }: { proj
 
   const baseline = baselines?.find((b) => b.number === baselineNumber) ?? null;
   useEffect(() => {
-    if (baseline) void fetchRequirements(projectId, baseline.number);
-  }, [baseline, projectId, fetchRequirements]);
+    // Phase-98-2：更新
+    // if (baseline) void fetchRequirements(projectId, baseline.number);
+    // }, [baseline, projectId, fetchRequirements]);
+    // ↓↓
+    if (!baseline) return;
+    void fetchRequirements(projectId, baseline.number);
+    void fetchOrigins(projectId, baseline.number);
+  }, [baseline, projectId, fetchRequirements, fetchOrigins]);
 
   if (unavailable) return <DetailedModeOnlyNotice projectId={projectId} title="変更要求を作る" />;
 
@@ -74,6 +89,8 @@ export function ChangeRequestCreateContent({ projectId, baselineNumber }: { proj
           <ChangeRequestForm
             initial={emptyForm(baseline.number)}
             requirements={requirements}
+            // Phase-98-2:追記
+            origins={origins}
             submitting={acting}
             submitLabel="下書きで作る"
             onCancel={() => {

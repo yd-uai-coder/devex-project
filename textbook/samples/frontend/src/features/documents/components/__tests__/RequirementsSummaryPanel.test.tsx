@@ -1,4 +1,4 @@
-// 作成：Phase-36-3｜更新：Phase-36(完了後の調整)
+// 作成：Phase-36-3｜更新：Phase-36(完了後の調整),98-1
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -64,6 +64,20 @@ describe("RequirementsSummaryPanel", () => {
   });
 
   // Phase-36(完了後の調整):追記
+  // Phase-98-1:追記
+  it("詳細設計モードだけ、推測の要件の件数つきで確認事項の一覧へのリンクを出す", () => {
+    useDocumentsStore.setState({ projectMode: "simple" });
+    const { unmount } = renderPanel(REQUIREMENTS_DOC);
+    expect(screen.queryByRole("link", { name: /確認事項の一覧で決める/ })).not.toBeInTheDocument();
+    unmount();
+
+    useDocumentsStore.setState({ projectMode: "detailed" });
+    renderPanel(REQUIREMENTS_DOC);
+    expect(
+      screen.getByRole("link", { name: "推測の要件 1件の決める機会・状態を、確認事項の一覧で決める →" }),
+    ).toHaveAttribute("href", "/projects/p1/confirmations");
+  });
+
   it("件数の下に出どころの意味の注釈を出す", () => {
     renderPanel(REQUIREMENTS_DOC);
 

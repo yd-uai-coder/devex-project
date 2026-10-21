@@ -1,3 +1,4 @@
+// 更新：Phase-98-1
 "use client";
 // 作成：Phase-88-3｜更新：Phase-88(完了後の調整)
 
@@ -69,6 +70,10 @@ export function BaselinesPageContent({ projectId }: { projectId: string }) {
           </Link>
           <Link href={`/projects/${projectId}/detailed-design`}>
             <Text color="$blue10">詳細設計</Text>
+          </Link>
+          {/* Phase-98-1:追記 */}
+          <Link href={`/projects/${projectId}/confirmations`}>
+            <Text color="$blue10">確認事項</Text>
           </Link>
         </XStack>
       </XStack>

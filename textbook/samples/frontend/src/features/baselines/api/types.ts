@@ -1,4 +1,4 @@
-// 作成：Phase-88-2
+// 作成：Phase-88-2｜更新：Phase-98-2
 // 合意済みの版(束)の API の型。devex-api app/schemas/baseline.py の同名のクラスに対応する
 // (画面で使う項目だけ)。
 
@@ -42,6 +42,16 @@ export type BaselineRequirementRead = {
   priority: string | null;
   category: string;
   text: string;
+};
+
+// Phase-98-2:追記
+// 束で、新しい要件の予測の起点に選べる要素1つ(CR の起点を選ぶ)
+export type OriginKind = "requirement" | "screen" | "api";
+
+export type BaselineOriginRead = {
+  key: string;
+  kind: OriginKind;
+  label: string;
 };
 
 // 束の作成(合意の記録と、入れる検証済みの CR の番号。相手は空でもよい。日時はタイムゾーン付き)

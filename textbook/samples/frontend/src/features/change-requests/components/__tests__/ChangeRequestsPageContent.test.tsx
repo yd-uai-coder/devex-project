@@ -1,4 +1,4 @@
-// 作成：Phase-87-2｜更新：Phase-88-2,88-3,88(完了後の調整)
+// 作成：Phase-87-2｜更新：Phase-88-2,88-3,88(完了後の調整),98-1
 // Phase-88(完了後の調整)：更新(作成のテストを ChangeRequestCreateContent.test.tsx へ移し、案内のリンクと簡易モードの知らせを確かめる。全体を書き換えた)
 // // SUT: ChangeRequestsPageContent(一覧と作成の画面)と、その中の ChangeRequestList・StatusBadge
 // // ドライバ: Testing Library(描画・クリック)
@@ -153,6 +153,8 @@ describe("ChangeRequestsPageContent", () => {
     const links = screen.getAllByRole("link", { name: "合意済みの版" });
     expect(links).toHaveLength(2);
     expect(links[1]).toHaveAttribute("href", "/projects/p1/baselines");
+    // Phase-98-1:追記
+    expect(screen.getByRole("link", { name: "確認事項" })).toHaveAttribute("href", "/projects/p1/confirmations");
     expect(screen.getByText("変更要求はまだありません。")).toBeInTheDocument();
   });
 

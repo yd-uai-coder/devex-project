@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-88-2
+// 作成：Phase-87-1｜更新：Phase-88-2,98-2
 // Phase-88-2：更新
 // // SUT: changeRequestsApi(CR・束の要件の API の薄い包み)
 // ↓↓
@@ -64,6 +64,8 @@ describe("changeRequestsApi", () => {
       background_memo: "",
       targets: [{ requirement_id: "FR-001", kind: "delete" as const, proposed_text: "" }],
       adds_requirement: false,
+      // Phase-98-2:追記
+      origins: [],
       baseline_number: 2,
     };
 
@@ -109,6 +111,8 @@ describe("changeRequestsApi", () => {
       background_memo: "m",
       targets: [],
       adds_requirement: true,
+      // Phase-98-2:追記
+      origins: ["screen:SCR-004"],
     };
 
     await updateChangeRequest("p1", 1, update);

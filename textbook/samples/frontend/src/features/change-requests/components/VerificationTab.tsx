@@ -1,4 +1,4 @@
-// 作成：Phase-87-4
+// 作成：Phase-87-4｜更新：Phase-98-2
 "use client";
 
 import { useEffect, useState } from "react";
@@ -22,7 +22,11 @@ const gateLabel = (gate: string) => GATE_LABEL[gate as ReviewGate] ?? gate;
 
 // 詳細の「検証」タブ(反映の後)。反映で付いた印の今の確認の状態(未確認 / 確認済み / 承認で済んだ)を
 // 段階へのリンクと一緒に出し、印の付かない文書の側(画面・API)の確認の項目をここで確認済みにする。
-// 反映の後に流したレビューを選んで結べ(任意。外せない)、未確認が0件なら検証済みにできる。
+// Phase-98-2：更新
+// // 反映の後に流したレビューを選んで結べ(任意。外せない)、未確認が0件なら検証済みにできる。
+// ↓↓
+// 反映の後に流したレビューを選んで結べ(任意。外せない)。CR で作り直した後にまだ承認していない段階は
+// 段階へのリンクと一緒に出す。未確認が0件で、作り直した段階をすべて承認したら検証済みにできる。
 export function VerificationTab({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
   const verification = useChangeRequestsStore((s) => s.views.verification);
   const candidates = useChangeRequestsStore((s) => s.views.candidates);
@@ -59,6 +63,21 @@ export function VerificationTab({ projectId, cr }: { projectId: string; cr: Chan
           ? "検証済みです。"
           : `未確認: 段階の印 ${verification.open_marks} 件・文書の側 ${verification.open_documents} 件`}
       </Text>
+
+      {/* Phase-98-2:追記 */}
+      {verification.pending_stages.length > 0 ? (
+        <YStack gap="$2" aria-label="未承認の段階">
+          <Text fontWeight="600">作り直した後に未承認の段階</Text>
+          <Paragraph color="$color11">
+            この CR で作り直した段階です。詳細設計画面で確かめて承認すると、承認で付く印がこの CR に結ばれます。すべて承認するまで検証済みにできません。
+          </Paragraph>
+          {verification.pending_stages.map((stage) => (
+            <Link key={stage} href={designStageHref(projectId, stage)}>
+              <Text color="$blue10">{`${stageLabel(stage)} を承認する →`}</Text>
+            </Link>
+          ))}
+        </YStack>
+      ) : null}
 
       <YStack gap="$2" aria-label="反映で付いた印">
         <Text fontWeight="600">反映で付いた印</Text>

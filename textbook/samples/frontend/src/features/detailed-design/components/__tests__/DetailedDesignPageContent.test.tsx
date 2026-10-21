@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4,69-3,78-1,87-2,87-4,88-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4,69-3,78-1,87-2,87-4,88-3,98-1
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-44-2:追記 ── ../../test-utils/stageFixtures.makeImpact
@@ -6,6 +6,11 @@
 // Phase-53-4:追記 ── @/features/design-review/review-store.useReviewStore, @/features/design-review/test-utils/reviewFixtures(finding, gate, run, user)
 // Phase-53-5:追記 ── @testing-library/react.waitFor, ../../test-utils/stageFixtures.makeLogics
 // Phase-57-3:追記 ── @testing-library/react.act, @/features/documents/test-spec-store.useTestSpecStore, @/features/documents/test-utils/testSpecFixtures.makeTestSpec
+// Phase-87-4:追記
+// Phase-28-3：更新
+// import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
+// ↓↓
+// Phase-64-4:追記
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,16 +18,11 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DetailedDesignPageContent } from "../DetailedDesignPageContent";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
-// Phase-87-4:追記
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import { useReviewStore } from "@/features/design-review/review-store";
 import { useTestSpecStore } from "@/features/documents/test-spec-store";
 import { makeTestSpec } from "@/features/documents/test-utils/testSpecFixtures";
 import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
-// Phase-28-3：更新
-// import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
-// ↓↓
-// Phase-64-4:追記
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import {
   makeFunctionList,
@@ -109,9 +109,14 @@ describe("DetailedDesignPageContent", () => {
   // Phase-88-3：更新
   // it("詳細設計モードは変更要求(CR)へのリンクを出す", () => {
   // ↓↓
-  it("詳細設計モードは変更要求(CR)と合意済みの版へのリンクを出す", () => {
+  // Phase-98-1：更新
+  // it("詳細設計モードは変更要求(CR)と合意済みの版へのリンクを出す", () => {
+  // ↓↓
+  it("詳細設計モードは変更要求(CR)・合意済みの版・確認事項へのリンクを出す", () => {
     renderContent();
 
+    // Phase-98-1:追記
+    expect(screen.getByRole("link", { name: "確認事項 →" })).toHaveAttribute("href", "/projects/p1/confirmations");
     expect(screen.getByRole("link", { name: "変更要求(CR) →" })).toHaveAttribute("href", "/projects/p1/change-requests");
     // Phase-88-3:追記
     expect(screen.getByRole("link", { name: "合意済みの版 →" })).toHaveAttribute("href", "/projects/p1/baselines");

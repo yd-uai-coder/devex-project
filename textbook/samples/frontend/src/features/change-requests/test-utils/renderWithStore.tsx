@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整)
+// 作成：Phase-87-3｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2
 import type { ReactElement } from "react";
 import { render } from "@testing-library/react";
 import { vi } from "vitest";
@@ -20,6 +20,8 @@ export function resetChangeRequestsStore(): void {
     fetchedAt: null,
     baselines: [],
     requirements: {},
+    // Phase-98-2:追記
+    origins: {},
     detail: null,
     detailStatus: "success",
     detailError: null,
@@ -40,6 +42,8 @@ export function resetChangeRequestsStore(): void {
     fetchList: vi.fn().mockResolvedValue(undefined),
     fetchBaselines: vi.fn().mockResolvedValue(undefined),
     fetchRequirements: vi.fn().mockResolvedValue(undefined),
+    // Phase-98-2:追記
+    fetchOrigins: vi.fn().mockResolvedValue(undefined),
     fetchDetail: vi.fn().mockResolvedValue(undefined),
     fetchView: vi.fn().mockResolvedValue(undefined),
     create: vi.fn().mockResolvedValue(null),

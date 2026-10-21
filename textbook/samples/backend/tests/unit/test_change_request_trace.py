@@ -1,4 +1,4 @@
-# 作成：Phase-86-4｜更新：Phase-88-2,89(完了後の調整),95-3
+# 作成：Phase-86-4｜更新：Phase-88-2,89(完了後の調整),95-3,98-2
 # Phase-89(完了後の調整)：更新(docstring: SUT に decision_note を足した)
 """検証済みの変更要求(CR)を合意済みの版(束)に入れることと、受付から検証までをたどる記録のテスト。
 
@@ -134,6 +134,24 @@ def test_edit_rows_show_the_edited_fields() -> None:
     assert entries[0].action_label == "直した"
     assert set(EDITED_FIELD_LABEL) == set(ChangeRequestUpdate.model_fields)
     assert TraceEntryRead.from_entry(entries[0]).edited_fields == ["タイトル", "対象"]
+
+
+# Phase-98-2:追記
+def test_approve_stage_rows_show_the_mark_count() -> None:
+    """段階の承認で印を結んだ行は、段階の版と結んだ印の数を出す。形の悪い数・ほかの操作の行は
+    None。"""
+    events = [
+        _event("approve_stage", {"stage": 3, "version": 2, "mark_count": 4}),
+        _event("approve_stage", {"stage": 3, "version": 3, "mark_count": "4"}),
+        _event("apply", {"stage": 3, "version": 1, "mark_count": 4}),
+    ]
+
+    entries = trace_entries(events, {}, {})
+
+    assert [e.mark_count for e in entries] == [4, None, None]
+    assert entries[0].stage == TraceStage(3, 2)
+    assert TraceEntryRead.from_entry(entries[0]).mark_count == 4
+    assert TraceEntryRead.from_entry(entries[2]).mark_count is None
 
 
 def test_decision_note_skips_missing_values_and_keeps_row_note() -> None:

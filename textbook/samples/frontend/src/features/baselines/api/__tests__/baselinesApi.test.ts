@@ -1,11 +1,13 @@
-// 作成：Phase-88-2
+// 作成：Phase-88-2｜更新：Phase-98-2
 // SUT: baselinesApi(合意済みの版の API の薄い包み)
 // ドライバ: vitest のテスト関数
 // スタブ: fetch(stubFetch)── 送ったメソッド・URL・本文と、応答の受け渡しを確かめるため
+// Phase-98-2:追記 ── ../baselinesApi.listBaselineOrigins
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createBaseline,
   getBaseline,
+  listBaselineOrigins,
   listBaselineRequirements,
   listBaselines,
 } from "../baselinesApi";
@@ -39,6 +41,16 @@ describe("baselinesApi", () => {
     expect(list[0].items).toHaveLength(11);
     expect(baseline.number).toBe(2);
     expect(rows[0].id).toBe("FR-001");
+  });
+
+  // Phase-98-2:追記
+  it("新しい要件の予測の起点の候補を読む", async () => {
+    stub.queue({ body: [{ key: "screen:SCR-004", kind: "screen", label: "SCR-004 チャットヒアリング画面" }] });
+
+    const origins = await listBaselineOrigins("p1", 2);
+
+    expect(stub.requests[0].url).toContain(`${BASE}/2/origins`);
+    expect(origins[0].kind).toBe("screen");
   });
 
   it("作成は合意の記録と入れる CR の番号を送る", async () => {

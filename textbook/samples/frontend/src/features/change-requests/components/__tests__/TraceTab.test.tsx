@@ -1,4 +1,4 @@
-// 作成：Phase-87-3
+// 作成：Phase-87-3｜更新：Phase-98-2
 // SUT: TraceTab(たどる記録の表と、行の指す先)
 // ドライバ: Testing Library(描画)
 // スタブ: ストアの fetchView(vi.fn)── 開いたときに読むことと、行の出し方だけを見るため
@@ -35,6 +35,32 @@ describe("TraceTab", () => {
     expect(screen.getByText("モデル: gemini-2.5-flash")).toBeInTheDocument();
     expect(screen.getByText(/レビュー\(.*claude-sonnet\): 指摘 4・採用 2/)).toBeInTheDocument();
     expect(screen.getByText("合意済みの版 B-2")).toBeInTheDocument();
+  });
+
+  // Phase-98-2:追記
+  it("直したの行は直した項目を、段階の承認の行は段階の版と結んだ印の数を出す", () => {
+    const base = makeTrace().entries[0];
+    const trace = makeTrace({
+      entries: [
+        { ...base, position: 1, action: "edit", action_label: "直した", edited_fields: ["タイトル", "対象"] },
+        {
+          ...base,
+          position: 2,
+          action: "approve_stage",
+          action_label: "段階の承認で印を結んだ",
+          stage: { stage: 3, version: 2 },
+          mark_count: 4,
+        },
+      ],
+    });
+    useChangeRequestsStore.setState({ views: { ...store().views, trace } });
+
+    renderWithTheme(<TraceTab projectId="p1" number={1} />);
+
+    expect(screen.getByText("直した項目: タイトル・対象")).toBeInTheDocument();
+    expect(screen.getByText("段階の承認で印を結んだ")).toBeInTheDocument();
+    expect(screen.getByText(/段階3 .* 版2/)).toBeInTheDocument();
+    expect(screen.getByText("結んだ印 4件")).toBeInTheDocument();
   });
 
   it("読み込みの失敗を出す", () => {

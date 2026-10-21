@@ -1,4 +1,4 @@
-// 作成：Phase-88(完了後の調整)
+// 作成：Phase-88(完了後の調整)｜更新：Phase-98-2
 // SUT: ChangeRequestCreateContent(合意済みの版を基準に CR を作るページ)と、その中の ChangeRequestForm
 // ドライバ: Testing Library(描画・入力・クリック)
 // スタブ: ストアの取得・作成の関数(vi.fn)と next/navigation の router ── 画面の配線(基準の版の固定・
@@ -31,6 +31,8 @@ describe("ChangeRequestCreateContent", () => {
 
     expect(useChangeRequestsStore.getState().fetchBaselines).toHaveBeenCalledWith("p1");
     expect(useChangeRequestsStore.getState().fetchRequirements).toHaveBeenCalledWith("p1", 2);
+    // Phase-98-2:追記
+    expect(useChangeRequestsStore.getState().fetchOrigins).toHaveBeenCalledWith("p1", 2);
     expect(screen.getByText(/基準の合意済みの版: B-2/)).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "基準の合意済みの版" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "← B-2 合意済みの版" })).toHaveAttribute("href", "/projects/p1/baselines/2");

@@ -1,29 +1,42 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整)
+// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2
+// Phase-89(完了後の調整)：更新
+// import { triggerGeneration } from "@/features/hearing/api/hearingApi";
+// ↓↓
+// Phase-88-2:追記
+// Phase-88(完了後の調整):追記
+  // Phase-88-2:追記
+  // Phase-88-2:追記
+  // Phase-88-2:追記
+  // Phase-88-2:追記
+  // Phase-88-2：削除
+  // listBaselineRequirements,
+  // listBaselines,
+  // Phase-88-2：削除
+  // BaselineRequirementRead,
+  // BaselineSummaryRead,
+  // Phase-88-2:追記
+// Phase-98-2:追記 ── @/features/baselines/api/baselinesApi.listBaselineOrigins, @/features/baselines/api/types.BaselineOriginRead
 import { create } from "zustand";
 import { ApiError, isNotFound } from "@/lib/api/client";
 import { isCacheFresh } from "@/lib/api/cache";
 import type { AsyncStatus } from "@/lib/api/types";
 import type { ProjectRead } from "@/features/dashboard/api/projects";
-// Phase-89(完了後の調整)：更新
-// import { triggerGeneration } from "@/features/hearing/api/hearingApi";
-// ↓↓
 import { getProject, triggerGeneration } from "@/features/hearing/api/hearingApi";
 import type { GenerationFailure } from "@/lib/generation-failure";
-// Phase-88-2:追記
-// Phase-88(完了後の調整):追記
 import { isDetailedModeOnly } from "@/features/change-requests/changeRequestOps";
-import { listBaselineRequirements, listBaselines } from "@/features/baselines/api/baselinesApi";
-import type { BaselineRequirementRead, BaselineSummaryRead } from "@/features/baselines/api/types";
+import { listBaselineOrigins, listBaselineRequirements, listBaselines } from "@/features/baselines/api/baselinesApi";
+import type {
+  BaselineOriginRead,
+  BaselineRequirementRead,
+  BaselineSummaryRead,
+} from "@/features/baselines/api/types";
 import {
   checkChangeRequestDocuments,
-  // Phase-88-2:追記
   confirmExplanationSummary,
   copyChangeRequest,
   createChangeRequest,
-  // Phase-88-2:追記
   createExplanationSummary,
   decideChangeRequest,
-  // Phase-88-2:追記
   editExplanationSummary,
   explainChangeRequest,
   getChangeRequest,
@@ -31,12 +44,8 @@ import {
   getChangeRequestImpact,
   getChangeRequestTrace,
   getChangeRequestVerification,
-  // Phase-88-2:追記
   getExplanation,
   linkChangeRequestReview,
-  // Phase-88-2：削除
-  // listBaselineRequirements,
-  // listBaselines,
   listChangeRequests,
   listReviewCandidates,
   updateChangeRequest,
@@ -44,13 +53,9 @@ import {
   withdrawChangeRequest,
 } from "@/features/change-requests/api/changeRequestsApi";
 import type {
-  // Phase-88-2：削除
-  // BaselineRequirementRead,
-  // BaselineSummaryRead,
   ChangeRequestComparisonRead,
   ChangeRequestCreate,
   ChangeRequestDecision,
-  // Phase-88-2:追記
   ChangeRequestExplanationRead,
   ChangeRequestImpactRead,
   ChangeRequestRead,
@@ -109,6 +114,9 @@ type ChangeRequestsStore = {
   baselines: BaselineSummaryRead[] | null;
   // 束の番号 → 要件定義書の写しの要件
   requirements: Record<number, BaselineRequirementRead[]>;
+  // Phase-98-2:追記
+  // 束の番号 → 新しい要件の予測の起点に選べる要素
+  origins: Record<number, BaselineOriginRead[]>;
 
   // 開いている CR の詳細
   detail: ChangeRequestRead | null;
@@ -134,6 +142,8 @@ type ChangeRequestsStore = {
   fetchList: (projectId: string, options?: { force?: boolean }) => Promise<void>;
   fetchBaselines: (projectId: string) => Promise<void>;
   fetchRequirements: (projectId: string, baselineNumber: number) => Promise<void>;
+  // Phase-98-2:追記
+  fetchOrigins: (projectId: string, baselineNumber: number) => Promise<void>;
   fetchDetail: (projectId: string, number: number) => Promise<void>;
   fetchView: (projectId: string, number: number, view: DetailView) => Promise<void>;
   clearActionError: () => void;
@@ -177,6 +187,8 @@ const PROJECT_INITIAL = {
   fetchedAt: null,
   baselines: null,
   requirements: {},
+  // Phase-98-2:追記
+  origins: {},
   detail: null,
   detailStatus: "idle" as AsyncStatus,
   detailError: null,
@@ -298,6 +310,19 @@ export const useChangeRequestsStore = create<ChangeRequestsStore>((set, get) => 
         // set({ actionError: message(err, "合意済みの版の要件の取得に失敗しました") });
         // ↓↓
         set({ actionError: message(err, "合意済みの版の要件の取得に失敗しました"), unavailable: isDetailedModeOnly(err) });
+      // Phase-98-2:追記
+      }
+    },
+
+    fetchOrigins: async (projectId, baselineNumber) => {
+      switchProject(set, get, projectId);
+      if (get().origins[baselineNumber]) return;
+      try {
+        const rows = await listBaselineOrigins(projectId, baselineNumber);
+        if (get().projectId !== projectId) return;
+        set({ origins: { ...get().origins, [baselineNumber]: rows } });
+      } catch (err) {
+        set({ actionError: message(err, "予測の起点の候補の取得に失敗しました"), unavailable: isDetailedModeOnly(err) });
       }
     },
 

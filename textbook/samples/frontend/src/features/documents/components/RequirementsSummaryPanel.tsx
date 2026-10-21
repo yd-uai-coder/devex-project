@@ -1,14 +1,16 @@
-// 作成：Phase-36-3｜更新：Phase-36(完了後の調整),37-3
+// 作成：Phase-36-3｜更新：Phase-36(完了後の調整),37-3,98-1
 "use client";
 
+  // Phase-37-3：削除
+  // RequirementIssueRead,
+// Phase-37-3:追記
+// Phase-98-1:追記 ── next/link.Link
+import Link from "next/link";
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import type {
   GeneratedDocumentRead,
-  // Phase-37-3：削除
-  // RequirementIssueRead,
   RequirementSource,
 } from "@/features/documents/api/documentsApi";
-// Phase-37-3:追記
 import { DocumentIssueList } from "@/features/documents/components/DocumentIssueList";
 import { useDocumentsStore } from "@/features/documents/documents-store";
 
@@ -40,11 +42,17 @@ type RequirementsSummaryPanelProps = {
 
 // 要件定義書の上に、要件の出どころの件数・検証の指摘・推測の要件(「採用にする」)を出す。
 // 推測は AI が補った要件(利用者は言っていない)。確かめた要件だけを「採用」にし、違う内容に
-// したいときはチャットで答えて再生成する。
+// Phase-98-1：更新
+// // したいときはチャットで答えて再生成する。
+// ↓↓
+// したいときはチャットで答えて再生成する。詳細設計モードは、推測の要件の件数つきで確認事項の一覧
+// (決める機会・状態・メモ)へのリンクも出す。
 export function RequirementsSummaryPanel({ projectId, document }: RequirementsSummaryPanelProps) {
   const adoptingId = useDocumentsStore((s) => s.adoptingId);
   const adoptError = useDocumentsStore((s) => s.adoptError);
   const adoptRequirement = useDocumentsStore((s) => s.adoptRequirement);
+  // Phase-98-1:追記
+  const projectMode = useDocumentsStore((s) => s.projectMode);
 
   if (document.doc_type !== "requirements") return null;
   const summary = document.requirements;
@@ -117,6 +125,12 @@ export function RequirementsSummaryPanel({ projectId, document }: RequirementsSu
               </Button>
             </XStack>
           ))}
+          {/* Phase-98-1:追記 */}
+          {projectMode === "detailed" ? (
+            <Link href={`/projects/${projectId}/confirmations`}>
+              <Text color="$blue10">{`推測の要件 ${summary.assumed.length}件の決める機会・状態を、確認事項の一覧で決める →`}</Text>
+            </Link>
+          ) : null}
         </YStack>
       ) : null}
       {adoptError ? (

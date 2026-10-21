@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整)
+// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2
 // Phase-88-2：更新
 // // SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映)
 // ↓↓
@@ -78,6 +78,18 @@ describe("useChangeRequestsStore", () => {
 
     expect(state().requirements[1]).toHaveLength(1);
     expect(stub.requests).toHaveLength(1);
+  // Phase-98-2:追記
+  });
+
+  it("起点の候補は束ごとに1回だけ読む", async () => {
+    stub.queue({ body: [{ key: "req:FR-001", kind: "requirement", label: "FR-001 a" }] });
+
+    await state().fetchOrigins("p1", 1);
+    await state().fetchOrigins("p1", 1);
+
+    expect(state().origins[1]).toHaveLength(1);
+    expect(stub.requests).toHaveLength(1);
+    expect(stub.requests[0].url).toContain("/baselines/1/origins");
   });
 
   it("詳細のタブを読み、比較の 409 はタブの失敗として残す", async () => {

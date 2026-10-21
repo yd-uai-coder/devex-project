@@ -242,6 +242,7 @@ Claude の判断(計画の承認で確定、または作業中):
 
 - Phase 88 完了後の調整: CR の作成のフォームを、CR の一覧のページから、合意済みの版の中身から移る作成のページ(`/projects/{id}/baselines/{番号}/change-requests/new`)へ移した。基準の束は選ばず、移る元の版に固定する([87-2](./Phase-87-2.md) の基準の束の選択は撤回)。経緯は [Phase 88 の introduction](../Phase-88/Phase-88-introduction.md#phase-完了後の調整) と [`q_a.md`](../q_a.md)「Phase 88 完了後の調整」。
 - Phase 89 完了後の調整: CR の詳細を開いたとき、プロジェクトが生成中なら反映の完了を待ち直す(`resumeReflection`。使われていなかった `setReflecting` を置き換えた)。経緯は [Phase 89 の introduction](../Phase-89/Phase-89-introduction.md#phase-完了後の調整) と [`q_a.md`](../q_a.md)「Phase 89 完了後の調整」。
+- Phase 98: CR のフォームの「新しい要件を足す」に、予測の起点の欄を足した(印を付けたときだけ)。印の文「影響の予測には入りません」を「起点を選ぶと、起点から影響を予測します」に改めた(Phase 96 で起点から予測するようになったため)。`DetailedModeOnlyNotice` に主語の `what` を足した(確認事項のページで使う)。経緯は [98-1](../Phase-98/Phase-98-1.md)・[98-2](../Phase-98/Phase-98-2.md)。
 
 ## Phase 完了チェック(#22)
 

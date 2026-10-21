@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-88-2
+// 作成：Phase-87-1｜更新：Phase-88-2,98-2
 // Phase-88-2：更新
 // // 変更要求(CR)と合意済みの版(束)の API の型。devex-api app/schemas/change_request.py・
 // // app/schemas/baseline.py の同名のクラスに対応する(画面で使う項目だけ)。
@@ -16,7 +16,11 @@ export type ChangeRequestStatus =
   | "withdrawn";
 
 // 時系列の操作(app/change_requests/states.py の ChangeRequestAction)。allowed_actions に出るのは
-// edit・explain・agree・reject・withdraw・apply・verify・copy
+// Phase-98-2：更新
+// // edit・explain・agree・reject・withdraw・apply・verify・copy
+// ↓↓
+// edit・explain・agree・reject・withdraw・apply・verify・copy。approve_stage は状態を変えない記録だけの行
+// (CR で作り直した段階を承認して印を結んだ)
 export type ChangeRequestAction =
   | "create"
   | "copy"
@@ -29,7 +33,11 @@ export type ChangeRequestAction =
   | "apply"
   | "verify"
   | "link_review"
-  | "baseline";
+  // Phase-98-2：更新
+  // | "baseline";
+  // ↓↓
+  | "baseline"
+  | "approve_stage";
 
 export type BackgroundSource = "meeting" | "email" | "document" | "other";
 export type TargetKind = "content" | "delete";
@@ -49,6 +57,9 @@ export type ChangeRequestCreate = {
   background_memo: string;
   targets: ChangeRequestTargetIn[];
   adds_requirement: boolean;
+  // Phase-98-2:追記
+  // 新しい要件の予測の起点(基準の束の要件・画面・API の要素のキー)。新しい要件を足す CR だけが持てる
+  origins: string[];
   baseline_number?: number;
 };
 
@@ -62,6 +73,13 @@ export type ChangeRequestTargetRead = {
   proposed_text: string;
 };
 
+// Phase-98-2:追記
+// 新しい要件の予測の起点1つ(要素のキーと表示名)
+export type ChangeRequestOriginRead = {
+  key: string;
+  label: string;
+};
+
 export type ChangeRequestSummaryRead = {
   number: number;
   label: string;
@@ -73,6 +91,8 @@ export type ChangeRequestSummaryRead = {
   background_date: string | null;
   targets: ChangeRequestTargetRead[];
   adds_requirement: boolean;
+  // Phase-98-2:追記
+  origins: ChangeRequestOriginRead[];
   baseline_number: number;
   baseline_label: string;
   created_by: string | null;
@@ -153,6 +173,9 @@ export type PredictedItemRead = {
   path: string[];
   reason: string;
   requirement_ids: string[];
+  // Phase-98-2:追記
+  // 届いた新しい要件の起点のキー
+  origin_keys: string[];
 };
 
 export type ChangeRequestImpactRead = {
@@ -165,6 +188,9 @@ export type ChangeRequestImpactRead = {
   items: PredictedItemRead[];
   unpredicted_new_requirement: boolean;
   excluded: { key: string; state: string }[];
+  // Phase-98-2:追記
+  // 予測に使った新しい要件の起点
+  origins: ChangeRequestOriginRead[];
 };
 
 // 比較(GET .../comparison。反映の後だけ)
@@ -221,6 +247,9 @@ export type ChangeRequestVerificationRead = {
   open_documents: number;
   marks: MarkStateRead[];
   documents: DocumentItemRead[];
+  // Phase-98-2:追記
+  // CR で作り直した後に、まだ承認していない段階(すべて承認するまで検証済みにできない)
+  pending_stages: number[];
 };
 
 // たどる記録(GET .../trace)
@@ -254,6 +283,11 @@ export type TraceEntryRead = {
   stage: { stage: number; version: number } | null;
   reviews: TraceReviewRead[];
   baseline_number: number | null;
+  // Phase-98-2:追記
+  // 直した(edit)の行の、直した項目の名前。ほかの行は空
+  edited_fields: string[];
+  // 段階の承認で印を結んだ(approve_stage)の行の、結んだ印の数。ほかの行は null
+  mark_count: number | null;
 };
 
 export type ChangeRequestTraceRead = {

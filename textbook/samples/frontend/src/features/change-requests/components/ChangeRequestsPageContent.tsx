@@ -1,3 +1,4 @@
+// 更新：Phase-98-1
 "use client";
 // 作成：Phase-87-2｜更新：Phase-88-3,88(完了後の調整)
 // Phase-88(完了後の調整)：更新(作成のボタンとフォームを外し、作成は合意済みの版の中身から(基準の版は固定)。簡易モードの知らせを足した。全体を書き換えた)
@@ -172,6 +173,10 @@ export function ChangeRequestsPageContent({ projectId }: { projectId: string }) 
           </Link>
           <Link href={baselinesHref(projectId)}>
             <Text color="$blue10">合意済みの版</Text>
+          </Link>
+          {/* Phase-98-1:追記 */}
+          <Link href={`/projects/${projectId}/confirmations`}>
+            <Text color="$blue10">確認事項</Text>
           </Link>
         </XStack>
       </XStack>

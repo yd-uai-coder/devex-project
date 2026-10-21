@@ -1,20 +1,24 @@
-// 作成：Phase-87-2｜更新：Phase-88-2,88(完了後の調整)
+// 作成：Phase-87-2｜更新：Phase-88-2,88(完了後の調整),98-2
 "use client";
 
-import { useState } from "react";
-import { Button, Text, XStack, YStack } from "tamagui";
 // Phase-88-2：更新
 // import type { BaselineRequirementRead, BaselineSummaryRead } from "@/features/change-requests/api/types";
 // ↓↓
 // Phase-88(完了後の調整)：更新
 // import type { BaselineRequirementRead, BaselineSummaryRead } from "@/features/baselines/api/types";
 // ↓↓
-import type { BaselineRequirementRead } from "@/features/baselines/api/types";
+// Phase-98-2:追記 ── @/features/baselines/api/types.BaselineOriginRead, @/features/change-requests/changeRequestOps.ORIGIN_KIND_LABEL, @/features/change-requests/changeRequestOps.addOrigin, @/features/change-requests/changeRequestOps.removeOrigin
+import { useState } from "react";
+import { Button, Text, XStack, YStack } from "tamagui";
+import type { BaselineOriginRead, BaselineRequirementRead } from "@/features/baselines/api/types";
 import {
   BACKGROUND_SOURCE_OPTIONS,
+  ORIGIN_KIND_LABEL,
   TARGET_KIND_OPTIONS,
+  addOrigin,
   addTarget,
   formProblems,
+  removeOrigin,
   removeTarget,
   setTargetKind,
   setTargetProposal,
@@ -30,6 +34,8 @@ const LABEL = { display: "block", fontSize: 13, fontWeight: 600, marginBottom: 2
 // // `baselines` を渡すと基準の束を選べる(作成のときだけ。編集では基準の束を変えない)。
 // ↓↓
 // 基準の束はこのフォームでは選ばない(作成は合意済みの版の中身から移るので固定。編集では変えない)。
+// Phase-98-2:追記
+// 「新しい要件を足す」にしたときだけ、新しい要件の予測の起点(基準の束の要件・画面・API)を選べる。
 export function ChangeRequestForm({
   initial,
   // Phase-88(完了後の調整)：削除
@@ -37,6 +43,8 @@ export function ChangeRequestForm({
   requirements,
   // Phase-88(完了後の調整)：削除
   // onBaselineChange,
+  // Phase-98-2:追記
+  origins,
   submitting,
   submitLabel,
   onSubmit,
@@ -51,6 +59,9 @@ export function ChangeRequestForm({
   requirements: BaselineRequirementRead[] | null;
   // Phase-88(完了後の調整)：削除
   // onBaselineChange?: (baselineNumber: number) => void;
+  // Phase-98-2:追記
+  // 基準の束で起点に選べる要素(読み込み中は null)
+  origins: BaselineOriginRead[] | null;
   submitting: boolean;
   submitLabel: string;
   onSubmit: (form: FormState) => void;
@@ -58,10 +69,15 @@ export function ChangeRequestForm({
 }) {
   const [form, setForm] = useState<FormState>(initial);
   const [picked, setPicked] = useState("");
+  // Phase-98-2:追記
+  const [pickedOrigin, setPickedOrigin] = useState("");
   const [showProblems, setShowProblems] = useState(false);
   const problems = formProblems(form);
   const textOf = (id: string) => requirements?.find((r) => r.id === id)?.text ?? "";
   const choices = (requirements ?? []).filter((r) => !form.targets.some((t) => t.requirement_id === r.id));
+  // Phase-98-2:追記
+  const originOf = (key: string) => origins?.find((o) => o.key === key);
+  const originChoices = (origins ?? []).filter((o) => !form.origins.includes(o.key));
   const update = (patch: Partial<FormState>) => setForm((current) => ({ ...current, ...patch }));
 
   const submit = () => {
@@ -246,8 +262,67 @@ export function ChangeRequestForm({
             checked={form.adds_requirement}
             onChange={(e) => update({ adds_requirement: e.target.checked })}
           />{" "}
-          新しい要件を足す(ID の無い要件。影響の予測には入りません)
+          {/* Phase-98-2：更新 */}
+          {/* 新しい要件を足す(ID の無い要件。影響の予測には入りません) */}
+          {/* ↓↓ */}
+          新しい要件を足す(ID の無い要件。起点を選ぶと、起点から影響を予測します)
         </label>
+        {/* Phase-98-2:追記 */}
+        {form.adds_requirement ? (
+          <YStack gap="$2" paddingLeft="$4" aria-label="予測の起点">
+            <Text fontSize="$3" color="$color11">
+              新しい要件が関わりそうな既存の要件・画面・API を選んでください(任意)。選ばなければ、新しい要件の分は予測に入りません。
+            </Text>
+            {origins === null ? <Text color="$color11">起点の候補を読み込み中...</Text> : null}
+            {form.origins.map((key) => {
+              const origin = originOf(key);
+              return (
+                <XStack key={key} gap="$2" alignItems="center">
+                  <Text fontSize="$3">
+                    {origin ? `${ORIGIN_KIND_LABEL[origin.kind]}: ${origin.label}` : key}
+                  </Text>
+                  <Button
+                    size="$2"
+                    chromeless
+                    aria-label={`${origin?.label ?? key} を起点から外す`}
+                    onPress={() => update({ origins: removeOrigin(form.origins, key) })}
+                  >
+                    外す
+                  </Button>
+                </XStack>
+              );
+            })}
+            {originChoices.length > 0 ? (
+              <XStack gap="$2" alignItems="center">
+                <select
+                  style={{ ...INPUT, width: "auto", maxWidth: 480 }}
+                  aria-label="足す起点"
+                  value={pickedOrigin}
+                  onChange={(e) => setPickedOrigin(e.target.value)}
+                >
+                  <option value="" style={OPTION}>
+                    起点を選ぶ
+                  </option>
+                  {originChoices.map((o) => (
+                    <option key={o.key} value={o.key} style={OPTION}>
+                      {`${ORIGIN_KIND_LABEL[o.kind]}: ${o.label}`.slice(0, 80)}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  size="$2"
+                  disabled={!pickedOrigin}
+                  onPress={() => {
+                    update({ origins: addOrigin(form.origins, pickedOrigin) });
+                    setPickedOrigin("");
+                  }}
+                >
+                  起点に足す
+                </Button>
+              </XStack>
+            ) : null}
+          </YStack>
+        ) : null}
       </YStack>
 
       {showProblems && problems.length > 0 ? (

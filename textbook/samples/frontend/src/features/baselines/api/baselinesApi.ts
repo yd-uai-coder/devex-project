@@ -1,7 +1,9 @@
-// 作成：Phase-88-2
+// 作成：Phase-88-2｜更新：Phase-98-2
+// Phase-98-2:追記 ── @/features/baselines/api/types.BaselineOriginRead
 import { apiFetch } from "@/lib/api/client";
 import type {
   BaselineCreate,
+  BaselineOriginRead,
   BaselineRead,
   BaselineRequirementRead,
   BaselineSummaryRead,
@@ -27,4 +29,10 @@ export function createBaseline(projectId: string, body: BaselineCreate): Promise
 
 export function listBaselineRequirements(projectId: string, number: number): Promise<BaselineRequirementRead[]> {
   return apiFetch<BaselineRequirementRead[]>(`${base(projectId)}/${number}/requirements`);
+}
+
+// Phase-98-2:追記
+// 新しい要件の予測の起点に選べる要素(束の要件・画面・API)
+export function listBaselineOrigins(projectId: string, number: number): Promise<BaselineOriginRead[]> {
+  return apiFetch<BaselineOriginRead[]>(`${base(projectId)}/${number}/origins`);
 }

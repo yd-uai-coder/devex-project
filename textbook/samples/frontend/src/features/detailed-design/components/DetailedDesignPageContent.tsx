@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4,69-3,78-1,87-2,87-4,88-3
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4,69-3,78-1,87-2,87-4,88-3,98-1
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -10,34 +10,34 @@
 // Phase-54-1:追記 ── @/features/design-review/model.unaddressedNotice, @/features/detailed-design/components/StageSendbackPanel.StageSendbackPanel
 // Phase-57-3:追記 ── tamagui.H3, @/features/documents/components/TestSpecPanel.TestSpecPanel, @/features/documents/test-spec-store.useTestSpecStore, @/features/documents/testSpecOps(testSpecReadiness, testSpecStatus, zipTestSpecNote), @/hooks/useGenerationPolling.useGenerationPolling
 // Phase-57(完了後の調整):追記 ── @/features/documents/testSpecOps.TEST_SPEC_TITLE
-import { useEffect, useState } from "react";
-import Link from "next/link";
 // Phase-64-4:追記
-import { useRouter } from "next/navigation";
-import { Button, H2, H3, Text, XStack, YStack } from "tamagui";
 // Phase-78-1:追記
-import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
-import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 // Phase-64-4:追記
-import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
-import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
-import type { ReviewGate } from "@/features/design-review/api/reviewApi";
 // Phase-54-1：更新
 // import { GATE_LABEL } from "@/features/design-review/model";
 // ↓↓
+// Phase-54-1:追記
+// Phase-28-3:追記
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button, H2, H3, Text, XStack, YStack } from "tamagui";
+import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
+import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
+import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
+import type { ReviewGate } from "@/features/design-review/api/reviewApi";
 import { GATE_LABEL, unaddressedNotice } from "@/features/design-review/model";
 import type { TargetActionOf } from "@/features/design-review/model";
 import { useReviewStore } from "@/features/design-review/review-store";
 import { ChangeImpactPanel } from "@/features/detailed-design/components/ChangeImpactPanel";
 import { DesignDocumentBar } from "@/features/detailed-design/components/DesignDocumentBar";
-// Phase-54-1:追記
 import { StageSendbackPanel } from "@/features/detailed-design/components/StageSendbackPanel";
 import { StageStepper } from "@/features/detailed-design/components/StageStepper";
 import { StageWorkArea } from "@/features/detailed-design/components/StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { locateTargetStage } from "@/features/detailed-design/impactOps";
 import { STAGE_TITLES } from "@/features/detailed-design/labels";
-// Phase-28-3:追記
 import { criticalCount } from "@/features/detailed-design/procedureDocOps";
 import { TestSpecPanel } from "@/features/documents/components/TestSpecPanel";
 import { useTestSpecStore } from "@/features/documents/test-spec-store";
@@ -223,6 +223,12 @@ export function DetailedDesignPageContent({
           {detailed ? (
             <Link href={`/projects/${projectId}/baselines`}>
               <Text color="$blue10">合意済みの版 →</Text>
+            </Link>
+          ) : null}
+          {/* Phase-98-1:追記 */}
+          {detailed ? (
+            <Link href={`/projects/${projectId}/confirmations`}>
+              <Text color="$blue10">確認事項 →</Text>
             </Link>
           ) : null}
           {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}
@@ -419,6 +425,7 @@ export function DetailedDesignPageContent({
         }}
         onCancel={() => setApprovedStage(null)}
       />
+
     </YStack>
   );
 }

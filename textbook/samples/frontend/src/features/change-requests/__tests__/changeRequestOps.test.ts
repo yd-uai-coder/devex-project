@@ -1,15 +1,25 @@
-// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整)
+// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2
 // SUT: changeRequestOps(CR の画面の純粋な変換)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
+  // Phase-87-4:追記
+  // Phase-88(完了後の調整):追記
+  // Phase-88-2:追記
+  // Phase-88-2:追記
+// Phase-88-2：更新
+// import { makeChangeRequest, makeComparison, makeImpact } from "../test-utils/changeRequestFixtures";
+// ↓↓
+// Phase-88(完了後の調整):追記
+// Phase-98-2:追記 ── ../changeRequestOps.ORIGIN_KIND_LABEL, ../changeRequestOps.addOrigin, ../changeRequestOps.originLabel, ../changeRequestOps.removeOrigin
 import { describe, expect, it } from "vitest";
 import {
+  ORIGIN_KIND_LABEL,
+  addOrigin,
   addTarget,
   canReflectDocuments,
   canReflectStages,
   comparisonGroups,
   crNumbersInImpact,
-  // Phase-87-4:追記
   defaultReflectionCr,
   designStageHref,
   emptyForm,
@@ -18,25 +28,21 @@ import {
   groupByStage,
   headerActions,
   isApplied,
-  // Phase-88(完了後の調整):追記
   isDetailedModeOnly,
   localInputToIso,
-  // Phase-88-2:追記
   markSegments,
   nowLocalInput,
+  originLabel,
+  removeOrigin,
   removeTarget,
   setTargetKind,
   setTargetProposal,
   stageLabel,
   stagesMarkedBy,
-  // Phase-88-2:追記
   summaryOutputNote,
   toCreateBody,
   toUpdateBody,
 } from "../changeRequestOps";
-// Phase-88-2：更新
-// import { makeChangeRequest, makeComparison, makeImpact } from "../test-utils/changeRequestFixtures";
-// ↓↓
 import {
   makeChangeRequest,
   makeComparison,
@@ -44,7 +50,6 @@ import {
   makeSummary,
 } from "../test-utils/changeRequestFixtures";
 import type { DesignImpactRead } from "@/features/detailed-design/api/types";
-// Phase-88(完了後の調整):追記
 import { ApiError } from "@/lib/api/client";
 
 const mark = (key: string, sources: string[], reviewed = false) => ({
@@ -121,6 +126,28 @@ describe("changeRequestOps", () => {
     expect(toUpdateBody(form).targets).toEqual([
       { requirement_id: "FR-005", kind: "content", proposed_text: "5件まで添付できる" },
     ]);
+  });
+
+  // Phase-98-2:追記
+  it("起点は同じ要素を2回入れず、新しい要件を足すときだけ送る", () => {
+    const origins = addOrigin(addOrigin(addOrigin([], "screen:SCR-004"), "req:FR-001"), "screen:SCR-004");
+    expect(origins).toEqual(["screen:SCR-004", "req:FR-001"]);
+    expect(removeOrigin(origins, "screen:SCR-004")).toEqual(["req:FR-001"]);
+    expect(addOrigin(origins, "")).toBe(origins);
+
+    const form = { ...emptyForm(), title: "t", content: "c", adds_requirement: true, origins };
+    expect(toUpdateBody(form).origins).toEqual(["screen:SCR-004", "req:FR-001"]);
+    // 「新しい要件を足す」を外したら、選んでいた起点は送らない(サーバーは起点だけ残ると断る)
+    expect(toUpdateBody({ ...form, adds_requirement: false }).origins).toEqual([]);
+    expect(ORIGIN_KIND_LABEL.screen).toBe("画面");
+  });
+
+  it("CR の起点はキーでフォームへ写し、表示名はキーから引く", () => {
+    const origins = [{ key: "screen:SCR-004", label: "SCR-004 チャットヒアリング画面" }];
+    const cr = makeChangeRequest({ adds_requirement: true, origins });
+    expect(formFromChangeRequest(cr).origins).toEqual(["screen:SCR-004"]);
+    expect(originLabel(origins, "screen:SCR-004")).toBe("SCR-004 チャットヒアリング画面");
+    expect(originLabel(origins, "api:GET /x")).toBe("api:GET /x");
   });
 
   it("datetime-local の値と ISO 文字列", () => {

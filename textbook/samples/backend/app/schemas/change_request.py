@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2
 # Phase-96-1：更新(docstring: ChangeRequestVerificationRead の pending_stages)
 # Phase-96-3：更新(docstring: ChangeRequestCreate・ChangeRequestImpactRead・PredictedItemRead の起点)
 # Phase-86-2：更新(docstring: ComparedItemRead の reviewed を今の確認の状態にした)
@@ -650,6 +650,9 @@ class TraceEntryRead(BaseModel):
     # Phase-95-3:追記
     # 直した(edit)の行の、直した項目の名前(タイトル・対象…)。ほかの行と、項目を残す前の行は空
     edited_fields: list[str]
+    # Phase-98-2:追記
+    # 段階の承認で印を結んだ行の、結んだ印の数。ほかの行は null
+    mark_count: int | None = None
 
     @classmethod
     def from_entry(cls, entry: TraceEntry) -> "TraceEntryRead":
@@ -688,6 +691,8 @@ class TraceEntryRead(BaseModel):
             baseline_number=entry.baseline_number,
             # Phase-95-3:追記
             edited_fields=list(entry.edited_fields),
+            # Phase-98-2:追記
+            mark_count=entry.mark_count,
         )
 
 

@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-88-3
+// 作成：Phase-87-3｜更新：Phase-88-3,98-2
 // SUT: ContentTab(内容・対象・合意の記録・重なり・写しの元と先、直すフォーム)
 // ドライバ: Testing Library(描画・クリック)
 // スタブ: ストアの関数(vi.fn)── 束の要件の読み込みと、直したときに送る本文だけを見るため
@@ -27,6 +27,23 @@ describe("ContentTab", () => {
     expect(screen.getByText("対象の要件(基準: B-1)")).toBeInTheDocument();
     expect(screen.getByText("3件まで添付できる")).toBeInTheDocument();
     expect(screen.getByText("5件まで添付できる")).toBeInTheDocument();
+  // Phase-98-2:追記
+  });
+
+  it("新しい要件を足す CR は予測の起点を出し、直すときだけ起点の候補を読む", async () => {
+    const origins = [{ key: "screen:SCR-004", label: "SCR-004 チャットヒアリング画面" }];
+    renderWithTheme(<ContentTab projectId="p1" cr={makeChangeRequest({ adds_requirement: true, origins })} />);
+
+    expect(screen.getByText("予測の起点: SCR-004 チャットヒアリング画面")).toBeInTheDocument();
+    expect(store().fetchOrigins).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "内容を直す" }));
+    expect(store().fetchOrigins).toHaveBeenCalledWith("p1", 1);
+  });
+
+  it("起点の無い新しい要件は、予測に入らないことを出す", () => {
+    renderWithTheme(<ContentTab projectId="p1" cr={makeChangeRequest({ adds_requirement: true })} />);
+
+    expect(screen.getByText(/予測の起点を選んでいないので/)).toBeInTheDocument();
   });
 
   it("合意の記録・重なり・写しの元と先・入れた版を出す。直せない状態では直すボタンを出さない", () => {

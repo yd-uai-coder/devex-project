@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3,78-1,87-2,88-3
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3,78-1,87-2,88-3,98-1
 "use client";
 
 // Phase-15-8:追記 ── useState(react), ConfirmDialog
@@ -200,6 +200,13 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           <Button size="$3" disabled={regenerating} onPress={() => regenerate(projectId)}>
               ↓↓ */}
           {/* Phase-31-5:追記 */}
+          {/* Phase-98-1:追記 */}
+          {/* 確認事項の一覧(SCR-011)も詳細設計モードだけ */}
+          {projectMode === "detailed" ? (
+            <Link href={`/projects/${projectId}/confirmations`}>
+              <Text color="$blue10">確認事項</Text>
+            </Link>
+          ) : null}
           {/* 簡易モードは、同じ画面(SCR-008)を段階8(実装手順書)だけで開く(入力は4文書) */}
           {projectMode === "simple" ? (
             <Link href={`/projects/${projectId}/detailed-design`}>

@@ -1,4 +1,4 @@
-// 作成：Phase-87-3
+// 作成：Phase-87-3｜更新：Phase-98-2
 "use client";
 
 import { useEffect } from "react";
@@ -11,7 +11,11 @@ import { GATE_LABEL } from "@/features/design-review/model";
 import { CELL, HEAD, TABLE } from "@/features/detailed-design/components/tableStyles";
 
 // 詳細の「たどる記録」タブ。受付から検証・合意済みの版までの時系列を、指す先(作った文書の版と、
-// それが今も残っているか・段階の版・モデル名・結んだレビュー・入れた版)と一緒に出す。
+// Phase-98-2：更新
+// // それが今も残っているか・段階の版・モデル名・結んだレビュー・入れた版)と一緒に出す。
+// ↓↓
+// それが今も残っているか・段階の版・モデル名・結んだレビュー・入れた版・直した項目・段階の承認で結んだ
+// 印の数)と一緒に出す。
 export function TraceTab({ projectId, number }: { projectId: string; number: number }) {
   const trace = useChangeRequestsStore((s) => s.views.trace);
   const error = useChangeRequestsStore((s) => s.viewErrors.trace);
@@ -74,6 +78,9 @@ function Refs({ entry }: { entry: TraceEntryRead }) {
     lines.push(`${doc.label} 版${doc.version}${doc.available ? "" : "(もう残っていない)"}`);
   }
   if (entry.stage) lines.push(`${stageLabel(entry.stage.stage)} 版${entry.stage.version}`);
+  // Phase-98-2:追記
+  if (entry.mark_count !== null) lines.push(`結んだ印 ${entry.mark_count}件`);
+  if (entry.edited_fields.length > 0) lines.push(`直した項目: ${entry.edited_fields.join("・")}`);
   if (entry.model) lines.push(`モデル: ${entry.model}`);
   for (const review of entry.reviews) {
     lines.push(`レビュー(${GATE_LABEL[review.gate as ReviewGate] ?? review.gate}・${review.model}): 指摘 ${review.findings}・採用 ${review.adopted}`);

@@ -221,7 +221,7 @@
   * Phase 95: 行の履歴 API と、CR の下書きの直しの時系列(要素ごとの履歴。戻した版は残っている版の分だけ。下書きの直しは直した項目の名前) ── **完了**([`textbook/Phase-95/Phase-95-introduction.md`](../textbook/Phase-95/Phase-95-introduction.md))
   * Phase 96: 段階の承認の印を CR に結ぶ・新しい要件の予測の起点(作り直した後の最初の承認の印を CR に結び、未承認の間は検証を止める。起点は CR の別の項目で、起点の画面・API も予測に入る) ── **完了**([`textbook/Phase-96/Phase-96-introduction.md`](../textbook/Phase-96/Phase-96-introduction.md))
   * Phase 97: 行の合意と履歴の画面(プレビューの上の「合意の状態」の枠。要素ごとの印と出どころ・戻した要素〈CR の版は予測に無い変更と言い分ける〉・行の履歴。状態の API を足した) ── **完了**([`textbook/Phase-97/Phase-97-introduction.md`](../textbook/Phase-97/Phase-97-introduction.md))
-  * Phase 98: 確認事項の一覧の画面と、CR の画面の手直し
+  * Phase 98: 確認事項の一覧の画面と、CR の画面の手直し(別のページの確認事項〈決める機会・状態・メモ・採用率。推測の確認済みはダイアログ〉・CR の起点の欄・検証の未承認の段階・たどる記録の直した項目と結んだ印の数) ── **完了**([`textbook/Phase-98/Phase-98-introduction.md`](../textbook/Phase-98/Phase-98-introduction.md))
   * Phase 99: 効果測定・統合/E2E(影響が広がる CR を実 LLM で反映し、CR を渡さない再生成を挟む・全 E2E・マイグレーションの往復・開発環境での画面確認・`OPERATIONS.md` 10.8節のステージ12 の分)
 * **マイルストーン13**: 合意済みの行(要件・利用者・画面・API・外部連携)が、CR の範囲の外の再生成で変わらない。推測の要件・推測の利用者・根拠が未決の観点が、すべて確認事項に出る。
 

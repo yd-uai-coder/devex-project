@@ -1,4 +1,4 @@
-# 作成：Phase-86-4｜更新：Phase-89(完了後の調整),95-3,96-1,96-3
+# 作成：Phase-86-4｜更新：Phase-89(完了後の調整),95-3,96-1,96-3,98-2
 # Phase-96-1：更新(docstring: 読み解く行に「段階の承認で印を結ぶ」を足した)
 # Phase-95-3：更新(docstring: 読み解く行に「直した」を足した)
 # Phase-89(完了後の調整)：更新(docstring: 合意・却下の行のメモに合意の記録を出す。CR で反映した版は消さない)
@@ -129,6 +129,9 @@ class TraceEntry:
     baseline_number: int | None = None
     # Phase-95-3:追記
     edited_fields: tuple[str, ...] = ()
+    # Phase-98-2:追記
+    # 段階の承認で印を結んだ(approve_stage)の行の、結んだ印の数。ほかの行は None
+    mark_count: int | None = None
 
 
 def trace_entries(
@@ -197,7 +200,15 @@ def _entry(
         baseline_number=baseline if isinstance(baseline, int) else None,
         # Phase-95-3:追記
         edited_fields=_edited_fields(refs) if event.action == "edit" else (),
+        # Phase-98-2:追記
+        mark_count=_mark_count(refs) if event.action == "approve_stage" else None,
     )
+
+
+# Phase-98-2:追記
+def _mark_count(refs: Mapping[str, Any]) -> int | None:
+    count = refs.get("mark_count")
+    return count if isinstance(count, int) and not isinstance(count, bool) else None
 
 
 # Phase-95-3:追記
