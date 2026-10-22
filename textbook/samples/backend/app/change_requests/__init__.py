@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2
+# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2,101-1,101-2
+# Phase-101-1：更新(docstring: 変更の規模を足した)
 # Phase-96-1：更新(docstring: CR で作り直した段階の承認を足した)
 # Phase-86-4：更新(docstring: 検証の条件(86-1)・レビューを結ぶ条件(86-3)・たどる記録(86-4)を足した)
 # Phase-85-4：更新(docstring: 反映の指示(85-1)・予測と実際の比較(85-4)を足した)
@@ -7,7 +8,7 @@
 # """変更要求(CR)の状態・遷移・重なりの判定(純粋関数)。
 # ↓↓
 """変更要求(CR)の状態・遷移・重なりの判定と、対象(要件 ID・変更の種類・変更後の案)の扱い・
-影響の予測・説明書の組み立てと、任意の要約の入力・照合・状態・反映の指示・予測と実際の比較・
+影響の予測・変更の規模・説明書の組み立てと、任意の要約の入力・照合・状態・反映の指示・予測と実際の比較・
 検証の条件・CR で作り直した段階の承認・レビューを結ぶ条件・たどる記録(純粋関数)。
 
 docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
@@ -30,6 +31,9 @@ docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 # Phase-95-3:追記 ── app.change_requests.trace.EDITED_FIELD_LABEL
 # Phase-96-1:追記 ── app.change_requests.comparison.merge_applied_marks, app.change_requests.stage_approvals.APPROVE_STAGE_ACTION, app.change_requests.stage_approvals.StageFacts, app.change_requests.stage_approvals.pending_stages, app.change_requests.stage_approvals.stage_apply_versions
 # Phase-96-2:追記 ── app.change_requests.prediction.ORIGIN_KINDS, app.change_requests.prediction.ORIGIN_REASON, app.change_requests.prediction.PredictedOrigin, app.change_requests.prediction.origin_candidates, app.change_requests.prediction.origin_candidates_from_snapshots, app.change_requests.prediction.origin_name
+# Phase-101-1:追記 ── app.change_requests.scale.SCALE_KIND_LABEL, app.change_requests.scale.SCALE_KINDS, app.change_requests.scale.Scale, app.change_requests.scale.ScaleComparisonRow, app.change_requests.scale.ScaleCount, app.change_requests.scale.ScaleKind, app.change_requests.scale.ScaleRemark, app.change_requests.scale.ScaleSources, app.change_requests.scale.compare_scale, app.change_requests.scale.count_scale, app.change_requests.scale.display_name, app.change_requests.scale.predicted_scale, app.change_requests.scale.sources_from_snapshots, app.change_requests.scale.unlinked_requirements
+# Phase-101-2:追記 ── app.change_requests.summary.needs_reconfirm
+# Phase-101-2：削除 ── app.change_requests.explanation.AffectedUnits, app.change_requests.explanation.affected_units
 from app.change_requests.comparison import (
     COMPARISON_STATUS_LABEL,
     COMPARISON_STATUSES,
@@ -44,11 +48,9 @@ from app.change_requests.comparison import (
     merge_applied_marks,
 )
 from app.change_requests.explanation import (
-    AffectedUnits,
     ChangeRequestFacts,
     Explanation,
     SummaryCheck,
-    affected_units,
     build_explanation,
     check_summary,
     explanation_filename,
@@ -77,6 +79,22 @@ from app.change_requests.reviews import (
     aware,
     first_applied_at,
     review_link_problem,
+)
+from app.change_requests.scale import (
+    SCALE_KIND_LABEL,
+    SCALE_KINDS,
+    Scale,
+    ScaleComparisonRow,
+    ScaleCount,
+    ScaleKind,
+    ScaleRemark,
+    ScaleSources,
+    compare_scale,
+    count_scale,
+    display_name,
+    predicted_scale,
+    sources_from_snapshots,
+    unlinked_requirements,
 )
 from app.change_requests.stage_approvals import (
     APPROVE_STAGE_ACTION,
@@ -113,6 +131,7 @@ from app.change_requests.summary import (
     SummaryStatus,
     build_summary_messages,
     clip_summary,
+    needs_reconfirm,
     summary_state,
 )
 from app.change_requests.targets import (
@@ -186,11 +205,13 @@ __all__ = [
     "predict_from_snapshots",
     "requirement_texts",
     # Phase-84-2:追記
-    "AffectedUnits",
+    # Phase-101-2：削除
+    # "AffectedUnits",
     "ChangeRequestFacts",
     "Explanation",
     "SummaryCheck",
-    "affected_units",
+    # Phase-101-2：削除
+    # "affected_units",
     "build_explanation",
     "check_summary",
     "with_summary",
@@ -250,7 +271,6 @@ __all__ = [
     "TraceDocument",
     "TraceEntry",
     "TraceStage",
-    # Phase-89(完了後の調整):追記
     "decision_note",
     # Phase-95-1:追記
     "predicted_document_keys",
@@ -270,4 +290,21 @@ __all__ = [
     "origin_candidates",
     "origin_candidates_from_snapshots",
     "origin_name",
+    # Phase-101-1:追記
+    "SCALE_KINDS",
+    "SCALE_KIND_LABEL",
+    "Scale",
+    "ScaleComparisonRow",
+    "ScaleCount",
+    "ScaleKind",
+    "ScaleRemark",
+    "ScaleSources",
+    "compare_scale",
+    "count_scale",
+    "display_name",
+    "predicted_scale",
+    "sources_from_snapshots",
+    "unlinked_requirements",
+    # Phase-101-2:追記
+    "needs_reconfirm",
 ]

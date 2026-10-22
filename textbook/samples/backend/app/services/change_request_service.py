@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3
 # Phase-96-3：更新(docstring: update が予測の起点を確かめ直す)
 # Phase-95-3：更新(docstring: update が下書きの中の直しも直した項目の名前で時系列に残す)
 # Phase-86-2：更新(docstring: ChangeRequestService に検証の確かめを足した)
@@ -22,6 +22,7 @@
 # Phase-96-1:追記 ── app.change_requests.StageFacts, app.change_requests.merge_applied_marks, app.change_requests.pending_stages, app.change_requests.stage_apply_versions
 # Phase-96-1：削除 ── collections.abc.Mapping, dataclasses.asdict
 # Phase-96-3:追記 ── app.change_requests.origin_candidates_from_snapshots, app.services.baseline_service.baseline_snapshots
+# Phase-101-3:追記 ── app.change_requests.Scale, app.change_requests.ScaleComparisonRow, app.change_requests.ScaleSources, app.change_requests.compare_scale, app.change_requests.count_scale, app.change_requests.needs_reconfirm, app.change_requests.prediction.STAGE_PREFIX, app.detailed_design.impact.elements.parse_model, app.detailed_design.plan.PlanModel, app.detailed_design.procedure_doc.ProcedureDocModel
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -51,6 +52,9 @@ from app.change_requests import (
     Overlap,
     Prediction,
     ReviewFacts,
+    Scale,
+    ScaleComparisonRow,
+    ScaleSources,
     StageFacts,
     SummaryState,
     Target,
@@ -64,9 +68,12 @@ from app.change_requests import (
     checked_documents,
     clip_summary,
     compare,
+    compare_scale,
+    count_scale,
     document_items,
     first_applied_at,
     merge_applied_marks,
+    needs_reconfirm,
     next_status,
     origin_candidates_from_snapshots,
     overlaps,
@@ -84,7 +91,11 @@ from app.change_requests import (
     with_summary,
 )
 from app.change_requests.explanation import DOCUMENT_LABEL
+from app.change_requests.prediction import STAGE_PREFIX
 from app.detailed_design.impact import Mark, StageImpact
+from app.detailed_design.impact.elements import parse_model
+from app.detailed_design.plan import PlanModel
+from app.detailed_design.procedure_doc import ProcedureDocModel
 from app.models.baseline import Baseline
 from app.models.change_request import ChangeRequest
 from app.models.change_request_summary import ChangeRequestSummary
@@ -173,6 +184,9 @@ class ImpactView:
     prediction: Prediction
     saved: bool
     excluded: list[ExcludedItem]
+    # Phase-101-3:追記
+    # 束に入っている段階の、束を作った時点の状態(規模の注記に使う)
+    stage_states: dict[int, str]
 
 
 # Phase-85-4:追記
@@ -183,6 +197,8 @@ class ComparisonView:
     change_request: ChangeRequest
     comparison: Comparison
     saved: bool
+    # Phase-101-3:追記
+    scale: tuple[ScaleComparisonRow, ...] = ()
 
 
 # Phase-86-2:追記
@@ -230,6 +246,16 @@ class ExplanationView:
         if self.summary is None:
             return None
         return summary_state(
+            self.summary.status, self.summary.fingerprint, self.explanation.fingerprint
+        )
+
+    @property
+    # Phase-101-3:追記
+    def summary_needs_reconfirm(self) -> bool:
+        """確認済みの要約が、その後の説明書の変化で古くなったか(共有の前に確かめ直す)。"""
+        if self.summary is None:
+            return False
+        return needs_reconfirm(
             self.summary.status, self.summary.fingerprint, self.explanation.fingerprint
         )
 
@@ -669,7 +695,38 @@ class ChangeRequestService:
         comparison = compare(
             view.prediction, applied, marked, change_request.document_checks or []
         )
-        return ComparisonView(change_request, comparison, saved=view.saved)
+        # Phase-101-3：更新
+        # return ComparisonView(change_request, comparison, saved=view.saved)
+        # ↓↓
+        scale = compare_scale(
+            (await self._explanation(change_request)).scale,
+            await self._actual_scale(project, change_request, applied),
+            [item.key for item in view.prediction.items],
+            change_request.document_checks or [],
+        )
+        return ComparisonView(change_request, comparison, saved=view.saved, scale=scale)
+
+    async def _actual_scale(
+        self, project: Project, change_request: ChangeRequest, applied: Sequence[Any]
+    ) -> Scale:
+        """反映で付いた印の要素を、今の設計(段階7・8 の今の内容・今のテスト仕様書)で数える。"""
+        rows = await DesignStageRepository(self._session).list_for_project(project.id)
+        models = {row.stage: row.model for row in rows if row.model}
+        test_spec = await GeneratedDocumentRepository(self._session).get_current(
+            project_id=project.id, doc_type="test_spec"
+        )
+        sources = ScaleSources(
+            plan=parse_model(PlanModel, models.get(7)),
+            procedure_docs=parse_model(ProcedureDocModel, models.get(8)),
+            test_spec=test_spec.model if test_spec is not None else None,
+            has_external_design=True,
+            missing_stages=frozenset(s for s in (1, 7) if s not in models),
+        )
+        return count_scale(
+            [(mark.key, mark.label) for mark in applied],
+            sources,
+            requirement_ids=target_ids(targets_from_json(change_request.targets)),
+        )
 
     # Phase-86-2:追記
     async def verification(self, project: Project, number: int) -> VerificationView:
@@ -970,6 +1027,8 @@ class ChangeRequestService:
             view.prediction,
             {item.key: item.model for item in baseline.items if item.included},
             [(e.key, e.state) for e in view.excluded],
+            # Phase-101-3:追記
+            view.stage_states,
         )
 
     async def _impact_with_baseline(
@@ -991,6 +1050,12 @@ class ChangeRequestService:
                 for item in baseline.items
                 if not item.included
             ],
+            # Phase-101-3:追記
+            stage_states={
+                int(item.key.removeprefix(STAGE_PREFIX)): item.state
+                for item in baseline.items
+                if item.included and item.key.startswith(STAGE_PREFIX)
+            },
         )
 
     async def _base_baseline(self, project: Project, number: int | None) -> Baseline:

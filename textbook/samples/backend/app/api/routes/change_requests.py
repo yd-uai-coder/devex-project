@@ -1,4 +1,4 @@
-# 作成：Phase-82-3｜更新：Phase-83-3,84-3,84-4,85-4,86-2,86-3,86-4
+# 作成：Phase-82-3｜更新：Phase-83-3,84-3,84-4,85-4,86-2,86-3,86-4,101-3
 # Phase-84-3:追記 ── fastapi.Response
 # Phase-85-4:追記 ── app.schemas.change_request.ChangeRequestComparisonRead
 from typing import Annotated
@@ -134,7 +134,10 @@ async def get_change_request_comparison(
     404、まだ反映していなければ409。"""
     view = await ChangeRequestService(session).comparison(current_project, number)
     return ChangeRequestComparisonRead.build(
-        view.change_request, view.comparison, saved=view.saved
+        # Phase-101-3：更新
+        # view.change_request, view.comparison, saved=view.saved
+        # ↓↓
+        view.change_request, view.comparison, saved=view.saved, scale=view.scale
     )
 
 

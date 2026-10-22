@@ -1,13 +1,11 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2,101-2,101-3
+# Phase-101-3：更新(docstring: ChangeRequestComparisonRead の scale・ExplanationSummaryRead の needs_reconfirm)
+# Phase-101-2：更新(docstring: ChangeRequestExplanationRead の scale)
 # Phase-96-1：更新(docstring: ChangeRequestVerificationRead の pending_stages)
 # Phase-96-3：更新(docstring: ChangeRequestCreate・ChangeRequestImpactRead・PredictedItemRead の起点)
 # Phase-86-2：更新(docstring: ComparedItemRead の reviewed を今の確認の状態にした)
 # Phase-83-1：更新(docstring: ChangeRequestCreate の対象を、要件 ID と変更の種類の組にした)
 # Phase-85-4:追記 ── app.change_requests.COMPARISON_STATUS_LABEL, app.change_requests.COMPARISON_STATUSES, app.change_requests.PREDICTED_ONLY_REASON_LABEL, app.change_requests.Comparison, app.change_requests.ComparisonStatus, app.change_requests.PredictedOnlyReason
-import uuid
-from datetime import date, datetime
-from typing import TYPE_CHECKING, Annotated, Any, Literal
-
 # Phase-83-1:追記 ── pydantic.field_validator, app.change_requests.TARGET_KIND_LABEL, app.change_requests.Target, app.change_requests.TargetKind, app.change_requests.normalize_targets, app.change_requests.targets_from_json
 # Phase-83-3:追記 ── app.change_requests.Prediction
 # Phase-84-3:追記 ── app.change_requests.Explanation, app.change_requests.explanation_filename
@@ -15,6 +13,13 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal
 # Phase-86-2:追記 ── app.change_requests.MARK_CONFIRMATION_LABEL, app.change_requests.MarkConfirmation, app.change_requests.Verification
 # Phase-86-3:追記 ── app.models.change_request.ChangeRequestReview, app.models.review.ReviewRun(TYPE_CHECKING)
 # Phase-86-4:追記 ── app.change_requests.TraceEntry
+    # Phase-84-4:追記
+# Phase-101-2:追記 ── app.change_requests.Scale, app.change_requests.ScaleCount, app.change_requests.ScaleKind, app.change_requests.ScaleRemark
+# Phase-101-3:追記 ── app.change_requests.ScaleComparisonRow, app.change_requests.needs_reconfirm
+import uuid
+from datetime import date, datetime
+from typing import TYPE_CHECKING, Annotated, Any, Literal
+
 from pydantic import (
     AwareDatetime,
     BaseModel,
@@ -44,6 +49,11 @@ from app.change_requests import (
     Overlap,
     PredictedOnlyReason,
     Prediction,
+    Scale,
+    ScaleComparisonRow,
+    ScaleCount,
+    ScaleKind,
+    ScaleRemark,
     SummaryState,
     Target,
     TargetKind,
@@ -51,6 +61,7 @@ from app.change_requests import (
     Verification,
     check_summary,
     explanation_filename,
+    needs_reconfirm,
     normalize_targets,
     targets_from_json,
 )
@@ -58,7 +69,6 @@ from app.schemas.agreement import MEMO_MAX, REASON_MAX, AgreementNotes
 
 if TYPE_CHECKING:
     from app.models.change_request import ChangeRequest, ChangeRequestReview
-    # Phase-84-4:追記
     from app.models.change_request_summary import ChangeRequestSummary
     from app.models.review import ReviewRun
 
@@ -477,9 +487,32 @@ class ComparedItemRead(BaseModel):
     reviewed: bool | None
 
 
+# Phase-101-3:追記
+class ScaleComparisonRead(BaseModel):
+    """規模の種類1つの、予測の数と実際の数(数えられなければ null)。`basis`は実際の数の出どころ
+    (`marks` = 反映の印から今の設計で数えた、`document_checks` = 文書の側の確認の一覧で確かめた
+    数)。"""
+
+    kind: ScaleKind
+    label: str
+    predicted: int | None
+    actual: int | None
+    basis: Literal["marks", "document_checks"]
+
+    @classmethod
+    def build(cls, row: ScaleComparisonRow) -> "ScaleComparisonRead":
+        return cls(
+            kind=row.kind,
+            label=row.label,
+            predicted=row.predicted,
+            actual=row.actual,
+            basis=row.basis,
+        )
+
+
 class ChangeRequestComparisonRead(BaseModel):
     """反映した CR の、影響の予測と反映で付いた印の比較。`counts`は分類ごとの件数、`saved`は予測が
-    判断の時点で保存したものか。"""
+    判断の時点で保存したものか、`scale`は規模の種類ごとの予測の数と実際の数。"""
 
     number: int
     label: str
@@ -487,16 +520,28 @@ class ChangeRequestComparisonRead(BaseModel):
     saved: bool
     counts: dict[ComparisonStatus, int]
     items: list[ComparedItemRead]
+    # Phase-101-3:追記
+    scale: list[ScaleComparisonRead] = []
 
     @classmethod
     def build(
-        cls, change_request: "ChangeRequest", comparison: Comparison, *, saved: bool
+        # Phase-101-3：更新
+        # cls, change_request: "ChangeRequest", comparison: Comparison, *, saved: bool
+        # ↓↓
+        cls,
+        change_request: "ChangeRequest",
+        comparison: Comparison,
+        *,
+        saved: bool,
+        scale: tuple[ScaleComparisonRow, ...] = (),
     ) -> "ChangeRequestComparisonRead":
         return cls(
             number=change_request.number,
             label=change_request_label(change_request.number),
             status=change_request.status,  # type: ignore[arg-type]
             saved=saved,
+            # Phase-101-3:追記
+            scale=[ScaleComparisonRead.build(row) for row in scale],
             counts={status: comparison.count(status) for status in COMPARISON_STATUSES},
             items=[
                 ComparedItemRead(
@@ -804,7 +849,8 @@ class SummaryEdit(BaseModel):
 class ExplanationSummaryRead(BaseModel):
     """説明書の要約。`state`は今の5節と比べた状態(古い = 作った・確かめた後に5節が変わった)。
     `generated_text`は LLM の元の文、`text`は今の文。照合は、`text`に出る要件 ID・数字のうち
-    5節に無いもの。"""
+    説明書に無いもの。`needs_reconfirm`は、確認済みのまま説明書が変わって古くなったか(出力に
+    載らないので、共有の前に確かめ直す)。"""
 
     text: str
     generated_text: str
@@ -819,6 +865,8 @@ class ExplanationSummaryRead(BaseModel):
     confirmed_at: datetime | None
     unknown_requirement_ids: list[str]
     unknown_numbers: list[str]
+    # Phase-101-3:追記
+    needs_reconfirm: bool
 
     @classmethod
     def build(
@@ -839,7 +887,51 @@ class ExplanationSummaryRead(BaseModel):
             confirmed_at=summary.confirmed_at,
             unknown_requirement_ids=list(check.unknown_requirement_ids),
             unknown_numbers=list(check.unknown_numbers),
+            # Phase-101-3:追記
+            needs_reconfirm=needs_reconfirm(
+                summary.status, summary.fingerprint, explanation.fingerprint
+            ),
         )
+
+
+# Phase-101-2:追記
+class ScaleRemarkRead(BaseModel):
+    """規模の数えられない理由、または注記1つ(`detail`は対象の段階・文書・要件 ID・単位)。"""
+
+    code: str
+    label: str
+    detail: str
+
+    @classmethod
+    def build(cls, remark: ScaleRemark) -> "ScaleRemarkRead":
+        return cls(code=remark.code, label=remark.label, detail=remark.detail)
+
+
+class ScaleCountRead(BaseModel):
+    """規模の種類1つ。`count`は数(数えられなければ null で、`uncountable`に理由)、`names`は
+    数えたもの(表示名)、`notes`は数えたうえでの注記。"""
+
+    kind: ScaleKind
+    label: str
+    count: int | None
+    names: list[str]
+    uncountable: list[ScaleRemarkRead]
+    notes: list[ScaleRemarkRead]
+
+    @classmethod
+    def build(cls, count: ScaleCount) -> "ScaleCountRead":
+        return cls(
+            kind=count.kind,
+            label=count.label,
+            count=count.count,
+            names=list(count.names),
+            uncountable=[ScaleRemarkRead.build(r) for r in count.uncountable],
+            notes=[ScaleRemarkRead.build(r) for r in count.notes],
+        )
+
+
+def scale_read(scale: Scale) -> list[ScaleCountRead]:
+    return [ScaleCountRead.build(count) for count in scale.counts]
 
 
 # Phase-84-3:追記
@@ -849,8 +941,10 @@ class ChangeRequestExplanationRead(BaseModel):
     # 5節の数の内訳(`has_test_spec`が偽なら、束にテスト仕様書が無くテストは数えていない)。"""
     # ↓↓
     """CR の説明書(プレビュー)。`markdown`は5節、`fingerprint`はその sha256、`output`は出力する
-    md(確認済みで古くない要約だけを載せる)。作業単位とテストは5節の数の内訳(`has_test_spec`が
-    偽なら、束にテスト仕様書が無くテストは数えていない)。`summary`は要約(作っていなければ null)。"""
+    md(確認済みで古くない要約だけを載せる)。`scale`は3節の規模(種類ごとの数と、数えられない
+    理由)。`units`・`integration_tests`・`system_tests`・`has_test_spec`は規模の作業単位と
+    テストの内訳(`has_test_spec`が偽なら、束にテスト仕様書が無くテストは数えていない)。
+    `summary`は要約(作っていなければ null)。"""
 
     number: int
     label: str
@@ -859,6 +953,8 @@ class ChangeRequestExplanationRead(BaseModel):
     fingerprint: str
     # Phase-84-4:追記
     output: str
+    # Phase-101-2:追記
+    scale: list[ScaleCountRead]
     units: list[str]
     integration_tests: list[str]
     system_tests: list[str]
@@ -881,7 +977,10 @@ class ChangeRequestExplanationRead(BaseModel):
         summary: "ChangeRequestSummary | None",
         summary_state: SummaryState | None,
     ) -> "ChangeRequestExplanationRead":
-        units = explanation.units
+        # Phase-101-2：更新
+        # units = explanation.units
+        # ↓↓
+        scale = explanation.scale
         return cls(
             number=change_request.number,
             label=change_request_label(change_request.number),
@@ -890,10 +989,17 @@ class ChangeRequestExplanationRead(BaseModel):
             fingerprint=explanation.fingerprint,
             # Phase-84-4:追記
             output=output,
-            units=list(units.units),
-            integration_tests=list(units.integration_tests),
-            system_tests=list(units.system_tests),
-            has_test_spec=units.has_test_spec,
+            # Phase-101-2：更新
+            # units=list(units.units),
+            # integration_tests=list(units.integration_tests),
+            # system_tests=list(units.system_tests),
+            # has_test_spec=units.has_test_spec,
+            # ↓↓
+            scale=scale_read(scale),
+            units=list(scale.of("unit").names),
+            integration_tests=list(scale.integration_tests),
+            system_tests=list(scale.system_tests),
+            has_test_spec=scale.has_test_spec,
             # Phase-84-4:追記
             summary=(
                 ExplanationSummaryRead.build(summary, summary_state, explanation)
