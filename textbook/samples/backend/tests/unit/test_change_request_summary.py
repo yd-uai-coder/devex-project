@@ -1,4 +1,4 @@
-# 作成：Phase-84-4｜更新：Phase-101-2
+# 作成：Phase-84-4｜更新：Phase-101-2,102-3
 # Phase-101-2：更新(docstring: SUT に needs_reconfirm)
 """変更の説明書の任意の要約の、純粋な部分(LLM の入力・文の整え・状態)と表・リポジトリのテスト。
 
@@ -39,6 +39,8 @@ def test_messages_pass_only_the_explanation() -> None:
     messages = build_summary_messages("# 変更の説明書 CR-1\n\n## 1. 変更の内容と背景")
 
     assert isinstance(messages[0], SystemMessage) and "クライアント" in str(messages[0].content)
+    # Phase-102-3:追記
+    assert "選択肢の節があれば" in str(messages[0].content)
     assert isinstance(messages[1], HumanMessage)
     assert messages[1].content == "# 変更の説明書 CR-1\n\n## 1. 変更の内容と背景"
 

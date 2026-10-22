@@ -1,4 +1,4 @@
-# 作成：Phase-86-4｜更新：Phase-89(完了後の調整),95-3,96-1,96-3,98-2
+# 作成：Phase-86-4｜更新：Phase-89(完了後の調整),95-3,96-1,96-3,98-2,102-2
 # Phase-96-1：更新(docstring: 読み解く行に「段階の承認で印を結ぶ」を足した)
 # Phase-95-3：更新(docstring: 読み解く行に「直した」を足した)
 # Phase-89(完了後の調整)：更新(docstring: 合意・却下の行のメモに合意の記録を出す。CR で反映した版は消さない)
@@ -48,6 +48,8 @@ EDITED_FIELD_LABEL: dict[str, str] = {
     "adds_requirement": "新しい要件を足す",
     # Phase-96-3:追記
     "origins": "予測の起点",
+    # Phase-102-2:追記
+    "options": "選択肢",
 }
 
 
@@ -67,11 +69,17 @@ class EventFacts:
 # Phase-89(完了後の調整):追記
 @dataclass(frozen=True)
 class DecisionFacts:
-    """CR に残した合意の記録(相手・メモ・理由。無いものは None か空)。"""
+    # Phase-102-2：更新
+    # """CR に残した合意の記録(相手・メモ・理由。無いものは None か空)。"""
+    # ↓↓
+    """CR に残した合意の記録(相手・メモ・理由。無いものは None か空)。`option`は合意で選んだ案の
+    表示名(`案2 メールだけ`。案の無い CR は None)。"""
 
     counterpart: str | None
     memo: str | None
     reason: str | None
+    # Phase-102-2:追記
+    option: str | None = None
 
 
 DECISION_ACTIONS: frozenset[str] = frozenset({"agree", "reject"})
@@ -148,9 +156,14 @@ def trace_entries(
 
 
 def decision_note(note: str, decision: DecisionFacts) -> str:
-    """合意・却下の行のメモ。行のメモに、相手・メモ・理由(あるものだけ)を続ける。"""
+    # Phase-102-2：更新
+    # """合意・却下の行のメモ。行のメモに、相手・メモ・理由(あるものだけ)を続ける。"""
+    # ↓↓
+    """合意・却下の行のメモ。行のメモに、選んだ案・相手・メモ・理由(あるものだけ)を続ける。"""
     parts = [note] if note else []
     for label, value in (
+        # Phase-102-2:追記
+        ("選んだ案", decision.option),
         ("相手", decision.counterpart),
         ("メモ", decision.memo),
         ("理由", decision.reason),

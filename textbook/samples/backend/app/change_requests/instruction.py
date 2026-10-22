@@ -1,4 +1,4 @@
-# 作成：Phase-85-1｜更新：Phase-96-2
+# 作成：Phase-85-1｜更新：Phase-96-2,102-2
 # Phase-96-2：更新(docstring: build_cr_instruction が起点の1行を足す)
 """合意した変更要求(CR)から、再生成の指示の文を組み立てる(純粋関数)。
 
@@ -7,9 +7,11 @@ docs/external_design.md 2.14節「反映」。設計レビューの採用した�
 文書・段階ごとに絞らず、どの生成にも同じ指示を渡す。指摘の指示と一緒に渡すときは、空行で並べる。
 """
 
+# Phase-102-2:追記 ── app.change_requests.options.option_label
 from collections.abc import Iterable
 
 from app.change_requests.explanation import ChangeRequestFacts
+from app.change_requests.options import option_label
 from app.change_requests.targets import TARGET_KIND_LABEL
 
 CR_INSTRUCTION_HEAD = (
@@ -19,19 +21,37 @@ CR_INSTRUCTION_HEAD = (
 ADDS_REQUIREMENT_LINE = "- 新しい要件を足す(内容は上の「内容」のとおり。ID は既存の要件と重ねない)"
 # Phase-96-2:追記
 ORIGIN_LINE = "  - 新しい要件が関わる既存の要素(予測の起点): {origins}"
+# Phase-102-2:追記
+OPTION_LINE = "合意した案: {label} {name}(結果: {outcome})"
 
 
 def build_cr_instruction(facts: ChangeRequestFacts) -> str:
     # Phase-96-2：更新
     # """指示の文(頭の1文 + タイトル・内容 + 対象1件1行 + 新しい要件を足すなら1行)。"""
     # ↓↓
-    """指示の文(頭の1文 + タイトル・内容 + 対象1件1行 + 新しい要件を足すなら1行と、起点があれば
-    その1行)。"""
+    # Phase-102-2：更新
+    # """指示の文(頭の1文 + タイトル・内容 + 対象1件1行 + 新しい要件を足すなら1行と、起点があれば
+    # その1行)。"""
+    # ↓↓
+    """指示の文(頭の1文 + タイトル・内容 + 合意した案があればその1行 + 対象1件1行 + 新しい要件を
+    足すなら1行と、起点があればその1行)。案のある CR では、合意で選んだ案の対象が CR の対象に
+    なっている。"""
     lines = [
         CR_INSTRUCTION_HEAD.format(number=facts.number),
         f"タイトル: {facts.title}",
         f"内容: {facts.content.strip() or '—'}",
     ]
+    # Phase-102-2:追記
+    number = facts.decision_option
+    if number is not None and 1 <= number <= len(facts.options.items):
+        option = facts.options.option(number)
+        lines.append(
+            OPTION_LINE.format(
+                label=option_label(number),
+                name=option.name,
+                outcome=" ".join(option.outcome.split()),
+            )
+        )
     if facts.targets:
         lines.append("対象の要件:")
     for target in facts.targets:

@@ -1,4 +1,6 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2,101-2,101-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2,101-2,101-3,102-2,102-3,102-4
+# Phase-102-3：更新(docstring: ChangeRequestExplanationRead の option_scales)
+# Phase-102-2：更新(docstring: ChangeRequestDecision の option・ChangeRequestRead の options)
 # Phase-101-3：更新(docstring: ChangeRequestComparisonRead の scale・ExplanationSummaryRead の needs_reconfirm)
 # Phase-101-2：更新(docstring: ChangeRequestExplanationRead の scale)
 # Phase-96-1：更新(docstring: ChangeRequestVerificationRead の pending_stages)
@@ -16,6 +18,9 @@
     # Phase-84-4:追記
 # Phase-101-2:追記 ── app.change_requests.Scale, app.change_requests.ScaleCount, app.change_requests.ScaleKind, app.change_requests.ScaleRemark
 # Phase-101-3:追記 ── app.change_requests.ScaleComparisonRow, app.change_requests.needs_reconfirm
+# Phase-102-2:追記 ── pydantic.model_validator, app.change_requests.OPTION_NAME_MAX, app.change_requests.OPTION_OUTCOME_MAX, app.change_requests.OPTIONS_MAX, app.change_requests.RECOMMEND_REASON_MAX, app.change_requests.ChangeOptions, app.change_requests.normalize_options, app.change_requests.option_label, app.change_requests.options_from_json, app.change_requests.options_from_rows
+# Phase-102-3:追記 ── app.change_requests.OptionScale
+# Phase-102-4:追記 ── app.change_requests.OPTION_DRAFT_STATUS_LABEL, app.change_requests.OptionDraftCheck, app.change_requests.OptionDraftStatus, app.models.change_request_option_draft.ChangeRequestOptionDraft
 import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Annotated, Any, Literal
@@ -27,6 +32,7 @@ from pydantic import (
     Field,
     StringConstraints,
     field_validator,
+    model_validator,
 )
 
 from app.change_requests import (
@@ -34,18 +40,27 @@ from app.change_requests import (
     COMPARISON_STATUS_LABEL,
     COMPARISON_STATUSES,
     MARK_CONFIRMATION_LABEL,
+    OPTION_DRAFT_STATUS_LABEL,
+    OPTION_NAME_MAX,
+    OPTION_OUTCOME_MAX,
+    OPTIONS_MAX,
     PREDICTED_ONLY_REASON_LABEL,
+    RECOMMEND_REASON_MAX,
     STATUS_LABEL,
     SUMMARY_MAX,
     SUMMARY_STATE_LABEL,
     TARGET_KIND_LABEL,
     BackgroundSource,
+    ChangeOptions,
     ChangeRequestAction,
     ChangeRequestStatus,
     Comparison,
     ComparisonStatus,
     Explanation,
     MarkConfirmation,
+    OptionDraftCheck,
+    OptionDraftStatus,
+    OptionScale,
     Overlap,
     PredictedOnlyReason,
     Prediction,
@@ -62,13 +77,18 @@ from app.change_requests import (
     check_summary,
     explanation_filename,
     needs_reconfirm,
+    normalize_options,
     normalize_targets,
+    option_label,
+    options_from_json,
+    options_from_rows,
     targets_from_json,
 )
 from app.schemas.agreement import MEMO_MAX, REASON_MAX, AgreementNotes
 
 if TYPE_CHECKING:
     from app.models.change_request import ChangeRequest, ChangeRequestReview
+    from app.models.change_request_option_draft import ChangeRequestOptionDraft
     from app.models.change_request_summary import ChangeRequestSummary
     from app.models.review import ReviewRun
 
@@ -136,6 +156,49 @@ def _normalized(value: list[ChangeRequestTargetIn] | None) -> list[ChangeRequest
 OriginsIn = Annotated[list[str], Field(max_length=ORIGINS_MAX)]
 
 
+# Phase-102-2:追記
+class ChangeRequestOptionIn(BaseModel):
+    """案1つ(名前・この案で変える対象・結果)。対象は CR の対象の中だけ(サービスで確かめる)。"""
+
+    name: str = Field(max_length=OPTION_NAME_MAX)
+    targets: TargetsIn = Field(default_factory=list)
+    outcome: str = Field(max_length=OPTION_OUTCOME_MAX)
+
+
+class ChangeRequestOptionsIn(BaseModel):
+    """CR の選択肢(案は0件か2〜3件)と、おすすめの案の番号(1始まり)と理由。案を消すときは
+    `items`を空で送る。"""
+
+    items: Annotated[list[ChangeRequestOptionIn], Field(max_length=OPTIONS_MAX)] = Field(
+        default_factory=list
+    )
+    recommended: int | None = Field(default=None, ge=1)
+    reason: str = Field(default="", max_length=RECOMMEND_REASON_MAX)
+
+    def to_options(self) -> ChangeOptions:
+        """整えた案(normalize_options。規則に合わなければ ValueError)。"""
+        return normalize_options(
+            options_from_rows(
+                (
+                    (
+                        o.name,
+                        (Target(t.requirement_id, t.kind, t.proposed_text) for t in o.targets),
+                        o.outcome,
+                    )
+                    for o in self.items
+                ),
+                self.recommended,
+                self.reason,
+            )
+        )
+
+    @model_validator(mode="after")
+    def _check(self) -> "ChangeRequestOptionsIn":
+        # 案の数・名前・おすすめ・対象の規則(合わなければ検証の誤り 422)
+        self.to_options()
+        return self
+
+
 class ChangeRequestCreate(BaseModel):
     """CR を作るときの本文。背景は出どころの種類・日付(日の粒度。任意)・メモ。対象は基準の束の
     要件定義書にある要件 ID と変更の種類の組と、新しい要件を足すかの印(どちらか一方は要る。
@@ -155,6 +218,8 @@ class ChangeRequestCreate(BaseModel):
     adds_requirement: bool = False
     # Phase-96-3:追記
     origins: OriginsIn = Field(default_factory=list)
+    # Phase-102-2:追記
+    options: ChangeRequestOptionsIn | None = None
     baseline_number: int | None = Field(default=None, ge=1)
 
     # Phase-83-1:追記
@@ -180,6 +245,8 @@ class ChangeRequestUpdate(BaseModel):
     adds_requirement: bool | None = None
     # Phase-96-3:追記
     origins: OriginsIn | None = None
+    # Phase-102-2:追記
+    options: ChangeRequestOptionsIn | None = None
 
     # Phase-83-1:追記
     @field_validator("targets")
@@ -192,10 +259,13 @@ class ChangeRequestUpdate(BaseModel):
 
 class ChangeRequestDecision(AgreementNotes):
     """CR の合意・却下の記録。相手・メモ・理由は合意済みの版と同じ(AgreementNotes)。判断の日時は
-    記録する日時と別に、タイムゾーン付きで受け取る。"""
+    記録する日時と別に、タイムゾーン付きで受け取る。`option`は合意で選んだ案の番号(1始まり。
+    案のある CR の合意では必須。サービスで確かめる)。"""
 
     decision: Literal["agreed", "rejected"]
     decided_at: AwareDatetime
+    # Phase-102-2:追記
+    option: int | None = Field(default=None, ge=1)
 
 
 class ChangeRequestWithdraw(BaseModel):
@@ -274,6 +344,8 @@ class ChangeRequestDecisionRead(BaseModel):
     memo: str
     reason: str
     recorded_by: uuid.UUID | None
+    # Phase-102-2:追記
+    option: int | None = None
 
 
 # Phase-83-1:追記
@@ -317,6 +389,44 @@ class ChangeRequestOriginRead(BaseModel):
 
     key: str
     label: str
+
+
+# Phase-102-2:追記
+class ChangeRequestOptionRead(BaseModel):
+    """案1つ(番号・呼び名・名前・対象・結果・おすすめか)。"""
+
+    number: int
+    label: str
+    name: str
+    targets: list[ChangeRequestTargetDetailRead]
+    outcome: str
+    recommended: bool
+
+
+class ChangeRequestOptionsRead(BaseModel):
+    """CR の選択肢(案の順)と、おすすめの理由(おすすめが無ければ空)。"""
+
+    items: list[ChangeRequestOptionRead]
+    recommended: int | None
+    reason: str
+
+    @classmethod
+    def from_options(cls, options: ChangeOptions) -> "ChangeRequestOptionsRead":
+        return cls(
+            items=[
+                ChangeRequestOptionRead(
+                    number=number,
+                    label=option_label(number),
+                    name=option.name,
+                    targets=[ChangeRequestTargetDetailRead.from_target(t) for t in option.targets],
+                    outcome=option.outcome,
+                    recommended=options.recommended == number,
+                )
+                for number, option in enumerate(options.items, start=1)
+            ],
+            recommended=options.recommended,
+            reason=options.reason,
+        )
 
 
 class ChangeRequestOverlapRead(BaseModel):
@@ -369,11 +479,17 @@ class ChangeRequestSummaryRead(BaseModel):
 
 class ChangeRequestRead(ChangeRequestSummaryRead):
     # Phase-86-4：更新(docstring: 結んだレビュー(86-3)・入れた束(86-4)を足した)
-    """CR 1つ(詳細)。中身・合意の記録・時系列・結んだレビュー・入れた束(検証済みの後)・重なり・
-    写しの元と先・今できる操作。"""
+    # Phase-102-2：更新
+    # """CR 1つ(詳細)。中身・合意の記録・時系列・結んだレビュー・入れた束(検証済みの後)・重なり・
+    # 写しの元と先・今できる操作。"""
+    # ↓↓
+    """CR 1つ(詳細)。中身・選択肢(案が無ければ null)・合意の記録・時系列・結んだレビュー・
+    入れた束(検証済みの後)・重なり・写しの元と先・今できる操作。"""
 
     content: str
     background_memo: str
+    # Phase-102-2:追記
+    options: ChangeRequestOptionsRead | None = None
     # Phase-88-2：削除
     # decision: ChangeRequestDecisionRead | None
     events: list[ChangeRequestEventRead]
@@ -412,6 +528,8 @@ class ChangeRequestRead(ChangeRequestSummaryRead):
                 **summary_fields(change_request),
                 "content": change_request.content,
                 "background_memo": change_request.background_memo,
+                # Phase-102-2:追記
+                "options": _options_read(change_request),
                 # Phase-88-2：削除
                 # "decision": decision,
                 "events": [
@@ -934,6 +1052,27 @@ def scale_read(scale: Scale) -> list[ScaleCountRead]:
     return [ScaleCountRead.build(count) for count in scale.counts]
 
 
+# Phase-102-3:追記
+class OptionScaleRead(BaseModel):
+    """案1つの規模(合意の前の案のある CR の説明書で、規模の表の1列)。"""
+
+    number: int
+    label: str
+    name: str
+    recommended: bool
+    scale: list[ScaleCountRead]
+
+    @classmethod
+    def build(cls, option: OptionScale) -> "OptionScaleRead":
+        return cls(
+            number=option.number,
+            label=option_label(option.number),
+            name=option.name,
+            recommended=option.recommended,
+            scale=scale_read(option.scale),
+        )
+
+
 # Phase-84-3:追記
 class ChangeRequestExplanationRead(BaseModel):
     # Phase-84-4：更新
@@ -944,7 +1083,8 @@ class ChangeRequestExplanationRead(BaseModel):
     md(確認済みで古くない要約だけを載せる)。`scale`は3節の規模(種類ごとの数と、数えられない
     理由)。`units`・`integration_tests`・`system_tests`・`has_test_spec`は規模の作業単位と
     テストの内訳(`has_test_spec`が偽なら、束にテスト仕様書が無くテストは数えていない)。
-    `summary`は要約(作っていなければ null)。"""
+    `option_scales`は合意の前の案ごとの規模(案の無い CR・案を選んだ後は空。`scale`は案を
+    合わせた範囲)。`summary`は要約(作っていなければ null)。"""
 
     number: int
     label: str
@@ -955,6 +1095,8 @@ class ChangeRequestExplanationRead(BaseModel):
     output: str
     # Phase-101-2:追記
     scale: list[ScaleCountRead]
+    # Phase-102-3:追記
+    option_scales: list[OptionScaleRead] = []
     units: list[str]
     integration_tests: list[str]
     system_tests: list[str]
@@ -996,6 +1138,8 @@ class ChangeRequestExplanationRead(BaseModel):
             # has_test_spec=units.has_test_spec,
             # ↓↓
             scale=scale_read(scale),
+            # Phase-102-3:追記
+            option_scales=[OptionScaleRead.build(o) for o in explanation.option_scales],
             units=list(scale.of("unit").names),
             integration_tests=list(scale.integration_tests),
             system_tests=list(scale.system_tests),
@@ -1011,6 +1155,12 @@ class ChangeRequestExplanationRead(BaseModel):
 
 def change_request_label(number: int) -> str:
     return f"CR-{number}"
+
+
+# Phase-102-2:追記
+def _options_read(change_request: "ChangeRequest") -> ChangeRequestOptionsRead | None:
+    options = options_from_json(change_request.options)
+    return None if options.empty else ChangeRequestOptionsRead.from_options(options)
 
 
 def summary_fields(change_request: "ChangeRequest") -> dict[str, Any]:
@@ -1030,6 +1180,8 @@ def summary_fields(change_request: "ChangeRequest") -> dict[str, Any]:
             memo=change_request.decision_memo or "",
             reason=change_request.decision_reason or "",
             recorded_by=change_request.decision_recorded_by,
+            # Phase-102-2:追記
+            option=change_request.decision_option,
         )
     included = change_request.included_baseline
     return {
@@ -1081,3 +1233,51 @@ def review_run_fields(run: "ReviewRun") -> dict[str, Any]:
         "findings": len(run.findings),
         "adopted": sum(1 for f in run.findings if f.decision == "adopted"),
     }
+
+
+# Phase-102-4:追記
+class OptionDraftRead(BaseModel):
+    """選択肢の LLM の下書き。`options`は LLM が作った案(規則に合わないこともある)、`status`は
+    未確認 / 取り込み済み、`stale`は作った後に説明書が変わったか。照合の`problems`は取り込めない
+    問題(案の規則・CR の対象に無い要件)、`unknown_*`は文に出る要件 ID・数字のうち説明書に
+    無いもの(取り込みは止めない)。"""
+
+    options: ChangeRequestOptionsRead
+    status: OptionDraftStatus
+    status_label: str
+    stale: bool
+    generated_model: str | None
+    generated_by: uuid.UUID | None
+    generated_at: datetime
+    adopted_by: uuid.UUID | None
+    adopted_at: datetime | None
+    problems: list[str]
+    unknown_requirement_ids: list[str]
+    unknown_numbers: list[str]
+    adoptable: bool
+
+    @classmethod
+    def build(
+        cls,
+        draft: "ChangeRequestOptionDraft",
+        options: ChangeOptions,
+        check: OptionDraftCheck,
+        *,
+        current_fingerprint: str,
+    ) -> "OptionDraftRead":
+        status: OptionDraftStatus = draft.status  # type: ignore[assignment]
+        return cls(
+            options=ChangeRequestOptionsRead.from_options(options),
+            status=status,
+            status_label=OPTION_DRAFT_STATUS_LABEL[status],
+            stale=draft.fingerprint != current_fingerprint,
+            generated_model=draft.generated_model,
+            generated_by=draft.generated_by,
+            generated_at=draft.generated_at,
+            adopted_by=draft.adopted_by,
+            adopted_at=draft.adopted_at,
+            problems=list(check.problems),
+            unknown_requirement_ids=list(check.unknown_requirement_ids),
+            unknown_numbers=list(check.unknown_numbers),
+            adoptable=check.adoptable,
+        )

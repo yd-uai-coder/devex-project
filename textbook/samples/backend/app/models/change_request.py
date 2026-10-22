@@ -1,4 +1,5 @@
-# 作成：Phase-82-1｜更新：Phase-83-1,83-3,85-2,86-2,96-3
+# 作成：Phase-82-1｜更新：Phase-83-1,83-3,85-2,86-2,96-3,102-2
+# Phase-102-2：更新(docstring: ChangeRequest の options・decision_option)
 # Phase-96-3：更新(docstring: ChangeRequest の origins)
 # Phase-86-2：更新(docstring: 文書の側の確認 `document_checks`・入れた束 `included_baseline_id`・結んだレビューと、時系列の `refs` の種類を足した)
 # Phase-85-2：更新(docstring: 反映の印の写し `applied_impact` と、時系列の `refs` を足した)
@@ -43,9 +44,11 @@ class ChangeRequest(Base):
     (日の粒度。任意)・メモ。対象は基準の束の要件定義書にある要件 ID と変更の種類の組の一覧
     (`targets`。`[{requirement_id, kind}]`、app/change_requests/targets.py)と、新しい要件を足すかの
     印(`adds_requirement`)。`origins`は新しい要件を足す CR の予測の起点(`[{key, label}]`。基準の
-    束の要件・画面・API。NULL は起点なし)。`derived_from_id`は、却下した CR を写して作ったときの
-    元の CR。
-    `decision_*`は合意・却下の記録(合意済みの版と同じ項目。判断の前は NULL)。
+    束の要件・画面・API。NULL は起点なし)。`options`は選択肢(2〜3の案とおすすめ。
+    app/change_requests/options.py の保存の形。NULL は案なし)。`derived_from_id`は、却下した CR を
+    写して作ったときの元の CR。
+    `decision_*`は合意・却下の記録(合意済みの版と同じ項目。判断の前は NULL)。`decision_option`は
+    合意で選んだ案の番号(1始まり。案の無い CR・却下は NULL)。選んだ案の対象が`targets`になる。
     `predicted_impact`は判断の時点の影響の予測(app/change_requests/prediction.py の保存の形。
     判断の前と取り下げは NULL で、求めるたびに基準の束から作る)。`applied_impact`は反映(CR を
     渡した文書の再生成)のときに付いた印の写し(app/detailed_design/impact/marks.py の Mark の形の
@@ -81,6 +84,8 @@ class ChangeRequest(Base):
     adds_requirement: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # Phase-96-3:追記
     origins: Mapped[list[dict] | None] = mapped_column(PortableJSON, nullable=True)
+    # Phase-102-2:追記
+    options: Mapped[dict | None] = mapped_column(PortableJSON, nullable=True)
     baseline_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("baselines.id", ondelete="CASCADE"), nullable=False
     )
@@ -92,6 +97,8 @@ class ChangeRequest(Base):
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     decision_memo: Mapped[str | None] = mapped_column(Text, nullable=True)
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Phase-102-2:追記
+    decision_option: Mapped[int | None] = mapped_column(Integer, nullable=True)
     decision_recorded_by: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

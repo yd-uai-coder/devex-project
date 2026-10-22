@@ -1,16 +1,17 @@
-# 作成：Phase-82-3｜更新：Phase-83-3,84-3,84-4,85-4,86-2,86-3,86-4,101-3
+# 作成：Phase-82-3｜更新：Phase-83-3,84-3,84-4,85-4,86-2,86-3,86-4,101-3,102-4
 # Phase-84-3:追記 ── fastapi.Response
 # Phase-85-4:追記 ── app.schemas.change_request.ChangeRequestComparisonRead
-from typing import Annotated
-
-from fastapi import APIRouter, Path, Response, status
-
 # Phase-83-3:追記 ── app.schemas.change_request.ChangeRequestImpactRead, app.schemas.change_request.ExcludedItemRead
 # Phase-84-3:追記 ── app.api.responses.content_disposition, app.change_requests.explanation_filename, app.schemas.change_request.ChangeRequestExplanationRead, app.services.change_request_service.ExplanationView
 # Phase-84-4:追記 ── app.schemas.change_request.SummaryEdit
 # Phase-86-2:追記 ── app.schemas.change_request.ChangeRequestVerificationRead, app.schemas.change_request.ChangeRequestVerify, app.schemas.change_request.DocumentChecksUpdate, app.services.change_request_service.VerificationView
 # Phase-86-3:追記 ── app.schemas.change_request.ChangeRequestReviewLink, app.schemas.change_request.ReviewRunBriefRead
 # Phase-86-4:追記 ── app.schemas.change_request.ChangeRequestTraceRead
+# Phase-102-4:追記 ── app.schemas.change_request.OptionDraftRead, app.services.change_request_service.OptionDraftView
+from typing import Annotated
+
+from fastapi import APIRouter, Path, Response, status
+
 from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
 from app.api.responses import content_disposition
 from app.change_requests import explanation_filename
@@ -30,6 +31,7 @@ from app.schemas.change_request import (
     ChangeRequestWithdraw,
     DocumentChecksUpdate,
     ExcludedItemRead,
+    OptionDraftRead,
     ReviewRunBriefRead,
     SummaryEdit,
 )
@@ -37,6 +39,7 @@ from app.services.change_request_service import (
     ChangeRequestService,
     ChangeRequestView,
     ExplanationView,
+    OptionDraftView,
     VerificationView,
 )
 
@@ -57,6 +60,13 @@ def _explanation(view: ExplanationView) -> ChangeRequestExplanationRead:
         output=view.output,
         summary=view.summary,
         summary_state=view.summary_state,
+    )
+
+
+# Phase-102-4:追記
+def _option_draft(view: OptionDraftView) -> OptionDraftRead:
+    return OptionDraftRead.build(
+        view.draft, view.options, view.check, current_fingerprint=view.current_fingerprint
     )
 
 
@@ -245,6 +255,45 @@ async def confirm_change_request_summary(
         current_project, number, actor_id=current_user.id
     )
     return _explanation(view)
+
+
+# Phase-102-4:追記
+@router.post("/{number}/options/draft", response_model=OptionDraftRead)
+async def generate_change_request_option_draft(
+    number: ChangeRequestNumber,
+    session: SessionDep,
+    current_project: CurrentProjectDep,
+    current_user: CurrentUserDep,
+) -> OptionDraftRead:
+    """説明書から、LLM で選択肢(案)の下書きを作る(未確認。前の下書きは上書き)。下書き・説明済み
+    だけで、ほかは409。"""
+    view = await ChangeRequestService(session).generate_option_draft(
+        current_project, number, user_id=current_user.id
+    )
+    return _option_draft(view)
+
+
+@router.get("/{number}/options/draft", response_model=OptionDraftRead)
+async def get_change_request_option_draft(
+    number: ChangeRequestNumber, session: SessionDep, current_project: CurrentProjectDep
+) -> OptionDraftRead:
+    """選択肢の下書きと照合の結果。下書きが無ければ404 `CR_OPTION_DRAFT_NOT_FOUND`。"""
+    return _option_draft(await ChangeRequestService(session).option_draft(current_project, number))
+
+
+@router.post("/{number}/options/draft/adopt", response_model=ChangeRequestRead)
+async def adopt_change_request_option_draft(
+    number: ChangeRequestNumber,
+    session: SessionDep,
+    current_project: CurrentProjectDep,
+    current_user: CurrentUserDep,
+) -> ChangeRequestRead:
+    """下書きの案を CR の案に取り込む(説明済みは下書きに戻る)。案の規則か CR の対象に合わなければ
+    422 `CR_OPTION_INVALID`、下書きが無ければ404。"""
+    view = await ChangeRequestService(session).adopt_option_draft(
+        current_project, number, actor_id=current_user.id
+    )
+    return _read(view)
 
 
 @router.patch("/{number}", response_model=ChangeRequestRead)

@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2,56-2,68-3,84-4
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2,56-2,68-3,84-4,102-4
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 # Phase-52-2:追記 ── app.review.schemas.ReviewFindingOut, app.review.schemas.ReviewOutput
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
@@ -18,13 +18,21 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 # Phase-45-3:追記 ── app.documents.implementation_plan.drafting(plan_doc), app.documents.internal_design.drafting(internal_doc)
 # Phase-54-5:追記 ── app.review.fix_check.FixCheckOut
 # Phase-56-2:追記 ── app.documents.test_spec.drafting(GeneratedCase, TestSpecGenerationOutput)
-from __future__ import annotations
-
 # Phase-10-5:追記 ── app.uml.generation.schemas(UML生成の出力スキーマ一式)
 # Phase-34-2:追記 ── re, app.hearing.POINT_DEFS,
 #   app.schemas.hearing(HearingPointsJudgement, JudgedPointOut)
 # Phase-34-2：削除 ── app.schemas.generation.HearingCompletionCheck
 # Phase-48-2:追記 ── app.detailed_design.procedure_drafting.GeneratedBranch
+# Phase-16-4:追記 ── app.detailed_design.drafting.FunctionListGenerationOutput, GeneratedFunction
+# Phase-17-2:追記 ── app.detailed_design.data_flow_drafting.GeneratedGroupProcess, GeneratedSummary, GroupDfdGenerationOutput, ProcessSummaryGenerationOutput
+# Phase-18-2:追記 ── app.detailed_design.data_model_drafting.CrudGenerationOutput, DataModelErOutput, DraftedColumn, DraftedTable, GeneratedCrudCell
+# Phase-19-2:追記 ── app.detailed_design.structure_drafting.GeneratedModuleRow, ModuleListGenerationOutput
+# Phase-20-2:追記 ── app.detailed_design.procedure_drafting.GeneratedStep, ProcedureGenerationOutput
+# Phase-21-2:追記 ── app.detailed_design.logic_drafting.GeneratedPseudoStep, LogicGenerationOutput
+# Phase-23-4:追記 ── app.detailed_design.plan_drafting(CrossCuttingGenerationOutput, GeneratedCrossCutting, GeneratedMilestone, GeneratedRisk, GeneratedTask, PlanGenerationOutput)
+# Phase-32-1:追記 ── app.detailed_design.procedure_doc_drafting(GeneratedFinding, GeneratedSimpleFinding, GeneratedTestPoint, GeneratedUnitFile, ProcedureDocGenerationOutput, SimpleProcedureDocGenerationOutput)
+# Phase-102-4:追記 ── app.change_requests.option_drafting.OptionDraftItemOut, app.change_requests.option_drafting.OptionDraftOut, app.change_requests.option_drafting.OptionDraftTargetOut
+from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
@@ -34,14 +42,11 @@ from typing import Any
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
 
-# Phase-16-4:追記 ── app.detailed_design.drafting.FunctionListGenerationOutput, GeneratedFunction
-# Phase-17-2:追記 ── app.detailed_design.data_flow_drafting.GeneratedGroupProcess, GeneratedSummary, GroupDfdGenerationOutput, ProcessSummaryGenerationOutput
-# Phase-18-2:追記 ── app.detailed_design.data_model_drafting.CrudGenerationOutput, DataModelErOutput, DraftedColumn, DraftedTable, GeneratedCrudCell
-# Phase-19-2:追記 ── app.detailed_design.structure_drafting.GeneratedModuleRow, ModuleListGenerationOutput
-# Phase-20-2:追記 ── app.detailed_design.procedure_drafting.GeneratedStep, ProcedureGenerationOutput
-# Phase-21-2:追記 ── app.detailed_design.logic_drafting.GeneratedPseudoStep, LogicGenerationOutput
-# Phase-23-4:追記 ── app.detailed_design.plan_drafting(CrossCuttingGenerationOutput, GeneratedCrossCutting, GeneratedMilestone, GeneratedRisk, GeneratedTask, PlanGenerationOutput)
-# Phase-32-1:追記 ── app.detailed_design.procedure_doc_drafting(GeneratedFinding, GeneratedSimpleFinding, GeneratedTestPoint, GeneratedUnitFile, ProcedureDocGenerationOutput, SimpleProcedureDocGenerationOutput)
+from app.change_requests.option_drafting import (
+    OptionDraftItemOut,
+    OptionDraftOut,
+    OptionDraftTargetOut,
+)
 from app.detailed_design.data_flow_drafting import (
     GeneratedGroupProcess,
     GeneratedSummary,
@@ -132,6 +137,9 @@ _TURNS_UNTIL_SUFFICIENT = 4
 # Phase-34-2:追記
 # 判定のLLMに見せる発言の番号([#n])。根拠の番号として返す
 _MESSAGE_NUMBER = re.compile(r"^\[#(\d+)\] ")
+# Phase-102-4:追記
+# 説明書の「2. 対象の要件」の表の行の要件 ID(選択肢の下書きの偽物が案の対象にする)
+_TARGET_ROW = re.compile(r"^\| ((?:FR|NFR|CON)-\d+) \|", re.MULTILINE)
 
 # Phase-35-2:追記
 # 返信のシステムプロンプトにある「カードにしてよい観点」の行(- キー: 観点(例: ...))
@@ -856,6 +864,31 @@ _SELF_DIAGNOSIS_REPLY = "[E2E Fake] 自己診断: 特に致命的な不足点は
 _CR_SUMMARY_REPLY = "[E2E Fake] 今回の変更の内容と、見直しが要る設計の範囲を説明書にまとめました。"
 
 
+# Phase-102-4:追記
+def _option_draft(messages: list[Any]) -> OptionDraftOut:
+    """選択肢の下書きの偽物。説明書の2節の対象の要件から、先頭の要件だけを変える案と、すべてを
+    変える案の2つを作り、1つ目をおすすめにする(文に要件 ID・数字を書かず、照合で印が付かない)。"""
+    text = "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+    section = text.split("## 2. ", 1)[-1].split("\n## ", 1)[0]
+    ids = list(dict.fromkeys(_TARGET_ROW.findall(section)))
+    return OptionDraftOut(
+        options=[
+            OptionDraftItemOut(
+                name="[E2E Fake] 小さく直す",
+                targets=[OptionDraftTargetOut(requirement_id=i) for i in ids[:1]],
+                outcome="[E2E Fake] 手間は小さいが、残りの要件は今のまま。",
+            ),
+            OptionDraftItemOut(
+                name="[E2E Fake] まとめて直す",
+                targets=[OptionDraftTargetOut(requirement_id=i) for i in ids],
+                outcome="[E2E Fake] 手間は大きいが、関わる要件をそろえて直せる。",
+            ),
+        ],
+        recommended=1,
+        reason="[E2E Fake] 早く確かめられる。",
+    )
+
+
 class _FakeChunk:
     """`astream()`が返すストリーミングチャンクを模した最小オブジェクト(`.content`のみ持つ)。"""
 
@@ -1046,6 +1079,9 @@ class _FakeStructuredE2e:
         # Phase-54-5:追記
         if self._schema is FixCheckOut:
             return _FIX_CHECK_OUTPUT
+        # Phase-102-4:追記
+        if self._schema is OptionDraftOut:
+            return _option_draft(messages)
         # ヒアリング・UML生成スキーマ以外のスキーマが追加された場合は
         # 「対応漏れ」に気づけるよう黙って汎用値を返さず例外にする。
         raise NotImplementedError(f"E2eFakeLLMが未対応のスキーマ: {self._schema}")

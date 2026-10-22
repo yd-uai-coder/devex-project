@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整),36-2,37-2,39-1,45-3,84-4
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整),36-2,37-2,39-1,45-3,84-4,102-4
 # 写経レベル: コア ── 実機検証で発見した2件の不具合(ヒアリング完了判定の誤カウント、
 # doc_type判別の誤マッチ)の回帰テスト。当初はPlaywright(Phase 4-4)のみで検証する設計にして
 # いたが、両方ともpytestレベルの単体テストで安価に検知できる性質のバグだったため、事後的に
@@ -14,12 +14,24 @@
 # Phase-45-3:追記 ── app.detailed_design.simple_procedure.parse_internal_design, tests.fixtures.simple_documents.e2e_fake_simple_documents
 # Phase-45-3：削除 ── app.services.doc_generator_service._DOC_TYPE_PROMPTS
 # Phase-84-4:追記 ── app.change_requests.build_summary_messages
+# Phase-102-4:追記 ── tests.fixtures.change_impact.impact_documents, tests.fixtures.change_impact.impact_stages, app.change_requests.ChangeRequestFacts, app.change_requests.OptionDraftOut, app.change_requests.Target, app.change_requests.build_explanation, app.change_requests.build_option_draft_messages, app.change_requests.check_option_draft, app.change_requests.draft_to_options, app.change_requests.predict_from_snapshots
 from langchain_core.messages import HumanMessage, SystemMessage
+from tests.fixtures.change_impact import impact_documents, impact_stages
 from tests.fixtures.external_design import e2e_fake_external_design_md
 from tests.fixtures.simple_documents import e2e_fake_simple_documents
 
 from app.ai.llm.fake import E2eFakeLLM
-from app.change_requests import build_summary_messages
+from app.change_requests import (
+    ChangeRequestFacts,
+    OptionDraftOut,
+    Target,
+    build_explanation,
+    build_option_draft_messages,
+    build_summary_messages,
+    check_option_draft,
+    draft_to_options,
+    predict_from_snapshots,
+)
 from app.detailed_design.plan import unit_ids
 from app.detailed_design.simple_procedure import parse_internal_design, parse_wbs
 from app.documents.requirements import build_model, render_requirements
@@ -200,6 +212,42 @@ async def test_change_request_summary_prompt_produces_summary_reply() -> None:
     assert "[E2E Fake]" in str(reply.content) and "説明書" in str(reply.content)
     body = str(reply.content).removeprefix("[E2E Fake]")
     assert not any(ch.isdigit() for ch in body)  # 照合で印が付かない
+
+
+# Phase-102-4:追記
+async def test_change_request_option_draft_uses_the_targets_of_the_explanation() -> None:
+    """選択肢の下書き(本物のプロンプトと説明書)には、2節の対象の要件から2つの案を返し、照合を
+    通る(取り込める・説明書に無い要件 ID・数字が無い)。説明書の書式を変えたときの契約テスト。"""
+    snapshots = {
+        **impact_documents(),
+        **{f"stage:{n}": model for n, model in impact_stages().items()},
+    }
+    targets = [Target("FR-001"), Target("FR-002")]
+    facts = ChangeRequestFacts(
+        number=1,
+        title="題",
+        status="draft",
+        content="内容",
+        background_source="meeting",
+        background_date=None,
+        background_memo="",
+        targets=tuple(targets),
+        adds_requirement=False,
+        baseline_number=1,
+    )
+    prediction = predict_from_snapshots(snapshots, targets, adds_requirement=False)
+    explanation = build_explanation(facts, prediction, snapshots, [], {})
+
+    structured = E2eFakeLLM().with_structured_output(OptionDraftOut)
+    result = await structured.ainvoke(build_option_draft_messages(explanation.markdown))
+
+    assert isinstance(result, OptionDraftOut)
+    options = draft_to_options(result)
+    assert [[t.requirement_id for t in o.targets] for o in options.items] == [
+        ["FR-001"],
+        ["FR-001", "FR-002"],
+    ]
+    assert check_option_draft(options, explanation, targets, False).ok
 
 
 async def test_hearing_reply_is_returned_for_ordinary_chat_turn() -> None:
