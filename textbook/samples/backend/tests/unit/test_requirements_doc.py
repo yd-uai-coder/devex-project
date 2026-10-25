@@ -1,4 +1,4 @@
-# 作成：Phase-36-1｜更新：Phase-36(完了後の調整),40-1,47-1
+# 作成：Phase-36-1｜更新：Phase-36(完了後の調整),40-1,47-1,105-3
 """要件定義書の model・組み立て・md・検証(純粋関数)。
 
 SUT: app/documents/requirements の各関数。ドライバ: このテスト。
@@ -172,7 +172,10 @@ def test_build_model_assigns_ids_caps_sources_and_normalizes() -> None:
     assert model.rows[1].priority == "Must"  # 知らない優先度は Must
     assert model.rows[2].category == "可用性"  # NFR は IPA の大項目にそろえる
     assert model.rows[3].category == "技術スタック"
-    assert model.next_seq == {"FR": 3, "NFR": 2, "CON": 2}
+    # Phase-105-3：更新
+    # assert model.next_seq == {"FR": 3, "NFR": 2, "CON": 2}
+    # ↓↓
+    assert model.next_seq == {"FR": 3, "NFR": 2, "CON": 2, "U": 2}
     # 生成した時点の観点の状態を写して持つ(付録・検証が読む)
     assert model.point_statuses["availability"] == "adopted"
     assert model.point_statuses["security"] == "open"

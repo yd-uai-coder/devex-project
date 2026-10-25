@@ -1,4 +1,4 @@
-# 作成：Phase-91-1｜更新：Phase-92-1,93-1,93-4,95-1,97-1
+# 作成：Phase-91-1｜更新：Phase-92-1,93-1,93-4,95-1,97-1,105-2
 # Phase-95-1：更新(docstring: モジュールの一覧に history を足した)
 # Phase-97-1：更新(docstring: モジュールの一覧に status を足した)
 # Phase-92-1：更新(docstring: モジュールの一覧に protection を足した)
@@ -18,6 +18,7 @@ docs/internal_design.md 3.3節「12. 合意の精度」。
 # Phase-93-4:追記 ── app.agreements.items.change_request_items, app.agreements.items.kind_of
 # Phase-95-1:追記 ── app.agreements.history.HISTORY_EVENT_LABEL, app.agreements.history.HISTORY_EVENTS, app.agreements.history.RESTORE_REASON_LABEL, app.agreements.history.ChangeRequestRef, app.agreements.history.ElementHistory, app.agreements.history.HistoryEntry, app.agreements.history.HistoryEvent, app.agreements.history.RecordFacts, app.agreements.history.RelatedChangeRequest, app.agreements.history.VersionFacts, app.agreements.history.element_history
 # Phase-97-1:追記 ── app.agreements.status.ELEMENT_STATE_LABEL, app.agreements.status.ELEMENT_STATES, app.agreements.status.CurrentAgreement, app.agreements.status.DocumentAgreementStatus, app.agreements.status.ElementState, app.agreements.status.ElementStatus, app.agreements.status.RestoredElement, app.agreements.status.element_states, app.agreements.status.restored_elements
+# Phase-105-2:追記 ── app.agreements.items.service_match_key
 from app.agreements.history import (
     HISTORY_EVENT_LABEL,
     HISTORY_EVENTS,
@@ -43,6 +44,7 @@ from app.agreements.items import (
     integration_key,
     kind_of,
     removed_keys,
+    service_match_key,
 )
 from app.agreements.origins import (
     ADOPT_LABEL,
@@ -136,4 +138,6 @@ __all__ = [
     "requirement_key",
     # Phase-97-1:追記
     "restored_elements",
+    # Phase-105-2:追記
+    "service_match_key",
 ]

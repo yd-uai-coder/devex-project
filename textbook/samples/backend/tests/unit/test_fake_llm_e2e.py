@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整),36-2,37-2,39-1,45-3,84-4,102-4
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,24(完了後の調整),31-1,34-2,35-2,35(完了後の調整),36-2,37-2,39-1,45-3,84-4,102-4,105-1,105-3
 # 写経レベル: コア ── 実機検証で発見した2件の不具合(ヒアリング完了判定の誤カウント、
 # doc_type判別の誤マッチ)の回帰テスト。当初はPlaywright(Phase 4-4)のみで検証する設計にして
 # いたが、両方ともpytestレベルの単体テストで安価に検知できる性質のバグだったため、事後的に
@@ -15,12 +15,14 @@
 # Phase-45-3：削除 ── app.services.doc_generator_service._DOC_TYPE_PROMPTS
 # Phase-84-4:追記 ── app.change_requests.build_summary_messages
 # Phase-102-4:追記 ── tests.fixtures.change_impact.impact_documents, tests.fixtures.change_impact.impact_stages, app.change_requests.ChangeRequestFacts, app.change_requests.OptionDraftOut, app.change_requests.Target, app.change_requests.build_explanation, app.change_requests.build_option_draft_messages, app.change_requests.check_option_draft, app.change_requests.draft_to_options, app.change_requests.predict_from_snapshots
+# Phase-105-1:追記 ── app.ai.llm.paraphrase.PARAPHRASE_MARK, app.ai.llm.paraphrase.PARAPHRASE_SUFFIX, app.detailed_design.drafting.FunctionListGenerationOutput, app.detailed_design.drafting.build_function_list_messages, app.documents.external_design.build_model, app.documents.external_design.render_external_design, app.documents.external_design.drafting.ExternalDesignGenerationOutput, app.documents.external_design.drafting.build_external_design_messages, app.documents.external_design.drafting.to_draft
 from langchain_core.messages import HumanMessage, SystemMessage
 from tests.fixtures.change_impact import impact_documents, impact_stages
 from tests.fixtures.external_design import e2e_fake_external_design_md
 from tests.fixtures.simple_documents import e2e_fake_simple_documents
 
 from app.ai.llm.fake import E2eFakeLLM
+from app.ai.llm.paraphrase import PARAPHRASE_MARK, PARAPHRASE_SUFFIX
 from app.change_requests import (
     ChangeRequestFacts,
     OptionDraftOut,
@@ -32,8 +34,19 @@ from app.change_requests import (
     draft_to_options,
     predict_from_snapshots,
 )
+from app.detailed_design.drafting import (
+    FunctionListGenerationOutput,
+    build_function_list_messages,
+)
 from app.detailed_design.plan import unit_ids
 from app.detailed_design.simple_procedure import parse_internal_design, parse_wbs
+from app.documents.external_design import build_model as build_external_model
+from app.documents.external_design import render_external_design
+from app.documents.external_design.drafting import (
+    ExternalDesignGenerationOutput,
+    build_external_design_messages,
+)
+from app.documents.external_design.drafting import to_draft as to_external_draft
 from app.documents.requirements import build_model, render_requirements
 from app.documents.requirements.drafting import (
     RequirementsGenerationOutput,
@@ -368,3 +381,84 @@ async def test_external_design_output_renders_with_e2e_marker() -> None:
     assert "# 2. 外部設計書" in md
     assert "| SCR-001 | 予約画面 |" in md
     assert "FR-001" in md and "FR-002" in md
+
+
+# Phase-105-1:追記
+async def _paraphrase_flow(conversation: str) -> tuple[
+    RequirementsGenerationOutput,
+    RequirementsGenerationOutput,
+    ExternalDesignGenerationOutput,
+    ExternalDesignGenerationOutput,
+    FunctionListGenerationOutput,
+    FunctionListGenerationOutput,
+]:
+    """要件定義書 → 外部設計書 → 段階1 を、本物のプロンプトで生成し、もう一度作り直す。"""
+    llm = E2eFakeLLM()
+    states = {d.key: PointState(d.key, "decided", "決定") for d in POINT_DEFS}
+    req_first = await _requirements(
+        llm, build_requirements_messages(conversation, states, None, None)
+    )
+    requirements = build_model(to_draft(req_first), None, states, "personal")
+    req_second = await _requirements(
+        llm, build_requirements_messages(conversation, states, "personal", requirements)
+    )
+    requirements_md = render_requirements(requirements)
+    external = llm.with_structured_output(ExternalDesignGenerationOutput)
+    ext_first = await external.ainvoke(build_external_design_messages(requirements_md, None))
+    assert isinstance(ext_first, ExternalDesignGenerationOutput)
+    design = build_external_model(to_external_draft(ext_first), None, requirements)
+    ext_second = await external.ainvoke(build_external_design_messages(requirements_md, design))
+    assert isinstance(ext_second, ExternalDesignGenerationOutput)
+    redesign = build_external_model(to_external_draft(ext_second), design, requirements)
+    functions = llm.with_structured_output(FunctionListGenerationOutput)
+    fn_first = await functions.ainvoke(
+        build_function_list_messages(render_external_design(design))
+    )
+    fn_second = await functions.ainvoke(
+        build_function_list_messages(render_external_design(redesign))
+    )
+    assert isinstance(fn_first, FunctionListGenerationOutput)
+    assert isinstance(fn_second, FunctionListGenerationOutput)
+    return req_first, req_second, ext_first, ext_second, fn_first, fn_second
+
+
+async def test_marked_project_is_paraphrased_on_regeneration() -> None:
+    """会話に言い換えの印があると、初回は印を下流へ写して推測の利用者と外部連携を足し、作り直すと
+    利用者・画面・外部連携・処理の名前を言い換える(要件の ID は引き継ぐ)。"""
+    req_first, req_second, ext_first, ext_second, fn_first, fn_second = await _paraphrase_flow(
+        f"備品を予約したい {PARAPHRASE_MARK}"
+    )
+
+    assert PARAPHRASE_MARK in req_first.purpose
+    assert [(u.user, u.source) for u in req_first.users] == [
+        ("[E2E Fake] 社員", "user"),
+        ("[E2E Fake] 総務の担当者", "assumed"),
+    ]
+    assert [u.user for u in req_second.users] == [
+        f"[E2E Fake] 社員{PARAPHRASE_SUFFIX}",
+        f"[E2E Fake] 総務の担当者{PARAPHRASE_SUFFIX}",
+    ]
+    assert all(r.prev_id for r in req_second.requirements)
+    assert PARAPHRASE_MARK in ext_first.overview
+    assert [i.service for i in ext_first.integrations] == ["[E2E Fake] 予約通知 API"]
+    assert [i.service for i in ext_second.integrations] == ["[E2E Fake] 予約通知"]
+    assert [s.name for s in ext_second.screens] == [f"予約画面{PARAPHRASE_SUFFIX}"]
+    assert [f.name for f in fn_first.functions] == ["予約を登録する", "予約の一覧を返す"]
+    assert all(f.name.endswith(PARAPHRASE_SUFFIX) for f in fn_second.functions)
+
+
+async def test_unmarked_project_keeps_the_same_names() -> None:
+    """印の無いプロジェクトは、作り直しても同じ名前・同じ要素を返す(既存の E2E の前提)。"""
+    req_first, req_second, ext_first, ext_second, fn_first, fn_second = await _paraphrase_flow(
+        "備品を予約したい"
+    )
+
+    # Phase-105-3：更新
+    # assert req_second.users == req_first.users
+    # ↓↓
+    assert [u.user for u in req_second.users] == [u.user for u in req_first.users]
+    assert [u.prev_id for u in req_second.users] == ["U-001"]
+    assert [u.source for u in req_first.users] == ["user"]
+    assert PARAPHRASE_MARK not in req_first.purpose
+    assert ext_first.integrations == [] and ext_second == ext_first
+    assert fn_second == fn_first

@@ -1,4 +1,5 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2,56-2,68-3,84-4,102-4
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2,56-2,68-3,84-4,102-4,105-1,105-3
+# Phase-105-1：更新(docstring: モジュールに言い換えのモードを足した)
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 # Phase-52-2:追記 ── app.review.schemas.ReviewFindingOut, app.review.schemas.ReviewOutput
 """ブラウザ経由のE2Eテスト(Phase 4-4)専用の決定論的LLMスタブ。
@@ -10,6 +11,10 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 そのため、LLMに渡された`messages`自体(システムプロンプトの文言・HumanMessageの件数)を
 手がかりに、外部から一切設定を注入されなくても意味のある応答を返せるよう、ステートレスかつ
 決定論的に応答を組み立てる設計にした。
+
+会話に言い換えの印(`app/ai/llm/paraphrase.py`の`PARAPHRASE_MARK`)があるプロジェクトだけ、
+再生成のたびに名称を言い換える(名前で同一性を決める照合を E2E で確かめるため)。印の無い
+プロジェクトの応答は変えない。
 """
 # Phase-24：削除 ── app.uml.generation.schemas.DfdGenerationOutput, app.uml.generation.schemas.ErGenerationOutput, app.uml.generation.schemas.GeneratedColumn, app.uml.generation.schemas.GeneratedProcess, app.uml.generation.schemas.GeneratedTable
 # Phase-35-2:追記 ── app.hearing.is_point_key, app.schemas.hearing(CardOptionOut, CardOut, HearingReplyOut)
@@ -32,6 +37,8 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 # Phase-23-4:追記 ── app.detailed_design.plan_drafting(CrossCuttingGenerationOutput, GeneratedCrossCutting, GeneratedMilestone, GeneratedRisk, GeneratedTask, PlanGenerationOutput)
 # Phase-32-1:追記 ── app.detailed_design.procedure_doc_drafting(GeneratedFinding, GeneratedSimpleFinding, GeneratedTestPoint, GeneratedUnitFile, ProcedureDocGenerationOutput, SimpleProcedureDocGenerationOutput)
 # Phase-102-4:追記 ── app.change_requests.option_drafting.OptionDraftItemOut, app.change_requests.option_drafting.OptionDraftOut, app.change_requests.option_drafting.OptionDraftTargetOut
+# Phase-105-1:追記 ── app.ai.llm.paraphrase.PARAPHRASE_MARK, app.ai.llm.paraphrase.PARAPHRASE_SUFFIX, app.ai.llm.paraphrase.paraphrase_external_design, app.ai.llm.paraphrase.paraphrase_function_list, app.ai.llm.paraphrase.paraphrase_requirements, app.documents.external_design.drafting.GeneratedIntegration, app.documents.revision.NONE_TEXT
+# Phase-105-3:追記 ── app.ai.llm.paraphrase.base_name
 from __future__ import annotations
 
 import re
@@ -42,6 +49,14 @@ from typing import Any
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
 
+from app.ai.llm.paraphrase import (
+    PARAPHRASE_MARK,
+    PARAPHRASE_SUFFIX,
+    base_name,
+    paraphrase_external_design,
+    paraphrase_function_list,
+    paraphrase_requirements,
+)
 from app.change_requests.option_drafting import (
     OptionDraftItemOut,
     OptionDraftOut,
@@ -87,6 +102,7 @@ from app.detailed_design.structure_drafting import GeneratedModuleRow, ModuleLis
 from app.documents.external_design.drafting import (
     ExternalDesignGenerationOutput,
     GeneratedApi,
+    GeneratedIntegration,
     GeneratedScreen,
 )
 from app.documents.implementation_plan import drafting as plan_doc
@@ -96,6 +112,7 @@ from app.documents.requirements.drafting import (
     GeneratedUserScene,
     RequirementsGenerationOutput,
 )
+from app.documents.revision import NONE_TEXT
 from app.documents.test_spec.drafting import GeneratedCase, TestSpecGenerationOutput
 from app.hearing import POINT_DEFS, is_point_key
 from app.review.fix_check import FixCheckOut
@@ -971,7 +988,10 @@ _PREVIOUS_SECTION = "## 前の版の要件\n"
 
 def _previous_ids(messages: list[Any]) -> dict[str, str]:
     """プロンプトの【前の版の要件】(`ID|本文`の行)から、本文 → ID を読む(ID の引き継ぎの契約)。"""
-    human = "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+    # Phase-105-1：更新
+    # human = "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+    # ↓↓
+    human = _human_text(messages)
     if _PREVIOUS_SECTION not in human:
         return {}
     section = human.split(_PREVIOUS_SECTION, 1)[1].split("\n\n", 1)[0]
@@ -979,12 +999,71 @@ def _previous_ids(messages: list[Any]) -> dict[str, str]:
     return {text: req_id for req_id, text in pairs}
 
 
+# Phase-105-1:追記
+def _human_text(messages: list[Any]) -> str:
+    return "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+
+
+def _paraphrasing(messages: list[Any]) -> bool:
+    """言い換えのモード。会話(下流の文書では、上流の文書の md)に印があるプロジェクトだけ。"""
+    return PARAPHRASE_MARK in _human_text(messages)
+
+
+# Phase-105-3:追記
+_PREVIOUS_USERS_SECTION = "## 前の版の利用者\n"
+
+
+def _previous_user_ids(messages: list[Any]) -> dict[str, str]:
+    """プロンプトの【前の版の利用者】(`ID|利用者: 場面`の行)から、言い換えの語を外した利用者の
+    名前 → ID を読む(言い換えた名前でも前の版の ID を指す。実 LLM に頼む契約と同じ)。"""
+    human = _human_text(messages)
+    if _PREVIOUS_USERS_SECTION not in human:
+        return {}
+    section = human.split(_PREVIOUS_USERS_SECTION, 1)[1].split("\n\n", 1)[0]
+    pairs = [line.split("|", 1) for line in section.splitlines() if "|" in line]
+    return {base_name(rest.split(": ", 1)[0]): user_id for user_id, rest in pairs}
+
+
 def _requirements_output(messages: list[Any]) -> RequirementsGenerationOutput:
-    """要件定義書の下書きの偽物。前の版に同じ本文の要件があれば、その ID を prev_id に返す。"""
+    # Phase-105-1：更新
+    # """要件定義書の下書きの偽物。前の版に同じ本文の要件があれば、その ID を prev_id に返す。"""
+    # ↓↓
+    """要件定義書の下書きの偽物。前の版に同じ本文の要件があれば、その ID を prev_id に返す。
+
+    言い換えのモードでは、目的に印を写して下流の文書のプロンプトへ届け、推測の利用者を1行足し、
+    再生成(前の版の要件がある)なら利用者の名前を言い換える。"""
     previous = _previous_ids(messages)
+    # Phase-105-1:追記
+    paraphrasing = _paraphrasing(messages)
+    output = _base_requirements_output(previous, paraphrasing)
+    # Phase-105-3:追記
+    user_ids = _previous_user_ids(messages)
+    users = [u.model_copy(update={"prev_id": user_ids.get(u.user, "")}) for u in output.users]
+    output = output.model_copy(update={"users": users})
+    # Phase-105-1:追記
+    return paraphrase_requirements(output) if paraphrasing and previous else output
+
+
+def _base_requirements_output(
+    previous: dict[str, str], paraphrasing: bool
+) -> RequirementsGenerationOutput:
+    users = [GeneratedUserScene(user="[E2E Fake] 社員", scene="備品を借りるとき", source="user")]
+    if paraphrasing:
+        users.append(
+            GeneratedUserScene(
+                user="[E2E Fake] 総務の担当者",
+                scene="備品の貸し出しを確かめるとき",
+                source="assumed",
+            )
+        )
+    purpose = "[E2E Fake] 備品の予約を楽にする"
     return RequirementsGenerationOutput(
-        purpose="[E2E Fake] 備品の予約を楽にする",
-        users=[GeneratedUserScene(user="[E2E Fake] 社員", scene="備品を借りるとき", source="user")],
+        # Phase-105-1：更新
+        # purpose="[E2E Fake] 備品の予約を楽にする",
+        # users=[GeneratedUserScene(user="[E2E Fake] 社員", scene="備品を借りるとき", source="user")],
+        # ↓↓
+        purpose=f"{purpose} {PARAPHRASE_MARK}" if paraphrasing else purpose,
+        users=users,
         in_scope=["[E2E Fake] 備品の予約"],
         out_of_scope=["[E2E Fake] 決済"],
         requirements=[
@@ -1000,6 +1079,48 @@ def _requirements_output(messages: list[Any]) -> RequirementsGenerationOutput:
             for kind, priority, category, text, source, point in _REQUIREMENTS
         ],
     )
+
+
+# Phase-105-1:追記
+# 言い換えのモードの外部設計書に足す外部連携(要件は偽の要件定義書の FR-001)
+_PARAPHRASE_INTEGRATION = GeneratedIntegration(
+    service="[E2E Fake] 予約通知 API",
+    purpose="予約を利用者に知らせる",
+    auth="API キー",
+    timing="予約の登録のとき",
+    req_ids=["FR-001"],
+)
+_PREVIOUS_SCREENS = "## 前の版の画面\n"
+
+
+def _external_design_output(messages: list[Any]) -> ExternalDesignGenerationOutput:
+    """外部設計書の下書きの偽物。言い換えのモードでは、概要に印を写して段階1 のプロンプトへ届け、
+    外部連携を1行足し、再生成(前の版の画面がある)なら画面名とサービス名を言い換える。"""
+    if not _paraphrasing(messages):
+        return _EXTERNAL_DESIGN_OUTPUT
+    output = _EXTERNAL_DESIGN_OUTPUT.model_copy(
+        update={
+            "overview": f"{_EXTERNAL_DESIGN_OUTPUT.overview} {PARAPHRASE_MARK}",
+            "integrations": [_PARAPHRASE_INTEGRATION],
+        }
+    )
+    human = _human_text(messages)
+    regenerating = (
+        _PREVIOUS_SCREENS in human
+        and not human.split(_PREVIOUS_SCREENS, 1)[1].startswith(NONE_TEXT)
+    )
+    return paraphrase_external_design(output) if regenerating else output
+
+
+def _function_list_output(messages: list[Any]) -> FunctionListGenerationOutput:
+    """段階1 の下書きの偽物。言い換えのモードで、外部設計書が言い換えた名前を持つ(再生成した)
+    なら、処理の名称を言い換える(API の処理はトリガーで、ID を引き継ぐ)。"""
+    output = _UML_OUTPUTS[FunctionListGenerationOutput]
+    assert isinstance(output, FunctionListGenerationOutput)
+    human = _human_text(messages)
+    if PARAPHRASE_MARK in human and PARAPHRASE_SUFFIX in human:
+        return paraphrase_function_list(output)
+    return output
 
 
 class _FakeStructuredE2e:
@@ -1025,6 +1146,9 @@ class _FakeStructuredE2e:
         return {"raw": raw, "parsed": parsed, "parsing_error": None}
 
     def _parsed_for(self, messages: list[Any]) -> BaseModel:
+        # Phase-105-1:追記
+        if self._schema is FunctionListGenerationOutput:
+            return _function_list_output(messages)
         if self._schema in _UML_OUTPUTS:
             return _UML_OUTPUTS[self._schema]
         # Phase-34-2：更新
@@ -1064,7 +1188,10 @@ class _FakeStructuredE2e:
             return _requirements_output(messages)
         # Phase-37-2:追記
         if self._schema is ExternalDesignGenerationOutput:
-            return _EXTERNAL_DESIGN_OUTPUT
+            # Phase-105-1：更新
+            # return _EXTERNAL_DESIGN_OUTPUT
+            # ↓↓
+            return _external_design_output(messages)
         # Phase-45-3:追記
         if self._schema is internal_doc.InternalDesignGenerationOutput:
             return _INTERNAL_DESIGN_OUTPUT

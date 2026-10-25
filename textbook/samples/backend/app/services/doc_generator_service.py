@@ -1,4 +1,5 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3,93-3,93-4,94-3
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3,93-3,93-4,94-3,105-3
+# Phase-105-3：更新(docstring: apply_adopt_user は利用者を ID で指す)
 # Phase-94-3：更新(docstring: adopt_requirement を commit だけにし、中身を apply_adopt_requirement〈採用した行を確認済みにすることを足した〉へ移した)
 # Phase-93-4：更新(docstring: generate が CR の反映で合意を更新することを足した)
 # Phase-93-3：更新(docstring: _generate_external_design が合意済みの画面・API・外部連携を守り、戻した要素を返すことを足した)
@@ -1271,18 +1272,29 @@ class DocGeneratorService:
 
     # Phase-94-3:追記
     async def apply_adopt_user(
-        self, project: Project, user: str, *, recorded_by: uuid.UUID | None = None
+        # Phase-105-3：更新
+        # self, project: Project, user: str, *, recorded_by: uuid.UUID | None = None
+        # ↓↓
+        self, project: Project, user_id: str, *, recorded_by: uuid.UUID | None = None
     ) -> GeneratedDocument:
-        """推測の利用者と使う場面(1.2 の行。利用者の名前で指す)を「採用」にする(commit は
+        """推測の利用者と使う場面(1.2 の行。ID で指す)を「採用」にする(commit は
         呼ぶ側。確認事項の一覧から使う)。要件の採用と同じく版は増やさず、詳細設計モードでは
         1.2 全体を合意として記録し、確認事項の一覧の項目を確認済みにする。生成中は409。要件定義書・
         その行が無ければ404、推測でない行は409。"""
         document, model = await self._requirements_for_adopt(project)
-        if model is None or all(u.user != user.strip() for u in model.users):
-            raise RequirementNotFoundError(f"User scene {user} not found")
-        adopted = mark_user_adopted(model, user)
+        # Phase-105-3：更新
+        # if model is None or all(u.user != user.strip() for u in model.users):
+        #     raise RequirementNotFoundError(f"User scene {user} not found")
+        # adopted = mark_user_adopted(model, user)
+        # ↓↓
+        if model is None or all(u.id != user_id.strip() for u in model.users):
+            raise RequirementNotFoundError(f"User scene {user_id} not found")
+        adopted = mark_user_adopted(model, user_id)
         if adopted is None:
-            raise RequirementNotAssumedError(f"User scene {user} is not assumed")
+            # Phase-105-3：更新
+            # raise RequirementNotAssumedError(f"User scene {user} is not assumed")
+            # ↓↓
+            raise RequirementNotAssumedError(f"User scene {user_id} is not assumed")
         await self._documents.replace_model(
             document,
             content=render_requirements(adopted),
@@ -1292,7 +1304,10 @@ class DocGeneratorService:
             await AgreementService(self._session).record_adopt_users(
                 project, adopted.users, recorded_by=recorded_by
             )
-            scene = next(u for u in adopted.users if u.user == user.strip())
+            # Phase-105-3：更新
+            # scene = next(u for u in adopted.users if u.user == user.strip())
+            # ↓↓
+            scene = next(u for u in adopted.users if u.id == user_id.strip())
             await ConfirmationRepository(self._session).mark_confirmed(
                 project.id, user_item(scene), updated_by=recorded_by
             )

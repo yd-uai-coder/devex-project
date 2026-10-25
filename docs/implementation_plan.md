@@ -235,7 +235,7 @@
   * Phase 102: 選択肢つきの説明 API(案・案ごとの規模・LLM の下書き・選んだ案での反映) ── **完了**([`textbook/Phase-102/Phase-102-introduction.md`](../textbook/Phase-102/Phase-102-introduction.md))
   * Phase 103: 共有リンク API(閲覧。トークン・期限・取り消し・説明済みとの結び付け・回数の上限) ── **完了**([`textbook/Phase-103/Phase-103-introduction.md`](../textbook/Phase-103/Phase-103-introduction.md))
   * Phase 104: 共有リンク API(コメントと合意・却下。合意の記録への入れ方) ── **完了**([`textbook/Phase-104/Phase-104-introduction.md`](../textbook/Phase-104/Phase-104-introduction.md))
-  * Phase 105: 名称を言い換える偽の LLM と、名前の揺れの直し(外部連携の重複・推測の利用者のキー)
+  * Phase 105: 名称を言い換える偽の LLM と、名前の揺れの直し(外部連携の重複・推測の利用者のキー) ── **完了**([`textbook/Phase-105/Phase-105-introduction.md`](../textbook/Phase-105/Phase-105-introduction.md))
   * Phase 106: 段階の参照の切れと、合意の周りの残り(API)
   * Phase 107: CR の画面(規模・選択肢・共有リンクの管理とコメント)
   * Phase 108: 共有リンクの画面(クライアント向け)
