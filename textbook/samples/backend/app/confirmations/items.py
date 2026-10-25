@@ -1,4 +1,5 @@
-# 作成：Phase-94-1｜更新：Phase-105-3
+# 作成：Phase-94-1｜更新：Phase-105-3,106-2
+# Phase-106-2：更新(docstring: モジュールに CR の反映で未確認に戻すことを足した)
 # Phase-105-3：更新(docstring: モジュールの推測の利用者のキーを ID にした)
 """確認事項の一覧の項目(推測の要件・推測の利用者・根拠が未決の観点)の導出と、推測の採用率
 (純粋関数)。
@@ -12,6 +13,9 @@ docs/external_design.md 2.15節。一覧は、今の要件定義書の model と
   ID を振る前の記録のキー(`user:<利用者の名前>`)は、`legacy_user_keys`で今の行の ID のキーに
   付け直す
 - 根拠が未決の観点: `point:<観点のキー>`
+
+CR の反映で文が変わった推測の要件は、確認済みでも未確認に戻す(`changed_requirement_keys`。
+戻した CR の番号を記録に残す)。
 
 観点の状態はチャットと観点の表で決める。一覧は観点を読むだけで、観点が決まれば次の組み立てで
 消える。
@@ -174,6 +178,24 @@ def confirmation_items(
             refs_of = tuple(dict.fromkeys(refs[key]))
             items.append(ConfirmationItem(point_item_key(key), "point", label, refs_of))
     return items
+
+
+# Phase-106-2:追記
+def changed_requirement_keys(
+    previous: RequirementsModel | None,
+    new: RequirementsModel | None,
+    requirement_ids: Iterable[str],
+) -> list[str]:
+    """CR の対象の要件のうち、反映の前後の要件定義書で文が変わった行の項目のキー(対象の順)。
+    前の版に無い行(新しい要件)と、反映で消えた行は含めない(消えた行は一覧に出ないので、
+    確認の記録はそのまま残す)。"""
+    before = {row.id: row.text for row in previous.rows} if previous else {}
+    after = {row.id: row.text for row in new.rows} if new else {}
+    return [
+        requirement_item_key(req_id)
+        for req_id in dict.fromkeys(requirement_ids)
+        if req_id in before and req_id in after and before[req_id] != after[req_id]
+    ]
 
 
 def adoption_counts(

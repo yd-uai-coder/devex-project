@@ -1,4 +1,4 @@
-# 作成：Phase-94-1｜更新：Phase-105-3
+# 作成：Phase-94-1｜更新：Phase-105-3,106-2
 """確認事項の一覧(ステージ12)の純粋関数。
 
 docs/internal_design.md 3.3節「12. 合意の精度」。
@@ -7,6 +7,7 @@ docs/internal_design.md 3.3節「12. 合意の精度」。
 """
 
 # Phase-105-3:追記 ── app.confirmations.items.legacy_user_keys
+# Phase-106-2:追記 ── app.confirmations.items.changed_requirement_keys
 from app.confirmations.items import (
     CONFIRMATION_KINDS,
     CONFIRMATION_STATUSES,
@@ -20,6 +21,7 @@ from app.confirmations.items import (
     ConfirmationStatus,
     Opportunity,
     adoption_counts,
+    changed_requirement_keys,
     confirmation_items,
     confirmation_kind_of,
     item_target,
@@ -44,6 +46,8 @@ __all__ = [
     "ConfirmationStatus",
     "Opportunity",
     "adoption_counts",
+    # Phase-106-2:追記
+    "changed_requirement_keys",
     "confirmation_items",
     "confirmation_kind_of",
     "item_target",

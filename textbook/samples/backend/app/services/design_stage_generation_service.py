@@ -1,4 +1,5 @@
-# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整),64-2,68-3,69-1,69-2,85-3
+# 作成：Phase-16-4｜更新：Phase-17-3,18-3,19-3,20-3,21-3,23-4,28-2,31-4,36-2,38-2,42-1,45-4,54-3,55(完了後の調整),64-2,68-3,69-1,69-2,85-3,106-1
+# Phase-106-1：更新(docstring: generate_plan は機能一覧に無い処理ID を捨てる)
 # Phase-85-3：更新(docstring: request_generation・execute が cr_number を受け、下書きにモデル名を残すことを足した)
 # 写経レベル: コア ── 受け付けと実行を分け、生成中の印・失敗の理由・止まった生成の回収を持つこと。段階2は DFD・データ項目も同じトランザクションで書く(Phase 17)。
 # Phase-23-4：更新(docstring: 段階7の生成を書いた)
@@ -59,6 +60,7 @@ UML図の生成(app/services/uml_generation_service.py)と同じ形で、生成�
 # Phase-68-3：削除 ── app.ai.llm.gemini.get_gemini_llm
 # Phase-68-3:追記 ── app.ai.llm.catalog.Purpose, app.services.llm_resolver.LlmResolver
 # Phase-85-3:追記 ── app.change_requests.join_instructions, app.services.change_request_service.ChangeRequestService, app.services.llm_resolver.injected_llm
+# Phase-106-1:追記 ── app.detailed_design.plan.drop_unknown_functions
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -124,6 +126,7 @@ from app.detailed_design.plan import (
     PLAN_STAGE,
     PlanModel,
     carry_over_unit_keys,
+    drop_unknown_functions,
     normalize_plan,
 )
 from app.detailed_design.plan_drafting import (
@@ -602,7 +605,8 @@ async def generate_plan(context: StageGenerationContext) -> dict:
 
     詳細設計書は 01〜06章だけを md にして渡す(07 横断事項は、この段階自身が作るため)。図は
     描かない(md の画像は入力に要らず、図を`exported`にもしない)。作り直しは全体を置き換える
-    (段階4と同じ)が、タスク名が同じ単位は前のキーを引き継ぐ(段階8の手順書を付けたままにする)。"""
+    (段階4と同じ)が、タスク名が同じ単位は前のキーを引き継ぐ(段階8の手順書を付けたままにする)。
+    AI が書いた処理ID のうち機能一覧に無いものは捨てる(段階2〜4の下書きと同じ)。"""
     project = await context.session.get(Project, context.project_id)
     if project is None:
         raise RuntimeError("project not found")
@@ -648,6 +652,8 @@ async def generate_plan(context: StageGenerationContext) -> dict:
     # model = normalize_plan(to_plan_model(crosscutting, plan_output), [row.path for row in modules])
     # ↓↓
     model = normalize_plan(to_plan_model(crosscutting, plan_output), paths)
+    # Phase-106-1:追記
+    model = drop_unknown_functions(model, (row.id for row in function_list.functions))
     # Phase-42-1：更新
     # return model.model_dump(mode="json")
     # ↓↓

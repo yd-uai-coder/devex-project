@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3,102-2,102-4,103-2,104-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3,102-2,102-4,103-2,104-3,106-5
+# Phase-106-5：更新(docstring: checked_origins の候補に段階1 の処理を足した)
 # Phase-102-2：更新(docstring: update が案を確かめ直す・decide が選んだ案の対象を CR の対象にする・copy_rejected が案も写す)
 # Phase-96-3：更新(docstring: update が予測の起点を確かめ直す)
 # Phase-95-3：更新(docstring: update が下書きの中の直しも直した項目の名前で時系列に残す)
@@ -1458,8 +1459,9 @@ def checked_origins(
     keys: Sequence[str], adds_requirement: bool, baseline: Baseline
 ) -> list[dict[str, str]] | None:
     """新しい要件の予測の起点(要素のキー)を確かめ、保存の形(`[{key, label}]`。選んだ順・重なりを
-    除く)にする。起点が無ければ None。新しい要件を足さない CR の起点と、基準の束の要件・画面・API に
-    無いキーは ChangeRequestTargetUnknownError。表示名は束の写しから写す(束は凍結されている)。"""
+    除く)にする。起点が無ければ None。新しい要件を足さない CR の起点と、基準の束の要件・画面・API・
+    段階1 の処理に無いキーは ChangeRequestTargetUnknownError。表示名は束の写しから写す(束は
+    凍結されている)。"""
     wanted = list(dict.fromkeys(key.strip() for key in keys if key.strip()))
     if not wanted:
         return None
@@ -1473,7 +1475,10 @@ def checked_origins(
     unknown = [key for key in wanted if key not in candidates]
     if unknown:
         raise ChangeRequestTargetUnknownError(
-            f"基準の合意済みの版(B-{baseline.number})に無い要件・画面・API です: "
+            # Phase-106-5：更新
+            # f"基準の合意済みの版(B-{baseline.number})に無い要件・画面・API です: "
+            # ↓↓
+            f"基準の合意済みの版(B-{baseline.number})に無い要件・画面・API・処理です: "
             f"{', '.join(unknown)}"
         )
     return [{"key": key, "label": candidates[key].label} for key in wanted]

@@ -1,4 +1,4 @@
-# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2,29-1,29-2,42-1,43-2,48-1,48-2,55(完了後の調整),83-2
+# 作成：Phase-15-2｜更新：Phase-16-1,16-2,17-1,18-1,19-1,20-1,20-3,21-1,23-1,26-1,27-1,27-2,28-1,28-2,29-1,29-2,42-1,43-2,48-1,48-2,55(完了後の調整),83-2,106-1
 # 写経レベル: 定型 ── re-export のみ。
 """詳細設計モード(ステージ4)のドメインロジック(純粋関数)。"""
 
@@ -24,6 +24,7 @@
 # Phase-48-2:追記 ── app.detailed_design.procedure.link_branch_refs
 # Phase-55(完了後の調整):追記 ── app.detailed_design.structure.component_element_layers
 # Phase-83-2:追記 ── app.detailed_design.data_model.ER_SNAPSHOT_KEY
+# Phase-106-1:追記 ── app.detailed_design.plan.drop_unknown_functions
 from app.detailed_design.api_list import (
     ApiEndpoint,
     endpoint_key,
@@ -97,6 +98,7 @@ from app.detailed_design.plan import (
     UnitKind,
     assign_unit_keys,
     carry_over_unit_keys,
+    drop_unknown_functions,
     is_file_path,
     milestone_functions,
     milestone_id,
@@ -322,6 +324,8 @@ __all__ = [
     # Phase-42-1:追記
     "assign_unit_keys",
     "carry_over_unit_keys",
+    # Phase-106-1:追記
+    "drop_unknown_functions",
     "endpoint_key",
     # Phase-18-1:追記
     # Phase-43-2:追記

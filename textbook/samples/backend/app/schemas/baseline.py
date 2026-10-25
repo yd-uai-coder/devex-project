@@ -1,4 +1,5 @@
-# 作成：Phase-81-3｜更新：Phase-82-2,86-4,87-1,96-3
+# 作成：Phase-81-3｜更新：Phase-82-2,86-4,87-1,96-3,106-5
+# Phase-106-5：更新(docstring: BaselineOriginRead の kind に function を足した)
 # Phase-86-4：更新(docstring: BaselineCreate に束に入れる CR の番号を足した)
 # Phase-82-2：更新 ── 合意の記録の項目を app.schemas.agreement.AgreementNotes に移した(CR の合意・却下と共有)
 # import uuid
@@ -17,9 +18,10 @@
 #
 # ↓↓
 # Phase-86-4:追記 ── pydantic.Field, pydantic.field_validator
+# Phase-106-5:追記 ── typing.Self
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Self
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, computed_field, field_validator
 
@@ -87,6 +89,14 @@ class BaselineItemRead(BaselineItemSummaryRead):
     model: dict[str, Any] | None
 
 
+# Phase-106-5:追記
+class BaselineChangeRequestRead(BaseModel):
+    """束に入れた CR 1つ(番号と題)。"""
+
+    number: int
+    title: str
+
+
 class _BaselineRecordRead(BaseModel):
     """合意済みの版1つの番号と合意の記録(写しは継承先で持つ)。`label`は画面に出す名前(B-1…)。"""
 
@@ -99,6 +109,19 @@ class _BaselineRecordRead(BaseModel):
     reason: str
     recorded_by: uuid.UUID | None
     created_at: datetime
+    # Phase-106-5:追記
+    # 束に入れた CR(番号の順)。ORM の行には無いので、ルートが`with_included`で足す
+    included_change_requests: list[BaselineChangeRequestRead] = Field(default_factory=list)
+
+    def with_included(self, included: list[tuple[int, str]]) -> Self:
+        """束に入れた CR(`(番号, 題)`の一覧)を足した写し。"""
+        return self.model_copy(
+            update={
+                "included_change_requests": [
+                    BaselineChangeRequestRead(number=n, title=t) for n, t in included
+                ]
+            }
+        )
 
     @computed_field
     @property
@@ -122,7 +145,7 @@ class BaselineRead(_BaselineRecordRead):
 # Phase-96-3:追記
 class BaselineOriginRead(BaseModel):
     """束で、新しい要件の予測の起点に選べる要素1つ(CR の起点を選ぶ画面用)。`kind`は
-    requirement / screen / api。"""
+    requirement / screen / api / function。"""
 
     key: str
     kind: str

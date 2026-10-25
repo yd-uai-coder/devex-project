@@ -1,4 +1,5 @@
-# 作成：Phase-86-4｜更新：Phase-88-2,89(完了後の調整),95-3,98-2
+# 作成：Phase-86-4｜更新：Phase-88-2,89(完了後の調整),95-3,98-2,106-5
+# Phase-106-5：更新(docstring: SUT に束の応答の入れた CR を足した)
 # Phase-89(完了後の調整)：更新(docstring: SUT に decision_note を足した)
 """検証済みの変更要求(CR)を合意済みの版(束)に入れることと、受付から検証までをたどる記録のテスト。
 
@@ -9,7 +10,9 @@ SUT: 純粋関数 trace_entries・decision_note と ACTION_LABEL(app/change_requ
      ChangeRequestNotIncludableError、
      ルート get_change_request_trace・list_change_requests(一覧の入れた束。
      app/api/routes/change_requests.py)・
-     create_baseline(app/api/routes/baselines.py)、モデルの列 included_baseline_id
+     create_baseline・list_baselines・get_baseline の入れた CR(app/api/routes/baselines.py、
+     BaselineService.included_change_requests・ChangeRequestRepository.included_by_baselines・
+     BaselineChangeRequestRead)、モデルの列 included_baseline_id
 ドライバ: 各テスト関数
 スタブ: 純粋関数のテストはスタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため。
 サービスとルートは、インメモリ SQLite(`db_session`)と tests/fixtures/change_requests.py
@@ -19,6 +22,7 @@ SUT: 純粋関数 trace_entries・decision_note と ACTION_LABEL(app/change_requ
 # Phase-88-2:追記 ── app.api.routes.change_requests.list_change_requests
 # Phase-89(完了後の調整):追記 ── app.change_requests.DecisionFacts, app.change_requests.decision_note
 # Phase-95-3:追記 ── app.change_requests.EDITED_FIELD_LABEL, app.schemas.change_request.ChangeRequestUpdate, app.schemas.change_request.TraceEntryRead
+# Phase-106-5:追記 ── app.api.routes.baselines.get_baseline, app.api.routes.baselines.list_baselines
 from datetime import UTC, datetime
 from typing import get_args
 
@@ -31,7 +35,7 @@ from tests.fixtures.change_requests import (
     confirm_everything,
 )
 
-from app.api.routes.baselines import create_baseline
+from app.api.routes.baselines import create_baseline, get_baseline, list_baselines
 from app.api.routes.change_requests import get_change_request_trace, list_change_requests
 from app.change_requests import (
     ACTION_LABEL,
@@ -206,6 +210,16 @@ async def test_verified_change_request_goes_into_new_baseline_and_trace(
     )
 
     assert baseline.number == 2
+    # Phase-106-5:追記
+    # 束の応答は入れた CR を持つ(作成・一覧・中身)。入れていない束は空
+    included = [(c.number, c.title) for c in baseline.included_change_requests]
+    assert included == [(1, "登録で確認メールを送る")]
+    listed_baselines = await list_baselines(db_session, project)
+    assert [
+        (b.number, [c.number for c in b.included_change_requests]) for b in listed_baselines
+    ] == [(2, [1]), (1, [])]
+    detail_baseline = await get_baseline(2, db_session, project)
+    assert [c.number for c in detail_baseline.included_change_requests] == [1]
     detail = await service.get(project, 1)
     assert detail.change_request.status == "verified"
     trace = await get_change_request_trace(1, db_session, project)

@@ -1,4 +1,5 @@
-# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2,81-1,85-2,89(完了後の調整),91-3,92-3,95-2
+# 作成：Phase-2-1｜更新：Phase-6-1,6-6,13-2,24(完了後の調整),36-1,52-4,56-2,81-1,85-2,89(完了後の調整),91-3,92-3,95-2,106-4
+# Phase-106-4：更新(docstring: create_version は巡回で消す版の戻しを PrunedProtection へ写す)
 # Phase-92-3：更新(docstring: create_version の protection を足した)
 # Phase-91-3：更新(docstring: 束が写した版も消さず、数にも入れない。モジュールの注記・create_version・list_versions)
 # Phase-85-2：更新(docstring: create_version の change_request_id を足した)
@@ -8,6 +9,7 @@
 # Phase-6-1: list_versions/get_versionはSCR-006向けの定型的な参照系メソッド(写経レベル: 定型)。
 # Phase-91-3:追記 ── sqlalchemy.select, app.models.baseline.Baseline, app.models.baseline.BaselineItem
 # Phase-95-2:追記 ── collections.abc.Sequence
+# Phase-106-4:追記 ── app.models.pruned_protection.PrunedProtection
 import uuid
 from collections.abc import Sequence
 
@@ -15,6 +17,7 @@ from sqlalchemy import select
 
 from app.models.baseline import Baseline, BaselineItem
 from app.models.generated_document import GeneratedDocument
+from app.models.pruned_protection import PrunedProtection
 from app.repositories.base import CRUDRepository
 
 # 生成される4種のドキュメント種別。GeneratedDocument.doc_type の取りうる値と対応する。
@@ -73,6 +76,8 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
         `protection`は合意の形へ戻した要素(合意を守った版だけ)。
         追加後に保管数がMAX_VERSIONS_PER_DOC_TYPEを超える場合は、最も古いバージョンから順に
         削除して上限を維持する。CR で反映した版と、束が写した版は消さず、数にも入れない。
+        消す版が合意の形へ戻した記録(`protection`が空でない一覧)を持てば、消す前に
+        PrunedProtection へ写す(要素の履歴に残すため。Phase 106)。
 
         Phase-6-6:追記 ── 新バージョンは常にis_current=Trueで作成し、既存行のis_currentは全て外す
         (新規生成した版が表示中になる)。新しい版が常にcurrentなので、保持数超過で削除される
@@ -127,6 +132,17 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
         ]
         keep_count = MAX_VERSIONS_PER_DOC_TYPE - (1 if change_request_id is None else 0)
         for stale in plain[keep_count:]:
+            # Phase-106-4:追記
+            if isinstance(stale.protection, list) and stale.protection:
+                self._session.add(
+                    PrunedProtection(
+                        project_id=stale.project_id,
+                        doc_type=stale.doc_type,
+                        version=stale.version,
+                        protection=stale.protection,
+                        created_at=stale.created_at,
+                    )
+                )
             await self._session.delete(stale)
         if len(plain) > keep_count:
             await self._session.flush()
@@ -224,6 +240,22 @@ class GeneratedDocumentRepository(CRUDRepository[GeneratedDocument]):
         )
         documents = (await self._session.execute(stmt)).scalars().all()
         return [d for d in documents if isinstance(d.protection, list)]
+
+    # Phase-106-4:追記
+    async def list_pruned_protections(
+        self, project_id: uuid.UUID, doc_types: Sequence[str]
+    ) -> list[PrunedProtection]:
+        """巡回で消えた版の、合意の形へ戻した記録を、文書の種類・版の順に返す(要素の履歴のため。
+        `list_protected`の残った版と合わせて読む)。"""
+        stmt = (
+            select(PrunedProtection)
+            .where(
+                PrunedProtection.project_id == project_id,
+                PrunedProtection.doc_type.in_(doc_types),
+            )
+            .order_by(PrunedProtection.doc_type, PrunedProtection.version)
+        )
+        return list((await self._session.execute(stmt)).scalars().all())
 
     async def get_version(
         self, *, project_id: uuid.UUID, doc_type: str, version: int

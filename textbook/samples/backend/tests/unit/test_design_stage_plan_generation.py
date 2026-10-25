@@ -1,4 +1,4 @@
-# 作成：Phase-23-4｜更新：Phase-26-2,42-1
+# 作成：Phase-23-4｜更新：Phase-26-2,42-1,106-1
 # 写経レベル: コア ── 入力が 01〜06章の md であること・図を exported にしないことを確かめる。
 """段階7(横断事項と実装計画)の下書きの生成のテスト。
 
@@ -253,6 +253,27 @@ async def test_regeneration_carries_keys_of_same_titles(db_session: AsyncSession
     assert stage7.model is not None
     [task] = stage7.model["milestones"][0]["tasks"]
     assert (task["title"], task["key"], stage7.model["next_unit_seq"]) == ("予約の API", "U-002", 3)
+
+
+# Phase-106-1:追記
+async def test_regeneration_drops_function_ids_not_in_function_list(
+    db_session: AsyncSession,
+) -> None:
+    """AI が機能一覧に無い処理ID を書いても、再生成の結果には残さない(段階2〜4と同じ)。"""
+    project = await create_stage7_project(db_session)
+    project_id = project.id
+    output = _plan_output()
+    output.milestones[0].tasks[0].function_ids = ["F-01", "F-99"]
+    service = DesignStageGenerationService(db_session)
+    await service.request_generation(project, stage=7)
+
+    llm = FakeLLM(structured_sequence=[_crosscutting_output(), output])
+    await service.execute(project_id=project_id, user_id=project.user_id, stage=7, llm=llm)
+    stage7 = await DesignStageService(db_session).read(project_id, 7)
+
+    assert stage7.model is not None
+    [task] = stage7.model["milestones"][0]["tasks"]
+    assert task["function_ids"] == ["F-01"]
 
 
 async def test_save_assigns_keys_to_new_tasks(db_session: AsyncSession) -> None:

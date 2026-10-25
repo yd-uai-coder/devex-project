@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2,101-2,101-3,102-2,102-3,102-4,103-2,104-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2,101-2,101-3,102-2,102-3,102-4,103-2,104-3,106-5
+# Phase-106-5：更新(docstring: ChangeRequestCreate の origins に処理を足した)
 # Phase-103-2：更新(docstring: ChangeRequestEventRead の説明の行の refs。md の写しは出さない)
 # Phase-102-3：更新(docstring: ChangeRequestExplanationRead の option_scales)
 # Phase-102-2：更新(docstring: ChangeRequestDecision の option・ChangeRequestRead の options)
@@ -207,7 +208,7 @@ class ChangeRequestOptionsIn(BaseModel):
 class ChangeRequestCreate(BaseModel):
     """CR を作るときの本文。背景は出どころの種類・日付(日の粒度。任意)・メモ。対象は基準の束の
     要件定義書にある要件 ID と変更の種類の組と、新しい要件を足すかの印(どちらか一方は要る。
-    サービスで確かめる)。`origins`は新しい要件の予測の起点(基準の束の要件・画面・API の要素の
+    サービスで確かめる)。`origins`は新しい要件の予測の起点(基準の束の要件・画面・API・処理の要素の
     キー。新しい要件を足す CR だけが持てる。サービスで確かめる)。
     基準の束の番号を省くと、最新の束を基準にする。"""
 

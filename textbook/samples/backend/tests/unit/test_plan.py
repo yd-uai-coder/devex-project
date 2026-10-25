@@ -1,9 +1,10 @@
-# 作成：Phase-23-1｜更新：Phase-26-1,42-1,42-2,49-3,71-1
+# 作成：Phase-23-1｜更新：Phase-26-1,42-1,42-2,49-3,71-1,106-1
+# Phase-106-1：更新(docstring: SUT に drop_unknown_functions を足した)
 # 写経レベル: コア ── 検証のエラーと警告の分け方(計画の漏れは警告)を確かめる。
 """段階7 横断事項と実装計画の意味モデルと検証のテスト。
 
 SUT: milestone_id / task_id / unit_ids / milestone_functions / planned_function_ids /
-     unplanned_functions / is_file_path / missing_topics / normalize_plan /
+     unplanned_functions / is_file_path / missing_topics / normalize_plan / drop_unknown_functions /
      unit_key / assign_unit_keys / carry_over_unit_keys
      (app/detailed_design/plan.py)、
      validate_plan / STAGE_VALIDATORS(app/detailed_design/validation.py)、
@@ -16,6 +17,7 @@ SUT: milestone_id / task_id / unit_ids / milestone_functions / planned_function_
 # Phase-26-1:追記 ── app.detailed_design.MAX_UNIT_FUNCTIONS, UNIT_KINDS, is_file_path, milestone_functions, task_id, unit_ids
 # Phase-42-1:追記 ── app.detailed_design(assign_unit_keys, carry_over_unit_keys, unit_key)
 # Phase-42-2:追記 ── app.documents.external_design.model.ExternalDesignModel
+# Phase-106-1:追記 ── app.detailed_design.drop_unknown_functions
 from tests.fixtures.detailed_design import function_list_model, module_list_model, plan_model
 
 from app.detailed_design import (
@@ -32,6 +34,7 @@ from app.detailed_design import (
     StageSources,
     assign_unit_keys,
     carry_over_unit_keys,
+    drop_unknown_functions,
     has_errors,
     is_file_path,
     milestone_functions,
@@ -514,6 +517,27 @@ def test_carry_over_unit_keys_by_unique_title():
     # 同じ名前が前に2つある「同名」は引き継がず、前の番号の続きから振る
     assert _keys(carried) == ["U-002", "U-005", "U-006", "U-001"]
     assert carried.next_unit_seq == 7
+
+
+# Phase-106-1:追記
+def test_drop_unknown_functions_keeps_only_function_list_ids():
+    """再生成の結果から、機能一覧に無い処理ID だけを外す(タスクとキーは残す)。"""
+    model = PlanModel(
+        milestones=[
+            Milestone(
+                name="a",
+                tasks=[
+                    PlanTask(key="U-001", title="x", function_ids=["F-01", "F-09", "F-02"]),
+                    PlanTask(key="U-002", title="y", function_ids=["F-09"]),
+                ],
+            )
+        ]
+    )
+    result = drop_unknown_functions(model, ["F-01", "F-02"])
+    tasks = result.milestones[0].tasks
+    assert [t.function_ids for t in tasks] == [["F-01", "F-02"], []]
+    assert [t.key for t in tasks] == ["U-001", "U-002"]
+    assert model.milestones[0].tasks[0].function_ids == ["F-01", "F-09", "F-02"]
 
 
 def test_normalize_plan_keeps_keys_and_next_seq():

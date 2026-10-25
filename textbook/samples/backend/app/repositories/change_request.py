@@ -1,4 +1,4 @@
-# 作成：Phase-82-1｜更新：Phase-83-1,85-2,86-3,86-4,88-1,96-3,102-2
+# 作成：Phase-82-1｜更新：Phase-83-1,85-2,86-3,86-4,88-1,96-3,102-2,106-5
 # Phase-86-4：更新(docstring: 入れた束を CR と一緒に読む)
 # Phase-86-3：更新(docstring: 結んだレビューの永続化と、CR と一緒に読むことを足した)
 # Phase-85-2：更新(docstring: add_event の refs を足した)
@@ -184,6 +184,23 @@ class ChangeRequestRepository(CRUDRepository[ChangeRequest]):
             .options(*self._default_options())
         )
         return list((await self._session.execute(stmt)).scalars().all())
+
+    # Phase-106-5:追記
+    async def included_by_baselines(
+        self, baseline_ids: Collection[uuid.UUID]
+    ) -> dict[uuid.UUID, list[tuple[int, str]]]:
+        """束の id → その束に入れた CR の(番号, 題)の一覧(番号の順。時系列は読まない)。"""
+        if not baseline_ids:
+            return {}
+        stmt = (
+            select(ChangeRequest.included_baseline_id, ChangeRequest.number, ChangeRequest.title)
+            .where(ChangeRequest.included_baseline_id.in_(baseline_ids))
+            .order_by(ChangeRequest.number)
+        )
+        found: dict[uuid.UUID, list[tuple[int, str]]] = {}
+        for baseline_id, number, title in (await self._session.execute(stmt)).all():
+            found.setdefault(baseline_id, []).append((number, title))
+        return found
 
     # Phase-88-1:追記
     async def numbers_by_id(self, ids: Collection[uuid.UUID]) -> dict[uuid.UUID, int]:

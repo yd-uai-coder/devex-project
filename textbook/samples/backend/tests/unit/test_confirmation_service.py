@@ -1,4 +1,5 @@
-# 作成：Phase-94-3｜更新：Phase-99(完了後の調整),105-3
+# 作成：Phase-94-3｜更新：Phase-99(完了後の調整),105-3,106-2
+# Phase-106-2：更新(docstring: SUT に CR で戻した番号を足した)
 # Phase-105-3：更新(docstring: SUT に ID を振る前の利用者のキーの付け直しを足した)
 # Phase-99(完了後の調整)：更新(docstring: モジュール。SUT に ConfirmationItemSettledError)
 """確認事項の一覧の組み立てと保存、「採用にする」との接続のテスト。
@@ -7,7 +8,8 @@ SUT: ConfirmationService(view / update。ID を振る前の利用者のキーの
      DocGeneratorService の apply_adopt_requirement /
      apply_adopt_user / adopt_requirement(確認済みと合意の記録)、
      AgreementService.record_adopt_users、
-     schemas の confirmation_list_read・ConfirmationUpdate、エラー ConfirmationItemNotFoundError・
+     schemas の confirmation_list_read(CR で戻した番号を含む)・ConfirmationUpdate、
+     エラー ConfirmationItemNotFoundError・
      ConfirmationItemSettledError、
      ルート app/api/routes/confirmations.py(アプリへの登録の確かめ)
 ドライバ: pytest のテスト関数
@@ -131,6 +133,29 @@ async def test_view_builds_items_with_defaults(db_session: AsyncSession) -> None
     assert view.items[4].refs == ["FR-002"]
     assert view.items[0].status_label == "未確認"
     assert (view.adoption.unconfirmed, view.adoption.rate) == (2, None)
+
+
+# Phase-106-2:追記
+async def test_view_shows_the_change_request_that_reopened_an_item(
+    db_session: AsyncSession,
+) -> None:
+    """CR の反映で未確認に戻した項目は、戻した CR の番号を出す。決め直すと消える。"""
+    project = await _project(db_session)
+    item = ConfirmationItem("req:FR-002", "requirement", "FR-002 通知する")
+    repo = ConfirmationRepository(db_session)
+    await repo.save(project.id, item, status="confirmed")
+    await repo.reopen(project.id, ["req:FR-002"], change_request_number=2)
+    service = ConfirmationService(db_session)
+
+    view = await service.view(project)
+    row = next(i for i in view.items if i.key == "req:FR-002")
+    assert (row.status, row.changed_by_change_request_number) == ("unconfirmed", 2)
+
+    view = await service.update(
+        project, "req:FR-002", ConfirmationUpdate(status="rejected"), updated_by=project.user_id
+    )
+    row = next(i for i in view.items if i.key == "req:FR-002")
+    assert (row.status, row.changed_by_change_request_number) == ("rejected", None)
 
 
 async def test_update_saves_fields_without_touching_documents(db_session: AsyncSession) -> None:

@@ -1,4 +1,5 @@
-# 作成：Phase-91-3｜更新：Phase-91-4,93-4,94-3,95-2,97-1
+# 作成：Phase-91-3｜更新：Phase-91-4,93-4,94-3,95-2,97-1,106-4
+# Phase-106-4：更新(docstring: history に巡回で消えた版の写しを足した)
 # Phase-93-4：更新(docstring: AgreementService の記録の出どころに CR の反映を足した)
 # Phase-91-4：更新(docstring: AgreementService に今の合意の一覧を足した)
 # Phase-91-4:追記 ── app.agreements.AGREED_KINDS, app.services.detailed_mode.require_detailed
@@ -70,7 +71,8 @@ class AgreementService:
 
     # Phase-95-2:追記
     async def history(self, project: Project, key: str) -> ElementHistory:
-        """要素1つの履歴(合意の記録・合意の形へ戻した版・関わる CR)。詳細設計モードだけ
+        """要素1つの履歴(合意の記録・合意の形へ戻した版〈巡回で消えた版の写しを含む〉・関わる
+        CR)。詳細設計モードだけ
         (簡易モードは DesignStagesNotAvailableError)。合意の対象でないキーは
         AgreementKeyInvalidError。記録も CR も無いキーは空の履歴(まだ合意していない要素)。"""
         require_detailed(project, "Agreements")
@@ -79,9 +81,14 @@ class AgreementService:
         records = await self._records.list_for_key(project.id, key)
         change_requests = await ChangeRequestRepository(self._session).list_for_project(project.id)
         numbers = {cr.id: cr.number for cr in change_requests}
-        versions = await GeneratedDocumentRepository(self._session).list_protected(
-            project.id, tuple(_DOCUMENT_KINDS)
-        )
+        # Phase-106-4：更新
+        # versions = await GeneratedDocumentRepository(self._session).list_protected(
+        #     project.id, tuple(_DOCUMENT_KINDS)
+        # )
+        # ↓↓
+        documents = GeneratedDocumentRepository(self._session)
+        versions = await documents.list_protected(project.id, tuple(_DOCUMENT_KINDS))
+        pruned = await documents.list_pruned_protections(project.id, tuple(_DOCUMENT_KINDS))
         return element_history(
             key,
             [_record_facts(r) for r in records],
@@ -96,6 +103,16 @@ class AgreementService:
                     else None,
                 )
                 for d in versions
+            # Phase-106-4:追記
+            ]
+            + [
+                VersionFacts(
+                    doc_type=p.doc_type,
+                    version=p.version,
+                    created_at=p.created_at,
+                    protection=p.protection,
+                )
+                for p in pruned
             ],
             [
                 ChangeRequestRef(

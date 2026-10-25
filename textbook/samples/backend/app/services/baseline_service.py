@@ -1,4 +1,5 @@
-# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整),91-3,91-4,96-3
+# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整),91-3,91-4,96-3,106-5
+# Phase-106-5：更新(docstring: origins の候補に処理を足した)
 # Phase-91-3：更新(docstring: BaselineService が束の要素を合意の記録にも残すことを足した)
 # Phase-86-4：更新(docstring: BaselineService・create に束に CR を結ぶことを足した)
 # Phase-86-4:追記 ── app.change_requests.INCLUDABLE_STATUSES, app.models.change_request.ChangeRequest, app.repositories.change_request.ChangeRequestRepository, app.services.errors.ChangeRequestNotFoundError, app.services.errors.ChangeRequestNotIncludableError
@@ -163,6 +164,15 @@ class BaselineService:
         require_detailed(project, "Baselines")
         return await self._baselines.list_for_project(project.id)
 
+    # Phase-106-5:追記
+    async def included_change_requests(
+        self, baselines: list[Baseline]
+    ) -> dict[uuid.UUID, list[tuple[int, str]]]:
+        """束の id → その束に入れた CR の(番号, 題)(束の一覧・中身の応答に出す)。"""
+        return await ChangeRequestRepository(self._session).included_by_baselines(
+            [b.id for b in baselines]
+        )
+
     async def get(self, project: Project, number: int) -> Baseline:
         # Phase-88(完了後の調整)：更新
         # """番号の束(写し付き)。無ければ BaselineNotFoundError。"""
@@ -182,7 +192,7 @@ class BaselineService:
 
     # Phase-96-3:追記
     async def origins(self, project: Project, number: int) -> list[PredictedOrigin]:
-        """番号の束で、新しい要件の予測の起点に選べる要素(要件・画面・API。CR の起点を選ぶ
+        """番号の束で、新しい要件の予測の起点に選べる要素(要件・画面・API・処理。CR の起点を選ぶ
         画面用)。無ければ BaselineNotFoundError。"""
         baseline = await self.get(project, number)
         return origin_candidates_from_snapshots(baseline_snapshots(baseline))

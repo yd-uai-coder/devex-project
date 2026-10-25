@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3,93-3,93-4,94-3,105-3
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3,93-3,93-4,94-3,105-3,106-2
 # Phase-105-3：更新(docstring: apply_adopt_user は利用者を ID で指す)
 # Phase-94-3：更新(docstring: adopt_requirement を commit だけにし、中身を apply_adopt_requirement〈採用した行を確認済みにすることを足した〉へ移した)
 # Phase-93-4：更新(docstring: generate が CR の反映で合意を更新することを足した)
@@ -45,6 +45,7 @@
 # Phase-93-3:追記 ── app.agreements.agreed_external_ids, app.agreements.protect_external_design, app.change_requests.rewritable_keys
 # Phase-93-3：削除 ── app.agreements.requirement_key
 # Phase-94-3:追記 ── app.confirmations.requirement_item, app.confirmations.user_item, app.documents.requirements.mark_user_adopted, app.repositories.confirmation.ConfirmationRepository
+# Phase-106-2:追記 ── app.confirmations.changed_requirement_keys
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -65,7 +66,7 @@ from app.agreements import (
 from app.ai.llm.catalog import Purpose
 from app.ai.llm.content import extract_text_content
 from app.change_requests import join_instructions, rewritable_keys, targets_from_json
-from app.confirmations import requirement_item, user_item
+from app.confirmations import changed_requirement_keys, requirement_item, user_item
 from app.core.database import AsyncSessionLocal
 from app.core.errors import AppError
 from app.detailed_design.function_list import FunctionListModel
@@ -954,6 +955,14 @@ class DocGeneratorService:
                 await AgreementService(self._session).record_change_request(
                     project, reflection.change_request, new_models, recorded_by=user_id
                 )
+                # Phase-106-2:追記
+                if "requirements" in designed:
+                    await self._reopen_confirmations(
+                        project,
+                        reflection.change_request,
+                        previous_models.get("requirements"),
+                        new_models.get("requirements"),
+                    )
 
             # Phase-52-4：更新
             # diagnosis = await self._self_diagnose(generated, llm=llm)
@@ -1312,6 +1321,33 @@ class DocGeneratorService:
                 project.id, user_item(scene), updated_by=recorded_by
             )
         return document
+
+    # Phase-106-2:追記
+    async def _reopen_confirmations(
+        self,
+        project: Project,
+        change_request: ChangeRequest,
+        previous: dict | None,
+        new: dict | None,
+    ) -> None:
+        """CR の反映で文が変わった対象の要件の確認事項を、確認済みから未確認に戻す(戻した CR の
+        番号を残す。共有リンクで合意した CR も同じ。再生成の文は案の文と同じとは限らないため)。
+        生成と同じトランザクションで、commit しない。"""
+        keys = changed_requirement_keys(
+            parse_requirements_model(previous),
+            parse_requirements_model(new),
+            [target.requirement_id for target in targets_from_json(change_request.targets)],
+        )
+        reopened = await ConfirmationRepository(self._session).reopen(
+            project.id, keys, change_request_number=change_request.number
+        )
+        if reopened:
+            logger.info(
+                "confirmations_reopened",
+                project_id=str(project.id),
+                change_request=change_request.number,
+                keys=reopened,
+            )
 
     # Phase-94-3:追記
     async def _requirements_for_adopt(

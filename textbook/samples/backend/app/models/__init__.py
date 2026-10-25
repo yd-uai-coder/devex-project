@@ -1,4 +1,4 @@
-# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2,79(完了後の調整),81-2,82-1,84-4,86-2,91-2,94-2,102-2,103-2,104-2
+# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2,79(完了後の調整),81-2,82-1,84-4,86-2,91-2,94-2,102-2,103-2,104-2,106-4
 # 写経レベル: 定型 ── re-exportの機械的な追記。
 # Phase-2-1:追記 ── ChatHistory, GeneratedDocument, IntakeFile, Project, PromptTemplate
 # Phase-8-2:追記 ── DataItem, UmlDiagram
@@ -18,6 +18,7 @@
 # Phase-102-2:追記 ── app.models.change_request_option_draft.ChangeRequestOptionDraft
 # Phase-103-2:追記 ── app.models.change_request_share_link.ChangeRequestShareLink
 # Phase-104-2:追記 ── app.models.change_request_comment.ChangeRequestComment
+# Phase-106-4:追記 ── app.models.pruned_protection.PrunedProtection
 from app.models.agreement import AgreementRecord
 from app.models.baseline import Baseline, BaselineItem
 from app.models.change_request import ChangeRequest, ChangeRequestEvent, ChangeRequestReview
@@ -34,6 +35,7 @@ from app.models.hearing_point import HearingPoint
 from app.models.intake_file import IntakeFile
 from app.models.project import Project
 from app.models.prompt_template import PromptTemplate
+from app.models.pruned_protection import PrunedProtection
 from app.models.review import ReviewFinding, ReviewFixCheck, ReviewRun
 from app.models.uml_diagram import UmlDiagram
 from app.models.uml_generation_run import UmlGenerationRun
@@ -80,6 +82,8 @@ __all__ = [
     # "Message",
     "Project",
     "PromptTemplate",
+    # Phase-106-4:追記
+    "PrunedProtection",
     # Phase-52-3:追記
     "ReviewFinding",
     # Phase-54-5:追記

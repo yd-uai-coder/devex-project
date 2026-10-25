@@ -1,7 +1,9 @@
-# 作成：Phase-17-4｜更新：Phase-18-4,19-4
+# 作成：Phase-17-4｜更新：Phase-18-4,19-4,106-3
+# Phase-106-3：更新(docstring: 生成で作り直したままの段階もレビュー中になることを足した)
 # 写経レベル: コア ── 段階の外の正本(DFD・データ辞書)の編集が段階の版に伝わることを確かめる。
 """DFD・データ辞書の編集による承認済みの段階2の差し戻し(Phase 17)と、ER の編集による承認済みの
 段階3の差し戻し(Phase 18)と、構成図の編集による承認済みの段階4の差し戻し(Phase 19)のテスト。
+生成で作り直したままの段階も、段階の外を直すとレビュー中になる(Phase 106)。
 
 SUT: DesignStageService.mark_edited(app/services/design_stage_service.py)、
      UmlDiagramService.update / compute_layout(app/services/uml_diagram_service.py)、
@@ -15,6 +17,7 @@ SUT: DesignStageService.mark_edited(app/services/design_stage_service.py)、
 
 # Phase-18-4:追記 ── tests.fixtures.detailed_design(create_stage3_project, crud_model, er_model), app.detailed_design.DATA_MODEL_STAGE, app.uml.domain.ErSemanticModel
 # Phase-19-4:追記 ── tests.fixtures.detailed_design(create_stage4_project, component_model, module_list_model), app.detailed_design.STRUCTURE_STAGE, app.uml.domain.ComponentSemanticModel
+# Phase-106-3:追記 ── app.repositories.design_stage.DesignStageRepository
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +35,7 @@ from tests.fixtures.detailed_design import (
 
 from app.detailed_design import DATA_FLOW_STAGE, DATA_MODEL_STAGE, STRUCTURE_STAGE
 from app.models.project import Project
+from app.repositories.design_stage import DesignStageRepository
 from app.repositories.uml_diagram import UmlDiagramRepository
 from app.services.data_item_service import DataItemService
 from app.services.design_stage_service import DesignStageService
@@ -150,6 +154,26 @@ async def test_data_item_edits_reopen_approved_stage2(db_session: AsyncSession) 
     assert (created.state, created.version) == ("reviewing", 2)
     assert (updated.state, updated.version) == ("reviewing", 3)
     assert (deleted.state, deleted.version) == ("reviewing", 4)
+
+
+# Phase-106-3:追記
+async def test_data_item_edit_moves_regenerated_stage2_to_reviewing(
+    db_session: AsyncSession,
+) -> None:
+    """生成で作り直したまま(`regenerated`)の段階2でデータ辞書を直すと、人が直した扱い
+    (レビュー中)になり、版が増える。"""
+    project = await _approved_stage2(db_session)
+    project_id = project.id
+    row = await DesignStageRepository(db_session).get(project_id=project_id, stage=DATA_FLOW_STAGE)
+    assert row is not None
+    row.status = "regenerated"
+    version = row.version
+    await db_session.commit()
+
+    await DataItemService(db_session).create(project_id=project_id, name="予約", fields=[])
+    edited = await _stage2(db_session, project_id)
+
+    assert (edited.state, edited.version) == ("reviewing", version + 1)
 
 
 async def test_mark_edited_ignores_unapproved_and_simple_projects(db_session: AsyncSession) -> None:
