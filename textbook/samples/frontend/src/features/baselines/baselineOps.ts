@@ -1,4 +1,4 @@
-// 作成：Phase-88-2｜更新：Phase-88(完了後の調整)
+// 作成：Phase-88-2｜更新：Phase-88(完了後の調整),109-2
 import { STAGE_TITLES, STATE_LABELS } from "@/features/detailed-design/labels";
 import type { DesignStageRead, StageState } from "@/features/detailed-design/api/types";
 import type { ChangeRequestSummaryRead } from "@/features/change-requests/api/types";
@@ -51,16 +51,17 @@ export function includableChangeRequests(list: ChangeRequestSummaryRead[]): Chan
     .sort((a, b) => a.number - b.number);
 }
 
-// この束に入れた CR(番号の順)
-export function includedChangeRequests(
-  list: ChangeRequestSummaryRead[],
-  baselineNumber: number,
-): ChangeRequestSummaryRead[] {
-  return list
-    .filter((cr) => cr.included_baseline_number === baselineNumber)
-    .sort((a, b) => a.number - b.number);
-}
-
+// Phase-109-2：削除
+// // この束に入れた CR(番号の順)
+// export function includedChangeRequests(
+//   list: ChangeRequestSummaryRead[],
+//   baselineNumber: number,
+// ): ChangeRequestSummaryRead[] {
+//   return list
+//     .filter((cr) => cr.included_baseline_number === baselineNumber)
+//     .sort((a, b) => a.number - b.number);
+// }
+//
 // 作成のフォームの入力(日時は datetime-local の値)
 export type BaselineForm = {
   agreedAt: string;

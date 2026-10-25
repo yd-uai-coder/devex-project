@@ -1,6 +1,7 @@
-// 作成：Phase-23-5｜更新：Phase-26-5,42-1,42-2
+// 作成：Phase-23-5｜更新：Phase-26-5,42-1,42-2,109-1
 // 写経レベル: 定型 ── 純粋関数の入出力の確認。
 // Phase-26-5:追記 ── UNIT_KINDS, MAX_UNIT_FUNCTIONS, PlanModel(api/types), UNIT_KIND_LABELS(labels), milestoneFunctions, moveTask, relinkDependencies, taskId(planOps)
+// Phase-109-1:追記 ── @/features/detailed-design/planOps.reassignTaskFunction, @/features/detailed-design/planOps.removeStrayTaskFunctions, @/features/detailed-design/planOps.removeTaskFunction, @/features/detailed-design/planOps.strayTaskFunctions, @/features/detailed-design/planOps.taskFunctionTargets, @/features/detailed-design/test-utils/stageFixtures.makeFunctionListWithSpare
 import { describe, expect, it } from "vitest";
 import {
   CROSSCUTTING_TOPICS,
@@ -18,6 +19,11 @@ import {
   milestoneFunctions,
   milestoneId,
   missingTopics,
+  reassignTaskFunction,
+  removeStrayTaskFunctions,
+  removeTaskFunction,
+  strayTaskFunctions,
+  taskFunctionTargets,
   moveMilestone,
   moveTask,
   relinkDependencies,
@@ -32,7 +38,7 @@ import {
   updateRisk,
   updateTask,
 } from "@/features/detailed-design/planOps";
-import { makePlan } from "@/features/detailed-design/test-utils/stageFixtures";
+import { makeFunctionListWithSpare, makePlan } from "@/features/detailed-design/test-utils/stageFixtures";
 
 // SUT: planOps(段階7の編集操作)と、型の定数(api/types の UNIT_KINDS・MAX_UNIT_FUNCTIONS・
 // CROSSCUTTING_TOPICS)、種別の表示(labels の UNIT_KIND_LABELS)
@@ -277,4 +283,37 @@ describe("planOps", () => {
   //   expect([0, 9, 99].map(milestoneId)).toEqual(["M-01", "M-10", "M-100"]);
   // });
 
+});
+
+// Phase-109-1:追記
+describe("planOps(機能一覧に無い処理)", () => {
+  // M-01-T02 の処理に、段階1 の作り直しで消えた F-09 が残っている(機能一覧は F-01・F-02)
+  const withStray = (): PlanModel => {
+    const plan = makePlan();
+    return updateTask(plan, 0, 1, { function_ids: ["F-01", "F-09"] });
+  };
+
+  it("タスクごとに機能一覧に無い処理を拾い、付け替え先はそのタスクに無い処理", () => {
+    const list = makeFunctionListWithSpare();
+    expect(strayTaskFunctions(withStray(), list)).toEqual([
+      { milestone: 0, task: 1, functionId: "F-09", taskLabel: "M-01-T02 予約を登録する" },
+    ]);
+    expect(taskFunctionTargets(withStray(), list, 0, 1).map((fn) => fn.id)).toEqual(["F-02"]);
+    expect(strayTaskFunctions(makePlan(), list)).toEqual([]);
+  });
+
+  it("付け替えは同じ位置で置き換え、外すとタスクは残る", () => {
+    expect(reassignTaskFunction(withStray(), 0, 1, "F-09", "F-02").milestones[0].tasks[1].function_ids).toEqual([
+      "F-01",
+      "F-02",
+    ]);
+    const removed = removeTaskFunction(withStray(), 0, 1, "F-09");
+    expect(removed.milestones[0].tasks.map((t) => t.function_ids)).toEqual([[], ["F-01"]]);
+  });
+
+  it("すべて外しても、書きかけの空の欄は残す", () => {
+    const plan = updateTask(withStray(), 0, 0, { function_ids: [""] });
+    const cleared = removeStrayTaskFunctions(plan, makeFunctionListWithSpare());
+    expect(cleared.milestones[0].tasks.map((t) => t.function_ids)).toEqual([[""], ["F-01"]]);
+  });
 });

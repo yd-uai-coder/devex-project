@@ -1,6 +1,13 @@
-// 作成：Phase-18-8｜更新：Phase-48-1
+// 作成：Phase-18-8｜更新：Phase-48-1,109-1
 // 写経レベル: コア ── DFD から決まる R を人の編集でも守り、書き換えたセルの下書きの印を外す。
-import type { CrudCell, CrudModel, DfdAccess } from "@/features/detailed-design/api/types";
+// Phase-109-1:追記 ── @/features/detailed-design/api/types.FunctionListModel, @/features/detailed-design/api/types.FunctionRow
+import type {
+  CrudCell,
+  CrudModel,
+  DfdAccess,
+  FunctionListModel,
+  FunctionRow,
+} from "@/features/detailed-design/api/types";
 
 // 段階3(データモデル)の CRUD 図の編集操作(純粋関数)。どれも新しいモデルを返し、引数は変えない。
 // DFD の線から決まる部分(読みの R)はバックエンドの merge_crud と同じ規則で守り、人の編集でも外させない。
@@ -125,4 +132,48 @@ export function crudTables(erTables: string[], model: CrudModel): string[] {
   // return [...erTables, ...extra];
   // ↓↓
   return [...unique, ...extra];
+}
+
+// Phase-109-1:追記
+// ---- 機能一覧に無い処理(段階1 の作り直しで処理 ID が変わって残ったセル) ----
+
+// 機能一覧に無い処理のセル(処理ごとにまとめる)。CRUD 図は機能一覧の処理だけを行にするので画面に
+// 出ず、ここから今の処理へ付け替えるか消す。
+export type StrayCrudFunction = { functionId: string; tables: string[] };
+
+export function strayCrudFunctions(model: CrudModel, functionList: FunctionListModel): StrayCrudFunction[] {
+  const ids = new Set(functionList.functions.map((fn) => fn.id));
+  const strays = new Map<string, string[]>();
+  for (const cell of model.cells) {
+    if (ids.has(cell.function_id)) continue;
+    strays.set(cell.function_id, [...(strays.get(cell.function_id) ?? []), cell.table]);
+  }
+  return [...strays].map(([functionId, tables]) => ({ functionId, tables }));
+}
+
+// 付け替え先に選べる処理(機能一覧にあって、セルがまだ無いもの)。
+export function crudTargets(model: CrudModel, functionList: FunctionListModel): FunctionRow[] {
+  const used = new Set(model.cells.map((cell) => cell.function_id));
+  return functionList.functions.filter((fn) => !used.has(fn.id));
+}
+
+// from の処理のセルを、操作はそのままで to の処理へ付け替える。人が付け替えたので、下書き・推定の
+// 印は外す(setCellOps と同じ)。
+export function reassignCrudFunction(model: CrudModel, from: string, to: string): CrudModel {
+  return {
+    cells: model.cells.map((cell) =>
+      cell.function_id === from
+        ? { function_id: to, table: cell.table, ops: cell.ops, draft: false }
+        : cell,
+    ),
+  };
+}
+
+export function removeCrudFunction(model: CrudModel, functionId: string): CrudModel {
+  return { cells: model.cells.filter((cell) => cell.function_id !== functionId) };
+}
+
+export function removeStrayCrud(model: CrudModel, functionList: FunctionListModel): CrudModel {
+  const ids = new Set(functionList.functions.map((fn) => fn.id));
+  return { cells: model.cells.filter((cell) => ids.has(cell.function_id)) };
 }

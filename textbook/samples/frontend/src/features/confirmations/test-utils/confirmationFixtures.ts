@@ -1,4 +1,4 @@
-// 作成：Phase-98-1
+// 作成：Phase-98-1｜更新：Phase-109-3
 import type { ConfirmationItemRead, ConfirmationListRead } from "@/features/confirmations/api/types";
 
 // 確認事項の一覧の画面のテストで使う応答(devex-api の形。必要な項目だけ上書きする)。
@@ -15,6 +15,8 @@ export function makeItem(overrides: Partial<ConfirmationItemRead> = {}): Confirm
     opportunity: null,
     opportunity_label: null,
     memo: "",
+    // Phase-109-3:追記
+    changed_by_change_request_number: null,
     updated_at: null,
     ...overrides,
   };

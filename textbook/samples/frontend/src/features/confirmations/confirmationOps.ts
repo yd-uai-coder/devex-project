@@ -1,4 +1,5 @@
-// 作成：Phase-98-1｜更新：Phase-99(完了後の調整)
+// 作成：Phase-98-1｜更新：Phase-99(完了後の調整),109-3
+// Phase-109-3:追記 ── @/features/change-requests/changeRequestOps.changeRequestLabel
 import type {
   AdoptionRead,
   ConfirmationItemRead,
@@ -6,6 +7,7 @@ import type {
   ConfirmationStatus,
   Opportunity,
 } from "@/features/confirmations/api/types";
+import { changeRequestLabel } from "@/features/change-requests/changeRequestOps";
 
 // 確認事項の一覧の画面の純粋な変換(絞り込み・分け方・採用率の文・確認のダイアログの要否)。
 
@@ -62,6 +64,13 @@ export function rowLock(item: ConfirmationItemRead): RowLock {
     return { locked: true, label: "確認済み(採用して合意)", viaChangeRequest: true };
   }
   return { locked: true, label: `${STATUS_LABEL[item.status]}(今の一覧に無い)`, viaChangeRequest: false };
+}
+
+// Phase-109-3:追記
+// CR の反映で文が変わり、未確認に戻った旨(戻していなければ null)
+export function changedByLabel(item: ConfirmationItemRead): string | null {
+  const number = item.changed_by_change_request_number;
+  return number === null ? null : `${changeRequestLabel(number)} の反映で文が変わりました`;
 }
 
 export function filterItems(items: ConfirmationItemRead[], filter: ConfirmationFilter): ConfirmationItemRead[] {

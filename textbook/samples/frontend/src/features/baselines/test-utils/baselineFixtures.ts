@@ -1,4 +1,4 @@
-// 作成：Phase-88-2
+// 作成：Phase-88-2｜更新：Phase-109-2
 import type {
   BaselineItemRead,
   BaselineRead,
@@ -27,6 +27,8 @@ export function makeBaseline(overrides: Partial<BaselineRead> = {}): BaselineRea
     reason: "初版の合意",
     recorded_by: "u1",
     created_at: "2026-10-19T01:05:00Z",
+    // Phase-109-2:追記
+    included_change_requests: [],
     items: [
       {
         key: "requirements",

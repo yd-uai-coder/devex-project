@@ -1,4 +1,4 @@
-// 作成：Phase-98-1
+// 作成：Phase-98-1｜更新：Phase-109-3
 // 確認事項の一覧の API の型。devex-api app/schemas/confirmation.py の同名のクラスに対応する。
 
 export type ConfirmationKind = "requirement" | "user" | "point";
@@ -6,7 +6,12 @@ export type ConfirmationStatus = "unconfirmed" | "confirmed" | "rejected";
 export type Opportunity = "next_meeting" | "email" | "implementation" | "none";
 
 // 確認事項1件。present は今の一覧にあるか(false は、状態を決めた後に一覧から消えた項目。採用にして
-// 推測でなくなった行など)。refs は観点に頼っている要件の ID(1.2 は "1.2")
+// Phase-109-3：更新
+// // 推測でなくなった行など)。refs は観点に頼っている要件の ID(1.2 は "1.2")
+// ↓↓
+// 推測でなくなった行など)。refs は観点に頼っている要件の ID(1.2 は "1.2")。
+// changed_by_change_request_number は、CR の反映で文が変わり確認済みから未確認に戻した CR の番号
+// (利用者が状態を決め直すまで出す)
 export type ConfirmationItemRead = {
   key: string;
   kind: ConfirmationKind;
@@ -18,6 +23,8 @@ export type ConfirmationItemRead = {
   opportunity: Opportunity | null;
   opportunity_label: string | null;
   memo: string;
+  // Phase-109-3:追記
+  changed_by_change_request_number: number | null;
   updated_at: string | null;
 };
 

@@ -1,19 +1,26 @@
-// 更新：Phase-98-1
+// 更新：Phase-98-1,109-2
 "use client";
 // 作成：Phase-88-3｜更新：Phase-88(完了後の調整)
 
+// Phase-88(完了後の調整):追記
+// Phase-109-2:追記 ── @/features/change-requests/api/types.ChangeRequestSummaryRead
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, H2, H3, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
-// Phase-88(完了後の調整):追記
 import { DetailedModeOnlyNotice } from "@/features/change-requests/components/DetailedModeOnlyNotice";
 import { useBaselinesStore } from "@/features/baselines/baselines-store";
 import { baselineHref, includableChangeRequests } from "@/features/baselines/baselineOps";
 import { BaselineCreateForm } from "@/features/baselines/components/BaselineCreateForm";
 import { BaselineList } from "@/features/baselines/components/BaselineList";
+import type { ChangeRequestSummaryRead } from "@/features/change-requests/api/types";
+
+// Phase-109-2:追記
+// 別のプロジェクトの CR の一覧を持っているときに返す空の一覧(選択のたびに新しい配列を返すと、
+// React が「getSnapshot の結果をキャッシュしていない」と警告する)
+const NO_CHANGE_REQUESTS: ChangeRequestSummaryRead[] = [];
 
 // 合意済みの版(束)の一覧と作成(SCR-010。docs/external_design.md 2.14節)。詳細設計モードのプロジェクト
 // Phase-88(完了後の調整)：更新
@@ -37,7 +44,10 @@ export function BaselinesPageContent({ projectId }: { projectId: string }) {
   const fetchStages = useBaselinesStore((s) => s.fetchStages);
   const create = useBaselinesStore((s) => s.create);
   const clearCreateError = useBaselinesStore((s) => s.clearCreateError);
-  const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : []));
+  // Phase-109-2：更新
+  // const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : []));
+  // ↓↓
+  const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : NO_CHANGE_REQUESTS));
   const fetchChangeRequests = useChangeRequestsStore((s) => s.fetchList);
   const [creating, setCreating] = useState(false);
 
@@ -123,7 +133,10 @@ export function BaselinesPageContent({ projectId }: { projectId: string }) {
         </XStack>
       )}
 
-      <BaselineList projectId={projectId} items={list} changeRequests={changeRequests} />
+      {/* Phase-109-2：更新 */}
+      {/* <BaselineList projectId={projectId} items={list} changeRequests={changeRequests} /> */}
+      {/* ↓↓ */}
+      <BaselineList projectId={projectId} items={list} />
     </YStack>
   );
 }

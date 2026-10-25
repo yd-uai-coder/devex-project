@@ -1,14 +1,14 @@
-// 作成：Phase-88-2｜更新：Phase-107-2
+// 作成：Phase-88-2｜更新：Phase-107-2,109-2
 // SUT: baselineOps(合意済みの版の画面の純粋な変換)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
+// Phase-109-2：削除 ── ../baselineOps.includedChangeRequests
 import { describe, expect, it } from "vitest";
 import {
   applySelection,
   baselineHref,
   createBlocker,
   includableChangeRequests,
-  includedChangeRequests,
   itemLabel,
   itemStateLabel,
   prefillAgreement,
@@ -74,7 +74,8 @@ describe("baselineOps", () => {
     const list = [VERIFIED_3, APPLIED, INCLUDED, VERIFIED_1];
 
     expect(includableChangeRequests(list).map((c) => c.number)).toEqual([1, 3]);
-    expect(includedChangeRequests(list, 2).map((c) => c.number)).toEqual([2]);
+    // Phase-109-2：削除
+    // expect(includedChangeRequests(list, 2).map((c) => c.number)).toEqual([2]);
   });
 
   it("合意の記録の初期値は、選んだ CR の記録から作る", () => {

@@ -1,4 +1,4 @@
-// 作成：Phase-17-6｜更新：Phase-17-7,17-8,18-9,21-7(画面確認後の修正),44-3
+// 作成：Phase-17-6｜更新：Phase-17-7,17-8,18-9,21-7(画面確認後の修正),44-3,109-1
 // 写経レベル: コア ── 段階1の内容をストアに置き、グループの選択 → 保存 → 生成の順を確かめる。
 // Phase-44-3:追記 ── ../../test-utils/stageFixtures(impactWith, makeMark)
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -223,5 +223,28 @@ describe("DataFlowPanel と DFD のタブ", () => {
     expect(screen.getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
     expect(screen.getByLabelText("F-01 の入力").closest("tr")).toHaveAttribute("aria-current", "true");
     useDetailedDesignStore.setState({ impact: null, highlight: null });
+  });
+
+  // Phase-109-1:追記
+  it("機能一覧に無い処理概要とグループがあるときだけ一覧を出し、消す・外すと保存できる", async () => {
+    const user = userEvent.setup();
+    const stray = { function_id: "F-09", input: "旧", process: "旧の処理", output: "旧" };
+    const onDirtyChange = renderPanel(
+      setup({
+        state: "regenerated",
+        version: 3,
+        model: { dfd_groups: ["reservations", "消えたグループ"], summaries: [...makeDataFlow().summaries, stray] },
+      }),
+    );
+
+    expect(screen.getByText("機能一覧に無い処理の処理概要(1)")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "F-09(旧の処理) を消す" }));
+    expect(screen.queryByText("機能一覧に無い処理の処理概要(1)")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "グループ「消えたグループ」を外す" }));
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+    const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
+    expect(model).toEqual({ dfd_groups: ["reservations"], summaries: makeDataFlow().summaries });
   });
 });

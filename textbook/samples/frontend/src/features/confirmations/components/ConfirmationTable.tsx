@@ -1,7 +1,8 @@
-// 作成：Phase-98-1｜更新：Phase-99(完了後の調整)
+// 作成：Phase-98-1｜更新：Phase-99(完了後の調整),109-3
 "use client";
 
 // Phase-99(完了後の調整):追記 ── next/link.Link, @/features/confirmations/confirmationOps.rowLock
+// Phase-109-3:追記 ── @/features/change-requests/changeRequestOps.changeRequestHref, @/features/confirmations/confirmationOps.changedByLabel
 import { useState } from "react";
 import Link from "next/link";
 import { Button, Text, XStack, YStack } from "tamagui";
@@ -11,7 +12,8 @@ import type {
   ConfirmationUpdate,
   Opportunity,
 } from "@/features/confirmations/api/types";
-import { KIND_LABEL, OPPORTUNITY_OPTIONS, rowLock } from "@/features/confirmations/confirmationOps";
+import { changeRequestHref } from "@/features/change-requests/changeRequestOps";
+import { changedByLabel, KIND_LABEL, OPPORTUNITY_OPTIONS, rowLock } from "@/features/confirmations/confirmationOps";
 import { CELL, HEAD, INPUT, MONO, OPTION, TABLE } from "@/features/detailed-design/components/tableStyles";
 
 const STATUS_COLOR: Record<ConfirmationStatus, string> = {
@@ -33,7 +35,11 @@ const STATUS_ACTIONS: { status: ConfirmationStatus; label: string }[] = [
 // ↓↓
 // 確認事項の表。行ごとに決める機会・状態・メモを変える(変えたらすぐ onUpdate)。今の一覧に無い行
 // (rowLock)は、状態と決める機会を変えられないので操作の代わりに理由を出す(採用して合意した要件・
-// 利用者は、変更要求へのリンク)。メモはどの行も書ける。
+// Phase-109-3：更新
+// // 利用者は、変更要求へのリンク)。メモはどの行も書ける。
+// ↓↓
+// 利用者は、変更要求へのリンク)。CR の反映で文が変わって未確認に戻った行は、その CR へのリンクを
+// 状態の文の下の段に出す。メモはどの行も書ける。
 export function ConfirmationTable({
   // Phase-99(完了後の調整):追記
   projectId,
@@ -72,6 +78,8 @@ export function ConfirmationTable({
         {/* ↓↓ */}
         {items.map((item) => {
           const lock = rowLock(item);
+          // Phase-109-3:追記
+          const changedBy = changedByLabel(item);
           return (
           <tr key={item.key}>
             <td style={{ ...CELL, whiteSpace: "nowrap" }}>{KIND_LABEL[item.kind]}</td>
@@ -117,6 +125,16 @@ export function ConfirmationTable({
                 {/* ↓↓ */}
                 {savingKey === item.key ? "保存中…" : lock.locked ? lock.label : item.status_label}
               </Text>
+              {/* Phase-109-3:追記 */}
+              {changedBy !== null && item.changed_by_change_request_number !== null ? (
+                // 状態の文の下の段に出す(2段。下の「変更要求(CR)で →」と同じ形)
+                <Link
+                  href={changeRequestHref(projectId, item.changed_by_change_request_number)}
+                  style={{ display: "block", marginTop: 2, fontSize: 12, color: "var(--blue10)" }}
+                >
+                  {`${changedBy} →`}
+                </Link>
+              ) : null}
               {/* Phase-99(完了後の調整)：更新 */}
               {/* {readOnly ? null : ( */}
               {/* ↓↓ */}

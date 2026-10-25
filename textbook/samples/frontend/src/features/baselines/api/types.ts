@@ -1,4 +1,4 @@
-// 作成：Phase-88-2｜更新：Phase-98-2
+// 作成：Phase-88-2｜更新：Phase-98-2,109-2
 // 合意済みの版(束)の API の型。devex-api app/schemas/baseline.py の同名のクラスに対応する
 // (画面で使う項目だけ)。
 
@@ -18,6 +18,10 @@ export type BaselineItemRead = BaselineItemSummaryRead & {
   model: Record<string, unknown> | null;
 };
 
+// Phase-109-2:追記
+// 束に入れた CR 1つ(番号と題)
+export type BaselineChangeRequestRead = { number: number; title: string };
+
 type BaselineRecordRead = {
   number: number;
   label: string;
@@ -27,6 +31,8 @@ type BaselineRecordRead = {
   reason: string;
   recorded_by: string | null;
   created_at: string;
+  // Phase-109-2:追記
+  included_change_requests: BaselineChangeRequestRead[];
 };
 
 // 一覧の1件(写しは要約だけ)
@@ -46,7 +52,10 @@ export type BaselineRequirementRead = {
 
 // Phase-98-2:追記
 // 束で、新しい要件の予測の起点に選べる要素1つ(CR の起点を選ぶ)
-export type OriginKind = "requirement" | "screen" | "api";
+// Phase-109-2：更新
+// export type OriginKind = "requirement" | "screen" | "api";
+// ↓↓
+export type OriginKind = "requirement" | "screen" | "api" | "function";
 
 export type BaselineOriginRead = {
   key: string;

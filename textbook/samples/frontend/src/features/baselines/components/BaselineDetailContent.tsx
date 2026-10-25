@@ -1,26 +1,23 @@
+// 作成：Phase-88-3｜更新：Phase-88(完了後の調整),109-2
 "use client";
-// 作成：Phase-88-3｜更新：Phase-88(完了後の調整)
 
+// Phase-88(完了後の調整):追記 ── next/navigation.useRouter, @/features/change-requests/components/DetailedModeOnlyNotice.DetailedModeOnlyNotice, @/features/baselines/baselineOps.newChangeRequestHref
+// Phase-109-2:追記 ── @/features/change-requests/changeRequestOps.changeRequestLabel
+// Phase-109-2：削除 ── @/features/change-requests/change-requests-store.useChangeRequestsStore, @/features/change-requests/components/StatusBadge.StatusBadge, @/features/baselines/baselineOps.includedChangeRequests
 import { useEffect, useState } from "react";
 import Link from "next/link";
-// Phase-88(完了後の調整):追記
 import { useRouter } from "next/navigation";
 import { Button, H2, H3, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
-import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
-import { changeRequestHref } from "@/features/change-requests/changeRequestOps";
-// Phase-88(完了後の調整):追記
+import { changeRequestHref, changeRequestLabel } from "@/features/change-requests/changeRequestOps";
 import { DetailedModeOnlyNotice } from "@/features/change-requests/components/DetailedModeOnlyNotice";
-import { StatusBadge } from "@/features/change-requests/components/StatusBadge";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { MarkdownBody } from "@/features/documents/components/MarkdownBody";
 import type { BaselineItemRead } from "@/features/baselines/api/types";
 import { useBaselinesStore } from "@/features/baselines/baselines-store";
 import {
   baselinesHref,
-  includedChangeRequests,
   itemLabel,
-  // Phase-88(完了後の調整):追記
   newChangeRequestHref,
   itemStateLabel,
   stageOfKey,
@@ -42,13 +39,17 @@ export function BaselineDetailContent({ projectId, number }: { projectId: string
   // Phase-88(完了後の調整):追記
   const unavailable = useBaselinesStore((s) => s.unavailable && s.projectId === projectId);
   const fetchDetail = useBaselinesStore((s) => s.fetchDetail);
-  const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : []));
-  const fetchChangeRequests = useChangeRequestsStore((s) => s.fetchList);
+  // Phase-109-2：削除
+  // const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : []));
+  // const fetchChangeRequests = useChangeRequestsStore((s) => s.fetchList);
 
   useEffect(() => {
     void fetchDetail(projectId, number);
-    void fetchChangeRequests(projectId);
-  }, [projectId, number, fetchDetail, fetchChangeRequests]);
+  // Phase-109-2：更新
+  //   void fetchChangeRequests(projectId);
+  // }, [projectId, number, fetchDetail, fetchChangeRequests]);
+  // ↓↓
+  }, [projectId, number, fetchDetail]);
 
   if (detailNotFound) return <ProjectNotFoundNotice />;
   // Phase-88(完了後の調整):追記
@@ -79,7 +80,10 @@ export function BaselineDetailContent({ projectId, number }: { projectId: string
 
   const documents = detail.items.filter((i) => stageOfKey(i.key) === null);
   const stages = detail.items.filter((i) => stageOfKey(i.key) !== null);
-  const included = includedChangeRequests(changeRequests, detail.number);
+  // Phase-109-2：更新
+  // const included = includedChangeRequests(changeRequests, detail.number);
+  // ↓↓
+  const included = detail.included_change_requests;
 
   return (
     <YStack paddingVertical="$4" gap="$4">
@@ -109,10 +113,14 @@ export function BaselineDetailContent({ projectId, number }: { projectId: string
           included.map((cr) => (
             <XStack key={cr.number} gap="$2" alignItems="center">
               <Link href={changeRequestHref(projectId, cr.number)}>
-                <Text color="$blue10">{cr.label}</Text>
+                {/* Phase-109-2：更新 */}
+                {/* <Text color="$blue10">{cr.label}</Text> */}
+                {/* ↓↓ */}
+                <Text color="$blue10">{changeRequestLabel(cr.number)}</Text>
               </Link>
               <Text>{cr.title}</Text>
-              <StatusBadge status={cr.status} label={cr.status_label} />
+              {/* Phase-109-2：削除 */}
+              {/* <StatusBadge status={cr.status} label={cr.status_label} /> */}
             </XStack>
           ))
         )}

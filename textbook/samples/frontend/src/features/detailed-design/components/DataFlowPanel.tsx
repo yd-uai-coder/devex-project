@@ -1,4 +1,4 @@
-// 作成：Phase-17-6｜更新：Phase-17-7,17-8,21-7(画面確認後の修正),44-3,53(完了後の調整)
+// 作成：Phase-17-6｜更新：Phase-17-7,17-8,21-7(画面確認後の修正),44-3,53(完了後の調整),109-1
 // 写経レベル: コア ── グループの選択を保存してから生成させること、段階の dirty に DFD の未保存の編集も含めること。
 "use client";
 
@@ -7,6 +7,7 @@
 // Phase-17-8:追記 ── @/features/detailed-design/components/DataDictionaryTable.DataDictionaryTable
 // Phase-44-3:追記 ── @/features/detailed-design/components/ImpactBadge.ImpactBadge, @/features/detailed-design/hooks/useStageImpact.useStageImpact, @/features/detailed-design/impactOps.elementKey
 // Phase-53(完了後の調整):追記 ── ReviewFindingBadge(@/features/design-review/components/ReviewFindingBadge), useStageReview(@/features/detailed-design/hooks/useStageReview)
+// Phase-109-1:追記 ── @/features/detailed-design/components/StrayFunctionTable.StrayFunctionTable, @/features/detailed-design/dataFlowOps.reassignSummary, @/features/detailed-design/dataFlowOps.removeStraySummaries, @/features/detailed-design/dataFlowOps.removeSummaryAt, @/features/detailed-design/dataFlowOps.strayDfdGroups, @/features/detailed-design/dataFlowOps.straySummaries, @/features/detailed-design/dataFlowOps.summaryTargets
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
@@ -22,11 +23,18 @@ import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFi
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
+import { StrayFunctionTable } from "@/features/detailed-design/components/StrayFunctionTable";
 import { CELL, HEAD, INPUT, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import {
   countGroupFunctions,
   hasDraft,
+  reassignSummary,
+  removeStraySummaries,
+  removeSummaryAt,
+  strayDfdGroups,
+  straySummaries,
   summaryOf,
+  summaryTargets,
   toDataFlow,
   toggleDfdGroup,
   updateSummary,
@@ -90,6 +98,9 @@ export function DataFlowPanel({
   const generating = stage.generation_status === "generating";
   const { timedOut } = useStageGenerationPolling(projectId, generating);
   const regenerating = hasDraft(saved);
+  // Phase-109-1:追記
+  const strayGroups = strayDfdGroups(draft, functionList);
+  const targets = summaryTargets(draft, functionList);
 
   const startGeneration = () => {
     setConfirming(false);
@@ -134,6 +145,24 @@ export function DataFlowPanel({
             );
           })}
         </XStack>
+        {/* Phase-109-1:追記 */}
+        {/* 段階1 の作り直しで消えたグループ(上の選択には出ないので、ここから外す) */}
+        {strayGroups.map((group) => (
+          <XStack key={group} gap="$2" alignItems="center" flexWrap="wrap">
+            <Text color="$orange10" fontSize="$2">
+              {`機能一覧に無いグループ「${group}」が選ばれています。このままでは承認できません。`}
+            </Text>
+            <StyledButton
+              size="$2"
+              theme="red"
+              disabled={generating || !stage.is_open}
+              aria-label={`グループ「${group}」を外す`}
+              onPress={() => setDraft((m) => toggleDfdGroup(m, group, false))}
+            >
+              外す
+            </StyledButton>
+          </XStack>
+        ))}
       </YStack>
 
       <YStack gap="$2">
@@ -270,6 +299,28 @@ export function DataFlowPanel({
           </div>
         </YStack>
       ) : null}
+
+      {/* Phase-109-1:追記 */}
+      {/* 段階1 の作り直しで処理 ID が変わって残った処理概要(表には出ないので、付け替えるか消す) */}
+      <StrayFunctionTable
+        title="機能一覧に無い処理の処理概要"
+        description="段階1 の処理 ID が変わったため、どの処理とも合わない処理概要です。このままでは承認できません。活かす行は今の処理へ付け替え(中身はそのまま)、要らない行は消してください。変更は保存して反映されます。"
+        detailHead="処理内容"
+        rows={straySummaries(draft, functionList).map((stray) => ({
+          key: String(stray.index),
+          functionId: stray.functionId,
+          detail: stray.process || "(空)",
+          targets,
+        }))}
+        removeLabel="消す"
+        removeAllLabel="機能一覧に無い処理概要をすべて消す"
+        disabled={generating || !stage.is_open}
+        onReassign={(key, functionId) =>
+          setDraft((m) => reassignSummary(m, functionList, Number(key), functionId))
+        }
+        onRemove={(key) => setDraft((m) => removeSummaryAt(m, Number(key)))}
+        onRemoveAll={() => setDraft((m) => removeStraySummaries(m, functionList))}
+      />
 
       {/* Phase-21-7：更新(画面確認後の修正。保存の操作を StageSaveBar にして、上部にも同じものを置いた)
          <XStack gap="$3" alignItems="center" flexWrap="wrap">

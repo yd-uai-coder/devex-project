@@ -1,4 +1,4 @@
-// 作成：Phase-87-2｜更新：Phase-88-2,88(完了後の調整),98-2
+// 作成：Phase-87-2｜更新：Phase-88-2,88(完了後の調整),98-2,109-2
 "use client";
 
 // Phase-88-2：更新
@@ -271,7 +271,10 @@ export function ChangeRequestForm({
         {form.adds_requirement ? (
           <YStack gap="$2" paddingLeft="$4" aria-label="予測の起点">
             <Text fontSize="$3" color="$color11">
-              新しい要件が関わりそうな既存の要件・画面・API を選んでください(任意)。選ばなければ、新しい要件の分は予測に入りません。
+              {/* Phase-109-2：更新 */}
+              {/* 新しい要件が関わりそうな既存の要件・画面・API を選んでください(任意)。選ばなければ、新しい要件の分は予測に入りません。 */}
+              {/* ↓↓ */}
+              新しい要件が関わりそうな既存の要件・画面・API・処理を選んでください(任意)。選ばなければ、新しい要件の分は予測に入りません。
             </Text>
             {origins === null ? <Text color="$color11">起点の候補を読み込み中...</Text> : null}
             {form.origins.map((key) => {

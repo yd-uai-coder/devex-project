@@ -1,5 +1,6 @@
-// 作成：Phase-23-6
+// 作成：Phase-23-6｜更新：Phase-109-1
 // 写経レベル: 定型 ── 生成・保存・作り直しの配線の確認。
+// Phase-109-1:追記 ── ../../test-utils/stageFixtures.makeFunctionListWithSpare
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -7,7 +8,7 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { PlanPanel } from "../PlanPanel";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
-import { makePlan, makeStages } from "../../test-utils/stageFixtures";
+import { makeFunctionListWithSpare, makePlan, makeStages } from "../../test-utils/stageFixtures";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 
 // SUT: PlanPanel / ドライバ: render と操作 / スタブ: 段階のストアの save・generate・fetchStages。
@@ -21,9 +22,18 @@ function renderPanel(stage: DesignStageRead, onDirtyChange = vi.fn()) {
   return onDirtyChange;
 }
 
-// 段階1〜6を承認し、段階7が開いた一覧の段階7(内容は引数で上書きする)
+// Phase-109-1：更新
+// // 段階1〜6を承認し、段階7が開いた一覧の段階7(内容は引数で上書きする)
+// ↓↓
+// 段階1〜6を承認し、段階7が開いた一覧の段階7(内容は引数で上書きする。段階1 は F-01・F-02 の機能一覧)
 function stage7(patch: Partial<DesignStageRead>): DesignStageRead {
-  const stages = makeStages({ 7: { is_open: true, missing_inputs: [], ...patch } });
+  // Phase-109-1：更新
+  // const stages = makeStages({ 7: { is_open: true, missing_inputs: [], ...patch } });
+  // ↓↓
+  const stages = makeStages({
+    1: { state: "approved", version: 1, approved_version: 1, model: makeFunctionListWithSpare() },
+    7: { is_open: true, missing_inputs: [], ...patch },
+  });
   useDetailedDesignStore.setState({ stages });
   return stages[6];
 }
@@ -88,5 +98,22 @@ describe("PlanPanel", () => {
   it("生成に失敗したら理由を出す", () => {
     renderPanel(stage7({ generation_status: "failed", generation_error: "上限に達しました" }));
     expect(screen.getByRole("alert")).toHaveTextContent("上限に達しました");
+  });
+
+  // Phase-109-1:追記
+  it("機能一覧に無い処理を持つタスクがあるときだけ一覧を出し、付け替えると保存できる", async () => {
+    const user = userEvent.setup();
+    const plan = makePlan();
+    plan.milestones[0].tasks[1].function_ids = ["F-09"];
+    renderPanel(stage7({ state: "regenerated", version: 2, model: plan }));
+
+    expect(screen.getByText("機能一覧に無い処理を持つタスク(1)")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("F-09(M-01-T02 予約を登録する) の付け替え先"), "F-01");
+    await user.click(screen.getByRole("button", { name: "F-09(M-01-T02 予約を登録する) を付け替える" }));
+    expect(screen.queryByText("機能一覧に無い処理を持つタスク(1)")).not.toBeInTheDocument();
+
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+    const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
+    expect((model as typeof plan).milestones[0].tasks[1].function_ids).toEqual(["F-01"]);
   });
 });

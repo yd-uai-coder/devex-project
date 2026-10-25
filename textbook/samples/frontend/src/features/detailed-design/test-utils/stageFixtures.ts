@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1,31-5,38-3,42-1,42-2,44-1,44-3,46-3
+// 作成：Phase-15-7｜更新：Phase-16-5,16-6,17-5,18-5,19-5,20-4,21-4,23-5,26-5,27-3,29-1,31-5,38-3,42-1,42-2,44-1,44-3,46-3,109-1
 // 写経レベル: 定型 ── テスト用の段階の雛形。
 // Phase-16-6:追記 ── @/features/detailed-design/api/types.FunctionListModel
 // Phase-17-5:追記 ── @/features/detailed-design/api/types.DataFlowModel
@@ -47,6 +47,15 @@ export function makeFunctionList(): FunctionListModel {
     ],
     next_number: 2,
   };
+}
+
+// Phase-109-1:追記
+// makeFunctionList に、まだどの段階にも書かれていない処理 F-02 を足した機能一覧(機能一覧に無い処理の
+// 付け替え先。テスト専用)。
+export function makeFunctionListWithSpare(): FunctionListModel {
+  const list = makeFunctionList();
+  const spare = { ...list.functions[0], id: "F-02", name: "予約を取り消す", trigger: "DELETE /api/v1/reservations/{id}" };
+  return { ...list, functions: [...list.functions, spare], next_number: 3 };
 }
 
 // Phase-17-5:追記

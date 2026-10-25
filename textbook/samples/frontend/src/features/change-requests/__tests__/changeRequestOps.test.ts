@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5
+// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5,109-2
 // SUT: changeRequestOps(CR の画面の純粋な変換)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
@@ -16,6 +16,7 @@
 // Phase-107-2:追記 ── ../changeRequestOps.addOption, ../changeRequestOps.decidedOptionLabel, ../changeRequestOps.optionsFormFromCr, ../changeRequestOps.optionsProblems, ../changeRequestOps.removeOption, ../changeRequestOps.toOptionsBody, ../changeRequestOps.toggleOptionTarget, ../changeRequestOps.updateOption, ../test-utils/changeRequestFixtures.makeOptions
 // Phase-107-4:追記 ── ../changeRequestOps.activeShareLink, ../changeRequestOps.canShare, ../changeRequestOps.shareDaysProblem, ../changeRequestOps.shareUrl, ../test-utils/changeRequestFixtures.makeShareLink
 // Phase-107-5:追記 ── ../changeRequestOps.commentAuthor, ../changeRequestOps.commentedOnOlderVersion, ../test-utils/changeRequestFixtures.makeComment
+// Phase-109-2:追記 ── ../changeRequestOps.changeRequestLabel
 import { describe, expect, it } from "vitest";
 import {
   ORIGIN_KIND_LABEL,
@@ -32,6 +33,7 @@ import {
   crNumbersInImpact,
   decidedOptionLabel,
   defaultReflectionCr,
+  changeRequestLabel,
   designStageHref,
   emptyForm,
   formFromChangeRequest,
@@ -169,6 +171,8 @@ describe("changeRequestOps", () => {
     // 「新しい要件を足す」を外したら、選んでいた起点は送らない(サーバーは起点だけ残ると断る)
     expect(toUpdateBody({ ...form, adds_requirement: false }).origins).toEqual([]);
     expect(ORIGIN_KIND_LABEL.screen).toBe("画面");
+    // Phase-109-2:追記
+    expect(ORIGIN_KIND_LABEL.function).toBe("処理");
   });
 
   it("CR の起点はキーでフォームへ写し、表示名はキーから引く", () => {
@@ -215,6 +219,8 @@ describe("changeRequestOps", () => {
     expect(stagesMarkedBy(impact, 2)).toEqual([1]);
     expect(stagesMarkedBy(impact, 5)).toEqual([]);
     expect(designStageHref("p1", 3)).toBe("/projects/p1/detailed-design?stage=3");
+    // Phase-109-2:追記
+    expect(changeRequestLabel(4)).toBe("CR-4");
     // Phase-87-4:追記
     // 段階の生成に渡す CR の初期値は、反映済みの CR のうち印の出どころにある最初のもの
     expect(defaultReflectionCr([2, 7], impact)).toBe(2);

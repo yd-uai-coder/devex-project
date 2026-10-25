@@ -1,16 +1,22 @@
-// 作成：Phase-98-1｜更新：Phase-99(完了後の調整)
+// 作成：Phase-98-1｜更新：Phase-99(完了後の調整),109-3
 // Phase-99(完了後の調整)：更新
 // // SUT: confirmationOps(確認事項の一覧の絞り込み・分け方・採用率の文・確認のダイアログの要否)
 // ↓↓
-// SUT: confirmationOps(確認事項の一覧の絞り込み・行の状態を変えられるか・採用率の文・確認のダイアログの要否)
+// Phase-109-3：更新
+// // SUT: confirmationOps(確認事項の一覧の絞り込み・行の状態を変えられるか・採用率の文・確認のダイアログの要否)
+// ↓↓
+// SUT: confirmationOps(確認事項の一覧の絞り込み・行の状態を変えられるか・採用率の文・確認のダイアログの要否・
+//      CR で変わった旨の文)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
 // Phase-99(完了後の調整):追記 ── ../confirmationOps.rowLock
 // Phase-99(完了後の調整)：削除 ── ../confirmationOps.splitByPresence
+// Phase-109-3:追記 ── ../confirmationOps.changedByLabel
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_FILTER,
   adoptionText,
+  changedByLabel,
   filterItems,
   needsAdoptConfirm,
   rowLock,
@@ -19,6 +25,12 @@ import {
 import { makeItem, makeList } from "../test-utils/confirmationFixtures";
 
 describe("confirmationOps", () => {
+  // Phase-109-3:追記
+  it("CR の反映で未確認に戻った行だけ、どの CR で変わったかの文を作る", () => {
+    expect(changedByLabel(makeItem())).toBeNull();
+    expect(changedByLabel(makeItem({ changed_by_change_request_number: 3 }))).toBe("CR-3 の反映で文が変わりました");
+  });
+
   // Phase-99(完了後の調整)：更新
   // it("今の一覧の項目と、一覧から消えた項目に分ける", () => {
   //   const { present, gone } = splitByPresence(makeList().items);

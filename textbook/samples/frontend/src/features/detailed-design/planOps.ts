@@ -1,11 +1,14 @@
-// 作成：Phase-23-5｜更新：Phase-26-5,42-1,42-2
+// 作成：Phase-23-5｜更新：Phase-26-5,42-1,42-2,109-1
 // 写経レベル: 定型 ── 行の追加・更新・削除が大半。マイルストーンの番号を保存せず並び順から導く点と、タスクを入れ子で更新する点がコア。
 // Phase-26-5：更新 ── import の TASK_AREAS・TaskArea を UNIT_KINDS・UnitKind に替えた
+// Phase-109-1:追記 ── @/features/detailed-design/api/types.FunctionListModel, @/features/detailed-design/api/types.FunctionRow
 import {
   CROSSCUTTING_TOPICS,
   PRIORITIES,
   UNIT_KINDS,
   type CrossCuttingRow,
+  type FunctionListModel,
+  type FunctionRow,
   type Milestone,
   type PlanModel,
   type PlanTask,
@@ -269,4 +272,73 @@ export function updateRisk(model: PlanModel, index: number, patch: Partial<Risk>
 
 export function removeRisk(model: PlanModel, index: number): PlanModel {
   return { ...model, risks: removeAt(model.risks, index) };
+}
+
+// Phase-109-1:追記
+// --- 機能一覧に無い処理(段階1 の作り直しで処理 ID が変わって残ったタスクの処理) ---
+
+// タスクが参照する処理のうち、機能一覧に無いもの(タスクの位置と処理 ID)。今の処理へ付け替えるか、
+// タスクは残して処理 ID だけを外す(再生成の drop_unknown_functions と同じ)。
+export type StrayTaskFunction = { milestone: number; task: number; functionId: string; taskLabel: string };
+
+export function strayTaskFunctions(model: PlanModel, functionList: FunctionListModel): StrayTaskFunction[] {
+  const ids = new Set(functionList.functions.map((fn) => fn.id));
+  return model.milestones.flatMap((milestone, m) =>
+    milestone.tasks.flatMap((task, t) =>
+      [...new Set(task.function_ids.map((f) => f.trim()).filter((f) => f && !ids.has(f)))].map((functionId) => ({
+        milestone: m,
+        task: t,
+        functionId,
+        taskLabel: `${taskId(m, t)} ${task.title}`.trim(),
+      })),
+    ),
+  );
+}
+
+// 付け替え先に選べる処理(機能一覧のうち、そのタスクにまだ無いもの)。
+export function taskFunctionTargets(
+  model: PlanModel,
+  functionList: FunctionListModel,
+  milestone: number,
+  task: number,
+): FunctionRow[] {
+  const used = new Set((model.milestones[milestone]?.tasks[task]?.function_ids ?? []).map((f) => f.trim()));
+  return functionList.functions.filter((fn) => !used.has(fn.id));
+}
+
+// タスクの処理 from を to に置き換える(並びの位置はそのまま)。
+export function reassignTaskFunction(
+  model: PlanModel,
+  milestone: number,
+  task: number,
+  from: string,
+  to: string,
+): PlanModel {
+  const current = model.milestones[milestone]?.tasks[task];
+  if (current === undefined) return model;
+  const function_ids = current.function_ids.map((f) => (f.trim() === from ? to : f));
+  return updateTask(model, milestone, task, { function_ids });
+}
+
+// タスクから処理 functionId を外す(タスクは残す)。
+export function removeTaskFunction(model: PlanModel, milestone: number, task: number, functionId: string): PlanModel {
+  const current = model.milestones[milestone]?.tasks[task];
+  if (current === undefined) return model;
+  return updateTask(model, milestone, task, {
+    function_ids: current.function_ids.filter((f) => f.trim() !== functionId),
+  });
+}
+
+export function removeStrayTaskFunctions(model: PlanModel, functionList: FunctionListModel): PlanModel {
+  const ids = new Set(functionList.functions.map((fn) => fn.id));
+  return {
+    ...model,
+    milestones: model.milestones.map((milestone) => ({
+      ...milestone,
+      tasks: milestone.tasks.map((task) => ({
+        ...task,
+        function_ids: task.function_ids.filter((f) => !f.trim() || ids.has(f.trim())),
+      })),
+    })),
+  };
 }

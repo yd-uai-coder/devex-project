@@ -1,9 +1,11 @@
-// 作成：Phase-17-6
+// 作成：Phase-17-6｜更新：Phase-109-1
 // 写経レベル: コア ── グループの上限と、「内容がある」の判定をバックエンドとそろえる。
+// Phase-109-1:追記 ── @/features/detailed-design/api/types.FunctionRow
 import {
   MAX_DFD_GROUPS,
   type DataFlowModel,
   type FunctionListModel,
+  type FunctionRow,
   type ProcessSummaryRow,
 } from "@/features/detailed-design/api/types";
 
@@ -80,4 +82,62 @@ export function updateSummary(
 // 機能グループに属する処理の数(グループの選択の横に出す)。
 export function countGroupFunctions(functionList: FunctionListModel, group: string): number {
   return functionList.functions.filter((row) => row.group === group).length;
+}
+
+// Phase-109-1:追記
+// ---- 機能一覧に無い処理(段階1 の作り直しで処理 ID が変わって残った行) ----
+
+// 機能一覧に無い処理の処理概要の行。表は機能一覧の処理だけを行にするので画面に出ず、ここから
+// 今の処理へ付け替えるか消す。index は summaries の並びの位置。
+export type StraySummary = { index: number; functionId: string; process: string };
+
+export function straySummaries(model: DataFlowModel, functionList: FunctionListModel): StraySummary[] {
+  const ids = new Set(functionList.functions.map((fn) => fn.id));
+  return model.summaries.flatMap((row, index) =>
+    ids.has(row.function_id) ? [] : [{ index, functionId: row.function_id, process: row.process }],
+  );
+}
+
+const isEmptySummary = (row: ProcessSummaryRow) =>
+  !row.input.trim() && !row.process.trim() && !row.output.trim();
+
+// 付け替え先に選べる処理(機能一覧にあって、処理概要がまだ空のもの)。
+export function summaryTargets(model: DataFlowModel, functionList: FunctionListModel): FunctionRow[] {
+  const written = new Set(model.summaries.filter((row) => !isEmptySummary(row)).map((row) => row.function_id));
+  return functionList.functions.filter((fn) => !written.has(fn.id));
+}
+
+// index の行を、中身はそのままで functionId の処理へ付け替える。付け替え先の空の行があれば置き換え、
+// 機能一覧の順に並べ直す(機能一覧に無い行は後ろ)。
+export function reassignSummary(
+  model: DataFlowModel,
+  functionList: FunctionListModel,
+  index: number,
+  functionId: string,
+): DataFlowModel {
+  const moved = model.summaries[index];
+  if (moved === undefined) return model;
+  const rest = model.summaries.filter((row, i) => i !== index && row.function_id !== functionId);
+  const order = new Map(functionList.functions.map((fn, i) => [fn.id, i]));
+  const rank = (id: string) => order.get(id) ?? Number.MAX_SAFE_INTEGER;
+  const summaries = [...rest, { ...moved, function_id: functionId }].sort(
+    (a, b) => rank(a.function_id) - rank(b.function_id),
+  );
+  return { ...model, summaries };
+}
+
+export function removeSummaryAt(model: DataFlowModel, index: number): DataFlowModel {
+  return { ...model, summaries: model.summaries.filter((_, i) => i !== index) };
+}
+
+export function removeStraySummaries(model: DataFlowModel, functionList: FunctionListModel): DataFlowModel {
+  const ids = new Set(functionList.functions.map((fn) => fn.id));
+  return { ...model, summaries: model.summaries.filter((row) => ids.has(row.function_id)) };
+}
+
+// DFD を描くグループのうち、機能一覧に無いもの(グループの選択には出ないので、ここから外す。
+// 外すのは toggleDfdGroup で行う)。
+export function strayDfdGroups(model: DataFlowModel, functionList: FunctionListModel): string[] {
+  const groups = new Set(functionList.groups);
+  return model.dfd_groups.filter((group) => !groups.has(group));
 }

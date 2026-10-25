@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-87-3,87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5
+// 作成：Phase-87-1｜更新：Phase-87-3,87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5,109-2
   // Phase-88-2:追記
 // Phase-88(完了後の調整):追記
 // Phase-98-2:追記 ── @/features/change-requests/api/types.ChangeRequestOriginRead, @/features/baselines/api/types.OriginKind
@@ -179,6 +179,8 @@ export const ORIGIN_KIND_LABEL: Record<OriginKind, string> = {
   requirement: "要件",
   screen: "画面",
   api: "API",
+  // Phase-109-2:追記
+  function: "処理",
 };
 
 // 起点を足す(同じ要素は2回入れない)
@@ -422,6 +424,12 @@ export function designStageHref(projectId: string, stage: number): string {
 
 export function changeRequestHref(projectId: string, number: number): string {
   return `/projects/${projectId}/change-requests/${number}`;
+}
+
+// Phase-109-2:追記
+// CR の表示名(devex-api の label と同じ形。番号だけを持つ応答から名前を出す)
+export function changeRequestLabel(number: number): string {
+  return `CR-${number}`;
 }
 
 // 印の出どころ(`cr:<番号>`)から CR の番号を読む
