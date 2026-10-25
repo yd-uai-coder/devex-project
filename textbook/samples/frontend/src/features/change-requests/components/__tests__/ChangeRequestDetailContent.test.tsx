@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整)
+// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整),107-4
 // SUT: ChangeRequestDetailContent(詳細の見出し・タブの切り替え・反映の完了待ち)
 // ドライバ: Testing Library(描画・タブのクリック)
 // スタブ: ストアの関数(vi.fn)・useGenerationPolling(vi.mock)・各タブと操作の部品(vi.mock)──
@@ -24,6 +24,8 @@ vi.mock("../VerificationTab", () => ({ VerificationTab: () => <div>検証のタ�
 // ── ここから Phase-87-3 の作成分 ──
 // Phase-88-4:追記
 vi.mock("../ExplanationTab", () => ({ ExplanationTab: () => <div>説明書のタブ</div> }));
+// Phase-107-4:追記
+vi.mock("../ShareTab", () => ({ ShareTab: () => <div>共有のタブ</div> }));
 vi.mock("../TraceTab", () => ({ TraceTab: () => <div>記録のタブ</div> }));
 
 describe("ChangeRequestDetailContent", () => {
@@ -57,10 +59,16 @@ describe("ChangeRequestDetailContent", () => {
     // Phase-88-4:追記
     await userEvent.click(screen.getByRole("tab", { name: "説明書" }));
     expect(screen.getByText("説明書のタブ")).toBeInTheDocument();
+    // Phase-107-4:追記
+    await userEvent.click(screen.getByRole("tab", { name: "共有" }));
+    expect(screen.getByText("共有のタブ")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("tab", { name: "たどる記録" }));
     expect(screen.getByText("記録のタブ")).toBeInTheDocument();
     // Phase-88-4:追記
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["内容", "影響", "検証", "説明書", "たどる記録"]);
+    // Phase-107-4：更新
+    // expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["内容", "影響", "検証", "説明書", "たどる記録"]);
+    // ↓↓
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["内容", "影響", "検証", "説明書", "共有", "たどる記録"]);
 
     // Phase-87-4:追記
     useChangeRequestsStore.setState({ detail: makeChangeRequest({ status: "applied" }) });

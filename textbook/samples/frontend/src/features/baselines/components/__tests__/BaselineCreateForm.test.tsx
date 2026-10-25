@@ -1,4 +1,4 @@
-// 作成：Phase-88-3
+// 作成：Phase-88-3｜更新：Phase-107-2
 // SUT: BaselineCreateForm(束の作成のフォーム)
 // ドライバ: Testing Library(描画・入力・クリック)
 // スタブ: onSubmit・onCancel(vi.fn)── フォームが組み立てて渡す本文だけを見るため(作成はストアのテスト)
@@ -16,14 +16,20 @@ const CANDIDATES = [
     label: "CR-1",
     title: "参考資料を5件まで",
     status: "verified",
-    decision: { counterpart: "山田(発注者)", decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "上限を上げる", recorded_by: "u1" },
+    // Phase-107-2：更新
+    // decision: { counterpart: "山田(発注者)", decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "上限を上げる", recorded_by: "u1" },
+    // ↓↓
+    decision: { counterpart: "山田(発注者)", decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "上限を上げる", recorded_by: "u1", option: null, source: null, source_label: null, fingerprint: null },
   }),
   makeChangeRequest({
     number: 3,
     label: "CR-3",
     title: "画面を足す",
     status: "verified",
-    decision: { counterpart: null, decided_at: "2026-10-19T02:00:00Z", memo: "", reason: "画面を足す", recorded_by: "u1" },
+    // Phase-107-2：更新
+    // decision: { counterpart: null, decided_at: "2026-10-19T02:00:00Z", memo: "", reason: "画面を足す", recorded_by: "u1" },
+    // ↓↓
+    decision: { counterpart: null, decided_at: "2026-10-19T02:00:00Z", memo: "", reason: "画面を足す", recorded_by: "u1", option: null, source: null, source_label: null, fingerprint: null },
   }),
 ];
 const stage = (n: number, overrides: Partial<DesignStageRead> = {}) =>

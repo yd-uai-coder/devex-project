@@ -1,7 +1,8 @@
-// 作成：Phase-87-3｜更新：Phase-98-2
+// 作成：Phase-87-3｜更新：Phase-98-2,107-1
 "use client";
 
 // Phase-98-2:追記 ── @/features/change-requests/api/types.ChangeRequestOriginRead, @/features/change-requests/changeRequestOps.originLabel
+// Phase-107-1:追記 ── @/features/change-requests/api/types.ScaleComparisonRead, @/features/change-requests/changeRequestOps.scaleCell, @/features/change-requests/changeRequestOps.scaleComparisonBasis
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, Paragraph, Text, YStack } from "tamagui";
@@ -11,6 +12,7 @@ import type {
   ChangeRequestRead,
   ComparedItemRead,
   PredictedItemRead,
+  ScaleComparisonRead,
 } from "@/features/change-requests/api/types";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import {
@@ -19,6 +21,8 @@ import {
   groupByStage,
   isApplied,
   originLabel,
+  scaleCell,
+  scaleComparisonBasis,
   stageLabel,
 } from "@/features/change-requests/changeRequestOps";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
@@ -29,7 +33,10 @@ import { failureHeading } from "@/lib/generation-failure";
 // Phase-98-2：更新
 // // 「変更の影響」で CR を選ぶ)。反映の後は、予測と実際の印の比較を3つに分けて出す。
 // ↓↓
-// 「変更の影響」で CR を選ぶ)。反映の後は、予測と実際の印の比較を3つに分けて出す。新しい要件を足す
+// Phase-107-1：更新
+// // 「変更の影響」で CR を選ぶ)。反映の後は、予測と実際の印の比較を3つに分けて出す。新しい要件を足す
+// ↓↓
+// 「変更の影響」で CR を選ぶ)。反映の後は、規模の予測と実際の数と、予測と実際の印の比較を3つに分けて出す。新しい要件を足す
 // CR は、予測に使った起点と、要素ごとに届いた起点も出す。
 export function ImpactTab({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
   const impact = useChangeRequestsStore((s) => s.views.impact);
@@ -90,6 +97,8 @@ export function ImpactTab({ projectId, cr }: { projectId: string; cr: ChangeRequ
             </Text>
           ) : null}
           {comparison === null && !viewErrors.comparison ? <Text color="$color11">読み込み中...</Text> : null}
+          {/* Phase-107-1:追記 */}
+          {comparison && comparison.scale.length > 0 ? <ScaleComparison rows={comparison.scale} /> : null}
           {comparison
             ? comparisonGroups(comparison.items).map((group) => (
                 <ComparisonGroup
@@ -157,6 +166,33 @@ export function ImpactTab({ projectId, cr }: { projectId: string; cr: ChangeRequ
         }}
       />
     </YStack>
+  );
+}
+
+// Phase-107-1:追記
+// 規模の予測と実際(数えられなければ「数えられない」)。画面・API は印が付かないので、文書の側の確認で確かめた数
+function ScaleComparison({ rows }: { rows: ScaleComparisonRead[] }) {
+  return (
+    <table style={TABLE} aria-label="規模の予測と実際">
+      <thead>
+        <tr>
+          <th style={HEAD}>種類</th>
+          <th style={HEAD}>予測</th>
+          <th style={HEAD}>実際</th>
+          <th style={HEAD}>実際の数え方</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.kind}>
+            <td style={CELL}>{row.label}</td>
+            <td style={CELL}>{scaleCell(row.predicted)}</td>
+            <td style={CELL}>{scaleCell(row.actual)}</td>
+            <td style={CELL}>{scaleComparisonBasis(row)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 

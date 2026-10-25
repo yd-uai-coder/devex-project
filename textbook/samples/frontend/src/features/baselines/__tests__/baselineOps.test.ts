@@ -1,4 +1,4 @@
-// 作成：Phase-88-2
+// 作成：Phase-88-2｜更新：Phase-107-2
 // SUT: baselineOps(合意済みの版の画面の純粋な変換)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
@@ -26,6 +26,11 @@ const decision = (counterpart: string | null, reason: string, memo = "") => ({
   memo,
   reason,
   recorded_by: "u1",
+  // Phase-107-2:追記
+  option: null,
+  source: null,
+  source_label: null,
+  fingerprint: null,
 });
 
 const VERIFIED_1 = makeChangeRequest({

@@ -237,7 +237,7 @@
   * Phase 104: 共有リンク API(コメントと合意・却下。合意の記録への入れ方) ── **完了**([`textbook/Phase-104/Phase-104-introduction.md`](../textbook/Phase-104/Phase-104-introduction.md))
   * Phase 105: 名称を言い換える偽の LLM と、名前の揺れの直し(外部連携の重複・推測の利用者のキー) ── **完了**([`textbook/Phase-105/Phase-105-introduction.md`](../textbook/Phase-105/Phase-105-introduction.md))
   * Phase 106: 段階の参照の切れと、合意の周りの残り(API。段階7 の再生成の処理 ID・確認事項の戻し・DFD の直しの承認の印・巡回で消えた版の戻し・起点の処理・束の入れた CR) ── **完了**([`textbook/Phase-106/Phase-106-introduction.md`](../textbook/Phase-106/Phase-106-introduction.md))
-  * Phase 107: CR の画面(規模・選択肢・共有リンクの管理とコメント)
+  * Phase 107: CR の画面(規模・選択肢・共有リンクの管理とコメント) ── **完了**([`textbook/Phase-107/Phase-107-introduction.md`](../textbook/Phase-107/Phase-107-introduction.md))
   * Phase 108: 共有リンクの画面(クライアント向け)
   * Phase 109: 残りの画面(段階2・3・7 の一覧・起点・束の一覧の CR・確認事項)
   * Phase 110: 効果測定・統合/E2E(同じ規則で CR-3・CR-4 と選択肢のある新しい CR を共有リンクの画面で読み直す・全 E2E・マイグレーションの往復・開発環境での画面確認・`OPERATIONS.md` 10.8節のステージ13 の分)

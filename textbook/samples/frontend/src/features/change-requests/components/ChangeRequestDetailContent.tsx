@@ -1,7 +1,10 @@
-// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整)
+// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整),107-4
 // Phase-87-4:追記 ── @/features/change-requests/components/VerificationTab.VerificationTab
 "use client";
 
+// Phase-88-4:追記
+// Phase-88(完了後の調整):追記
+// Phase-107-4:追記 ── @/features/change-requests/components/ShareTab.ShareTab
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
@@ -9,11 +12,10 @@ import { useChangeRequestsStore } from "@/features/change-requests/change-reques
 import { isApplied } from "@/features/change-requests/changeRequestOps";
 import { ChangeRequestActions } from "@/features/change-requests/components/ChangeRequestActions";
 import { ContentTab } from "@/features/change-requests/components/ContentTab";
-// Phase-88-4:追記
-// Phase-88(完了後の調整):追記
 import { DetailedModeOnlyNotice } from "@/features/change-requests/components/DetailedModeOnlyNotice";
 import { ExplanationTab } from "@/features/change-requests/components/ExplanationTab";
 import { ImpactTab } from "@/features/change-requests/components/ImpactTab";
+import { ShareTab } from "@/features/change-requests/components/ShareTab";
 import { StatusBadge } from "@/features/change-requests/components/StatusBadge";
 import { TraceTab } from "@/features/change-requests/components/TraceTab";
 import { VerificationTab } from "@/features/change-requests/components/VerificationTab";
@@ -22,7 +24,10 @@ import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 // Phase-88-4：更新
 // export type DetailTab = "content" | "impact" | "verification" | "trace";
 // ↓↓
-export type DetailTab = "content" | "impact" | "verification" | "explanation" | "trace";
+// Phase-107-4：更新
+// export type DetailTab = "content" | "impact" | "verification" | "explanation" | "trace";
+// ↓↓
+export type DetailTab = "content" | "impact" | "verification" | "explanation" | "share" | "trace";
 
 const TABS: { value: DetailTab; label: string }[] = [
   { value: "content", label: "内容" },
@@ -32,6 +37,8 @@ const TABS: { value: DetailTab; label: string }[] = [
   // ── ここから Phase-87-3 の作成分 ──
   // Phase-88-4:追記
   { value: "explanation", label: "説明書" },
+  // Phase-107-4:追記
+  { value: "share", label: "共有" },
   { value: "trace", label: "たどる記録" },
 ];
 
@@ -39,8 +46,12 @@ const TABS: { value: DetailTab; label: string }[] = [
 // // 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は4つのタブ(内容・影響・検証・たどる記録)。
 // // タブの中身(予測・比較・検証・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
 // ↓↓
-// 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は5つのタブ(内容・影響・検証・説明書・
-// たどる記録)。タブの中身(予測・比較・検証・説明書・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
+// Phase-107-4：更新
+// // 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は5つのタブ(内容・影響・検証・説明書・
+// // たどる記録)。タブの中身(予測・比較・検証・説明書・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
+// ↓↓
+// 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は6つのタブ(内容・影響・検証・説明書・共有・
+// たどる記録)。タブの中身(予測・比較・検証・説明書・共有リンク・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
 // フォームの状態を、親の再描画で失わないよう、部品を作り直さない)。文書への反映の完了待ちは、
 // Phase-89(完了後の調整)：更新
 // // タブを移っても続くようにここで持つ。
@@ -154,6 +165,8 @@ export function ChangeRequestDetailContent({ projectId, number }: { projectId: s
             {/* ── ここから Phase-87-3 の作成分 ── */}
             {/* Phase-88-4:追記 */}
             {tab === "explanation" ? <ExplanationTab projectId={projectId} cr={detail} /> : null}
+            {/* Phase-107-4:追記 */}
+            {tab === "share" ? <ShareTab projectId={projectId} cr={detail} /> : null}
             {tab === "trace" ? <TraceTab projectId={projectId} number={number} /> : null}
           </YStack>
         </>

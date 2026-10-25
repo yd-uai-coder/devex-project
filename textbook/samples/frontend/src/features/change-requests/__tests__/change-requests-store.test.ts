@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2
+// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2,107-2,107-3,107-4,107-5
 // Phase-88-2：更新
 // // SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映)
 // ↓↓
@@ -8,14 +8,23 @@
 // SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映と完了の待ち直し・説明書の要約)
 // ドライバ: vitest のテスト関数(ストアの関数を直接呼ぶ)
 // スタブ: fetch(stubFetch)── ストアが API を呼ぶ順と本文、応答・失敗の後の状態を確かめるため
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { useChangeRequestsStore } from "../change-requests-store";
 // Phase-88-2：更新
 // import { makeChangeRequest, makeVerification } from "../test-utils/changeRequestFixtures";
 // ↓↓
+// Phase-107-2:追記 ── ../test-utils/changeRequestFixtures.makeOptions
+// Phase-107-3:追記 ── ../test-utils/changeRequestFixtures.makeOptionDraft
+// Phase-107-4:追記 ── ../test-utils/changeRequestFixtures.makeCreatedShareLink, ../test-utils/changeRequestFixtures.makeShareLink
+// Phase-107-5:追記 ── ../test-utils/changeRequestFixtures.makeComment
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { useChangeRequestsStore } from "../change-requests-store";
 import {
   makeChangeRequest,
   makeExplanation,
+  makeOptionDraft,
+  makeOptions,
+  makeComment,
+  makeCreatedShareLink,
+  makeShareLink,
   makeSummary,
   makeVerification,
 } from "../test-utils/changeRequestFixtures";
@@ -41,6 +50,16 @@ describe("useChangeRequestsStore", () => {
       // Phase-88-2:追記
       summaryActing: null,
       summaryError: null,
+      // Phase-107-3:追記
+      draftActing: null,
+      draftError: null,
+      // Phase-107-4:追記
+      createdLink: null,
+      shareActing: null,
+      shareError: null,
+      // Phase-107-5:追記
+      replying: null,
+      replyError: null,
       // Phase-88(完了後の調整):追記
       unavailable: false,
     });
@@ -120,6 +139,22 @@ describe("useChangeRequestsStore", () => {
     expect(state().views.verification).toBeNull();
     expect(state().fetchedAt).toBeNull();
     expect(state().acting).toBe(false);
+  });
+
+  // Phase-107-2:追記
+  it("案の保存は案だけを PATCH で送り、詳細を置き換える", async () => {
+    stub.queue({ body: makeChangeRequest() });
+    stub.queue({ body: makeChangeRequest({ options: makeOptions() }) });
+
+    await state().fetchDetail("p1", 1);
+    const body = { items: [], recommended: null, reason: "" };
+    const ok = await state().updateOptions("p1", 1, body);
+
+    expect(ok).toBe(true);
+    expect(stub.requests[1].url).toMatch(/\/change-requests\/1$/);
+    expect(stub.requests[1].init?.method).toBe("PATCH");
+    expect(JSON.parse(String(stub.requests[1].init?.body))).toEqual({ options: body });
+    expect(state().detail?.options?.items).toHaveLength(2);
   });
 
   it("操作の失敗は actionError に残し、詳細は変えない", async () => {
@@ -236,6 +271,95 @@ describe("useChangeRequestsStore", () => {
     expect(ok).toBe(false);
     expect(state().summaryError).toBe("LLM の呼び出しに失敗しました");
     expect(state().views.explanation?.summary).toBeNull();
+  });
+
+  // Phase-107-3:追記
+  it("下書きの無い 404 は「下書きなし」として読み、作ると下書きのビューを、取り込むと詳細を置き換える", async () => {
+    stub.queue({ body: makeChangeRequest() });
+    stub.queue({ status: 404, body: { detail: "none", code: "CR_OPTION_DRAFT_NOT_FOUND" } });
+    stub.queue({ body: makeOptionDraft() });
+    stub.queue({ body: makeChangeRequest({ options: makeOptions() }) });
+
+    await state().fetchDetail("p1", 1);
+    await state().fetchView("p1", 1, "optionDraft");
+    expect(state().views.optionDraft).toEqual({ draft: null });
+    expect(state().viewErrors.optionDraft).toBeUndefined();
+
+    expect(await state().draftOptions("p1", 1)).toBe(true);
+    expect(stub.requests[2].url).toMatch(/\/options\/draft$/);
+    expect(stub.requests[2].init?.method).toBe("POST");
+    expect(state().views.optionDraft?.draft?.adoptable).toBe(true);
+
+    expect(await state().adoptDraft("p1", 1)).toBe(true);
+    expect(stub.requests[3].url).toMatch(/\/options\/draft\/adopt$/);
+    expect(state().detail?.options?.items).toHaveLength(2);
+    expect(state().views.optionDraft).toBeNull();
+    expect(state().draftActing).toBeNull();
+  });
+
+  it("下書きの失敗は draftError に残す", async () => {
+    stub.queue({ body: makeChangeRequest() });
+    stub.queue({ status: 422, body: { detail: "取り込めません", code: "CR_OPTION_INVALID" } });
+
+    await state().fetchDetail("p1", 1);
+    expect(await state().adoptDraft("p1", 1)).toBe(false);
+
+    expect(state().draftError).toBe("取り込めません");
+  });
+
+  // Phase-107-4:追記
+  it("共有リンクを作るとトークンつきのリンクを持ち、CR を読み直す。別の CR を開くと捨てる", async () => {
+    stub.queue({ body: makeChangeRequest() });
+    stub.queue({ body: makeCreatedShareLink() });
+    stub.queue({ body: makeChangeRequest({ status: "explained" }) });
+
+    await state().fetchDetail("p1", 1);
+    expect(await state().createShare("p1", 1, 30)).toBe(true);
+
+    expect(JSON.parse(String(stub.requests[1].init?.body))).toEqual({ expires_in_days: 30 });
+    expect(state().createdLink).toEqual({ number: 1, link: expect.objectContaining({ token: "tok123" }) });
+    expect(state().detail?.status).toBe("explained");
+    expect(state().views.shareLinks).toBeNull();
+
+    stub.queue({ body: makeChangeRequest({ number: 2, label: "CR-2" }) });
+    await state().fetchDetail("p1", 2);
+    expect(state().createdLink).toBeNull();
+  });
+
+  it("取り消し・延長は応答のリンクで一覧の行を置き換え、失敗は shareError に残す", async () => {
+    stub.queue({ body: makeChangeRequest() });
+    stub.queue({ body: [makeShareLink(), makeShareLink({ id: "l0", state: "revoked" })] });
+    stub.queue({ body: makeShareLink({ state: "revoked", state_label: "取り消し", revoked_at: "2026-10-25T01:00:00Z" }) });
+    stub.queue({ status: 409, body: { detail: "取り消したリンクは延ばせません" } });
+
+    await state().fetchDetail("p1", 1);
+    await state().fetchView("p1", 1, "shareLinks");
+    expect(await state().revokeShare("p1", 1, "l1")).toBe(true);
+    expect(stub.requests[2].url).toMatch(/\/share-links\/l1\/revoke$/);
+    expect(state().views.shareLinks?.map((l) => l.state)).toEqual(["revoked", "revoked"]);
+
+    expect(await state().extendShare("p1", 1, "l1", 7)).toBe(false);
+    expect(JSON.parse(String(stub.requests[3].init?.body))).toEqual({ expires_in_days: 7 });
+    expect(state().shareError).toBe("取り消したリンクは延ばせません");
+  });
+
+  // Phase-107-5:追記
+  it("返信は返ったコメントで一覧の同じコメントを置き換え、記録のタブを読み直させる", async () => {
+    const answered = makeComment({ replies: [makeComment({ id: "r1", from_developer: true, can_reply: false })] });
+    stub.queue({ body: makeChangeRequest() });
+    stub.queue({ body: [makeComment(), makeComment({ id: "c2" })] });
+    stub.queue({ body: answered });
+
+    await state().fetchDetail("p1", 1);
+    await state().fetchView("p1", 1, "comments");
+    useChangeRequestsStore.setState({ views: { ...state().views, trace: { number: 1 } as never } });
+    expect(await state().reply("p1", 1, "c1", "答え")).toBe(true);
+
+    expect(stub.requests[2].url).toMatch(/\/comments\/c1\/replies$/);
+    expect(JSON.parse(String(stub.requests[2].init?.body))).toEqual({ body: "答え" });
+    expect(state().views.comments?.map((c) => c.replies.length)).toEqual([1, 0]);
+    expect(state().views.trace).toBeNull();
+    expect(state().replying).toBeNull();
   });
 
   // Phase-88(完了後の調整):追記

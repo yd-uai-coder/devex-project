@@ -1,21 +1,34 @@
-// 作成：Phase-87-1｜更新：Phase-87-3,87-4,88-2,88(完了後の調整),98-2,99(完了後の調整)
+// 作成：Phase-87-1｜更新：Phase-87-3,87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5
   // Phase-88-2:追記
 // Phase-88(完了後の調整):追記
 // Phase-98-2:追記 ── @/features/change-requests/api/types.ChangeRequestOriginRead, @/features/baselines/api/types.OriginKind
 // Phase-99(完了後の調整):追記 ── @/features/change-requests/api/types.ChangeRequestVerificationRead
+// Phase-107-1:追記 ── @/features/change-requests/api/types.ChangeRequestExplanationRead, @/features/change-requests/api/types.ScaleComparisonRead, @/features/change-requests/api/types.ScaleCountRead
+// Phase-107-2:追記 ── @/features/change-requests/api/types.ChangeRequestOptionsIn, @/features/change-requests/api/types.ChangeRequestOptionsRead, @/features/change-requests/api/types.ChangeRequestTargetRead
+// Phase-107-4:追記 ── @/features/change-requests/api/types.ShareLinkRead, @/features/change-requests/api/types.ShareState
+// Phase-107-5:追記 ── @/features/change-requests/api/types.ChangeRequestCommentRead
 import type {
   BackgroundSource,
   ChangeRequestAction,
+  ChangeRequestCommentRead,
   ChangeRequestCreate,
+  ChangeRequestExplanationRead,
+  ChangeRequestOptionsIn,
+  ChangeRequestOptionsRead,
   ChangeRequestOriginRead,
   ChangeRequestRead,
   ChangeRequestStatus,
   ChangeRequestTargetIn,
+  ChangeRequestTargetRead,
   ChangeRequestUpdate,
   ChangeRequestVerificationRead,
   ComparedItemRead,
   ComparisonStatus,
   ExplanationSummaryRead,
+  ScaleComparisonRead,
+  ScaleCountRead,
+  ShareLinkRead,
+  ShareState,
   SummaryState,
   TargetKind,
 } from "@/features/change-requests/api/types";
@@ -241,6 +254,115 @@ export function toCreateBody(form: ChangeRequestForm): ChangeRequestCreate {
   };
 }
 
+// Phase-107-2:追記
+// ---- 選択肢(案) ----
+
+// 案は0件か2〜3件(devex-api app/change_requests/options.py の OPTIONS_MIN・OPTIONS_MAX)
+export const OPTIONS_MIN = 2;
+export const OPTIONS_MAX = 3;
+
+export type OptionForm = { name: string; targets: ChangeRequestTargetIn[]; outcome: string };
+export type OptionsForm = { items: OptionForm[]; recommended: number | null; reason: string };
+
+export function optionLabel(number: number): string {
+  return `案${number}`;
+}
+
+export function optionsFormFromCr(options: ChangeRequestOptionsRead | null): OptionsForm {
+  if (options === null) return { items: [], recommended: null, reason: "" };
+  return {
+    items: options.items.map((o) => ({
+      name: o.name,
+      targets: o.targets.map((t) => ({ requirement_id: t.requirement_id, kind: t.kind, proposed_text: t.proposed_text })),
+      outcome: o.outcome,
+    })),
+    recommended: options.recommended,
+    reason: options.reason,
+  };
+}
+
+// 案を足す。2件に満たないと保存できないので、初めて足すときは2つ並べる
+export function addOption(form: OptionsForm): OptionsForm {
+  if (form.items.length >= OPTIONS_MAX) return form;
+  const blank = (): OptionForm => ({ name: "", targets: [], outcome: "" });
+  return { ...form, items: form.items.length === 0 ? [blank(), blank()] : [...form.items, blank()] };
+}
+
+// 案を消す。おすすめの番号は消した案の後ろを1つ詰め、消した案がおすすめなら外す(理由は残す)
+export function removeOption(form: OptionsForm, index: number): OptionsForm {
+  const items = form.items.filter((_, i) => i !== index);
+  const removed = index + 1;
+  let recommended = form.recommended;
+  if (recommended === removed) recommended = null;
+  else if (recommended !== null && recommended > removed) recommended -= 1;
+  return { ...form, items, recommended };
+}
+
+export function updateOption(form: OptionsForm, index: number, patch: Partial<OptionForm>): OptionsForm {
+  return { ...form, items: form.items.map((o, i) => (i === index ? { ...o, ...patch } : o)) };
+}
+
+// 案で変える対象の入り切り。入れるときは CR の対象の種類と変更後の案を写して始める
+export function toggleOptionTarget(option: OptionForm, target: ChangeRequestTargetRead, on: boolean): OptionForm {
+  const without = option.targets.filter((t) => t.requirement_id !== target.requirement_id);
+  if (!on) return { ...option, targets: without };
+  const added = { requirement_id: target.requirement_id, kind: target.kind, proposed_text: target.proposed_text };
+  return { ...option, targets: [...without, added] };
+}
+
+// 合意で選んだ案の表示(「案1 名前」。案が消えていれば番号だけ)
+export function decidedOptionLabel(cr: ChangeRequestRead): string {
+  const number = cr.decision?.option ?? null;
+  if (number === null) return "";
+  const option = cr.options?.items.find((o) => o.number === number);
+  return option ? `${option.label} ${option.name}` : optionLabel(number);
+}
+
+// 保存の前に確かめること(サーバーも同じ規則で 422 を返す)。空なら保存できる
+export function optionsProblems(form: OptionsForm, crTargets: ChangeRequestTargetRead[], addsRequirement: boolean): string[] {
+  const problems: string[] = [];
+  const count = form.items.length;
+  // 案を全部消したら、おすすめも外して送る(toOptionsBody)
+  if (count === 0) return problems;
+  if (count < OPTIONS_MIN || count > OPTIONS_MAX) problems.push(`案は${OPTIONS_MIN}〜${OPTIONS_MAX}件にしてください`);
+  const known = new Set(crTargets.map((t) => t.requirement_id));
+  const names = new Set<string>();
+  form.items.forEach((option, i) => {
+    const label = optionLabel(i + 1);
+    const name = option.name.trim().split(/\s+/).join(" ");
+    if (!name || !option.outcome.trim()) problems.push(`${label}に名前と結果を書いてください`);
+    if (name && names.has(name)) problems.push(`${label}の名前がほかの案と重なっています`);
+    names.add(name);
+    const unknown = option.targets.filter((t) => !known.has(t.requirement_id)).map((t) => t.requirement_id);
+    if (unknown.length > 0) problems.push(`${label}の対象が CR の対象にありません: ${unknown.join(", ")}`);
+    if (option.targets.length === 0 && !addsRequirement) problems.push(`${label}で変える要件を選んでください`);
+  });
+  if (form.recommended !== null) {
+    if (form.recommended < 1 || form.recommended > count) problems.push("おすすめの案を選び直してください");
+    if (!form.reason.trim()) problems.push("おすすめの理由を書いてください");
+  } else if (form.reason.trim()) {
+    problems.push("おすすめの案を選ばずに理由は書けません");
+  }
+  return problems;
+}
+
+export function toOptionsBody(form: OptionsForm): ChangeRequestOptionsIn {
+  if (form.items.length === 0) return { items: [], recommended: null, reason: "" };
+  return {
+    items: form.items.map((o) => ({
+      name: o.name.trim(),
+      targets: o.targets.map((t) => ({
+        requirement_id: t.requirement_id,
+        kind: t.kind,
+        proposed_text: t.kind === "delete" ? "" : t.proposed_text.trim(),
+      })),
+      outcome: o.outcome.trim(),
+    })),
+    recommended: form.recommended,
+    reason: form.recommended === null ? "" : form.reason.trim(),
+  };
+}
+
 // ---- 合意・却下の日時 ----
 
 // <input type="datetime-local"> の今の値(秒なし・手元の時刻)
@@ -391,6 +513,123 @@ export function markSegments(text: string, unknownIds: string[], unknownNumbers:
   }
   push(text.slice(last), null);
   return segments;
+}
+
+// Phase-107-1:追記
+// ---- 変更の規模 ----
+
+// 規模の表の1列(案のある CR の合意の前は案ごと、それ以外は CR の1列)
+export type ScaleColumn = { key: string; title: string; recommended: boolean; scale: ScaleCountRead[] };
+
+export function scaleColumns(explanation: ChangeRequestExplanationRead): ScaleColumn[] {
+  if (explanation.option_scales.length > 0) {
+    return explanation.option_scales.map((o) => ({
+      key: o.label,
+      title: `${o.label} ${o.name}`,
+      recommended: o.recommended,
+      scale: o.scale,
+    }));
+  }
+  return [{ key: "cr", title: "この変更", recommended: false, scale: explanation.scale }];
+}
+
+// 数は「n件」、数えられなければ「数えられない」(0件と書かない)
+export function scaleCell(count: number | null): string {
+  return count === null ? "数えられない" : `${count}件`;
+}
+
+// 表の下に出す理由・注記の1行。同じ列で同じ理由・注記の種類は1行にまとめる(説明書の3節と同じ)。
+// 列が複数なら行の頭に列の名前を付ける
+export type ScaleRemarkLine = { text: string; uncountable: boolean };
+
+export function scaleRemarkLines(columns: ScaleColumn[]): ScaleRemarkLine[] {
+  const lines: { key: string; prefix: string; kinds: string[]; body: string; uncountable: boolean }[] = [];
+  for (const column of columns) {
+    const prefix = columns.length > 1 ? `${column.title} ── ` : "";
+    for (const count of column.scale) {
+      const remarks = [
+        ...count.uncountable.map((r) => ({ remark: r, uncountable: true })),
+        ...count.notes.map((r) => ({ remark: r, uncountable: false })),
+      ];
+      for (const { remark, uncountable } of remarks) {
+        const body = remark.detail ? `${remark.label}(${remark.detail})` : remark.label;
+        const key = `${column.key}|${uncountable}|${remark.code}|${body}`;
+        const found = lines.find((line) => line.key === key);
+        if (found) {
+          if (!found.kinds.includes(count.label)) found.kinds.push(count.label);
+        } else {
+          lines.push({ key, prefix, kinds: [count.label], body, uncountable });
+        }
+      }
+    }
+  }
+  return lines.map((line) => ({
+    text: `${line.prefix}${line.kinds.join("・")}${line.uncountable ? "は数えられない" : ""}: ${line.body}`,
+    uncountable: line.uncountable,
+  }));
+}
+
+// 反映の後の比較の1行の文(数えられなければ「数えられない」)と、数え方の注記
+export function scaleComparisonBasis(row: ScaleComparisonRead): string {
+  return row.basis === "document_checks"
+    ? "予測のうち、文書の側の確認の一覧で確かめた数"
+    : "反映で付いた印から、今の設計で数えた数";
+}
+
+// Phase-107-4:追記
+// ---- 共有リンク ----
+
+// 期限の日数(devex-api app/change_requests/sharing.py の DEFAULT_EXPIRES_DAYS・MAX_EXPIRES_DAYS)
+export const SHARE_DEFAULT_DAYS = 14;
+export const SHARE_MAX_DAYS = 90;
+
+export const SHARE_STATE_TONE: Record<ShareState, string> = {
+  open: "green",
+  paused: "yellow",
+  decided: "blue",
+  closed: "gray",
+  expired: "red",
+  revoked: "red",
+};
+
+// リンクを作れる CR の状態(作ると下書きは説明済みになる)
+export function canShare(status: ChangeRequestStatus): boolean {
+  return status === "draft" || status === "explained";
+}
+
+// クライアントに送る URL(応答の path に、今開いている Devex の origin を付ける)
+export function shareUrl(path: string, origin: string): string {
+  return `${origin.replace(/\/$/, "")}${path}`;
+}
+
+// 期限の日数の入力の問題(null なら送れる)
+export function shareDaysProblem(value: string): string | null {
+  const days = Number(value);
+  if (!value.trim() || !Number.isInteger(days) || days < 1 || days > SHARE_MAX_DAYS) {
+    return `期限は1〜${SHARE_MAX_DAYS}日で入れてください`;
+  }
+  return null;
+}
+
+// 今使えるリンク(取り消し・期限切れでないもの)。CR に有効なリンクは1本
+export function activeShareLink(links: ShareLinkRead[]): ShareLinkRead | null {
+  return links.find((l) => l.state !== "revoked" && l.state !== "expired") ?? null;
+}
+
+// Phase-107-5:追記
+// ---- コメント ----
+
+// 返信の本文の上限(devex-api app/change_requests/comments.py の COMMENT_BODY_MAX)
+export const COMMENT_BODY_MAX = 2000;
+
+// コメントの書き手(クライアントは書いた名前、返信は開発者)
+export function commentAuthor(comment: ChangeRequestCommentRead): string {
+  return comment.from_developer ? "開発者(返信)" : `${comment.author_name}(クライアント)`;
+}
+
+// コメントが、今の説明書より前の版を見て書かれたか(説明書の指紋が違う)
+export function commentedOnOlderVersion(comment: ChangeRequestCommentRead, fingerprint: string | null): boolean {
+  return fingerprint !== null && comment.fingerprint !== "" && comment.fingerprint !== fingerprint;
 }
 
 // Phase-88(完了後の調整):追記

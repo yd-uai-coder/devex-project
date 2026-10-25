@@ -1,9 +1,10 @@
-// 作成：Phase-87-3｜更新：Phase-98-2
+// 作成：Phase-87-3｜更新：Phase-98-2,107-1
 // SUT: ImpactTab(予測・比較・文書への反映のボタン)
 // ドライバ: Testing Library(描画・クリック)
 // スタブ: ストアの関数(vi.fn)── タブを開いたときの読み込みと、反映のボタンの出し分けだけを見るため
+// Phase-107-1:追記 ── @testing-library/react.within
 import { beforeEach, describe, expect, it } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ImpactTab } from "../ImpactTab";
 import { useChangeRequestsStore } from "../../change-requests-store";
@@ -79,6 +80,24 @@ describe("ImpactTab", () => {
     expect(screen.getByText(/文書の側\(印が付かない\)/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "反映中(文書を作り直しています)..." })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByRole("link", { name: "詳細設計画面で段階へ反映する →" })).toBeInTheDocument();
+  });
+
+  // Phase-107-1:追記
+  it("反映済みは、規模の予測と実際の数を並べる(数えられなければそう書く)", () => {
+    const scale = [
+      { kind: "unit" as const, label: "作業単位", predicted: 2, actual: 3, basis: "marks" as const },
+      { kind: "api" as const, label: "API", predicted: null, actual: null, basis: "document_checks" as const },
+    ];
+    useChangeRequestsStore.setState({
+      views: { ...store().views, impact: makeImpact({ saved: true }), comparison: makeComparison({ scale }) },
+    });
+    renderWithTheme(<ImpactTab projectId="p1" cr={makeChangeRequest({ status: "applied" })} />);
+
+    const table = screen.getByRole("table", { name: "規模の予測と実際" });
+    const unit = within(table).getByRole("row", { name: /作業単位/ });
+    expect(within(unit).getByText("2件")).toBeInTheDocument();
+    expect(within(unit).getByText("3件")).toBeInTheDocument();
+    expect(within(within(table).getByRole("row", { name: /API/ })).getAllByText("数えられない")).toHaveLength(2);
   });
 
   it("比較の読み込みの失敗を出す", () => {

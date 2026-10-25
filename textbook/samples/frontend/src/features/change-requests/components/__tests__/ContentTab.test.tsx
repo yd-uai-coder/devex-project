@@ -1,13 +1,15 @@
-// 作成：Phase-87-3｜更新：Phase-88-3,98-2
+// 作成：Phase-87-3｜更新：Phase-88-3,98-2,107-1,107-2,107-3
 // SUT: ContentTab(内容・対象・合意の記録・重なり・写しの元と先、直すフォーム)
 // ドライバ: Testing Library(描画・クリック)
 // スタブ: ストアの関数(vi.fn)── 束の要件の読み込みと、直したときに送る本文だけを見るため
+// Phase-107-1:追記 ── ../../test-utils/changeRequestFixtures.makeExplanation
+// Phase-107-2:追記 ── ../../test-utils/changeRequestFixtures.makeOptions
 import { beforeEach, describe, expect, it } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ContentTab } from "../ContentTab";
 import { useChangeRequestsStore } from "../../change-requests-store";
-import { makeChangeRequest } from "../../test-utils/changeRequestFixtures";
+import { makeChangeRequest, makeExplanation, makeOptions } from "../../test-utils/changeRequestFixtures";
 import { renderWithTheme, resetChangeRequestsStore } from "../../test-utils/renderWithStore";
 
 const store = () => useChangeRequestsStore.getState();
@@ -30,6 +32,44 @@ describe("ContentTab", () => {
   // Phase-98-2:追記
   });
 
+  // Phase-107-1:追記
+  it("説明書のビューを読み、変更の規模を出す", () => {
+    const { unmount } = renderWithTheme(<ContentTab projectId="p1" cr={makeChangeRequest()} />);
+
+    expect(store().fetchView).toHaveBeenCalledWith("p1", 1, "explanation");
+    // Phase-107-3：更新
+    // expect(screen.getByText("読み込み中...")).toBeInTheDocument();
+    // ↓↓
+    expect(screen.getByRole("table", { name: "対象の要件" })).toBeInTheDocument();
+    expect(screen.queryByRole("table", { name: "変更の規模" })).toBeNull();
+    unmount();
+    useChangeRequestsStore.setState({ views: { ...store().views, explanation: makeExplanation() } });
+    renderWithTheme(<ContentTab projectId="p1" cr={makeChangeRequest()} />);
+    expect(screen.getByRole("table", { name: "変更の規模" })).toBeInTheDocument();
+  });
+
+  // Phase-107-2:追記
+  it("合意の記録に、選んだ案と出どころを出し、選択肢の節も出す", () => {
+    const decision = {
+      counterpart: "佐藤",
+      decided_at: "2026-10-19T01:00:00Z",
+      memo: "",
+      reason: "共有リンクで合意",
+      recorded_by: null,
+      option: 1,
+      source: "share_link",
+      source_label: "共有リンク",
+      fingerprint: "f1",
+    };
+    renderWithTheme(
+      <ContentTab projectId="p1" cr={makeChangeRequest({ status: "agreed", options: makeOptions(), decision })} />,
+    );
+
+    expect(screen.getByText("選んだ案: 案1 5件まで")).toBeInTheDocument();
+    expect(screen.getByText("出どころ: 共有リンク")).toBeInTheDocument();
+    expect(screen.getByText("選択肢(案)")).toBeInTheDocument();
+  });
+
   it("新しい要件を足す CR は予測の起点を出し、直すときだけ起点の候補を読む", async () => {
     const origins = [{ key: "screen:SCR-004", label: "SCR-004 チャットヒアリング画面" }];
     renderWithTheme(<ContentTab projectId="p1" cr={makeChangeRequest({ adds_requirement: true, origins })} />);
@@ -50,7 +90,10 @@ describe("ContentTab", () => {
     const cr = makeChangeRequest({
       status: "verified",
       allowed_actions: [],
-      decision: { counterpart: null, decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "合意した", recorded_by: "u1" },
+      // Phase-107-2：更新
+      // decision: { counterpart: null, decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "合意した", recorded_by: "u1" },
+      // ↓↓
+      decision: { counterpart: null, decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "合意した", recorded_by: "u1", option: null, source: null, source_label: null, fingerprint: null },
       overlapping: [{ number: 2, label: "CR-2", requirement_ids: ["FR-005"] }],
       derived_from_number: 3,
       derived_numbers: [6],

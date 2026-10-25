@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2,99(完了後の調整)
+// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5
 // SUT: changeRequestOps(CR の画面の純粋な変換)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
@@ -12,15 +12,25 @@
 // Phase-88(完了後の調整):追記
 // Phase-98-2:追記 ── ../changeRequestOps.ORIGIN_KIND_LABEL, ../changeRequestOps.addOrigin, ../changeRequestOps.originLabel, ../changeRequestOps.removeOrigin
 // Phase-99(完了後の調整):追記 ── ../changeRequestOps.verifyBannerText
+// Phase-107-1:追記 ── ../changeRequestOps.scaleCell, ../changeRequestOps.scaleColumns, ../changeRequestOps.scaleComparisonBasis, ../changeRequestOps.scaleRemarkLines, ../test-utils/changeRequestFixtures.makeExplanation, ../test-utils/changeRequestFixtures.makeScale
+// Phase-107-2:追記 ── ../changeRequestOps.addOption, ../changeRequestOps.decidedOptionLabel, ../changeRequestOps.optionsFormFromCr, ../changeRequestOps.optionsProblems, ../changeRequestOps.removeOption, ../changeRequestOps.toOptionsBody, ../changeRequestOps.toggleOptionTarget, ../changeRequestOps.updateOption, ../test-utils/changeRequestFixtures.makeOptions
+// Phase-107-4:追記 ── ../changeRequestOps.activeShareLink, ../changeRequestOps.canShare, ../changeRequestOps.shareDaysProblem, ../changeRequestOps.shareUrl, ../test-utils/changeRequestFixtures.makeShareLink
+// Phase-107-5:追記 ── ../changeRequestOps.commentAuthor, ../changeRequestOps.commentedOnOlderVersion, ../test-utils/changeRequestFixtures.makeComment
 import { describe, expect, it } from "vitest";
 import {
   ORIGIN_KIND_LABEL,
+  activeShareLink,
+  addOption,
   addOrigin,
   addTarget,
   canReflectDocuments,
   canReflectStages,
+  canShare,
+  commentAuthor,
+  commentedOnOlderVersion,
   comparisonGroups,
   crNumbersInImpact,
+  decidedOptionLabel,
   defaultReflectionCr,
   designStageHref,
   emptyForm,
@@ -33,22 +43,39 @@ import {
   localInputToIso,
   markSegments,
   nowLocalInput,
+  optionsFormFromCr,
+  optionsProblems,
   originLabel,
+  removeOption,
   removeOrigin,
   removeTarget,
+  scaleCell,
+  scaleColumns,
+  scaleComparisonBasis,
+  scaleRemarkLines,
   setTargetKind,
+  shareDaysProblem,
+  shareUrl,
   setTargetProposal,
   stageLabel,
   stagesMarkedBy,
   summaryOutputNote,
   toCreateBody,
+  toOptionsBody,
   toUpdateBody,
+  toggleOptionTarget,
+  updateOption,
   verifyBannerText,
 } from "../changeRequestOps";
 import {
   makeChangeRequest,
+  makeComment,
   makeComparison,
+  makeExplanation,
   makeImpact,
+  makeOptions,
+  makeScale,
+  makeShareLink,
   makeSummary,
 } from "../test-utils/changeRequestFixtures";
 import type { DesignImpactRead } from "@/features/detailed-design/api/types";
@@ -214,6 +241,206 @@ describe("説明書と要約", () => {
     expect(summaryOutputNote(makeSummary({ state: "confirmed" }))).toContain("要約が載ります");
     expect(summaryOutputNote(makeSummary({ state: "unconfirmed" }))).toContain("載りません");
     expect(summaryOutputNote(makeSummary({ state: "stale" }))).toContain("確かめ直すまで");
+  });
+});
+
+// Phase-107-1:追記
+describe("変更の規模", () => {
+  const uncountable = { code: "no_stage", label: "要る段階が束に無い", detail: "段階7" };
+
+  it("案の無い CR は1列、案のある CR の合意の前は案ごとの列にする", () => {
+    expect(scaleColumns(makeExplanation()).map((c) => c.title)).toEqual(["この変更"]);
+    const explanation = makeExplanation({
+      option_scales: [
+        { number: 1, label: "案1", name: "一緒に", recommended: true, scale: makeScale() },
+        { number: 2, label: "案2", name: "先に", recommended: false, scale: makeScale() },
+      ],
+    });
+
+    expect(scaleColumns(explanation).map((c) => [c.title, c.recommended])).toEqual([
+      ["案1 一緒に", true],
+      ["案2 先に", false],
+    ]);
+  });
+
+  it("数えられない数を0件と書かない", () => {
+    expect(scaleCell(0)).toBe("0件");
+    expect(scaleCell(null)).toBe("数えられない");
+  });
+
+  it("同じ列の同じ理由は種類をまとめ、列が複数なら列の名前を頭に付ける", () => {
+    const scale = makeScale({
+      unit: { count: null, uncountable: [uncountable] },
+      file: { count: null, uncountable: [uncountable] },
+      test: { notes: [{ code: "stale", label: "古いまま写した段階から数えた", detail: "" }] },
+    });
+
+    expect(scaleRemarkLines(scaleColumns(makeExplanation({ scale })))).toEqual([
+      { text: "作業単位・ファイルは数えられない: 要る段階が束に無い(段階7)", uncountable: true },
+      { text: "テスト: 古いまま写した段階から数えた", uncountable: false },
+      { text: "APIは数えられない: 要る文書が束に無い(外部設計書)", uncountable: true },
+    ]);
+    const two = scaleColumns(
+      makeExplanation({
+        option_scales: [
+          { number: 1, label: "案1", name: "一緒に", recommended: false, scale: makeScale() },
+          { number: 2, label: "案2", name: "先に", recommended: false, scale: makeScale() },
+        ],
+      }),
+    );
+    expect(scaleRemarkLines(two).map((l) => l.text)).toEqual([
+      "案1 一緒に ── APIは数えられない: 要る文書が束に無い(外部設計書)",
+      "案2 先に ── APIは数えられない: 要る文書が束に無い(外部設計書)",
+    ]);
+  });
+
+  it("反映の後の実際の数え方を、種類の数え方ごとに書く", () => {
+    const row = { kind: "screen" as const, label: "画面", predicted: 1, actual: 1 };
+    expect(scaleComparisonBasis({ ...row, basis: "document_checks" })).toContain("文書の側の確認");
+    expect(scaleComparisonBasis({ ...row, basis: "marks" })).toContain("印から");
+  });
+});
+
+// Phase-107-2:追記
+describe("選択肢(案)", () => {
+  const cr = makeChangeRequest();
+  const target = cr.targets[0];
+
+  it("CR の案をフォームにし、案が無ければ空にする", () => {
+    expect(optionsFormFromCr(null)).toEqual({ items: [], recommended: null, reason: "" });
+    const form = optionsFormFromCr(makeOptions());
+    expect(form.items.map((o) => o.name)).toEqual(["5件まで", "上限なし"]);
+    expect(form.items[0].targets).toEqual([{ requirement_id: "FR-005", kind: "content", proposed_text: "5件まで添付できる" }]);
+    expect(form.recommended).toBe(1);
+  });
+
+  it("初めて足すと2つ並べ、3つまでしか足さない", () => {
+    const two = addOption({ items: [], recommended: null, reason: "" });
+    expect(two.items).toHaveLength(2);
+    const three = addOption(two);
+    expect(addOption(three).items).toHaveLength(3);
+  });
+
+  it("消した案の後ろのおすすめは番号を詰め、消した案のおすすめは外す", () => {
+    const form = { ...optionsFormFromCr(makeOptions()), recommended: 2 };
+    expect(removeOption(form, 0).recommended).toBe(1);
+    expect(removeOption(form, 1).recommended).toBeNull();
+  });
+
+  it("対象を入れると CR の種類と案を写し、外すと消す", () => {
+    const option = { name: "a", targets: [], outcome: "b" };
+    const on = toggleOptionTarget(option, target, true);
+    expect(on.targets).toEqual([{ requirement_id: "FR-005", kind: "content", proposed_text: "5件まで添付できる" }]);
+    expect(toggleOptionTarget(on, target, false).targets).toEqual([]);
+    expect(updateOption({ items: [option], recommended: null, reason: "" }, 0, { name: "c" }).items[0].name).toBe("c");
+  });
+
+  it("案の数・名前と結果・重なり・対象・おすすめの規則を確かめる", () => {
+    const ok = optionsFormFromCr(makeOptions());
+    expect(optionsProblems(ok, cr.targets, false)).toEqual([]);
+    expect(optionsProblems({ items: [], recommended: null, reason: "" }, cr.targets, false)).toEqual([]);
+    expect(optionsProblems({ ...ok, items: ok.items.slice(0, 1), recommended: null, reason: "" }, cr.targets, false)).toEqual([
+      "案は2〜3件にしてください",
+    ]);
+    const bad = {
+      items: [
+        { name: "同じ", targets: [{ requirement_id: "FR-099", kind: "content" as const, proposed_text: "" }], outcome: "x" },
+        { name: "同じ", targets: [], outcome: "" },
+      ],
+      recommended: 1,
+      reason: "",
+    };
+    expect(optionsProblems(bad, cr.targets, false)).toEqual([
+      "案1の対象が CR の対象にありません: FR-099",
+      "案2に名前と結果を書いてください",
+      "案2の名前がほかの案と重なっています",
+      "案2で変える要件を選んでください",
+      "おすすめの理由を書いてください",
+    ]);
+    // 新しい要件を足す CR は、変える要件の無い案を持てる
+    const noTargets = { ...ok, items: ok.items.map((o) => ({ ...o, targets: [] })) };
+    expect(optionsProblems(noTargets, cr.targets, true)).toEqual([]);
+    expect(optionsProblems({ ...ok, recommended: null }, cr.targets, false)).toEqual([
+      "おすすめの案を選ばずに理由は書けません",
+    ]);
+  });
+
+  it("送る本文は前後の空白を除き、削除の案を空にする。案が無ければ空の案で送る", () => {
+    const form = {
+      items: [
+        { name: " a ", targets: [{ requirement_id: "FR-005", kind: "delete" as const, proposed_text: "x" }], outcome: " b " },
+        { name: "c", targets: [], outcome: "d" },
+      ],
+      recommended: 1,
+      reason: " r ",
+    };
+    expect(toOptionsBody(form)).toEqual({
+      items: [
+        { name: "a", targets: [{ requirement_id: "FR-005", kind: "delete", proposed_text: "" }], outcome: "b" },
+        { name: "c", targets: [], outcome: "d" },
+      ],
+      recommended: 1,
+      reason: "r",
+    });
+    expect(toOptionsBody({ items: [], recommended: null, reason: "" })).toEqual({ items: [], recommended: null, reason: "" });
+  });
+
+  it("合意で選んだ案を、名前つきで出す", () => {
+    const decision = {
+      counterpart: null,
+      decided_at: "2026-10-19T01:00:00Z",
+      memo: "",
+      reason: "r",
+      recorded_by: "u1",
+      option: 2,
+      source: "share_link",
+      source_label: "共有リンク",
+      fingerprint: "f1",
+    };
+    expect(decidedOptionLabel(makeChangeRequest({ options: makeOptions(), decision }))).toBe("案2 上限なし");
+    expect(decidedOptionLabel(makeChangeRequest({ options: null, decision }))).toBe("案2");
+    expect(decidedOptionLabel(makeChangeRequest())).toBe("");
+  });
+});
+
+// Phase-107-4:追記
+describe("共有リンク", () => {
+  it("作れるのは下書きと説明済みだけ", () => {
+    expect(canShare("draft")).toBe(true);
+    expect(canShare("explained")).toBe(true);
+    expect(canShare("agreed")).toBe(false);
+  });
+
+  it("応答のパスに今の origin を付けて URL にする", () => {
+    expect(shareUrl("/share/abc", "https://devex.example.com/")).toBe("https://devex.example.com/share/abc");
+    expect(shareUrl("/share/abc", "http://localhost:3000")).toBe("http://localhost:3000/share/abc");
+  });
+
+  it("期限は1〜90日の整数だけを受ける", () => {
+    expect(shareDaysProblem("14")).toBeNull();
+    expect(shareDaysProblem("90")).toBeNull();
+    for (const bad of ["", "0", "91", "1.5", "x"]) expect(shareDaysProblem(bad)).not.toBeNull();
+  });
+
+  it("今使えるリンクは、取り消し・期限切れでないもの", () => {
+    const revoked = makeShareLink({ id: "a", state: "revoked" });
+    const paused = makeShareLink({ id: "b", state: "paused" });
+    expect(activeShareLink([revoked, makeShareLink({ id: "c", state: "expired" })])).toBeNull();
+    expect(activeShareLink([revoked, paused])?.id).toBe("b");
+  });
+});
+
+// Phase-107-5:追記
+describe("コメント", () => {
+  it("書き手はクライアントの名前か開発者の返信", () => {
+    expect(commentAuthor(makeComment())).toBe("佐藤(クライアント)");
+    expect(commentAuthor(makeComment({ from_developer: true, author_name: "" }))).toBe("開発者(返信)");
+  });
+
+  it("今の説明書と指紋が違うコメントだけを、前の版を見たものとする", () => {
+    expect(commentedOnOlderVersion(makeComment({ fingerprint: "a" }), "b")).toBe(true);
+    expect(commentedOnOlderVersion(makeComment({ fingerprint: "a" }), "a")).toBe(false);
+    expect(commentedOnOlderVersion(makeComment({ fingerprint: "a" }), null)).toBe(false);
   });
 });
 

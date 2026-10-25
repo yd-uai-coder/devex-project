@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-88-4
+// 作成：Phase-87-3｜更新：Phase-88-4,107-2
 "use client";
 
 import { useState } from "react";
@@ -96,6 +96,8 @@ export function ChangeRequestActions({ projectId, cr }: { projectId: string; cr:
         <DecisionDialog
           open
           decision={dialog === "agree" ? "agreed" : "rejected"}
+          // Phase-107-2:追記
+          options={cr.options}
           onCancel={close}
           onConfirm={(body) => {
             close();

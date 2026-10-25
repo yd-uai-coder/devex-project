@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2
+// 作成：Phase-87-3｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2,107-2,107-3,107-4,107-5
 import type { ReactElement } from "react";
 import { render } from "@testing-library/react";
 import { vi } from "vitest";
@@ -29,7 +29,22 @@ export function resetChangeRequestsStore(): void {
     // Phase-88-2：更新
     // views: { impact: null, comparison: null, verification: null, trace: null, candidates: null },
     // ↓↓
-    views: { impact: null, comparison: null, verification: null, trace: null, candidates: null, explanation: null },
+    // Phase-107-3：更新
+    // views: { impact: null, comparison: null, verification: null, trace: null, candidates: null, explanation: null },
+    // ↓↓
+    views: {
+      impact: null,
+      comparison: null,
+      verification: null,
+      trace: null,
+      candidates: null,
+      explanation: null,
+      optionDraft: null,
+      // Phase-107-4:追記
+      shareLinks: null,
+      // Phase-107-5:追記
+      comments: null,
+    },
     viewErrors: {},
     acting: false,
     actionError: null,
@@ -39,6 +54,16 @@ export function resetChangeRequestsStore(): void {
     // Phase-88-2:追記
     summaryActing: null,
     summaryError: null,
+    // Phase-107-3:追記
+    draftActing: null,
+    draftError: null,
+    // Phase-107-4:追記
+    createdLink: null,
+    shareActing: null,
+    shareError: null,
+    // Phase-107-5:追記
+    replying: null,
+    replyError: null,
     fetchList: vi.fn().mockResolvedValue(undefined),
     fetchBaselines: vi.fn().mockResolvedValue(undefined),
     fetchRequirements: vi.fn().mockResolvedValue(undefined),
@@ -48,6 +73,8 @@ export function resetChangeRequestsStore(): void {
     fetchView: vi.fn().mockResolvedValue(undefined),
     create: vi.fn().mockResolvedValue(null),
     update: vi.fn().mockResolvedValue(true),
+    // Phase-107-2:追記
+    updateOptions: vi.fn().mockResolvedValue(true),
     explain: vi.fn().mockResolvedValue(true),
     decide: vi.fn().mockResolvedValue(true),
     withdraw: vi.fn().mockResolvedValue(true),
@@ -63,6 +90,16 @@ export function resetChangeRequestsStore(): void {
     summarize: vi.fn().mockResolvedValue(true),
     editSummary: vi.fn().mockResolvedValue(true),
     confirmSummary: vi.fn().mockResolvedValue(true),
+    // Phase-107-3:追記
+    draftOptions: vi.fn().mockResolvedValue(true),
+    adoptDraft: vi.fn().mockResolvedValue(true),
+    // Phase-107-4:追記
+    createShare: vi.fn().mockResolvedValue(true),
+    revokeShare: vi.fn().mockResolvedValue(true),
+    extendShare: vi.fn().mockResolvedValue(true),
+    dismissCreatedLink: vi.fn(),
+    // Phase-107-5:追記
+    reply: vi.fn().mockResolvedValue(true),
   });
 }
 

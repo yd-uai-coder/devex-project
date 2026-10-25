@@ -1,3 +1,4 @@
+// 更新：Phase-107-4
 "use client";
 // 作成：Phase-88-4
 
@@ -12,7 +13,11 @@ import { MarkdownBody } from "@/features/documents/components/MarkdownBody";
 
 // 詳細の「説明書」タブ。任意の要約(作る・直す・確認する)と、出力する md のプレビュー・ダウンロード。
 // 説明書は開いたときに読み、要約の操作の後は応答の説明書で置き換える。要約は CR の内容か影響が変わると
-// 「古い」になり、確かめ直すまで出力に載らない(docs/external_design.md 2.14節「変更の説明書」)
+// Phase-107-4：更新
+// // 「古い」になり、確かめ直すまで出力に載らない(docs/external_design.md 2.14節「変更の説明書」)
+// ↓↓
+// 「古い」になり、確かめ直すまで出力に載らない。確認済みのまま古くなったら、共有の前に知らせる
+// (docs/external_design.md 2.14節「変更の説明書」・2.16節)
 export function ExplanationTab({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
   const explanation = useChangeRequestsStore((s) => s.views.explanation);
   const error = useChangeRequestsStore((s) => s.viewErrors.explanation);
@@ -50,6 +55,12 @@ export function ExplanationTab({ projectId, cr }: { projectId: string; cr: Chang
           {summaryOutputNote(summary)}
           {summary ? "" : " 要約は LLM(生成の用途のモデル)で作り、人が確かめてから出力に載せます。"}
         </Paragraph>
+        {/* Phase-107-4:追記 */}
+        {summary?.needs_reconfirm ? (
+          <Text role="status" color="$orange10">
+            確認済みの要約が、その後の説明書の変化で古くなりました。共有する前に確かめ直してください。
+          </Text>
+        ) : null}
         {summaryError ? (
           <Text role="alert" color="$red10">
             {summaryError}

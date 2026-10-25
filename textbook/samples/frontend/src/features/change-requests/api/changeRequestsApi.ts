@@ -1,22 +1,31 @@
-// 作成：Phase-87-1｜更新：Phase-88-2
-import { apiFetch } from "@/lib/api/client";
-import { fetchAttachment, parseFilename } from "@/lib/api/download";
-import type {
+// 作成：Phase-87-1｜更新：Phase-88-2,107-2,107-3,107-4,107-5
   // Phase-88-2：削除
   // BaselineRequirementRead,
   // BaselineSummaryRead,
+  // Phase-88-2:追記
+// Phase-107-2:追記 ── @/features/change-requests/api/types.ChangeRequestOptionsIn
+// Phase-107-3:追記 ── @/features/change-requests/api/types.OptionDraftRead
+// Phase-107-4:追記 ── @/features/change-requests/api/types.ShareLinkCreatedRead, @/features/change-requests/api/types.ShareLinkRead
+// Phase-107-5:追記 ── @/features/change-requests/api/types.ChangeRequestCommentRead
+import { apiFetch } from "@/lib/api/client";
+import { fetchAttachment, parseFilename } from "@/lib/api/download";
+import type {
+  ChangeRequestCommentRead,
   ChangeRequestComparisonRead,
   ChangeRequestCreate,
   ChangeRequestDecision,
-  // Phase-88-2:追記
   ChangeRequestExplanationRead,
   ChangeRequestImpactRead,
+  ChangeRequestOptionsIn,
   ChangeRequestRead,
   ChangeRequestSummaryRead,
   ChangeRequestTraceRead,
   ChangeRequestUpdate,
   ChangeRequestVerificationRead,
+  OptionDraftRead,
   ReviewRunBriefRead,
+  ShareLinkCreatedRead,
+  ShareLinkRead,
 } from "@/features/change-requests/api/types";
 
 // Phase-88-2：更新
@@ -54,6 +63,20 @@ export function updateChangeRequest(
   return apiFetch<ChangeRequestRead>(one(projectId, number), {
     method: "PATCH",
     body: JSON.stringify(body),
+  });
+}
+
+// Phase-107-2:追記
+// 選択肢(案)だけを直す(下書き・説明済みの間だけ。説明済みは下書きに戻る)。案を消すときは items を空で送る。
+// 案の規則か CR の対象に合わなければ422
+export function updateChangeRequestOptions(
+  projectId: string,
+  number: number,
+  options: ChangeRequestOptionsIn,
+): Promise<ChangeRequestRead> {
+  return apiFetch<ChangeRequestRead>(one(projectId, number), {
+    method: "PATCH",
+    body: JSON.stringify({ options }),
   });
 }
 
@@ -164,6 +187,68 @@ export function confirmExplanationSummary(
   number: number,
 ): Promise<ChangeRequestExplanationRead> {
   return apiFetch<ChangeRequestExplanationRead>(`${one(projectId, number)}/explanation/summary/confirm`, post());
+}
+
+// Phase-107-3:追記
+// 選択肢の下書きを LLM で作る(説明書の md から2〜3の案とおすすめ。未確認でき、前の下書きは上書き)。
+// 下書き・説明済みの間だけ。利用者の生成の用途のモデルで作る
+export function createOptionDraft(projectId: string, number: number): Promise<OptionDraftRead> {
+  return apiFetch<OptionDraftRead>(`${one(projectId, number)}/options/draft`, post());
+}
+
+// 下書きと照合の結果。下書きが無ければ404(CR_OPTION_DRAFT_NOT_FOUND)
+export function getOptionDraft(projectId: string, number: number): Promise<OptionDraftRead> {
+  return apiFetch<OptionDraftRead>(`${one(projectId, number)}/options/draft`);
+}
+
+// 下書きの案を CR の案に取り込む(説明済みは下書きに戻る)。取り込めない下書きは422
+export function adoptOptionDraft(projectId: string, number: number): Promise<ChangeRequestRead> {
+  return apiFetch<ChangeRequestRead>(`${one(projectId, number)}/options/draft/adopt`, post());
+}
+
+// Phase-107-4:追記
+// 共有リンクを作る(下書きは説明済みになる。有効なリンクがあれば取り消してから作る)。期限は今からの日数(1〜90)。
+// トークンはこの応答でだけ返る。下書き・説明済みでなければ409
+export function createShareLink(projectId: string, number: number, expiresInDays: number): Promise<ShareLinkCreatedRead> {
+  return apiFetch<ShareLinkCreatedRead>(`${one(projectId, number)}/share-links`, post({ expires_in_days: expiresInDays }));
+}
+
+// CR の共有リンク(新しい順。取り消したものも)
+export function listShareLinks(projectId: string, number: number): Promise<ShareLinkRead[]> {
+  return apiFetch<ShareLinkRead[]>(`${one(projectId, number)}/share-links`);
+}
+
+export function revokeShareLink(projectId: string, number: number, linkId: string): Promise<ShareLinkRead> {
+  return apiFetch<ShareLinkRead>(`${one(projectId, number)}/share-links/${linkId}/revoke`, post());
+}
+
+// 期限を今から指定の日数後に置き直す。取り消したリンクは409
+export function extendShareLink(
+  projectId: string,
+  number: number,
+  linkId: string,
+  expiresInDays: number,
+): Promise<ShareLinkRead> {
+  return apiFetch<ShareLinkRead>(
+    `${one(projectId, number)}/share-links/${linkId}/extend`,
+    post({ expires_in_days: expiresInDays }),
+  );
+}
+
+// Phase-107-5:追記
+// CR のコメント欄(クライアントのコメントごとに返信をまとめ、古い順。リンクを作り直しても残る)
+export function listComments(projectId: string, number: number): Promise<ChangeRequestCommentRead[]> {
+  return apiFetch<ChangeRequestCommentRead[]>(`${one(projectId, number)}/comments`);
+}
+
+// クライアントのコメントに返信する(返したコメントと返信の一覧が返る)。返信への返信は409
+export function replyComment(
+  projectId: string,
+  number: number,
+  commentId: string,
+  body: string,
+): Promise<ChangeRequestCommentRead> {
+  return apiFetch<ChangeRequestCommentRead>(`${one(projectId, number)}/comments/${commentId}/replies`, post({ body }));
 }
 
 // 変更の説明書(md)。ファイル名はサーバーの Content-Disposition(cr-<番号>-explanation.md)

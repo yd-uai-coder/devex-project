@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,98-2
+// 作成：Phase-87-1｜更新：Phase-88-2,98-2,107-1,107-2,107-3,107-4,107-5
 // Phase-88-2：更新
 // // 変更要求(CR)と合意済みの版(束)の API の型。devex-api app/schemas/change_request.py・
 // // app/schemas/baseline.py の同名のクラスに対応する(画面で使う項目だけ)。
@@ -20,7 +20,11 @@ export type ChangeRequestStatus =
 // // edit・explain・agree・reject・withdraw・apply・verify・copy
 // ↓↓
 // edit・explain・agree・reject・withdraw・apply・verify・copy。approve_stage は状態を変えない記録だけの行
-// (CR で作り直した段階を承認して印を結んだ)
+// Phase-107-5：更新
+// // (CR で作り直した段階を承認して印を結んだ)
+// ↓↓
+// (CR で作り直した段階を承認して印を結んだ)。share・unshare・extend_share・comment・reply_comment も
+// 記録だけの行(共有リンクの作成・取り消し・期限の延長、クライアントのコメントと開発者の返信)
 export type ChangeRequestAction =
   | "create"
   | "copy"
@@ -37,7 +41,15 @@ export type ChangeRequestAction =
   // | "baseline";
   // ↓↓
   | "baseline"
-  | "approve_stage";
+  // Phase-107-5：更新
+  // | "approve_stage";
+  // ↓↓
+  | "approve_stage"
+  | "share"
+  | "unshare"
+  | "extend_share"
+  | "comment"
+  | "reply_comment";
 
 export type BackgroundSource = "meeting" | "email" | "document" | "other";
 export type TargetKind = "content" | "delete";
@@ -61,6 +73,21 @@ export type ChangeRequestCreate = {
   // 新しい要件の予測の起点(基準の束の要件・画面・API の要素のキー)。新しい要件を足す CR だけが持てる
   origins: string[];
   baseline_number?: number;
+};
+
+// Phase-107-2:追記
+// 選択肢(案)。案は0件か2〜3件で、案ごとに名前・この案で変える対象(CR の対象のうち。対象ごとに種類と
+// 変更後の案)・結果。おすすめは案の番号(1始まり)と理由。案を消すときは items を空で送る
+export type ChangeRequestOptionIn = {
+  name: string;
+  targets: ChangeRequestTargetIn[];
+  outcome: string;
+};
+
+export type ChangeRequestOptionsIn = {
+  items: ChangeRequestOptionIn[];
+  recommended: number | null;
+  reason: string;
 };
 
 // 編集(下書き・説明済みの間だけ。基準の束は変えない)
@@ -104,12 +131,35 @@ export type ChangeRequestSummaryRead = {
   included_baseline_number: number | null;
 };
 
+// Phase-107-2:追記
+// option は合意で選んだ案の番号、source は出どころ(developer = 開発者が記録 / share_link = 共有リンク。
+// 記録を足す前の判断は null)、fingerprint は判断したときの説明書の版
 export type ChangeRequestDecisionRead = {
   counterpart: string | null;
   decided_at: string;
   memo: string;
   reason: string;
   recorded_by: string | null;
+  // Phase-107-2:追記
+  option: number | null;
+  source: string | null;
+  source_label: string | null;
+  fingerprint: string | null;
+};
+
+export type ChangeRequestOptionRead = {
+  number: number;
+  label: string;
+  name: string;
+  targets: ChangeRequestTargetRead[];
+  outcome: string;
+  recommended: boolean;
+};
+
+export type ChangeRequestOptionsRead = {
+  items: ChangeRequestOptionRead[];
+  recommended: number | null;
+  reason: string;
 };
 
 export type ReviewRunBriefRead = {
@@ -137,6 +187,9 @@ export type ChangeRequestOverlapRead = {
 export type ChangeRequestRead = ChangeRequestSummaryRead & {
   content: string;
   background_memo: string;
+  // Phase-107-2:追記
+  // 選択肢(案の無い CR は null)
+  options: ChangeRequestOptionsRead | null;
   // Phase-88-2：削除
   // decision: ChangeRequestDecisionRead | null;
   reviews: LinkedReviewRead[];
@@ -148,13 +201,18 @@ export type ChangeRequestRead = ChangeRequestSummaryRead & {
   allowed_actions: ChangeRequestAction[];
 };
 
-// 合意・却下の記録(相手は空でもよい。日時はタイムゾーン付き)
+// Phase-107-2：更新
+// // 合意・却下の記録(相手は空でもよい。日時はタイムゾーン付き)
+// ↓↓
+// 合意・却下の記録(相手は空でもよい。日時はタイムゾーン付き)。案のある CR の合意では、選んだ案の番号が要る
 export type ChangeRequestDecision = {
   decision: "agreed" | "rejected";
   decided_at: string;
   counterpart: string | null;
   memo: string;
   reason: string;
+  // Phase-107-2:追記
+  option?: number | null;
 };
 
 // 予測(GET .../impact)
@@ -210,6 +268,17 @@ export type ComparedItemRead = {
   reviewed: boolean | null;
 };
 
+// Phase-107-1:追記
+// 規模の予測と実際(basis = marks は反映で付いた印から数えた、document_checks は文書の側の確認の一覧で
+// 確かめた数)。数えられなければ null
+export type ScaleComparisonRead = {
+  kind: ScaleKind;
+  label: string;
+  predicted: number | null;
+  actual: number | null;
+  basis: "marks" | "document_checks";
+};
+
 export type ChangeRequestComparisonRead = {
   number: number;
   label: string;
@@ -217,6 +286,8 @@ export type ChangeRequestComparisonRead = {
   saved: boolean;
   counts: Record<ComparisonStatus, number>;
   items: ComparedItemRead[];
+  // Phase-107-1:追記
+  scale: ScaleComparisonRead[];
 };
 
 // 検証(GET .../verification)
@@ -322,6 +393,38 @@ export type ExplanationSummaryRead = {
   confirmed_at: string | null;
   unknown_requirement_ids: string[];
   unknown_numbers: string[];
+  // Phase-107-4:追記
+  // 確認済みのまま、その後の説明書の変化で古くなった(共有の前に確かめ直す)
+  needs_reconfirm: boolean;
+};
+
+// Phase-107-1:追記
+// 変更の規模(説明書の規模の節)。種類ごとの数(数えられなければ null で、uncountable に理由)・
+// 数えたものの表示名・数えたうえでの注記。detail は対象の段階・文書・要件 ID・単位
+export type ScaleKind = "unit" | "file" | "test" | "screen" | "api";
+
+export type ScaleRemarkRead = {
+  code: string;
+  label: string;
+  detail: string;
+};
+
+export type ScaleCountRead = {
+  kind: ScaleKind;
+  label: string;
+  count: number | null;
+  names: string[];
+  uncountable: ScaleRemarkRead[];
+  notes: ScaleRemarkRead[];
+};
+
+// 合意の前の案1つの規模(案のある CR の規模の表の1列)
+export type OptionScaleRead = {
+  number: number;
+  label: string;
+  name: string;
+  recommended: boolean;
+  scale: ScaleCountRead[];
 };
 
 // 説明書(プレビュー)。markdown は5節、output は出力する md(確認済みで古くない要約だけを載せる)
@@ -339,11 +442,73 @@ export type ChangeRequestExplanationRead = {
   markdown: string;
   fingerprint: string;
   output: string;
+  // Phase-107-1:追記
+  // 規模(案のある CR では案を合わせた範囲)と、合意の前の案ごとの規模(案の無い CR・案を選んだ後は空)
+  scale: ScaleCountRead[];
+  option_scales: OptionScaleRead[];
   units: string[];
   integration_tests: string[];
   system_tests: string[];
   has_test_spec: boolean;
   summary: ExplanationSummaryRead | null;
+};
+
+// Phase-107-3:追記
+// 選択肢の LLM の下書き(GET .../options/draft)。options は LLM が作った案(規則に合わないこともある)、
+// stale は作った後に説明書が変わったか。problems は取り込めない問題、unknown_* は文に出る要件 ID・数字のうち
+// 説明書に無いもの(取り込みは止めない)。adoptable が真なら取り込める
+export type OptionDraftStatus = "unconfirmed" | "adopted";
+
+export type OptionDraftRead = {
+  options: ChangeRequestOptionsRead;
+  status: OptionDraftStatus;
+  status_label: string;
+  stale: boolean;
+  generated_model: string | null;
+  generated_by: string | null;
+  generated_at: string;
+  adopted_by: string | null;
+  adopted_at: string | null;
+  problems: string[];
+  unknown_requirement_ids: string[];
+  unknown_numbers: string[];
+  adoptable: boolean;
+};
+
+// Phase-107-4:追記
+// 共有リンク(GET .../share-links。トークンは含めない)。state は今の状態(取り消し > 期限切れ > CR の状態)
+export type ShareState = "open" | "paused" | "decided" | "closed" | "expired" | "revoked";
+
+export type ShareLinkRead = {
+  id: string;
+  state: ShareState;
+  state_label: string;
+  created_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+  last_viewed_at: string | null;
+};
+
+// 作った共有リンク。token と path(クライアントの画面のパス)はこの応答でだけ返る
+export type ShareLinkCreatedRead = ShareLinkRead & {
+  token: string;
+  path: string;
+  summary_needs_reconfirm: boolean;
+};
+
+// Phase-107-5:追記
+// CR のコメント欄(GET .../comments)。クライアントのコメントごとに開発者の返信をまとめる(1段)。
+// author_name はクライアントが書いた名前(返信は空)、fingerprint は書いたときに見ていた説明書の版
+export type ChangeRequestCommentRead = {
+  id: string;
+  from_developer: boolean;
+  author_name: string;
+  author_id: string | null;
+  body: string;
+  fingerprint: string;
+  created_at: string;
+  can_reply: boolean;
+  replies: ChangeRequestCommentRead[];
 };
 // Phase-88-2：削除
 //
