@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3,102-2,102-4,103-2
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3,102-2,102-4,103-2,104-3
 # Phase-102-2：更新(docstring: update が案を確かめ直す・decide が選んだ案の対象を CR の対象にする・copy_rejected が案も写す)
 # Phase-96-3：更新(docstring: update が予測の起点を確かめ直す)
 # Phase-95-3：更新(docstring: update が下書きの中の直しも直した項目の名前で時系列に残す)
@@ -27,6 +27,7 @@
 # Phase-102-2:追記 ── app.change_requests.ChangeOptions, app.change_requests.option_label, app.change_requests.option_target_problems, app.change_requests.options_from_json, app.change_requests.options_to_json, app.services.errors.ChangeRequestOptionInvalidError
 # Phase-102-4:追記 ── app.change_requests.OptionDraftCheck, app.change_requests.OptionDraftOut, app.change_requests.build_option_draft_messages, app.change_requests.check_option_draft, app.change_requests.draft_to_json, app.change_requests.draft_to_options, app.change_requests.normalize_options, app.models.change_request_option_draft.ChangeRequestOptionDraft, app.repositories.change_request_option_draft.ChangeRequestOptionDraftRepository, app.schemas.change_request.ChangeRequestOptionsIn, app.services.errors.ChangeRequestOptionDraftNotFoundError, app.services.llm_retry.invoke_structured
 # Phase-103-2:追記 ── app.change_requests.snapshot_refs, app.models.change_request.ChangeRequestEvent
+# Phase-104-3:追記 ── app.change_requests.DecisionSource
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -52,6 +53,7 @@ from app.change_requests import (
     ChangeRequestStatus,
     Comparison,
     DecisionFacts,
+    DecisionSource,
     EventFacts,
     Explanation,
     OptionDraftCheck,
@@ -564,35 +566,36 @@ class ChangeRequestService:
         # Phase-83-3：更新
         # """説明済みの CR を合意か却下にし、合意の記録(相手・日時・メモ・理由・記録した人)を残す。"""
         # ↓↓
-        """説明済みの CR を合意か却下にし、合意の記録(相手・日時・メモ・理由・記録した人)と、
-        その時点の影響の予測を残す。案のある CR の合意では選んだ案の対象を CR の対象にし
-        (前の対象は時系列の行に残す)、予測はその対象で求める。"""
+        # Phase-104-3：更新
+        # """説明済みの CR を合意か却下にし、合意の記録(相手・日時・メモ・理由・記録した人)と、
+        # その時点の影響の予測を残す。案のある CR の合意では選んだ案の対象を CR の対象にし
+        # (前の対象は時系列の行に残す)、予測はその対象で求める。"""
+        # ↓↓
+        """説明済みの CR を合意か却下にする(開発者が記録する。中身は record_decision)。"""
         change_request = await self._load(project, number)
-        action = DECISION_ACTIONS[payload.decision]
-        to_status = self._next(change_request, action)
-        # Phase-102-2:追記
-        refs = None
-        chosen = chosen_option(change_request, payload)
-        if chosen is not None:
-            refs = {"option": chosen, "targets": list(change_request.targets)}
-            option = options_from_json(change_request.options).option(chosen)
-            change_request.targets = targets_to_json(option.targets)
-        change_request.decision_option = chosen
-        # Phase-83-3:追記
-        # 判断のときに示した影響の範囲を残す(後でたどり方の規則を直しても変わらないように)
-        baseline = await self._baseline_with_items(change_request)
-        change_request.predicted_impact = predict_for(change_request, baseline).to_dict()
-        change_request.decision_counterpart = payload.counterpart
-        change_request.decided_at = payload.decided_at
-        change_request.decision_memo = payload.memo
-        change_request.decision_reason = payload.reason
-        change_request.decision_recorded_by = actor_id
-        await self._change_requests.add_event(
-            # Phase-102-2：更新
-            # change_request, action=action, to_status=to_status, actor_id=actor_id
-            # ↓↓
-            change_request, action=action, to_status=to_status, actor_id=actor_id, refs=refs
-        )
+        # Phase-104-3：更新(判断の中身を record_decision に移した。共有リンクの判断と共有する)
+        # action = DECISION_ACTIONS[payload.decision]
+        # to_status = self._next(change_request, action)
+        # refs = None
+        # chosen = chosen_option(change_request, payload)
+        # if chosen is not None:
+        #     refs = {"option": chosen, "targets": list(change_request.targets)}
+        #     option = options_from_json(change_request.options).option(chosen)
+        #     change_request.targets = targets_to_json(option.targets)
+        # change_request.decision_option = chosen
+        # # 判断のときに示した影響の範囲を残す(後でたどり方の規則を直しても変わらないように)
+        # baseline = await self._baseline_with_items(change_request)
+        # change_request.predicted_impact = predict_for(change_request, baseline).to_dict()
+        # change_request.decision_counterpart = payload.counterpart
+        # change_request.decided_at = payload.decided_at
+        # change_request.decision_memo = payload.memo
+        # change_request.decision_reason = payload.reason
+        # change_request.decision_recorded_by = actor_id
+        # await self._change_requests.add_event(
+        #     change_request, action=action, to_status=to_status, actor_id=actor_id, refs=refs
+        # )
+        # ↓↓
+        await self.record_decision(change_request, payload, actor_id=actor_id, source="developer")
         await self._session.commit()
         logger.info(
             "change_request_decided",
@@ -601,6 +604,52 @@ class ChangeRequestService:
             decision=payload.decision,
         )
         return await self._view(change_request)
+
+    # Phase-104-3:追記(decide の中身を移し、出どころ・指紋・時系列の行に足すものを足した)
+    async def record_decision(
+        self,
+        change_request: ChangeRequest,
+        payload: ChangeRequestDecision,
+        *,
+        actor_id: uuid.UUID | None,
+        source: DecisionSource,
+        fingerprint: str | None = None,
+        refs: dict[str, Any] | None = None,
+    ) -> None:
+        """説明済みの CR を合意か却下にし、合意の記録(相手・日時・メモ・理由・記録した人・出どころ・
+        判断したときの説明書の指紋)と、その時点の影響の予測を残す。案のある CR の合意では選んだ案の
+        対象を CR の対象にし(前の対象は時系列の行に残す)、予測はその対象で求める。指紋を渡さなければ
+        今の説明書の指紋を残す。`refs`は時系列の行に足すもの(共有リンクの出どころなど)。説明済みで
+        なければ ChangeRequestInvalidTransitionError。共有リンクの判断と同じトランザクションで使う
+        ため、commitしない。"""
+        action = DECISION_ACTIONS[payload.decision]
+        to_status = self._next(change_request, action)
+        if fingerprint is None:
+            fingerprint = (await self._explanation(change_request)).fingerprint
+        event_refs = dict(refs or {})
+        chosen = chosen_option(change_request, payload)
+        if chosen is not None:
+            event_refs |= {"option": chosen, "targets": list(change_request.targets)}
+            option = options_from_json(change_request.options).option(chosen)
+            change_request.targets = targets_to_json(option.targets)
+        change_request.decision_option = chosen
+        # 判断のときに示した影響の範囲を残す(後でたどり方の規則を直しても変わらないように)
+        baseline = await self._baseline_with_items(change_request)
+        change_request.predicted_impact = predict_for(change_request, baseline).to_dict()
+        change_request.decision_counterpart = payload.counterpart
+        change_request.decided_at = payload.decided_at
+        change_request.decision_memo = payload.memo
+        change_request.decision_reason = payload.reason
+        change_request.decision_recorded_by = actor_id
+        change_request.decision_source = source
+        change_request.decision_fingerprint = fingerprint
+        await self._change_requests.add_event(
+            change_request,
+            action=action,
+            to_status=to_status,
+            actor_id=actor_id,
+            refs=event_refs or None,
+        )
 
     async def withdraw(
         self,
@@ -1050,6 +1099,8 @@ class ChangeRequestService:
             change_request.decision_reason,
             # Phase-102-2:追記
             chosen_option_name(change_request),
+            # Phase-104-3:追記
+            change_request.decision_source,
         )
         return TraceView(change_request, trace_entries(events, available, reviews, decision))
 

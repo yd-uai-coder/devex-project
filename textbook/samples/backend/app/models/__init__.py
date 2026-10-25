@@ -1,4 +1,4 @@
-# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2,79(完了後の調整),81-2,82-1,84-4,86-2,91-2,94-2,102-2,103-2
+# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2,79(完了後の調整),81-2,82-1,84-4,86-2,91-2,94-2,102-2,103-2,104-2
 # 写経レベル: 定型 ── re-exportの機械的な追記。
 # Phase-2-1:追記 ── ChatHistory, GeneratedDocument, IntakeFile, Project, PromptTemplate
 # Phase-8-2:追記 ── DataItem, UmlDiagram
@@ -17,9 +17,11 @@
 # Phase-94-2:追記 ── app.models.confirmation.ConfirmationItemRecord
 # Phase-102-2:追記 ── app.models.change_request_option_draft.ChangeRequestOptionDraft
 # Phase-103-2:追記 ── app.models.change_request_share_link.ChangeRequestShareLink
+# Phase-104-2:追記 ── app.models.change_request_comment.ChangeRequestComment
 from app.models.agreement import AgreementRecord
 from app.models.baseline import Baseline, BaselineItem
 from app.models.change_request import ChangeRequest, ChangeRequestEvent, ChangeRequestReview
+from app.models.change_request_comment import ChangeRequestComment
 from app.models.change_request_option_draft import ChangeRequestOptionDraft
 from app.models.change_request_share_link import ChangeRequestShareLink
 from app.models.change_request_summary import ChangeRequestSummary
@@ -54,6 +56,8 @@ __all__ = [
     "ChangeRequestEvent",
     # Phase-86-2:追記
     "ChangeRequestReview",
+    # Phase-104-2:追記
+    "ChangeRequestComment",
     # Phase-102-2:追記
     "ChangeRequestOptionDraft",
     # Phase-103-2:追記

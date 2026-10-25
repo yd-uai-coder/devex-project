@@ -1,4 +1,4 @@
-# 作成：Phase-82-3｜更新：Phase-83-3,84-3,84-4,85-4,86-2,86-3,86-4,101-3,102-4,103-2
+# 作成：Phase-82-3｜更新：Phase-83-3,84-3,84-4,85-4,86-2,86-3,86-4,101-3,102-4,103-2,104-2
 # Phase-84-3:追記 ── fastapi.Response
 # Phase-85-4:追記 ── app.schemas.change_request.ChangeRequestComparisonRead
 # Phase-83-3:追記 ── app.schemas.change_request.ChangeRequestImpactRead, app.schemas.change_request.ExcludedItemRead
@@ -9,6 +9,7 @@
 # Phase-86-4:追記 ── app.schemas.change_request.ChangeRequestTraceRead
 # Phase-102-4:追記 ── app.schemas.change_request.OptionDraftRead, app.services.change_request_service.OptionDraftView
 # Phase-103-2:追記 ── uuid, app.schemas.share_link.ShareLinkCreate, app.schemas.share_link.ShareLinkCreatedRead, app.schemas.share_link.ShareLinkExtend, app.schemas.share_link.ShareLinkRead, app.services.share_link_service.ShareLinkService
+# Phase-104-2:追記 ── app.schemas.share_link.ChangeRequestCommentRead, app.schemas.share_link.ChangeRequestReplyCreate
 import uuid
 from typing import Annotated
 
@@ -38,6 +39,8 @@ from app.schemas.change_request import (
     SummaryEdit,
 )
 from app.schemas.share_link import (
+    ChangeRequestCommentRead,
+    ChangeRequestReplyCreate,
     ShareLinkCreate,
     ShareLinkCreatedRead,
     ShareLinkExtend,
@@ -481,3 +484,34 @@ async def extend_change_request_share_link(
         current_project, number, link_id, payload, actor_id=current_user.id
     )
     return ShareLinkRead.build(view)
+
+
+# Phase-104-2:追記
+@router.get("/{number}/comments", response_model=list[ChangeRequestCommentRead])
+async def list_change_request_comments(
+    number: ChangeRequestNumber, session: SessionDep, current_project: CurrentProjectDep
+) -> list[ChangeRequestCommentRead]:
+    """CR のコメント欄(クライアントのコメントごとに返信をまとめ、古い順)。CR が無ければ404。"""
+    threads = await ShareLinkService(session).comments_for(current_project, number)
+    return [ChangeRequestCommentRead.from_thread(thread) for thread in threads]
+
+
+@router.post(
+    "/{number}/comments/{comment_id}/replies",
+    response_model=ChangeRequestCommentRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def reply_change_request_comment(
+    number: ChangeRequestNumber,
+    comment_id: uuid.UUID,
+    payload: ChangeRequestReplyCreate,
+    session: SessionDep,
+    current_project: CurrentProjectDep,
+    current_user: CurrentUserDep,
+) -> ChangeRequestCommentRead:
+    """クライアントのコメントに返信する(返したコメントと返信の一覧を返す)。コメントが無ければ404、
+    返信への返信は409。"""
+    thread = await ShareLinkService(session).reply(
+        current_project, number, comment_id, payload, actor_id=current_user.id
+    )
+    return ChangeRequestCommentRead.from_thread(thread)

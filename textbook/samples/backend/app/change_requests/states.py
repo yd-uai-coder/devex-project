@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,85-1,86-1,96-1,103-2
+# 作成：Phase-82-2｜更新：Phase-83-1,85-1,86-1,96-1,103-2,104-2
+# Phase-104-2：更新(docstring: 記録だけの行に comment・reply_comment を足した)
 # Phase-103-2：更新(docstring: 記録だけの行に share・unshare・extend_share を足した)
 # Phase-96-1：更新(docstring: 記録だけの行に approve_stage を足した)
 # Phase-86-1：更新(docstring: 検証の条件と、記録だけの操作 link_review・baseline を足した)
@@ -12,8 +13,9 @@
 時系列に1行足す)。検証(verify)は、反映で付いた印と文書の側の確認がすべて済んだときだけ
 (条件は verification.py)。レビューを結ぶ(link_review)・束に入れる(baseline)・CR で作り直した段階の
 承認で印を結ぶ(approve_stage。stage_approvals.py)と、共有リンクの作成(share。下書きの CR では
-説明済みにする explain の行になる)・取り消し(unshare)・期限の延長(extend_share)は、状態を変えない
-記録だけの行(写しの copied と同じく、遷移の表には持たない。sharing.py)。
+説明済みにする explain の行になる)・取り消し(unshare)・期限の延長(extend_share)と、コメント欄の
+クライアントのコメント(comment)・開発者の返信(reply_comment)は、状態を変えない記録だけの行
+(写しの copied と同じく、遷移の表には持たない。sharing.py・comments.py)。
 """
 
 from collections.abc import Iterable, Sequence
@@ -45,6 +47,9 @@ ChangeRequestAction = Literal[
     "share",
     "unshare",
     "extend_share",
+    # Phase-104-2:追記
+    "comment",
+    "reply_comment",
 ]
 BackgroundSource = Literal["meeting", "email", "document", "other"]
 

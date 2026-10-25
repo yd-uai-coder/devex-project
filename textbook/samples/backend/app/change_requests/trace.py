@@ -1,4 +1,6 @@
-# 作成：Phase-86-4｜更新：Phase-89(完了後の調整),95-3,96-1,96-3,98-2,102-2,103-2
+# 作成：Phase-86-4｜更新：Phase-89(完了後の調整),95-3,96-1,96-3,98-2,102-2,103-2,104-2,104-3
+# Phase-104-3：更新(docstring: 合意の行のメモと DecisionFacts に出どころを足した)
+# Phase-104-2：更新(docstring: 読み解く行にコメントと返信を足した)
 # Phase-103-2：更新(docstring: 読み解く行に共有リンクの作成・取り消し・延長を足した)
 # Phase-96-1：更新(docstring: 読み解く行に「段階の承認で印を結ぶ」を足した)
 # Phase-95-3：更新(docstring: 読み解く行に「直した」を足した)
@@ -6,18 +8,20 @@
 """変更要求(CR)の、受付から検証までをたどる記録(純粋関数。docs/external_design.md 2.14節)。
 
 CR の時系列の行(状態の遷移・直した・反映・段階の承認で印を結ぶ・レビューを結ぶ・検証・
-束に入れる・共有リンクの作成・取り消し・延長)の`refs`を、指す先の今の状態で読み解く。文書の版は直近の数版しか残さないので、
+束に入れる・共有リンクの作成・取り消し・延長・コメントと返信)の`refs`を、指す先の今の状態で読み解く。文書の版は直近の数版しか残さないので、
 作った版が今も残っているかを示す(CR で反映した版は消さないが、それより前の記録もあるため)。
 レビューは CR に結んだ回の要点(区切り・モデル・状態・指摘と採用の数)を付ける。合意・却下の行の
-メモには、CR に残した合意の記録(相手・メモ・理由)を出す。
+メモには、CR に残した合意の記録(出どころ・相手・メモ・理由)を出す。
 """
 
+# Phase-104-3:追記 ── app.change_requests.sharing.decision_source_label
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 from app.change_requests.explanation import DOCUMENT_LABEL
+from app.change_requests.sharing import decision_source_label
 
 ACTION_LABEL: dict[str, str] = {
     "create": "作成",
@@ -39,6 +43,9 @@ ACTION_LABEL: dict[str, str] = {
     "share": "共有リンクを作った",
     "unshare": "共有リンクを取り消した",
     "extend_share": "共有リンクの期限を延ばした",
+    # Phase-104-2:追記
+    "comment": "コメントを受けた",
+    "reply_comment": "コメントに返信した",
 }
 
 
@@ -78,13 +85,16 @@ class DecisionFacts:
     # """CR に残した合意の記録(相手・メモ・理由。無いものは None か空)。"""
     # ↓↓
     """CR に残した合意の記録(相手・メモ・理由。無いものは None か空)。`option`は合意で選んだ案の
-    表示名(`案2 メールだけ`。案の無い CR は None)。"""
+    表示名(`案2 メールだけ`。案の無い CR は None)。`source`は判断の出どころ(developer /
+    share_link。記録を足す前の判断は None)。"""
 
     counterpart: str | None
     memo: str | None
     reason: str | None
     # Phase-102-2:追記
     option: str | None = None
+    # Phase-104-3:追記
+    source: str | None = None
 
 
 DECISION_ACTIONS: frozenset[str] = frozenset({"agree", "reject"})
@@ -164,9 +174,17 @@ def decision_note(note: str, decision: DecisionFacts) -> str:
     # Phase-102-2：更新
     # """合意・却下の行のメモ。行のメモに、相手・メモ・理由(あるものだけ)を続ける。"""
     # ↓↓
-    """合意・却下の行のメモ。行のメモに、選んだ案・相手・メモ・理由(あるものだけ)を続ける。"""
+    # Phase-104-3：更新
+    # """合意・却下の行のメモ。行のメモに、選んだ案・相手・メモ・理由(あるものだけ)を続ける。"""
+    # ↓↓
+    """合意・却下の行のメモ。行のメモに、出どころ(共有リンクのときだけ。開発者の記録がふつうの
+    形)・選んだ案・相手・メモ・理由(あるものだけ)を続ける。"""
     parts = [note] if note else []
+    # Phase-104-3:追記
+    source = decision_source_label(decision.source) if decision.source == "share_link" else None
     for label, value in (
+        # Phase-104-3:追記
+        ("出どころ", source),
         # Phase-102-2:追記
         ("選んだ案", decision.option),
         ("相手", decision.counterpart),

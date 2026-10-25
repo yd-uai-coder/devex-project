@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4,94-3,95-2,99(完了後の調整),102-2,102-4,103-2
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4,94-3,95-2,99(完了後の調整),102-2,102-4,103-2,104-2,104-3
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -756,3 +756,37 @@ class ShareLinkNotExtendableError(ConflictError):
     """取り消した共有リンクの期限を延ばそうとした場合に送出する(作り直す)。"""
 
     code: ClassVar[str | None] = "SHARE_LINK_NOT_EXTENDABLE"
+
+
+# Phase-104-2:追記
+class ShareLinkNotWritableError(ConflictError):
+    """開いていない共有リンク(直している・判断済み・閉じた CR)から、コメント・判断を書き込もうと
+    した場合に送出する(直している間は、見た説明書と合意する中身がずれるため)。"""
+
+    code: ClassVar[str | None] = "SHARE_LINK_NOT_WRITABLE"
+
+
+class ShareExplanationChangedError(ConflictError):
+    """共有リンクのクライアントが見た説明書の版(指紋)が、今の説明書と違う場合に送出する(開いた後に
+    開発者が直して説明し直した。読み直してもらう)。"""
+
+    code: ClassVar[str | None] = "SHARE_EXPLANATION_CHANGED"
+
+
+class ChangeRequestCommentNotFoundError(NotFoundError):
+    """CR のコメント欄に、指定したコメントが無い場合に送出する。"""
+
+    code: ClassVar[str | None] = "CR_COMMENT_NOT_FOUND"
+
+
+class ChangeRequestCommentNotRepliableError(ConflictError):
+    """返信できないコメント(開発者の返信。返信は1段)に返信しようとした場合に送出する。"""
+
+    code: ClassVar[str | None] = "CR_COMMENT_NOT_REPLIABLE"
+
+
+# Phase-104-3:追記
+class ShareDecisionReasonRequiredError(UnprocessableEntityError):
+    """共有リンクから理由を書かずに却下しようとした場合に送出する(却下の理由は出し直しの材料)。"""
+
+    code: ClassVar[str | None] = "SHARE_DECISION_REASON_REQUIRED"

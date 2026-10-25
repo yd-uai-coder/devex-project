@@ -1,4 +1,5 @@
-# 作成：Phase-82-1｜更新：Phase-83-1,83-3,85-2,86-2,96-3,102-2
+# 作成：Phase-82-1｜更新：Phase-83-1,83-3,85-2,86-2,96-3,102-2,104-3
+# Phase-104-3：更新(docstring: ChangeRequest に判断の出どころと指紋を足した)
 # Phase-102-2：更新(docstring: ChangeRequest の options・decision_option)
 # Phase-96-3：更新(docstring: ChangeRequest の origins)
 # Phase-86-2：更新(docstring: 文書の側の確認 `document_checks`・入れた束 `included_baseline_id`・結んだレビューと、時系列の `refs` の種類を足した)
@@ -49,6 +50,9 @@ class ChangeRequest(Base):
     写して作ったときの元の CR。
     `decision_*`は合意・却下の記録(合意済みの版と同じ項目。判断の前は NULL)。`decision_option`は
     合意で選んだ案の番号(1始まり。案の無い CR・却下は NULL)。選んだ案の対象が`targets`になる。
+    `decision_source`は判断の出どころ(developer = 開発者が記録 / share_link = クライアントが共有
+    リンクで押した。app/change_requests/sharing.py)、`decision_fingerprint`は判断したときの説明書の
+    sha256(共有リンクではクライアントが見た版)。どちらもこの記録を足す前の判断は NULL。
     `predicted_impact`は判断の時点の影響の予測(app/change_requests/prediction.py の保存の形。
     判断の前と取り下げは NULL で、求めるたびに基準の束から作る)。`applied_impact`は反映(CR を
     渡した文書の再生成)のときに付いた印の写し(app/detailed_design/impact/marks.py の Mark の形の
@@ -99,6 +103,9 @@ class ChangeRequest(Base):
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Phase-102-2:追記
     decision_option: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Phase-104-3:追記
+    decision_source: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    decision_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
     decision_recorded_by: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2,101-2,101-3,102-2,102-3,102-4,103-2
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2,101-2,101-3,102-2,102-3,102-4,103-2,104-3
 # Phase-103-2：更新(docstring: ChangeRequestEventRead の説明の行の refs。md の写しは出さない)
 # Phase-102-3：更新(docstring: ChangeRequestExplanationRead の option_scales)
 # Phase-102-2：更新(docstring: ChangeRequestDecision の option・ChangeRequestRead の options)
@@ -23,6 +23,7 @@
 # Phase-102-3:追記 ── app.change_requests.OptionScale
 # Phase-102-4:追記 ── app.change_requests.OPTION_DRAFT_STATUS_LABEL, app.change_requests.OptionDraftCheck, app.change_requests.OptionDraftStatus, app.models.change_request_option_draft.ChangeRequestOptionDraft
 # Phase-103-2:追記 ── app.change_requests.SNAPSHOT_MARKDOWN_KEY
+# Phase-104-3:追記 ── app.change_requests.decision_source_label
 import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Annotated, Any, Literal
@@ -78,6 +79,7 @@ from app.change_requests import (
     TraceEntry,
     Verification,
     check_summary,
+    decision_source_label,
     explanation_filename,
     needs_reconfirm,
     normalize_options,
@@ -350,7 +352,12 @@ class ChangeRequestReviewLink(BaseModel):
 
 
 class ChangeRequestDecisionRead(BaseModel):
-    """CR の合意・却下の記録(合意済みの版と同じ項目)。"""
+    # Phase-104-3：更新
+    # """CR の合意・却下の記録(合意済みの版と同じ項目)。"""
+    # ↓↓
+    """CR の合意・却下の記録(合意済みの版と同じ項目)。`source`は出どころ(developer = 開発者が
+    記録 / share_link = 共有リンク。記録を足す前の判断は null)、`fingerprint`は判断したときの
+    説明書の版。"""
 
     counterpart: str | None
     decided_at: datetime
@@ -359,6 +366,10 @@ class ChangeRequestDecisionRead(BaseModel):
     recorded_by: uuid.UUID | None
     # Phase-102-2:追記
     option: int | None = None
+    # Phase-104-3:追記
+    source: str | None = None
+    source_label: str | None = None
+    fingerprint: str | None = None
 
 
 # Phase-83-1:追記
@@ -1195,6 +1206,10 @@ def summary_fields(change_request: "ChangeRequest") -> dict[str, Any]:
             recorded_by=change_request.decision_recorded_by,
             # Phase-102-2:追記
             option=change_request.decision_option,
+            # Phase-104-3:追記
+            source=change_request.decision_source,
+            source_label=decision_source_label(change_request.decision_source),
+            fingerprint=change_request.decision_fingerprint,
         )
     included = change_request.included_baseline
     return {
