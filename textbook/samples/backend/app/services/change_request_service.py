@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3,102-2,102-4
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3,102-2,102-4,103-2
 # Phase-102-2：更新(docstring: update が案を確かめ直す・decide が選んだ案の対象を CR の対象にする・copy_rejected が案も写す)
 # Phase-96-3：更新(docstring: update が予測の起点を確かめ直す)
 # Phase-95-3：更新(docstring: update が下書きの中の直しも直した項目の名前で時系列に残す)
@@ -26,6 +26,7 @@
 # Phase-101-3:追記 ── app.change_requests.Scale, app.change_requests.ScaleComparisonRow, app.change_requests.ScaleSources, app.change_requests.compare_scale, app.change_requests.count_scale, app.change_requests.needs_reconfirm, app.change_requests.prediction.STAGE_PREFIX, app.detailed_design.impact.elements.parse_model, app.detailed_design.plan.PlanModel, app.detailed_design.procedure_doc.ProcedureDocModel
 # Phase-102-2:追記 ── app.change_requests.ChangeOptions, app.change_requests.option_label, app.change_requests.option_target_problems, app.change_requests.options_from_json, app.change_requests.options_to_json, app.services.errors.ChangeRequestOptionInvalidError
 # Phase-102-4:追記 ── app.change_requests.OptionDraftCheck, app.change_requests.OptionDraftOut, app.change_requests.build_option_draft_messages, app.change_requests.check_option_draft, app.change_requests.draft_to_json, app.change_requests.draft_to_options, app.change_requests.normalize_options, app.models.change_request_option_draft.ChangeRequestOptionDraft, app.repositories.change_request_option_draft.ChangeRequestOptionDraftRepository, app.schemas.change_request.ChangeRequestOptionsIn, app.services.errors.ChangeRequestOptionDraftNotFoundError, app.services.llm_retry.invoke_structured
+# Phase-103-2:追記 ── app.change_requests.snapshot_refs, app.models.change_request.ChangeRequestEvent
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -95,6 +96,7 @@ from app.change_requests import (
     pending_stages,
     predict_from_snapshots,
     review_link_problem,
+    snapshot_refs,
     stage_apply_versions,
     summary_state,
     target_ids,
@@ -112,7 +114,7 @@ from app.detailed_design.impact.elements import parse_model
 from app.detailed_design.plan import PlanModel
 from app.detailed_design.procedure_doc import ProcedureDocModel
 from app.models.baseline import Baseline
-from app.models.change_request import ChangeRequest
+from app.models.change_request import ChangeRequest, ChangeRequestEvent
 from app.models.change_request_option_draft import ChangeRequestOptionDraft
 from app.models.change_request_summary import ChangeRequestSummary
 from app.models.project import Project
@@ -519,14 +521,37 @@ class ChangeRequestService:
     ) -> ChangeRequestView:
         """下書きの CR を説明済みにする(クライアントに説明した)。"""
         change_request = await self._load(project, number)
-        await self._change_requests.add_event(
+        # Phase-103-2：更新
+        # await self._change_requests.add_event(
+        # ↓↓
+        await self.record_explain(change_request, actor_id=actor_id)
+        await self._session.commit()
+        return await self._view(change_request)
+
+    async def record_explain(
+        self, change_request: ChangeRequest, *, actor_id: uuid.UUID | None, note: str = ""
+    ) -> ChangeRequestEvent:
+        """下書きの CR を説明済みにし、その時点の説明書の md と指紋を時系列の行に残す(共有リンクの
+        「前回から変わった点」の材料。app/change_requests/sharing.py)。下書きでなければ
+        ChangeRequestInvalidTransitionError。共有リンクの作成と同じトランザクションで使うため、
+        commitしない。"""
+        event = await self._change_requests.add_event(
             change_request,
             action="explain",
             to_status=self._next(change_request, "explain"),
             actor_id=actor_id,
+            # Phase-103-2:追記
+            note=note,
         )
-        await self._session.commit()
-        return await self._view(change_request)
+        # Phase-103-2：更新
+        # await self._session.commit()
+        # return await self._view(change_request)
+        # ↓↓
+        # 説明済みにした後の説明書(頭の「CR の状態」も説明済み)を写す
+        explanation = await self._explanation(change_request)
+        event.refs = snapshot_refs(explanation.markdown, explanation.fingerprint)
+        await self._session.flush()
+        return event
 
     async def decide(
         self,
@@ -685,6 +710,16 @@ class ChangeRequestService:
         # ↓↓
         """CR の説明書(5節)と要約。予測は影響の API と同じもの(判断の後は保存したもの)を使う。"""
         return await self._explanation_view(await self._load(project, number))
+
+    # Phase-103-2:追記
+    async def explanation_of(self, change_request: ChangeRequest) -> ExplanationView:
+        """読み込んだ CR の説明書と要約(共有リンクの公開の入口が、リンクから引いた CR で使う。
+        モードの確かめは呼ぶ側)。"""
+        return await self._explanation_view(change_request)
+
+    async def load(self, project: Project, number: int) -> ChangeRequest:
+        """番号の CR(詳細設計モードだけ)。無ければ ChangeRequestNotFoundError。"""
+        return await self._load(project, number)
 
     # Phase-84-4:追記
     async def generate_summary(

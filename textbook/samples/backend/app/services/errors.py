@@ -1,8 +1,9 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4,94-3,95-2,99(完了後の調整),102-2,102-4
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4,94-3,95-2,99(完了後の調整),102-2,102-4,103-2
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
 # Phase-67-1:追記 ── app.core.errors.ServiceUnavailableError, app.core.errors.UnprocessableEntityError
+# Phase-103-2:追記 ── app.core.errors.GoneError
 from typing import ClassVar
 
 from app.core.errors import (
@@ -10,6 +11,7 @@ from app.core.errors import (
     BadRequestError,
     ConflictError,
     ForbiddenError,
+    GoneError,
     NotFoundError,
     ServiceUnavailableError,
     TooManyRequestsError,
@@ -726,3 +728,31 @@ class ChangeRequestNotIncludableError(ConflictError):
     渡した場合に送出する。"""
 
     code: ClassVar[str | None] = "CR_NOT_INCLUDABLE"
+
+
+# Phase-103-2:追記
+class ShareLinkNotFoundError(NotFoundError):
+    """共有リンクが無い場合に送出する。公開の入口では、トークンに当たるリンクが無いとき(取り消し・
+    期限切れとは分ける)と、簡易ドキュメントモードのプロジェクトの CR のリンクのとき。開発者の操作
+    では、その CR に番号のリンクが無いとき。"""
+
+    code: ClassVar[str | None] = "SHARE_LINK_NOT_FOUND"
+
+
+class ShareLinkExpiredError(GoneError):
+    """共有リンクの期限が切れている場合に送出する(トークンを持つのは正当な相手なので、開発者に
+    新しいリンクか延長を頼めるよう、取り消し・存在しないと分ける)。"""
+
+    code: ClassVar[str | None] = "SHARE_LINK_EXPIRED"
+
+
+class ShareLinkRevokedError(GoneError):
+    """共有リンクを開発者が取り消した(作り直した)場合に送出する。"""
+
+    code: ClassVar[str | None] = "SHARE_LINK_REVOKED"
+
+
+class ShareLinkNotExtendableError(ConflictError):
+    """取り消した共有リンクの期限を延ばそうとした場合に送出する(作り直す)。"""
+
+    code: ClassVar[str | None] = "SHARE_LINK_NOT_EXTENDABLE"

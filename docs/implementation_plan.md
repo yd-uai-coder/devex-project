@@ -233,7 +233,7 @@
   * Phase 100: 要件確認フェーズ(仕様診断・ステージ13 の入力の判断・Claude がクライアント役のベースライン・docs反映・ステージ13の実装計画) ── **完了**([`textbook/Phase-100/Phase-100-introduction.md`](../textbook/Phase-100/Phase-100-introduction.md))
   * Phase 101: 変更の規模の集計 API と、説明書のクライアント向けの直し ── **完了**([`textbook/Phase-101/Phase-101-introduction.md`](../textbook/Phase-101/Phase-101-introduction.md))
   * Phase 102: 選択肢つきの説明 API(案・案ごとの規模・LLM の下書き・選んだ案での反映) ── **完了**([`textbook/Phase-102/Phase-102-introduction.md`](../textbook/Phase-102/Phase-102-introduction.md))
-  * Phase 103: 共有リンク API(閲覧。トークン・期限・取り消し・説明済みとの結び付け・回数の上限)
+  * Phase 103: 共有リンク API(閲覧。トークン・期限・取り消し・説明済みとの結び付け・回数の上限) ── **完了**([`textbook/Phase-103/Phase-103-introduction.md`](../textbook/Phase-103/Phase-103-introduction.md))
   * Phase 104: 共有リンク API(コメントと合意・却下。合意の記録への入れ方)
   * Phase 105: 名称を言い換える偽の LLM と、名前の揺れの直し(外部連携の重複・推測の利用者のキー)
   * Phase 106: 段階の参照の切れと、合意の周りの残り(API)

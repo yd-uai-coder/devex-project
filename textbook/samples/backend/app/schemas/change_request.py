@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2,101-2,101-3,102-2,102-3,102-4
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-4,86-2,86-3,86-4,88-2,95-3,96-1,96-3,98-2,101-2,101-3,102-2,102-3,102-4,103-2
+# Phase-103-2：更新(docstring: ChangeRequestEventRead の説明の行の refs。md の写しは出さない)
 # Phase-102-3：更新(docstring: ChangeRequestExplanationRead の option_scales)
 # Phase-102-2：更新(docstring: ChangeRequestDecision の option・ChangeRequestRead の options)
 # Phase-101-3：更新(docstring: ChangeRequestComparisonRead の scale・ExplanationSummaryRead の needs_reconfirm)
@@ -21,6 +22,7 @@
 # Phase-102-2:追記 ── pydantic.model_validator, app.change_requests.OPTION_NAME_MAX, app.change_requests.OPTION_OUTCOME_MAX, app.change_requests.OPTIONS_MAX, app.change_requests.RECOMMEND_REASON_MAX, app.change_requests.ChangeOptions, app.change_requests.normalize_options, app.change_requests.option_label, app.change_requests.options_from_json, app.change_requests.options_from_rows
 # Phase-102-3:追記 ── app.change_requests.OptionScale
 # Phase-102-4:追記 ── app.change_requests.OPTION_DRAFT_STATUS_LABEL, app.change_requests.OptionDraftCheck, app.change_requests.OptionDraftStatus, app.models.change_request_option_draft.ChangeRequestOptionDraft
+# Phase-103-2:追記 ── app.change_requests.SNAPSHOT_MARKDOWN_KEY
 import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Annotated, Any, Literal
@@ -46,6 +48,7 @@ from app.change_requests import (
     OPTIONS_MAX,
     PREDICTED_ONLY_REASON_LABEL,
     RECOMMEND_REASON_MAX,
+    SNAPSHOT_MARKDOWN_KEY,
     STATUS_LABEL,
     SUMMARY_MAX,
     SUMMARY_STATE_LABEL,
@@ -281,7 +284,9 @@ class ChangeRequestEventRead(BaseModel):
     # Phase-86-3：更新(docstring: refs の種類を足した)
     """CR の時系列の1行。`from_status`は作成・写しで null。`refs`は行が指すもの(反映: 作った文書の
     版とモデル名、段階の反映: 段階・版・モデル名、レビューを結ぶ: 回・区切り・モデル名、検証:
-    確かめた数と結んだレビュー、束に入れる: 束の番号)。指すものの無い行は null。"""
+    確かめた数と結んだレビュー、束に入れる: 束の番号、説明: その時点の説明書の指紋)。指すものの
+    無い行は null。説明の行に残した説明書の md の写しは、応答に出さない(共有リンクの「前回から
+    変わった点」だけが読む)。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -293,6 +298,14 @@ class ChangeRequestEventRead(BaseModel):
     note: str
     # Phase-85-2:追記
     refs: dict[str, Any] | None = None
+
+    # Phase-103-2:追記
+    @field_validator("refs")
+    @classmethod
+    def _drop_snapshot(cls, value: dict[str, Any] | None) -> dict[str, Any] | None:
+        if value is None or SNAPSHOT_MARKDOWN_KEY not in value:
+            return value
+        return {k: v for k, v in value.items() if k != SNAPSHOT_MARKDOWN_KEY}
 
 
 # Phase-86-3:追記

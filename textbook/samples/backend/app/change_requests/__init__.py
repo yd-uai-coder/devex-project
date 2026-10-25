@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2,101-1,101-2,102-1,102-4
+# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2,101-1,101-2,102-1,102-4,103-1,103-2
+# Phase-103-1：更新(docstring: 共有リンクの規則を足した)
 # Phase-102-4：更新(docstring: 選択肢の LLM の下書きを足した)
 # Phase-102-1：更新(docstring: 選択肢を足した)
 # Phase-101-1：更新(docstring: 変更の規模を足した)
@@ -12,7 +13,7 @@
 """変更要求(CR)の状態・遷移・重なりの判定と、対象(要件 ID・変更の種類・変更後の案)の扱い・
 影響の予測・変更の規模・選択肢とその LLM の下書き・説明書の組み立てと、任意の要約の入力・照合・
 状態・反映の指示・予測と実際の比較・検証の条件・CR で作り直した段階の承認・レビューを結ぶ条件・
-たどる記録(純粋関数)。
+たどる記録・共有リンクの規則(純粋関数)。
 
 docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 """
@@ -39,6 +40,8 @@ docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 # Phase-101-2：削除 ── app.change_requests.explanation.AffectedUnits, app.change_requests.explanation.affected_units
 # Phase-102-1:追記 ── app.change_requests.options.OPTION_NAME_MAX, app.change_requests.options.OPTION_OUTCOME_MAX, app.change_requests.options.OPTIONS_MAX, app.change_requests.options.OPTIONS_MIN, app.change_requests.options.RECOMMEND_REASON_MAX, app.change_requests.options.ChangeOption, app.change_requests.options.ChangeOptions, app.change_requests.options.OptionScale, app.change_requests.options.normalize_options, app.change_requests.options.option_label, app.change_requests.options.option_scales, app.change_requests.options.option_target_problems, app.change_requests.options.options_from_json, app.change_requests.options.options_from_rows, app.change_requests.options.options_to_json
 # Phase-102-4:追記 ── app.change_requests.option_drafting.OPTION_DRAFT_STATUS_LABEL, app.change_requests.option_drafting.OptionDraftCheck, app.change_requests.option_drafting.OptionDraftItemOut, app.change_requests.option_drafting.OptionDraftOut, app.change_requests.option_drafting.OptionDraftStatus, app.change_requests.option_drafting.OptionDraftTargetOut, app.change_requests.option_drafting.build_option_draft_messages, app.change_requests.option_drafting.check_option_draft, app.change_requests.option_drafting.draft_to_json, app.change_requests.option_drafting.draft_to_options
+# Phase-103-1:追記 ── app.change_requests.sharing.DEFAULT_EXPIRES_DAYS, app.change_requests.sharing.MAX_EXPIRES_DAYS, app.change_requests.sharing.READABLE_STATES, app.change_requests.sharing.SHARE_STATE_LABEL, app.change_requests.sharing.SectionChange, app.change_requests.sharing.ShareState, app.change_requests.sharing.expires_at_from, app.change_requests.sharing.explanation_changes, app.change_requests.sharing.new_token, app.change_requests.sharing.share_state, app.change_requests.sharing.token_hash
+# Phase-103-2:追記 ── app.change_requests.sharing.SNAPSHOT_MARKDOWN_KEY, app.change_requests.sharing.ExplainedSnapshot, app.change_requests.sharing.explained_snapshots, app.change_requests.sharing.previous_snapshot, app.change_requests.sharing.snapshot_refs
 from app.change_requests.comparison import (
     COMPARISON_STATUS_LABEL,
     COMPARISON_STATUSES,
@@ -129,6 +132,24 @@ from app.change_requests.scale import (
     predicted_scale,
     sources_from_snapshots,
     unlinked_requirements,
+)
+from app.change_requests.sharing import (
+    DEFAULT_EXPIRES_DAYS,
+    MAX_EXPIRES_DAYS,
+    READABLE_STATES,
+    SHARE_STATE_LABEL,
+    SNAPSHOT_MARKDOWN_KEY,
+    ExplainedSnapshot,
+    SectionChange,
+    ShareState,
+    expires_at_from,
+    explained_snapshots,
+    explanation_changes,
+    new_token,
+    previous_snapshot,
+    share_state,
+    snapshot_refs,
+    token_hash,
 )
 from app.change_requests.stage_approvals import (
     APPROVE_STAGE_ACTION,
@@ -368,4 +389,22 @@ __all__ = [
     "check_option_draft",
     "draft_to_json",
     "draft_to_options",
+    # Phase-103-1:追記
+    "DEFAULT_EXPIRES_DAYS",
+    "MAX_EXPIRES_DAYS",
+    "READABLE_STATES",
+    "SHARE_STATE_LABEL",
+    "SectionChange",
+    "ShareState",
+    "expires_at_from",
+    "explanation_changes",
+    "new_token",
+    "share_state",
+    "token_hash",
+    # Phase-103-2:追記
+    "SNAPSHOT_MARKDOWN_KEY",
+    "ExplainedSnapshot",
+    "explained_snapshots",
+    "previous_snapshot",
+    "snapshot_refs",
 ]

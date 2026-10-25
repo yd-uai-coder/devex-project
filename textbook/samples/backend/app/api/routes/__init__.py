@@ -1,4 +1,4 @@
-# 更新：Phase-2-3,6-3,8-4,15-2,52-5,67-3,79(完了後の調整),81-3,82-3,91-4,94-3
+# 更新：Phase-2-3,6-3,8-4,15-2,52-5,67-3,79(完了後の調整),81-3,82-3,91-4,94-3,103-3
 # Phase-2-3:追記 ── app.api.routes.projects
 # Phase-6-3:追記 ── app.api.routes.prompt_templates
 # Phase-8-4:追記 ── app.api.routes.uml
@@ -10,6 +10,7 @@
 # Phase-82-3:追記 ── app.api.routes.change_requests.router(change_requests_router)
 # Phase-91-4:追記 ── app.api.routes.agreements.router
 # Phase-94-3:追記 ── app.api.routes.confirmations.router
+# Phase-103-3:追記 ── app.api.routes.share.router
 from fastapi import APIRouter
 
 from app.api.routes.agreements import router as agreements_router
@@ -22,6 +23,7 @@ from app.api.routes.llm import router as llm_router
 from app.api.routes.projects import router as projects_router
 from app.api.routes.prompt_templates import router as prompt_templates_router
 from app.api.routes.reviews import router as reviews_router
+from app.api.routes.share import router as share_router
 from app.api.routes.uml import router as uml_router
 from app.api.routes.users import router as users_router
 
@@ -51,3 +53,5 @@ api_router.include_router(agreements_router)
 # Phase-94-3:追記
 api_router.include_router(confirmations_router)
 api_router.include_router(llm_router)
+# Phase-103-3:追記
+api_router.include_router(share_router)

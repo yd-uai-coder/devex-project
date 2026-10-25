@@ -1,4 +1,4 @@
-# 更新：Phase-2-5,67-1
+# 更新：Phase-2-5,67-1,103-2
 from typing import ClassVar
 
 
@@ -57,6 +57,13 @@ class ConflictError(AppError):
     """既存リソースと状態が競合する場合に送出する例外（HTTP 409に対応）。"""
 
     status_code: ClassVar[int] = 409
+
+
+# Phase-103-2:追記
+class GoneError(AppError):
+    """リソースは在ったが、もう使えない(期限切れ・取り消し)場合に送出する例外（HTTP 410に対応）。"""
+
+    status_code: ClassVar[int] = 410
 
 
 class TooManyRequestsError(AppError):
