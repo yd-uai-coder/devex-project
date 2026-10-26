@@ -1,21 +1,30 @@
-// 作成：Phase-87-3｜更新：Phase-88-4,107-2
+// 作成：Phase-87-3｜更新：Phase-88-4,107-2,112-4
 "use client";
 
+// Phase-88-4：削除
+// import { downloadExplanation } from "@/features/change-requests/api/changeRequestsApi";
+// Phase-88-4:追記
+// Phase-112-4:追記 ── @/features/change-requests/changeRequestOps.conflictNoticeLine
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, XStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
-// Phase-88-4：削除
-// import { downloadExplanation } from "@/features/change-requests/api/changeRequestsApi";
 import type { ChangeRequestAction, ChangeRequestRead } from "@/features/change-requests/api/types";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
-import { ACTION_BUTTON_LABEL, changeRequestHref, headerActions } from "@/features/change-requests/changeRequestOps";
+import {
+  ACTION_BUTTON_LABEL,
+  changeRequestHref,
+  conflictNoticeLine,
+  headerActions,
+} from "@/features/change-requests/changeRequestOps";
 import { DecisionDialog } from "@/features/change-requests/components/DecisionDialog";
-// Phase-88-4:追記
 import { ExplanationDownloadButton } from "@/features/change-requests/components/ExplanationDownloadButton";
 import { INPUT } from "@/features/detailed-design/components/tableStyles";
 // Phase-88-4：削除
 // import { saveFile } from "@/lib/api/download";
+
+// Phase-112-4:追記
+const NOTICE = { display: "block", marginTop: 8, color: "var(--orange11)" } as const;
 
 // CR の見出しの操作のボタン(許された操作だけ。docs/external_design.md 2.14節の状態)と、
 // Phase-88-4：更新
@@ -23,6 +32,8 @@ import { INPUT } from "@/features/detailed-design/components/tableStyles";
 // ↓↓
 // 変更の説明書のダウンロード(どの状態でも。プレビューと要約の確認は説明書のタブ)。
 // 合意・却下は記録のダイアログ、取り下げは理由を入れて確かめる。写すと写しの先の詳細へ移る。
+// Phase-112-4:追記
+// 重なる CR の競合が未確認なら、説明済み・合意の確かめの画面に知らせの1行を足す(止めはしない)。
 export function ChangeRequestActions({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
   const router = useRouter();
   const acting = useChangeRequestsStore((s) => s.acting);
@@ -35,6 +46,9 @@ export function ChangeRequestActions({ projectId, cr }: { projectId: string; cr:
   // Phase-88-4：削除
   // const [downloadError, setDownloadError] = useState<string | null>(null);
   const close = () => setDialog(null);
+  // Phase-112-4:追記
+  // 重なる CR の競合(未確認)は、説明済み・合意を止めずに確かめの画面で知らせる
+  const conflictLine = conflictNoticeLine(cr);
 
   const press = async (action: ChangeRequestAction) => {
     if (action === "copy") {
@@ -84,7 +98,15 @@ export function ChangeRequestActions({ projectId, cr }: { projectId: string; cr:
       <ConfirmDialog
         open={dialog === "explain"}
         title="説明済みにする"
-        description="クライアントに変更の内容と影響を説明したことを記録します。説明の後に直すと、下書きに戻ります。"
+        // Phase-112-4：更新
+        // description="クライアントに変更の内容と影響を説明したことを記録します。説明の後に直すと、下書きに戻ります。"
+        // ↓↓
+        description={
+          <>
+            クライアントに変更の内容と影響を説明したことを記録します。説明の後に直すと、下書きに戻ります。
+            {conflictLine ? <span style={NOTICE}>{conflictLine}</span> : null}
+          </>
+        }
         confirmLabel="記録する"
         onCancel={close}
         onConfirm={() => {
@@ -98,6 +120,8 @@ export function ChangeRequestActions({ projectId, cr }: { projectId: string; cr:
           decision={dialog === "agree" ? "agreed" : "rejected"}
           // Phase-107-2:追記
           options={cr.options}
+          // Phase-112-4:追記
+          notice={dialog === "agree" ? conflictLine : null}
           onCancel={close}
           onConfirm={(body) => {
             close();

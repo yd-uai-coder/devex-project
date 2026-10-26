@@ -1,18 +1,22 @@
-// 作成：Phase-87-3｜更新：Phase-88-4,107-2
+// 作成：Phase-87-3｜更新：Phase-88-4,107-2,112-4
 // Phase-88-4：更新
 // // SUT: ChangeRequestActions(見出しの操作のボタン)と DecisionDialog(合意・却下の記録)
 // ↓↓
-// SUT: ChangeRequestActions(見出しの操作のボタン)・ExplanationDownloadButton(説明書のダウンロード)と DecisionDialog(合意・却下の記録)
+// Phase-112-4：更新
+// // SUT: ChangeRequestActions(見出しの操作のボタン)・ExplanationDownloadButton(説明書のダウンロード)と DecisionDialog(合意・却下の記録)
+// ↓↓
+// SUT: ChangeRequestActions(見出しの操作のボタン・競合の知らせ)・ExplanationDownloadButton(説明書のダウンロード)と DecisionDialog(合意・却下の記録)
 // ドライバ: Testing Library(クリック・入力)
 // スタブ: ストアの操作の関数(vi.fn)・next/navigation の router・説明書の API(vi.mock)・saveFile ──
 // ボタンの出し分けと、ダイアログから渡す本文だけを見るため
 // Phase-107-2:追記 ── ../../test-utils/changeRequestFixtures.makeOptions
+// Phase-112-4:追記 ── ../../test-utils/changeRequestFixtures.makeConflict
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ChangeRequestActions } from "../ChangeRequestActions";
 import { useChangeRequestsStore } from "../../change-requests-store";
-import { makeChangeRequest, makeOptions } from "../../test-utils/changeRequestFixtures";
+import { makeChangeRequest, makeConflict, makeOptions } from "../../test-utils/changeRequestFixtures";
 import { renderWithTheme, resetChangeRequestsStore } from "../../test-utils/renderWithStore";
 
 const push = vi.fn();
@@ -57,6 +61,23 @@ describe("ChangeRequestActions", () => {
     await userEvent.click(await screen.findByLabelText("記録する"));
 
     expect(store().explain).toHaveBeenCalledWith("p1", 1);
+  });
+
+  // Phase-112-4:追記
+  it("重なる CR の競合が未確認なら、説明済み・合意の確かめに知らせを出す(止めはしない)", async () => {
+    const conflicts = [makeConflict()];
+    const { unmount } = renderWithTheme(<ChangeRequestActions projectId="p1" cr={makeChangeRequest({ conflicts })} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "説明済みにする" }));
+    expect(await screen.findByText(/FR-005\(CR-2 が先に変えた\)/)).toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText("記録する"));
+    expect(store().explain).toHaveBeenCalledWith("p1", 1);
+    unmount();
+
+    const cr = makeChangeRequest({ status: "explained", allowed_actions: ["edit", "agree"], conflicts });
+    renderWithTheme(<ChangeRequestActions projectId="p1" cr={cr} />);
+    await userEvent.click(screen.getByRole("button", { name: "合意を記録する" }));
+    expect(await screen.findByText(/FR-005\(CR-2 が先に変えた\)/)).toBeInTheDocument();
   });
 
   // Phase-107-2:追記

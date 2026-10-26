@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2,107-2,107-3,107-4,107-5
+// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2,107-2,107-3,107-4,107-5,112-4
 // Phase-89(完了後の調整)：更新
 // import { triggerGeneration } from "@/features/hearing/api/hearingApi";
 // ↓↓
@@ -20,6 +20,7 @@
 // Phase-107-3:追記 ── @/features/change-requests/api/changeRequestsApi.adoptOptionDraft, @/features/change-requests/api/changeRequestsApi.createOptionDraft, @/features/change-requests/api/changeRequestsApi.getOptionDraft, @/features/change-requests/api/types.OptionDraftRead
 // Phase-107-4:追記 ── @/features/change-requests/api/changeRequestsApi.createShareLink, @/features/change-requests/api/changeRequestsApi.extendShareLink, @/features/change-requests/api/changeRequestsApi.listShareLinks, @/features/change-requests/api/changeRequestsApi.revokeShareLink, @/features/change-requests/api/types.ShareLinkCreatedRead, @/features/change-requests/api/types.ShareLinkRead
 // Phase-107-5:追記 ── @/features/change-requests/api/changeRequestsApi.listComments, @/features/change-requests/api/changeRequestsApi.replyComment, @/features/change-requests/api/types.ChangeRequestCommentRead
+// Phase-112-4:追記 ── @/features/change-requests/api/changeRequestsApi.checkChangeRequestConflicts
 import { create } from "zustand";
 import { ApiError, isNotFound } from "@/lib/api/client";
 import { isCacheFresh } from "@/lib/api/cache";
@@ -36,6 +37,7 @@ import type {
 } from "@/features/baselines/api/types";
 import {
   adoptOptionDraft,
+  checkChangeRequestConflicts,
   checkChangeRequestDocuments,
   confirmExplanationSummary,
   copyChangeRequest,
@@ -219,6 +221,9 @@ type ChangeRequestsStore = {
   // 選択肢(案)だけを直す(説明済みは下書きに戻る)
   updateOptions: (projectId: string, number: number, options: ChangeRequestOptionsIn) => Promise<boolean>;
   explain: (projectId: string, number: number) => Promise<boolean>;
+  // Phase-112-4:追記
+  // 重なる CR の競合を、今の文と見比べて確かめた、にする
+  checkConflicts: (projectId: string, number: number) => Promise<boolean>;
   decide: (projectId: string, number: number, body: ChangeRequestDecision) => Promise<boolean>;
   withdraw: (projectId: string, number: number, reason: string) => Promise<boolean>;
   // 写しの先を返す(画面はその番号へ移る)
@@ -501,6 +506,11 @@ export const useChangeRequestsStore = create<ChangeRequestsStore>((set, get) => 
 
     explain: async (projectId, number) =>
       (await act(projectId, () => explainChangeRequest(projectId, number), "説明済みにできませんでした")) !== null,
+
+    // Phase-112-4:追記
+    checkConflicts: async (projectId, number) =>
+      (await act(projectId, () => checkChangeRequestConflicts(projectId, number), "確かめた印を付けられませんでした")) !==
+      null,
 
     decide: async (projectId, number, body) =>
       (await act(projectId, () => decideChangeRequest(projectId, number, body), "判断を記録できませんでした")) !==

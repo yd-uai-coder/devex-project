@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3,102-2,102-4,103-2,104-3,106-5
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3,102-2,102-4,103-2,104-3,106-5,112-1,112-3
+# Phase-112-1：更新(docstring: record_document_apply が要素の前 → 後を残すことを足した)
 # Phase-106-5：更新(docstring: checked_origins の候補に段階1 の処理を足した)
 # Phase-102-2：更新(docstring: update が案を確かめ直す・decide が選んだ案の対象を CR の対象にする・copy_rejected が案も写す)
 # Phase-96-3：更新(docstring: update が予測の起点を確かめ直す)
@@ -29,15 +30,28 @@
 # Phase-102-4:追記 ── app.change_requests.OptionDraftCheck, app.change_requests.OptionDraftOut, app.change_requests.build_option_draft_messages, app.change_requests.check_option_draft, app.change_requests.draft_to_json, app.change_requests.draft_to_options, app.change_requests.normalize_options, app.models.change_request_option_draft.ChangeRequestOptionDraft, app.repositories.change_request_option_draft.ChangeRequestOptionDraftRepository, app.schemas.change_request.ChangeRequestOptionsIn, app.services.errors.ChangeRequestOptionDraftNotFoundError, app.services.llm_retry.invoke_structured
 # Phase-103-2:追記 ── app.change_requests.snapshot_refs, app.models.change_request.ChangeRequestEvent
 # Phase-104-3:追記 ── app.change_requests.DecisionSource
+# Phase-112-1:追記 ── collections.abc.Mapping, app.agreements.AgreedItem, app.agreements.AppliedReflection, app.agreements.ReflectionChange, app.agreements.agreement_items, app.agreements.applied_reflections, app.agreements.changes_to_json, app.agreements.reflection_changes, app.agreements.requirement_key, app.change_requests.rewritable_keys, app.documents.external_design.model.ExternalDesignModel, app.documents.requirements.model.RequirementsModel
+# Phase-112-3:追記 ── dataclasses.field, app.change_requests.Conflict, app.change_requests.RecordFact, app.change_requests.checks_for, app.change_requests.conflicts, app.change_requests.is_checked, app.change_requests.unchecked, app.repositories.agreement.AgreementRepository, app.services.errors.ChangeRequestConflictUncheckedError
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from datetime import UTC, datetime
 from typing import Any
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agreements import (
+    AgreedItem,
+    AppliedReflection,
+    ReflectionChange,
+    agreement_items,
+    applied_reflections,
+    changes_to_json,
+    reflection_changes,
+    requirement_key,
+)
 from app.ai.llm.catalog import Purpose
 from app.ai.llm.content import extract_text_content
 from app.change_requests import (
@@ -53,6 +67,7 @@ from app.change_requests import (
     ChangeRequestFacts,
     ChangeRequestStatus,
     Comparison,
+    Conflict,
     DecisionFacts,
     DecisionSource,
     EventFacts,
@@ -61,6 +76,7 @@ from app.change_requests import (
     OptionDraftOut,
     Overlap,
     Prediction,
+    RecordFact,
     ReviewFacts,
     Scale,
     ScaleComparisonRow,
@@ -78,14 +94,17 @@ from app.change_requests import (
     build_summary_messages,
     check_option_draft,
     checked_documents,
+    checks_for,
     clip_summary,
     compare,
     compare_scale,
+    conflicts,
     count_scale,
     document_items,
     draft_to_json,
     draft_to_options,
     first_applied_at,
+    is_checked,
     merge_applied_marks,
     needs_reconfirm,
     next_status,
@@ -99,6 +118,7 @@ from app.change_requests import (
     pending_stages,
     predict_from_snapshots,
     review_link_problem,
+    rewritable_keys,
     snapshot_refs,
     stage_apply_versions,
     summary_state,
@@ -106,6 +126,7 @@ from app.change_requests import (
     targets_from_json,
     targets_to_json,
     trace_entries,
+    unchecked,
     verification_of,
     with_confirmations,
     with_summary,
@@ -116,12 +137,15 @@ from app.detailed_design.impact import Mark, StageImpact
 from app.detailed_design.impact.elements import parse_model
 from app.detailed_design.plan import PlanModel
 from app.detailed_design.procedure_doc import ProcedureDocModel
+from app.documents.external_design.model import ExternalDesignModel
+from app.documents.requirements.model import RequirementsModel
 from app.models.baseline import Baseline
 from app.models.change_request import ChangeRequest, ChangeRequestEvent
 from app.models.change_request_option_draft import ChangeRequestOptionDraft
 from app.models.change_request_summary import ChangeRequestSummary
 from app.models.project import Project
 from app.models.review import ReviewRun
+from app.repositories.agreement import AgreementRepository
 from app.repositories.baseline import BaselineRepository
 from app.repositories.change_request import ChangeRequestRepository
 from app.repositories.change_request_option_draft import ChangeRequestOptionDraftRepository
@@ -147,6 +171,7 @@ from app.services.baseline_service import (
 from app.services.detailed_mode import require_detailed
 from app.services.errors import (
     ChangeRequestBaselineMissingError,
+    ChangeRequestConflictUncheckedError,
     ChangeRequestInvalidTransitionError,
     ChangeRequestNotAppliedError,
     ChangeRequestNotFoundError,
@@ -181,6 +206,9 @@ class ChangeRequestView:
     derived_from_number: int | None
     derived_numbers: list[int]
     allowed_actions: list[ChangeRequestAction]
+    # Phase-112-3:追記
+    # 基準の束の後に、ほかの CR の反映で変わった対象の要件(確かめの印つき)
+    conflicts: list[tuple[Conflict, bool]] = dataclass_field(default_factory=list)
 
 
 # Phase-85-2:追記
@@ -239,6 +267,9 @@ class ComparisonView:
     saved: bool
     # Phase-101-3:追記
     scale: tuple[ScaleComparisonRow, ...] = ()
+    # Phase-112-1:追記
+    # 文書への反映ごとの前 → 後(新しい順)
+    reflections: tuple[AppliedReflection, ...] = ()
 
 
 # Phase-86-2:追記
@@ -922,7 +953,19 @@ class ChangeRequestService:
             [item.key for item in view.prediction.items],
             change_request.document_checks or [],
         )
-        return ComparisonView(change_request, comparison, saved=view.saved, scale=scale)
+        # Phase-112-1：更新
+        # return ComparisonView(change_request, comparison, saved=view.saved, scale=scale)
+        # ↓↓
+        reflections = applied_reflections(
+            (e.action, e.occurred_at, e.refs) for e in change_request.events
+        )
+        return ComparisonView(
+            change_request,
+            comparison,
+            saved=view.saved,
+            scale=scale,
+            reflections=tuple(reflections),
+        )
 
     async def _actual_scale(
         self, project: Project, change_request: ChangeRequest, applied: Sequence[Any]
@@ -1135,7 +1178,11 @@ class ChangeRequestService:
         if change_request is None or change_request.status not in statuses:
             return None
         facts = facts_of(change_request, change_request.baseline.number)
-        return Reflection(change_request, build_cr_instruction(facts))
+        # Phase-112-3：更新
+        # return Reflection(change_request, build_cr_instruction(facts))
+        # ↓↓
+        found = await self._conflicts(change_request)
+        return Reflection(change_request, build_cr_instruction(facts, found))
 
     async def record_document_apply(
         self,
@@ -1145,10 +1192,15 @@ class ChangeRequestService:
         model: str | None,
         marks: Sequence[Mark],
         actor_id: uuid.UUID | None,
+        # Phase-112-1:追記
+        before_models: Mapping[str, Mapping[str, Any] | None] | None = None,
+        after_models: Mapping[str, Mapping[str, Any] | None] | None = None,
+        protection: Sequence[Mapping[str, Any]] = (),
     ) -> None:
         """CR を渡した文書の再生成が終わったことを記録する。反映済みにし(やり直しは反映済みのまま)、
-        時系列に作った版(`documents`=(文書の種類, 版))とモデル名を残し、付いた印を写しに重ねる。
-        生成と同じトランザクションで使うため、commitしない。"""
+        時系列に作った版(`documents`=(文書の種類, 版))とモデル名と、要素の前 → 後(`changes`。
+        反映の直前の版`before_models`と作った版`after_models`を比べる。版は巡回で消えうるため)を
+        残し、付いた印を写しに重ねる。生成と同じトランザクションで使うため、commitしない。"""
         change_request.applied_impact = merge_applied_marks(
             change_request.applied_impact, marks
         )
@@ -1162,6 +1214,12 @@ class ChangeRequestService:
             refs={
                 "documents": [{"doc_type": t, "version": v} for t, v in documents],
                 "model": model,
+                # Phase-112-1:追記
+                "changes": changes_to_json(
+                    document_changes(
+                        change_request, before_models or {}, after_models or {}, protection
+                    )
+                ),
             },
         )
 
@@ -1366,13 +1424,114 @@ class ChangeRequestService:
             derived_from_number = source.number if source is not None else None
         derived = await self._change_requests.find_derived(change_request.id)
         status: ChangeRequestStatus = change_request.status  # type: ignore[assignment]
+        # Phase-112-3:追記
+        checks = change_request.conflict_checks or []
         return ChangeRequestView(
             change_request=change_request,
             overlapping=overlapping,
             derived_from_number=derived_from_number,
             derived_numbers=[c.number for c in derived],
             allowed_actions=allowed_actions(status),
+            # Phase-112-3:追記
+            conflicts=[(c, is_checked(c, checks)) for c in await self._conflicts(change_request)],
         )
+
+    # Phase-112-3:追記
+    async def _conflicts(self, change_request: ChangeRequest) -> list[Conflict]:
+        """基準の束の後に、ほかの CR の反映で変わった対象の要件。進行中の CR だけ(終わった CR は
+        反映しないので空)。"""
+        if change_request.status not in ACTIVE_STATUSES:
+            return []
+        records = await AgreementRepository(self._session).list_for_project(
+            change_request.project_id
+        )
+        return conflicts(
+            target_ids(targets_from_json(change_request.targets)),
+            [
+                RecordFact(
+                    seq=r.seq,
+                    key=r.key,
+                    origin=r.origin,
+                    baseline_id=r.baseline_id,
+                    change_request_number=(
+                        r.change_request.number if r.change_request is not None else None
+                    ),
+                    content=r.content,
+                )
+                for r in records
+            ],
+            change_request.baseline_id,
+            change_request.number,
+        )
+
+    async def check_conflicts(
+        self, project: Project, number: int, *, actor_id: uuid.UUID | None
+    ) -> ChangeRequestView:
+        """今の競合を「今の文と見比べて確かめた」にする(印は今の合意の記録の順を持ち、後でさらに
+        変わったら効かなくなる)。時系列に1行(状態は変えない)残す。競合が無い・進行中でない CR は
+        ChangeRequestInvalidTransitionError。"""
+        change_request = await self._load(project, number)
+        found = await self._conflicts(change_request)
+        if not found:
+            raise ChangeRequestInvalidTransitionError(
+                f"CR-{number} has no conflicts to check (status={change_request.status})"
+            )
+        change_request.conflict_checks = checks_for(found)
+        change_request.updated_at = datetime.now(UTC)
+        names = "・".join(c.requirement_id for c in found)
+        await self._change_requests.add_event(
+            change_request,
+            action="check_conflict",
+            to_status=change_request.status,
+            actor_id=actor_id,
+            note=f"{names} の今の文と見比べて確かめた",
+            refs={"checks": change_request.conflict_checks},
+        )
+        await self._session.commit()
+        return await self._view(change_request)
+
+    async def require_conflicts_checked(self, project: Project, number: int) -> None:
+        """反映の受け付けのときの確かめ。未確認の競合があれば
+        ChangeRequestConflictUncheckedError。"""
+        change_request = await self._load(project, number)
+        pending = unchecked(
+            await self._conflicts(change_request), change_request.conflict_checks or []
+        )
+        if pending:
+            detail = "、".join(
+                f"{c.requirement_id}({'・'.join(f'CR-{n}' for n in c.by_numbers)} が先に変えた)"
+                for c in pending
+            )
+            raise ChangeRequestConflictUncheckedError(
+                f"{change_request_label(number)} の対象の要件は、基準の束の後にほかの CR の反映で"
+                f"変わっています: {detail}。今の文と見比べて確かめてから反映してください。"
+            )
+
+
+# Phase-112-1:追記
+def document_changes(
+    change_request: ChangeRequest,
+    before_models: Mapping[str, Mapping[str, Any] | None],
+    after_models: Mapping[str, Mapping[str, Any] | None],
+    protection: Sequence[Mapping[str, Any]],
+) -> list[ReflectionChange]:
+    """反映の前 → 後(合意の対象の要素)。作り直さなかった文書は、前の版のまま比べる(変わらない)。"""
+
+    def items(models: Mapping[str, Mapping[str, Any] | None]) -> list[AgreedItem]:
+        return agreement_items(
+            parse_model(RequirementsModel, models.get("requirements")),
+            parse_model(ExternalDesignModel, models.get("external_design")),
+        )
+
+    targets = targets_from_json(change_request.targets)
+    return reflection_changes(
+        items(before_models),
+        items({**before_models, **after_models}),
+        target_keys={requirement_key(t.requirement_id) for t in targets},
+        rewritable=rewritable_keys(targets, change_request.predicted_impact),
+        adds_requirement=change_request.adds_requirement,
+        protection=protection,
+    )
 
 
 # Phase-96-1：削除(app/change_requests/comparison.py へ移した。段階の承認でも使うため)

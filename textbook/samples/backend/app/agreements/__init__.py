@@ -1,4 +1,5 @@
-# 作成：Phase-91-1｜更新：Phase-92-1,93-1,93-4,95-1,97-1,105-2
+# 作成：Phase-91-1｜更新：Phase-92-1,93-1,93-4,95-1,97-1,105-2,112-1
+# Phase-112-1：更新(docstring: モジュールの一覧に reflection_diff を足した)
 # Phase-95-1：更新(docstring: モジュールの一覧に history を足した)
 # Phase-97-1：更新(docstring: モジュールの一覧に status を足した)
 # Phase-92-1：更新(docstring: モジュールの一覧に protection を足した)
@@ -11,6 +12,7 @@ docs/internal_design.md 3.3節「12. 合意の精度」。
 - protection: 再生成の後に、合意済みの要素を合意の形へ戻す
 - history: 要素1つの合意の履歴(合意の記録・戻した版・関わる CR)
 - status: 表示中の版の要素ごとの合意の状態(合意済み・合意と違う・未合意・今の版に無い)
+- reflection_diff: CR の反映で要素がどう変わったか(前 → 後)
 """
 
 # Phase-92-1:追記 ── app.agreements.protection.RESTORE_REASONS, app.agreements.protection.Restored, app.agreements.protection.RestoreReason, app.agreements.protection.agreed_requirement_ids, app.agreements.protection.protect_requirements, app.agreements.protection.requirement_key
@@ -19,6 +21,7 @@ docs/internal_design.md 3.3節「12. 合意の精度」。
 # Phase-95-1:追記 ── app.agreements.history.HISTORY_EVENT_LABEL, app.agreements.history.HISTORY_EVENTS, app.agreements.history.RESTORE_REASON_LABEL, app.agreements.history.ChangeRequestRef, app.agreements.history.ElementHistory, app.agreements.history.HistoryEntry, app.agreements.history.HistoryEvent, app.agreements.history.RecordFacts, app.agreements.history.RelatedChangeRequest, app.agreements.history.VersionFacts, app.agreements.history.element_history
 # Phase-97-1:追記 ── app.agreements.status.ELEMENT_STATE_LABEL, app.agreements.status.ELEMENT_STATES, app.agreements.status.CurrentAgreement, app.agreements.status.DocumentAgreementStatus, app.agreements.status.ElementState, app.agreements.status.ElementStatus, app.agreements.status.RestoredElement, app.agreements.status.element_states, app.agreements.status.restored_elements
 # Phase-105-2:追記 ── app.agreements.items.service_match_key
+# Phase-112-1:追記 ── app.agreements.reflection_diff.REFLECTION_CHANGE_KINDS, app.agreements.reflection_diff.REFLECTION_CHANGE_LABEL, app.agreements.reflection_diff.REFLECTION_SCOPE_LABEL, app.agreements.reflection_diff.REFLECTION_SCOPES, app.agreements.reflection_diff.AppliedReflection, app.agreements.reflection_diff.FieldChange, app.agreements.reflection_diff.ReflectionChange, app.agreements.reflection_diff.ReflectionChangeKind, app.agreements.reflection_diff.ReflectionScope, app.agreements.reflection_diff.applied_reflections, app.agreements.reflection_diff.changes_from_json, app.agreements.reflection_diff.changes_to_json, app.agreements.reflection_diff.reflection_changes
 from app.agreements.history import (
     HISTORY_EVENT_LABEL,
     HISTORY_EVENTS,
@@ -63,6 +66,21 @@ from app.agreements.protection import (
     protect_requirements,
     requirement_key,
 )
+from app.agreements.reflection_diff import (
+    REFLECTION_CHANGE_KINDS,
+    REFLECTION_CHANGE_LABEL,
+    REFLECTION_SCOPE_LABEL,
+    REFLECTION_SCOPES,
+    AppliedReflection,
+    FieldChange,
+    ReflectionChange,
+    ReflectionChangeKind,
+    ReflectionScope,
+    applied_reflections,
+    changes_from_json,
+    changes_to_json,
+    reflection_changes,
+)
 from app.agreements.status import (
     ELEMENT_STATE_LABEL,
     ELEMENT_STATES,
@@ -86,6 +104,11 @@ __all__ = [
     "ELEMENT_STATE_LABEL",
     "HISTORY_EVENTS",
     "HISTORY_EVENT_LABEL",
+    # Phase-112-1:追記
+    "REFLECTION_CHANGE_KINDS",
+    "REFLECTION_CHANGE_LABEL",
+    "REFLECTION_SCOPES",
+    "REFLECTION_SCOPE_LABEL",
     "RESTORE_REASONS",
     # Phase-95-1:追記
     "RESTORE_REASON_LABEL",
@@ -93,6 +116,8 @@ __all__ = [
     "USERS_LABEL",
     "AgreedItem",
     "AgreedKind",
+    # Phase-112-1:追記
+    "AppliedReflection",
     "AgreementOrigin",
     # Phase-92-1:追記
     # Phase-95-1:追記
@@ -103,9 +128,15 @@ __all__ = [
     "ElementState",
     "ElementStatus",
     "ElementHistory",
+    # Phase-112-1:追記
+    "FieldChange",
     "HistoryEntry",
     "HistoryEvent",
     "RecordFacts",
+    # Phase-112-1:追記
+    "ReflectionChange",
+    "ReflectionChangeKind",
+    "ReflectionScope",
     "RelatedChangeRequest",
     "VersionFacts",
     "RestoreReason",
@@ -117,10 +148,15 @@ __all__ = [
     "RestoredElement",
     "agreed_external_ids",
     "agreed_requirement_ids",
+    # Phase-112-1:追記
+    "applied_reflections",
     "agreement_items",
     "body_of",
     # Phase-93-4:追記
     "change_request_items",
+    # Phase-112-1:追記
+    "changes_from_json",
+    "changes_to_json",
     # Phase-95-1:追記
     "element_history",
     # Phase-97-1:追記
@@ -133,6 +169,8 @@ __all__ = [
     "protect_external_design",
     # Phase-92-1:追記
     "protect_requirements",
+    # Phase-112-1:追記
+    "reflection_changes",
     "removed_keys",
     # Phase-92-1:追記
     "requirement_key",

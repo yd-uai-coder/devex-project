@@ -1,14 +1,28 @@
-// 作成：Phase-87-3｜更新：Phase-98-2,107-1
-// SUT: ImpactTab(予測・比較・文書への反映のボタン)
+// 作成：Phase-87-3｜更新：Phase-98-2,107-1,112-2,112-4
+// Phase-112-2：更新
+// // SUT: ImpactTab(予測・比較・文書への反映のボタン)
+// ↓↓
+// Phase-112-4：更新
+// // SUT: ImpactTab(予測・比較・文書への反映のボタン・反映で変わった所)
+// ↓↓
+// SUT: ImpactTab(予測・比較・文書への反映のボタンと競合での止め・反映で変わった所)
 // ドライバ: Testing Library(描画・クリック)
 // スタブ: ストアの関数(vi.fn)── タブを開いたときの読み込みと、反映のボタンの出し分けだけを見るため
 // Phase-107-1:追記 ── @testing-library/react.within
+// Phase-112-2:追記 ── ../../test-utils/changeRequestFixtures.makeReflection
+// Phase-112-4:追記 ── ../../test-utils/changeRequestFixtures.makeConflict
 import { beforeEach, describe, expect, it } from "vitest";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ImpactTab } from "../ImpactTab";
 import { useChangeRequestsStore } from "../../change-requests-store";
-import { makeChangeRequest, makeComparison, makeImpact } from "../../test-utils/changeRequestFixtures";
+import {
+  makeChangeRequest,
+  makeComparison,
+  makeConflict,
+  makeImpact,
+  makeReflection,
+} from "../../test-utils/changeRequestFixtures";
 import { renderWithTheme, resetChangeRequestsStore } from "../../test-utils/renderWithStore";
 
 const store = () => useChangeRequestsStore.getState();
@@ -67,6 +81,29 @@ describe("ImpactTab", () => {
     expect(store().reflectDocuments).toHaveBeenCalledWith("p1", 1);
   });
 
+  // Phase-112-4:追記
+  it("重なる CR の競合を確かめるまでは、文書へ反映するボタンを押せず、理由を出す", () => {
+    useChangeRequestsStore.setState({ views: { ...store().views, impact: makeImpact({ saved: true }) } });
+    const { unmount } = renderWithTheme(
+      <ImpactTab projectId="p1" cr={makeChangeRequest({ status: "agreed", conflicts: [makeConflict()] })} />,
+    );
+
+    expect(screen.getByRole("button", { name: "文書へ反映する(要件定義書から再生成)" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByText(/今の文と見比べて確かめてから反映してください/)).toBeInTheDocument();
+
+    unmount();
+    renderWithTheme(
+      <ImpactTab
+        projectId="p1"
+        cr={makeChangeRequest({ status: "agreed", conflicts: [makeConflict({ checked: true })] })}
+      />,
+    );
+    expect(screen.queryByText(/今の文と見比べて確かめてから反映してください/)).not.toBeInTheDocument();
+  });
+
   it("反映済みは比較も読み、予測の外 → 予測だけ → 一致の順に出す。段階へのリンクも出す", () => {
     useChangeRequestsStore.setState({
       views: { ...store().views, impact: makeImpact({ saved: true }), comparison: makeComparison() },
@@ -106,5 +143,27 @@ describe("ImpactTab", () => {
     renderWithTheme(<ImpactTab projectId="p1" cr={makeChangeRequest({ status: "verified" })} />);
 
     expect(screen.getByText("反映の前です")).toBeInTheDocument();
+  });
+
+  // Phase-112-2:追記
+  it("反映の後は、反映で変わった所を比較の上に出し、確認事項から来た要素を目立たせる", () => {
+    useChangeRequestsStore.setState({
+      views: {
+        ...store().views,
+        impact: makeImpact({ saved: true }),
+        comparison: makeComparison({ reflections: [makeReflection()] }),
+      },
+    });
+
+    renderWithTheme(
+      <ImpactTab projectId="p1" cr={makeChangeRequest({ status: "applied" })} focusKey="req:FR-005" />,
+    );
+
+    const section = screen.getByLabelText("反映で変わった所");
+    expect(within(section).getByText("CR の対象(1)")).toBeInTheDocument();
+    expect(section.compareDocumentPosition(screen.getByLabelText("予測と実際の比較"))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(document.querySelectorAll('tr[data-focused="true"]')).toHaveLength(1);
   });
 });

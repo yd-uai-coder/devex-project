@@ -1,25 +1,34 @@
-# 作成：Phase-85-1｜更新：Phase-96-2,102-2
+# 作成：Phase-85-1｜更新：Phase-96-2,102-2,112-3
+# Phase-112-3：更新(docstring: 競合の今の文の1行を足した)
 # Phase-102-2：更新(docstring: SUT に合意した案の1行)
 """合意した CR からの再生成の指示のテスト。
 
 SUT: app.change_requests(build_cr_instruction / join_instructions。合意した案の1行は
-     options_from_rows で組んだ案)
+     options_from_rows で組んだ案。競合の今の文の1行は Conflict で組んだ競合)
 ドライバ: pytest のテスト関数
 スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
 """
 
 # Phase-96-2:追記 ── app.change_requests.instruction.ORIGIN_LINE
 # Phase-102-2:追記 ── app.change_requests.options_from_rows, app.change_requests.instruction.OPTION_LINE
+# Phase-112-3:追記 ── app.change_requests.Conflict, app.change_requests.instruction.CONFLICT_LINE, app.change_requests.instruction.CONFLICT_REMOVED_LINE
 from datetime import date
 
 from app.change_requests import (
     ChangeRequestFacts,
+    Conflict,
     Target,
     build_cr_instruction,
     join_instructions,
     options_from_rows,
 )
-from app.change_requests.instruction import ADDS_REQUIREMENT_LINE, OPTION_LINE, ORIGIN_LINE
+from app.change_requests.instruction import (
+    ADDS_REQUIREMENT_LINE,
+    CONFLICT_LINE,
+    CONFLICT_REMOVED_LINE,
+    OPTION_LINE,
+    ORIGIN_LINE,
+)
 
 
 def _facts(targets: tuple[Target, ...], **overrides: object) -> ChangeRequestFacts:
@@ -113,3 +122,28 @@ def test_instruction_names_the_agreed_option() -> None:
     assert lines[4] == "対象の要件:"
     assert "合意した案" not in build_cr_instruction(_facts((Target("FR-005"),), options=options))
     assert OPTION_LINE.startswith("合意した案")
+
+
+# Phase-112-3:追記
+def test_conflicting_target_gets_current_text_line() -> None:
+    """対象の要件がほかの CR の反映で変わっていれば、その行の下に今の文(消えていればその旨)を
+    添える。競合の無い対象には添えない。"""
+    conflicts = [
+        Conflict("req:FR-005", "FR-005", (1, 2), "参照ファイルは3つまで", "参照は4つまで", 9),
+        Conflict("req:FR-009", "FR-009", (2,), "古い文", None, 10),
+    ]
+    text = build_cr_instruction(
+        _facts(
+            (
+                Target("FR-005", "content", "参照ファイルは5つまで添付できる"),
+                Target("FR-007", "content"),
+                Target("FR-009", "delete"),
+            )
+        ),
+        conflicts,
+    )
+
+    lines = text.splitlines()
+    assert lines[5] == CONFLICT_LINE.format(numbers="CR-1・CR-2", current="参照は4つまで")
+    assert lines[6] == "- FR-007(内容の変更): 上の「内容」のとおりに変える"
+    assert lines[8] == CONFLICT_REMOVED_LINE.format(numbers="CR-2")

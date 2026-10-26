@@ -1,5 +1,8 @@
-// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整),107-4
-// SUT: ChangeRequestDetailContent(詳細の見出し・タブの切り替え・反映の完了待ち)
+// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整),107-4,112-2,112-4
+// Phase-112-2：更新
+// // SUT: ChangeRequestDetailContent(詳細の見出し・タブの切り替え・反映の完了待ち)
+// ↓↓
+// SUT: ChangeRequestDetailContent(詳細の見出し・タブの切り替え・URL で開くタブ・反映の完了待ち)
 // ドライバ: Testing Library(描画・タブのクリック)
 // スタブ: ストアの関数(vi.fn)・useGenerationPolling(vi.mock)・各タブと操作の部品(vi.mock)──
 // 詳細自身の配線だけを見る。タブの中身はそれぞれのテストで確かめる
@@ -18,7 +21,14 @@ vi.mock("@/hooks/useGenerationPolling", () => ({
 }));
 vi.mock("../ChangeRequestActions", () => ({ ChangeRequestActions: () => <div>操作</div> }));
 vi.mock("../ContentTab", () => ({ ContentTab: () => <div>内容のタブ</div> }));
-vi.mock("../ImpactTab", () => ({ ImpactTab: () => <div>影響のタブ</div> }));
+// Phase-112-4:追記
+vi.mock("../ConflictNotice", () => ({ ConflictNotice: () => <div>競合の知らせ</div> }));
+// Phase-112-2：更新
+// vi.mock("../ImpactTab", () => ({ ImpactTab: () => <div>影響のタブ</div> }));
+// ↓↓
+vi.mock("../ImpactTab", () => ({
+  ImpactTab: ({ focusKey }: { focusKey?: string | null }) => <div>{`影響のタブ ${focusKey ?? ""}`.trim()}</div>,
+}));
 // Phase-87-4:追記
 vi.mock("../VerificationTab", () => ({ VerificationTab: () => <div>検証のタブ</div> }));
 // ── ここから Phase-87-3 の作成分 ──
@@ -46,6 +56,20 @@ describe("ChangeRequestDetailContent", () => {
     expect(screen.getByRole("heading", { name: "CR-1 参考資料を5件まで" })).toBeInTheDocument();
     expect(screen.getByLabelText("状態: 下書き")).toBeInTheDocument();
     expect(screen.getByText("内容のタブ")).toBeInTheDocument();
+    // Phase-112-4:追記
+    expect(screen.getByText("競合の知らせ")).toBeInTheDocument();
+  });
+
+  // Phase-112-2:追記
+  it("URL で選んだタブから始め、目立たせる要素のキーを影響のタブへ渡す", () => {
+    useChangeRequestsStore.setState({ detail: makeChangeRequest({ status: "applied" }) });
+
+    renderWithTheme(
+      <ChangeRequestDetailContent projectId="p1" number={1} initialTab="impact" focusKey="req:FR-005" />,
+    );
+
+    expect(screen.getByText("影響のタブ req:FR-005")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "影響" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("タブを切り替える。検証は反映の後だけ", async () => {

@@ -1,4 +1,4 @@
-// 作成：Phase-98-1｜更新：Phase-99(完了後の調整),109-3
+// 作成：Phase-98-1｜更新：Phase-99(完了後の調整),109-3,112-2
 "use client";
 
 // Phase-99(完了後の調整):追記 ── next/link.Link, @/features/confirmations/confirmationOps.rowLock
@@ -39,7 +39,10 @@ const STATUS_ACTIONS: { status: ConfirmationStatus; label: string }[] = [
 // // 利用者は、変更要求へのリンク)。メモはどの行も書ける。
 // ↓↓
 // 利用者は、変更要求へのリンク)。CR の反映で文が変わって未確認に戻った行は、その CR へのリンクを
-// 状態の文の下の段に出す。メモはどの行も書ける。
+// Phase-112-2：更新
+// // 状態の文の下の段に出す。メモはどの行も書ける。
+// ↓↓
+// 状態の文の下の段に出す(CR の影響のタブの、反映で変わった所のその行へ)。メモはどの行も書ける。
 export function ConfirmationTable({
   // Phase-99(完了後の調整):追記
   projectId,
@@ -129,7 +132,13 @@ export function ConfirmationTable({
               {changedBy !== null && item.changed_by_change_request_number !== null ? (
                 // 状態の文の下の段に出す(2段。下の「変更要求(CR)で →」と同じ形)
                 <Link
-                  href={changeRequestHref(projectId, item.changed_by_change_request_number)}
+                  // Phase-112-2：更新
+                  // href={changeRequestHref(projectId, item.changed_by_change_request_number)}
+                  // ↓↓
+                  href={changeRequestHref(projectId, item.changed_by_change_request_number, {
+                    tab: "impact",
+                    focus: item.key,
+                  })}
                   style={{ display: "block", marginTop: 2, fontSize: 12, color: "var(--blue10)" }}
                 >
                   {`${changedBy} →`}

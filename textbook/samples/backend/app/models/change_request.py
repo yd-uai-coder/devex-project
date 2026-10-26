@@ -1,4 +1,5 @@
-# 作成：Phase-82-1｜更新：Phase-83-1,83-3,85-2,86-2,96-3,102-2,104-3,106-5
+# 作成：Phase-82-1｜更新：Phase-83-1,83-3,85-2,86-2,96-3,102-2,104-3,106-5,112-3
+# Phase-112-3：更新(docstring: ChangeRequest に conflict_checks を足した)
 # Phase-106-5：更新(docstring: ChangeRequest の origins に段階1 の処理を足した)
 # Phase-104-3：更新(docstring: ChangeRequest に判断の出どころと指紋を足した)
 # Phase-102-2：更新(docstring: ChangeRequest の options・decision_option)
@@ -59,7 +60,9 @@ class ChangeRequest(Base):
     渡した文書の再生成)のときに付いた印の写し(app/detailed_design/impact/marks.py の Mark の形の
     一覧。やり直しはキーで重ねる。反映の前は NULL)。予測との比較に使う(段階の印は承認で消えるため)。
     `document_checks`は文書の側の確認の一覧(保存した予測の画面・API)のうち、確認済みにしたキー
-    (NULL は未確認だけ。app/change_requests/verification.py)。`included_baseline_id`は検証済みの後に
+    (NULL は未確認だけ。app/change_requests/verification.py)。`conflict_checks`は重なる CR の競合を
+    「今の文と見比べて確かめた」の印(`[{key, seq}]`。seq は確かめた時点の最新の合意の記録。
+    app/change_requests/conflicts.py)。`included_baseline_id`は検証済みの後に
     入れた新しい合意済みの版(束)。結んだ設計レビューは ChangeRequestReview に持つ。
     状態の遷移は時系列(ChangeRequestEvent)に1行ずつ残す。
     """
@@ -116,6 +119,8 @@ class ChangeRequest(Base):
     applied_impact: Mapped[list[dict] | None] = mapped_column(PortableJSON, nullable=True)
     # Phase-86-2:追記
     document_checks: Mapped[list[str] | None] = mapped_column(PortableJSON, nullable=True)
+    # Phase-112-3:追記
+    conflict_checks: Mapped[list[dict] | None] = mapped_column(PortableJSON, nullable=True)
     included_baseline_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("baselines.id", ondelete="SET NULL"), nullable=True
     )

@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,107-2,107-3,107-4,107-5
+// 作成：Phase-87-1｜更新：Phase-88-2,107-2,107-3,107-4,107-5,112-4
   // Phase-88-2：削除
   // BaselineRequirementRead,
   // BaselineSummaryRead,
@@ -82,6 +82,12 @@ export function updateChangeRequestOptions(
 
 export function explainChangeRequest(projectId: string, number: number): Promise<ChangeRequestRead> {
   return apiFetch<ChangeRequestRead>(`${one(projectId, number)}/explain`, post());
+}
+
+// Phase-112-4:追記
+// 重なる CR の競合を、今の文と見比べて確かめた、にする(競合が無ければ409)
+export function checkChangeRequestConflicts(projectId: string, number: number): Promise<ChangeRequestRead> {
+  return apiFetch<ChangeRequestRead>(`${one(projectId, number)}/conflict-checks`, post());
 }
 
 // 合意・却下(判断の時点の予測を CR に保存する)

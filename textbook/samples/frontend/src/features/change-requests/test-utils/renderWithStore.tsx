@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2,107-2,107-3,107-4,107-5
+// 作成：Phase-87-3｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2,107-2,107-3,107-4,107-5,112-4
 import type { ReactElement } from "react";
 import { render } from "@testing-library/react";
 import { vi } from "vitest";
@@ -76,6 +76,8 @@ export function resetChangeRequestsStore(): void {
     // Phase-107-2:追記
     updateOptions: vi.fn().mockResolvedValue(true),
     explain: vi.fn().mockResolvedValue(true),
+    // Phase-112-4:追記
+    checkConflicts: vi.fn().mockResolvedValue(true),
     decide: vi.fn().mockResolvedValue(true),
     withdraw: vi.fn().mockResolvedValue(true),
     copy: vi.fn().mockResolvedValue(null),

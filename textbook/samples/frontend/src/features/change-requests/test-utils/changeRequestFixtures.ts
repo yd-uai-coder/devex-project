@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,98-2,107-1,107-2,107-3,107-4,107-5
+// 作成：Phase-87-1｜更新：Phase-88-2,98-2,107-1,107-2,107-3,107-4,107-5,112-2,112-4
   // Phase-88-2:追記
   // Phase-88-2:追記
 // Phase-107-1:追記 ── @/features/change-requests/api/types.ScaleCountRead
@@ -6,9 +6,13 @@
 // Phase-107-3:追記 ── @/features/change-requests/api/types.OptionDraftRead
 // Phase-107-4:追記 ── @/features/change-requests/api/types.ShareLinkCreatedRead, @/features/change-requests/api/types.ShareLinkRead
 // Phase-107-5:追記 ── @/features/change-requests/api/types.ChangeRequestCommentRead
+// Phase-112-2:追記 ── @/features/change-requests/api/types.AppliedReflectionRead
+// Phase-112-4:追記 ── @/features/change-requests/api/types.ChangeRequestConflictRead
 import type {
+  AppliedReflectionRead,
   ChangeRequestCommentRead,
   ChangeRequestComparisonRead,
+  ChangeRequestConflictRead,
   ChangeRequestExplanationRead,
   ChangeRequestImpactRead,
   ChangeRequestOptionsRead,
@@ -56,6 +60,21 @@ export function makeChangeRequest(overrides: Partial<ChangeRequestRead> = {}): C
     derived_from_number: null,
     derived_numbers: [],
     allowed_actions: ["edit", "explain", "withdraw"],
+    // Phase-112-4:追記
+    conflicts: [],
+    ...overrides,
+  };
+}
+
+// 重なる CR の競合1つ(FR-005 を CR-2 が先に変えた。未確認)
+export function makeConflict(overrides: Partial<ChangeRequestConflictRead> = {}): ChangeRequestConflictRead {
+  return {
+    requirement_id: "FR-005",
+    by_numbers: [2],
+    by: ["CR-2"],
+    base_text: "3件まで添付できる",
+    current_text: "4件まで添付できる",
+    checked: false,
     ...overrides,
   };
 }
@@ -150,6 +169,53 @@ export function makeComparison(overrides: Partial<ChangeRequestComparisonRead> =
     ],
     // Phase-107-1:追記
     scale: [],
+    // Phase-112-2:追記
+    reflections: [],
+    ...overrides,
+  };
+}
+
+// 文書への反映1回の前 → 後(CR の対象の要件の文の変更・範囲の外の画面・合意の形に戻した要件)
+export function makeReflection(overrides: Partial<AppliedReflectionRead> = {}): AppliedReflectionRead {
+  return {
+    occurred_at: "2026-10-26T10:00:00+09:00",
+    documents: ["要件定義書 v3", "外部設計書 v3"],
+    recorded: true,
+    changes: [
+      {
+        key: "req:FR-005",
+        kind: "requirement",
+        label: "FR-005 資料を添付できる",
+        change: "changed",
+        change_label: "変更",
+        scope: "target",
+        scope_label: "CR の対象",
+        fields: [{ name: "text", label: "内容", before: "3件まで添付できる", after: "5件まで添付できる" }],
+        restore_reason: null,
+      },
+      {
+        key: "screen:SCR-004",
+        kind: "screen",
+        label: "SCR-004 チャットヒアリング画面",
+        change: "changed",
+        change_label: "変更",
+        scope: "outside",
+        scope_label: "範囲の外",
+        fields: [{ name: "ui_spec", label: "画面の仕様", before: "添付は3件", after: "添付は5件" }],
+        restore_reason: null,
+      },
+      {
+        key: "req:FR-002",
+        kind: "requirement",
+        label: "FR-002 チャットで聞く",
+        change: "restored",
+        change_label: "合意の形に戻した",
+        scope: "outside",
+        scope_label: "範囲の外",
+        fields: [],
+        restore_reason: "changed",
+      },
+    ],
     ...overrides,
   };
 }

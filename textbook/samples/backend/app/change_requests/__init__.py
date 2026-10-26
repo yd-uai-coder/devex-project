@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2,101-1,101-2,102-1,102-4,103-1,103-2,104-1,104-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2,101-1,101-2,102-1,102-4,103-1,103-2,104-1,104-3,112-3
+# Phase-112-3：更新(docstring: 重なる CR の競合を足した)
 # Phase-104-1：更新(docstring: コメント欄の規則を足した)
 # Phase-103-1：更新(docstring: 共有リンクの規則を足した)
 # Phase-102-4：更新(docstring: 選択肢の LLM の下書きを足した)
@@ -14,7 +15,7 @@
 """変更要求(CR)の状態・遷移・重なりの判定と、対象(要件 ID・変更の種類・変更後の案)の扱い・
 影響の予測・変更の規模・選択肢とその LLM の下書き・説明書の組み立てと、任意の要約の入力・照合・
 状態・反映の指示・予測と実際の比較・検証の条件・CR で作り直した段階の承認・レビューを結ぶ条件・
-たどる記録・共有リンクの規則・コメント欄の規則(純粋関数)。
+たどる記録・共有リンクの規則・コメント欄の規則・重なる CR の競合(純粋関数)。
 
 docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 """
@@ -45,6 +46,7 @@ docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 # Phase-103-2:追記 ── app.change_requests.sharing.SNAPSHOT_MARKDOWN_KEY, app.change_requests.sharing.ExplainedSnapshot, app.change_requests.sharing.explained_snapshots, app.change_requests.sharing.previous_snapshot, app.change_requests.sharing.snapshot_refs
 # Phase-104-1:追記 ── app.change_requests.comments.COMMENT_BODY_MAX, app.change_requests.comments.DEVELOPER_LABEL, app.change_requests.comments.CommentFacts, app.change_requests.comments.CommentThread, app.change_requests.comments.can_reply, app.change_requests.comments.comment_threads, app.change_requests.sharing.DECISION_SOURCE_LABEL, app.change_requests.sharing.SHARE_AGREE_REASON, app.change_requests.sharing.WRITABLE_STATES, app.change_requests.sharing.DecisionSource, app.change_requests.sharing.WriteProblem, app.change_requests.sharing.share_decision_reason, app.change_requests.sharing.write_problem
 # Phase-104-3:追記 ── app.change_requests.sharing.decision_source_label
+# Phase-112-3:追記 ── app.change_requests.conflicts.Conflict, app.change_requests.conflicts.RecordFact, app.change_requests.conflicts.base_seq, app.change_requests.conflicts.changed_after, app.change_requests.conflicts.checks_for, app.change_requests.conflicts.conflicts, app.change_requests.conflicts.is_checked, app.change_requests.conflicts.unchecked
 from app.change_requests.comments import (
     COMMENT_BODY_MAX,
     DEVELOPER_LABEL,
@@ -65,6 +67,16 @@ from app.change_requests.comparison import (
     applied_marks_from_json,
     compare,
     merge_applied_marks,
+)
+from app.change_requests.conflicts import (
+    Conflict,
+    RecordFact,
+    base_seq,
+    changed_after,
+    checks_for,
+    conflicts,
+    is_checked,
+    unchecked,
 )
 from app.change_requests.explanation import (
     ChangeRequestFacts,
@@ -328,7 +340,11 @@ __all__ = [
     "EDITED_FIELD_LABEL",
     "AppliedMark",
     "ComparedItem",
+    # Phase-112-3:追記
+    "Conflict",
     "Comparison",
+    # Phase-112-3:追記
+    "RecordFact",
     "ComparisonStatus",
     "PredictedOnlyReason",
     "applied_marks_from_json",
@@ -389,6 +405,14 @@ __all__ = [
     "ScaleKind",
     "ScaleRemark",
     "ScaleSources",
+    # Phase-112-3:追記
+    "conflicts",
+    "is_checked",
+    "unchecked",
+    # Phase-112-3:追記
+    "base_seq",
+    "changed_after",
+    "checks_for",
     "compare_scale",
     "count_scale",
     "display_name",

@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-88-3,98-2,107-1,107-2
+// 作成：Phase-87-3｜更新：Phase-88-3,98-2,107-1,107-2,112-4
 "use client";
 
 // Phase-88-3:追記
@@ -184,6 +184,10 @@ export function ContentTab({ projectId, cr }: { projectId: string; cr: ChangeReq
               <Text color="$blue10">{`${o.label}(${o.requirement_ids.join("、")})`}</Text>
             </Link>
           ))}
+          {/* Phase-112-4:追記 */}
+          <Text color="$color11" fontSize="$2">
+            このうち先に反映された CR があると、見出しの下に知らせが出ます。反映の前に、今の文と見比べて確かめます。
+          </Text>
         </YStack>
       ) : null}
       {cr.derived_from_number !== null ? (

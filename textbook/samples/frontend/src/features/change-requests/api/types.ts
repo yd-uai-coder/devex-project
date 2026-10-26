@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,98-2,107-1,107-2,107-3,107-4,107-5
+// 作成：Phase-87-1｜更新：Phase-88-2,98-2,107-1,107-2,107-3,107-4,107-5,112-2,112-4
 // Phase-88-2：更新
 // // 変更要求(CR)と合意済みの版(束)の API の型。devex-api app/schemas/change_request.py・
 // // app/schemas/baseline.py の同名のクラスに対応する(画面で使う項目だけ)。
@@ -184,6 +184,18 @@ export type ChangeRequestOverlapRead = {
   requirement_ids: string[];
 };
 
+// Phase-112-4:追記
+// 重なる CR の競合: 対象の要件が、基準の束の後にほかの CR の反映で変わった(by は変えた CR。変えた順)。
+// current_text は今の合意の文(消えていれば null)、checked は今の文と見比べて確かめたか
+export type ChangeRequestConflictRead = {
+  requirement_id: string;
+  by_numbers: number[];
+  by: string[];
+  base_text: string;
+  current_text: string | null;
+  checked: boolean;
+};
+
 export type ChangeRequestRead = ChangeRequestSummaryRead & {
   content: string;
   background_memo: string;
@@ -199,6 +211,9 @@ export type ChangeRequestRead = ChangeRequestSummaryRead & {
   derived_from_number: number | null;
   derived_numbers: number[];
   allowed_actions: ChangeRequestAction[];
+  // Phase-112-4:追記
+  // 基準の束の後に、ほかの CR の反映で変わった対象の要件(未確認があると文書へ反映できない)
+  conflicts: ChangeRequestConflictRead[];
 };
 
 // Phase-107-2：更新
@@ -279,6 +294,39 @@ export type ScaleComparisonRead = {
   basis: "marks" | "document_checks";
 };
 
+// Phase-112-2:追記
+// 反映の前 → 後(文書の要素ごと。システムが要素のキーで比べたもの)。change は変更 / 追加 / 削除 /
+// 合意の形に戻した(範囲の外で LLM が書き換えたのを戻した)、scope は CR の対象 / 予測した要素 / 範囲の外
+export type ReflectionChangeKind = "changed" | "added" | "removed" | "restored";
+export type ReflectionScope = "target" | "predicted" | "outside";
+
+export type FieldChangeRead = {
+  name: string;
+  label: string;
+  before: string;
+  after: string;
+};
+
+export type ReflectionChangeRead = {
+  key: string;
+  kind: string;
+  label: string;
+  change: ReflectionChangeKind;
+  change_label: string;
+  scope: ReflectionScope;
+  scope_label: string;
+  fields: FieldChangeRead[];
+  restore_reason: string | null;
+};
+
+// 文書への反映1回。recorded = false は前 → 後を残す前の反映(changes は空)
+export type AppliedReflectionRead = {
+  occurred_at: string;
+  documents: string[];
+  recorded: boolean;
+  changes: ReflectionChangeRead[];
+};
+
 export type ChangeRequestComparisonRead = {
   number: number;
   label: string;
@@ -288,6 +336,9 @@ export type ChangeRequestComparisonRead = {
   items: ComparedItemRead[];
   // Phase-107-1:追記
   scale: ScaleComparisonRead[];
+  // Phase-112-2:追記
+  // 文書への反映ごとの前 → 後(新しい順)
+  reflections: AppliedReflectionRead[];
 };
 
 // 検証(GET .../verification)

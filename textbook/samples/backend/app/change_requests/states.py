@@ -1,4 +1,5 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,85-1,86-1,96-1,103-2,104-2
+# 作成：Phase-82-2｜更新：Phase-83-1,85-1,86-1,96-1,103-2,104-2,112-3
+# Phase-112-3：更新(docstring: 記録だけの行に check_conflict を足した)
 # Phase-104-2：更新(docstring: 記録だけの行に comment・reply_comment を足した)
 # Phase-103-2：更新(docstring: 記録だけの行に share・unshare・extend_share を足した)
 # Phase-96-1：更新(docstring: 記録だけの行に approve_stage を足した)
@@ -14,7 +15,8 @@
 (条件は verification.py)。レビューを結ぶ(link_review)・束に入れる(baseline)・CR で作り直した段階の
 承認で印を結ぶ(approve_stage。stage_approvals.py)と、共有リンクの作成(share。下書きの CR では
 説明済みにする explain の行になる)・取り消し(unshare)・期限の延長(extend_share)と、コメント欄の
-クライアントのコメント(comment)・開発者の返信(reply_comment)は、状態を変えない記録だけの行
+クライアントのコメント(comment)・開発者の返信(reply_comment)と、重なる CR の競合を確かめた
+(check_conflict。conflicts.py)は、状態を変えない記録だけの行
 (写しの copied と同じく、遷移の表には持たない。sharing.py・comments.py)。
 """
 
@@ -50,6 +52,8 @@ ChangeRequestAction = Literal[
     # Phase-104-2:追記
     "comment",
     "reply_comment",
+    # Phase-112-3:追記
+    "check_conflict",
 ]
 BackgroundSource = Literal["meeting", "email", "document", "other"]
 

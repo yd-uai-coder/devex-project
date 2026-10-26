@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-107-2
+// 作成：Phase-87-3｜更新：Phase-107-2,112-4
 "use client";
 
 // Phase-107-2:追記 ── @/features/change-requests/api/types.ChangeRequestOptionsRead
@@ -21,6 +21,8 @@ export function DecisionDialog({
   decision,
   // Phase-107-2:追記
   options = null,
+  // Phase-112-4:追記
+  notice = null,
   onConfirm,
   onCancel,
 }: {
@@ -28,6 +30,9 @@ export function DecisionDialog({
   decision: ChangeRequestDecision["decision"];
   // Phase-107-2:追記
   options?: ChangeRequestOptionsRead | null;
+  // Phase-112-4:追記
+  // 説明の下に出す知らせ(重なる CR の競合など)
+  notice?: string | null;
   onConfirm: (body: ChangeRequestDecision) => void;
   onCancel: () => void;
 }) {
@@ -71,6 +76,8 @@ export function DecisionDialog({
           {agreed
             ? "合意すると、今の影響の予測を CR に保存します(反映の後の比較の基準になります)。"
             : "却下した CR はそのまま残ります。出し直すときは、写して新しい番号の下書きを作ります。"}
+          {/* Phase-112-4:追記 */}
+          {notice ? <span style={{ ...FIELD, color: "var(--orange11)" }}>{notice}</span> : null}
           {/* Phase-107-2:追記 */}
           {choices.length > 0 ? (
             // 説明は <p> に入るので、<fieldset> でなく <span> の radiogroup にする

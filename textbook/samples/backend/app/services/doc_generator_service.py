@@ -1,4 +1,4 @@
-# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3,93-3,93-4,94-3,105-3,106-2
+# 作成：Phase-2-4｜更新：Phase-2-5,6-1,6-5,6-6,8-5,10-1,13-2,15-1,15-3,16-1,24(ゴール3後の調整),31-1,36-2,37-2,38-2,40-1,43-3,45-3,46-2,49-3,52-4,53-1,53(完了後の調整),54-2,54-5,56-2,57-1,57-2,64-2,68-3,68-4,69-1,81-1,85-2,88-1,91-3,92-3,93-3,93-4,94-3,105-3,106-2,112-1,112-3
 # Phase-105-3：更新(docstring: apply_adopt_user は利用者を ID で指す)
 # Phase-94-3：更新(docstring: adopt_requirement を commit だけにし、中身を apply_adopt_requirement〈採用した行を確認済みにすることを足した〉へ移した)
 # Phase-93-4：更新(docstring: generate が CR の反映で合意を更新することを足した)
@@ -569,6 +569,8 @@ class DocGeneratorService:
         # Phase-85-2:追記
         if cr_number is not None:
             await ChangeRequestService(self._session).reflectable(project, cr_number)
+            # Phase-112-3:追記
+            await ChangeRequestService(self._session).require_conflicts_checked(project, cr_number)
             if not any(t in DOC_TYPES_BY_MODE[project.mode] for t in targets):
                 raise ChangeRequestNotReflectableError(
                     "テスト仕様書だけの生成には、変更要求を渡せません。"
@@ -766,6 +768,9 @@ class DocGeneratorService:
                 )
                 previous_models[doc_type] = current.model if current is not None else None
             new_models: dict[str, dict | None] = {}
+            # Phase-112-1:追記
+            # 作った版で合意の形へ戻した要素(反映の前 → 後に「戻した」として残す)
+            protections: list[dict] = []
             for doc_type in doc_types:
                 # Phase-53(完了後の調整):追記
                 if doc_type not in targets:
@@ -895,6 +900,8 @@ class DocGeneratorService:
                 )
                 # Phase-85-2:追記
                 versions.append((doc_type, document.version))
+                # Phase-112-1:追記
+                protections += protection or []
                 generated[doc_type] = content
                 # Phase-43-3:追記
                 new_models[doc_type] = model
@@ -950,6 +957,10 @@ class DocGeneratorService:
                     model=resolved.model,
                     marks=marks,
                     actor_id=user_id,
+                    # Phase-112-1:追記
+                    before_models=previous_models,
+                    after_models=new_models,
+                    protection=protections,
                 # Phase-93-4:追記
                 )
                 await AgreementService(self._session).record_change_request(

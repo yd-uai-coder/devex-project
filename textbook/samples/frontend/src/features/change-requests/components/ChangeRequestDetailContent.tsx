@@ -1,16 +1,19 @@
-// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整),107-4
+// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整),107-4,112-2,112-4
 // Phase-87-4:追記 ── @/features/change-requests/components/VerificationTab.VerificationTab
 "use client";
 
 // Phase-88-4:追記
 // Phase-88(完了後の調整):追記
 // Phase-107-4:追記 ── @/features/change-requests/components/ShareTab.ShareTab
+// Phase-112-2:追記 ── @/features/change-requests/changeRequestOps.DetailTab
+// Phase-112-4:追記 ── @/features/change-requests/components/ConflictNotice.ConflictNotice
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
-import { isApplied } from "@/features/change-requests/changeRequestOps";
+import { type DetailTab, isApplied } from "@/features/change-requests/changeRequestOps";
 import { ChangeRequestActions } from "@/features/change-requests/components/ChangeRequestActions";
+import { ConflictNotice } from "@/features/change-requests/components/ConflictNotice";
 import { ContentTab } from "@/features/change-requests/components/ContentTab";
 import { DetailedModeOnlyNotice } from "@/features/change-requests/components/DetailedModeOnlyNotice";
 import { ExplanationTab } from "@/features/change-requests/components/ExplanationTab";
@@ -27,8 +30,9 @@ import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 // Phase-107-4：更新
 // export type DetailTab = "content" | "impact" | "verification" | "explanation" | "trace";
 // ↓↓
-export type DetailTab = "content" | "impact" | "verification" | "explanation" | "share" | "trace";
-
+// Phase-112-2：削除
+// export type DetailTab = "content" | "impact" | "verification" | "explanation" | "share" | "trace";
+//
 const TABS: { value: DetailTab; label: string }[] = [
   { value: "content", label: "内容" },
   { value: "impact", label: "影響" },
@@ -50,14 +54,34 @@ const TABS: { value: DetailTab; label: string }[] = [
 // // 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は5つのタブ(内容・影響・検証・説明書・
 // // たどる記録)。タブの中身(予測・比較・検証・説明書・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
 // ↓↓
-// 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は6つのタブ(内容・影響・検証・説明書・共有・
-// たどる記録)。タブの中身(予測・比較・検証・説明書・共有リンク・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
+// Phase-112-4：更新
+// // 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は6つのタブ(内容・影響・検証・説明書・共有・
+// ↓↓
+// 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作(重なる CR の競合があれば、その知らせ)、本文は6つのタブ(内容・影響・検証・説明書・共有・
+// Phase-112-2：更新
+// // たどる記録)。タブの中身(予測・比較・検証・説明書・共有リンク・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
+// ↓↓
+// たどる記録)。開くタブは URL の ?tab= で選べる(?focus= は影響のタブで目立たせる要素)。タブの中身(予測・比較・検証・説明書・共有リンク・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
 // フォームの状態を、親の再描画で失わないよう、部品を作り直さない)。文書への反映の完了待ちは、
 // Phase-89(完了後の調整)：更新
 // // タブを移っても続くようにここで持つ。
 // ↓↓
 // タブを移っても続くようにここで持ち、開いたときにプロジェクトが生成中なら待ち直す。
-export function ChangeRequestDetailContent({ projectId, number }: { projectId: string; number: number }) {
+// Phase-112-2：更新
+// export function ChangeRequestDetailContent({ projectId, number }: { projectId: string; number: number }) {
+// ↓↓
+export function ChangeRequestDetailContent({
+  projectId,
+  number,
+  initialTab = "content",
+  focusKey = null,
+}: {
+  projectId: string;
+  number: number;
+  // URL で開くタブと、影響のタブの反映の前 → 後で目立たせる要素のキー(確認事項からのリンク)
+  initialTab?: DetailTab;
+  focusKey?: string | null;
+}) {
   const detail = useChangeRequestsStore((s) => (s.projectId === projectId && s.detail?.number === number ? s.detail : null));
   const detailStatus = useChangeRequestsStore((s) => s.detailStatus);
   const detailError = useChangeRequestsStore((s) => s.detailError);
@@ -70,7 +94,10 @@ export function ChangeRequestDetailContent({ projectId, number }: { projectId: s
   const onReflectionFinished = useChangeRequestsStore((s) => s.onReflectionFinished);
   // Phase-89(完了後の調整):追記
   const resumeReflection = useChangeRequestsStore((s) => s.resumeReflection);
-  const [tab, setTab] = useState<DetailTab>("content");
+  // Phase-112-2：更新
+  // const [tab, setTab] = useState<DetailTab>("content");
+  // ↓↓
+  const [tab, setTab] = useState<DetailTab>(initialTab);
 
   useEffect(() => {
     void fetchDetail(projectId, number);
@@ -127,6 +154,8 @@ export function ChangeRequestDetailContent({ projectId, number }: { projectId: s
       {detail ? (
         <>
           <ChangeRequestActions projectId={projectId} cr={detail} />
+          {/* Phase-112-4:追記 */}
+          <ConflictNotice projectId={projectId} cr={detail} />
           {actionError ? (
             <Text role="alert" color="$red10">
               {actionError}
@@ -153,7 +182,10 @@ export function ChangeRequestDetailContent({ projectId, number }: { projectId: s
           </XStack>
           <YStack role="tabpanel" padding="$3" borderWidth={1} borderColor="$borderColor" borderRadius="$4">
             {tab === "content" ? <ContentTab projectId={projectId} cr={detail} /> : null}
-            {tab === "impact" ? <ImpactTab projectId={projectId} cr={detail} /> : null}
+            {/* Phase-112-2：更新 */}
+            {/* {tab === "impact" ? <ImpactTab projectId={projectId} cr={detail} /> : null} */}
+            {/* ↓↓ */}
+            {tab === "impact" ? <ImpactTab projectId={projectId} cr={detail} focusKey={focusKey} /> : null}
             {/* Phase-87-4:追記 */}
             {tab === "verification" ? (
               isApplied(detail.status) ? (

@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-88-3,98-2,107-1,107-2,107-3
+// 作成：Phase-87-3｜更新：Phase-88-3,98-2,107-1,107-2,107-3,112-4
 // SUT: ContentTab(内容・対象・合意の記録・重なり・写しの元と先、直すフォーム)
 // ドライバ: Testing Library(描画・クリック)
 // スタブ: ストアの関数(vi.fn)── 束の要件の読み込みと、直したときに送る本文だけを見るため
@@ -105,6 +105,9 @@ describe("ContentTab", () => {
     expect(screen.getByText("相手: (記録なし)")).toBeInTheDocument();
     expect(screen.getByText("理由: 合意した")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "CR-2(FR-005)" })).toHaveAttribute("href", "/projects/p1/change-requests/2");
+    // Phase-112-4:追記
+    // 先に反映された CR との競合は、見出しの下の知らせで確かめる(案内の1行)
+    expect(screen.getByText(/見出しの下に知らせが出ます/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "写しの元: CR-3" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "写しの先: CR-6" })).toBeInTheDocument();
     // Phase-88-3：更新

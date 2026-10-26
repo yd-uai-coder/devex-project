@@ -1,4 +1,4 @@
-// 作成：Phase-98-1｜更新：Phase-99(完了後の調整),109-3
+// 作成：Phase-98-1｜更新：Phase-99(完了後の調整),109-3,112-2
 // SUT: ConfirmationsPageContent(確認事項の一覧のページ)、ConfirmationTable(行ごとの決める機会・状態・
 //      メモ。ページの中で描く)
 // ドライバ: vitest のテスト関数(render・userEvent)
@@ -180,7 +180,10 @@ describe("ConfirmationTable", () => {
   });
 
   // Phase-109-3:追記
-  it("CR の反映で文が変わって未確認に戻った行は、状態の文の下の段にその CR へのリンクを出す", () => {
+  // Phase-112-2：更新
+  // it("CR の反映で文が変わって未確認に戻った行は、状態の文の下の段にその CR へのリンクを出す", () => {
+  // ↓↓
+  it("CR の反映で文が変わって未確認に戻った行は、状態の文の下の段にその CR の反映で変わった所へのリンクを出す", () => {
     render(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <ConfirmationTable
@@ -194,7 +197,10 @@ describe("ConfirmationTable", () => {
     );
 
     const link = screen.getByRole("link", { name: "CR-3 の反映で文が変わりました →" });
-    expect(link).toHaveAttribute("href", "/projects/p1/change-requests/3");
+    // Phase-112-2：更新
+    // expect(link).toHaveAttribute("href", "/projects/p1/change-requests/3");
+    // ↓↓
+    expect(link).toHaveAttribute("href", "/projects/p1/change-requests/3?tab=impact&focus=req%3AFR-004");
     expect(link).toHaveStyle({ display: "block" });
     expect(screen.getAllByRole("link")).toHaveLength(1);
   });

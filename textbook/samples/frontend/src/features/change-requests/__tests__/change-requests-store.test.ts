@@ -1,11 +1,14 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2,107-2,107-3,107-4,107-5
+// 作成：Phase-87-1｜更新：Phase-88-2,88(完了後の調整),89(完了後の調整),98-2,107-2,107-3,107-4,107-5,112-4
 // Phase-88-2：更新
 // // SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映)
 // ↓↓
 // Phase-89(完了後の調整)：更新
 // // SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映・説明書の要約)
 // ↓↓
-// SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映と完了の待ち直し・説明書の要約)
+// Phase-112-4：更新
+// // SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映と完了の待ち直し・説明書の要約)
+// ↓↓
+// SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・競合の確かめ・文書への反映と完了の待ち直し・説明書の要約)
 // ドライバ: vitest のテスト関数(ストアの関数を直接呼ぶ)
 // スタブ: fetch(stubFetch)── ストアが API を呼ぶ順と本文、応答・失敗の後の状態を確かめるため
 // Phase-88-2：更新
@@ -15,10 +18,12 @@
 // Phase-107-3:追記 ── ../test-utils/changeRequestFixtures.makeOptionDraft
 // Phase-107-4:追記 ── ../test-utils/changeRequestFixtures.makeCreatedShareLink, ../test-utils/changeRequestFixtures.makeShareLink
 // Phase-107-5:追記 ── ../test-utils/changeRequestFixtures.makeComment
+// Phase-112-4:追記 ── ../test-utils/changeRequestFixtures.makeConflict
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useChangeRequestsStore } from "../change-requests-store";
 import {
   makeChangeRequest,
+  makeConflict,
   makeExplanation,
   makeOptionDraft,
   makeOptions,
@@ -139,6 +144,20 @@ describe("useChangeRequestsStore", () => {
     expect(state().views.verification).toBeNull();
     expect(state().fetchedAt).toBeNull();
     expect(state().acting).toBe(false);
+  });
+
+  // Phase-112-4:追記
+  it("競合の確かめは conflict-checks を POST し、詳細を置き換える", async () => {
+    stub.queue({ body: makeChangeRequest({ conflicts: [makeConflict()] }) });
+    stub.queue({ body: makeChangeRequest({ conflicts: [makeConflict({ checked: true })] }) });
+
+    await state().fetchDetail("p1", 1);
+    const ok = await state().checkConflicts("p1", 1);
+
+    expect(ok).toBe(true);
+    expect(stub.requests[1].url).toMatch(/\/projects\/p1\/change-requests\/1\/conflict-checks$/);
+    expect(stub.requests[1].init?.method).toBe("POST");
+    expect(state().detail?.conflicts[0].checked).toBe(true);
   });
 
   // Phase-107-2:追記

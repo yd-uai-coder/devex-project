@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-87-3,87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5,109-2,110(完了後の調整)
+// 作成：Phase-87-1｜更新：Phase-87-3,87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5,109-2,110(完了後の調整),112-2,112-4
   // Phase-88-2:追記
 // Phase-88(完了後の調整):追記
 // Phase-98-2:追記 ── @/features/change-requests/api/types.ChangeRequestOriginRead, @/features/baselines/api/types.OriginKind
@@ -8,10 +8,13 @@
 // Phase-107-4:追記 ── @/features/change-requests/api/types.ShareLinkRead, @/features/change-requests/api/types.ShareState
 // Phase-107-5:追記 ── @/features/change-requests/api/types.ChangeRequestCommentRead
 // Phase-110(完了後の調整):追記 ── @/features/change-requests/api/types.OptionDraftRead
+// Phase-112-2:追記 ── @/features/change-requests/api/types.ReflectionChangeRead, @/features/change-requests/api/types.ReflectionScope
+// Phase-112-4:追記 ── @/features/change-requests/api/types.ChangeRequestConflictRead
 import type {
   BackgroundSource,
   ChangeRequestAction,
   ChangeRequestCommentRead,
+  ChangeRequestConflictRead,
   ChangeRequestCreate,
   ChangeRequestExplanationRead,
   ChangeRequestOptionsIn,
@@ -27,6 +30,8 @@ import type {
   ComparisonStatus,
   ExplanationSummaryRead,
   OptionDraftRead,
+  ReflectionChangeRead,
+  ReflectionScope,
   ScaleComparisonRead,
   ScaleCountRead,
   ShareLinkRead,
@@ -424,8 +429,72 @@ export function designStageHref(projectId: string, stage: number): string {
   return `/projects/${projectId}/detailed-design?stage=${stage}`;
 }
 
-export function changeRequestHref(projectId: string, number: number): string {
-  return `/projects/${projectId}/change-requests/${number}`;
+// Phase-112-2：更新
+// export function changeRequestHref(projectId: string, number: number): string {
+//   return `/projects/${projectId}/change-requests/${number}`;
+// ↓↓
+export function changeRequestHref(
+  projectId: string,
+  number: number,
+  open: { tab?: DetailTab; focus?: string } = {},
+): string {
+  const query = new URLSearchParams();
+  if (open.tab) query.set("tab", open.tab);
+  if (open.focus) query.set("focus", open.focus);
+  const search = query.toString();
+  return `/projects/${projectId}/change-requests/${number}${search ? `?${search}` : ""}`;
+}
+
+// CR の詳細のタブ(URL の ?tab= で開くタブを選べる)
+export const DETAIL_TABS = ["content", "impact", "verification", "explanation", "share", "trace"] as const;
+export type DetailTab = (typeof DETAIL_TABS)[number];
+
+// URL の値から開くタブ(知らない値・無ければ「内容」)
+export function detailTabOf(value: string | undefined): DetailTab {
+  return DETAIL_TABS.find((t) => t === value) ?? "content";
+}
+
+// Phase-112-4:追記
+// 重なる CR の競合のうち、今の文と見比べて確かめていないもの
+export function uncheckedConflicts(cr: Pick<ChangeRequestRead, "conflicts">): ChangeRequestConflictRead[] {
+  return cr.conflicts.filter((c) => !c.checked);
+}
+
+// 説明済み・合意・反映の確かめの画面に出す、競合の知らせの1行(未確認の競合が無ければ null)
+export function conflictNoticeLine(cr: Pick<ChangeRequestRead, "conflicts">): string | null {
+  const pending = uncheckedConflicts(cr);
+  if (pending.length === 0) return null;
+  const items = pending.map((c) => `${c.requirement_id}(${c.by.join("・")} が先に変えた)`).join("、");
+  return `対象の要件が、基準の束の後にほかの CR の反映で変わっています: ${items}。案が先の変更を消さないか、今の文と見比べてください。`;
+}
+
+// 反映の前 → 後の見出しの並び(CR の対象 → 予測した要素 → 範囲の外 → 合意の形に戻した)
+export type ReflectionGroupKey = ReflectionScope | "restored";
+
+const REFLECTION_GROUP_ORDER: ReflectionGroupKey[] = ["target", "predicted", "outside", "restored"];
+const REFLECTION_GROUP_TITLE: Record<ReflectionGroupKey, string> = {
+  target: "CR の対象",
+  predicted: "予測した要素(画面・API)",
+  outside: "範囲の外(予測に無い所)",
+  restored: "合意の形に戻した(範囲の外の書き換えを戻した)",
+};
+
+// 反映1回の前 → 後を見出しごとに分ける(空の見出しは出さない。中は応答の順)
+export function reflectionGroups(
+  changes: ReflectionChangeRead[],
+): { key: ReflectionGroupKey; title: string; changes: ReflectionChangeRead[] }[] {
+  return REFLECTION_GROUP_ORDER.map((key) => ({
+    key,
+    title: REFLECTION_GROUP_TITLE[key],
+    changes: changes.filter((c) => (c.change === "restored" ? "restored" : c.scope) === key),
+  })).filter((group) => group.changes.length > 0);
+}
+
+// 戻した理由の表示(changed = LLM が書き換えた、dropped = LLM が落とした)
+export function restoreReasonLabel(reason: string | null): string {
+  if (reason === "dropped") return "LLM が落としたのを戻した";
+  if (reason === "changed") return "LLM が書き換えたのを戻した";
+  return "";
 }
 
 // Phase-109-2:追記

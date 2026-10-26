@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5,109-2,110(完了後の調整)
+// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5,109-2,110(完了後の調整),112-2,112-4
 // SUT: changeRequestOps(CR の画面の純粋な変換)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
@@ -18,6 +18,8 @@
 // Phase-107-5:追記 ── ../changeRequestOps.commentAuthor, ../changeRequestOps.commentedOnOlderVersion, ../test-utils/changeRequestFixtures.makeComment
 // Phase-109-2:追記 ── ../changeRequestOps.changeRequestLabel
 // Phase-110(完了後の調整):追記 ── ../changeRequestOps.draftStaleNotice
+// Phase-112-2:追記 ── ../changeRequestOps.changeRequestHref, ../changeRequestOps.detailTabOf, ../changeRequestOps.reflectionGroups, ../changeRequestOps.restoreReasonLabel, ../test-utils/changeRequestFixtures.makeReflection
+// Phase-112-4:追記 ── ../changeRequestOps.conflictNoticeLine, ../changeRequestOps.uncheckedConflicts, ../test-utils/changeRequestFixtures.makeConflict
 import { describe, expect, it } from "vitest";
 import {
   ORIGIN_KIND_LABEL,
@@ -28,14 +30,17 @@ import {
   canReflectDocuments,
   canReflectStages,
   canShare,
+  conflictNoticeLine,
   commentAuthor,
   commentedOnOlderVersion,
   comparisonGroups,
   crNumbersInImpact,
   decidedOptionLabel,
   defaultReflectionCr,
+  changeRequestHref,
   changeRequestLabel,
   designStageHref,
+  detailTabOf,
   draftStaleNotice,
   emptyForm,
   formFromChangeRequest,
@@ -44,6 +49,9 @@ import {
   headerActions,
   isApplied,
   isDetailedModeOnly,
+  reflectionGroups,
+  restoreReasonLabel,
+  uncheckedConflicts,
   localInputToIso,
   markSegments,
   nowLocalInput,
@@ -75,9 +83,11 @@ import {
   makeChangeRequest,
   makeComment,
   makeComparison,
+  makeConflict,
   makeExplanation,
   makeImpact,
   makeOptions,
+  makeReflection,
   makeScale,
   makeShareLink,
   makeSummary,
@@ -473,5 +483,53 @@ describe("詳細設計の画面の CR の帯", () => {
     expect(verifyBannerText({ open_marks: 3, open_documents: 0, pending_stages: [1, 4] })).toBe(
       "未確認の印 3 / 文書の側 0 / 未承認の段階 2",
     );
+  });
+});
+
+// Phase-112-2:追記
+describe("詳細のタブと反映の前 → 後", () => {
+  it("CR の詳細の URL に、開くタブと目立たせる要素のキーを付ける", () => {
+    expect(changeRequestHref("p1", 3)).toBe("/projects/p1/change-requests/3");
+    expect(changeRequestHref("p1", 3, { tab: "impact", focus: "req:FR-001" })).toBe(
+      "/projects/p1/change-requests/3?tab=impact&focus=req%3AFR-001",
+    );
+  });
+
+  it("URL の値から開くタブを決める(知らない値・無ければ内容)", () => {
+    expect(detailTabOf("impact")).toBe("impact");
+    expect(detailTabOf("unknown")).toBe("content");
+    expect(detailTabOf(undefined)).toBe("content");
+  });
+
+  it("前 → 後を、CR の対象 → 予測 → 範囲の外 → 戻した、に分ける(空の見出しは出さない)", () => {
+    const groups = reflectionGroups(makeReflection().changes);
+
+    expect(groups.map((g) => [g.key, g.changes.map((c) => c.key)])).toEqual([
+      ["target", ["req:FR-005"]],
+      ["outside", ["screen:SCR-004"]],
+      ["restored", ["req:FR-002"]],
+    ]);
+    expect(groups[1].title).toBe("範囲の外(予測に無い所)");
+  });
+
+  it("戻した理由を文にする", () => {
+    expect(restoreReasonLabel("changed")).toBe("LLM が書き換えたのを戻した");
+    expect(restoreReasonLabel("dropped")).toBe("LLM が落としたのを戻した");
+    expect(restoreReasonLabel(null)).toBe("");
+  });
+});
+
+// Phase-112-4:追記
+describe("重なる CR の競合", () => {
+  it("未確認の競合だけを数え、知らせの1行にする(無ければ null)", () => {
+    const cr = makeChangeRequest({
+      conflicts: [makeConflict(), makeConflict({ requirement_id: "FR-006", by: ["CR-2", "CR-4"], checked: false }), makeConflict({ requirement_id: "FR-007", checked: true })],
+    });
+
+    expect(uncheckedConflicts(cr).map((c) => c.requirement_id)).toEqual(["FR-005", "FR-006"]);
+    expect(conflictNoticeLine(cr)).toBe(
+      "対象の要件が、基準の束の後にほかの CR の反映で変わっています: FR-005(CR-2 が先に変えた)、FR-006(CR-2・CR-4 が先に変えた)。案が先の変更を消さないか、今の文と見比べてください。",
+    );
+    expect(conflictNoticeLine(makeChangeRequest())).toBeNull();
   });
 });
