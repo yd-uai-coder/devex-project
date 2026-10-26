@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-87-3,87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5,109-2
+// 作成：Phase-87-1｜更新：Phase-87-3,87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5,109-2,110(完了後の調整)
   // Phase-88-2:追記
 // Phase-88(完了後の調整):追記
 // Phase-98-2:追記 ── @/features/change-requests/api/types.ChangeRequestOriginRead, @/features/baselines/api/types.OriginKind
@@ -7,6 +7,7 @@
 // Phase-107-2:追記 ── @/features/change-requests/api/types.ChangeRequestOptionsIn, @/features/change-requests/api/types.ChangeRequestOptionsRead, @/features/change-requests/api/types.ChangeRequestTargetRead
 // Phase-107-4:追記 ── @/features/change-requests/api/types.ShareLinkRead, @/features/change-requests/api/types.ShareState
 // Phase-107-5:追記 ── @/features/change-requests/api/types.ChangeRequestCommentRead
+// Phase-110(完了後の調整):追記 ── @/features/change-requests/api/types.OptionDraftRead
 import type {
   BackgroundSource,
   ChangeRequestAction,
@@ -25,6 +26,7 @@ import type {
   ComparedItemRead,
   ComparisonStatus,
   ExplanationSummaryRead,
+  OptionDraftRead,
   ScaleComparisonRead,
   ScaleCountRead,
   ShareLinkRead,
@@ -521,6 +523,14 @@ export function markSegments(text: string, unknownIds: string[], unknownNumbers:
   }
   push(text.slice(last), null);
   return segments;
+}
+
+// Phase-110(完了後の調整):追記
+// 下書きの「作った後に説明書が変わりました」を出すか。取り込んだ下書きは、取り込みで CR の案が
+// 変わり説明書も変わるので、古くなっていても知らせない(取り込んだ直後に出ると、取り込みが
+// 失敗したように見えるため)
+export function draftStaleNotice(draft: Pick<OptionDraftRead, "stale" | "status">): boolean {
+  return draft.stale && draft.status !== "adopted";
 }
 
 // Phase-107-1:追記

@@ -1,4 +1,4 @@
-// 作成：Phase-89-2
+// 作成：Phase-89-2｜更新：Phase-110-2
 // 変更要求(CR)の流れの E2E。詳細設計モードで文書まで作り、合意済みの版 B-1 を作って、その中身から
 // CR を作る。説明書のダウンロード → 説明済み → 合意 → 文書への反映 → 文書の側(画面・API)の確認 →
 // 検証済み → 新しい版 B-2 に入れる → たどる記録、までを画面で通す(docs/external_design.md 2.14節)。
@@ -68,7 +68,11 @@ test("合意済みの版から CR を作り、説明・合意・反映・検証�
   await openTab(page, "説明書");
   const [download] = await Promise.all([
     page.waitForEvent("download"),
-    page.getByRole("button", { name: "説明書をダウンロード(.md)" }).click(),
+    // Phase-110-2：更新
+    // page.getByRole("button", { name: "説明書をダウンロード(.md)" }).click(),
+    // ↓↓
+    // 見出しの操作にも同じボタンがあるので、タブの中のものを押す
+    page.getByRole("tabpanel").getByRole("button", { name: "説明書をダウンロード(.md)" }).click(),
   ]);
   expect(download.suggestedFilename()).toBe("cr-1-explanation.md");
   const markdown = await readFile((await download.path()) as string, "utf-8");

@@ -240,8 +240,9 @@
   * Phase 107: CR の画面(規模・選択肢・共有リンクの管理とコメント) ── **完了**([`textbook/Phase-107/Phase-107-introduction.md`](../textbook/Phase-107/Phase-107-introduction.md))
   * Phase 108: 共有リンクの画面(クライアント向け) ── **完了**([`textbook/Phase-108/Phase-108-introduction.md`](../textbook/Phase-108/Phase-108-introduction.md))
   * Phase 109: 残りの画面(段階2・3・7 の一覧・起点・束の一覧の CR・確認事項) ── **完了**([`textbook/Phase-109/Phase-109-introduction.md`](../textbook/Phase-109/Phase-109-introduction.md))
-  * Phase 110: 効果測定・統合/E2E(同じ規則で CR-3・CR-4 と選択肢のある新しい CR を共有リンクの画面で読み直す・全 E2E・マイグレーションの往復・開発環境での画面確認・`OPERATIONS.md` 10.8節のステージ13 の分)
+  * Phase 110: 効果測定・統合/E2E(同じ規則で CR-3・CR-4 と選択肢のある新しい CR を共有リンクの画面で読み直す・全 E2E・マイグレーションの往復・開発環境での画面確認・`OPERATIONS.md` 10.8節のステージ13 の分) ── **完了**([`textbook/Phase-110/Phase-110-introduction.md`](../textbook/Phase-110/Phase-110-introduction.md)。マイルストーン14 は達成(CR-6)── [`appendix/measurements/stage13-effect.md`](../appendix/measurements/stage13-effect.md)。古い束が基準の CR-3・CR-4 は判断できず、題材を読み替えた(下の注記)。画面確認の後の調整で、スマートフォンの幅の説明書の表・見出し、案ごとの規模の表の幅、取り込んだ下書きの知らせを直した)
 * **マイルストーン14**: クライアント役(ベースラインと同じ規則)が、共有リンクの画面の説明書だけで、題材のすべての CR の合意・却下を、説明書の外への質問なしに決められる。
+  * **[Phase 110 で読み替え(CR)]** 「題材のすべての CR」は、ステージ13 の流れ(段階が最新の束を基準にして作り、共有リンクで説明する)で作った題材の CR とする。古い束が基準の、ステージ13 より前に反映した CR(CR-3・CR-4)は、参考として測るが判定に入れない。古い束を基準にした説明の扱いはステージ14 以降へ送る(経緯は [`textbook/q_a.md`](../textbook/q_a.md) の「Phase 110 開始時」)。
 
 ---
 

@@ -1,4 +1,4 @@
-// 作成：Phase-107-1
+// 作成：Phase-107-1｜更新：Phase-110(完了後の調整)
 "use client";
 
 import { Text, YStack } from "tamagui";
@@ -8,6 +8,10 @@ import { CELL, HEAD, TABLE } from "@/features/detailed-design/components/tableSt
 
 const NUM = { ...CELL, textAlign: "right", whiteSpace: "nowrap" } as const;
 const UNCOUNTABLE = { ...CELL, color: "var(--orange10)", whiteSpace: "nowrap" } as const;
+// Phase-110(完了後の調整):追記
+// 案ごとの列のときは内訳の列が無いので、表を内容の幅にする(全幅だと数が項目の名前から遠く離れる)。
+// 入れ物は縦並び(既定で子を横いっぱいに伸ばす)なので、左に寄せて伸ばさない
+const NARROW_TABLE = { ...TABLE, width: "auto", alignSelf: "flex-start" } as const;
 
 // 変更の規模の表(説明書の規模の節と同じ数)。合意の前で案があれば種類 × 案、それ以外は1列と内訳。
 // 数えられない種類は0件と書かず「数えられない」と出し、表の下に理由と注記をまとめる
@@ -21,7 +25,10 @@ export function ScaleTable({ explanation }: { explanation: ChangeRequestExplanat
 
   return (
     <YStack gap="$2">
-      <table style={TABLE} aria-label="変更の規模">
+      {/* Phase-110(完了後の調整)：更新 */}
+      {/* <table style={TABLE} aria-label="変更の規模"> */}
+      {/* ↓↓ */}
+      <table style={single ? TABLE : NARROW_TABLE} aria-label="変更の規模">
         <thead>
           <tr>
             <th style={HEAD}>種類</th>

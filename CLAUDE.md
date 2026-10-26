@@ -15,7 +15,7 @@ There is no root-level `package.json`, build script, or CI config tying the two 
 
 The root `README.md` is the portfolio-facing overview of Devex — a system that interviews users through AI chat and builds requirements, design, implementation procedures and tests as structured design information linked by IDs. The detailed Japanese spec is split across four files under `docs/`: `docs/requirements.md`, `docs/external_design.md`, `docs/internal_design.md`, `docs/implementation_plan.md` — mirroring the four document types Devex itself generates.
 
-Both subrepos implement this spec through stage 10 (stages 1–10 deployed as of 2026-10-18; production: https://devex.uandi-tech.com/). The project was reopened on 2026-10-19 and stage 11 (Phase 80〜89) is in progress; the plan for stages 11〜15 is in [`appendix/devex_project_positioning.md`](appendix/devex_project_positioning.md) 12章. When changing Devex features, treat `docs/*.md` as the spec and keep it in sync with the code; the stage history is in `docs/implementation_plan.md` 4.1 and `textbook/`.
+Both subrepos implement this spec through stage 10 (stages 1–10 deployed as of 2026-10-18; production: https://devex.uandi-tech.com/). The project was reopened on 2026-10-19; stages 11〜13 (Phase 80〜110) are done (not yet deployed — stages 11〜15 go to production together at stage 15); the plan for stages 11〜15 is in [`appendix/devex_project_positioning.md`](appendix/devex_project_positioning.md) 12章. When changing Devex features, treat `docs/*.md` as the spec and keep it in sync with the code; the stage history is in `docs/implementation_plan.md` 4.1 and `textbook/`.
 
 ## Working across the two repos
 

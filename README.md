@@ -205,6 +205,6 @@ flowchart LR
 
 影響の分析・再生成・設計レビュー・「古い」の印は作り済みなので、ステージ11 で新しく作るのは、主に合意と CR とその記録です。
 
-ステージ11 は 2026-10-19 に着手し、2026-10-20 に完了しました(要件確認は [Phase 80](textbook/Phase-80/Phase-80-introduction.md)、出発点は [ステージ11のベースライン](appendix/measurements/stage11-baseline.md)。本番への反映はステージ15 の完了時にまとめます)。ステージ12 は 2026-10-20 に着手し、2026-10-21 に完了しました(要件確認は [Phase 90](textbook/Phase-90/Phase-90-introduction.md)、出発点は [ステージ12のベースライン](appendix/measurements/stage12-baseline.md))。ステージ13 は 2026-10-21 に着手しました(要件確認は [Phase 100](textbook/Phase-100/Phase-100-introduction.md)、出発点は [ステージ13のベースライン](appendix/measurements/stage13-baseline.md))。
+ステージ11 は 2026-10-19 に着手し、2026-10-20 に完了しました(要件確認は [Phase 80](textbook/Phase-80/Phase-80-introduction.md)、出発点は [ステージ11のベースライン](appendix/measurements/stage11-baseline.md)。本番への反映はステージ15 の完了時にまとめます)。ステージ12 は 2026-10-20 に着手し、2026-10-21 に完了しました(要件確認は [Phase 90](textbook/Phase-90/Phase-90-introduction.md)、出発点は [ステージ12のベースライン](appendix/measurements/stage12-baseline.md))。ステージ13 は 2026-10-21 に着手し、2026-10-25 に完了しました(要件確認は [Phase 100](textbook/Phase-100/Phase-100-introduction.md)、出発点は [ステージ13のベースライン](appendix/measurements/stage13-baseline.md)、結果は [ステージ13の効果測定](appendix/measurements/stage13-effect.md))。
 
 **引き続きやらないこと**: AI による完全自動の実装、企業をまたぐ複雑な権限管理、プロジェクト管理ツールの置き換えや直接連携。

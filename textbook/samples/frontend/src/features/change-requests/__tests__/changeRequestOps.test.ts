@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5,109-2
+// 作成：Phase-87-1｜更新：Phase-87-4,88-2,88(完了後の調整),98-2,99(完了後の調整),107-1,107-2,107-4,107-5,109-2,110(完了後の調整)
 // SUT: changeRequestOps(CR の画面の純粋な変換)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
@@ -17,6 +17,7 @@
 // Phase-107-4:追記 ── ../changeRequestOps.activeShareLink, ../changeRequestOps.canShare, ../changeRequestOps.shareDaysProblem, ../changeRequestOps.shareUrl, ../test-utils/changeRequestFixtures.makeShareLink
 // Phase-107-5:追記 ── ../changeRequestOps.commentAuthor, ../changeRequestOps.commentedOnOlderVersion, ../test-utils/changeRequestFixtures.makeComment
 // Phase-109-2:追記 ── ../changeRequestOps.changeRequestLabel
+// Phase-110(完了後の調整):追記 ── ../changeRequestOps.draftStaleNotice
 import { describe, expect, it } from "vitest";
 import {
   ORIGIN_KIND_LABEL,
@@ -35,6 +36,7 @@ import {
   defaultReflectionCr,
   changeRequestLabel,
   designStageHref,
+  draftStaleNotice,
   emptyForm,
   formFromChangeRequest,
   formProblems,
@@ -267,6 +269,13 @@ describe("変更の規模", () => {
       ["案1 一緒に", true],
       ["案2 先に", false],
     ]);
+  });
+
+  // Phase-110(完了後の調整):追記
+  it("下書きが古い知らせは、取り込んでいない下書きだけに出す", () => {
+    expect(draftStaleNotice({ stale: true, status: "unconfirmed" })).toBe(true);
+    expect(draftStaleNotice({ stale: true, status: "adopted" })).toBe(false);
+    expect(draftStaleNotice({ stale: false, status: "unconfirmed" })).toBe(false);
   });
 
   it("数えられない数を0件と書かない", () => {

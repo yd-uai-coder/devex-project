@@ -1,4 +1,4 @@
-// 作成：Phase-107-3
+// 作成：Phase-107-3｜更新：Phase-110(完了後の調整)
 // SUT: OptionDraftReview(選択肢の LLM の下書きの確かめと取り込み)
 // ドライバ: Testing Library(描画・クリック)
 // スタブ: ストアの関数(vi.fn)── 下書きの読み込み・作る・取り込むの呼び出しと、照合の結果の出し分けだけを見るため
@@ -62,5 +62,13 @@ describe("OptionDraftReview", () => {
 
     expect(screen.getByText(/取り込み済み/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "下書きを取り込む" })).toBeNull();
+  });
+
+  // Phase-110(完了後の調整):追記
+  it("取り込み済みの下書きは、取り込みで説明書が変わっても古いと知らせない", () => {
+    withDraft(makeOptionDraft({ status: "adopted", status_label: "取り込み済み", stale: true }));
+    renderWithTheme(<OptionDraftReview projectId="p1" cr={makeChangeRequest()} />);
+
+    expect(screen.queryByText(/作った後に説明書が変わりました/)).toBeNull();
   });
 });
