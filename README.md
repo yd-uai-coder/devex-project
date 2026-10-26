@@ -200,11 +200,11 @@ flowchart LR
 | 11 | 合意と変更の一巡 | 合意済みの版(プロジェクトの束)・変更要求(CR)・CR に結んだ影響の一覧・変更の説明書・合意の記録・反映・再検証 | 1件の CR が受付から再検証まで通り、「何を・なぜ・誰の合意で・どこに反映したか」を後からたどれる |
 | 12 | 合意の精度 | 行単位の合意と変更の履歴・確認事項の一覧(推測・未決)・差分の再生成と合意済みの行の保護 | 合意済みの行が、CR の範囲外の再生成で変わらない |
 | 13 | 説明とすり合わせ | 変更の規模の集計・選択肢つきの説明・クライアントの閲覧・コメント・合意 | クライアントが説明書だけで合意・却下を判断できる |
-| 14 | 変更の取り込み | 議事録・メール・資料から、合意済みの内容と違う点を拾って CR の下書きにする | 差分を仕込んだ資料で、拾い漏れと誤りを測れる |
+| 14 | 変更の取り込み | 議事録・メール・資料から、合意済みの内容と違う点を拾って CR の下書きにする | 差分を仕込んだ資料で、拾い漏れと誤りを測れ、違いを CR の下書きにそのまま使える |
 | 15 | 実装との接続 | コミット・PR と作業単位を ID で結ぶ | 必要性を確かめてから着手を決める |
 
 影響の分析・再生成・設計レビュー・「古い」の印は作り済みなので、ステージ11 で新しく作るのは、主に合意と CR とその記録です。
 
-ステージ11 は 2026-10-19 に着手し、2026-10-20 に完了しました(要件確認は [Phase 80](textbook/Phase-80/Phase-80-introduction.md)、出発点は [ステージ11のベースライン](appendix/measurements/stage11-baseline.md)。本番への反映はステージ15 の完了時にまとめます)。ステージ12 は 2026-10-20 に着手し、2026-10-21 に完了しました(要件確認は [Phase 90](textbook/Phase-90/Phase-90-introduction.md)、出発点は [ステージ12のベースライン](appendix/measurements/stage12-baseline.md))。ステージ13 は 2026-10-21 に着手し、2026-10-25 に完了しました(要件確認は [Phase 100](textbook/Phase-100/Phase-100-introduction.md)、出発点は [ステージ13のベースライン](appendix/measurements/stage13-baseline.md)、結果は [ステージ13の効果測定](appendix/measurements/stage13-effect.md))。
+ステージ11 は 2026-10-19 に着手し、2026-10-20 に完了しました(要件確認は [Phase 80](textbook/Phase-80/Phase-80-introduction.md)、出発点は [ステージ11のベースライン](appendix/measurements/stage11-baseline.md)。本番への反映はステージ15 の完了時にまとめます)。ステージ12 は 2026-10-20 に着手し、2026-10-21 に完了しました(要件確認は [Phase 90](textbook/Phase-90/Phase-90-introduction.md)、出発点は [ステージ12のベースライン](appendix/measurements/stage12-baseline.md))。ステージ13 は 2026-10-21 に着手し、2026-10-25 に完了しました(要件確認は [Phase 100](textbook/Phase-100/Phase-100-introduction.md)、出発点は [ステージ13のベースライン](appendix/measurements/stage13-baseline.md)、結果は [ステージ13の効果測定](appendix/measurements/stage13-effect.md))。ステージ14 は 2026-10-26 に着手しました(要件確認は [Phase 111](textbook/Phase-111/Phase-111-introduction.md)、出発点は [ステージ14のベースライン](appendix/measurements/stage14-baseline.md))。
 
 **引き続きやらないこと**: AI による完全自動の実装、企業をまたぐ複雑な権限管理、プロジェクト管理ツールの置き換えや直接連携。

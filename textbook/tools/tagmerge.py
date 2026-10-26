@@ -7,7 +7,8 @@
 - 追記: 追加行の直前に `<c> Phase-N-n:追記`
 - 更新: `<c> Phase-N-n：更新` + 旧行のコメントアウト + `<c> ↓↓` + 新行
 - 削除: `<c> Phase-N-n：削除` + 旧行のコメントアウト
-- ファイル冒頭のヘッダー(`<c> 作成：…｜更新：…`)の「更新」に章を足す。ヘッダーが無ければ `<c> 更新：Phase-N-n` を入れる。
+- ファイル冒頭のヘッダー(`<c> 作成：…｜更新：…`。`"use client"` の次の行にあるものも読む)の「更新」に章を足す。ヘッダーが無ければ
+  1行目に `<c> 更新：Phase-N-n` を入れる。
 - ファイル先頭の import 区間は、samples を新の区間で置き換え、増えた・減った名前を区間の直前の1行
   (`<c> Phase-N-n:追記 ── m.a, m.b` / `<c> Phase-N-n：削除 ── m.c`)にまとめる(#29 の特則)。並べ替えだけならタグなし。
 - 複数行の文字列(docstring)を途中で切る変更・関数の中の import はタグを付けずにそのまま当て、
@@ -204,12 +205,26 @@ def merge_imports(
 # ── ヘッダー ────────────────────────────────────────────────
 
 
+def is_directive(line: str) -> bool:
+    """TS の `"use client"`・`"use server"`(引用符・末尾のセミコロンは問わない)。"""
+    return line.strip().strip("'\";") in ("use client", "use server")
+
+
 def update_header(sample: list[str], chapter: str, c: str) -> list[str]:
     at = 0
     while at < len(sample) and sample[at].startswith(("#!", "# -*-")):
         at += 1
-    line = sample[at] if at < len(sample) else ""
-    if line.startswith((f"{c} 作成：", f"{c} 更新：")):
+
+    def is_header(line: str) -> bool:
+        return line.startswith((f"{c} 作成：", f"{c} 更新："))
+
+    found = at
+    # ヘッダーが `"use client"` の後(2行目)にある samples もある。そこを読み、無ければ1行目に足す
+    if found + 1 < len(sample) and is_directive(sample[found]) and is_header(sample[found + 1]):
+        found += 1
+    line = sample[found] if found < len(sample) else ""
+    if is_header(line):
+        at = found
         text = line.rstrip("\n")
         if "更新：Phase-" in text:
             head, _, chapters = text.partition("更新：Phase-")

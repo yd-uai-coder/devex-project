@@ -70,6 +70,30 @@ def test_header_ts():
     assert result.startswith("// 作成：Phase-5-1｜更新：Phase-6-1\n")
 
 
+def test_header_after_use_client_is_updated_in_place():
+    old = lines('"use client";', "const a = 1;")
+    new = lines('"use client";', "const a = 1;", "const b = 2;")
+    sample = lines('"use client";', "// 作成：Phase-88-4", "const a = 1;")
+    result, _ = merge(sample, old, new, "112-1", "//")
+    assert result.splitlines()[:2] == ['"use client";', "// 作成：Phase-88-4｜更新：Phase-112-1"]
+    assert result.count("作成：") == 1
+
+
+def test_header_before_use_client_still_works():
+    old = lines('"use client";', "const a = 1;")
+    new = lines('"use client";', "const a = 1;", "const b = 2;")
+    sample = lines("// 作成：Phase-5-1", '"use client";', "const a = 1;")
+    result, _ = merge(sample, old, new, "6-1", "//")
+    assert result.splitlines()[:2] == ["// 作成：Phase-5-1｜更新：Phase-6-1", '"use client";']
+
+
+def test_header_missing_with_use_client_goes_to_first_line():
+    old = lines('"use client"', "const a = 1;")
+    new = lines('"use client"', "const a = 1;", "const b = 2;")
+    result, _ = merge(old, old, new, "6-1", "//")
+    assert result.splitlines()[:2] == ["// 更新：Phase-6-1", '"use client"']
+
+
 # ── ② import の集約 ──
 
 PY_OLD = lines(

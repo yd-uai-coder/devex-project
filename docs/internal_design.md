@@ -970,6 +970,15 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 * **合意の周りの残り**(Phase 105・106): 外部連携の重複の除き方、推測の利用者のキー、段階2・3・7 の参照の切れの一覧、CR の反映での確認事項の戻し、起点の種類、束の一覧の CR、巡回で消えた版の戻しの履歴、DFD・データ辞書だけを直した承認の印。形は各 Phase で決める。
   * **Phase 106 で確定**(ユーザー決定): 段階2・3・7 の機能一覧に無い処理は、段階5 と同じく画面で付け替えるか消す(Phase 109。一覧と操作は devex-ui の純粋関数で、API は増やさない)。API の側は、段階7 の再生成で AI が書いた処理 ID のうち機能一覧に無いものを捨てる(`app/detailed_design/plan.py` の `drop_unknown_functions`。段階2〜4 の下書きと同じ扱い。人の保存には使わない)。段階1 の ID は再利用されず、言い換えても引き継ぐので、切れるのは消えた ID だけ(`paraphrase_function_list` で段階2・3・4・7 の検証を確かめた)。確認事項: CR を渡した要件定義書の再生成(反映)の時点で、CR の対象の要件のうち前後で文が変わった行(`app/confirmations/items.py` の `changed_requirement_keys`。新しい行・消えた行は除く)の確認済みの記録を未確認に戻し、CR の番号を残す(`ConfirmationRepository.reopen`。`DocGeneratorService._reopen_confirmations` が合意の更新と同じトランザクションで呼ぶ。メモ・決める機会は残し、状態を決め直すと番号を消す)。共有リンクで合意した CR も同じ(再生成の文は案の文と同じとは限らないため)。DFD・データ辞書(と ER・構成図)の保存の `DesignStageService.mark_edited` は、承認済みに加えて生成で作り直したまま(`regenerated`)の段階も `reviewing` にする(保存の記録で「人が直した」と判定。承認で前の段階へ印が行く)。巡回で消えた版の戻しは、消す前に表㉕へ写し、`AgreementService.history` が残った版と合わせて読む(`list_pruned_protections`)。起点の種類に段階1 の処理(`function`)を足した(`ORIGIN_KINDS`。起点の処理そのものも「新しい要件の起点」として予測に入り、その先の段階へたどる。文書の要素でないので、反映で書き換えてよい要素には入らない)。束の応答に入れた CR(`ChangeRequestRepository.included_by_baselines`)。マイグレーション `f3b7d9a2c514`(㉑の列)・`a9c2e4f6b318`(㉕)。
 
+### 14. 変更の取り込み(ステージ14)
+
+方針は[外部設計書](external_design.md) 2.17節、決定の経緯は[`textbook/Phase-111/Phase-111-1.md`](../textbook/Phase-111/Phase-111-1.md)。テーブル・API・モジュールの形は各 Phase の着手時に決め、ここに「Phase N で確定」として書き足す。
+
+* **資料**(Phase 113): プロジェクトごとの資料のテーブル(種類・題・日付・本文・状態)。作成時の添付資料(④ `intake_files`)とは別の表。txt / md / pdf の本文の取り出しは、今の `ProjectService._ingest_file` が使う関数を共有する(#17)。
+* **束の鮮度**(Phase 113): 純粋関数で、束の後に反映した CR と、束を作った時点で古かった段階を返す。取り込み(114)・CR の作成と共有リンクの作成(115)・規模の集計(`app/change_requests/scale.py`。「数えられない」と「古くて少ない」を分ける)が使う。
+* **違いの取り出し**(Phase 114): 資料1件と最新の束の写しを、生成の用途の LLM に構造化出力で渡す。違い = 種類・対象(合意済みの行のキー。ステージ12 の行単位の合意と同じキー。新規は起点)・内容・根拠の引用。純粋関数の検査(引用が資料の本文に文字どおりあるか・対象のキーが束にあるか・種類と対象の組み合わせ)で、通らないものは弾いた理由とともに残す。LLM の下書き → 人が確かめる型は、案の下書き(`app/change_requests/option_drafting.py`)と同じ。偽の LLM は資料の印で決まった違いを返す。
+* **CR の下書き**(Phase 115): 選んだ違いから `ChangeRequestService.create` の入口に渡す(対象は `checked_targets` が照らす束の要件の行、新しい要件は `checked_origins` の起点、背景は資料の題と日付)。
+
 ## 3.4 例外処理・エラーハンドリング・ログ設計
 
 ### 1. 共通エラーレスポンス形式

@@ -157,3 +157,9 @@
 - **概要**: devex-ui のテンプレートの `LayoutGrid`(と `ListCard`)は、Tamagui の `YStack` に CSS Module の `.grid { display: grid }` を付けていた。本番ビルドでは Tamagui の `.is_View { display: flex }` の `<style>` が CSS Module の `<link>` より後ろに入り、同じ詳細度なので負けて縦1列になった。開発サーバーでは順が逆で再現しない。`LayoutGrid` の入れ物を素の `div` にして直した。`ListCard` はアプリで使っていないので残した。
 - **判断理由**: テンプレートの部品そのものの不具合で、clone した先でも本番で初めて気づく。テンプレートで直しておけば、同じ食い違いを踏まない。`devex-ui/CLAUDE.md` のハマりどころにも書いた。
 
+
+## `[テンプレート反映候補]` ログインの無いページでも refresh が呼ばれて 401 が出る
+
+- **発生**: [`Phase-108-introduction.md`](./Phase-108/Phase-108-introduction.md)・[`Phase-110-introduction.md`](./Phase-110/Phase-110-introduction.md)(未消化の申し送り)
+- **概要**: devex-ui の共有リンクの画面(`/share/[token]`)はログインを要らないが、テンプレート由来の認証の初期化が、どのページでも起動時に `POST /auth/refresh` を呼ぶ。ログインしていないクライアントでは毎回 401 になり、ブラウザの開発者ツールに失敗した要求として出る(画面の動きには影響しない)。Devex では持ち越しにした。
+- **判断理由**: テンプレートの認証の初期化は「アプリのページはすべてログインの後」を前提にしている。公開のページ(共有・紹介・ログインの前の画面)を足すと、clone した先でも同じ 401 が出る。ページ側で初期化を外せる印(または refresh の cookie が無いときは呼ばない)をテンプレートに持たせておくと、同じ調べ直しをせずに済む。
