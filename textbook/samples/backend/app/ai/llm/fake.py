@@ -1,4 +1,4 @@
-# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2,56-2,68-3,84-4,102-4,105-1,105-3
+# 作成：Phase-4-3｜更新：Phase-6-6,10-1,10-5,16-1,16-4,17-2,18-2,19-2,20-2,21-2,23-4,24(完了後の調整),29-2,31-1,32-1,34-2,35-2,36-2,37-2,38-2,40-2,45-3,48-2,52-2,53(完了後の調整),54-5,55-2,56-2,68-3,84-4,102-4,105-1,105-3,114-2
 # Phase-105-1：更新(docstring: モジュールに言い換えのモードを足した)
 # 写経レベル: コア ── ブラウザE2Eを決定論的に動かすための設計判断そのもの。
 # Phase-52-2:追記 ── app.review.schemas.ReviewFindingOut, app.review.schemas.ReviewOutput
@@ -39,6 +39,7 @@ Playwrightのブラウザ操作からPythonプロセス内部へ台本を注入�
 # Phase-102-4:追記 ── app.change_requests.option_drafting.OptionDraftItemOut, app.change_requests.option_drafting.OptionDraftOut, app.change_requests.option_drafting.OptionDraftTargetOut
 # Phase-105-1:追記 ── app.ai.llm.paraphrase.PARAPHRASE_MARK, app.ai.llm.paraphrase.PARAPHRASE_SUFFIX, app.ai.llm.paraphrase.paraphrase_external_design, app.ai.llm.paraphrase.paraphrase_function_list, app.ai.llm.paraphrase.paraphrase_requirements, app.documents.external_design.drafting.GeneratedIntegration, app.documents.revision.NONE_TEXT
 # Phase-105-3:追記 ── app.ai.llm.paraphrase.base_name
+# Phase-114-2:追記 ── app.materials.differences.DifferenceItemOut, app.materials.differences.DifferenceListOut
 from __future__ import annotations
 
 import re
@@ -115,6 +116,7 @@ from app.documents.requirements.drafting import (
 from app.documents.revision import NONE_TEXT
 from app.documents.test_spec.drafting import GeneratedCase, TestSpecGenerationOutput
 from app.hearing import POINT_DEFS, is_point_key
+from app.materials.differences import DifferenceItemOut, DifferenceListOut
 from app.review.fix_check import FixCheckOut
 from app.review.schemas import ReviewFindingOut, ReviewOutput
 from app.schemas.hearing import (
@@ -906,6 +908,35 @@ def _option_draft(messages: list[Any]) -> OptionDraftOut:
     )
 
 
+# Phase-114-2:追記
+# 資料の違いの印(`[違い:<種類>:<キー>]`。キーは変更・削除・確かめる点の対象、追加の起点。`-`は無し)
+_DIFFERENCE_MARK = re.compile(r"\[違い:(add|change|delete|question):([^\]]*)\]")
+
+
+def _differences(messages: list[Any]) -> DifferenceListOut:
+    """違いの取り出しの偽物。資料の本文の印のある行ごとに、印の種類・キーで違いを1件返す(引用は印と
+    行頭の md の記号を除いた行の文。E2E が決まった違いを作るため)。"""
+    text = "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+    items = []
+    for line in text.splitlines():
+        match = _DIFFERENCE_MARK.search(line)
+        if match is None:
+            continue
+        kind, key = match.group(1), match.group(2).strip()
+        key = "" if key == "-" else key
+        quote = _DIFFERENCE_MARK.sub("", line).strip().lstrip("-*> ").strip()
+        items.append(
+            DifferenceItemOut(
+                kind=kind,  # type: ignore[arg-type]
+                target_key="" if kind == "add" else key,
+                origin_key=key if kind == "add" else "",
+                content=f"[E2E Fake] {quote}",
+                quote=quote,
+            )
+        )
+    return DifferenceListOut(differences=items)
+
+
 class _FakeChunk:
     """`astream()`が返すストリーミングチャンクを模した最小オブジェクト(`.content`のみ持つ)。"""
 
@@ -1209,6 +1240,9 @@ class _FakeStructuredE2e:
         # Phase-102-4:追記
         if self._schema is OptionDraftOut:
             return _option_draft(messages)
+        # Phase-114-2:追記
+        if self._schema is DifferenceListOut:
+            return _differences(messages)
         # ヒアリング・UML生成スキーマ以外のスキーマが追加された場合は
         # 「対応漏れ」に気づけるよう黙って汎用値を返さず例外にする。
         raise NotImplementedError(f"E2eFakeLLMが未対応のスキーマ: {self._schema}")

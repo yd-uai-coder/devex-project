@@ -1,4 +1,4 @@
-# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2,79(完了後の調整),81-2,82-1,84-4,86-2,91-2,94-2,102-2,103-2,104-2,106-4,113-1
+# 更新：Phase-2-1,8-2,10-4,15-2,34-1,52-3,54-5,67-2,79(完了後の調整),81-2,82-1,84-4,86-2,91-2,94-2,102-2,103-2,104-2,106-4,113-1,114-2
 # 写経レベル: 定型 ── re-exportの機械的な追記。
 # Phase-2-1:追記 ── ChatHistory, GeneratedDocument, IntakeFile, Project, PromptTemplate
 # Phase-8-2:追記 ── DataItem, UmlDiagram
@@ -20,6 +20,7 @@
 # Phase-104-2:追記 ── app.models.change_request_comment.ChangeRequestComment
 # Phase-106-4:追記 ── app.models.pruned_protection.PrunedProtection
 # Phase-113-1:追記 ── app.models.material.Material
+# Phase-114-2:追記 ── app.models.material_difference.MaterialDifference, app.models.material_difference.MaterialExtraction
 from app.models.agreement import AgreementRecord
 from app.models.baseline import Baseline, BaselineItem
 from app.models.change_request import ChangeRequest, ChangeRequestEvent, ChangeRequestReview
@@ -35,6 +36,7 @@ from app.models.generated_document import GeneratedDocument
 from app.models.hearing_point import HearingPoint
 from app.models.intake_file import IntakeFile
 from app.models.material import Material
+from app.models.material_difference import MaterialDifference, MaterialExtraction
 from app.models.project import Project
 from app.models.prompt_template import PromptTemplate
 from app.models.pruned_protection import PrunedProtection
@@ -82,6 +84,9 @@ __all__ = [
     "IntakeFile",
     # Phase-113-1:追記
     "Material",
+    # Phase-114-2:追記
+    "MaterialDifference",
+    "MaterialExtraction",
     # Phase-79(完了後の調整)：削除
     # "Message",
     "Project",

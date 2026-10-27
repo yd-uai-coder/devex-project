@@ -1,4 +1,5 @@
-# 作成：Phase-113-1
+# 作成：Phase-113-1｜更新：Phase-114-2
+# Phase-114-2:追記 ── app.models.material_difference.MaterialDifference, app.models.material_difference.MaterialExtraction
 import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING
@@ -11,6 +12,7 @@ from app.core.database import Base
 # 型チェック時の解決用。
 # 通常の実行時には False -> importされない（循環import回避のため）
 if TYPE_CHECKING:
+    from app.models.material_difference import MaterialDifference, MaterialExtraction
     from app.models.project import Project
 
 
@@ -48,3 +50,12 @@ class Material(Base):
     )
 
     project: Mapped["Project"] = relationship(back_populates="materials")
+    # Phase-114-2:追記
+    extraction: Mapped["MaterialExtraction | None"] = relationship(
+        back_populates="material", cascade="all, delete-orphan", uselist=False
+    )
+    differences: Mapped[list["MaterialDifference"]] = relationship(
+        back_populates="material",
+        cascade="all, delete-orphan",
+        order_by="MaterialDifference.position",
+    )

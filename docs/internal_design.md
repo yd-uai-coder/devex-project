@@ -44,6 +44,7 @@
 * **ChangeRequestComment(CR のコメント欄、ステージ13)**: クライアントが共有リンクから書いたコメントと、開発者の返信(1段。㉔、Phase 104 で新設。下の 3.3節「13. 説明とすり合わせ」)。
 * **PrunedProtection(巡回で消えた版の戻しの写し、ステージ13)**: 版の巡回で消える版の、合意の形へ戻した記録の写し(㉕、Phase 106 で新設。要素の履歴が読む)。
 * **Material(資料、ステージ14)**: プロジェクトの途中から足す議事録・メール・資料の本文(㉖、Phase 113 で新設。作成時の添付資料〈IntakeFile〉とは別。下の 3.3節「14. 変更の取り込み」)。
+* **MaterialExtraction / MaterialDifference(違いの取り出し、ステージ14)**: 資料1件と最新の束の合意済みの内容の違い(㉘)と、取り出しの直近の回(㉗。比べた束とその時点の鮮度)。Phase 114 で新設。資料と一緒に消える。
 * **ConfirmationItem(確認事項の利用者が決めた欄、ステージ12)**: 確認事項(推測の要件・推測の利用者・根拠が未決の観点)ごとの決める機会・状態・メモ(㉑、Phase 94 で新設。一覧そのものは保存しない)。
 * **DesignStage（詳細設計の段階、ステージ4）**: 詳細設計モードの段階1〜7ごとの成果物(意味モデル)と承認状態を管理(⑩、Phase 15で新設)。
 
@@ -519,7 +520,40 @@ CR に有効な(取り消していない)リンクは1本で、作り直すと�
 | created_by | UUID | FK (`users.id`, ondelete SET NULL), NULL | 足した開発者 |
 | created_at | TIMESTAMP(tz) | NOT NULL | 足した日時 |
 
-`INDEX(project_id, created_at)`。元のファイルは持たない。取り出せなかったファイルは行を作らない(作成時の添付資料と違い、失敗の行を残さない)。ヒアリングの根拠(`chat_histories`)には入れない。違いの表(Phase 114)はこの表に CASCADE で結ぶ(資料を消すと違いも消える。違いから作った CR は残る)。マイグレーション `e7d2b9a4c103`。
+`INDEX(project_id, created_at)`。元のファイルは持たない。取り出せなかったファイルは行を作らない(作成時の添付資料と違い、失敗の行を残さない)。ヒアリングの根拠(`chat_histories`)には入れない。違いの表(Phase 114。㉗・㉘)はこの表に CASCADE で結ぶ(資料を消すと違いも消える。違いから作った CR は残る)。マイグレーション `e7d2b9a4c103`。
+
+**㉗ `material_extractions`(違いの取り出しの直近の回。Phase 114)**
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | ID |
+| material_id | UUID | FK (`materials.id`, ondelete CASCADE), NOT NULL, UNIQUE | 資料(資料ごとに1行。やり直すと上書き) |
+| baseline_number | INTEGER | NOT NULL | 比べた束(取り出しの時点の最新の束)の番号 |
+| freshness | JSONB | NOT NULL | 取り出しの時点の束の鮮度(`GET .../baselines/{number}/freshness` の応答の形) |
+| generated_model | VARCHAR(100) | NULL | 取り出したモデル名 |
+| generated_by | UUID | FK (`users.id`, ondelete SET NULL), NULL | 取り出した開発者 |
+| generated_at | TIMESTAMP(tz) | NOT NULL | 取り出した日時 |
+
+**㉘ `material_differences`(資料から取り出した違い。Phase 114)**
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | 違いID |
+| material_id | UUID | FK (`materials.id`, ondelete CASCADE), NOT NULL | 資料 |
+| position | INTEGER | NOT NULL | 資料の中の並び(取り出した順。やり直しで足したものは残した違いの後ろ) |
+| kind | VARCHAR(20) | NOT NULL | 種類(`add` 追加 / `change` 変更 / `delete` 削除 / `question` 確かめる点) |
+| target_key | VARCHAR(300) | NOT NULL | 対象の合意の要素のキー(`req:FR-001` など。追加と、対象の無い確かめる点は空) |
+| origin_key | VARCHAR(300) | NOT NULL | 追加の起点(つながる合意の要素のキー。空でもよい) |
+| content | TEXT | NOT NULL | 内容(何がどう違うか) |
+| quote | TEXT | NOT NULL | 根拠の引用(資料の文) |
+| status | VARCHAR(20) | NOT NULL | `unconfirmed` 未確認 / `rejected` 弾いた / `converted` CR にした(Phase 115) / `dismissed` 捨てた |
+| reasons | JSONB | NOT NULL | 弾いた理由(検査の結果。通ったものは空) |
+| dismiss_reason | TEXT | NULL | 捨てた理由(確かめる点を閉じた理由も) |
+| baseline_number | INTEGER | NOT NULL | 取り出したときに比べた束 |
+| decided_by / decided_at | UUID / TIMESTAMP(tz) | NULL | 捨てた開発者と日時 |
+| created_at | TIMESTAMP(tz) | NOT NULL | 取り出した日時 |
+
+`INDEX(material_id, position)`。やり直すと、`unconfirmed`・`rejected` を消して新しい結果に置き換え、`converted`・`dismissed` は残す(新しい結果のうち、残した違いと種類・対象・正規化した引用が同じものは足さない)。マイグレーション `b8f3d6a2e915`。
 
 * **`generated_documents` に足す列**: 反映した CR(`change_request_id`。NULL 可。Phase 85 で足した)。生成したモデル名(`generated_model`)は Phase 81 で足した(④)。段階(⑩)にも、直近の生成の CR(`generation_change_request_id`)と生成したモデル名(`generated_model`)を Phase 85 で足した。
 ---
@@ -636,6 +670,8 @@ backend/
 | **POST** / **GET** | `/api/v1/projects/{id}/materials` | （※ステージ14、Phase 113）資料の追加(本文の貼り付け。`{kind, title, material_date, body}`。`kind` は `minutes` / `email` / `document`、題は1〜200文字、本文は前後の空白を除いて1文字以上)と一覧(足した順の新しい方から。本文なし、`length` = 本文の文字数)。本文が20,000文字を超えれば422 `MATERIAL_TOO_LONG`(切り詰めない)、1プロジェクト50件を超えれば409 `TOO_MANY_MATERIALS`、簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`。201で本文つきの資料 | 必要 |
 | **POST** | `/api/v1/projects/{id}/materials/upload` | （※ステージ14、Phase 113）ファイルで資料を足す(multipart: `file`・`kind`・`title`・`material_date`)。txt / md は UTF-8 で読み、pdf は持ち主の Gemini で本文を読む(作成時の添付資料と同じ関数)。形式が違えば400 `UNSUPPORTED_FILE_TYPE`、2MB を超えれば400 `FILE_TOO_LARGE`、本文を取り出せない(UTF-8 でない・PDF を読めない・空)は422 `MATERIAL_UNREADABLE`、長すぎれば422 `MATERIAL_TOO_LONG`。形式・大きさ・数は本文を取り出す前に確かめる | 必要 |
 | **GET** / **DELETE** | `/api/v1/projects/{id}/materials/{material_id}` | （※ステージ14、Phase 113）資料1件(本文つき)と削除(204。資料から作った CR は残る)。ほかのプロジェクトの資料・無い資料は404 | 必要 |
+| **POST** / **GET** | `/api/v1/projects/{id}/materials/{material_id}/differences` | （※ステージ14、Phase 114）POST は資料と最新の束の違いを生成の用途の LLM で取り出す(同期で1回。やり直すと未確認と弾いたを置き換える)。束が古くても止めず、比べた束の鮮度を `extraction.freshness` に返す。束が無ければ409 `MATERIAL_BASELINE_MISSING`。GET は一覧。応答は `{material_id, extraction〈baseline_number・baseline_label・freshness・generated_model・generated_by・generated_at。まだなら null〉, latest_baseline_number〈今の最新の束〉, differences〈id・kind・target_key・origin_key・content・quote・status・reasons・dismiss_reason・baseline_number・decided_*・created_at。並びの順〉}`。資料が無ければ404 | 必要 |
+| **PATCH** | `/api/v1/projects/{id}/materials/{material_id}/differences/{difference_id}` | （※ステージ14、Phase 114）違いを捨てる(`{action: "dismiss", reason}`。理由は1〜500文字。未確認だけ)・捨てたものを未確認に戻す(`{action: "restore"}`)。今の状態でできなければ409 `MATERIAL_DIFFERENCE_STATE`、理由が無ければ422、無い違いは404 | 必要 |
 | **POST** / **GET** | `/api/v1/projects/{id}/change-requests` | （※ステージ11、Phase 82）CR の作成(本文`{title, content, background_source, background_date, background_memo, targets, adds_requirement, baseline_number}`。`targets`は`[{requirement_id, kind}]`(`kind`は`content`/`delete`、省くと`content`。同じ要件を違う種類で2回は422)。`background_source`は`meeting`/`email`/`document`/`other`、`baseline_number`を省くと最新の束。201で詳細)・一覧(新しい順。中身と時系列なし。**(Phase 88)** 合意・却下の記録 `decision` と、入れた束の番号 `included_baseline_number` は一覧にも出す。束の作成の画面が、入れる CR を選び、合意の記録の初期値にするため)。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`(**(Phase 88 完了後の調整)** 作成だけでなく、一覧と、CR ごとのすべての操作・読み出しも)、束が無ければ409 `CR_BASELINE_MISSING`、番号の束が無ければ404、基準の束の要件定義書に無い要件 ID・対象が空で新規の印も無いは422 `CR_TARGET_UNKNOWN`。**(Phase 96)** 本文に `origins`(新しい要件の予測の起点。要素のキーの一覧、上限20)。新しい要件を足さない CR の起点・束に無い要素は422 `CR_TARGET_UNKNOWN`。応答(一覧・詳細)に `origins`(`[{key, label}]`) **(Phase 102)** 本文に選択肢 `options`(省略可。`{items: [{name, targets, outcome}], recommended, reason}`。案は0件か2〜3件・名前は重ねない・結果は必須・おすすめの番号があれば理由は必須〈規則に合わなければ422〉。案の対象は CR の対象の中だけ〈外れれば422 `CR_OPTION_INVALID`〉)。 | 必要 |
 | **GET** / **PATCH** | `/api/v1/projects/{id}/change-requests/{number}` | （※ステージ11、Phase 82）CR の詳細(中身・合意の記録`decision`・時系列`events`・結んだレビュー`reviews`と入れた束`included_baseline_number`(Phase 86)・重なり`overlapping`・写しの元`derived_from_number`と先`derived_numbers`・今できる操作`allowed_actions`。無ければ404)・中身の更新(送った項目だけ。下書き・説明済みだけで、説明済みは下書きに戻る。ほかは409 `CR_INVALID_TRANSITION`)。**(Phase 95)** 値の変わった項目があれば、下書きのままでも時系列に `edit` の行を足す(`refs.fields`)。値の変わらない保存は足さない。**(Phase 96)** `origins` を送ったとき(null は変えない、空の一覧で外す)と `adds_requirement` を変えたときに起点を確かめ直す **(Phase 102)** 詳細に `options`(案が無ければ null。案ごとに `number`・`label`〈`案1`〉・`name`・`targets`・`outcome`・`recommended`)と `decision.option`(合意で選んだ案の番号)。PATCH の `options` は送ったときだけ変え(`{items: []}` で消す)、対象・新しい要件の印を変えたときも今の案を確かめ直す(時系列の直した項目は `options`)。 | 必要 |
 | **POST** | `/api/v1/projects/{id}/change-requests/{number}/explain` ・ `/decision` ・ `/withdraw` ・ `/copy` | （※ステージ11、Phase 82）状態の遷移。説明済みにする(下書きから)・合意 / 却下(説明済みから。本文は合意の記録`{decision, decided_at, counterpart, memo, reason}`)・取り下げ(下書き・説明済みから。本文`{reason}`は任意)・却下した CR の写し(新しい番号の下書き。201)。許されない遷移は409 `CR_INVALID_TRANSITION`。反映済みは CR を渡した文書の再生成が終わると自動で付く(Phase 85。この API には無い)。検証済みは Phase 86 の`/verify` **(Phase 102)** `/decision` の本文に `option`(合意で選んだ案の番号)。案のある CR の合意では必須で、選んだ案の対象を CR の対象にし(前の対象は時系列の行の `refs` に `{option, targets}`)、予測はその対象で保存する。案の無い CR・却下で送るか、番号の案が無ければ422 `CR_OPTION_INVALID`。`/copy` は案も写す。 | 必要 |
@@ -1000,7 +1036,7 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 
 * **資料**(**Phase 113 で確定**): ㉖ `materials`。`MaterialService`(`app/services/material_service.py`)が貼り付け(`create_from_text`)とファイル(`create_from_file`)で足し、一覧(`list_for_project`。`MaterialRepository.list_with_length` が本文を読まずに文字数だけ数える)・取得・削除を持つ。本文の取り出しは作成時の添付資料と同じ `intake_file_processor.extract_text`(`max_chars=None` で切り詰めない。拡張子の解決 `file_type_of` も `ProjectService` と共有。#17)。上限は1プロジェクト50件・本文20,000文字・ファイル2MB(API 全体のリクエストの上限に合わせる)。詳細設計モードだけ(`require_detailed`)。マイグレーション `e7d2b9a4c103`。
 * **束の鮮度**(**Phase 113 で確定**): 純粋関数 `app/change_requests/freshness.py`。`freshness` が合意の記録(⑳。`AgreementService.record_facts` が `RecordFact` にする。競合の判定〈`ChangeRequestService._conflicts`〉と共有)から、束の記録の最後の `seq`(`base_seq`)より後に CR の反映が中身を書き換えた要素(`changed_after`。文を変えなかった反映は数えない)を CR ごとにまとめ(`AppliedAfter`)、後の束の番号と、束を作った時点で承認のままでなかった段階(`scale.outdated_stages`。規模の集計の注記と同じ規則。束の写しの段階の状態は `baseline_stage_states` で、規模の集計と共有)と合わせて `Freshness` を返す(`fresh` は3つとも無いこと。束の記録が無ければ `tracked` = False)。`BaselineService.freshness` / `freshness_of`(合意の記録と束の番号〈`BaselineRepository.numbers`〉は1回だけ読む)。取り込み(114)・CR の作成と共有リンクの作成(115)・規模の集計(「数えられない」と「古くて少ない」を分ける。115)が使う。
-* **違いの取り出し**(Phase 114): 資料1件と最新の束の写しを、生成の用途の LLM に構造化出力で渡す。違い = 種類・対象(合意済みの行のキー。ステージ12 の行単位の合意と同じキー。新規は起点)・内容・根拠の引用。純粋関数の検査(引用が資料の本文に文字どおりあるか・対象のキーが束にあるか・種類と対象の組み合わせ)で、通らないものは弾いた理由とともに残す。LLM の下書き → 人が確かめる型は、案の下書き(`app/change_requests/option_drafting.py`)と同じ。偽の LLM は資料の印で決まった違いを返す。
+* **違いの取り出し**(**Phase 114 で確定**): 純粋関数のパッケージ `app/materials/`(`differences.py`)。`agreed_listing` が束の写しの要件定義書・外部設計書から合意の要素(`agreement_items`。ステージ12 の合意と同じキー)を「キー | 名前 | 中身」の行にし、目的と範囲(1.3)をキーの無い参考として添える(段階は渡さない)。`build_difference_messages` が一覧と資料(種類・題・日付・本文)を LLM に渡し、構造化出力 `DifferenceListOut`(`DifferenceItemOut` = kind・target_key・origin_key・content・quote)で受ける。`check_difference` の決定的な検査: 引用は `normalize_quote`(NFKC・空白と改行・md の記号〈強調・コード・取り消し線・見出し・引用〉を除く)した上で本文の中にあるか(正規化後6文字未満・「…」でつないだもの・無いものは弾く)、対象・起点は束の合意の要素のキーか(接頭辞の無い ID は、補って一つに決まればそのキー。`resolve_key`)、種類と対象の組み合わせ(変更・削除は対象が要る・追加は対象を持たない・起点は追加だけ)。`fresh_differences` がやり直しの重なりを除く。`MaterialDifferenceService`(`app/services/material_difference_service.py`)が、最新の束(`BaselineRepository.latest`)と鮮度(`BaselineService.freshness_of`)・生成の用途の LLM(`invoke_structured`。要約・案の下書きと同じ)・検査・置き換えを1回の取り出しにまとめ、捨てる(`dismiss`)・戻す(`restore`)を持つ。偽の LLM(`app/ai/llm/fake.py`)は資料の本文の印 `[違い:<種類>:<キー>]` の行から違いを返す。マイグレーション `b8f3d6a2e915`(㉗・㉘)。LLM の下書き → 人が確かめる型は、案の下書き(`app/change_requests/option_drafting.py`)と同じ。
 * **CR の下書き**(Phase 115): 選んだ違いから `ChangeRequestService.create` の入口に渡す(対象は `checked_targets` が照らす束の要件の行、新しい要件は `checked_origins` の起点、背景は資料の題と日付)。
 * **反映の前 → 後**(**Phase 112 で確定**): 純粋関数 `app/agreements/reflection_diff.py`。`reflection_changes` が反映の直前の版と作った版の合意の対象の要素(`agreement_items`)をキーで突き合わせ、比べる値(`body_of`)が違う要素を欄ごとの前 → 後(`FieldChange`。欄の表示名は種類ごと)にし、種類(`changed`/`added`/`removed`/`restored`)と区分(`target` = 対象の要件と、CR が足した新しい要件/`predicted` = `rewritable_keys` の残り/`outside`)を付ける。作った版の `protection` のキーは `restored`(欄なし)。`DocGeneratorService.generate` が作った版の `protection` を集めて `ChangeRequestService.record_document_apply` に前後の model と一緒に渡し(`document_changes`。作り直さなかった文書は前の版のまま)、時系列の `apply` の行の `refs.changes` に残す(`changes_to_json`)。読むのは `applied_reflections`(`documents` を持つ `apply` の行を新しい順。`changes` の無い行は記録なし)で、`GET .../comparison` の `reflections` に出す。DB の変更は無い。
 * **重なる CR の競合**(**Phase 112 で確定**): 純粋関数 `app/change_requests/conflicts.py`。合意の記録(⑳)から、基準の束の記録の最後の `seq`(`base_seq`)より後に、ほかの CR が対象の要件の中身を書き換えた行(`changed_after`。前の記録と中身が同じ行は数えない)を引き、`conflicts` が要件ごとに先に変えた CR・束の文・今の文・中身が最後に変わった記録の `seq` を返す。確かめの印は⑯ `conflict_checks`(`[{key, seq}]`。`checks_for`)で、`unchecked` は印の `seq` が今と違うものを返す(後でさらに変わったら外れる)。`changed_after` は束の鮮度(Phase 113)でも使う。`ChangeRequestService` は進行中の CR の詳細に `conflicts`(確かめの有無つき)を載せ、`check_conflicts`(記録だけの行 `check_conflict`)で印を付け、`require_conflicts_checked` を反映の受け付け(`DocGeneratorService.request_generation`。`reflectable` の後)で呼ぶ(未確認なら 409 `CR_CONFLICT_UNCHECKED`)。反映の指示(`build_cr_instruction(facts, conflicts)`)は、競合のある対象の行の下に今の文の1行(`CONFLICT_LINE`・消えていれば `CONFLICT_REMOVED_LINE`)を足す。マイグレーション `c4e8a1f7b2d6`(⑯の列)。
