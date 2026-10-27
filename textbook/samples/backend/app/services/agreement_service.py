@@ -1,4 +1,4 @@
-# 作成：Phase-91-3｜更新：Phase-91-4,93-4,94-3,95-2,97-1,106-4
+# 作成：Phase-91-3｜更新：Phase-91-4,93-4,94-3,95-2,97-1,106-4,113-2
 # Phase-106-4：更新(docstring: history に巡回で消えた版の写しを足した)
 # Phase-93-4：更新(docstring: AgreementService の記録の出どころに CR の反映を足した)
 # Phase-91-4：更新(docstring: AgreementService に今の合意の一覧を足した)
@@ -7,6 +7,7 @@
 # Phase-94-3:追記 ── app.documents.requirements.model.UserScene
 # Phase-95-2:追記 ── app.agreements.ChangeRequestRef, app.agreements.ElementHistory, app.agreements.RecordFacts, app.agreements.VersionFacts, app.agreements.element_history, app.agreements.kind_of, app.agreements.origin_label, app.change_requests.predicted_document_keys, app.repositories.change_request.ChangeRequestRepository, app.repositories.generated_document.GeneratedDocumentRepository, app.services.errors.AgreementKeyInvalidError
 # Phase-97-1:追記 ── app.agreements.CurrentAgreement, app.agreements.DocumentAgreementStatus, app.agreements.element_states, app.agreements.restored_elements
+# Phase-113-2:追記 ── app.change_requests.RecordFact
 import uuid
 from collections.abc import Mapping
 from typing import Any
@@ -32,6 +33,7 @@ from app.agreements import (
     restored_elements,
 )
 from app.change_requests import (
+    RecordFact,
     predicted_document_keys,
     rewritable_keys,
     targets_from_json,
@@ -68,6 +70,11 @@ class AgreementService:
         order = {kind: i for i, kind in enumerate(AGREED_KINDS)}
         records = await self._records.current(project.id)
         return sorted(records, key=lambda r: (order.get(r.kind, len(order)), r.seq))
+
+    # Phase-113-2:追記
+    async def record_facts(self, project_id: uuid.UUID) -> list[RecordFact]:
+        """プロジェクトの合意の記録を、競合と束の鮮度の判定の材料にして返す(記録の順)。"""
+        return [_record_fact(r) for r in await self._records.list_for_project(project_id)]
 
     # Phase-95-2:追記
     async def history(self, project: Project, key: str) -> ElementHistory:
@@ -252,6 +259,21 @@ class AgreementService:
             change_request_id=change_request.id,
             recorded_by=recorded_by,
         )
+
+
+# Phase-113-2:追記
+def _record_fact(record: AgreementRecord) -> RecordFact:
+    """記録の行から、競合と束の鮮度の判定の材料を作る(出どころの CR は読み込み済みであること)。"""
+    return RecordFact(
+        seq=record.seq,
+        key=record.key,
+        origin=record.origin,
+        baseline_id=record.baseline_id,
+        change_request_number=(
+            record.change_request.number if record.change_request is not None else None
+        ),
+        content=record.content,
+    )
 
 
 # Phase-95-2:追記

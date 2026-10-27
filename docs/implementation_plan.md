@@ -251,7 +251,7 @@
 * **対象Phase**(暫定。各Phaseの着手時に見直す。Phaseごとの成果物・依存関係・未確定事項は[`textbook/Phase-111/Phase-111-4.md`](../textbook/Phase-111/Phase-111-4.md)参照):
   * Phase 111: 要件確認フェーズ(仕様診断・ステージ14 の入力の判断・素朴なプロンプトの実 LLM のベースライン・ユーザーの画面確認・docs反映・ステージ14の実装計画・完成イメージの見本) ── **完了**([`textbook/Phase-111/Phase-111-introduction.md`](../textbook/Phase-111/Phase-111-introduction.md))
   * Phase 112: 使い勝手の直し: 反映の前 → 後と、重なる CR の競合のガード(Phase 111 の画面確認の指摘2件。API と画面。前 → 後は要素ごとにシステムが比べる。競合は説明済み・合意・反映で知らせ、反映は確かめの印を求める。1 Phase 4章で行った) ── **完了**([`textbook/Phase-112/Phase-112-introduction.md`](../textbook/Phase-112/Phase-112-introduction.md))
-  * Phase 113: 資料 API と束の鮮度(資料のテーブル・追加 / 一覧 / 読む / 消す・PDF の本文・束の鮮度の判定)
+  * Phase 113: 資料 API と束の鮮度(資料のテーブル・追加 / 一覧 / 読む / 消す・PDF の本文・束の鮮度の判定。本文は20,000文字を超えたら断る。鮮度は束ごとの API と、束の一覧・中身の `fresh`) ── **完了**([`textbook/Phase-113/Phase-113-introduction.md`](../textbook/Phase-113/Phase-113-introduction.md))
   * Phase 114: 違いの取り出し API(LLM の構造化出力・引用と対象のキーの決定的な検査・違いのテーブル・偽の LLM の決まった違い)
   * Phase 115: 違いから CR の下書き・古い束の知らせ(API。CR の作成と共有リンクの作成の知らせ・規模の表の基準の束と鮮度)
   * Phase 116: 取り込みの画面(資料・違いの一覧・選んで CR の下書きへ・捨てる・束が古いときの知らせ)

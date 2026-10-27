@@ -1,4 +1,4 @@
-# 作成：Phase-81-3
+# 作成：Phase-81-3｜更新：Phase-113-2
 """合意済みの版(束)の API を実際の PostgreSQL で確かめる(JSONB の写し・一意制約・CASCADE)。
 
 SUT: POST・GET /api/v1/projects/{id}/baselines、GET .../baselines/{number}(ルート →
@@ -129,3 +129,26 @@ async def test_conditions_and_ownership(client: AsyncClient) -> None:
     assert (missing.status_code, missing.json()["code"]) == (409, "BASELINE_DOCUMENTS_MISSING")
     assert other.status_code == 404
     assert invalid.status_code == 422
+
+
+# Phase-113-2:追記
+async def test_freshness_of_older_and_latest_baseline(client: AsyncClient) -> None:
+    headers, user_id = await _login("baseline-freshness@example.com")
+    project_id = await _project(user_id, documents=("requirements", "external_design"))
+    base = f"/api/v1/projects/{project_id}/baselines"
+    for _ in range(2):
+        assert (await client.post(base, json=_BODY, headers=headers)).status_code == 201
+
+    listed = await client.get(base, headers=headers)
+    assert [(b["number"], b["fresh"]) for b in listed.json()] == [(2, True), (1, False)]
+
+    old = await client.get(f"{base}/1/freshness", headers=headers)
+    assert old.status_code == 200
+    assert (old.json()["label"], old.json()["is_latest"], old.json()["newer_numbers"]) == (
+        "B-1",
+        False,
+        [2],
+    )
+    latest = await client.get(f"{base}/2/freshness", headers=headers)
+    assert (latest.json()["fresh"], latest.json()["applied_after"]) == (True, [])
+    assert (await client.get(f"{base}/3/freshness", headers=headers)).status_code == 404

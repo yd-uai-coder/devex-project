@@ -1,4 +1,4 @@
-# 作成：Phase-2-3
+# 作成：Phase-2-3｜更新：Phase-113-1
 from langchain_core.messages import AIMessage
 from tests.fixtures.fake_llm import FakeLLM
 
@@ -73,3 +73,15 @@ async def test_unsupported_file_type_is_reported_as_error() -> None:
 
     assert text is None
     assert error is not None
+
+
+# Phase-113-1:追記
+async def test_max_chars_none_keeps_full_text() -> None:
+    long_text = "あ" * (processor.MAX_EXTRACTED_TEXT_CHARS + 100)
+
+    text, error = await processor.extract_text(
+        file_type="txt", data=long_text.encode(), max_chars=None
+    )
+
+    assert text == long_text
+    assert error is None

@@ -1,4 +1,4 @@
-# 作成：Phase-81-3｜更新：Phase-82-2,86-4,87-1,96-3,106-5
+# 作成：Phase-81-3｜更新：Phase-82-2,86-4,87-1,96-3,106-5,113-2
 # Phase-106-5：更新(docstring: BaselineOriginRead の kind に function を足した)
 # Phase-86-4：更新(docstring: BaselineCreate に束に入れる CR の番号を足した)
 # Phase-82-2：更新 ── 合意の記録の項目を app.schemas.agreement.AgreementNotes に移した(CR の合意・却下と共有)
@@ -19,12 +19,14 @@
 # ↓↓
 # Phase-86-4:追記 ── pydantic.Field, pydantic.field_validator
 # Phase-106-5:追記 ── typing.Self
+# Phase-113-2:追記 ── app.change_requests.Freshness
 import uuid
 from datetime import datetime
 from typing import Any, Self
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, computed_field, field_validator
 
+from app.change_requests import Freshness
 from app.schemas.agreement import AgreementNotes
 
 # Phase-82-2：更新
@@ -112,6 +114,10 @@ class _BaselineRecordRead(BaseModel):
     # Phase-106-5:追記
     # 束に入れた CR(番号の順)。ORM の行には無いので、ルートが`with_included`で足す
     included_change_requests: list[BaselineChangeRequestRead] = Field(default_factory=list)
+    # Phase-113-2:追記
+    # 新しいか(最新の束で、束の後に反映した CR も古かった段階も無い)。ルートが`with_fresh`で足す
+    # (足していなければ None)
+    fresh: bool | None = None
 
     def with_included(self, included: list[tuple[int, str]]) -> Self:
         """束に入れた CR(`(番号, 題)`の一覧)を足した写し。"""
@@ -122,6 +128,11 @@ class _BaselineRecordRead(BaseModel):
                 ]
             }
         )
+
+    # Phase-113-2:追記
+    def with_fresh(self, fresh: bool) -> Self:
+        """新しいかを足した写し。"""
+        return self.model_copy(update={"fresh": fresh})
 
     @computed_field
     @property
@@ -160,3 +171,46 @@ class BaselineRequirementRead(BaseModel):
     priority: str | None = None
     category: str = ""
     text: str
+
+
+# Phase-113-2:追記
+class BaselineAppliedAfterRead(BaseModel):
+    """束の後に反映した CR 1つと、それが書き換えた要素のキー(`req:FR-001`など)。"""
+
+    number: int
+    keys: list[str]
+
+
+class BaselineFreshnessRead(BaseModel):
+    """合意済みの版1つの鮮度。`fresh`は最新の束で、束の後に反映した CR も古かった段階も無いこと。
+    `newer_numbers`はこの束より後の束、`applied_after`は束の後に反映した CR(反映の順)、
+    `outdated_stages`は束を作った時点で承認のままでなかった段階、`tracked`は束の後の CR を判定
+    できたか(合意の記録を始める前の束は False)。"""
+
+    baseline_number: int
+    fresh: bool
+    is_latest: bool
+    tracked: bool
+    newer_numbers: list[int]
+    applied_after: list[BaselineAppliedAfterRead]
+    outdated_stages: list[int]
+
+    @classmethod
+    def of(cls, freshness: Freshness) -> Self:
+        return cls(
+            baseline_number=freshness.baseline_number,
+            fresh=freshness.fresh,
+            is_latest=freshness.is_latest,
+            tracked=freshness.tracked,
+            newer_numbers=list(freshness.newer_numbers),
+            applied_after=[
+                BaselineAppliedAfterRead(number=a.number, keys=list(a.keys))
+                for a in freshness.applied_after
+            ],
+            outdated_stages=list(freshness.outdated_stages),
+        )
+
+    @computed_field
+    @property
+    def label(self) -> str:
+        return f"B-{self.baseline_number}"

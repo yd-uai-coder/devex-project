@@ -1,4 +1,4 @@
-# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整),91-3,91-4,96-3,106-5
+# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整),91-3,91-4,96-3,106-5,113-2
 # Phase-106-5：更新(docstring: origins の候補に処理を足した)
 # Phase-91-3：更新(docstring: BaselineService が束の要素を合意の記録にも残すことを足した)
 # Phase-86-4：更新(docstring: BaselineService・create に束に CR を結ぶことを足した)
@@ -8,6 +8,7 @@
 # Phase-91-4:追記 ── app.services.detailed_mode.require_detailed
 # Phase-91-4：削除 ── app.services.errors.DesignStagesNotAvailableError
 # Phase-96-3:追記 ── app.change_requests.PredictedOrigin, app.change_requests.origin_candidates_from_snapshots
+# Phase-113-2:追記 ── app.change_requests.Freshness, app.change_requests.freshness, app.change_requests.prediction.STAGE_PREFIX
 import uuid
 from collections.abc import Mapping
 from typing import Any
@@ -17,10 +18,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.change_requests import (
     INCLUDABLE_STATUSES,
+    Freshness,
     PredictedOrigin,
+    freshness,
     origin_candidates_from_snapshots,
 )
 from app.change_requests.explanation import REQUIREMENTS_KEY
+from app.change_requests.prediction import STAGE_PREFIX
 from app.detailed_design import StageView, stage_key
 from app.models.baseline import Baseline
 from app.models.change_request import ChangeRequest
@@ -197,10 +201,46 @@ class BaselineService:
         baseline = await self.get(project, number)
         return origin_candidates_from_snapshots(baseline_snapshots(baseline))
 
+    # Phase-113-2:追記
+    async def freshness(self, project: Project, number: int) -> Freshness:
+        """番号の束の鮮度(後の束・束の後に反映した CR・古かった段階)。無ければ
+        BaselineNotFoundError。"""
+        baseline = await self.get(project, number)
+        return (await self.freshness_of(project, [baseline]))[baseline.id]
+
+    async def freshness_of(
+        self, project: Project, baselines: list[Baseline]
+    ) -> dict[uuid.UUID, Freshness]:
+        """束の id → 鮮度(束の一覧・中身の応答に出す。合意の記録と束の番号は1回だけ読む)。"""
+        if not baselines:
+            return {}
+        records = await AgreementService(self._session).record_facts(project.id)
+        numbers = await self._baselines.numbers(project.id)
+        return {
+            b.id: freshness(
+                records,
+                baseline_id=b.id,
+                baseline_number=b.number,
+                baseline_numbers=numbers,
+                stage_states=baseline_stage_states(b),
+            )
+            for b in baselines
+        }
+
 
 def baseline_snapshots(baseline: Baseline) -> dict[str, Any]:
     """束の写しのうち入っているもの(key → model)。予測と起点の候補の入力。"""
     return {item.key: item.model for item in baseline.items if item.included}
+
+
+# Phase-113-2:追記
+def baseline_stage_states(baseline: Baseline) -> dict[int, str]:
+    """束に入っている段階の、束を作った時点の状態(段階の番号 → 状態)。規模の集計と鮮度の入力。"""
+    return {
+        int(item.key.removeprefix(STAGE_PREFIX)): item.state
+        for item in baseline.items
+        if item.included and item.key.startswith(STAGE_PREFIX)
+    }
 
 
 # Phase-91-4：削除 ── Phase-88(完了後の調整) で足した require_detailed を、末端のモジュール

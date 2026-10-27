@@ -1,4 +1,4 @@
-# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3,24(ゴール3後の調整),64-1,65-1,68-3,69-1
+# 作成：Phase-2-3｜更新：Phase-6-3,6-5,8-5,15-1,15-3,24(ゴール3後の調整),64-1,65-1,68-3,69-1,113-1
 # 写経レベル: コア ── 添付ファイルのバリデーション順序・失敗時の非ブロッキング方針など、ドメイン判断を体現する箇所。
 # Phase-6-3:追記 ── app.repositories.prompt_template.PromptTemplateRepository,
 #   app.services.errors.PromptTemplateNotFoundError
@@ -10,6 +10,7 @@
 # Phase-64-1:追記 ── redis.asyncio.Redis, app.services.generation_progress.GenerationProgressStore
 # Phase-65-1:追記 ── collections.abc.Sequence, app.schemas.project(PROJECT_PAGE_SIZE, ProjectListPage, ProjectRead, ProjectStatus)
 # Phase-68-3:追記 ── contextlib, app.services.errors.LlmUnavailableError, app.services.llm_resolver.LlmResolver
+# Phase-113-1:追記 ── app.services.intake_file_processor.file_type_of
 import contextlib
 import uuid
 from collections.abc import Sequence
@@ -43,7 +44,7 @@ from app.services.errors import (
     UnsupportedFileTypeError,
 )
 from app.services.generation_progress import GenerationProgressStore
-from app.services.intake_file_processor import ALLOWED_FILE_TYPES, extract_text
+from app.services.intake_file_processor import ALLOWED_FILE_TYPES, extract_text, file_type_of
 from app.services.llm_resolver import LlmResolver
 
 logger = structlog.get_logger(__name__)
@@ -202,7 +203,10 @@ class ProjectService:
 
     def _validate_file(self, file: UploadedFileInput) -> None:
         """対応形式・サイズ上限を満たさないファイルがあれば、記録前にまとめて弾く。"""
-        file_type = _resolve_file_type(file.filename)
+        # Phase-113-1：更新
+        # file_type = _resolve_file_type(file.filename)
+        # ↓↓
+        file_type = file_type_of(file.filename)
         if file_type not in ALLOWED_FILE_TYPES:
             raise UnsupportedFileTypeError(f"対応していないファイル形式です: {file.filename}")
         if len(file.data) > MAX_FILE_SIZE_BYTES:
@@ -216,7 +220,10 @@ class ProjectService:
         双方のLLMコンテキストとしては引き続き使う。ファイル名自体は_format_intake_summaryが
         intake要約側に表示する)。テキスト化に失敗しても例外は送出しない(ヒアリング自体を
         ブロックしないため)。PDFは持ち主の Gemini(自分のキー、無ければ既定)で読む。"""
-        file_type = _resolve_file_type(file.filename)
+        # Phase-113-1：更新
+        # file_type = _resolve_file_type(file.filename)
+        # ↓↓
+        file_type = file_type_of(file.filename)
         # Phase-68-3：更新
         # extracted_text, error_message = await extract_text(file_type=file_type, data=file.data)
         # ↓↓
@@ -245,11 +252,12 @@ class ProjectService:
             )
 
 
-def _resolve_file_type(filename: str) -> str:
-    """ファイル名の拡張子から file_type("txt"/"md"/"pdf" 等)を求める。"""
-    return filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-
-
+# Phase-113-1：削除
+# def _resolve_file_type(filename: str) -> str:
+#     """ファイル名の拡張子から file_type("txt"/"md"/"pdf" 等)を求める。"""
+#     return filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+#
+#
 def _format_intake_summary(intake: dict, filenames: list[str]) -> str:
     """intake(system_overview/goals_raw/notes_raw/environment)を、チャット画面に表示する
     ためのプレーンテキストに整形する。environmentは表示対象外(ヒアリング対話のLLM

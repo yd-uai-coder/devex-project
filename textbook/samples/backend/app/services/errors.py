@@ -1,4 +1,4 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4,94-3,95-2,99(完了後の調整),102-2,102-4,103-2,104-2,104-3,112-3
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4,94-3,95-2,99(完了後の調整),102-2,102-4,103-2,104-2,104-3,112-3,113-1
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -83,7 +83,11 @@ class UnsupportedFileTypeError(BadRequestError):
 
 # Phase-2-3:追記(codeフィールドはPhase-2-5で追記)
 class FileTooLargeError(BadRequestError):
-    """添付ファイルが1ファイルあたりの上限(5MB)を超えている場合に送出する。"""
+    # Phase-113-1：更新
+    # """添付ファイルが1ファイルあたりの上限(5MB)を超えている場合に送出する。"""
+    # ↓↓
+    """添付ファイルが1ファイルあたりの上限(作成時の添付資料は5MB、資料は2MB)を超えている場合に
+    送出する。"""
 
     # Phase-2-5:追記
     code: ClassVar[str | None] = "FILE_TOO_LARGE"
@@ -798,3 +802,30 @@ class ShareDecisionReasonRequiredError(UnprocessableEntityError):
     """共有リンクから理由を書かずに却下しようとした場合に送出する(却下の理由は出し直しの材料)。"""
 
     code: ClassVar[str | None] = "SHARE_DECISION_REASON_REQUIRED"
+
+
+# Phase-113-1:追記
+class MaterialNotFoundError(NotFoundError):
+    """指定した資料が、そのプロジェクトに無い場合に送出する。"""
+
+    code: ClassVar[str | None] = "RESOURCE_NOT_FOUND"
+
+
+class TooManyMaterialsError(ConflictError):
+    """プロジェクトの資料が上限(50件)に達しているのに足そうとした場合に送出する。"""
+
+    code: ClassVar[str | None] = "TOO_MANY_MATERIALS"
+
+
+class MaterialTooLongError(UnprocessableEntityError):
+    """資料の本文(貼り付け、またはファイルから取り出した本文)が上限の文字数を超えている場合に送出
+    する(違いの根拠の引用を本文で確かめるため、切り詰めずに断る)。"""
+
+    code: ClassVar[str | None] = "MATERIAL_TOO_LONG"
+
+
+class MaterialUnreadableError(UnprocessableEntityError):
+    """資料のファイルから本文を取り出せなかった場合(UTF-8 でない・PDF を読めない・本文が空)に
+    送出する。"""
+
+    code: ClassVar[str | None] = "MATERIAL_UNREADABLE"

@@ -1,15 +1,19 @@
-# 作成：Phase-81-3｜更新：Phase-86-4,87-1,96-3,106-5
+# 作成：Phase-81-3｜更新：Phase-86-4,87-1,96-3,106-5,113-2
 # Phase-106-5：更新(docstring: 起点の候補に処理を足し、束の一覧・中身・作成の応答に入れた CR を添えた)
 # Phase-86-4：更新(docstring: create_baseline に CR を結ぶことと 404/409 を足した)
 # Phase-87-1:追記 ── app.schemas.baseline.BaselineRequirementRead
 # Phase-96-3:追記 ── app.schemas.baseline.BaselineOriginRead
+# Phase-113-2:追記 ── app.models.baseline.Baseline, app.models.project.Project, app.schemas.baseline.BaselineFreshnessRead
 from typing import Annotated
 
 from fastapi import APIRouter, Path, status
 
 from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
+from app.models.baseline import Baseline
+from app.models.project import Project
 from app.schemas.baseline import (
     BaselineCreate,
+    BaselineFreshnessRead,
     BaselineOriginRead,
     BaselineRead,
     BaselineRequirementRead,
@@ -21,6 +25,17 @@ from app.services.baseline_service import BaselineService
 router = APIRouter(prefix="/projects/{project_id}/baselines", tags=["baselines"])
 
 BaselineNumber = Annotated[int, Path(ge=1, description="合意済みの版の番号(B-1 なら 1)")]
+
+
+# Phase-113-2:追記
+async def _read(service: BaselineService, project: Project, baseline: Baseline) -> BaselineRead:
+    included = await service.included_change_requests([baseline])
+    freshness = await service.freshness_of(project, [baseline])
+    return (
+        BaselineRead.model_validate(baseline)
+        .with_included(included.get(baseline.id, []))
+        .with_fresh(freshness[baseline.id].fresh)
+    )
 
 
 @router.post("", response_model=BaselineRead, status_code=status.HTTP_201_CREATED)
@@ -41,8 +56,11 @@ async def create_baseline(
     # ↓↓
     service = BaselineService(session)
     baseline = await service.create(current_project, payload, recorded_by=current_user.id)
-    included = await service.included_change_requests([baseline])
-    return BaselineRead.model_validate(baseline).with_included(included.get(baseline.id, []))
+    # Phase-113-2：更新
+    # included = await service.included_change_requests([baseline])
+    # return BaselineRead.model_validate(baseline).with_included(included.get(baseline.id, []))
+    # ↓↓
+    return await _read(service, current_project, baseline)
 
 
 @router.get("", response_model=list[BaselineSummaryRead])
@@ -54,12 +72,23 @@ async def list_baselines(
     # baselines = await BaselineService(session).list_for_project(current_project)
     # return [BaselineSummaryRead.model_validate(baseline) for baseline in baselines]
     # ↓↓
-    """プロジェクトの合意済みの版を新しい順に返す(写しは要約だけ。入れた CR を添える)。"""
+    # Phase-113-2：更新
+    # """プロジェクトの合意済みの版を新しい順に返す(写しは要約だけ。入れた CR を添える)。"""
+    # ↓↓
+    """プロジェクトの合意済みの版を新しい順に返す(写しは要約だけ。入れた CR と、新しいかを
+    添える)。"""
     service = BaselineService(session)
     baselines = await service.list_for_project(current_project)
     included = await service.included_change_requests(baselines)
+    # Phase-113-2:追記
+    freshness = await service.freshness_of(current_project, baselines)
     return [
-        BaselineSummaryRead.model_validate(b).with_included(included.get(b.id, []))
+        # Phase-113-2：更新
+        # BaselineSummaryRead.model_validate(b).with_included(included.get(b.id, []))
+        # ↓↓
+        BaselineSummaryRead.model_validate(b)
+        .with_included(included.get(b.id, []))
+        .with_fresh(freshness[b.id].fresh)
         for b in baselines
     ]
 
@@ -72,11 +101,28 @@ async def get_baseline(
     # """合意済みの版1つ(写しの中身付き)。無ければ404。"""
     # return BaselineRead.model_validate(await BaselineService(session).get(current_project, number))
     # ↓↓
-    """合意済みの版1つ(写しの中身付き。入れた CR を添える)。無ければ404。"""
+    # Phase-113-2：更新
+    # """合意済みの版1つ(写しの中身付き。入れた CR を添える)。無ければ404。"""
+    # ↓↓
+    """合意済みの版1つ(写しの中身付き。入れた CR と、新しいかを添える)。無ければ404。"""
     service = BaselineService(session)
-    baseline = await service.get(current_project, number)
-    included = await service.included_change_requests([baseline])
-    return BaselineRead.model_validate(baseline).with_included(included.get(baseline.id, []))
+    # Phase-113-2：更新
+    # baseline = await service.get(current_project, number)
+    # included = await service.included_change_requests([baseline])
+    # return BaselineRead.model_validate(baseline).with_included(included.get(baseline.id, []))
+    # ↓↓
+    return await _read(service, current_project, await service.get(current_project, number))
+
+
+@router.get("/{number}/freshness", response_model=BaselineFreshnessRead)
+async def get_baseline_freshness(
+    number: BaselineNumber, session: SessionDep, current_project: CurrentProjectDep
+) -> BaselineFreshnessRead:
+    """合意済みの版1つの鮮度(後の束・束の後に反映した CR・束を作った時点で古かった段階)。
+    無ければ404。"""
+    return BaselineFreshnessRead.of(
+        await BaselineService(session).freshness(current_project, number)
+    )
 
 
 # Phase-87-1:追記

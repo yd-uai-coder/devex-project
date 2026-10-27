@@ -1,4 +1,4 @@
-# 作成：Phase-101-1
+# 作成：Phase-101-1｜更新：Phase-113-2
 """変更要求(CR)の変更の規模(作業単位・ファイル・テスト・画面・API の数。純粋関数)。
 
 docs/external_design.md 2.16節「説明とすり合わせ」。影響の予測(prediction.py)の要素と、基準の
@@ -185,10 +185,19 @@ def sources_from_snapshots(
         test_spec=snapshots.get("test_spec"),
         has_external_design=bool(snapshots.get("external_design")),
         missing_stages=frozenset(s for s in _UNIT_STAGES if s not in present),
-        outdated_stages=frozenset(
-            s for s, state in stage_states.items() if s in present and state != APPROVED_STATE
-        ),
+        # Phase-113-2：更新
+        # outdated_stages=frozenset(
+        #     s for s, state in stage_states.items() if s in present and state != APPROVED_STATE
+        # ),
+        # ↓↓
+        outdated_stages=frozenset(s for s in outdated_stages(stage_states) if s in present),
     )
+
+
+# Phase-113-2:追記
+def outdated_stages(stage_states: Mapping[int, str]) -> frozenset[int]:
+    """承認のままでない段階(段階の番号 → 束を作った時点の状態から)。束の鮮度と共通の規則。"""
+    return frozenset(s for s, state in stage_states.items() if state != APPROVED_STATE)
 
 
 def unlinked_requirements(targets: Sequence[Target], prediction: Prediction) -> tuple[str, ...]:

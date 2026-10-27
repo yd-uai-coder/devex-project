@@ -1,4 +1,4 @@
-# 作成：Phase-81-2｜更新：Phase-88-1
+# 作成：Phase-81-2｜更新：Phase-88-1,113-2
 # Phase-88-1:追記 ── sqlalchemy.orm.defer
 import uuid
 from collections.abc import Sequence
@@ -98,6 +98,16 @@ class BaselineRepository(CRUDRepository[Baseline]):
                     defer(BaselineItem.content), defer(BaselineItem.model)
                 )
             )
+        )
+        return list((await self._session.execute(stmt)).scalars().all())
+
+    # Phase-113-2:追記
+    async def numbers(self, project_id: uuid.UUID) -> list[int]:
+        """プロジェクトの束の番号(古い順)。"""
+        stmt = (
+            select(Baseline.number)
+            .where(Baseline.project_id == project_id)
+            .order_by(Baseline.number)
         )
         return list((await self._session.execute(stmt)).scalars().all())
 

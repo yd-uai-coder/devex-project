@@ -1,4 +1,5 @@
-# 作成：Phase-2-3｜更新：Phase-68-3
+# 作成：Phase-2-3｜更新：Phase-68-3,113-1
+# Phase-113-1：更新(docstring: extract_text に max_chars〈None なら切り詰めない〉を足した)
 # 写経レベル: コア ── PDFのテキスト化方式(Geminiのネイティブファイル理解、ライブラリ不使用)というPhase 2の主要設計判断を体現する箇所。
 # Phase-68-3：削除 ── app.ai.llm.gemini.extract_text_content, app.ai.llm.gemini.get_gemini_llm
 # Phase-68-3:追記 ── app.ai.llm.content.extract_text_content
@@ -32,8 +33,21 @@ class _StructuredContentLLM(Protocol):
     async def ainvoke(self, messages: list, /) -> AIMessage: ...
 
 
+# Phase-113-1:追記
+def file_type_of(filename: str) -> str:
+    """ファイル名の拡張子から file_type("txt"/"md"/"pdf" 等)を求める。"""
+    return filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+
 async def extract_text(
-    *, file_type: str, data: bytes, llm: _StructuredContentLLM | None = None
+    # Phase-113-1：更新
+    # *, file_type: str, data: bytes, llm: _StructuredContentLLM | None = None
+    # ↓↓
+    *,
+    file_type: str,
+    data: bytes,
+    llm: _StructuredContentLLM | None = None,
+    max_chars: int | None = MAX_EXTRACTED_TEXT_CHARS,
 ) -> tuple[str | None, str | None]:
     """添付ファイルのバイト列からテキストを抽出する。
 
@@ -45,6 +59,7 @@ async def extract_text(
     txt/mdはUTF-8テキストとしてそのまま読み込む(LLM呼び出し不要)。pdfはGeminiのネイティブな
     ファイル理解でテキスト化する(図・レイアウトの解釈を含む)。PDFを読む`llm`は呼び出し側が
     ユーザーごとに解決して渡す(app/services/llm_resolver.py の resolve_pdf_reader)。
+    `max_chars`で切り詰める(None なら切り詰めない。資料は長さで断るため、呼び出し側で確かめる)。
     """
     if file_type in ("txt", "md"):
         try:
@@ -65,7 +80,10 @@ async def extract_text(
     else:
         return None, f"unsupported file_type: {file_type}"
 
-    return text[:MAX_EXTRACTED_TEXT_CHARS], None
+    # Phase-113-1：更新
+    # return text[:MAX_EXTRACTED_TEXT_CHARS], None
+    # ↓↓
+    return (text if max_chars is None else text[:max_chars]), None
 
 
 async def _extract_pdf_text(data: bytes, *, llm: _StructuredContentLLM) -> str:

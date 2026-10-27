@@ -43,6 +43,7 @@
 * **ChangeRequestShareLink(共有リンク、ステージ13)**: CR ごとの共有リンク(トークンの sha256・期限・取り消し・最後に見られた日時。㉓、Phase 103 で新設。下の 3.3節「13. 説明とすり合わせ」)。
 * **ChangeRequestComment(CR のコメント欄、ステージ13)**: クライアントが共有リンクから書いたコメントと、開発者の返信(1段。㉔、Phase 104 で新設。下の 3.3節「13. 説明とすり合わせ」)。
 * **PrunedProtection(巡回で消えた版の戻しの写し、ステージ13)**: 版の巡回で消える版の、合意の形へ戻した記録の写し(㉕、Phase 106 で新設。要素の履歴が読む)。
+* **Material(資料、ステージ14)**: プロジェクトの途中から足す議事録・メール・資料の本文(㉖、Phase 113 で新設。作成時の添付資料〈IntakeFile〉とは別。下の 3.3節「14. 変更の取り込み」)。
 * **ConfirmationItem(確認事項の利用者が決めた欄、ステージ12)**: 確認事項(推測の要件・推測の利用者・根拠が未決の観点)ごとの決める機会・状態・メモ(㉑、Phase 94 で新設。一覧そのものは保存しない)。
 * **DesignStage（詳細設計の段階、ステージ4）**: 詳細設計モードの段階1〜7ごとの成果物(意味モデル)と承認状態を管理(⑩、Phase 15で新設)。
 
@@ -503,6 +504,23 @@ CR に有効な(取り消していない)リンクは1本で、作り直すと�
 
 `UNIQUE(project_id, doc_type, version)`。版の巡回(`GeneratedDocumentRepository.create_version`)が版を消す前に写す。巡回で消えるのは CR を反映していない版だけなので、CR の番号は持たない。この表を足す前に消えた版の分は無い。マイグレーション `a9c2e4f6b318`。
 
+**㉖ `materials`(資料。Phase 113)**
+
+| カラム名 | データ型 | 制約 | 説明 |
+| :--- | :--- | :--- | :--- |
+| id | UUID | PK | 資料ID |
+| project_id | UUID | FK (`projects.id`, ondelete CASCADE), NOT NULL | プロジェクト |
+| kind | VARCHAR(20) | NOT NULL | 種類(`minutes` 議事録 / `email` メール / `document` 資料) |
+| title | VARCHAR(200) | NOT NULL | 題 |
+| material_date | DATE | NOT NULL | 資料の日付(会議の日・メールの日。足した日時とは別) |
+| body | TEXT | NOT NULL | 本文(切り詰めない。上限20,000文字は作成時に確かめる) |
+| source | VARCHAR(20) | NOT NULL | 本文の出どころ(`paste` / `txt` / `md` / `pdf`) |
+| filename | VARCHAR(255) | NULL | ファイルから足したときのファイル名 |
+| created_by | UUID | FK (`users.id`, ondelete SET NULL), NULL | 足した開発者 |
+| created_at | TIMESTAMP(tz) | NOT NULL | 足した日時 |
+
+`INDEX(project_id, created_at)`。元のファイルは持たない。取り出せなかったファイルは行を作らない(作成時の添付資料と違い、失敗の行を残さない)。ヒアリングの根拠(`chat_histories`)には入れない。違いの表(Phase 114)はこの表に CASCADE で結ぶ(資料を消すと違いも消える。違いから作った CR は残る)。マイグレーション `e7d2b9a4c103`。
+
 * **`generated_documents` に足す列**: 反映した CR(`change_request_id`。NULL 可。Phase 85 で足した)。生成したモデル名(`generated_model`)は Phase 81 で足した(④)。段階(⑩)にも、直近の生成の CR(`generation_change_request_id`)と生成したモデル名(`generated_model`)を Phase 85 で足した。
 ---
 
@@ -614,6 +632,10 @@ backend/
 | **POST** / **GET** | `/api/v1/projects/{id}/baselines` | （※ステージ11、Phase 81）合意済みの版(束)の作成(本文は合意の記録`{counterpart, agreed_at, memo, reason}`。`agreed_at`はタイムゾーン付き、`reason`は必須。**(Phase 86)** 任意の`change_request_numbers`で検証済みの CR を束に結ぶ(CR の時系列に1行。検証済みでない・もう束に入っているは409 `CR_NOT_INCLUDABLE`、無い CR は404)。201で写しの中身付きの束)・一覧(新しい順。写しは要約だけ)。`GET .../baselines/{number}` で中身(写し)、無ければ404。**(Phase 106)** 作成・一覧・中身の応答に、束に入れた CR `included_change_requests: [{number, title}]`(番号の順)を足した。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`(**(Phase 88 完了後の調整)** 作成だけでなく一覧・中身・要件の行も)、生成中は409、要件定義書か外部設計書が無ければ409 `BASELINE_DOCUMENTS_MISSING`。直す・消す API は持たない | 必要 |
 | **GET** | `/api/v1/projects/{id}/baselines/{number}/requirements` | （※ステージ11、Phase 87）束の要件定義書の写しにある要件の行(`id`・`kind`・`priority`・`category`・`text`。行の順。ID の無い行は除く)。CR の作成の画面で対象を選ぶのに使う(束の詳細は全段階の写しを含んで重いため)。束が無ければ404 | 必要 |
 | **GET** | `/api/v1/projects/{id}/baselines/{number}/origins` | （※ステージ12、Phase 96）束で、新しい要件の予測の起点に選べる要素(要件・画面・API・**(Phase 106)** 段階1 の処理〈`kind` = `function`、キー `fn:F-01`。束に段階1 が入っているときだけ〉。`[{key, kind, label}]`。要素を組んだ順 = 文書の並び → 機能一覧の並び)。CR の作成・編集の画面で起点を選ぶのに使う(Phase 98)。束が無ければ404 | 必要 |
+| **GET** | `/api/v1/projects/{id}/baselines/{number}/freshness` | （※ステージ14、Phase 113）束1つの鮮度。`fresh`(最新の束で、束の後に反映した CR も古かった段階も無い)・`is_latest`・`newer_numbers`(この束より後の束)・`applied_after`(束の後に CR の反映が中身を書き換えた要素。`[{number, keys}]`。反映の順。文を変えなかった反映は数えない)・`outdated_stages`(束を作った時点で承認のままでなかった、入っている段階)・`tracked`(合意の記録を始める前の束は false。束の後の CR を判定できない)・`label`。束の作成・一覧・中身の応答にも `fresh` を足した。束が無ければ404 | 必要 |
+| **POST** / **GET** | `/api/v1/projects/{id}/materials` | （※ステージ14、Phase 113）資料の追加(本文の貼り付け。`{kind, title, material_date, body}`。`kind` は `minutes` / `email` / `document`、題は1〜200文字、本文は前後の空白を除いて1文字以上)と一覧(足した順の新しい方から。本文なし、`length` = 本文の文字数)。本文が20,000文字を超えれば422 `MATERIAL_TOO_LONG`(切り詰めない)、1プロジェクト50件を超えれば409 `TOO_MANY_MATERIALS`、簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`。201で本文つきの資料 | 必要 |
+| **POST** | `/api/v1/projects/{id}/materials/upload` | （※ステージ14、Phase 113）ファイルで資料を足す(multipart: `file`・`kind`・`title`・`material_date`)。txt / md は UTF-8 で読み、pdf は持ち主の Gemini で本文を読む(作成時の添付資料と同じ関数)。形式が違えば400 `UNSUPPORTED_FILE_TYPE`、2MB を超えれば400 `FILE_TOO_LARGE`、本文を取り出せない(UTF-8 でない・PDF を読めない・空)は422 `MATERIAL_UNREADABLE`、長すぎれば422 `MATERIAL_TOO_LONG`。形式・大きさ・数は本文を取り出す前に確かめる | 必要 |
+| **GET** / **DELETE** | `/api/v1/projects/{id}/materials/{material_id}` | （※ステージ14、Phase 113）資料1件(本文つき)と削除(204。資料から作った CR は残る)。ほかのプロジェクトの資料・無い資料は404 | 必要 |
 | **POST** / **GET** | `/api/v1/projects/{id}/change-requests` | （※ステージ11、Phase 82）CR の作成(本文`{title, content, background_source, background_date, background_memo, targets, adds_requirement, baseline_number}`。`targets`は`[{requirement_id, kind}]`(`kind`は`content`/`delete`、省くと`content`。同じ要件を違う種類で2回は422)。`background_source`は`meeting`/`email`/`document`/`other`、`baseline_number`を省くと最新の束。201で詳細)・一覧(新しい順。中身と時系列なし。**(Phase 88)** 合意・却下の記録 `decision` と、入れた束の番号 `included_baseline_number` は一覧にも出す。束の作成の画面が、入れる CR を選び、合意の記録の初期値にするため)。簡易ドキュメントモードは409 `DESIGN_STAGES_NOT_AVAILABLE`(**(Phase 88 完了後の調整)** 作成だけでなく、一覧と、CR ごとのすべての操作・読み出しも)、束が無ければ409 `CR_BASELINE_MISSING`、番号の束が無ければ404、基準の束の要件定義書に無い要件 ID・対象が空で新規の印も無いは422 `CR_TARGET_UNKNOWN`。**(Phase 96)** 本文に `origins`(新しい要件の予測の起点。要素のキーの一覧、上限20)。新しい要件を足さない CR の起点・束に無い要素は422 `CR_TARGET_UNKNOWN`。応答(一覧・詳細)に `origins`(`[{key, label}]`) **(Phase 102)** 本文に選択肢 `options`(省略可。`{items: [{name, targets, outcome}], recommended, reason}`。案は0件か2〜3件・名前は重ねない・結果は必須・おすすめの番号があれば理由は必須〈規則に合わなければ422〉。案の対象は CR の対象の中だけ〈外れれば422 `CR_OPTION_INVALID`〉)。 | 必要 |
 | **GET** / **PATCH** | `/api/v1/projects/{id}/change-requests/{number}` | （※ステージ11、Phase 82）CR の詳細(中身・合意の記録`decision`・時系列`events`・結んだレビュー`reviews`と入れた束`included_baseline_number`(Phase 86)・重なり`overlapping`・写しの元`derived_from_number`と先`derived_numbers`・今できる操作`allowed_actions`。無ければ404)・中身の更新(送った項目だけ。下書き・説明済みだけで、説明済みは下書きに戻る。ほかは409 `CR_INVALID_TRANSITION`)。**(Phase 95)** 値の変わった項目があれば、下書きのままでも時系列に `edit` の行を足す(`refs.fields`)。値の変わらない保存は足さない。**(Phase 96)** `origins` を送ったとき(null は変えない、空の一覧で外す)と `adds_requirement` を変えたときに起点を確かめ直す **(Phase 102)** 詳細に `options`(案が無ければ null。案ごとに `number`・`label`〈`案1`〉・`name`・`targets`・`outcome`・`recommended`)と `decision.option`(合意で選んだ案の番号)。PATCH の `options` は送ったときだけ変え(`{items: []}` で消す)、対象・新しい要件の印を変えたときも今の案を確かめ直す(時系列の直した項目は `options`)。 | 必要 |
 | **POST** | `/api/v1/projects/{id}/change-requests/{number}/explain` ・ `/decision` ・ `/withdraw` ・ `/copy` | （※ステージ11、Phase 82）状態の遷移。説明済みにする(下書きから)・合意 / 却下(説明済みから。本文は合意の記録`{decision, decided_at, counterpart, memo, reason}`)・取り下げ(下書き・説明済みから。本文`{reason}`は任意)・却下した CR の写し(新しい番号の下書き。201)。許されない遷移は409 `CR_INVALID_TRANSITION`。反映済みは CR を渡した文書の再生成が終わると自動で付く(Phase 85。この API には無い)。検証済みは Phase 86 の`/verify` **(Phase 102)** `/decision` の本文に `option`(合意で選んだ案の番号)。案のある CR の合意では必須で、選んだ案の対象を CR の対象にし(前の対象は時系列の行の `refs` に `{option, targets}`)、予測はその対象で保存する。案の無い CR・却下で送るか、番号の案が無ければ422 `CR_OPTION_INVALID`。`/copy` は案も写す。 | 必要 |
@@ -976,8 +998,8 @@ Stage 3(Phase 7〜)で追加するUML設計図パイプラインの図記法と�
 
 方針は[外部設計書](external_design.md) 2.17節、決定の経緯は[`textbook/Phase-111/Phase-111-1.md`](../textbook/Phase-111/Phase-111-1.md)。テーブル・API・モジュールの形は各 Phase の着手時に決め、ここに「Phase N で確定」として書き足す。
 
-* **資料**(Phase 113): プロジェクトごとの資料のテーブル(種類・題・日付・本文・状態)。作成時の添付資料(④ `intake_files`)とは別の表。txt / md / pdf の本文の取り出しは、今の `ProjectService._ingest_file` が使う関数を共有する(#17)。
-* **束の鮮度**(Phase 113): 純粋関数で、束の後に反映した CR と、束を作った時点で古かった段階を返す。取り込み(114)・CR の作成と共有リンクの作成(115)・規模の集計(`app/change_requests/scale.py`。「数えられない」と「古くて少ない」を分ける)が使う。
+* **資料**(**Phase 113 で確定**): ㉖ `materials`。`MaterialService`(`app/services/material_service.py`)が貼り付け(`create_from_text`)とファイル(`create_from_file`)で足し、一覧(`list_for_project`。`MaterialRepository.list_with_length` が本文を読まずに文字数だけ数える)・取得・削除を持つ。本文の取り出しは作成時の添付資料と同じ `intake_file_processor.extract_text`(`max_chars=None` で切り詰めない。拡張子の解決 `file_type_of` も `ProjectService` と共有。#17)。上限は1プロジェクト50件・本文20,000文字・ファイル2MB(API 全体のリクエストの上限に合わせる)。詳細設計モードだけ(`require_detailed`)。マイグレーション `e7d2b9a4c103`。
+* **束の鮮度**(**Phase 113 で確定**): 純粋関数 `app/change_requests/freshness.py`。`freshness` が合意の記録(⑳。`AgreementService.record_facts` が `RecordFact` にする。競合の判定〈`ChangeRequestService._conflicts`〉と共有)から、束の記録の最後の `seq`(`base_seq`)より後に CR の反映が中身を書き換えた要素(`changed_after`。文を変えなかった反映は数えない)を CR ごとにまとめ(`AppliedAfter`)、後の束の番号と、束を作った時点で承認のままでなかった段階(`scale.outdated_stages`。規模の集計の注記と同じ規則。束の写しの段階の状態は `baseline_stage_states` で、規模の集計と共有)と合わせて `Freshness` を返す(`fresh` は3つとも無いこと。束の記録が無ければ `tracked` = False)。`BaselineService.freshness` / `freshness_of`(合意の記録と束の番号〈`BaselineRepository.numbers`〉は1回だけ読む)。取り込み(114)・CR の作成と共有リンクの作成(115)・規模の集計(「数えられない」と「古くて少ない」を分ける。115)が使う。
 * **違いの取り出し**(Phase 114): 資料1件と最新の束の写しを、生成の用途の LLM に構造化出力で渡す。違い = 種類・対象(合意済みの行のキー。ステージ12 の行単位の合意と同じキー。新規は起点)・内容・根拠の引用。純粋関数の検査(引用が資料の本文に文字どおりあるか・対象のキーが束にあるか・種類と対象の組み合わせ)で、通らないものは弾いた理由とともに残す。LLM の下書き → 人が確かめる型は、案の下書き(`app/change_requests/option_drafting.py`)と同じ。偽の LLM は資料の印で決まった違いを返す。
 * **CR の下書き**(Phase 115): 選んだ違いから `ChangeRequestService.create` の入口に渡す(対象は `checked_targets` が照らす束の要件の行、新しい要件は `checked_origins` の起点、背景は資料の題と日付)。
 * **反映の前 → 後**(**Phase 112 で確定**): 純粋関数 `app/agreements/reflection_diff.py`。`reflection_changes` が反映の直前の版と作った版の合意の対象の要素(`agreement_items`)をキーで突き合わせ、比べる値(`body_of`)が違う要素を欄ごとの前 → 後(`FieldChange`。欄の表示名は種類ごと)にし、種類(`changed`/`added`/`removed`/`restored`)と区分(`target` = 対象の要件と、CR が足した新しい要件/`predicted` = `rewritable_keys` の残り/`outside`)を付ける。作った版の `protection` のキーは `restored`(欄なし)。`DocGeneratorService.generate` が作った版の `protection` を集めて `ChangeRequestService.record_document_apply` に前後の model と一緒に渡し(`document_changes`。作り直さなかった文書は前の版のまま)、時系列の `apply` の行の `refs.changes` に残す(`changes_to_json`)。読むのは `applied_reflections`(`documents` を持つ `apply` の行を新しい順。`changes` の無い行は記録なし)で、`GET .../comparison` の `reflections` に出す。DB の変更は無い。

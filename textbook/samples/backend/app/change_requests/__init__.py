@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2,101-1,101-2,102-1,102-4,103-1,103-2,104-1,104-3,112-3
+# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2,101-1,101-2,102-1,102-4,103-1,103-2,104-1,104-3,112-3,113-2
 # Phase-112-3：更新(docstring: 重なる CR の競合を足した)
 # Phase-104-1：更新(docstring: コメント欄の規則を足した)
 # Phase-103-1：更新(docstring: 共有リンクの規則を足した)
@@ -47,6 +47,7 @@ docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 # Phase-104-1:追記 ── app.change_requests.comments.COMMENT_BODY_MAX, app.change_requests.comments.DEVELOPER_LABEL, app.change_requests.comments.CommentFacts, app.change_requests.comments.CommentThread, app.change_requests.comments.can_reply, app.change_requests.comments.comment_threads, app.change_requests.sharing.DECISION_SOURCE_LABEL, app.change_requests.sharing.SHARE_AGREE_REASON, app.change_requests.sharing.WRITABLE_STATES, app.change_requests.sharing.DecisionSource, app.change_requests.sharing.WriteProblem, app.change_requests.sharing.share_decision_reason, app.change_requests.sharing.write_problem
 # Phase-104-3:追記 ── app.change_requests.sharing.decision_source_label
 # Phase-112-3:追記 ── app.change_requests.conflicts.Conflict, app.change_requests.conflicts.RecordFact, app.change_requests.conflicts.base_seq, app.change_requests.conflicts.changed_after, app.change_requests.conflicts.checks_for, app.change_requests.conflicts.conflicts, app.change_requests.conflicts.is_checked, app.change_requests.conflicts.unchecked
+# Phase-113-2:追記 ── app.change_requests.freshness.AppliedAfter, app.change_requests.freshness.Freshness, app.change_requests.freshness.freshness, app.change_requests.scale.outdated_stages
 from app.change_requests.comments import (
     COMMENT_BODY_MAX,
     DEVELOPER_LABEL,
@@ -87,6 +88,7 @@ from app.change_requests.explanation import (
     explanation_filename,
     with_summary,
 )
+from app.change_requests.freshness import AppliedAfter, Freshness, freshness
 from app.change_requests.instruction import build_cr_instruction, join_instructions
 from app.change_requests.option_drafting import (
     OPTION_DRAFT_STATUS_LABEL,
@@ -152,6 +154,7 @@ from app.change_requests.scale import (
     compare_scale,
     count_scale,
     display_name,
+    outdated_stages,
     predicted_scale,
     sources_from_snapshots,
     unlinked_requirements,
@@ -399,6 +402,9 @@ __all__ = [
     # Phase-101-1:追記
     "SCALE_KINDS",
     "SCALE_KIND_LABEL",
+    # Phase-113-2:追記
+    "AppliedAfter",
+    "Freshness",
     "Scale",
     "ScaleComparisonRow",
     "ScaleCount",
@@ -415,12 +421,16 @@ __all__ = [
     "checks_for",
     "compare_scale",
     "count_scale",
+    # Phase-113-2:追記
+    "freshness",
     "display_name",
     "predicted_scale",
     "sources_from_snapshots",
     "unlinked_requirements",
     # Phase-101-2:追記
     "needs_reconfirm",
+    # Phase-113-2:追記
+    "outdated_stages",
     # Phase-102-1:追記
     "OPTIONS_MAX",
     "OPTIONS_MIN",
