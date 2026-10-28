@@ -1,4 +1,5 @@
-# 作成：Phase-114-2
+# 作成：Phase-114-2｜更新：Phase-115-2
+# Phase-115-2：更新(docstring: MaterialDifference の converted に change_request_id を足した)
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -49,9 +50,10 @@ class MaterialDifference(Base):
     kind: app/materials/differences.py の 'add' / 'change' / 'delete' / 'question'。
     target_key: 対象の合意の要素のキー(`req:FR-001`。追加は空)。origin_key: 追加の起点。
     status: 'unconfirmed'(未確認) / 'rejected'(検査で弾いた。`reasons`に理由) / 'converted'
-    (CR にした) / 'dismissed'(捨てた。`dismiss_reason`に理由)。やり直すと、未確認と弾いたは
-    置き換わり、CR にした・捨てたは残る。`baseline_number`は取り出したときに比べた束、`position`は
-    資料の中の並び(取り出した順。やり直しで足したものは後ろに続く)。
+    (CR にした。`change_request_id`にその CR) / 'dismissed'(捨てた。`dismiss_reason`に理由)。
+    やり直すと、未確認と弾いたは置き換わり、CR にした・捨てたは残る。`baseline_number`は
+    取り出したときに比べた束、`position`は資料の中の並び(取り出した順。やり直しで足したものは
+    後ろに続く)。
     """
 
     __tablename__ = "material_differences"
@@ -71,6 +73,10 @@ class MaterialDifference(Base):
     reasons: Mapped[list] = mapped_column(PortableJSON, nullable=False, default=list)
     dismiss_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     baseline_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Phase-115-2:追記
+    change_request_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("change_requests.id", ondelete="SET NULL"), nullable=True
+    )
     decided_by: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

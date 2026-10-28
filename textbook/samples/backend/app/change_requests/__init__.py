@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2,101-1,101-2,102-1,102-4,103-1,103-2,104-1,104-3,112-3,113-2
+# 作成：Phase-82-2｜更新：Phase-83-1,83-2,84-2,84-3,84-4,85-1,85-4,86-1,86-3,86-4,89(完了後の調整),93-3,95-1,95-3,96-1,96-2,101-1,101-2,102-1,102-4,103-1,103-2,104-1,104-3,112-3,113-2,115-3
 # Phase-112-3：更新(docstring: 重なる CR の競合を足した)
 # Phase-104-1：更新(docstring: コメント欄の規則を足した)
 # Phase-103-1：更新(docstring: 共有リンクの規則を足した)
@@ -48,6 +48,7 @@ docs/internal_design.md 3.3節「11. 合意と変更の一巡」。
 # Phase-104-3:追記 ── app.change_requests.sharing.decision_source_label
 # Phase-112-3:追記 ── app.change_requests.conflicts.Conflict, app.change_requests.conflicts.RecordFact, app.change_requests.conflicts.base_seq, app.change_requests.conflicts.changed_after, app.change_requests.conflicts.checks_for, app.change_requests.conflicts.conflicts, app.change_requests.conflicts.is_checked, app.change_requests.conflicts.unchecked
 # Phase-113-2:追記 ── app.change_requests.freshness.AppliedAfter, app.change_requests.freshness.Freshness, app.change_requests.freshness.freshness, app.change_requests.scale.outdated_stages
+# Phase-115-3:追記 ── app.change_requests.scale.STALE_NOTE_KINDS, app.change_requests.scale.ScaleState, app.change_requests.scale.with_baseline_changes, app.change_requests.states.UNDECIDED_STATUSES
 from app.change_requests.comments import (
     COMMENT_BODY_MAX,
     DEVELOPER_LABEL,
@@ -145,12 +146,14 @@ from app.change_requests.reviews import (
 from app.change_requests.scale import (
     SCALE_KIND_LABEL,
     SCALE_KINDS,
+    STALE_NOTE_KINDS,
     Scale,
     ScaleComparisonRow,
     ScaleCount,
     ScaleKind,
     ScaleRemark,
     ScaleSources,
+    ScaleState,
     compare_scale,
     count_scale,
     display_name,
@@ -158,6 +161,7 @@ from app.change_requests.scale import (
     predicted_scale,
     sources_from_snapshots,
     unlinked_requirements,
+    with_baseline_changes,
 )
 from app.change_requests.sharing import (
     DECISION_SOURCE_LABEL,
@@ -205,6 +209,7 @@ from app.change_requests.states import (
     STATUS_LABEL,
     STATUSES,
     TRANSITIONS,
+    UNDECIDED_STATUSES,
     BackgroundSource,
     ChangeRequestAction,
     ChangeRequestStatus,
@@ -402,6 +407,10 @@ __all__ = [
     # Phase-101-1:追記
     "SCALE_KINDS",
     "SCALE_KIND_LABEL",
+    # Phase-115-3:追記
+    "UNDECIDED_STATUSES",
+    # Phase-115-3:追記
+    "STALE_NOTE_KINDS",
     # Phase-113-2:追記
     "AppliedAfter",
     "Freshness",
@@ -411,6 +420,8 @@ __all__ = [
     "ScaleKind",
     "ScaleRemark",
     "ScaleSources",
+    # Phase-115-3:追記
+    "ScaleState",
     # Phase-112-3:追記
     "conflicts",
     "is_checked",
@@ -431,6 +442,8 @@ __all__ = [
     "needs_reconfirm",
     # Phase-113-2:追記
     "outdated_stages",
+    # Phase-115-3:追記
+    "with_baseline_changes",
     # Phase-102-1:追記
     "OPTIONS_MAX",
     "OPTIONS_MIN",

@@ -1,4 +1,4 @@
-# 作成：Phase-82-3｜更新：Phase-83-3,84-3,84-4,85-4,86-2,86-3,86-4,101-3,102-4,103-2,104-2,112-1,112-3
+# 作成：Phase-82-3｜更新：Phase-83-3,84-3,84-4,85-4,86-2,86-3,86-4,101-3,102-4,103-2,104-2,112-1,112-3,115-2,115-3
 # Phase-84-3:追記 ── fastapi.Response
 # Phase-85-4:追記 ── app.schemas.change_request.ChangeRequestComparisonRead
 # Phase-83-3:追記 ── app.schemas.change_request.ChangeRequestImpactRead, app.schemas.change_request.ExcludedItemRead
@@ -72,6 +72,8 @@ def _explanation(view: ExplanationView) -> ChangeRequestExplanationRead:
         output=view.output,
         summary=view.summary,
         summary_state=view.summary_state,
+        # Phase-115-3:追記
+        baseline_freshness=view.baseline_freshness,
     )
 
 
@@ -90,15 +92,17 @@ def _verification(view: VerificationView) -> ChangeRequestVerificationRead:
 
 
 def _read(view: ChangeRequestView) -> ChangeRequestRead:
-    return ChangeRequestRead.build(
-        view.change_request,
-        overlapping=view.overlapping,
-        derived_from_number=view.derived_from_number,
-        derived_numbers=view.derived_numbers,
-        allowed_actions=view.allowed_actions,
-        # Phase-112-3:追記
-        conflicts=view.conflicts,
-    )
+    # Phase-115-2：更新
+    # return ChangeRequestRead.build(
+    #     view.change_request,
+    #     overlapping=view.overlapping,
+    #     derived_from_number=view.derived_from_number,
+    #     derived_numbers=view.derived_numbers,
+    #     allowed_actions=view.allowed_actions,
+    #     conflicts=view.conflicts,
+    # )
+    # ↓↓
+    return ChangeRequestRead.from_view(view)
 
 
 @router.post("", response_model=ChangeRequestRead, status_code=status.HTTP_201_CREATED)

@@ -1,4 +1,4 @@
-# 作成：Phase-114-2
+# 作成：Phase-114-2｜更新：Phase-115-2
 """資料と最新の束の違いの取り出し・一覧・捨てる / 戻すのテスト。
 
 SUT: MaterialDifferenceService(extract / list_for / dismiss / restore)・
@@ -13,6 +13,7 @@ SUT: MaterialDifferenceService(extract / list_for / dismiss / restore)・
      (tests/fixtures/change_requests.py)で作り、DB はテスト用の SQLite
 """
 
+# Phase-115-2:追記 ── app.services.material_difference_service.DifferencesView
 import uuid
 from datetime import date
 
@@ -49,7 +50,7 @@ from app.services.errors import (
     MaterialDifferenceStateError,
     MaterialNotFoundError,
 )
-from app.services.material_difference_service import MaterialDifferenceService
+from app.services.material_difference_service import DifferencesView, MaterialDifferenceService
 from app.services.material_service import MaterialService
 
 _BODY = """# 第4回 定例
@@ -91,6 +92,11 @@ async def _material(session: AsyncSession, project: Project, body: str = _BODY) 
     return view.material.id
 
 
+# Phase-115-2:追記
+def _rows(view: DifferencesView) -> list[MaterialDifference]:
+    return [d.difference for d in view.differences]
+
+
 def _service(session: AsyncSession, *outs: DifferenceListOut) -> MaterialDifferenceService:
     return MaterialDifferenceService(session, llm=FakeLLM(structured_sequence=list(outs)))
 
@@ -104,15 +110,29 @@ async def test_extract_checks_differences_and_records_stale_baseline(
 
     view = await service.extract(project, material_id, user_id=project.user_id)
 
-    rows = [(d.kind, d.target_key, d.status, d.reasons) for d in view.differences]
+    # Phase-115-2：更新
+    # rows = [(d.kind, d.target_key, d.status, d.reasons) for d in view.differences]
+    # ↓↓
+    rows = [(d.kind, d.target_key, d.status, d.reasons) for d in _rows(view)]
     assert rows == [
         ("change", "req:FR-001", "unconfirmed", []),
         ("delete", "req:FR-002", "unconfirmed", []),
         ("question", "", "unconfirmed", []),
         ("change", "FR-009", "rejected", ["引用が資料に無い", "対象 FR-009 が束に無い"]),
     ]
-    assert [d.position for d in view.differences] == [1, 2, 3, 4]
-    assert {d.baseline_number for d in view.differences} == {1}
+    # Phase-115-2：更新
+    # assert [d.position for d in view.differences] == [1, 2, 3, 4]
+    # assert {d.baseline_number for d in view.differences} == {1}
+    # ↓↓
+    assert [d.position for d in _rows(view)] == [1, 2, 3, 4]
+    assert {d.baseline_number for d in _rows(view)} == {1}
+    # 変更・削除の対象につながる要件が候補になる(確かめる点・弾いたものは候補なし)
+    assert [d.requirement_candidates for d in view.differences] == [
+        ("FR-001",),
+        ("FR-002",),
+        (),
+        (),
+    ]
     # 束 B-1 の後に CR-1 を反映したので、比べた束は古い(止めずに記録する)
     assert view.extraction is not None
     assert view.extraction.baseline_number == 1
@@ -126,13 +146,19 @@ async def test_rerun_replaces_unconfirmed_and_keeps_dismissed(db_session: AsyncS
     material_id = await _material(db_session, project)
     service = _service(db_session, _out(_CHANGE, _DELETE, _INVENTED), _out(_CHANGE, _QUESTION))
     first = await service.extract(project, material_id, user_id=project.user_id)
-    change = first.differences[0]
+    # Phase-115-2：更新
+    # change = first.differences[0]
+    # ↓↓
+    change = first.differences[0].difference
     await service.dismiss(project, material_id, change.id, reason="同じ会で撤回", actor_id=None)
 
     second = await service.extract(project, material_id, user_id=project.user_id)
 
     # 捨てた変更は残り、同じ違いは足し直さない。未確認の削除と弾いたものは置き換わる
-    assert [(d.kind, d.status, d.position) for d in second.differences] == [
+    # Phase-115-2：更新
+    # assert [(d.kind, d.status, d.position) for d in second.differences] == [
+    # ↓↓
+    assert [(d.kind, d.status, d.position) for d in _rows(second)] == [
         ("change", "dismissed", 1),
         ("question", "unconfirmed", 2),
     ]
@@ -147,14 +173,27 @@ async def test_dismiss_and_restore_follow_states(db_session: AsyncSession) -> No
     material_id = await _material(db_session, project)
     service = _service(db_session, _out(_QUESTION, _INVENTED))
     view = await service.extract(project, material_id, user_id=project.user_id)
-    question, rejected = view.differences
+    # Phase-115-2：更新
+    # question, rejected = view.differences
+    # ↓↓
+    question, rejected = _rows(view)
 
-    closed = await service.dismiss(
-        project, material_id, question.id, reason="次回の定例で確かめる", actor_id=project.user_id
-    )
+    # Phase-115-2：更新
+    # closed = await service.dismiss(
+    #     project, material_id, question.id, reason="次回の定例で確かめる", actor_id=project.user_id
+    # )
+    # ↓↓
+    reason = "次回の定例で確かめる"
+    actor = project.user_id
+    closed = (
+        await service.dismiss(project, material_id, question.id, reason=reason, actor_id=actor)
+    ).difference
     assert (closed.status, closed.dismiss_reason, closed.decided_by) == (
         "dismissed",
-        "次回の定例で確かめる",
+        # Phase-115-2：更新
+        # "次回の定例で確かめる",
+        # ↓↓
+        reason,
         project.user_id,
     )
     with pytest.raises(MaterialDifferenceStateError):
@@ -164,7 +203,10 @@ async def test_dismiss_and_restore_follow_states(db_session: AsyncSession) -> No
     with pytest.raises(MaterialDifferenceStateError):
         await service.restore(project, material_id, rejected.id)
 
-    restored = await service.restore(project, material_id, question.id)
+    # Phase-115-2：更新
+    # restored = await service.restore(project, material_id, question.id)
+    # ↓↓
+    restored = (await service.restore(project, material_id, question.id)).difference
     assert (restored.status, restored.dismiss_reason, restored.decided_at) == (
         "unconfirmed",
         None,

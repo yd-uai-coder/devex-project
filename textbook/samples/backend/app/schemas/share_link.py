@@ -1,4 +1,5 @@
-# 作成：Phase-103-2｜更新：Phase-103-3,104-2,104-3
+# 作成：Phase-103-2｜更新：Phase-103-3,104-2,104-3,115-3
+# Phase-115-3：更新(docstring: ShareLinkCreatedRead に baseline_freshness を足した)
 # Phase-104-2：更新(docstring: モジュールと SharedChangeRequestRead にコメント欄を足した)
 """CR の共有リンクのスキーマ(開発者の作成・一覧・延長と、ログインの要らない閲覧の応答・コメント、
 開発者のコメント欄の一覧・返信)。
@@ -11,6 +12,7 @@ docs/external_design.md 2.16節「共有リンク」。公開の閲覧の応答�
 # Phase-103-3:追記 ── typing.Literal, app.change_requests.STATUS_LABEL, app.change_requests.SectionChange, app.change_requests.option_label, app.change_requests.options_from_json, app.services.share_link_service.SharedView
 # Phase-104-2:追記 ── typing.Annotated, pydantic.StringConstraints, app.change_requests.COMMENT_BODY_MAX, app.change_requests.DEVELOPER_LABEL, app.change_requests.CommentFacts, app.change_requests.CommentThread, app.schemas.agreement.COUNTERPART_MAX
 # Phase-104-3:追記 ── app.change_requests.decision_source_label, app.schemas.agreement.REASON_MAX
+# Phase-115-3:追記 ── app.schemas.baseline.BaselineFreshnessRead
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Annotated, Any, Literal
@@ -34,6 +36,7 @@ from app.change_requests import (
     options_from_json,
 )
 from app.schemas.agreement import COUNTERPART_MAX, REASON_MAX
+from app.schemas.baseline import BaselineFreshnessRead
 
 if TYPE_CHECKING:
     from app.models.change_request_share_link import ChangeRequestShareLink
@@ -88,11 +91,14 @@ class ShareLinkRead(BaseModel):
 
 class ShareLinkCreatedRead(ShareLinkRead):
     """作った共有リンク。`token`と`path`(クライアントの画面のパス)はこの応答でだけ返す。
-    `summary_needs_reconfirm`は、確認済みの要約がその後の説明書の変化で古くなっているか。"""
+    `summary_needs_reconfirm`は、確認済みの要約がその後の説明書の変化で古くなっているか。
+    `baseline_freshness`は説明書の規模を数えた基準の束の鮮度(古ければ知らせる)。"""
 
     token: str
     path: str
     summary_needs_reconfirm: bool
+    # Phase-115-3:追記
+    baseline_freshness: BaselineFreshnessRead | None = None
 
     @classmethod
     def from_created(cls, created: "CreatedShareLink") -> "ShareLinkCreatedRead":
@@ -104,6 +110,12 @@ class ShareLinkCreatedRead(ShareLinkRead):
             token=created.token,
             path=f"{SHARE_PATH_PREFIX}{created.token}",
             summary_needs_reconfirm=created.summary_needs_reconfirm,
+            # Phase-115-3:追記
+            baseline_freshness=(
+                None
+                if created.baseline_freshness is None
+                else BaselineFreshnessRead.of(created.baseline_freshness)
+            ),
         )
 
 

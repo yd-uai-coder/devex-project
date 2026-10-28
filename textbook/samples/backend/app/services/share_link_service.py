@@ -1,9 +1,11 @@
-# 作成：Phase-103-2｜更新：Phase-103-3,104-2,104-3
+# 作成：Phase-103-2｜更新：Phase-103-3,104-2,104-3,115-3
+# Phase-115-3：更新(docstring: CreatedShareLink に baseline_freshness を足した)
 # Phase-104-3：更新(docstring: ShareLinkService に共有リンクの合意 / 却下を足した)
 # Phase-104-2：更新(docstring: SharedView にコメント欄、ShareLinkService にコメントと返信を足した)
 # Phase-103-3:追記 ── app.change_requests.READABLE_STATES, app.change_requests.SectionChange, app.change_requests.explained_snapshots, app.change_requests.explanation_changes, app.change_requests.previous_snapshot, app.repositories.project.ProjectRepository, app.services.errors.ShareLinkExpiredError, app.services.errors.ShareLinkRevokedError
 # Phase-104-2:追記 ── app.change_requests.CommentFacts, app.change_requests.CommentThread, app.change_requests.can_reply, app.change_requests.comment_threads, app.change_requests.write_problem, app.models.change_request_comment.ChangeRequestComment, app.repositories.change_request_comment.ChangeRequestCommentRepository, app.schemas.share_link.ChangeRequestReplyCreate, app.schemas.share_link.SharedCommentCreate, app.services.errors.ChangeRequestCommentNotFoundError, app.services.errors.ChangeRequestCommentNotRepliableError, app.services.errors.ShareExplanationChangedError, app.services.errors.ShareLinkNotWritableError
 # Phase-104-3:追記 ── app.change_requests.share_decision_reason, app.schemas.change_request.ChangeRequestDecision, app.schemas.share_link.SharedDecisionCreate, app.services.errors.ShareDecisionReasonRequiredError
+# Phase-115-3:追記 ── app.change_requests.Freshness
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -15,6 +17,7 @@ from app.change_requests import (
     READABLE_STATES,
     CommentFacts,
     CommentThread,
+    Freshness,
     SectionChange,
     ShareState,
     aware,
@@ -82,11 +85,14 @@ class ShareLinkView:
 @dataclass(frozen=True)
 class CreatedShareLink:
     """作った共有リンクと、1度だけ返すトークン。`summary_needs_reconfirm`は、確認済みの要約が
-    その後の説明書の変化で古くなっているか(共有の前に確かめ直すよう知らせる。作成は止めない)。"""
+    その後の説明書の変化で古くなっているか(共有の前に確かめ直すよう知らせる。作成は止めない)。
+    `baseline_freshness`は説明書の規模を数えた基準の束の鮮度(古ければ知らせる。作成は止めない)。"""
 
     view: ShareLinkView
     token: str
     summary_needs_reconfirm: bool
+    # Phase-115-3:追記
+    baseline_freshness: Freshness | None = None
 
 
 # Phase-103-3:追記
@@ -172,6 +178,8 @@ class ShareLinkService:
             view=self._view(link, change_request),
             token=token,
             summary_needs_reconfirm=explanation.summary_needs_reconfirm,
+            # Phase-115-3:追記
+            baseline_freshness=explanation.baseline_freshness,
         )
 
     async def list_for(self, project: Project, number: int) -> list[ShareLinkView]:

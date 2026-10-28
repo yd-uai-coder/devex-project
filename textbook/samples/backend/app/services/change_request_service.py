@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3,102-2,102-4,103-2,104-3,106-5,112-1,112-3,113-2
+# 作成：Phase-82-2｜更新：Phase-83-1,83-3,84-1,84-3,84-4,85-2,85-3,85-4,86-2,86-3,86-4,87-1,88-1,88(完了後の調整),89(完了後の調整),91-4,95-3,96-1,96-3,101-3,102-2,102-4,103-2,104-3,106-5,112-1,112-3,113-2,115-2,115-3
 # Phase-112-1：更新(docstring: record_document_apply が要素の前 → 後を残すことを足した)
 # Phase-106-5：更新(docstring: checked_origins の候補に段階1 の処理を足した)
 # Phase-102-2：更新(docstring: update が案を確かめ直す・decide が選んだ案の対象を CR の対象にする・copy_rejected が案も写す)
@@ -34,6 +34,7 @@
 # Phase-112-3:追記 ── dataclasses.field, app.change_requests.Conflict, app.change_requests.RecordFact, app.change_requests.checks_for, app.change_requests.conflicts, app.change_requests.is_checked, app.change_requests.unchecked, app.repositories.agreement.AgreementRepository, app.services.errors.ChangeRequestConflictUncheckedError
 # Phase-113-2:追記 ── app.services.agreement_service.AgreementService, app.services.baseline_service.baseline_stage_states
 # Phase-113-2：削除 ── app.change_requests.RecordFact, app.change_requests.prediction.STAGE_PREFIX, app.repositories.agreement.AgreementRepository
+# Phase-115-3:追記 ── app.change_requests.UNDECIDED_STATUSES, app.change_requests.Freshness
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -64,6 +65,7 @@ from app.change_requests import (
     DOCUMENT_REFLECTABLE_STATUSES,
     INITIAL_STATUS,
     STAGE_REFLECTABLE_STATUSES,
+    UNDECIDED_STATUSES,
     ChangeOptions,
     ChangeRequestAction,
     ChangeRequestFacts,
@@ -74,6 +76,7 @@ from app.change_requests import (
     DecisionSource,
     EventFacts,
     Explanation,
+    Freshness,
     OptionDraftCheck,
     OptionDraftOut,
     Overlap,
@@ -210,6 +213,9 @@ class ChangeRequestView:
     # Phase-112-3:追記
     # 基準の束の後に、ほかの CR の反映で変わった対象の要件(確かめの印つき)
     conflicts: list[tuple[Conflict, bool]] = dataclass_field(default_factory=list)
+    # Phase-115-3:追記
+    # 基準の束の鮮度(CR 自身の反映は除く。古ければ知らせる。止めはしない)
+    baseline_freshness: Freshness | None = None
 
 
 # Phase-85-2:追記
@@ -310,6 +316,9 @@ class ExplanationView:
     explanation: Explanation
     # Phase-84-4:追記
     summary: ChangeRequestSummary | None
+    # Phase-115-3:追記
+    # 規模を数えた基準の束の鮮度(CR 自身の反映は除く)
+    baseline_freshness: Freshness | None = None
 
     # Phase-84-4:追記
     @property
@@ -370,6 +379,21 @@ class ChangeRequestService:
     ) -> ChangeRequestView:
         """CR を下書きで作る。基準の束は番号の束(省けば最新の束)。束が1つも無ければ
         ChangeRequestBaselineMissingError、番号の束が無ければ BaselineNotFoundError。"""
+        # Phase-115-2:追記
+        change_request = await self.add_draft(project, payload, created_by=created_by)
+        await self._session.commit()
+        logger.info(
+            "change_request_created", project_id=str(project.id), number=change_request.number
+        )
+        return await self._view(change_request)
+
+    # Phase-115-2:追記(create の確かめと作成を、commit しない add_draft に分けた。資料の違いから
+    # CR を作るとき、違いを CR に結ぶのと同じトランザクションにするため)
+    async def add_draft(
+        self, project: Project, payload: ChangeRequestCreate, *, created_by: uuid.UUID | None
+    ) -> ChangeRequest:
+        """CR を下書きで足す(確かめは create と同じ)。commit はしない(資料の違いから作るとき、
+        違いを CR に結ぶのと同じトランザクションにするため)。"""
         # Phase-88(完了後の調整)：更新(読み出しと共通の require_detailed へ)
         # if project.mode != "detailed":
         #     raise DesignStagesNotAvailableError(
@@ -420,11 +444,14 @@ class ChangeRequestService:
             action="create",
             created_by=created_by,
         )
-        await self._session.commit()
-        logger.info(
-            "change_request_created", project_id=str(project.id), number=change_request.number
-        )
-        return await self._view(change_request)
+        # Phase-115-2：更新
+        # await self._session.commit()
+        # logger.info(
+        #     "change_request_created", project_id=str(project.id), number=change_request.number
+        # )
+        # return await self._view(change_request)
+        # ↓↓
+        return change_request
 
     async def list_for_project(self, project: Project) -> list[ChangeRequest]:
         # Phase-88(完了後の調整)：更新
@@ -1281,10 +1308,19 @@ class ChangeRequestService:
         return view, verification, marked
 
     async def _explanation_view(self, change_request: ChangeRequest) -> ExplanationView:
+        # Phase-115-3:追記
+        freshness = await self._baseline_freshness(
+            change_request, await self._baseline_with_items(change_request)
+        )
         return ExplanationView(
             change_request=change_request,
-            explanation=await self._explanation(change_request),
+            # Phase-115-3：更新
+            # explanation=await self._explanation(change_request),
+            # ↓↓
+            explanation=await self._explanation(change_request, freshness),
             summary=await self._summaries.get_for(change_request.id),
+            # Phase-115-3:追記
+            baseline_freshness=freshness,
         )
 
     async def _require_summary(self, change_request: ChangeRequest) -> ChangeRequestSummary:
@@ -1321,8 +1357,21 @@ class ChangeRequestService:
         return await LlmResolver(self._session).resolve(user_id, Purpose.GENERATION)
 
     # Phase-84-3:追記
-    async def _explanation(self, change_request: ChangeRequest) -> Explanation:
+    # Phase-115-3：更新
+    # async def _explanation(self, change_request: ChangeRequest) -> Explanation:
+    # ↓↓
+    async def _explanation(
+        self, change_request: ChangeRequest, freshness: Freshness | None = None
+    ) -> Explanation:
+        """説明書。合意の前は、基準の束の後に反映したほかの CR を規模の注記に出す(`freshness`を
+        省けば求める)。判断の後は判断の時点の予測から組むので、注記を足さない。"""
         baseline, view = await self._impact_with_baseline(change_request)
+        # Phase-115-3:追記
+        changed_after: list[int] = []
+        if change_request.status in UNDECIDED_STATUSES:
+            if freshness is None:
+                freshness = await self._baseline_freshness(change_request, baseline)
+            changed_after = [a.number for a in freshness.applied_after]
         return build_explanation(
             facts_of(change_request, baseline.number),
             view.prediction,
@@ -1330,7 +1379,19 @@ class ChangeRequestService:
             [(e.key, e.state) for e in view.excluded],
             # Phase-101-3:追記
             view.stage_states,
+            # Phase-115-3:追記
+            changed_after,
         )
+
+    # Phase-115-3:追記
+    async def _baseline_freshness(
+        self, change_request: ChangeRequest, baseline: Baseline
+    ) -> Freshness:
+        """CR の基準の束の鮮度(束の後に反映した CR から、この CR 自身を除く)。"""
+        found = await BaselineService(self._session).freshness_in(
+            change_request.project_id, [baseline]
+        )
+        return found[baseline.id].excluding(change_request.number)
 
     async def _impact_with_baseline(
         self, change_request: ChangeRequest
@@ -1438,6 +1499,10 @@ class ChangeRequestService:
             allowed_actions=allowed_actions(status),
             # Phase-112-3:追記
             conflicts=[(c, is_checked(c, checks)) for c in await self._conflicts(change_request)],
+            # Phase-115-3:追記
+            baseline_freshness=await self._baseline_freshness(
+                change_request, await self._baseline_with_items(change_request)
+            ),
         )
 
     # Phase-112-3:追記

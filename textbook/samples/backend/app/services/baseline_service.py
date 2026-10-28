@@ -1,4 +1,4 @@
-# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整),91-3,91-4,96-3,106-5,113-2
+# 作成：Phase-81-3｜更新：Phase-86-4,87-1,88(完了後の調整),91-3,91-4,96-3,106-5,113-2,115-3
 # Phase-106-5：更新(docstring: origins の候補に処理を足した)
 # Phase-91-3：更新(docstring: BaselineService が束の要素を合意の記録にも残すことを足した)
 # Phase-86-4：更新(docstring: BaselineService・create に束に CR を結ぶことを足した)
@@ -212,10 +212,21 @@ class BaselineService:
         self, project: Project, baselines: list[Baseline]
     ) -> dict[uuid.UUID, Freshness]:
         """束の id → 鮮度(束の一覧・中身の応答に出す。合意の記録と束の番号は1回だけ読む)。"""
+        # Phase-115-3:追記
+        return await self.freshness_in(project.id, baselines)
+
+    async def freshness_in(
+        self, project_id: uuid.UUID, baselines: list[Baseline]
+    ) -> dict[uuid.UUID, Freshness]:
+        """freshness_of と同じ(プロジェクトを id で渡す。CR の基準の束の鮮度に使う)。"""
         if not baselines:
             return {}
-        records = await AgreementService(self._session).record_facts(project.id)
-        numbers = await self._baselines.numbers(project.id)
+        # Phase-115-3：更新
+        # records = await AgreementService(self._session).record_facts(project.id)
+        # numbers = await self._baselines.numbers(project.id)
+        # ↓↓
+        records = await AgreementService(self._session).record_facts(project_id)
+        numbers = await self._baselines.numbers(project_id)
         return {
             b.id: freshness(
                 records,

@@ -1,5 +1,6 @@
-# 作成：Phase-113-1｜更新：Phase-114-2
+# 作成：Phase-113-1｜更新：Phase-114-2,115-2
 # Phase-114-2:追記 ── app.schemas.material_difference.MaterialDifferenceRead, app.schemas.material_difference.MaterialDifferencesRead, app.schemas.material_difference.MaterialDifferenceUpdate, app.schemas.material_difference.MaterialExtractionRead, app.services.material_difference_service.DifferencesView, app.services.material_difference_service.MaterialDifferenceService
+# Phase-115-2:追記 ── app.schemas.change_request.ChangeRequestRead, app.schemas.material_difference.MaterialChangeRequestCreate, app.services.material_difference_service.DifferenceView
 import uuid
 from datetime import date
 from typing import Annotated
@@ -7,6 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, File, Form, UploadFile, status
 
 from app.api.deps import CurrentProjectDep, CurrentUserDep, SessionDep
+from app.schemas.change_request import ChangeRequestRead
 from app.schemas.material import (
     MaterialCreate,
     MaterialKind,
@@ -16,12 +18,17 @@ from app.schemas.material import (
     MaterialTitle,
 )
 from app.schemas.material_difference import (
+    MaterialChangeRequestCreate,
     MaterialDifferenceRead,
     MaterialDifferencesRead,
     MaterialDifferenceUpdate,
     MaterialExtractionRead,
 )
-from app.services.material_difference_service import DifferencesView, MaterialDifferenceService
+from app.services.material_difference_service import (
+    DifferencesView,
+    DifferenceView,
+    MaterialDifferenceService,
+)
 from app.services.material_service import MaterialService, MaterialView
 
 # 束・CR と同じく、プロジェクト配下の独立したサブツリーとしてprefixにproject_idを含める
@@ -47,7 +54,18 @@ def _differences(view: DifferencesView) -> MaterialDifferencesRead:
             None if extraction is None else MaterialExtractionRead.model_validate(extraction)
         ),
         latest_baseline_number=view.latest_baseline_number,
-        differences=[MaterialDifferenceRead.model_validate(d) for d in view.differences],
+        # Phase-115-2：更新
+        # differences=[MaterialDifferenceRead.model_validate(d) for d in view.differences],
+        # ↓↓
+        differences=[_difference(d) for d in view.differences],
+    )
+
+
+def _difference(view: DifferenceView) -> MaterialDifferenceRead:
+    return MaterialDifferenceRead.build(
+        view.difference,
+        requirement_candidates=view.requirement_candidates,
+        change_request_number=view.change_request_number,
     )
 
 
@@ -166,7 +184,10 @@ async def update_material_difference(
     service = MaterialDifferenceService(session)
     if payload.action == "dismiss":
         assert payload.reason is not None  # スキーマで確かめた
-        difference = await service.dismiss(
+        # Phase-115-2：更新
+        # difference = await service.dismiss(
+        # ↓↓
+        view = await service.dismiss(
             current_project,
             material_id,
             difference_id,
@@ -174,5 +195,34 @@ async def update_material_difference(
             actor_id=current_user.id,
         )
     else:
-        difference = await service.restore(current_project, material_id, difference_id)
-    return MaterialDifferenceRead.model_validate(difference)
+        # Phase-115-2：更新
+        # difference = await service.restore(current_project, material_id, difference_id)
+        # return MaterialDifferenceRead.model_validate(difference)
+        # ↓↓
+        view = await service.restore(current_project, material_id, difference_id)
+    return _difference(view)
+
+
+@router.post(
+    "/{material_id}/change-requests",
+    response_model=ChangeRequestRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_change_request_from_differences(
+    material_id: uuid.UUID,
+    payload: MaterialChangeRequestCreate,
+    session: SessionDep,
+    current_project: CurrentProjectDep,
+    current_user: CurrentUserDep,
+) -> ChangeRequestRead:
+    """選んだ違い(未確認の追加・変更・削除)から CR の下書きを作り、違いを CR に結ぶ。基準の束は
+    最新の束。CR にできない状態・種類と、違いを取り出した後に束を作り直したときは409、組み立て
+    られない(選んだ要件が違いにつながらない等)ときは422、資料・違いが無ければ404。"""
+    view = await MaterialDifferenceService(session).create_change_request(
+        current_project,
+        material_id,
+        payload.difference_ids,
+        requirement_ids=payload.requirement_ids,
+        created_by=current_user.id,
+    )
+    return ChangeRequestRead.from_view(view)

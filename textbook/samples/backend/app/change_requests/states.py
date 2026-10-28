@@ -1,4 +1,4 @@
-# 作成：Phase-82-2｜更新：Phase-83-1,85-1,86-1,96-1,103-2,104-2,112-3
+# 作成：Phase-82-2｜更新：Phase-83-1,85-1,86-1,96-1,103-2,104-2,112-3,115-3
 # Phase-112-3：更新(docstring: 記録だけの行に check_conflict を足した)
 # Phase-104-2：更新(docstring: 記録だけの行に comment・reply_comment を足した)
 # Phase-103-2：更新(docstring: 記録だけの行に share・unshare・extend_share を足した)
@@ -99,6 +99,9 @@ COPYABLE_STATUSES: frozenset[ChangeRequestStatus] = frozenset({"rejected"})
 ACTIVE_STATUSES: frozenset[ChangeRequestStatus] = frozenset(
     {"draft", "explained", "agreed", "applied"}
 )
+# Phase-115-3:追記
+# 合意の前(判断していない)。説明書の規模に、束の後に反映したほかの CR の注記を出す状態
+UNDECIDED_STATUSES: frozenset[ChangeRequestStatus] = frozenset({"draft", "explained"})
 # Phase-85-1:追記
 # 再生成に渡せる状態(文書は合意・反映済み、段階は文書へ反映した後の反映済みだけ)
 DOCUMENT_REFLECTABLE_STATUSES: frozenset[ChangeRequestStatus] = frozenset({"agreed", "applied"})

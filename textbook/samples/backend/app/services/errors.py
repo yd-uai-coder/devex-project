@@ -1,4 +1,5 @@
-# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4,94-3,95-2,99(完了後の調整),102-2,102-4,103-2,104-2,104-3,112-3,113-1,114-2
+# 更新：Phase-2-2,2-3,2-5,6-3,8-2,9-2,9-3,9-5,10-5,12-1,12-4,15-2,15-3,16-3,16-4,24(完了後の調整),24(ゴール3後の調整),28-1,29-4,30-5,30-7,35-2,35(完了後の調整),36-2,43-3,52-2,53-1,53(完了後の調整),54-2,54-4,56-2,66-2,67-1,68-2,74-2,74-3,75-1,79-1,81-3,82-2,84-4,85-2,85-4,86-2,86-3,86-4,94-3,95-2,99(完了後の調整),102-2,102-4,103-2,104-2,104-3,112-3,113-1,114-2,115-2
+# Phase-115-2：更新(docstring: MaterialDifferenceStateError に CR にできる状態を足した)
 # Phase-2-3:追記 ── app.core.errors.BadRequestError
 # Phase-2-5:追記 ── typing.ClassVar
 # Phase-52-2:追記 ── app.core.errors.ForbiddenError
@@ -847,6 +848,21 @@ class MaterialDifferenceNotFoundError(NotFoundError):
 
 class MaterialDifferenceStateError(ConflictError):
     """違いの今の状態では、その操作ができない場合に送出する(捨てられるのは未確認だけ、戻せるのは
-    捨てたものだけ)。"""
+    捨てたものだけ。CR にできるのは未確認の追加・変更・削除だけ)。"""
 
     code: ClassVar[str | None] = "MATERIAL_DIFFERENCE_STATE"
+
+
+# Phase-115-2:追記
+class MaterialDifferenceOutdatedError(ConflictError):
+    """違いを取り出した後に束を作り直していて(違いの束が最新の束でない)、違いから CR を作れない
+    場合に送出する(対象のキーが今の束にあるとは限らないため、取り出し直してもらう)。"""
+
+    code: ClassVar[str | None] = "MATERIAL_DIFFERENCE_OUTDATED"
+
+
+class MaterialDraftInvalidError(UnprocessableEntityError):
+    """選んだ違いと要件から CR の下書きを組み立てられない場合に送出する(選んだ要件が違いの対象に
+    つながらない・同じ要件が内容の変更と削除の両方になる)。"""
+
+    code: ClassVar[str | None] = "MATERIAL_DRAFT_INVALID"
