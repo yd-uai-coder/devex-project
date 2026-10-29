@@ -1,0 +1,126 @@
+{
+  "materials": "materials-b",
+  "run": 2,
+  "results": [
+    {
+      "file": "minutes.md",
+      "title": "定例打ち合わせ 議事録(セット B)",
+      "baseline_number": 7,
+      "model": "gemini-3.5-flash-lite",
+      "fresh": false,
+      "usage": {
+        "gemini-3.5-flash-lite": {
+          "input_tokens": 1879,
+          "output_tokens": 428,
+          "total_tokens": 2307,
+          "input_token_details": {
+            "cache_read": 0
+          }
+        }
+      },
+      "differences": [
+        {
+          "id": "22a0728d-5e2a-45d0-85e6-a87792c1d0b1",
+          "kind": "add",
+          "target_key": "",
+          "origin_key": "screen:SCR-001",
+          "content": "トップページの各順位の横に背景解説を1行に縮めた要約を表示する要望が追加された。",
+          "quote": "トップページの各順位の横に、背景解説を1行に縮めた要約を出してほしい。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        },
+        {
+          "id": "89abe637-ccd6-4b7d-b605-950d9ee7c175",
+          "kind": "change",
+          "target_key": "screen:SCR-001",
+          "origin_key": "",
+          "content": "トレンド名を押した際に背景解説ページを開くのではなく、Xの検索結果を新しいタブで開き、背景解説ページへは要約の横の「詳しく」から入るように変更する。",
+          "quote": "トレンド名を押したときは、今の背景解説のページではなく X の検索結果を新しいタブで開く形に変えたい。背景解説のページへは、要約の横の「詳しく」から入る。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": [
+            "FR-003"
+          ]
+        },
+        {
+          "id": "5bf6d37c-b37c-4eed-b6c0-22f2bc516521",
+          "kind": "question",
+          "target_key": "",
+          "origin_key": "",
+          "content": "マーケティング担当からのメール通知の要望について、企画が不要としているため、結論が次回に持ち越しとなっている。",
+          "quote": "マーケティング担当は、取得の結果をメールで受け取りたいと発言。企画は不要との意見で、結論は次回に持ち越し。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        },
+        {
+          "id": "790c1839-7d87-4468-a6d1-7226bbf2295b",
+          "kind": "add",
+          "target_key": "",
+          "origin_key": "users",
+          "content": "画面を日本語に加えて英語でも切り替えボタンで閲覧できるようにする要望が追加された。",
+          "quote": "画面は日本語に加えて英語でも見られるようにしたい(切り替えのボタンで)。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        }
+      ],
+      "draft": {
+        "differences": 3,
+        "ok": true,
+        "title": "「定例打ち合わせ 議事録(セット B)」の変更(3件)",
+        "targets": [
+          {
+            "requirement_id": "FR-003",
+            "kind": "content",
+            "proposed_text": ""
+          }
+        ],
+        "origins": [
+          {
+            "key": "screen:SCR-001",
+            "label": "SCR-001 トップページ"
+          }
+        ],
+        "adds_requirement": true,
+        "background_source": "meeting",
+        "background_memo": "資料「定例打ち合わせ 議事録(セット B)」(2026-11-16)の違い3件から作った下書き",
+        "content": "資料から取り込んだ違い:\n\n- 追加 新規(起点 screen:SCR-001): トップページの各順位の横に背景解説を1行に縮めた要約を表示する要望が追加された。\n  - 根拠: 「トップページの各順位の横に、背景解説を1行に縮めた要約を出してほしい。」\n- 変更 screen:SCR-001: トレンド名を押した際に背景解説ページを開くのではなく、Xの検索結果を新しいタブで開き、背景解説ページへは要約の横の「詳しく」から入るように変更する。\n  - 根拠: 「トレンド名を押したときは、今の背景解説のページではなく X の検索結果を新しいタブで開く形に変えたい。背景解説のページへは、要約の横の「詳しく」から入る。」\n- 追加 新規(起点 users): 画面を日本語に加えて英語でも切り替えボタンで閲覧できるようにする要望が追加された。\n  - 根拠: 「画面は日本語に加えて英語でも見られるようにしたい(切り替えのボタンで)。」"
+      }
+    },
+    {
+      "file": "email.md",
+      "title": "外部向けの API について(セット B)",
+      "baseline_number": 7,
+      "model": "gemini-3.5-flash-lite",
+      "fresh": false,
+      "usage": {
+        "gemini-3.5-flash-lite": {
+          "input_tokens": 1646,
+          "output_tokens": 139,
+          "total_tokens": 1785,
+          "input_token_details": {
+            "cache_read": 0
+          }
+        }
+      },
+      "differences": [
+        {
+          "id": "f210cf4b-ec3c-4477-9b31-251dc5cb016f",
+          "kind": "question",
+          "target_key": "api:GET /api/v1/trends",
+          "origin_key": "",
+          "content": "外部向けAPIの利用について、実装するかどうか社内で意見が分かれているため次回の打ち合わせで確定させる必要がある。",
+          "quote": "なお、企画の担当者からは「外部向けの API は当面いらないのでは」という話も聞いています。社内で意見がそろっていないため、どちらで進めるかは次回の打ち合わせで確定させたいと思います。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        }
+      ],
+      "draft": {
+        "differences": 0
+      }
+    }
+  ]
+}

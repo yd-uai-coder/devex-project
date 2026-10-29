@@ -1,4 +1,5 @@
-# 作成：Phase-114-1
+# 作成：Phase-114-1｜更新：Phase-117-1
+# Phase-117-1：更新(DIFFERENCE_SYSTEM_PROMPT: 詳細〈数値・上限・条件〉を決めるものを change に、未決の話と同じ資料の決まったことを別の件に)
 """資料と合意済みの内容(最新の束)の違いの取り出し(入力・構造化出力の形・検査・やり直し。純粋関数)。
 
 docs/external_design.md 2.17節「違いの一覧」。LLM(生成の用途)に、束の合意の要素の一覧(キー |
@@ -68,6 +69,8 @@ DIFFERENCE_SYSTEM_PROMPT = """\
 - 種類: add=新しく足すもの(合意済みの内容に無い) / change=合意済みの要素の中身を変えるもの /
   delete=合意済みの要素をやめるもの / question=未決・資料どうしの食い違いで、確かめる必要がある
   もの。
+- 合意済みの要素に、合意済みの内容に無い数値・上限・条件などの詳細を決めるもの(例: 「制限する」
+  だけの要素に回数を決める)は、言い換えでなく change にする。
 - target_key: change と delete は、変わる合意済みの要素のキーを一覧の「キー」から1つ、そのまま
   書く。add は空にする。question は関わる要素があればそのキー、無ければ空。
 - origin_key: add のとき、新しいものがつながる合意済みの要素のキーを一覧から1つ(無ければ空)。
@@ -78,7 +81,8 @@ DIFFERENCE_SYSTEM_PROMPT = """\
 - 次のものは挙げない: 合意済みの内容と同じことの言い換え・確認、撤回された提案(同じ資料の中で
   元に戻ったもの)、既に済んだこと、日程などの要件でない話、合意済みの内容どうしの食い違い
   (資料と関係ないもの)。
-- 結論が出ていない話は、add / change / delete と断定せず question にする。
+- 結論が出ていない話は、add / change / delete と断定せず question にする。同じ資料に結論の
+  出ていない話があっても、決まったこと(依頼・指示)は別の件として挙げる。
 - 1つの違いは1件にまとめる。違いが無ければ空の一覧を返す。
 """
 
@@ -167,15 +171,24 @@ def build_difference_messages(listing: AgreedListing, material: MaterialFacts) -
     return [SystemMessage(content=DIFFERENCE_SYSTEM_PROMPT), HumanMessage(content=human)]
 
 
-# 引用の照合で除く文字: 空白・改行と、md の記号(強調・コード・取り消し線・見出し・引用)
-_IGNORED = re.compile(r"[\s*_~`#>]+")
+# Phase-117-1：更新
+# # 引用の照合で除く文字: 空白・改行と、md の記号(強調・コード・取り消し線・見出し・引用)
+# _IGNORED = re.compile(r"[\s*_~`#>]+")
+# ↓↓
+# 引用の照合で除く文字: 空白・改行と、md の記号(強調・コード・取り消し線・見出し・引用)。LLM が
+# 改行を「\n」の2文字で書いた引用もあるので、文字どおりの「\n」「\r」「\t」も改行とみなして除く
+_IGNORED = re.compile(r"(?:\\[nrt]|[\s*_~`#>])+")
 # 引用の前後に LLM が付けがちな括弧
 _QUOTE_MARKS = "「」『』\"'“”"
 _ELLIPSIS = re.compile(r"…|‥|\.\.\.")
 
 
 def normalize_quote(text: str) -> str:
-    """引用と本文を照合する正規形(NFKC で全角・半角をそろえ、空白・改行と md の記号を除く)。"""
+    # Phase-117-1：更新
+    # """引用と本文を照合する正規形(NFKC で全角・半角をそろえ、空白・改行と md の記号を除く)。"""
+    # ↓↓
+    """引用と本文を照合する正規形(NFKC で全角・半角をそろえ、空白・改行〈文字どおりの「\\n」も〉と
+    md の記号を除く)。"""
     return _IGNORED.sub("", unicodedata.normalize("NFKC", text))
 
 

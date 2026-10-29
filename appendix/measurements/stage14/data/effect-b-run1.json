@@ -1,0 +1,126 @@
+{
+  "materials": "materials-b",
+  "run": 1,
+  "results": [
+    {
+      "file": "minutes.md",
+      "title": "定例打ち合わせ 議事録(セット B)",
+      "baseline_number": 7,
+      "model": "gemini-3.5-flash-lite",
+      "fresh": false,
+      "usage": {
+        "gemini-3.5-flash-lite": {
+          "input_tokens": 1879,
+          "output_tokens": 421,
+          "total_tokens": 2300,
+          "input_token_details": {
+            "cache_read": 0
+          }
+        }
+      },
+      "differences": [
+        {
+          "id": "5a134ef9-3f6c-4cf8-873c-23c2aed8f01b",
+          "kind": "add",
+          "target_key": "",
+          "origin_key": "screen:SCR-001",
+          "content": "トップページの各順位の横に、背景解説を1行に縮めた要約を追加する。",
+          "quote": "トップページの各順位の横に、背景解説を1行に縮めた要約を出してほしい。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        },
+        {
+          "id": "256af0c4-5b74-4f9a-bdd7-b9ced35b55eb",
+          "kind": "change",
+          "target_key": "screen:SCR-001",
+          "origin_key": "",
+          "content": "トレンド名を押した際に背景解説ページへ遷移する仕様から、Xの検索結果を新しいタブで開く仕様に変更し、背景解説へは「詳しく」から入るようにする。",
+          "quote": "トレンド名を押したときは、今の背景解説のページではなく X の検索結果を新しいタブで開く形に変えたい。背景解説のページへは、要約の横の「詳しく」から入る。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": [
+            "FR-003"
+          ]
+        },
+        {
+          "id": "dbb6dab0-771b-4a77-9a8c-06756871cfdf",
+          "kind": "question",
+          "target_key": "",
+          "origin_key": "",
+          "content": "取得結果をメールで通知する機能の追加について議論されているが、結論は次回に持ち越しとなっている。",
+          "quote": "マーケティング担当は、取得の結果をメールで受け取りたいと発言。企画は不要との意見で、結論は次回に持ち越し。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        },
+        {
+          "id": "6d2c4148-da61-4114-bfba-5bc1aa860117",
+          "kind": "add",
+          "target_key": "",
+          "origin_key": "users",
+          "content": "画面を日本語に加えて英語でも見られるように切り替えボタンを実装する。",
+          "quote": "画面は日本語に加えて英語でも見られるようにしたい(切り替えのボタンで)。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        }
+      ],
+      "draft": {
+        "differences": 3,
+        "ok": true,
+        "title": "「定例打ち合わせ 議事録(セット B)」の変更(3件)",
+        "targets": [
+          {
+            "requirement_id": "FR-003",
+            "kind": "content",
+            "proposed_text": ""
+          }
+        ],
+        "origins": [
+          {
+            "key": "screen:SCR-001",
+            "label": "SCR-001 トップページ"
+          }
+        ],
+        "adds_requirement": true,
+        "background_source": "meeting",
+        "background_memo": "資料「定例打ち合わせ 議事録(セット B)」(2026-11-16)の違い3件から作った下書き",
+        "content": "資料から取り込んだ違い:\n\n- 追加 新規(起点 screen:SCR-001): トップページの各順位の横に、背景解説を1行に縮めた要約を追加する。\n  - 根拠: 「トップページの各順位の横に、背景解説を1行に縮めた要約を出してほしい。」\n- 変更 screen:SCR-001: トレンド名を押した際に背景解説ページへ遷移する仕様から、Xの検索結果を新しいタブで開く仕様に変更し、背景解説へは「詳しく」から入るようにする。\n  - 根拠: 「トレンド名を押したときは、今の背景解説のページではなく X の検索結果を新しいタブで開く形に変えたい。背景解説のページへは、要約の横の「詳しく」から入る。」\n- 追加 新規(起点 users): 画面を日本語に加えて英語でも見られるように切り替えボタンを実装する。\n  - 根拠: 「画面は日本語に加えて英語でも見られるようにしたい(切り替えのボタンで)。」"
+      }
+    },
+    {
+      "file": "email.md",
+      "title": "外部向けの API について(セット B)",
+      "baseline_number": 7,
+      "model": "gemini-3.5-flash-lite",
+      "fresh": false,
+      "usage": {
+        "gemini-3.5-flash-lite": {
+          "input_tokens": 1646,
+          "output_tokens": 147,
+          "total_tokens": 1793,
+          "input_token_details": {
+            "cache_read": 0
+          }
+        }
+      },
+      "differences": [
+        {
+          "id": "2823e3d0-9c5a-4bca-9783-43a343e0bfca",
+          "kind": "question",
+          "target_key": "req:FR-005",
+          "origin_key": "",
+          "content": "外部向けAPIは予定どおり用意する方針がある一方で、不要論もあり社内で意見がそろっていないため、実装するかどうかは次回の打ち合わせで確定させる必要がある。",
+          "quote": "なお、企画の担当者からは「外部向けの API は当面いらないのでは」という話も聞いています。社内で意見がそろっていないため、どちらで進めるかは次回の打ち合わせで確定させたいと思います。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        }
+      ],
+      "draft": {
+        "differences": 0
+      }
+    }
+  ]
+}

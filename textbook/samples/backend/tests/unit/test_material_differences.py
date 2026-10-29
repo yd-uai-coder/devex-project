@@ -1,4 +1,4 @@
-# 作成：Phase-114-1
+# 作成：Phase-114-1｜更新：Phase-117-1
 """資料と合意済みの内容の違いの取り出し(純粋関数)のテスト。
 
 SUT: app/materials/differences.py の agreed_listing・build_difference_messages・normalize_quote・
@@ -82,6 +82,10 @@ def test_messages_carry_listing_and_material() -> None:
     system, human = build_difference_messages(listing, material)
 
     assert "question" in str(system.content)
+    # Phase-117-1:追記
+    # 合意済みの要素に詳細(数値・上限)を決めるものは change、未決の話と同じ資料の決まったことは別に
+    assert "数値・上限・条件などの詳細を決めるもの" in str(system.content)
+    assert "決まったこと(依頼・指示)は別の件として挙げる" in str(system.content)
     assert str(human.content).startswith(listing.text)
     assert "# 資料(議事録「第3回 定例」2026-10-20)" in str(human.content)
     assert str(human.content).endswith(_BODY)
@@ -94,6 +98,9 @@ def test_quote_ignores_width_whitespace_and_markdown() -> None:
     assert quote_found("「取消は前日までとする。」", _BODY)
     assert not quote_found("取消は前々日までとする。", _BODY)
     assert not quote_found("「」", _BODY)
+    # Phase-117-1:追記
+    # 改行を文字どおりの「\n」で書いた引用(構造化出力で LLM が書くことがある)
+    assert quote_found("予約の登録の後に、\\n確認メールを送ってほしい。", _BODY)
 
 
 def test_resolve_key_adds_prefix_only_when_unique() -> None:

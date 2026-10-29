@@ -1,0 +1,260 @@
+[
+  {
+    "title": "運用メモ(セット A)",
+    "differences": 2,
+    "targets": [
+      "CON-006"
+    ],
+    "origins": [
+      "screen:SCR-002"
+    ],
+    "background_source": "document",
+    "scale": [
+      {
+        "kind": "unit",
+        "count": 1,
+        "state": "stale",
+        "uncountable": [],
+        "notes": [
+          "stage_outdated"
+        ]
+      },
+      {
+        "kind": "file",
+        "count": 4,
+        "state": "stale",
+        "uncountable": [],
+        "notes": [
+          "stage_outdated"
+        ]
+      },
+      {
+        "kind": "test",
+        "count": 0,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      },
+      {
+        "kind": "screen",
+        "count": 1,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      },
+      {
+        "kind": "api",
+        "count": 0,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      }
+    ]
+  },
+  {
+    "title": "背景解説の書き方について(セット A)",
+    "differences": 2,
+    "targets": [],
+    "origins": [
+      "req:FR-002",
+      "req:FR-004"
+    ],
+    "background_source": "email",
+    "scale": [
+      {
+        "kind": "unit",
+        "count": 5,
+        "state": "stale",
+        "uncountable": [],
+        "notes": [
+          "stage_outdated"
+        ]
+      },
+      {
+        "kind": "file",
+        "count": 13,
+        "state": "stale",
+        "uncountable": [],
+        "notes": [
+          "stage_outdated"
+        ]
+      },
+      {
+        "kind": "test",
+        "count": 0,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      },
+      {
+        "kind": "screen",
+        "count": 1,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      },
+      {
+        "kind": "api",
+        "count": 0,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      }
+    ]
+  },
+  {
+    "title": "定例打ち合わせ 議事録(セット A)",
+    "differences": 3,
+    "targets": [
+      "FR-001",
+      "FR-005"
+    ],
+    "origins": [
+      "screen:SCR-001"
+    ],
+    "background_source": "meeting",
+    "scale": [
+      {
+        "kind": "unit",
+        "count": 5,
+        "state": "stale",
+        "uncountable": [],
+        "notes": [
+          "stage_outdated"
+        ]
+      },
+      {
+        "kind": "file",
+        "count": 13,
+        "state": "stale",
+        "uncountable": [],
+        "notes": [
+          "stage_outdated"
+        ]
+      },
+      {
+        "kind": "test",
+        "count": 5,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      },
+      {
+        "kind": "screen",
+        "count": 1,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      },
+      {
+        "kind": "api",
+        "count": 1,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      }
+    ]
+  },
+  {
+    "title": "外部向けの API について(セット B)",
+    "differences": 1,
+    "targets": [
+      "FR-005"
+    ],
+    "origins": [],
+    "background_source": "email",
+    "scale": [
+      {
+        "kind": "unit",
+        "count": 3,
+        "state": "stale",
+        "uncountable": [],
+        "notes": [
+          "stage_outdated"
+        ]
+      },
+      {
+        "kind": "file",
+        "count": 8,
+        "state": "stale",
+        "uncountable": [],
+        "notes": [
+          "stage_outdated"
+        ]
+      },
+      {
+        "kind": "test",
+        "count": 4,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      },
+      {
+        "kind": "screen",
+        "count": 0,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      },
+      {
+        "kind": "api",
+        "count": 1,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      }
+    ]
+  },
+  {
+    "title": "定例打ち合わせ 議事録(セット B)",
+    "differences": 3,
+    "targets": [
+      "FR-003"
+    ],
+    "origins": [
+      "screen:SCR-001"
+    ],
+    "background_source": "meeting",
+    "scale": [
+      {
+        "kind": "unit",
+        "count": 1,
+        "state": "stale",
+        "uncountable": [],
+        "notes": [
+          "stage_outdated"
+        ]
+      },
+      {
+        "kind": "file",
+        "count": 5,
+        "state": "stale",
+        "uncountable": [],
+        "notes": [
+          "stage_outdated"
+        ]
+      },
+      {
+        "kind": "test",
+        "count": 3,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      },
+      {
+        "kind": "screen",
+        "count": 1,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      },
+      {
+        "kind": "api",
+        "count": 0,
+        "state": "counted",
+        "uncountable": [],
+        "notes": []
+      }
+    ]
+  }
+]

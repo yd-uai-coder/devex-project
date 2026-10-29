@@ -1,0 +1,241 @@
+{
+  "materials": "materials-a",
+  "run": 3,
+  "results": [
+    {
+      "file": "minutes.md",
+      "title": "定例打ち合わせ 議事録(セット A)",
+      "baseline_number": 7,
+      "model": "gemini-3.5-flash-lite",
+      "fresh": false,
+      "usage": {
+        "gemini-3.5-flash-lite": {
+          "input_tokens": 1883,
+          "output_tokens": 364,
+          "total_tokens": 2247,
+          "input_token_details": {
+            "cache_read": 0
+          }
+        }
+      },
+      "differences": [
+        {
+          "id": "84ebb468-2b28-442a-8c2d-5fec5538cacd",
+          "kind": "change",
+          "target_key": "req:FR-001",
+          "origin_key": "",
+          "content": "取得の間隔を12時間ごとから6時間ごとに変更する。",
+          "quote": "取得の間隔を **6時間ごと** に変えたい。X API の無料枠に収まるかは開発者が確かめる。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": [
+            "FR-001"
+          ]
+        },
+        {
+          "id": "811df11f-375a-4619-9c51-8c3e6957a531",
+          "kind": "question",
+          "target_key": "req:CON-005",
+          "origin_key": "",
+          "content": "6時間ごとの取得に変更した場合、X APIの無料枠に収まるか確かめる必要がある。",
+          "quote": "取得の間隔を **6時間ごと** に変えたい。X API の無料枠に収まるかは開発者が確かめる。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        },
+        {
+          "id": "d1dc4c0d-562d-4344-8ce4-b3b11cb00dba",
+          "kind": "delete",
+          "target_key": "req:FR-005",
+          "origin_key": "",
+          "content": "外部クライアント向けのトレンドデータ提供APIは今回は作らない。",
+          "quote": "**外部クライアント向けのトレンドデータ提供 API は今回は作らない**(次の段階で改めて相談する)。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": [
+            "FR-005"
+          ]
+        },
+        {
+          "id": "e6ae87e3-5f6f-420a-b1d1-18a5e20dca6e",
+          "kind": "add",
+          "target_key": "",
+          "origin_key": "screen:SCR-001",
+          "content": "トップページにエンタメ・スポーツ・ニュースなどのジャンルでランキングを絞り込める機能を追加する。",
+          "quote": "エンタメ・スポーツ・ニュースなどの **ジャンルでランキングを絞り込めるようにしたい**。ジャンルの分け方は LLM に任せてよい。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        }
+      ],
+      "draft": {
+        "differences": 3,
+        "ok": true,
+        "title": "「定例打ち合わせ 議事録(セット A)」の変更(3件)",
+        "targets": [
+          {
+            "requirement_id": "FR-001",
+            "kind": "content",
+            "proposed_text": ""
+          },
+          {
+            "requirement_id": "FR-005",
+            "kind": "delete",
+            "proposed_text": ""
+          }
+        ],
+        "origins": [
+          {
+            "key": "screen:SCR-001",
+            "label": "SCR-001 トップページ"
+          }
+        ],
+        "adds_requirement": true,
+        "background_source": "meeting",
+        "background_memo": "資料「定例打ち合わせ 議事録(セット A)」(2026-11-02)の違い3件から作った下書き",
+        "content": "資料から取り込んだ違い:\n\n- 変更 req:FR-001: 取得の間隔を12時間ごとから6時間ごとに変更する。\n  - 根拠: 「取得の間隔を **6時間ごと** に変えたい。X API の無料枠に収まるかは開発者が確かめる。」\n- 削除 req:FR-005: 外部クライアント向けのトレンドデータ提供APIは今回は作らない。\n  - 根拠: 「**外部クライアント向けのトレンドデータ提供 API は今回は作らない**(次の段階で改めて相談する)。」\n- 追加 新規(起点 screen:SCR-001): トップページにエンタメ・スポーツ・ニュースなどのジャンルでランキングを絞り込める機能を追加する。\n  - 根拠: 「エンタメ・スポーツ・ニュースなどの **ジャンルでランキングを絞り込めるようにしたい**。ジャンルの分け方は LLM に任せてよい。」"
+      }
+    },
+    {
+      "file": "email.md",
+      "title": "背景解説の書き方について(セット A)",
+      "baseline_number": 7,
+      "model": "gemini-3.5-flash-lite",
+      "fresh": false,
+      "usage": {
+        "gemini-3.5-flash-lite": {
+          "input_tokens": 1762,
+          "output_tokens": 202,
+          "total_tokens": 1964,
+          "input_token_details": {
+            "cache_read": 0
+          }
+        }
+      },
+      "differences": [
+        {
+          "id": "7d41414a-d265-4f9e-b366-931d3a1545a1",
+          "kind": "add",
+          "target_key": "",
+          "origin_key": "req:FR-002",
+          "content": "トレンド取得のたびに上位5件を社内のSlackチャンネルに投稿する機能を追加する。",
+          "quote": "社内の企画チームが見逃さないよう、取得のたびに 上位5件を社内の Slack のチャンネルに投稿 してほしいです。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        },
+        {
+          "id": "1f2aa532-2b71-4ee6-ab90-65d1470329af",
+          "kind": "change",
+          "target_key": "req:FR-002",
+          "origin_key": "",
+          "content": "背景解説の長さを1件あたり200字以内に制限する。",
+          "quote": "スマートフォンで読む人が多いので、背景解説は 1件あたり200字以内 にまとめてください。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": [
+            "FR-002"
+          ]
+        }
+      ],
+      "draft": {
+        "differences": 2,
+        "ok": true,
+        "title": "「背景解説の書き方について(セット A)」の変更(2件)",
+        "targets": [
+          {
+            "requirement_id": "FR-002",
+            "kind": "content",
+            "proposed_text": ""
+          }
+        ],
+        "origins": [
+          {
+            "key": "req:FR-002",
+            "label": "FR-002 トレンド取得と同時にLLMを用いて上位20件分の背景解説を自動生成しデータベースに保存する。"
+          }
+        ],
+        "adds_requirement": true,
+        "background_source": "email",
+        "background_memo": "資料「背景解説の書き方について(セット A)」(2026-11-05)の違い2件から作った下書き",
+        "content": "資料から取り込んだ違い:\n\n- 追加 新規(起点 req:FR-002): トレンド取得のたびに上位5件を社内のSlackチャンネルに投稿する機能を追加する。\n  - 根拠: 「社内の企画チームが見逃さないよう、取得のたびに 上位5件を社内の Slack のチャンネルに投稿 してほしいです。」\n- 変更 req:FR-002: 背景解説の長さを1件あたり200字以内に制限する。\n  - 根拠: 「スマートフォンで読む人が多いので、背景解説は 1件あたり200字以内 にまとめてください。」"
+      }
+    },
+    {
+      "file": "memo.md",
+      "title": "運用メモ(セット A)",
+      "baseline_number": 7,
+      "model": "gemini-3.5-flash-lite",
+      "fresh": false,
+      "usage": {
+        "gemini-3.5-flash-lite": {
+          "input_tokens": 1756,
+          "output_tokens": 323,
+          "total_tokens": 2079,
+          "input_token_details": {
+            "cache_read": 0
+          }
+        }
+      },
+      "differences": [
+        {
+          "id": "174a33c1-ba8b-4218-a4a9-2051f9fc26e6",
+          "kind": "change",
+          "target_key": "req:CON-006",
+          "origin_key": "",
+          "content": "利用するLLMとして社内規定によりAnthropicのClaudeを指定し、背景解説の自動生成もClaudeで行うことになった。",
+          "quote": "- 社内の規定により、外部の LLM は **Anthropic の Claude** に限る。背景解説の自動生成も Claude で行うこと。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": [
+            "CON-006"
+          ]
+        },
+        {
+          "id": "a88b2a1c-e8ad-447d-8bd0-0a67071a2eb7",
+          "kind": "add",
+          "target_key": "",
+          "origin_key": "screen:SCR-002",
+          "content": "LLMの呼び出し失敗時に背景解説ページへ「解説を準備中です」と表示する機能を追加する。",
+          "quote": "- LLM の呼び出しが失敗して背景解説が作れなかったトレンドは、ランキングには出したうえで、\n  背景解説ページに **「解説を準備中です」と表示** してほしい(空のページにしない)。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        },
+        {
+          "id": "2c353b13-a743-4009-b16e-dba59ce5f1ba",
+          "kind": "add",
+          "target_key": "",
+          "origin_key": "users",
+          "content": "過去7日分のランキングを日付を選んで見られるようにする機能を追加する。",
+          "quote": "- 企画チームから、**過去7日分のランキングを日付を選んで見られるようにしたい** という要望が来ている。\n  情報システム部門としても保存の容量は問題ない。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        }
+      ],
+      "draft": {
+        "differences": 3,
+        "ok": true,
+        "title": "「運用メモ(セット A)」の変更(3件)",
+        "targets": [
+          {
+            "requirement_id": "CON-006",
+            "kind": "content",
+            "proposed_text": ""
+          }
+        ],
+        "origins": [
+          {
+            "key": "screen:SCR-002",
+            "label": "SCR-002 背景解説ページ"
+          }
+        ],
+        "adds_requirement": true,
+        "background_source": "document",
+        "background_memo": "資料「運用メモ(セット A)」(2026-11-06)の違い3件から作った下書き",
+        "content": "資料から取り込んだ違い:\n\n- 変更 req:CON-006: 利用するLLMとして社内規定によりAnthropicのClaudeを指定し、背景解説の自動生成もClaudeで行うことになった。\n  - 根拠: 「- 社内の規定により、外部の LLM は **Anthropic の Claude** に限る。背景解説の自動生成も Claude で行うこと。」\n- 追加 新規(起点 screen:SCR-002): LLMの呼び出し失敗時に背景解説ページへ「解説を準備中です」と表示する機能を追加する。\n  - 根拠: 「- LLM の呼び出しが失敗して背景解説が作れなかったトレンドは、ランキングには出したうえで、 背景解説ページに **「解説を準備中です」と表示** してほしい(空のページにしない)。」\n- 追加 新規(起点 users): 過去7日分のランキングを日付を選んで見られるようにする機能を追加する。\n  - 根拠: 「- 企画チームから、**過去7日分のランキングを日付を選んで見られるようにしたい** という要望が来ている。 情報システム部門としても保存の容量は問題ない。」"
+      }
+    }
+  ]
+}

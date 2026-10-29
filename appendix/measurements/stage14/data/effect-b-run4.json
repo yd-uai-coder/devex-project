@@ -1,0 +1,155 @@
+{
+  "materials": "materials-b",
+  "run": 4,
+  "results": [
+    {
+      "file": "minutes.md",
+      "title": "定例打ち合わせ 議事録(セット B)",
+      "baseline_number": 7,
+      "model": "gemini-3.5-flash-lite",
+      "fresh": false,
+      "usage": {
+        "gemini-3.5-flash-lite": {
+          "input_tokens": 1960,
+          "output_tokens": 422,
+          "total_tokens": 2382,
+          "input_token_details": {
+            "cache_read": 0
+          }
+        }
+      },
+      "differences": [
+        {
+          "id": "fd56d7e1-6795-412e-8ec6-e1385e7ea62c",
+          "kind": "add",
+          "target_key": "",
+          "origin_key": "screen:SCR-001",
+          "content": "トップページの各順位の横に背景解説を1行に縮めた要約を追加する。",
+          "quote": "トップページの各順位の横に、背景解説を1行に縮めた要約を出してほしい。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        },
+        {
+          "id": "1bcf253f-1fd6-4b09-91b8-492ff5f2cbd7",
+          "kind": "change",
+          "target_key": "screen:SCR-001",
+          "origin_key": "",
+          "content": "トレンド名を押したときの遷移先を背景解説ページからXの検索結果を新しいタブで開く形に変え、背景解説ページへは要約の横の「詳しく」から入るように変更する。",
+          "quote": "トレンド名を押したときは、今の背景解説のページではなく X の検索結果を新しいタブで開く形に変えたい。背景解説のページへは、要約の横の「詳しく」から入る。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": [
+            "FR-003"
+          ]
+        },
+        {
+          "id": "3ba066aa-35dc-4ea1-ac9f-7beffa7554ed",
+          "kind": "question",
+          "target_key": "",
+          "origin_key": "",
+          "content": "取得の結果をメールで通知するかどうかについて、結論が出ていないため確認が必要である。",
+          "quote": "マーケティング担当は、取得の結果をメールで受け取りたいと発言。企画は不要との意見で、結論は次回に持ち越し。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        },
+        {
+          "id": "2c14c0de-5964-4951-a197-86b335e9bc88",
+          "kind": "add",
+          "target_key": "",
+          "origin_key": "users",
+          "content": "画面を日本語に加えて英語でも切り替えボタンでで見られるようにする機能を追加する。",
+          "quote": "画面は日本語に加えて英語でも見られるようにしたい(切り替えのボタンで)。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": []
+        }
+      ],
+      "draft": {
+        "differences": 3,
+        "ok": true,
+        "title": "「定例打ち合わせ 議事録(セット B)」の変更(3件)",
+        "targets": [
+          {
+            "requirement_id": "FR-003",
+            "kind": "content",
+            "proposed_text": ""
+          }
+        ],
+        "origins": [
+          {
+            "key": "screen:SCR-001",
+            "label": "SCR-001 トップページ"
+          }
+        ],
+        "adds_requirement": true,
+        "background_source": "meeting",
+        "background_memo": "資料「定例打ち合わせ 議事録(セット B)」(2026-11-16)の違い3件から作った下書き",
+        "content": "資料から取り込んだ違い:\n\n- 追加 新規(起点 screen:SCR-001): トップページの各順位の横に背景解説を1行に縮めた要約を追加する。\n  - 根拠: 「トップページの各順位の横に、背景解説を1行に縮めた要約を出してほしい。」\n- 変更 screen:SCR-001: トレンド名を押したときの遷移先を背景解説ページからXの検索結果を新しいタブで開く形に変え、背景解説ページへは要約の横の「詳しく」から入るように変更する。\n  - 根拠: 「トレンド名を押したときは、今の背景解説のページではなく X の検索結果を新しいタブで開く形に変えたい。背景解説のページへは、要約の横の「詳しく」から入る。」\n- 追加 新規(起点 users): 画面を日本語に加えて英語でも切り替えボタンでで見られるようにする機能を追加する。\n  - 根拠: 「画面は日本語に加えて英語でも見られるようにしたい(切り替えのボタンで)。」"
+      }
+    },
+    {
+      "file": "email.md",
+      "title": "外部向けの API について(セット B)",
+      "baseline_number": 7,
+      "model": "gemini-3.5-flash-lite",
+      "fresh": false,
+      "usage": {
+        "gemini-3.5-flash-lite": {
+          "input_tokens": 1727,
+          "output_tokens": 236,
+          "total_tokens": 1963,
+          "input_token_details": {
+            "cache_read": 0
+          }
+        }
+      },
+      "differences": [
+        {
+          "id": "fd5b693b-646f-42d1-b1f7-9309a4ff44ae",
+          "kind": "change",
+          "target_key": "api:GET /api/v1/trends",
+          "origin_key": "",
+          "content": "外部向けトレンドデータ提供APIのレート制限について、1つのキーにつき1分あたり60回までに制限する詳細が追加された。",
+          "quote": "使い過ぎを防ぐため、**呼び出しは1つのキーにつき1分あたり60回まで** に制限してください。",
+          "status": "unconfirmed",
+          "reasons": [],
+          "requirement_candidates": [
+            "FR-005"
+          ]
+        },
+        {
+          "id": "b30c5f7d-8b68-4046-9389-ff87a6daeceb",
+          "kind": "question",
+          "target_key": "req:FR-005",
+          "origin_key": "",
+          "content": "外部向けのAPIを当面不要とする意見もあり社内で意見が揃っていないため、外部向けAPIを引き続き用意して進めるかどうか確認が必要である。",
+          "quote": "なお、企画の担当者からは「外部向けの API は当面いらないのでは」という話も聞いています。\\n社内で意見がそろっていないため、どちらで進めるかは次回の打ち合わせで確定させたいと思います。",
+          "status": "rejected",
+          "reasons": [
+            "引用が資料に無い"
+          ],
+          "requirement_candidates": []
+        }
+      ],
+      "draft": {
+        "differences": 1,
+        "ok": true,
+        "title": "外部向けトレンドデータ提供APIのレート制限について、1つのキーにつき1分あたり60回までに制限する詳細が追加された。",
+        "targets": [
+          {
+            "requirement_id": "FR-005",
+            "kind": "content",
+            "proposed_text": ""
+          }
+        ],
+        "origins": [],
+        "adds_requirement": false,
+        "background_source": "email",
+        "background_memo": "資料「外部向けの API について(セット B)」(2026-11-18)の違い1件から作った下書き",
+        "content": "資料から取り込んだ違い:\n\n- 変更 api:GET /api/v1/trends: 外部向けトレンドデータ提供APIのレート制限について、1つのキーにつき1分あたり60回までに制限する詳細が追加された。\n  - 根拠: 「使い過ぎを防ぐため、**呼び出しは1つのキーにつき1分あたり60回まで** に制限してください。」"
+      }
+    }
+  ]
+}
