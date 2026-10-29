@@ -1,12 +1,14 @@
-// 作成：Phase-88-2｜更新：Phase-98-2
+// 作成：Phase-88-2｜更新：Phase-98-2,116-1
 // SUT: baselinesApi(合意済みの版の API の薄い包み)
 // ドライバ: vitest のテスト関数
 // スタブ: fetch(stubFetch)── 送ったメソッド・URL・本文と、応答の受け渡しを確かめるため
 // Phase-98-2:追記 ── ../baselinesApi.listBaselineOrigins
+// Phase-116-1:追記 ── ../baselinesApi.getBaselineFreshness
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createBaseline,
   getBaseline,
+  getBaselineFreshness,
   listBaselineOrigins,
   listBaselineRequirements,
   listBaselines,
@@ -51,6 +53,27 @@ describe("baselinesApi", () => {
 
     expect(stub.requests[0].url).toContain(`${BASE}/2/origins`);
     expect(origins[0].kind).toBe("screen");
+  });
+
+  // Phase-116-1:追記
+  it("束の鮮度を読む", async () => {
+    stub.queue({
+      body: {
+        baseline_number: 2,
+        label: "B-2",
+        fresh: false,
+        is_latest: true,
+        tracked: true,
+        newer_numbers: [],
+        applied_after: [{ number: 6, keys: ["req:FR-001"] }],
+        outdated_stages: [],
+      },
+    });
+
+    const freshness = await getBaselineFreshness("p1", 2);
+
+    expect(stub.requests[0].url).toContain(`${BASE}/2/freshness`);
+    expect(freshness.applied_after[0].number).toBe(6);
   });
 
   it("作成は合意の記録と入れる CR の番号を送る", async () => {

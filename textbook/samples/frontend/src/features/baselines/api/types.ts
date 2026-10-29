@@ -1,4 +1,4 @@
-// 作成：Phase-88-2｜更新：Phase-98-2,109-2
+// 作成：Phase-88-2｜更新：Phase-98-2,109-2,116-1,116-4
 // 合意済みの版(束)の API の型。devex-api app/schemas/baseline.py の同名のクラスに対応する
 // (画面で使う項目だけ)。
 
@@ -33,6 +33,9 @@ type BaselineRecordRead = {
   created_at: string;
   // Phase-109-2:追記
   included_change_requests: BaselineChangeRequestRead[];
+  // Phase-116-4:追記
+  // 新しいか(最新の束で、束の後に反映した CR も古かった段階も無い)。古い応答では無い
+  fresh?: boolean | null;
 };
 
 // 一覧の1件(写しは要約だけ)
@@ -61,6 +64,24 @@ export type BaselineOriginRead = {
   key: string;
   kind: OriginKind;
   label: string;
+};
+
+// Phase-116-1:追記
+// 束の後に反映した CR 1つと、それが書き換えた要素のキー("req:FR-001" など)
+export type BaselineAppliedAfterRead = { number: number; keys: string[] };
+
+// 束1つの鮮度(GET .../baselines/{n}/freshness。CR の詳細・説明書・共有リンクの作成・違いの取り出しの回にも付く)。
+// fresh は最新の束で、束の後に反映した CR も古かった段階も無いこと。tracked が偽なら束の後の CR を判定できない
+// (合意の記録を始める前の束)
+export type BaselineFreshnessRead = {
+  baseline_number: number;
+  label: string;
+  fresh: boolean;
+  is_latest: boolean;
+  tracked: boolean;
+  newer_numbers: number[];
+  applied_after: BaselineAppliedAfterRead[];
+  outdated_stages: number[];
 };
 
 // 束の作成(合意の記録と、入れる検証済みの CR の番号。相手は空でもよい。日時はタイムゾーン付き)

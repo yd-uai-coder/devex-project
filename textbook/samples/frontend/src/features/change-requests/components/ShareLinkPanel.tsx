@@ -1,9 +1,11 @@
-// 作成：Phase-107-4
+// 作成：Phase-107-4｜更新：Phase-116-4
 "use client";
 
+// Phase-116-4:追記 ── @/features/baselines/components/BaselineFreshnessNotice.BaselineFreshnessNotice
 import { useEffect, useState } from "react";
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import { BaselineFreshnessNotice } from "@/features/baselines/components/BaselineFreshnessNotice";
 import type { ChangeRequestRead, ShareLinkRead } from "@/features/change-requests/api/types";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import {
@@ -95,6 +97,12 @@ export function ShareLinkPanel({ projectId, cr }: { projectId: string; cr: Chang
               閉じる
             </Button>
           </XStack>
+          {/* Phase-116-4:追記 */}
+          <BaselineFreshnessNotice
+            projectId={projectId}
+            freshness={created.baseline_freshness}
+            lead="クライアントに見せる説明書の規模は、この版の設計から数えています。"
+          />
           {created.summary_needs_reconfirm ? (
             <Text color="$orange10">確認済みの要約が古くなっています。説明書のタブで確かめ直すまで、要約はクライアントに見えません。</Text>
           ) : null}

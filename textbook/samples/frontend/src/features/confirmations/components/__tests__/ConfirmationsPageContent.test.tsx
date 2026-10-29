@@ -1,4 +1,4 @@
-// 作成：Phase-98-1｜更新：Phase-99(完了後の調整),109-3,112-2
+// 作成：Phase-98-1｜更新：Phase-99(完了後の調整),109-3,112-2,116-2
 // SUT: ConfirmationsPageContent(確認事項の一覧のページ)、ConfirmationTable(行ごとの決める機会・状態・
 //      メモ。ページの中で描く)
 // ドライバ: vitest のテスト関数(render・userEvent)
@@ -48,6 +48,8 @@ describe("ConfirmationsPageContent", () => {
     expect(within(table).getByText("FR-004 期限の前に通知する")).toBeInTheDocument();
     expect(within(table).getByText("FR-002, 1.2")).toBeInTheDocument();
     expect(screen.queryByText("FR-009 CSV で出力する")).not.toBeInTheDocument();
+    // Phase-116-2:追記
+    expect(screen.getByRole("link", { name: "資料" })).toHaveAttribute("href", "/projects/p1/materials");
 
     // Phase-99(完了後の調整)：更新
     // await userEvent.click(screen.getByRole("button", { name: "▸ 一覧から消えた項目(決めた記録) 1件" }));

@@ -1,7 +1,8 @@
-// 作成：Phase-98-1｜更新：Phase-99(完了後の調整)
+// 作成：Phase-98-1｜更新：Phase-99(完了後の調整),116-2
 "use client";
 
 // Phase-99(完了後の調整)：削除 ── tamagui.Button, @/features/confirmations/confirmationOps.splitByPresence
+// Phase-116-2:追記 ── @/features/materials/materialOps.materialsHref
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { H2, Paragraph, Text, XStack, YStack } from "tamagui";
@@ -28,6 +29,7 @@ import {
 import { ConfirmationTable } from "@/features/confirmations/components/ConfirmationTable";
 import { isDetailedModeOnly } from "@/features/change-requests/changeRequestOps";
 import { DetailedModeOnlyNotice } from "@/features/change-requests/components/DetailedModeOnlyNotice";
+import { materialsHref } from "@/features/materials/materialOps";
 import { INPUT, OPTION } from "@/features/detailed-design/components/tableStyles";
 import { isNotFound } from "@/lib/api/client";
 
@@ -114,6 +116,10 @@ export function ConfirmationsPageContent({ projectId }: { projectId: string }) {
           </Link>
           <Link href={`/projects/${projectId}/baselines`}>
             <Text color="$blue10">合意済みの版</Text>
+          </Link>
+          {/* Phase-116-2:追記 */}
+          <Link href={materialsHref(projectId)}>
+            <Text color="$blue10">資料</Text>
           </Link>
         </XStack>
       </XStack>

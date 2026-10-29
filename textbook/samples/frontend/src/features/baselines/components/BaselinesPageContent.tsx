@@ -1,9 +1,10 @@
-// 更新：Phase-98-1,109-2
+// 更新：Phase-98-1,109-2,116-2,116-4
 "use client";
 // 作成：Phase-88-3｜更新：Phase-88(完了後の調整)
 
 // Phase-88(完了後の調整):追記
 // Phase-109-2:追記 ── @/features/change-requests/api/types.ChangeRequestSummaryRead
+// Phase-116-2:追記 ── @/features/materials/materialOps.materialsHref
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,6 +17,7 @@ import { baselineHref, includableChangeRequests } from "@/features/baselines/bas
 import { BaselineCreateForm } from "@/features/baselines/components/BaselineCreateForm";
 import { BaselineList } from "@/features/baselines/components/BaselineList";
 import type { ChangeRequestSummaryRead } from "@/features/change-requests/api/types";
+import { materialsHref } from "@/features/materials/materialOps";
 
 // Phase-109-2:追記
 // 別のプロジェクトの CR の一覧を持っているときに返す空の一覧(選択のたびに新しい配列を返すと、
@@ -27,8 +29,19 @@ const NO_CHANGE_REQUESTS: ChangeRequestSummaryRead[] = [];
 // // だけ(簡易モードではサーバーが409を返す)。作成のフォームを開くと、段階の一覧を読む(止まった生成が
 // ↓↓
 // だけ(簡易モードではサーバーが409を返し、本体の代わりに知らせを出す)。作成のフォームを開くと、段階の一覧を読む(止まった生成が
-// 回収され、入る段階・入らない段階を見せられる)。作ったら中身へ移る。
-export function BaselinesPageContent({ projectId }: { projectId: string }) {
+// Phase-116-4：更新
+// // 回収され、入る段階・入らない段階を見せられる)。作ったら中身へ移る。
+// export function BaselinesPageContent({ projectId }: { projectId: string }) {
+// ↓↓
+// 回収され、入る段階・入らない段階を見せられる)。作ったら中身へ移る。initialCreate なら作成のフォームを開いて
+// 始める(束が古いときの知らせからの案内)。
+export function BaselinesPageContent({
+  projectId,
+  initialCreate = false,
+}: {
+  projectId: string;
+  initialCreate?: boolean;
+}) {
   const router = useRouter();
   const list = useBaselinesStore((s) => s.list);
   const status = useBaselinesStore((s) => s.status);
@@ -49,12 +62,24 @@ export function BaselinesPageContent({ projectId }: { projectId: string }) {
   // ↓↓
   const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : NO_CHANGE_REQUESTS));
   const fetchChangeRequests = useChangeRequestsStore((s) => s.fetchList);
-  const [creating, setCreating] = useState(false);
+  // Phase-116-4：更新
+  // const [creating, setCreating] = useState(false);
+  // ↓↓
+  const [creating, setCreating] = useState(initialCreate);
 
   useEffect(() => {
     void fetchList(projectId);
     void fetchChangeRequests(projectId);
   }, [projectId, fetchList, fetchChangeRequests]);
+
+  // Phase-116-4:追記
+  // 作成のフォームを開いて始めるときも、段階と CR を読み直す(フォームを開くボタンと同じ)
+  useEffect(() => {
+    if (!initialCreate) return;
+    clearCreateError();
+    void fetchStages(projectId);
+    void fetchChangeRequests(projectId, { force: true });
+  }, [initialCreate, projectId, clearCreateError, fetchStages, fetchChangeRequests]);
 
   if (notFound) return <ProjectNotFoundNotice />;
   // Phase-88(完了後の調整):追記
@@ -84,6 +109,10 @@ export function BaselinesPageContent({ projectId }: { projectId: string }) {
           {/* Phase-98-1:追記 */}
           <Link href={`/projects/${projectId}/confirmations`}>
             <Text color="$blue10">確認事項</Text>
+          </Link>
+          {/* Phase-116-2:追記 */}
+          <Link href={materialsHref(projectId)}>
+            <Text color="$blue10">資料</Text>
           </Link>
         </XStack>
       </XStack>

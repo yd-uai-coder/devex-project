@@ -1,4 +1,4 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,98-2,107-1,107-2,107-3,107-4,107-5,112-2,112-4
+// 作成：Phase-87-1｜更新：Phase-88-2,98-2,107-1,107-2,107-3,107-4,107-5,112-2,112-4,116-4
   // Phase-88-2:追記
   // Phase-88-2:追記
 // Phase-107-1:追記 ── @/features/change-requests/api/types.ScaleCountRead
@@ -62,6 +62,8 @@ export function makeChangeRequest(overrides: Partial<ChangeRequestRead> = {}): C
     allowed_actions: ["edit", "explain", "withdraw"],
     // Phase-112-4:追記
     conflicts: [],
+    // Phase-116-4:追記
+    baseline_freshness: null,
     ...overrides,
   };
 }
@@ -386,6 +388,8 @@ export function makeExplanation(
     option_scales: [],
     has_test_spec: true,
     summary: null,
+    // Phase-116-4:追記
+    baseline_freshness: null,
     ...overrides,
   };
 }
@@ -394,14 +398,22 @@ export function makeExplanation(
 // 説明書の規模(作業単位1件・ファイル2件・テスト1件・画面1件、API は数えられない)
 export function makeScale(overrides: Partial<Record<ScaleCountRead["kind"], Partial<ScaleCountRead>>> = {}): ScaleCountRead[] {
   const base: ScaleCountRead[] = [
-    { kind: "unit", label: "作業単位", count: 1, names: ["M-01-T02"], uncountable: [], notes: [] },
-    { kind: "file", label: "ファイル", count: 2, names: ["app/a.py", "app/b.py"], uncountable: [], notes: [] },
-    { kind: "test", label: "テスト", count: 1, names: ["IT-01"], uncountable: [], notes: [] },
-    { kind: "screen", label: "画面", count: 1, names: ["チャットヒアリング画面(SCR-004)"], uncountable: [], notes: [] },
+    // Phase-116-4：更新
+    // { kind: "unit", label: "作業単位", count: 1, names: ["M-01-T02"], uncountable: [], notes: [] },
+    // { kind: "file", label: "ファイル", count: 2, names: ["app/a.py", "app/b.py"], uncountable: [], notes: [] },
+    // { kind: "test", label: "テスト", count: 1, names: ["IT-01"], uncountable: [], notes: [] },
+    // { kind: "screen", label: "画面", count: 1, names: ["チャットヒアリング画面(SCR-004)"], uncountable: [], notes: [] },
+    // ↓↓
+    { kind: "unit", state: "counted", label: "作業単位", count: 1, names: ["M-01-T02"], uncountable: [], notes: [] },
+    { kind: "file", state: "counted", label: "ファイル", count: 2, names: ["app/a.py", "app/b.py"], uncountable: [], notes: [] },
+    { kind: "test", state: "counted", label: "テスト", count: 1, names: ["IT-01"], uncountable: [], notes: [] },
+    { kind: "screen", state: "counted", label: "画面", count: 1, names: ["チャットヒアリング画面(SCR-004)"], uncountable: [], notes: [] },
     {
       kind: "api",
       label: "API",
       count: null,
+      // Phase-116-4:追記
+      state: "uncountable",
       names: [],
       uncountable: [{ code: "no_document", label: "要る文書が束に無い", detail: "外部設計書" }],
       notes: [],
@@ -479,6 +491,8 @@ export function makeCreatedShareLink(overrides: Partial<ShareLinkCreatedRead> = 
     token: "tok123",
     path: "/share/tok123",
     summary_needs_reconfirm: false,
+    // Phase-116-4:追記
+    baseline_freshness: null,
     ...overrides,
   };
 }

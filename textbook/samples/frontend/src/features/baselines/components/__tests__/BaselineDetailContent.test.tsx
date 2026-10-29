@@ -1,4 +1,4 @@
-// 作成：Phase-88-3｜更新：Phase-88(完了後の調整),109-2
+// 作成：Phase-88-3｜更新：Phase-88(完了後の調整),109-2,116-4
 // SUT: BaselineDetailContent(束の中身の画面)と、写した文書の md を描く MarkdownBody
 // ドライバ: Testing Library(描画・クリック)
 // Phase-88(完了後の調整)：更新
@@ -11,6 +11,7 @@
 // スタブ: 束のストアの取得の関数(vi.fn)と next/navigation の router ── 画面の配線(読み込み・合意の記録・
 // 入れた CR・文書・段階・CR の作成へ移る・簡易モード)だけを見るため
 // Phase-109-2：削除 ── @/features/change-requests/test-utils/changeRequestFixtures.makeChangeRequest
+// Phase-116-4:追記 ── @/features/materials/test-utils/materialFixtures.makeFreshness
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -18,6 +19,7 @@ import { BaselineDetailContent } from "../BaselineDetailContent";
 import { useBaselinesStore } from "../../baselines-store";
 import { makeBaseline } from "../../test-utils/baselineFixtures";
 import { resetBaselinesStore } from "../../test-utils/resetBaselinesStore";
+import { makeFreshness } from "@/features/materials/test-utils/materialFixtures";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import { renderWithTheme, resetChangeRequestsStore } from "@/features/change-requests/test-utils/renderWithStore";
 
@@ -98,5 +100,21 @@ describe("BaselineDetailContent", () => {
     renderWithTheme(<BaselineDetailContent projectId="p1" number={1} />);
 
     expect(screen.getByText(/詳細設計モードのプロジェクトだけで使えます/)).toBeInTheDocument();
+  });
+
+  // Phase-116-4:追記
+  it("束が古ければ知らせ、判定できない束はそう出す", () => {
+    useBaselinesStore.setState({
+      detail: makeBaseline(),
+      freshness: makeFreshness({ baseline_number: 1, fresh: false, applied_after: [{ number: 2, keys: ["req:FR-001"] }] }),
+    });
+    const { unmount } = renderWithTheme(<BaselineDetailContent projectId="p1" number={1} />);
+    expect(screen.getByLabelText("B-1 が古いことの知らせ")).toBeInTheDocument();
+    unmount();
+
+    useBaselinesStore.setState({ freshness: makeFreshness({ baseline_number: 1, tracked: false }) });
+    renderWithTheme(<BaselineDetailContent projectId="p1" number={1} />);
+    expect(screen.queryByLabelText("B-1 が古いことの知らせ")).toBeNull();
+    expect(screen.getByText(/後に反映した変更要求があるかは判定できません/)).toBeInTheDocument();
   });
 });

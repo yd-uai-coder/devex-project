@@ -1,10 +1,12 @@
-// 作成：Phase-88-2｜更新：Phase-88(完了後の調整),109-2
+// 作成：Phase-88-2｜更新：Phase-88(完了後の調整),109-2,116-4
+// Phase-116-4:追記 ── @/features/baselines/api/types.BaselineFreshnessRead
 import { STAGE_TITLES, STATE_LABELS } from "@/features/detailed-design/labels";
 import type { DesignStageRead, StageState } from "@/features/detailed-design/api/types";
 import type { ChangeRequestSummaryRead } from "@/features/change-requests/api/types";
 import { localInputToIso } from "@/features/change-requests/changeRequestOps";
 import type {
   BaselineCreate,
+  BaselineFreshnessRead,
   BaselineItemSummaryRead,
 } from "@/features/baselines/api/types";
 
@@ -39,6 +41,21 @@ export function itemStateLabel(item: BaselineItemSummaryRead): string {
 
 export const baselineHref = (projectId: string, number: number) => `/projects/${projectId}/baselines/${number}`;
 export const baselinesHref = (projectId: string) => `/projects/${projectId}/baselines`;
+// Phase-116-4:追記
+// 束の一覧を、作成のフォームを開いた形で開く(束が古いときの知らせから作り直しへ案内する)
+export const baselineCreateHref = (projectId: string) => `${baselinesHref(projectId)}?create=1`;
+
+// 一覧の鮮度の印(fresh は最新の束で、束の後に反映した CR も古かった段階も無いこと。読めなければ null)
+export function freshnessLabel(fresh: boolean | null | undefined): string {
+  if (fresh === null || fresh === undefined) return "─";
+  return fresh ? "新しい" : "古い";
+}
+
+// 束が古い理由のうち、束を作り直せば直るもの(束の後に反映した CR・古かった段階)があるか。
+// 後の束があるだけなら、作り直さずに最新の束を使えばよい
+export function needsRebuild(freshness: BaselineFreshnessRead): boolean {
+  return freshness.applied_after.length > 0 || freshness.outdated_stages.length > 0;
+}
 // Phase-88(完了後の調整):追記
 // この束を基準に変更要求を作るページ(基準の束は URL の番号に固定)
 export const newChangeRequestHref = (projectId: string, number: number) =>

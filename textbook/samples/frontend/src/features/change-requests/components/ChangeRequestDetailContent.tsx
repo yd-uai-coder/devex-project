@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整),107-4,112-2,112-4
+// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整),107-4,112-2,112-4,116-4
 // Phase-87-4:追記 ── @/features/change-requests/components/VerificationTab.VerificationTab
 "use client";
 
@@ -7,9 +7,11 @@
 // Phase-107-4:追記 ── @/features/change-requests/components/ShareTab.ShareTab
 // Phase-112-2:追記 ── @/features/change-requests/changeRequestOps.DetailTab
 // Phase-112-4:追記 ── @/features/change-requests/components/ConflictNotice.ConflictNotice
+// Phase-116-4:追記 ── @/features/baselines/components/BaselineFreshnessNotice.BaselineFreshnessNotice
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
+import { BaselineFreshnessNotice } from "@/features/baselines/components/BaselineFreshnessNotice";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import { type DetailTab, isApplied } from "@/features/change-requests/changeRequestOps";
 import { ChangeRequestActions } from "@/features/change-requests/components/ChangeRequestActions";
@@ -57,7 +59,10 @@ const TABS: { value: DetailTab; label: string }[] = [
 // Phase-112-4：更新
 // // 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は6つのタブ(内容・影響・検証・説明書・共有・
 // ↓↓
-// 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作(重なる CR の競合があれば、その知らせ)、本文は6つのタブ(内容・影響・検証・説明書・共有・
+// Phase-116-4：更新
+// // 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作(重なる CR の競合があれば、その知らせ)、本文は6つのタブ(内容・影響・検証・説明書・共有・
+// ↓↓
+// 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作(重なる CR の競合と、合意の前に基準の束が古ければ、その知らせ)、本文は6つのタブ(内容・影響・検証・説明書・共有・
 // Phase-112-2：更新
 // // たどる記録)。タブの中身(予測・比較・検証・説明書・共有リンク・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
 // ↓↓
@@ -156,6 +161,15 @@ export function ChangeRequestDetailContent({
           <ChangeRequestActions projectId={projectId} cr={detail} />
           {/* Phase-112-4:追記 */}
           <ConflictNotice projectId={projectId} cr={detail} />
+          {/* Phase-116-4:追記 */}
+          {/* 合意の後は判断の時点の予測で組むので、束の鮮度は合意の前だけ知らせる */}
+          {detail.decision === null ? (
+            <BaselineFreshnessNotice
+              projectId={projectId}
+              freshness={detail.baseline_freshness}
+              lead={`この CR の対象の文・説明書・規模は、基準の版 ${detail.baseline_label} の設計から求めています。`}
+            />
+          ) : null}
           {actionError ? (
             <Text role="alert" color="$red10">
               {actionError}

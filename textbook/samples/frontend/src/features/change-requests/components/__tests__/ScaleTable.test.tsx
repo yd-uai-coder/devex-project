@@ -1,11 +1,13 @@
-// 作成：Phase-107-1｜更新：Phase-110(完了後の調整)
+// 作成：Phase-107-1｜更新：Phase-110(完了後の調整),116-4
 // SUT: ScaleTable(変更の規模の表と、理由・注記)
 // ドライバ: Testing Library(描画)
 // スタブ不要 ── 説明書の応答を受け取って描くだけで、ストアも API も呼ばないため
+// Phase-116-4:追記 ── @/features/materials/test-utils/materialFixtures.makeFreshness
 import { describe, expect, it } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { ScaleTable } from "../ScaleTable";
 import { makeExplanation, makeScale } from "../../test-utils/changeRequestFixtures";
+import { makeFreshness } from "@/features/materials/test-utils/materialFixtures";
 import { renderWithTheme } from "../../test-utils/renderWithStore";
 
 describe("ScaleTable", () => {
@@ -42,5 +44,24 @@ describe("ScaleTable", () => {
     const unitRow = within(table).getByRole("row", { name: /作業単位/ });
     expect(within(unitRow).getByText("4件")).toBeInTheDocument();
     expect(within(unitRow).getByText("3件")).toBeInTheDocument();
+  });
+
+  // Phase-116-4:追記
+  it("表の上に基準の束を出し、古い段階から数えた種類は「(古い)」を添えて数えられないと分ける", () => {
+    const explanation = makeExplanation({
+      scale: makeScale({ unit: { count: 3, state: "stale" } }),
+      baseline_freshness: makeFreshness({ baseline_number: 6, fresh: false, applied_after: [{ number: 6, keys: [] }] }),
+    });
+    renderWithTheme(<ScaleTable explanation={explanation} />);
+
+    expect(screen.getByText(/合意済みの版 B-6 の設計から数えました。B-6 は古い版なので/)).toBeInTheDocument();
+    const table = screen.getByRole("table", { name: "変更の規模" });
+    expect(within(within(table).getByRole("row", { name: /作業単位/ })).getByText("3件(古い)")).toBeInTheDocument();
+    expect(within(within(table).getByRole("row", { name: /API/ })).getByText("数えられない")).toBeInTheDocument();
+  });
+
+  it("新しい束なら、どの束から数えたかだけを出す", () => {
+    renderWithTheme(<ScaleTable explanation={makeExplanation({ baseline_freshness: makeFreshness({ baseline_number: 1 }) })} />);
+    expect(screen.getByText("合意済みの版 B-1 の設計から数えました。")).toBeInTheDocument();
   });
 });

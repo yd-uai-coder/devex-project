@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4,69-3,78-1,87-2,87-4,88-3,98-1,99(完了後の調整)
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,27-3,28-3,31-5,44-2,46-3,53-4,53-5,54-1,54-3,57-3,57(完了後の調整),64-4,69-3,78-1,87-2,87-4,88-3,98-1,99(完了後の調整),116-2
 // 写経レベル: 定型 ── ストアと部品の配線。
 "use client";
 
@@ -19,6 +19,7 @@
 // Phase-54-1:追記
 // Phase-28-3:追記
 // Phase-99(完了後の調整):追記 ── @/features/change-requests/change-requests-store.useChangeRequestsStore, @/features/change-requests/components/ChangeRequestVerifyBanner.ChangeRequestVerifyBanner, @/features/change-requests/components/ChangeRequestVerifyDialog.ChangeRequestVerifyDialog, @/features/change-requests/hooks/useAppliedChangeRequests.useAppliedChangeRequests
+// Phase-116-2:追記 ── @/features/materials/materialOps.materialsHref
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -53,6 +54,7 @@ import {
   zipTestSpecNote,
 } from "@/features/documents/testSpecOps";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
+import { materialsHref } from "@/features/materials/materialOps";
 
 // Phase-27-3：更新(段階1〜7 → 段階1〜8)
 // 詳細設計画面(SCR-008)。左に段階1〜8のステッパー、右に選んだ段階の作業領域を置く
@@ -243,6 +245,13 @@ export function DetailedDesignPageContent({
           {detailed ? (
             <Link href={`/projects/${projectId}/confirmations`}>
               <Text color="$blue10">確認事項 →</Text>
+            </Link>
+          ) : null}
+          {/* Phase-116-2:追記 */}
+          {/* 資料(SCR-013)も詳細設計モードだけ */}
+          {detailed ? (
+            <Link href={materialsHref(projectId)}>
+              <Text color="$blue10">資料 →</Text>
             </Link>
           ) : null}
           {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}

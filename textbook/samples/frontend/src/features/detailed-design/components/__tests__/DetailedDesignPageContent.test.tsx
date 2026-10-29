@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4,69-3,78-1,87-2,87-4,88-3,98-1,99(完了後の調整)
+// 作成：Phase-15-7｜更新：Phase-16-6,18-9,22-6,23-6,27-3,28-3,30-4,30-7,31-5,44-2,46-3,53-4,53-5,53(完了後の調整),54-1,57-3,57(完了後の調整),64-4,69-3,78-1,87-2,87-4,88-3,98-1,99(完了後の調整),116-2
 // 写経レベル: 定型
 // Phase-16-6:追記 ── ../../test-utils/stageFixtures.makeFunctionList
 // Phase-44-2:追記 ── ../../test-utils/stageFixtures.makeImpact
@@ -119,6 +119,8 @@ describe("DetailedDesignPageContent", () => {
 
     // Phase-98-1:追記
     expect(screen.getByRole("link", { name: "確認事項 →" })).toHaveAttribute("href", "/projects/p1/confirmations");
+    // Phase-116-2:追記
+    expect(screen.getByRole("link", { name: "資料 →" })).toHaveAttribute("href", "/projects/p1/materials");
     expect(screen.getByRole("link", { name: "変更要求(CR) →" })).toHaveAttribute("href", "/projects/p1/change-requests");
     // Phase-88-3:追記
     expect(screen.getByRole("link", { name: "合意済みの版 →" })).toHaveAttribute("href", "/projects/p1/baselines");

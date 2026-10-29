@@ -1,4 +1,7 @@
-// 作成：Phase-87-1｜更新：Phase-88-2,98-2,107-1,107-2,107-3,107-4,107-5,112-2,112-4
+// 作成：Phase-87-1｜更新：Phase-88-2,98-2,107-1,107-2,107-3,107-4,107-5,112-2,112-4,116-4
+// Phase-116-4:追記 ── @/features/baselines/api/types.BaselineFreshnessRead
+import type { BaselineFreshnessRead } from "@/features/baselines/api/types";
+
 // Phase-88-2：更新
 // // 変更要求(CR)と合意済みの版(束)の API の型。devex-api app/schemas/change_request.py・
 // // app/schemas/baseline.py の同名のクラスに対応する(画面で使う項目だけ)。
@@ -214,6 +217,9 @@ export type ChangeRequestRead = ChangeRequestSummaryRead & {
   // Phase-112-4:追記
   // 基準の束の後に、ほかの CR の反映で変わった対象の要件(未確認があると文書へ反映できない)
   conflicts: ChangeRequestConflictRead[];
+  // Phase-116-4:追記
+  // 基準の束の鮮度(束の後にほかの CR を反映した・古い段階から数えた、なら古い。この CR 自身の反映は除く)
+  baseline_freshness: BaselineFreshnessRead | null;
 };
 
 // Phase-107-2：更新
@@ -453,6 +459,9 @@ export type ExplanationSummaryRead = {
 // 変更の規模(説明書の規模の節)。種類ごとの数(数えられなければ null で、uncountable に理由)・
 // 数えたものの表示名・数えたうえでの注記。detail は対象の段階・文書・要件 ID・単位
 export type ScaleKind = "unit" | "file" | "test" | "screen" | "api";
+// Phase-116-4:追記
+// counted(数えた) / stale(古い段階・束の後の CR の注記つきで数えた。少ない・違うことがある) / uncountable(数えられない)
+export type ScaleState = "counted" | "stale" | "uncountable";
 
 export type ScaleRemarkRead = {
   code: string;
@@ -464,6 +473,8 @@ export type ScaleCountRead = {
   kind: ScaleKind;
   label: string;
   count: number | null;
+  // Phase-116-4:追記
+  state: ScaleState;
   names: string[];
   uncountable: ScaleRemarkRead[];
   notes: ScaleRemarkRead[];
@@ -502,6 +513,9 @@ export type ChangeRequestExplanationRead = {
   system_tests: string[];
   has_test_spec: boolean;
   summary: ExplanationSummaryRead | null;
+  // Phase-116-4:追記
+  // 規模を数えた基準の束の鮮度
+  baseline_freshness: BaselineFreshnessRead | null;
 };
 
 // Phase-107-3:追記
@@ -545,6 +559,9 @@ export type ShareLinkCreatedRead = ShareLinkRead & {
   token: string;
   path: string;
   summary_needs_reconfirm: boolean;
+  // Phase-116-4:追記
+  // 説明書の規模を数えた基準の束の鮮度(古ければ知らせる)
+  baseline_freshness: BaselineFreshnessRead | null;
 };
 
 // Phase-107-5:追記

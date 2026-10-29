@@ -1,10 +1,12 @@
-// 作成：Phase-88-2｜更新：Phase-88(完了後の調整)
+// 作成：Phase-88-2｜更新：Phase-88(完了後の調整),116-4
 // SUT: useBaselinesStore(一覧・中身・段階の状態・作成)
 // ドライバ: vitest のテスト関数(ストアの関数を直接呼ぶ)
 // スタブ: fetch(stubFetch)── ストアが API を呼ぶ順と本文、応答・失敗の後の状態を確かめるため
+// Phase-116-4:追記 ── @/features/materials/test-utils/materialFixtures.makeFreshness
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useBaselinesStore } from "../baselines-store";
 import { makeBaseline, makeBaselineSummary } from "../test-utils/baselineFixtures";
+import { makeFreshness } from "@/features/materials/test-utils/materialFixtures";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
@@ -46,15 +48,27 @@ describe("useBaselinesStore", () => {
     expect(state().list).toEqual([]);
   });
 
-  it("中身と段階の状態を読む", async () => {
+  // Phase-116-4：更新
+  // it("中身と段階の状態を読む", async () => {
+  // ↓↓
+  it("中身と鮮度と段階の状態を読む", async () => {
     stub.queue({ body: makeBaseline({ number: 2 }) });
+    // Phase-116-4:追記
+    stub.queue({ body: makeFreshness({ baseline_number: 2, fresh: false, outdated_stages: [5] }) });
     stub.queue({ body: [{ stage: 1, state: "approved", approved_version: 1, generation_status: null }] });
 
     await state().fetchDetail("p1", 2);
+    // Phase-116-4:追記
+    await new Promise((resolve) => setTimeout(resolve, 0));
     await state().fetchStages("p1");
 
     expect(state().detail?.number).toBe(2);
-    expect(stub.requests[1].url).toContain("/api/v1/projects/p1/design-stages");
+    // Phase-116-4：更新
+    // expect(stub.requests[1].url).toContain("/api/v1/projects/p1/design-stages");
+    // ↓↓
+    expect(stub.requests[1].url).toContain("/api/v1/projects/p1/baselines/2/freshness");
+    expect(state().freshness?.outdated_stages).toEqual([5]);
+    expect(stub.requests[2].url).toContain("/api/v1/projects/p1/design-stages");
     expect(state().stages).toHaveLength(1);
   });
 

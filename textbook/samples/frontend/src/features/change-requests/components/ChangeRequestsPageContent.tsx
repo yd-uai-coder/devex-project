@@ -1,4 +1,4 @@
-// 更新：Phase-98-1
+// 更新：Phase-98-1,116-2
 "use client";
 // 作成：Phase-87-2｜更新：Phase-88-3,88(完了後の調整)
 // Phase-88(完了後の調整)：更新(作成のボタンとフォームを外し、作成は合意済みの版の中身から(基準の版は固定)。簡易モードの知らせを足した。全体を書き換えた)
@@ -133,6 +133,7 @@
 //   );
 // }
 // ↓↓
+// Phase-116-2:追記 ── @/features/materials/materialOps.materialsHref
 import { useEffect } from "react";
 import Link from "next/link";
 import { H2, Paragraph, Text, XStack, YStack } from "tamagui";
@@ -141,6 +142,7 @@ import { useChangeRequestsStore } from "@/features/change-requests/change-reques
 import { ChangeRequestList } from "@/features/change-requests/components/ChangeRequestList";
 import { DetailedModeOnlyNotice } from "@/features/change-requests/components/DetailedModeOnlyNotice";
 import { baselinesHref } from "@/features/baselines/baselineOps";
+import { materialsHref } from "@/features/materials/materialOps";
 
 // 変更要求(CR)の一覧(SCR-010。docs/external_design.md 2.14節)。詳細設計モードのプロジェクトだけ
 // (簡易モードではサーバーが409を返し、本体の代わりに知らせを出す)。CR は合意済みの版を基準にするので、
@@ -177,6 +179,10 @@ export function ChangeRequestsPageContent({ projectId }: { projectId: string }) 
           {/* Phase-98-1:追記 */}
           <Link href={`/projects/${projectId}/confirmations`}>
             <Text color="$blue10">確認事項</Text>
+          </Link>
+          {/* Phase-116-2:追記 */}
+          <Link href={materialsHref(projectId)}>
+            <Text color="$blue10">資料</Text>
           </Link>
         </XStack>
       </XStack>

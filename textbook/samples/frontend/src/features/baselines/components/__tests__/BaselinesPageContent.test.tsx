@@ -1,4 +1,4 @@
-// 作成：Phase-88-3｜更新：Phase-88(完了後の調整),98-1,109-2
+// 作成：Phase-88-3｜更新：Phase-88(完了後の調整),98-1,109-2,116-2,116-4
 // Phase-88(完了後の調整)：更新
 // // SUT: BaselinesPageContent(束の一覧と作成の画面)と、その中の BaselineList
 // ↓↓
@@ -59,6 +59,8 @@ describe("BaselinesPageContent", () => {
     expect(screen.getByRole("link", { name: "← 変更要求(CR)" })).toHaveAttribute("href", "/projects/p1/change-requests");
     // Phase-98-1:追記
     expect(screen.getByRole("link", { name: "確認事項" })).toHaveAttribute("href", "/projects/p1/confirmations");
+    // Phase-116-2:追記
+    expect(screen.getByRole("link", { name: "資料" })).toHaveAttribute("href", "/projects/p1/materials");
   });
 
   it("作成のフォームを開くと段階と CR を読み直し、入れられる CR だけを選ばせる", async () => {
@@ -94,5 +96,25 @@ describe("BaselinesPageContent", () => {
 
     expect(screen.getByText(/詳細設計モードのプロジェクトだけで使えます/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "合意済みの版を作る" })).not.toBeInTheDocument();
+  });
+
+  // Phase-116-4:追記
+  it("一覧に鮮度を出す", () => {
+    useBaselinesStore.setState({
+      list: [makeBaselineSummary({ number: 2, label: "B-2", fresh: true }), makeBaselineSummary({ fresh: false })],
+    });
+    renderWithTheme(<BaselinesPageContent projectId="p1" />);
+
+    expect(screen.getByRole("columnheader", { name: "鮮度" })).toBeInTheDocument();
+    expect(screen.getByText("新しい")).toBeInTheDocument();
+    expect(screen.getByText("古い")).toBeInTheDocument();
+  });
+
+  it("知らせからの案内(initialCreate)では、作成のフォームを開いて段階と CR を読む", () => {
+    renderWithTheme(<BaselinesPageContent projectId="p1" initialCreate />);
+
+    expect(screen.getByRole("heading", { name: "合意済みの版を作る" })).toBeInTheDocument();
+    expect(useBaselinesStore.getState().fetchStages).toHaveBeenCalledWith("p1");
+    expect(useChangeRequestsStore.getState().fetchList).toHaveBeenCalledWith("p1", { force: true });
   });
 });

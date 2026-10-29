@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3,78-1,87-2,88-3,98-1
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3,78-1,87-2,88-3,98-1,116-2
 // Phase-53-4:追記 ── @testing-library/react.act
 // Phase-54-2:追記 ── @/features/design-review/review-store.useReviewStore, @/features/design-review/test-utils/reviewFixtures.as, @/features/design-review/test-utils/reviewFixtures.finding, @/features/design-review/test-utils/reviewFixtures.gate, @/features/design-review/test-utils/reviewFixtures.reviewUser, @/features/design-review/test-utils/reviewFixtures.run, @/features/design-review/test-utils/reviewFixtures.user
 // Phase-57-2:追記 ── @/features/documents/test-spec-store.useTestSpecStore
@@ -305,6 +305,8 @@ describe("DocumentsPageContent", () => {
     expect(screen.queryByRole("link", { name: "合意済みの版" })).not.toBeInTheDocument();
     // Phase-98-1:追記
     expect(screen.queryByRole("link", { name: "確認事項" })).not.toBeInTheDocument();
+    // Phase-116-2:追記
+    expect(screen.queryByRole("link", { name: "資料" })).not.toBeInTheDocument();
   });
 
   // Phase-15-7:追記
@@ -331,6 +333,8 @@ describe("DocumentsPageContent", () => {
     expect(screen.getByRole("link", { name: "合意済みの版" })).toHaveAttribute("href", "/projects/p1/baselines");
     // Phase-98-1:追記
     expect(screen.getByRole("link", { name: "確認事項" })).toHaveAttribute("href", "/projects/p1/confirmations");
+    // Phase-116-2:追記
+    expect(screen.getByRole("link", { name: "資料" })).toHaveAttribute("href", "/projects/p1/materials");
   });
 
   it("ドキュメントが無ければ空状態メッセージを表示する", () => {

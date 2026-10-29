@@ -1,4 +1,4 @@
-// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整),107-4,112-2,112-4
+// 作成：Phase-87-3｜更新：Phase-87-4,88-4,88(完了後の調整),89(完了後の調整),107-4,112-2,112-4,116-4
 // Phase-112-2：更新
 // // SUT: ChangeRequestDetailContent(詳細の見出し・タブの切り替え・反映の完了待ち)
 // ↓↓
@@ -6,6 +6,7 @@
 // ドライバ: Testing Library(描画・タブのクリック)
 // スタブ: ストアの関数(vi.fn)・useGenerationPolling(vi.mock)・各タブと操作の部品(vi.mock)──
 // 詳細自身の配線だけを見る。タブの中身はそれぞれのテストで確かめる
+// Phase-116-4:追記 ── @/features/materials/test-utils/materialFixtures.makeFreshness
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -13,6 +14,7 @@ import { ChangeRequestDetailContent } from "../ChangeRequestDetailContent";
 import { useChangeRequestsStore } from "../../change-requests-store";
 import { makeChangeRequest } from "../../test-utils/changeRequestFixtures";
 import { renderWithTheme, resetChangeRequestsStore } from "../../test-utils/renderWithStore";
+import { makeFreshness } from "@/features/materials/test-utils/materialFixtures";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 const polling = vi.fn();
@@ -128,5 +130,35 @@ describe("ChangeRequestDetailContent", () => {
 
     expect(screen.getByText(/詳細設計モードのプロジェクトだけで使えます/)).toBeInTheDocument();
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+  });
+
+  // Phase-116-4:追記
+  it("合意の前は、基準の束が古ければ知らせる。合意の後は出さない", () => {
+    const stale = makeFreshness({ baseline_number: 1, fresh: false, applied_after: [{ number: 2, keys: ["req:FR-005"] }] });
+    useChangeRequestsStore.setState({ detail: makeChangeRequest({ baseline_freshness: stale }) });
+    const { unmount } = renderWithTheme(<ChangeRequestDetailContent projectId="p1" number={1} />);
+
+    expect(screen.getByLabelText("B-1 が古いことの知らせ")).toHaveTextContent("基準の版 B-1 の設計から求めています");
+    unmount();
+
+    useChangeRequestsStore.setState({
+      detail: makeChangeRequest({
+        status: "agreed",
+        baseline_freshness: stale,
+        decision: {
+          decided_at: "2026-10-20T01:00:00Z",
+          counterpart: null,
+          memo: "",
+          reason: "",
+          recorded_by: "u1",
+          option: null,
+          source: null,
+          source_label: null,
+          fingerprint: null,
+        },
+      }),
+    });
+    renderWithTheme(<ChangeRequestDetailContent projectId="p1" number={1} />);
+    expect(screen.queryByLabelText("B-1 が古いことの知らせ")).toBeNull();
   });
 });

@@ -1,8 +1,10 @@
-// 作成：Phase-88-2｜更新：Phase-98-2
+// 作成：Phase-88-2｜更新：Phase-98-2,116-1
 // Phase-98-2:追記 ── @/features/baselines/api/types.BaselineOriginRead
+// Phase-116-1:追記 ── @/features/baselines/api/types.BaselineFreshnessRead
 import { apiFetch } from "@/lib/api/client";
 import type {
   BaselineCreate,
+  BaselineFreshnessRead,
   BaselineOriginRead,
   BaselineRead,
   BaselineRequirementRead,
@@ -35,4 +37,10 @@ export function listBaselineRequirements(projectId: string, number: number): Pro
 // 新しい要件の予測の起点に選べる要素(束の要件・画面・API)
 export function listBaselineOrigins(projectId: string, number: number): Promise<BaselineOriginRead[]> {
   return apiFetch<BaselineOriginRead[]>(`${base(projectId)}/${number}/origins`);
+}
+
+// Phase-116-1:追記
+// 束の鮮度(後の束・束の後に反映した CR・束を作った時点で古かった段階)
+export function getBaselineFreshness(projectId: string, number: number): Promise<BaselineFreshnessRead> {
+  return apiFetch<BaselineFreshnessRead>(`${base(projectId)}/${number}/freshness`);
 }

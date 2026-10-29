@@ -1,4 +1,4 @@
-// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3,78-1,87-2,88-3,98-1
+// 作成：Phase-3-6｜更新：Phase-11-4,15-7,15-8,24(完了後の調整),31-5,53-4,53(完了後の調整),54-2,57-2,64-4,69-3,78-1,87-2,88-3,98-1,116-2
 "use client";
 
 // Phase-15-8:追記 ── useState(react), ConfirmDialog
@@ -6,22 +6,24 @@
 // Phase-53(完了後の調整):追記 ── @/features/documents/regenerationOps(DOC_LABEL, modeDocTypes, progressText, regenerationTargets, startLabel), POLL_INTERVAL_MS(@/hooks/useGenerationPolling), useInterval(@/hooks/useInterval)
 // Phase-54-2:追記 ── @/features/design-review/model.LEVEL_LABEL, @/features/design-review/model.regenerableFindings, @/features/design-review/model.regenerationStartFor, @/features/design-review/review-store.useReviewStore
 // Phase-57-2:追記 ── @/features/documents/components/TestSpecPanel.TestSpecPanel, @/features/documents/test-spec-store.useTestSpecStore, @/features/documents/regenerationOps.progressDocTypes
-import { useEffect, useState } from "react";
-import Link from "next/link";
 // Phase-64-4:追記
-import { useRouter } from "next/navigation";
-import { Button, H2, Text, XStack, YStack } from "tamagui";
 // Phase-69-3:追記
-import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
 // Phase-78-1:追記
-import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
-import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 // Phase-64-4:追記
-import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
-import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
 // Phase-54-2：更新
 // import { documentOfTarget } from "@/features/design-review/model";
 // ↓↓
+// Phase-69-3:追記
+// Phase-116-2:追記 ── @/features/materials/materialOps.materialsHref
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button, H2, Text, XStack, YStack } from "tamagui";
+import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
+import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
+import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
+import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
 import { LEVEL_LABEL, documentOfTarget, regenerableFindings, regenerationStartFor } from "@/features/design-review/model";
 import { useReviewStore } from "@/features/design-review/review-store";
 import type { TargetActionOf } from "@/features/design-review/model";
@@ -40,8 +42,8 @@ import {
 } from "@/features/documents/regenerationOps";
 import { POLL_INTERVAL_MS, useGenerationPolling } from "@/hooks/useGenerationPolling";
 import { useInterval } from "@/hooks/useInterval";
-// Phase-69-3:追記
 import { failureFor } from "@/lib/generation-failure";
+import { materialsHref } from "@/features/materials/materialOps";
 
 export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const documents = useDocumentsStore((s) => s.documents);
@@ -205,6 +207,13 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           {projectMode === "detailed" ? (
             <Link href={`/projects/${projectId}/confirmations`}>
               <Text color="$blue10">確認事項</Text>
+            </Link>
+          ) : null}
+          {/* Phase-116-2:追記 */}
+          {/* 資料(SCR-013)も詳細設計モードだけ */}
+          {projectMode === "detailed" ? (
+            <Link href={materialsHref(projectId)}>
+              <Text color="$blue10">資料</Text>
             </Link>
           ) : null}
           {/* 簡易モードは、同じ画面(SCR-008)を段階8(実装手順書)だけで開く(入力は4文書) */}

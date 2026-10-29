@@ -1,4 +1,4 @@
-// 作成：Phase-88-3｜更新：Phase-88(完了後の調整)
+// 作成：Phase-88-3｜更新：Phase-88(完了後の調整),116-4
 import { vi } from "vitest";
 import { useBaselinesStore } from "@/features/baselines/baselines-store";
 
@@ -18,6 +18,8 @@ export function resetBaselinesStore(): void {
     detailStatus: "success",
     detailError: null,
     detailNotFound: false,
+    // Phase-116-4:追記
+    freshness: null,
     stages: null,
     stagesError: null,
     creating: false,

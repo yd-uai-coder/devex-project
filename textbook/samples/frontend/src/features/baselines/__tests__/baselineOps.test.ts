@@ -1,8 +1,9 @@
-// 作成：Phase-88-2｜更新：Phase-107-2,109-2
+// 作成：Phase-88-2｜更新：Phase-107-2,109-2,116-4
 // SUT: baselineOps(合意済みの版の画面の純粋な変換)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
 // Phase-109-2：削除 ── ../baselineOps.includedChangeRequests
+// Phase-116-4:追記 ── ../baselineOps.baselineCreateHref, ../baselineOps.freshnessLabel, ../baselineOps.needsRebuild, @/features/materials/test-utils/materialFixtures.makeFreshness
 import { describe, expect, it } from "vitest";
 import {
   applySelection,
@@ -16,7 +17,11 @@ import {
   stagePreview,
   toCreateBody,
   type BaselineForm,
+  baselineCreateHref,
+  freshnessLabel,
+  needsRebuild,
 } from "../baselineOps";
+import { makeFreshness } from "@/features/materials/test-utils/materialFixtures";
 import { makeChangeRequest } from "@/features/change-requests/test-utils/changeRequestFixtures";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 
@@ -120,5 +125,16 @@ describe("baselineOps", () => {
       { stage: 1, title: "機能一覧", included: true, state: "承認済み" },
       { stage: 2, title: "データフロー", included: false, state: "下書き" },
     ]);
+  });
+
+  // Phase-116-4:追記
+  it("鮮度の印・作り直しが要るか・作成のフォームを開くリンク", () => {
+    expect(freshnessLabel(true)).toBe("新しい");
+    expect(freshnessLabel(false)).toBe("古い");
+    expect(freshnessLabel(undefined)).toBe("─");
+    expect(needsRebuild(makeFreshness({ fresh: false, applied_after: [{ number: 2, keys: [] }] }))).toBe(true);
+    expect(needsRebuild(makeFreshness({ fresh: false, outdated_stages: [5] }))).toBe(true);
+    expect(needsRebuild(makeFreshness({ fresh: false, is_latest: false, newer_numbers: [3] }))).toBe(false);
+    expect(baselineCreateHref("p1")).toBe("/projects/p1/baselines?create=1");
   });
 });

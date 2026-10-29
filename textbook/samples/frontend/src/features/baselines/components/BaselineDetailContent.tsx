@@ -1,9 +1,10 @@
-// 作成：Phase-88-3｜更新：Phase-88(完了後の調整),109-2
+// 作成：Phase-88-3｜更新：Phase-88(完了後の調整),109-2,116-4
 "use client";
 
 // Phase-88(完了後の調整):追記 ── next/navigation.useRouter, @/features/change-requests/components/DetailedModeOnlyNotice.DetailedModeOnlyNotice, @/features/baselines/baselineOps.newChangeRequestHref
 // Phase-109-2:追記 ── @/features/change-requests/changeRequestOps.changeRequestLabel
 // Phase-109-2：削除 ── @/features/change-requests/change-requests-store.useChangeRequestsStore, @/features/change-requests/components/StatusBadge.StatusBadge, @/features/baselines/baselineOps.includedChangeRequests
+// Phase-116-4:追記 ── @/features/baselines/components/BaselineFreshnessNotice.BaselineFreshnessNotice
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,6 +16,7 @@ import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/t
 import { MarkdownBody } from "@/features/documents/components/MarkdownBody";
 import type { BaselineItemRead } from "@/features/baselines/api/types";
 import { useBaselinesStore } from "@/features/baselines/baselines-store";
+import { BaselineFreshnessNotice } from "@/features/baselines/components/BaselineFreshnessNotice";
 import {
   baselinesHref,
   itemLabel,
@@ -27,7 +29,10 @@ import {
 // // 合意済みの版(束)の中身(SCR-010)。合意の記録・入れた変更要求・写した文書(md)・段階の表を出す。
 // ↓↓
 // 合意済みの版(束)の中身(SCR-010)。合意の記録・入れた変更要求・写した文書(md)・段階の表を出し、
-// この版を基準に変更要求を作るページへ移れる。
+// Phase-116-4：更新
+// // この版を基準に変更要求を作るページへ移れる。
+// ↓↓
+// この版を基準に変更要求を作るページへ移れる。束が古ければ、作る前に知らせる。
 // 段階の写し(model)の中身は出さない(重いため。詳細設計画面で今の段階を見る)
 export function BaselineDetailContent({ projectId, number }: { projectId: string; number: number }) {
   // Phase-88(完了後の調整):追記
@@ -39,6 +44,10 @@ export function BaselineDetailContent({ projectId, number }: { projectId: string
   // Phase-88(完了後の調整):追記
   const unavailable = useBaselinesStore((s) => s.unavailable && s.projectId === projectId);
   const fetchDetail = useBaselinesStore((s) => s.fetchDetail);
+  // Phase-116-4:追記
+  const freshness = useBaselinesStore((s) =>
+    s.projectId === projectId && s.freshness?.baseline_number === number ? s.freshness : null,
+  );
   // Phase-109-2：削除
   // const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : []));
   // const fetchChangeRequests = useChangeRequestsStore((s) => s.fetchList);
@@ -88,6 +97,17 @@ export function BaselineDetailContent({ projectId, number }: { projectId: string
   return (
     <YStack paddingVertical="$4" gap="$4">
       {header}
+      {/* Phase-116-4:追記 */}
+      <BaselineFreshnessNotice
+        projectId={projectId}
+        freshness={freshness}
+        lead={`この版を基準に変更要求を作ると、対象の要件の文・説明・規模は ${detail.label} の設計から求めます。`}
+      />
+      {freshness && !freshness.tracked ? (
+        <Text color="$color11">
+          この版は合意の記録を始める前に作ったので、後に反映した変更要求があるかは判定できません。
+        </Text>
+      ) : null}
       {/* Phase-88(完了後の調整):追記 */}
       {/* 変更要求は、合意済みの版の中身から作る(基準の版はこの版に固定する) */}
       <XStack>

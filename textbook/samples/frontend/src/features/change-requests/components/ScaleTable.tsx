@@ -1,4 +1,4 @@
-// 作成：Phase-107-1｜更新：Phase-110(完了後の調整)
+// 作成：Phase-107-1｜更新：Phase-110(完了後の調整),116-4
 "use client";
 
 import { Text, YStack } from "tamagui";
@@ -8,23 +8,40 @@ import { CELL, HEAD, TABLE } from "@/features/detailed-design/components/tableSt
 
 const NUM = { ...CELL, textAlign: "right", whiteSpace: "nowrap" } as const;
 const UNCOUNTABLE = { ...CELL, color: "var(--orange10)", whiteSpace: "nowrap" } as const;
+// Phase-116-4:追記
+const STALE = { ...NUM, color: "var(--yellow11)" } as const;
 // Phase-110(完了後の調整):追記
 // 案ごとの列のときは内訳の列が無いので、表を内容の幅にする(全幅だと数が項目の名前から遠く離れる)。
 // 入れ物は縦並び(既定で子を横いっぱいに伸ばす)なので、左に寄せて伸ばさない
 const NARROW_TABLE = { ...TABLE, width: "auto", alignSelf: "flex-start" } as const;
 
 // 変更の規模の表(説明書の規模の節と同じ数)。合意の前で案があれば種類 × 案、それ以外は1列と内訳。
-// 数えられない種類は0件と書かず「数えられない」と出し、表の下に理由と注記をまとめる
-// (docs/external_design.md 2.16節「変更の規模」)
+// Phase-116-4：更新
+// // 数えられない種類は0件と書かず「数えられない」と出し、表の下に理由と注記をまとめる
+// // (docs/external_design.md 2.16節「変更の規模」)
+// ↓↓
+// 数えられない種類は0件と書かず「数えられない」と出し、古い段階・束の後の CR から数えた種類は「(古い)」を添えて
+// 分ける。表の上に基準の束(新しいか)、表の下に理由と注記をまとめる
+// (docs/external_design.md 2.16節「変更の規模」・2.17節「束が古いときの知らせ」)
 export function ScaleTable({ explanation }: { explanation: ChangeRequestExplanationRead }) {
   const columns = scaleColumns(explanation);
   const single = columns.length === 1;
   const kinds = columns[0]?.scale ?? [];
   const remarks = scaleRemarkLines(columns);
   const countOf = (scale: ScaleCountRead[], kind: ScaleKind) => scale.find((c) => c.kind === kind);
+  // Phase-116-4:追記
+  const freshness = explanation.baseline_freshness;
 
   return (
     <YStack gap="$2">
+      {/* Phase-116-4:追記 */}
+      {freshness ? (
+        <Text fontSize="$3" color={freshness.fresh ? "$color11" : "$orange11"}>
+          {freshness.fresh
+            ? `合意済みの版 ${freshness.label} の設計から数えました。`
+            : `合意済みの版 ${freshness.label} の設計から数えました。${freshness.label} は古い版なので、今の設計と違うことがあります。`}
+        </Text>
+      ) : null}
       {/* Phase-110(完了後の調整)：更新 */}
       {/* <table style={TABLE} aria-label="変更の規模"> */}
       {/* ↓↓ */}
@@ -45,10 +62,18 @@ export function ScaleTable({ explanation }: { explanation: ChangeRequestExplanat
             <tr key={row.kind}>
               <td style={CELL}>{row.label}</td>
               {columns.map((column) => {
-                const count = countOf(column.scale, row.kind)?.count ?? null;
+                // Phase-116-4：更新
+                // const count = countOf(column.scale, row.kind)?.count ?? null;
+                // ↓↓
+                const cell = countOf(column.scale, row.kind);
+                const count = cell?.count ?? null;
                 return (
-                  <td key={column.key} style={count === null ? UNCOUNTABLE : NUM}>
-                    {scaleCell(count)}
+                  // Phase-116-4：更新
+                  // <td key={column.key} style={count === null ? UNCOUNTABLE : NUM}>
+                  //   {scaleCell(count)}
+                  // ↓↓
+                  <td key={column.key} style={count === null ? UNCOUNTABLE : cell?.state === "stale" ? STALE : NUM}>
+                    {scaleCell(count, cell?.state)}
                   </td>
                 );
               })}
