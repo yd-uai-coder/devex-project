@@ -208,6 +208,8 @@
 
 **(Phase 89 の着手時に変更)** ステージ11〜15 の本番への反映は、ステージ15 の完了時にまとめて行う(2026-10-20 のユーザー決定。[`textbook/q_a.md`](../textbook/q_a.md)「Phase 89 開始時」の CR)。手順は [`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.8節に、各ステージが自分の分を足していく。各ステージの最後の Phase は、効果測定・E2E・開発環境での画面確認までを行う。
 
+**(ステージ14 の振り返りで変更)** ステージ15(実装との接続)をスコープから外したので、ステージ11〜14 の本番への反映は、ステージ14 の後の Phase 119 で行う(2026-10-29 のユーザー決定。[`textbook/q_a.md`](../textbook/q_a.md)「ステージ14完了後 ── 振り返り」の CR。その後、反映の前に TOP・GUIDE のページを Phase 118 として足し、反映を Phase 119 に送った ── 同「ステージ14完了後 ── TOP・GUIDE の構成案」)。
+
 ### ステージ12：合意の精度 ── 【Could have】
 
 * **目的**: 合意した中身(要件の行・利用者・画面・API・外部連携)が、CR の範囲の外の再生成で変わらないようにし、推測と未決を確認事項として漏れなく出す。構想は[`appendix/devex_project_positioning.md`](../appendix/devex_project_positioning.md) 12章、出発点は[`appendix/measurements/stage12-baseline.md`](../appendix/measurements/stage12-baseline.md)。
@@ -255,7 +257,9 @@
   * Phase 114: 違いの取り出し API(LLM の構造化出力・引用と対象のキーの決定的な検査・違いのテーブル・偽の LLM の決まった違い。比べるのは束の合意の要素の一覧と範囲、やり直しは未確認と弾いたを置き換える) ── **完了**([`textbook/Phase-114/Phase-114-introduction.md`](../textbook/Phase-114/Phase-114-introduction.md))
   * Phase 115: 違いから CR の下書き・古い束の知らせ(API。選んだ違いから決定的に組み立てる CR の下書きと違いの結び・CR の詳細・説明書・共有リンクの作成の基準の束の鮮度・規模の「古い」の状態と説明書の基準の束の行) ── **完了**([`textbook/Phase-115/Phase-115-introduction.md`](../textbook/Phase-115/Phase-115-introduction.md))
   * Phase 116: 取り込みの画面(資料の一覧・追加・資料のページ・違いの取り出しと一覧・選んで CR の下書きへ・捨てる / 戻す・束が古いときの共通の知らせ・規模の表の基準の束と「古い」・束の一覧の鮮度) ── **完了**([`textbook/Phase-116/Phase-116-introduction.md`](../textbook/Phase-116/Phase-116-introduction.md))
-  * Phase 117: 効果測定・統合/E2E(束 B-7 を作ってから、資料セット A・B を取り込みに各2回通す・全 E2E・マイグレーションの往復・開発環境での画面確認・`OPERATIONS.md` 10.8節のステージ14 の分) ── **完了**([`textbook/Phase-117/Phase-117-introduction.md`](../textbook/Phase-117/Phase-117-introduction.md)。マイルストーン15 は、取り出しのプロンプト(詳細を決める違いを change に・未決の話と同じ資料の決まったことを別に)と引用の照合(文字どおりの `\n`)を直した後の2回で達成 ── [`appendix/measurements/stage14-effect.md`](../appendix/measurements/stage14-effect.md)。直す前の2回は拾い漏れ 1・2 で (1) を満たさなかった。ユーザーの画面確認は Phase 完了後に行う)
+  * Phase 117: 効果測定・統合/E2E(束 B-7 を作ってから、資料セット A・B を取り込みに各2回通す・全 E2E・マイグレーションの往復・開発環境での画面確認・`OPERATIONS.md` 10.8節のステージ14 の分) ── **完了**([`textbook/Phase-117/Phase-117-introduction.md`](../textbook/Phase-117/Phase-117-introduction.md)。マイルストーン15 は、取り出しのプロンプト(詳細を決める違いを change に・未決の話と同じ資料の決まったことを別に)と引用の照合(文字どおりの `\n`)を直した後の2回で達成 ── [`appendix/measurements/stage14-effect.md`](../appendix/measurements/stage14-effect.md)。直す前の2回は拾い漏れ 1・2 で (1) を満たさなかった。ユーザーの画面確認は Phase の完了後に済ませた(指摘1件。Phase 116 の完了後の調整))
+  * Phase 118: TOP ページと GUIDE(使い方の解説)のページ(偶然来た人にも伝わる概要・できること、機能ごとの使い方のページを利用の流れでつなぐ。画面のスクリーンショットつき。公開ページ)。本番への反映の前に足した(2026-10-29 のユーザー決定)。2026-10-30 に実装した([`textbook/Phase-118/`](../textbook/Phase-118/Phase-118-introduction.md))
+  * Phase 119: ステージ11〜14 と Phase 118 の本番への反映と本番での確認([`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md) 10.8節。説明済みの CR の要約の確かめ直しを含む)。ステージ15 をスコープから外したので足した(上のステージ11 の注)
 * **マイルストーン15**: 題材(トレンド追跡アプリ。束 B-7)で、資料セット A・B を取り込みに各2回通したとき、(1) 拾い漏れと誤りがベースラインより増えない、(2) 一覧に出た違い(弾いたものを除く)の対象がすべて合意済みの行のキーか「新規 + 起点」で、CR の下書きにそのまま渡せる、(3) 根拠の引用がすべて資料に文字どおりある、(4) 撤回・CR で済んだ変更・未決・言い換えが追加・変更・削除として出ない、(5) 選んだ違いから作った CR の下書きが対象と背景を持ち、規模が数えられる。題材の束が最新であることを、測る前に束の鮮度の判定で確かめる。
   * **[Phase 117 で読み替え(CR)]** 「題材の束が最新」は、後の束と束の後に反映した CR が無いこととする。束 B-7 は、段階2〜8 が CR-6 の後で古いまま作ったので鮮度は「古かった段階」で新しくないが、違いの取り出しは文書だけを使うので測定に関わらない。段階の古さは (5) の規模に「古い」として出る(数えられないではない)。経緯は [`textbook/q_a.md`](../textbook/q_a.md) の「Phase 117 開始時」。
 

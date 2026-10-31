@@ -1,5 +1,7 @@
-// 作成：Phase-62-2｜更新：Phase-66-3
+// 作成：Phase-62-2｜更新：Phase-66-3,118-1
+// Phase-118-1:追記 ── @/features/guide/guide-flow.GUIDE_INDEX_HREF, @/features/guide/guide-flow.GUIDE_PAGES, @/features/guide/guide-flow.guideHref
 import { describe, expect, it } from "vitest";
+import { GUIDE_INDEX_HREF, GUIDE_PAGES, guideHref } from "@/features/guide/guide-flow";
 import { MENU_TREE, menuItemKey, visibleMenuTree, type MenuGroup } from "../menu-tree";
 
 function labels(tree: MenuGroup[]) {
@@ -17,6 +19,15 @@ describe("MENU_TREE", () => {
     const contents = MENU_TREE.find((group) => group.label === "CONTENTS");
     expect(contents?.children.at(-1)).toEqual({ kind: "link", label: "マイページ", href: "/mypage" });
   });
+
+  // Phase-118-1:追記
+  it("Guide は使い方ガイドの目次と、ガイドのページへのリンク", () => {
+    const guide = MENU_TREE.find((group) => group.label === "Guide");
+    const hrefs = guide?.children.map((item) => (item.kind === "link" ? item.href : null));
+    expect(hrefs?.[0]).toBe(GUIDE_INDEX_HREF);
+    const pageHrefs = Object.values(GUIDE_PAGES).map((page) => guideHref(page.slug));
+    expect(hrefs?.slice(1).every((href) => href !== null && pageHrefs.includes(href))).toBe(true);
+  });
 });
 
 describe("visibleMenuTree", () => {
@@ -28,7 +39,10 @@ describe("visibleMenuTree", () => {
       // ↓↓
       ["CONTENTS", ["ダッシュボード", "新規プロジェクト作成", "マイページ"]],
       ["Authentication", ["ログイン", "ユーザー登録"]],
-      ["Guide", ["作成予定"]],
+      // Phase-118-1：更新
+      // ["Guide", ["作成予定"]],
+      // ↓↓
+      ["Guide", ["使い方ガイド(目次)", "はじめに", "ヒアリング", "合意と変更管理", "クライアントの方へ"]],
     ]);
   });
 

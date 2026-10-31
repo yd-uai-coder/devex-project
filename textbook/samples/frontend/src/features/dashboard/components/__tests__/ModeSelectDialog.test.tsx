@@ -1,11 +1,12 @@
-// 作成：Phase-15-7｜更新：Phase-62-3
+// 作成：Phase-15-7｜更新：Phase-62-3,118(完了後の調整2)
 // 写経レベル: 定型
+// Phase-118(完了後の調整2):追記 ── ../ModeSelectDialog.MODES_GUIDE_HREF
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
-import { ModeSelectDialog } from "../ModeSelectDialog";
+import { MODES_GUIDE_HREF, ModeSelectDialog } from "../ModeSelectDialog";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -32,6 +33,16 @@ describe("ModeSelectDialog", () => {
     expect(screen.getByText("簡易ドキュメントモード")).toBeInTheDocument();
     expect(screen.getByText("詳細設計モード")).toBeInTheDocument();
     expect(screen.getByText("モードはプロジェクトの作成後に変更できません。")).toBeInTheDocument();
+  });
+
+  // Phase-118(完了後の調整2):追記
+  it("作る文書の違いを、使い方ガイドの新しいタブで開けるようにする", () => {
+    renderDialog();
+
+    const link = screen.getByText("作る文書の違いを見る(使い方ガイド・新しいタブ)");
+    expect(link).toHaveAttribute("href", MODES_GUIDE_HREF);
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
 
   it("選んだモードを ?mode= で作成画面へ渡し、ダイアログを閉じる", async () => {

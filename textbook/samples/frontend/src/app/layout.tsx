@@ -1,4 +1,4 @@
-// 更新：Phase-3-1,24(T2同期)
+// 更新：Phase-3-1,24(T2同期),118-1
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
@@ -23,7 +23,11 @@ export const metadata: Metadata = {
   // description: "Next.js + Tamagui UI template collection",
   // ↓↓
   title: "Devex",
-  description: "AIによるシステム開発を支援するAIツール",
+  // Phase-118-1：更新
+  // description: "AIによるシステム開発を支援するAIツール",
+  // ↓↓
+  description:
+    "クライアントとの合意を、設計から実装・テストまでつなぐ。AI のヒアリングから設計書・実装手順・テストを作り、仕様変更の合意と反映までを管理します。",
 };
 
 export default function RootLayout({
@@ -33,7 +37,10 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      // Phase-118-1：更新
+      // lang="en"
+      // ↓↓
+      lang="ja"
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >

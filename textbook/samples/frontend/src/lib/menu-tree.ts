@@ -1,4 +1,4 @@
-// 更新：Phase-3-1,3-2,3-3,3-4,24(完了後の調整),24(T2同期),25-2,33-3,40(完了後の調整),41-3,50-3,51-3,60-3,62-2,66-3
+// 更新：Phase-3-1,3-2,3-3,3-4,24(完了後の調整),24(T2同期),25-2,33-3,40(完了後の調整),41-3,50-3,51-3,60-3,62-2,66-3,118-1
 // Phase-62-2：更新
 // export type MenuLeaf = { label: string; href: string };
 // export type MenuGroup = { label: string; children: MenuLeaf[] };
@@ -93,8 +93,18 @@ export const MENU_TREE: MenuGroup[] = [
   },
   {
     label: "Guide",
-    // 仮のリンク(ページはまだ無く、開くと 404)
-    children: [{ kind: "link", label: "作成予定", href: "/guide" }],
+    // Phase-118-1：更新
+    // // 仮のリンク(ページはまだ無く、開くと 404)
+    // children: [{ kind: "link", label: "作成予定", href: "/guide" }],
+    // ↓↓
+    // 使い方ガイドの目次と、よく開くページ(ページの定義は features/guide/guide-flow.ts)
+    children: [
+      { kind: "link", label: "使い方ガイド(目次)", href: "/guide" },
+      { kind: "link", label: "はじめに", href: "/guide/getting-started" },
+      { kind: "link", label: "ヒアリング", href: "/guide/hearing" },
+      { kind: "link", label: "合意と変更管理", href: "/guide/agreement" },
+      { kind: "link", label: "クライアントの方へ", href: "/guide/for-clients" },
+    ],
   },
 ];
 

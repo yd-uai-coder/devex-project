@@ -1,4 +1,4 @@
-// 更新：Phase-51-3,60-3,62-2
+// 更新：Phase-51-3,60-3,62-2,118-1
 // Phase-62-2:追記 ── beforeEach・vi(vitest), useAuthStore(@/components/auth/auth-store), stubFetch(@/lib/api/test-utils/fetch-stub)
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -105,7 +105,10 @@ describe("Menu", () => {
 
     // Phase-62-2:追記
     await user.click(screen.getByRole("button", { name: "Guide" }));
-    expect(screen.getByRole("link", { name: "作成予定" })).toHaveAttribute("href", "/guide");
+    // Phase-118-1：更新
+    // expect(screen.getByRole("link", { name: "作成予定" })).toHaveAttribute("href", "/guide");
+    // ↓↓
+    expect(screen.getByRole("link", { name: "使い方ガイド(目次)" })).toHaveAttribute("href", "/guide");
   });
 
   // Phase-62-2:追記

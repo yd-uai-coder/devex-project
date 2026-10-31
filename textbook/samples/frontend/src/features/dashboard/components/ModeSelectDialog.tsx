@@ -1,4 +1,4 @@
-// 作成：Phase-15-7｜更新：Phase-62-3
+// 作成：Phase-15-7｜更新：Phase-62-3,118(完了後の調整2)
 // 写経レベル: コア ── 作成後に変えられないモードを、何が生成されるかの違いとともに選ばせる。
 "use client";
 
@@ -22,6 +22,10 @@ export const MODE_OPTIONS: { mode: ProjectMode; title: string; description: stri
       "ヒアリングの後に要件定義・外部設計を生成し、続けて機能一覧から処理の手順までを段階ごとに確認・承認しながら詳細設計書を組み立てます。",
   },
 ];
+
+// Phase-118(完了後の調整2):追記
+// 使い方ガイドの「2つのモードと作る文書」(features/guide/guide-flow.ts の modes)
+export const MODES_GUIDE_HREF = "/guide/modes";
 
 // SCR-002 の「新規プロジェクトを作成」で開くモード選択ダイアログ。選んだモードを
 // Phase-62-3：更新
@@ -67,6 +71,13 @@ export function ModeSelectDialog({
         >
           <Dialog.Title>モードを選んでください</Dialog.Title>
           <Dialog.Description>モードはプロジェクトの作成後に変更できません。</Dialog.Description>
+          {/* Phase-118(完了後の調整2):追記 */}
+          {/* 迷ったときに、作る文書の違いを別のタブで読めるようにする(ダイアログは閉じない) */}
+          <Text fontSize="$3">
+            <a href={MODES_GUIDE_HREF} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue10)" }}>
+              作る文書の違いを見る(使い方ガイド・新しいタブ)
+            </a>
+          </Text>
           <YStack gap="$3">
             {MODE_OPTIONS.map((option) => (
               <YStack

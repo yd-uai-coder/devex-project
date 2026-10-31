@@ -1,0 +1,96 @@
+/* 作成：Phase-118-2 */
+/* TOP ページの見た目。表示の切り替え(display)を決める入れ物は素の要素にする
+   (本番ビルドで Tamagui の .is_View に負けないように。CLAUDE.md のハマりどころ)。 */
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cta,
+.ctaSecondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cta {
+  background: var(--green9);
+  color: white;
+}
+
+.cta:hover {
+  background: var(--green10);
+}
+
+.ctaSecondary {
+  border: 1px solid var(--borderColor);
+  background: var(--color1);
+  color: var(--color12);
+}
+
+.ctaSecondary:hover {
+  border-color: var(--blue9);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cards[data-columns="4"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.textLink {
+  color: var(--blue10);
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.4em;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.7;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  border: 1px solid var(--borderColor);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+.table thead th {
+  background: var(--color3);
+}
+
+.table tbody th {
+  white-space: nowrap;
+  background: var(--color2);
+}
