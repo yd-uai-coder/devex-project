@@ -1,4 +1,4 @@
-// 更新：Phase-62-1,108-1
+// 更新：Phase-62-1,108-1,119(本番確認後の調整)
 "use client";
 
 // Phase-62-1:追記 ── Link(next/link), styles(./Menu.module.css)
@@ -43,6 +43,8 @@ export function Header({ plain = false }: { plain?: boolean }) {
         minWidth={0}
         fontSize="$7"
         $md={{ fontSize: "$9" }}
+        // Phase-119(本番確認後の調整):追記
+        color="white"
       >
         {/* Phase-108-1：更新 */}
         {/* {/* タイトルはトップページへのリンク *\/} */}

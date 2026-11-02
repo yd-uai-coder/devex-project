@@ -15,7 +15,7 @@ There is no root-level `package.json`, build script, or CI config tying the two 
 
 The root `README.md` is the portfolio-facing overview of Devex — a system that interviews users through AI chat and builds requirements, design, implementation procedures and tests as structured design information linked by IDs. The detailed Japanese spec is split across four files under `docs/`: `docs/requirements.md`, `docs/external_design.md`, `docs/internal_design.md`, `docs/implementation_plan.md` — mirroring the four document types Devex itself generates.
 
-Both subrepos implement this spec through stage 10 (stages 1–10 deployed as of 2026-10-18; production: https://devex.uandi-tech.com/). The project was reopened on 2026-10-19; stages 11〜14 (Phase 80〜117) and Phase 118 (the TOP page and the GUIDE pages, 2026-10-30) are done (not yet deployed — they go to production together in Phase 119); stage 15 was removed from scope on 2026-10-29; the plan for stages 11〜15 is in [`appendix/devex_project_positioning.md`](appendix/devex_project_positioning.md) 12章. When changing Devex features, treat `docs/*.md` as the spec and keep it in sync with the code; the stage history is in `docs/implementation_plan.md` 4.1 and `textbook/`.
+Both subrepos implement this spec through stage 10 (stages 1–10 deployed as of 2026-10-18; production: https://devex.uandi-tech.com/). The project was reopened on 2026-10-19; stages 11〜14 (Phase 80〜117) and Phase 118 (the TOP page and the GUIDE pages, 2026-10-30) are done and were deployed together in Phase 119 (2026-11-02); stage 15 was removed from scope on 2026-10-29; the project was closed again by the second project-completion retrospective on 2026-11-02 ([`textbook/retrospectives/project-retrospective.md`](textbook/retrospectives/project-retrospective.md) 11〜19節); the plan for stages 11〜15 is in [`appendix/devex_project_positioning.md`](appendix/devex_project_positioning.md) 12章. When changing Devex features, treat `docs/*.md` as the spec and keep it in sync with the code; the stage history is in `docs/implementation_plan.md` 4.1 and `textbook/`.
 
 ## Working across the two repos
 
@@ -25,7 +25,7 @@ Both subrepos implement this spec through stage 10 (stages 1–10 deployed as of
 
 ## 進行のルール
 
-このプロジェクトは、`appendix/cl-development-handoff.md`(v1。プロジェクトの完了後に削除し、最終版の [`appendix/cl-development-handoff-v2.md`](appendix/cl-development-handoff-v2.md) が #1〜17 をそのまま含む)にまとめられた「CL(Curriculum Loop)開発」手法(AI が Phase 単位で学習教材・サンプルコードを著述し、人間が手で実装コードを書き、実装で当たった摩擦を教材に還流する開発・学習手法)を土台に開発を進める。教材は `textbook/` に置く。人間が手で実装するか、AI が本体まで実装するかは、Phase ごとに #21 の自動実装モード(on/off)で決める。
+このプロジェクトは、`appendix/cl-development-handoff.md`(v1。プロジェクトの完了後に削除し、[`appendix/cl-development-handoff-v2.md`](appendix/cl-development-handoff-v2.md) と最終版の [`appendix/cl-development-handoff-v3.md`](appendix/cl-development-handoff-v3.md) が #1〜17 をそのまま含む)にまとめられた「CL(Curriculum Loop)開発」手法(AI が Phase 単位で学習教材・サンプルコードを著述し、人間が手で実装コードを書き、実装で当たった摩擦を教材に還流する開発・学習手法)を土台に開発を進める。教材は `textbook/` に置く。人間が手で実装するか、AI が本体まで実装するかは、Phase ごとに #21 の自動実装モード(on/off)で決める。
 
 以下の #1〜#17 は v1 からの転記(番号・内容とも変更なし)。#18 以降がこのプロジェクト固有の追加ルールである。ドメイン・アーキテクチャの決定(採用する言語・フレームワーク・レイヤー構成など)はこの節ではなく、このファイルの「Repository structure」節や各サブリポジトリの `CLAUDE.md` に書く。
 
@@ -162,7 +162,7 @@ Both subrepos implement this spec through stage 10 (stages 1–10 deployed as of
 
 > **運用注記(#37 ── ステージ9完了後)**: 本番への反映は、次のステージとまとめてよい。その場合は、申し送りの「本番への反映と本番での確認」と、画面確認で決める項目を、次のステージの最後の Phase へ引き継ぐ。反映の手順は、2つのステージの分を1つにまとめる。振り返りは本番での確認の前に行ってよい。#39 の「本番での確認の指摘」は、反映の後の振り返りで、前のステージの分も埋める。経緯は [`textbook/retrospectives/overall-retrospective.md`](textbook/retrospectives/overall-retrospective.md) 14節。
 
-> **運用注記(#37 ── ステージ11完了後)**: 本番への反映を、次のステージよりさらに先(ステージ11〜15 はステージ15 の完了時)にまとめてもよい。その場合、まとめる各ステージの最後の Phase は、効果測定・全 E2E(#36)・開発環境での画面確認までを行い、`devex-api/OPERATIONS.md` の反映の手順の節(ステージ11〜15 は 10.8節)に、そのステージの分(マイグレーション・確認の表・ロールバック)を足す。本番への反映と本番での確認の申し送りは、反映するステージの最後の Phase まで引き継ぐ。#39 の「本番での確認の指摘」は、まとめて反映した後の振り返りで、各ステージの分を埋める。経緯は [`textbook/retrospectives/overall-retrospective.md`](textbook/retrospectives/overall-retrospective.md) 16節。ステージ15 はステージ14 の振り返りでスコープから外したので、ステージ11〜14 の分はステージ14 の後の Phase 119 で反映する(同 19節。Phase 118 は TOP・GUIDE のページにした。2026-10-29)。
+> **運用注記(#37 ── ステージ11完了後)**: 本番への反映を、次のステージよりさらに先(ステージ11〜15 はステージ15 の完了時)にまとめてもよい。その場合、まとめる各ステージの最後の Phase は、効果測定・全 E2E(#36)・開発環境での画面確認までを行い、`devex-api/OPERATIONS.md` の反映の手順の節(ステージ11〜15 は 10.8節)に、そのステージの分(マイグレーション・確認の表・ロールバック)を足す。本番への反映と本番での確認の申し送りは、反映するステージの最後の Phase まで引き継ぐ。#39 の「本番での確認の指摘」は、まとめて反映した後の振り返りで、各ステージの分を埋める。経緯は [`textbook/retrospectives/overall-retrospective.md`](textbook/retrospectives/overall-retrospective.md) 16節。ステージ15 はステージ14 の振り返りでスコープから外したので、ステージ11〜14 の分はステージ14 の後の Phase 119 で反映する(同 19節。Phase 118 は TOP・GUIDE のページにした。2026-10-29)。反映は 2026-11-02 に済んだ。
 
 **#38. AI の提案と最終決定**(ステージ4完了後の振り返りで確立)。AI が書くコード・設計・計画は提案であり、採用するか変更するかはユーザーが最終的に決める。画面確認の後の修正や、Phase の分割・撤回・番号の付け直しは、問題ではなく通常の工程として扱う。経緯は q_a(#8)と、introduction の「後続 Phase での改訂」(#12)に残す。
 
@@ -175,8 +175,10 @@ Both subrepos implement this spec through stage 10 (stages 1–10 deployed as of
 > 2026-10-18 のプロジェクト完了の振り返りで、3つとも達成と判定した([`textbook/retrospectives/project-retrospective.md`](textbook/retrospectives/project-retrospective.md) 2節)。
 >
 > 2026-10-19 に新しい位置付け([`appendix/devex_project_positioning.md`](appendix/devex_project_positioning.md))でプロジェクトを再開し、ゴール4 を足した。
+>
+> 2026-11-02 の2回目のプロジェクト完了の振り返りで、ゴール4 も達成と判定し、プロジェクトを完了として閉じた([`project-retrospective.md`](textbook/retrospectives/project-retrospective.md) 12節)。
 
 1. **プロダクト目標**: `docs/implementation_plan.md` ステージ1(MVP)が定義する Must 要件(チャットヒアリング → 要件定義 / 外部設計 / 内部設計 / 実装計画の4種 Markdown 自動生成)を満たし、ステージ1のマイルストーン1・2の受け入れ基準を満たす。
-2. **手法目標**: v1 の #1〜17 を土台に #18〜28(本節)を実プロジェクトで運用し、自動実装モード(#21)の off・on をそれぞれ少なくとも1 Phase で実施した上で(実績: off = Phase 1〜6、on = Phase 7〜24)、所感5.1 / 5.2 / 5.5 / 5.6 各提案の採否とその根拠を振り返り(`textbook/retrospectives/*-retrospective.md`)に記録する。プロジェクト完了時、次プロジェクトに引き継げる改訂版 handoff ドキュメント相当を作成可能な状態にする(実績: [`appendix/cl-development-handoff-v2.md`](./appendix/cl-development-handoff-v2.md) を最終版にした)。
+2. **手法目標**: v1 の #1〜17 を土台に #18〜28(本節)を実プロジェクトで運用し、自動実装モード(#21)の off・on をそれぞれ少なくとも1 Phase で実施した上で(実績: off = Phase 1〜6、on = Phase 7〜24)、所感5.1 / 5.2 / 5.5 / 5.6 各提案の採否とその根拠を振り返り(`textbook/retrospectives/*-retrospective.md`)に記録する。プロジェクト完了時、次プロジェクトに引き継げる改訂版 handoff ドキュメント相当を作成可能な状態にする(実績: [`appendix/cl-development-handoff-v2.md`](./appendix/cl-development-handoff-v2.md) を作り、再開分を足した [`appendix/cl-development-handoff-v3.md`](./appendix/cl-development-handoff-v3.md) を最終版にした)。
 3. **再帰検証目標**: Devex が生成すべき4文書の「質の良さ」の基準を、本プロジェクト自身が書く CL 教材(introduction / チェックリスト / 振り返り)の質を通じて具体化し、逆に Devex の生成物の構造を CL 教材テンプレートに転用できるかを #25 の振り返りで検証する。最低1回、Devex の実際の生成文書と `Phase-<N>-introduction.md` を突き合わせ、共通化できるテンプレート要素を最低1つ具体的に特定する(実績: [`textbook/retrospectives/goal3-comparison.md`](textbook/retrospectives/goal3-comparison.md)。共通要素 = 作業単位の表)。
 4. **合意と変更の目標**(2026-10-19 の再開で追加): [位置付け](appendix/devex_project_positioning.md) 12章のステージ11〜14 の完了の判断基準を満たす。最初はステージ11 のマイルストーン12(`docs/implementation_plan.md`)。ステージ15 は、ステージ14 の振り返り(2026-10-29)でスコープから外した。

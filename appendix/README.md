@@ -4,9 +4,10 @@
 
 | 資料 | 内容 |
 |---|---|
-| [`devex_project_positioning.md`](./devex_project_positioning.md) | これからの Devex の方針の正本。位置付け・コンセプト・3つの柱・仕様変更への対応フロー・AI と人の役割・優先事項・ステージ配分(ステージ11〜15。15 はスコープ外) |
+| [`devex_project_positioning.md`](./devex_project_positioning.md) | 再開(2026-10-19)からの Devex の方針の正本。ステージ11〜14 はすべて完了した(2026-11-02)。位置付け・コンセプト・3つの柱・仕様変更への対応フロー・AI と人の役割・優先事項・ステージ配分(ステージ11〜15。15 はスコープ外) |
 | [`concept-history.md`](./concept-history.md) | 構想の経緯。ロードマップ(ステージ5〜10 の構想と順序)、UML 製図システムの要件定義書、ステージ3の要件整理、詳細設計モードの構想、実装手順書の作成方針、ステージ9・10 の計画を1本にまとめたもの。今の仕様は `docs/` が正 |
-| [`cl-development-handoff-v2.md`](./cl-development-handoff-v2.md) | CL(Curriculum Loop)開発の手法の最終版。次のプロジェクトに引き継ぐ進行のルール(#1〜#34)と、2つのプロジェクトで分かった課題 |
+| [`cl-development-handoff-v3.md`](./cl-development-handoff-v3.md) | CL(Curriculum Loop)開発の手法の最終版(2026-11-02)。v2 に再開分(ステージ11〜14)を足した。次のプロジェクトに引き継ぐ進行のルール(#1〜#35)と、分かった課題 |
+| [`cl-development-handoff-v2.md`](./cl-development-handoff-v2.md) | v3 の前の版(2026-10-18。進行のルール #1〜#34)。v3 が内容をそのまま含む |
 | [`top-guide-plan.md`](./top-guide-plan.md) | TOP ページと GUIDE(使い方の解説)のページの構成案。見せ方の方針・機能ごとの説明と使い方・ページ構成(Phase 118 の入力) |
 | [`measurements/`](./measurements/) | 効果測定の結果。改良の前(ベースライン)と後(効果測定)を、実際の LLM と決まった題材・規則で比べた記録 |
 | [`goal3-generated/`](./goal3-generated/README.md) | プロジェクトのゴール3(Devex の生成文書と CL 教材の突き合わせ)に使った、Devex の実際の生成物。突き合わせの結果は [`goal3-comparison.md`](../textbook/retrospectives/goal3-comparison.md) |
@@ -20,7 +21,9 @@
 | 7 変更影響分析 | [stage7-baseline](./measurements/stage7-baseline.md) | [stage7-effect](./measurements/stage7-effect.md)(ヒアリングの数え方は [stage7-hearing](./measurements/stage7-hearing.md)) |
 | 8 AI 設計レビュー + テスト設計 | [stage8-baseline](./measurements/stage8-baseline.md) | [stage8-effect](./measurements/stage8-effect.md) |
 | 11 合意と変更の一巡 | [stage11-baseline](./measurements/stage11-baseline.md)(スクリプトは `measurements/stage11/measure.py`。材料は git から読み出す) | [stage11-effect](./measurements/stage11-effect.md)(スクリプトは `measurements/stage11/effect.py`) |
-| 12 合意の精度 | [stage12-baseline](./measurements/stage12-baseline.md)(スクリプトは `measurements/stage12/measure.py`。開発環境の版を `data/` に書き出して比べる) | (Phase 99) |
+| 12 合意の精度 | [stage12-baseline](./measurements/stage12-baseline.md)(スクリプトは `measurements/stage12/measure.py`。開発環境の版を `data/` に書き出して比べる) | [stage12-effect](./measurements/stage12-effect.md) |
+| 13 説明とすり合わせ | [stage13-baseline](./measurements/stage13-baseline.md) | [stage13-effect](./measurements/stage13-effect.md) |
+| 14 変更の取り込み | [stage14-baseline](./measurements/stage14-baseline.md) | [stage14-effect](./measurements/stage14-effect.md) |
 
 ## 2026-10-19 の整理
 
